@@ -9,5 +9,6 @@ target_link_libraries(
                      MLIRPass MLIRParser MLIRTransformUtils LLVMHeaders
                      MLIRHeaders LLZKFeltDialect)
 llzk_target_add_mlir_link_settings(LLZKZKExprDialect)
+add_dependencies(LLZKZKExprDialect ZKExprDialectIncGen)
 
 install(TARGETS LLZKZKExprDialect EXPORT LLZKTargets)
