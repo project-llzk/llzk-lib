@@ -21,6 +21,7 @@
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Transforms/ZKLeanPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/InitAllDialects.h"
@@ -77,6 +78,9 @@ int main(int argc, char **argv) {
   llzk::polymorphic::registerTransformationPasses();
   llzk::registerTransformationPassPipelines();
   llzk::registerValidationPasses();
+
+  // register zklean pretty print pass
+  mlir::registerPass([] { return llzk::zklean::createPrettyPrintZKLeanPass(); });
 
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
