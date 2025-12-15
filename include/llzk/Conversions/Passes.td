@@ -12,8 +12,8 @@
 
 include "llzk/Pass/PassBase.td"
 
-def ConvertFeltConstToZKExprPass
-    : Pass<"convert-felt-const-to-zkexpr", "::mlir::ModuleOp"> {
+def ConvertLLZKToZKLeanPass
+    : Pass<"convert-llzk-to-zklean", "::mlir::ModuleOp"> {
   let summary = "Wrap felt constants in ZKExpr.Literal ops";
   let description = [{
     Converts felt.const operations into the ZKExpr dialect by materializing a
@@ -27,7 +27,7 @@ def ConvertFeltConstToZKExprPass
     "mlir::zkexpr::ZKExprDialect",
     "mlir::zkbuilder::ZKBuilderDialect"
   ];
-  let constructor = "llzk::createConvertFeltConstToZKExprPass()";
+  let constructor = "llzk::createConvertLLZKToZKLeanPass()";
 }
 
 #endif // LLZK_CONVERSIONS_PASSES_TD
