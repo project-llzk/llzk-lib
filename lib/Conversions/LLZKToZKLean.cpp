@@ -1,10 +1,5 @@
 //===-- LLZKToZKLean.cpp ----------------------------------------*- C++ -*-===//
 //
-// Part of the LLZK Project, under the Apache License v2.0.
-// See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
-// SPDX-License-Identifier: Apache-2.0
-//
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Conversions/Passes.h"
@@ -29,30 +24,86 @@ namespace llzk {
 
 namespace {
 
-static LogicalResult convertModule(ModuleOp module) {
-  OpBuilder builder(module.getContext());
-  auto zkType = mlir::zkexpr::ZKExprType::get(module.getContext());
+// Create name for Lean function from llzk function full namepath, e.g.
+// "struct.def @IsZero { ... function.def @constrain ..." -> "@IsZero__constrain ..."
+static std::string buildLeanFunctionName(llzk::function::FuncDefOp func) {
+  std::string name;
+  auto fq = func.getFullyQualifiedName(false);
+  if (!fq)
+    return func.getSymName().str();
 
-  module.walk([&](llzk::function::FuncDefOp func) {
+  name = fq.getRootReference().str();
+  for (SymbolRefAttr nested : fq.getNestedReferences()) {
+    name.append("__");
+    name.append(nested.getLeafReference().str());
+  }
+  return name;
+}
+
+// Build ZKLean IR versions of constraint functions 
+// from `source` module and insert into `dest` module.
+static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
+  OpBuilder builder(dest.getContext());
+  auto zkType = mlir::zkexpr::ZKExprType::get(dest.getContext());
+  bool createdAny = false;
+
+  source.walk([&](llzk::function::FuncDefOp func) {
     if (func.getBody().empty())
       return;
-    if (!func->hasAttr("function.allow_constraint"))
+
+    // ZKLean only interested in constrains so LLZK module must permit
+    // constraints
+    if (!func->hasAttr("function.allow_constraint")) 
       return;
 
+    // Snapshot the original block so we can iterate without mutating in place.
     Block &oldBlock = func.getBody().front();
+
+    // Copy ops from original block into ops
     SmallVector<Operation *, 16> ops;
     for (Operation &op : oldBlock)
       ops.push_back(&op);
 
+    // Copy types of arguments from original block
+    SmallVector<Type> newInputTypes;
+    for (BlockArgument arg : oldBlock.getArguments()) {
+      if (mlir::isa<llzk::component::StructType>(arg.getType()))
+        continue;
+      newInputTypes.push_back(arg.getType());
+    }
+
+    auto funcType = FunctionType::get(dest.getContext(), newInputTypes,
+                                      func.getFunctionType().getResults());
+
+    // Create new ZKLean IR function in a place after original block
+    builder.setInsertionPointToEnd(dest.getBody());
+    auto leanFunc =
+        builder.create<llzk::function::FuncDefOp>(func.getLoc(),
+                                                  buildLeanFunctionName(func),
+                                                  funcType);
+
+    // Enable constraints for the new ZKLean IR function 
+    leanFunc.setAllowConstraintAttr(true);
+
+    // Create new block 
     auto *newBlock = new Block();
+    leanFunc.getBody().push_front(newBlock);
+
     DenseMap<Value, Value> zkValues;
     DenseMap<Value, Value> argMapping;
 
-    for (auto [idx, oldArg] : llvm::enumerate(oldBlock.getArguments())) {
-      auto newArg = newBlock->addArgument(oldArg.getType(), oldArg.getLoc());
+    unsigned newIdx = 0;
+
+    // Drop struct-typed arguments from the Lean signature.
+    for (BlockArgument oldArg : oldBlock.getArguments()) {
+      if (mlir::isa<llzk::component::StructType>(oldArg.getType()))
+        continue;
+      auto newArg =
+          newBlock->addArgument(newInputTypes[newIdx++], oldArg.getLoc());
       argMapping[oldArg] = newArg;
     }
 
+    // Map a felt SSA value to its Lean/ZKExpr equivalent.
     auto mapValue = [&](Value v) -> Value {
       if (auto it = zkValues.find(v); it != zkValues.end())
         return it->second;
@@ -63,13 +114,14 @@ static LogicalResult convertModule(ModuleOp module) {
 
       OpBuilder::InsertionGuard guard(builder);
       builder.setInsertionPointToEnd(newBlock);
-      auto literal = builder.create<mlir::zkexpr::LiteralOp>(v.getLoc(), zkType,
-                                                             newArg);
+      auto literal =
+          builder.create<mlir::zkexpr::LiteralOp>(v.getLoc(), zkType, newArg);
       zkValues[v] = literal.getOutput();
       return literal.getOutput();
     };
 
     for (Operation *op : ops) {
+      // Convert felt.const to ZKExpr.Literal
       if (auto constOp = dyn_cast<llzk::felt::FeltConstantOp>(op)) {
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
@@ -82,7 +134,7 @@ static LogicalResult convertModule(ModuleOp module) {
         zkValues[constOp.getResult()] = literal.getOutput();
         continue;
       }
-
+      // Convert felt.add to ZKExpr.Add
       if (auto add = dyn_cast<llzk::felt::AddFeltOp>(op)) {
         Value lhs = mapValue(add.getLhs());
         Value rhs = mapValue(add.getRhs());
@@ -93,7 +145,7 @@ static LogicalResult convertModule(ModuleOp module) {
         zkValues[add.getResult()] = zkAdd.getOutput();
         continue;
       }
-
+      // Convert felt.mul to ZKExpr.Mul
       if (auto mul = dyn_cast<llzk::felt::MulFeltOp>(op)) {
         Value lhs = mapValue(mul.getLhs());
         Value rhs = mapValue(mul.getRhs());
@@ -104,7 +156,7 @@ static LogicalResult convertModule(ModuleOp module) {
         zkValues[mul.getResult()] = zkMul.getOutput();
         continue;
       }
-
+      // Convert felt.neg to ZKExpr.Neg
       if (auto neg = dyn_cast<llzk::felt::NegFeltOp>(op)) {
         Value operand = mapValue(neg.getOperand());
         OpBuilder::InsertionGuard guard(builder);
@@ -114,7 +166,7 @@ static LogicalResult convertModule(ModuleOp module) {
         zkValues[neg.getResult()] = zkNeg.getOutput();
         continue;
       }
-
+      // Convert struct.readf to ZKExpr.Witnessable.witness
       if (auto read = dyn_cast<llzk::component::FieldReadOp>(op)) {
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
@@ -122,12 +174,12 @@ static LogicalResult convertModule(ModuleOp module) {
         zkValues[read.getResult()] = witness.getOutput();
         continue;
       }
-
+      // Convert constrain.eq to ZKBuilder.ConstrainEq
       if (auto eq = dyn_cast<llzk::constrain::EmitEqualityOp>(op)) {
         Value lhs = mapValue(eq.getLhs());
         Value rhs = mapValue(eq.getRhs());
         auto stateType =
-            mlir::zkbuilder::ZKBuilderStateType::get(module.getContext());
+            mlir::zkbuilder::ZKBuilderStateType::get(dest.getContext());
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
         builder.create<mlir::zkbuilder::ConstrainEqOp>(eq.getLoc(), stateType,
@@ -138,14 +190,14 @@ static LogicalResult convertModule(ModuleOp module) {
 
     OpBuilder::InsertionGuard guard(builder);
     builder.setInsertionPointToEnd(newBlock);
-    builder.create<llzk::function::ReturnOp>(func.getLoc());
 
-    while (!func.getBody().empty())
-      func.getBody().front().erase();
-    func.getBody().push_back(newBlock);
+    // TODO: Consider more nuanced handling of return
+    // Return Op at the end of function 
+    builder.create<llzk::function::ReturnOp>(func.getLoc());
+    createdAny = true;
   });
 
-  return success();
+  return success(createdAny);
 }
 
 class ConvertLLZKToZKLeanPass
@@ -154,15 +206,18 @@ class ConvertLLZKToZKLeanPass
 public:
   void runOnOperation() override {
     ModuleOp original = getOperation();
-    ModuleOp zkLeanClone = original.clone();
+    ModuleOp zkLeanModule = ModuleOp::create(original.getLoc());
     auto symName = StringAttr::get(&getContext(), "ZKLean");
-    zkLeanClone->setAttr(SymbolTable::getSymbolAttrName(), symName);
-    if (failed(convertModule(zkLeanClone))) {
+    zkLeanModule->setAttr(SymbolTable::getSymbolAttrName(), symName);
+    if (auto lang = original->getAttr("veridise.lang"))
+      zkLeanModule->setAttr("veridise.lang", lang);
+
+    if (failed(convertModule(original, zkLeanModule))) {
       original.emitError("failed to produce ZKLean module");
       signalPassFailure();
       return;
     }
-    original.getBody()->push_back(zkLeanClone.getOperation());
+    original.getBody()->push_back(zkLeanModule.getOperation());
   }
 };
 
