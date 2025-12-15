@@ -1,4 +1,4 @@
-//===-- FeltToZKExpr.cpp ---------------------------------------*- C++ -*-===//
+//===-- LLZKToZKLean.cpp ----------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -12,18 +12,18 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Pass/Pass.h>
-#include <mlir/Transforms/GreedyPatternRewriteDriver.h>
 
 using namespace mlir;
 
 namespace llzk {
-#define GEN_PASS_DEF_CONVERTFELTCONSTTOZKEXPRPASS
+#define GEN_PASS_DEF_CONVERTLLZKTOZKLEANPASS
 #include "llzk/Conversions/LLZKConversionPasses.h.inc"
 } // namespace llzk
 
@@ -115,6 +115,14 @@ static LogicalResult convertModule(ModuleOp module) {
         continue;
       }
 
+      if (auto read = dyn_cast<llzk::component::FieldReadOp>(op)) {
+        OpBuilder::InsertionGuard guard(builder);
+        builder.setInsertionPointToEnd(newBlock);
+        auto witness = builder.create<mlir::zkexpr::WitnessOp>(read.getLoc());
+        zkValues[read.getResult()] = witness.getOutput();
+        continue;
+      }
+
       if (auto eq = dyn_cast<llzk::constrain::EmitEqualityOp>(op)) {
         Value lhs = mapValue(eq.getLhs());
         Value rhs = mapValue(eq.getRhs());
@@ -140,21 +148,21 @@ static LogicalResult convertModule(ModuleOp module) {
   return success();
 }
 
-class ConvertFeltConstToZKExprPass
-    : public llzk::impl::ConvertFeltConstToZKExprPassBase<
-          ConvertFeltConstToZKExprPass> {
+class ConvertLLZKToZKLeanPass
+    : public llzk::impl::ConvertLLZKToZKLeanPassBase<
+          ConvertLLZKToZKLeanPass> {
 public:
   void runOnOperation() override {
     ModuleOp original = getOperation();
-    ModuleOp leanClone = original.clone();
+    ModuleOp zkLeanClone = original.clone();
     auto symName = StringAttr::get(&getContext(), "ZKLean");
-    leanClone->setAttr(SymbolTable::getSymbolAttrName(), symName);
-    if (failed(convertModule(leanClone))) {
+    zkLeanClone->setAttr(SymbolTable::getSymbolAttrName(), symName);
+    if (failed(convertModule(zkLeanClone))) {
       original.emitError("failed to produce ZKLean module");
       signalPassFailure();
       return;
     }
-    original.getBody()->push_back(leanClone.getOperation());
+    original.getBody()->push_back(zkLeanClone.getOperation());
   }
 };
 
@@ -162,12 +170,12 @@ public:
 
 namespace llzk {
 
-std::unique_ptr<Pass> createConvertFeltConstToZKExprPass() {
-  return std::make_unique<ConvertFeltConstToZKExprPass>();
+std::unique_ptr<Pass> createConvertLLZKToZKLeanPass() {
+  return std::make_unique<ConvertLLZKToZKLeanPass>();
 }
 
 void registerConversionPasses() {
-  ::mlir::registerPass([] { return createConvertFeltConstToZKExprPass(); });
+  ::mlir::registerPass([] { return createConvertLLZKToZKLeanPass(); });
 }
 
 } // namespace llzk
