@@ -1,7 +1,7 @@
 add_executable(llzk-opt llzk-opt.cpp)
 target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       LLZK::DialectRegistration LLZKAnalysis
-                      LLZKTransforms LLZKUtil LLZKValidators
+                      LLZKTransforms LLZKConversions LLZKUtil LLZKValidators
                       LLZKDialectHeaders MLIRIR R1CSDialectHeaders 
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLTransforms>)

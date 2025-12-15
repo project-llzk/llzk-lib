@@ -15,14 +15,14 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 //        ZKBuilderOps
 ////////////////////////////////////////////////////////
 
-def ZKBuilder_ConstrainEqOp : Op<ZKBuilder_Dialect, "ConstrainEq", [Pure]> {
+def ZKBuilder_ConstrainEqOp : Op<ZKBuilder_Dialect, "ConstrainEq", []> {
   let summary = "Constrain two ZK Expressions to be equal";
   let arguments = (ins ZKExpr:$lhs, ZKExpr:$rhs);
   let results = (outs ZKBuilderState:$output);
   let assemblyFormat = "$lhs $rhs attr-dict";
 }
 
-def ZKBuilder_ConstrainR1CSOp : Op<ZKBuilder_Dialect, "ConstrainR1CS", [Pure]> {
+def ZKBuilder_ConstrainR1CSOp : Op<ZKBuilder_Dialect, "ConstrainR1CS", []> {
   let summary = "Constrain R1CS in the Builder State";
   let arguments = (ins ZKExpr:$a, ZKExpr:$b, ZKExpr:$c);
   let results = (outs ZKBuilderState:$output);

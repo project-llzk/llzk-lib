@@ -41,6 +41,7 @@ add_subdirectory(llzk/Dialect/Undef/IR)
 add_subdirectory(llzk/Dialect/ZKBuilder/IR)
 
 add_subdirectory(llzk/Dialect/ZKExpr/IR)
+add_subdirectory(llzk/Conversions)
 
 add_subdirectory(llzk/Transforms)
 add_subdirectory(llzk/Util)
