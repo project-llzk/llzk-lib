@@ -165,7 +165,7 @@ struct PrettyPrintZKLeanPass
     outputFilename = other.outputFilename;
   }
 
-  StringRef getArgument() const final { return "zk-lean-pretty-print"; }
+  StringRef getArgument() const final { return "zklean-pretty-print"; }
   StringRef getDescription() const final {
     return "Pretty-print zk dialect IR as Lean code";
   }
