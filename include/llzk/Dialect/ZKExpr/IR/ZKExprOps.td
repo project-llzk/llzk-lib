@@ -51,7 +51,7 @@ def ZKExpr_WitnessVarOp : Op<ZKExpr_Dialect, "WitnessVar", [Pure]> {
 
 // TODO: Figure out the difference between Builder witness, zkexpr witness, and
 // witnessable.witness
-def ZKExpr_WitnessOp : Op<ZKExpr_Dialect, "Witnessable.witness", [Pure, ConstantLike]> {
+def ZKExpr_WitnessOp : Op<ZKExpr_Dialect, "Witnessable.witness", [ConstantLike]> {
   let summary = "Witnessable.witness";
   let results = (outs ZKExpr:$output);
   let assemblyFormat = "attr-dict";
