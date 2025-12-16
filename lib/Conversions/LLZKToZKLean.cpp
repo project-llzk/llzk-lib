@@ -15,6 +15,8 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Pass/Pass.h>
 
+#include <llvm/ADT/DenseMap.h>
+
 using namespace mlir;
 
 namespace llzk {
@@ -231,6 +233,7 @@ std::unique_ptr<Pass> createConvertLLZKToZKLeanPass() {
 
 void registerConversionPasses() {
   ::mlir::registerPass([] { return createConvertLLZKToZKLeanPass(); });
+  ::mlir::registerPass([] { return createConvertZKLeanToLLZKPass(); });
 }
 
 } // namespace llzk
