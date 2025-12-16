@@ -27,4 +27,21 @@ def ConvertLLZKToZKLeanPass
   let constructor = "llzk::createConvertLLZKToZKLeanPass()";
 }
 
+def ConvertZKLeanToLLZKPass
+    : Pass<"convert-zklean-to-llzk", "::mlir::ModuleOp"> {
+  let summary = "Convert ZKExpr/ZKBuilder ops back to felt/constrain dialect";
+  let description = [{
+    Converts the lean IR back to LLZK-style felt operations by translating
+    ZKExpr arithmetic into felt arithmetic and ZKBuilder constraints into
+    constrain.eq operations.
+  }];
+  let dependentDialects = [
+    "llzk::felt::FeltDialect",
+    "llzk::constrain::ConstrainDialect",
+    "mlir::zkexpr::ZKExprDialect",
+    "mlir::zkbuilder::ZKBuilderDialect"
+  ];
+  let constructor = "llzk::createConvertZKLeanToLLZKPass()";
+}
+
 #endif // LLZK_CONVERSIONS_PASSES_TD

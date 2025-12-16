@@ -1,7 +1,7 @@
 add_library(LLZKConversions)
 add_library(LLZK::LLZKConversions ALIAS LLZKConversions)
 
-target_sources(LLZKConversions PRIVATE LLZKToZKLean.cpp)
+target_sources(LLZKConversions PRIVATE LLZKToZKLean.cpp ZKLeanToLLZK.cpp)
 
 target_link_libraries(
   LLZKConversions
