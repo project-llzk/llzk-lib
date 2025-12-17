@@ -59,9 +59,9 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
     auto newFunc =
         builder.create<llzk::function::FuncDefOp>(func.getLoc(),
                                                   func.getSymName(), funcType);
-    // Allow constraints / witnesses if original function did
-    if (func.hasAllowConstraintAttr())
-      newFunc.setAllowConstraintAttr(true);
+    // Allow constraints 
+    newFunc.setAllowConstraintAttr(true);
+    // Allow witnesses if original function permitted witnesses
     if (func.hasAllowWitnessAttr())
       newFunc.setAllowWitnessAttr(true);
 
