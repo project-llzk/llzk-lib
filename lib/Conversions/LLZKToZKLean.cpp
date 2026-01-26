@@ -48,8 +48,11 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
   OpBuilder builder(dest.getContext());
   auto zkType = mlir::zkexpr::ZKExprType::get(dest.getContext());
   bool createdAny = false;
+  bool hadError = false;
 
   source.walk([&](llzk::function::FuncDefOp func) {
+    if (hadError)
+      return;
     if (func.getBody().empty())
       return;
 
@@ -106,13 +109,20 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
     }
 
     // Map a felt SSA value to its Lean/ZKExpr equivalent.
-    auto mapValue = [&](Value v) -> Value {
+    auto mapValue = [&](Value v, Operation *userOp) -> Value {
       if (auto it = zkValues.find(v); it != zkValues.end())
         return it->second;
 
       auto newArg = argMapping.lookup(v);
       if (!newArg)
-        return Value();
+        {
+          if (auto *def = v.getDefiningOp())
+            def->emitError("unsupported value producer for ZKLean conversion");
+          else
+            userOp->emitError("unsupported block argument for ZKLean conversion");
+          hadError = true;
+          return Value();
+        }
 
       OpBuilder::InsertionGuard guard(builder);
       builder.setInsertionPointToEnd(newBlock);
@@ -138,8 +148,10 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
       }
       // Convert felt.add to ZKExpr.Add
       if (auto add = dyn_cast<llzk::felt::AddFeltOp>(op)) {
-        Value lhs = mapValue(add.getLhs());
-        Value rhs = mapValue(add.getRhs());
+        Value lhs = mapValue(add.getLhs(), op);
+        Value rhs = mapValue(add.getRhs(), op);
+        if (!lhs || !rhs)
+          continue;
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
         auto zkAdd =
@@ -147,10 +159,25 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
         zkValues[add.getResult()] = zkAdd.getOutput();
         continue;
       }
+      // Convert felt.sub to ZKExpr.Sub
+      if (auto sub = dyn_cast<llzk::felt::SubFeltOp>(op)) {
+        Value lhs = mapValue(sub.getLhs(), op);
+        Value rhs = mapValue(sub.getRhs(), op);
+        if (!lhs || !rhs)
+          continue;
+        OpBuilder::InsertionGuard guard(builder);
+        builder.setInsertionPointToEnd(newBlock);
+        auto zkSub =
+            builder.create<mlir::zkexpr::SubOp>(sub.getLoc(), lhs, rhs);
+        zkValues[sub.getResult()] = zkSub.getOutput();
+        continue;
+      }
       // Convert felt.mul to ZKExpr.Mul
       if (auto mul = dyn_cast<llzk::felt::MulFeltOp>(op)) {
-        Value lhs = mapValue(mul.getLhs());
-        Value rhs = mapValue(mul.getRhs());
+        Value lhs = mapValue(mul.getLhs(), op);
+        Value rhs = mapValue(mul.getRhs(), op);
+        if (!lhs || !rhs)
+          continue;
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
         auto zkMul =
@@ -160,7 +187,9 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
       }
       // Convert felt.neg to ZKExpr.Neg
       if (auto neg = dyn_cast<llzk::felt::NegFeltOp>(op)) {
-        Value operand = mapValue(neg.getOperand());
+        Value operand = mapValue(neg.getOperand(), op);
+        if (!operand)
+          continue;
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
         auto zkNeg =
@@ -178,14 +207,21 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
       }
       // Convert constrain.eq to ZKBuilder.ConstrainEq
       if (auto eq = dyn_cast<llzk::constrain::EmitEqualityOp>(op)) {
-        Value lhs = mapValue(eq.getLhs());
-        Value rhs = mapValue(eq.getRhs());
+        Value lhs = mapValue(eq.getLhs(), op);
+        Value rhs = mapValue(eq.getRhs(), op);
+        if (!lhs || !rhs)
+          continue;
         auto stateType =
             mlir::zkbuilder::ZKBuilderStateType::get(dest.getContext());
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
         builder.create<mlir::zkbuilder::ConstrainEqOp>(eq.getLoc(), stateType,
                                                        lhs, rhs);
+        continue;
+      }
+      if (op->getNumResults() != 0) {
+        op->emitError("unsupported op in ZKLean conversion");
+        hadError = true;
         continue;
       }
     }
@@ -199,6 +235,8 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
     createdAny = true;
   });
 
+  if (hadError)
+    return failure();
   return success(createdAny);
 }
 
