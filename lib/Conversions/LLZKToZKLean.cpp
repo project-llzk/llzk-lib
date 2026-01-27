@@ -10,12 +10,17 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "llzk/Dialect/ZKLeanStruct/IR/ZKLeanStructOps.h"
 
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/DialectRegistry.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Pass/Pass.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 
 using namespace mlir;
 
@@ -50,6 +55,41 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
   bool createdAny = false;
   bool hadError = false;
 
+  // Map LLZK struct types to ZKLean struct types for ZKLean signatures.
+  auto mapType = [&](Type type) -> Type {
+    if (auto structType = dyn_cast<llzk::component::StructType>(type)) {
+      return mlir::zkleanstruct::StructType::get(dest.getContext(),
+                                                 structType.getNameRef());
+    }
+    return type;
+  };
+
+  // Emit ZKLeanStruct.def equivalents so downstream functions can reference
+  // ZKLean struct types by symbol.
+  llvm::DenseSet<StringRef> seenStructs;
+  for (auto def : source.getBody()->getOps<llzk::component::StructDefOp>()) {
+    StringRef name = def.getSymName();
+    if (!seenStructs.insert(name).second)
+      continue;
+    OpBuilder::InsertionGuard guard(builder);
+    builder.setInsertionPointToEnd(dest.getBody());
+    auto zkStruct =
+        builder.create<mlir::zkleanstruct::StructDefOp>(def.getLoc(),
+                                                        def.getSymNameAttr());
+    auto *body = new Block();
+    zkStruct.getBodyRegion().push_back(body);
+    OpBuilder fieldBuilder(body, body->begin());
+    for (auto field : def.getBody()->getOps<llzk::component::FieldDefOp>()) {
+      if (!mlir::isa<llzk::felt::FeltType>(field.getType())) {
+        field.emitError("unsupported field type for ZKLean struct conversion");
+        hadError = true;
+        continue;
+      }
+      fieldBuilder.create<mlir::zkleanstruct::FieldDefOp>(
+          field.getLoc(), field.getSymNameAttr(), TypeAttr::get(zkType));
+    }
+  }
+
   source.walk([&](llzk::function::FuncDefOp func) {
     if (hadError)
       return;
@@ -69,42 +109,38 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
     for (Operation &op : oldBlock)
       ops.push_back(&op);
 
-    // Copy types of arguments from original block
+    // Copy types of arguments from original block, mapping LLZK struct types to
+    // ZKLean struct types.
     SmallVector<Type> newInputTypes;
     for (BlockArgument arg : oldBlock.getArguments()) {
-      if (mlir::isa<llzk::component::StructType>(arg.getType()))
-        continue;
-      newInputTypes.push_back(arg.getType());
+      newInputTypes.push_back(mapType(arg.getType()));
+    }
+    SmallVector<Type> newResultTypes;
+    auto funcType = func.getFunctionType();
+    for (Type resultType : funcType.getResults()) {
+      newResultTypes.push_back(mapType(resultType));
     }
 
-    auto funcType = FunctionType::get(dest.getContext(), newInputTypes,
-                                      func.getFunctionType().getResults());
+    auto newFuncType =
+        FunctionType::get(dest.getContext(), newInputTypes, newResultTypes);
 
     // Create new ZKLean IR function in a place after original block
     builder.setInsertionPointToEnd(dest.getBody());
-    auto leanFunc =
-        builder.create<llzk::function::FuncDefOp>(func.getLoc(),
-                                                  buildLeanFunctionName(func),
-                                                  funcType);
+    // Use func.func for ZKLean to allow non-LLZK types (e.g. ZKLeanStruct).
+    auto leanFunc = builder.create<mlir::func::FuncOp>(
+        func.getLoc(), buildLeanFunctionName(func), newFuncType);
 
-    // Enable constraints for the new ZKLean IR function 
-    leanFunc.setAllowConstraintAttr(true);
-
-    // Create new block 
-    auto *newBlock = new Block();
-    leanFunc.getBody().push_front(newBlock);
+    // Create new block.
+    Block *newBlock = leanFunc.addEntryBlock();
 
     DenseMap<Value, Value> zkValues;
     DenseMap<Value, Value> argMapping;
 
     unsigned newIdx = 0;
 
-    // Drop struct-typed arguments from the Lean signature.
+    // Preserve original arguments in the ZKLean signature.
     for (BlockArgument oldArg : oldBlock.getArguments()) {
-      if (mlir::isa<llzk::component::StructType>(oldArg.getType()))
-        continue;
-      auto newArg =
-          newBlock->addArgument(newInputTypes[newIdx++], oldArg.getLoc());
+      auto newArg = newBlock->getArgument(newIdx++);
       argMapping[oldArg] = newArg;
     }
 
@@ -123,6 +159,11 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
           hadError = true;
           return Value();
         }
+      if (mlir::isa<mlir::zkleanstruct::StructType>(newArg.getType())) {
+        userOp->emitError("struct values must be accessed via zkleanstruct.readf");
+        hadError = true;
+        return Value();
+      }
 
       OpBuilder::InsertionGuard guard(builder);
       builder.setInsertionPointToEnd(newBlock);
@@ -197,12 +238,19 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
         zkValues[neg.getResult()] = zkNeg.getOutput();
         continue;
       }
-      // Convert struct.readf to ZKExpr.Witnessable.witness
+      // Convert struct.readf to ZKLeanStruct.readf
       if (auto read = dyn_cast<llzk::component::FieldReadOp>(op)) {
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
-        auto witness = builder.create<mlir::zkexpr::WitnessOp>(read.getLoc());
-        zkValues[read.getResult()] = witness.getOutput();
+        Value component = argMapping.lookup(read.getComponent());
+        if (!component) {
+          read.emitError("unsupported struct source in ZKLean conversion");
+          hadError = true;
+          continue;
+        }
+        auto readOp = builder.create<mlir::zkleanstruct::ReadOp>(
+            read.getLoc(), zkType, component, read.getFieldNameAttr());
+        zkValues[read.getResult()] = readOp.getValue();
         continue;
       }
       // Convert constrain.eq to ZKBuilder.ConstrainEq
@@ -231,7 +279,7 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
 
     // TODO: Consider more nuanced handling of return
     // Return Op at the end of function 
-    builder.create<llzk::function::ReturnOp>(func.getLoc());
+    builder.create<mlir::func::ReturnOp>(func.getLoc());
     createdAny = true;
   });
 
@@ -244,6 +292,13 @@ class ConvertLLZKToZKLeanPass
     : public llzk::impl::ConvertLLZKToZKLeanPassBase<
           ConvertLLZKToZKLeanPass> {
 public:
+  void getDependentDialects(mlir::DialectRegistry &registry) const override {
+    registry.insert<mlir::func::FuncDialect,
+                    mlir::zkbuilder::ZKBuilderDialect,
+                    mlir::zkexpr::ZKExprDialect,
+                    mlir::zkleanstruct::ZKLeanStructDialect>();
+  }
+
   void runOnOperation() override {
     ModuleOp original = getOperation();
     ModuleOp zkLeanModule = ModuleOp::create(original.getLoc());

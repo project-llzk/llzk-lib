@@ -16,6 +16,7 @@ target_link_libraries(
   PRIVATE
     LLZKFeltDialect
     LLZKZKExprDialect
+    LLZKZKLeanStructDialect
 )
 
 llzk_target_add_mlir_link_settings(LLZKConversions)
