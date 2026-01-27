@@ -38,6 +38,7 @@ add_subdirectory(llzk/Dialect/Polymorphic/Transforms)
 add_subdirectory(llzk/Dialect/String/IR)
 add_subdirectory(llzk/Dialect/Struct/IR)
 add_subdirectory(llzk/Dialect/Undef/IR)
+add_subdirectory(llzk/Dialect/ZKLeanStruct/IR)
 add_subdirectory(llzk/Dialect/ZKBuilder/IR)
 
 add_subdirectory(llzk/Dialect/ZKExpr/IR)

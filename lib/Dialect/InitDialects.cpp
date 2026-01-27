@@ -22,6 +22,7 @@
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Undef/IR/Dialect.h"
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
+#include "llzk/Dialect/ZKLeanStruct/IR/ZKLeanStructDialect.h"
 
 #include "llzk/Dialect/ZKExpr/IR/ZKExprDialect.h"
 
@@ -51,6 +52,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       mlir::arith::ArithDialect,
       mlir::scf::SCFDialect,
       mlir::zkbuilder::ZKBuilderDialect,
+      mlir::zkleanstruct::ZKLeanStructDialect,
       mlir::zkexpr::ZKExprDialect
       // clang-format on
       >();
