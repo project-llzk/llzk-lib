@@ -1,0 +1,8 @@
+#ifndef LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTDIALECT_H_
+#define LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTDIALECT_H_
+
+#include <mlir/IR/DialectImplementation.h>
+
+#include "llzk/Dialect/ZKLeanStruct/IR/ZKLeanStructDialect.h.inc"
+
+#endif  // LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTDIALECT_H_
