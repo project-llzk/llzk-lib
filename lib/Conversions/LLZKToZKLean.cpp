@@ -160,7 +160,7 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
           return Value();
         }
       if (mlir::isa<mlir::zkleanstruct::StructType>(newArg.getType())) {
-        userOp->emitError("struct values must be accessed via zkleanstruct.readf");
+        userOp->emitError("struct values must be accessed via zkleanstruct.accessor");
         hadError = true;
         return Value();
       }
@@ -238,7 +238,7 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
         zkValues[neg.getResult()] = zkNeg.getOutput();
         continue;
       }
-      // Convert struct.readf to ZKLeanStruct.readf
+      // Convert struct.readf to ZKLeanStruct.accessor
       if (auto read = dyn_cast<llzk::component::FieldReadOp>(op)) {
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
@@ -248,9 +248,9 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
           hadError = true;
           continue;
         }
-        auto readOp = builder.create<mlir::zkleanstruct::ReadOp>(
+        auto accessorOp = builder.create<mlir::zkleanstruct::AccessorOp>(
             read.getLoc(), zkType, component, read.getFieldNameAttr());
-        zkValues[read.getResult()] = readOp.getValue();
+        zkValues[read.getResult()] = accessorOp.getValue();
         continue;
       }
       // Convert constrain.eq to ZKBuilder.ConstrainEq

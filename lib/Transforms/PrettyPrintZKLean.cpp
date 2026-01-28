@@ -269,14 +269,14 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto read = dyn_cast<mlir::zkleanstruct::ReadOp>(op)) {
+  if (auto accessor = dyn_cast<mlir::zkleanstruct::AccessorOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
     line.append(" := ");
-    line.append(lookupValueName(read.getComponent(), valueNames));
+    line.append(lookupValueName(accessor.getComponent(), valueNames));
     line.push_back('.');
-    line.append(read.getFieldNameAttr().getValue());
+    line.append(accessor.getFieldNameAttr().getValue());
     return line;
   }
 

@@ -285,20 +285,20 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
         continue;
       }
 
-      // ZKLeanStruct.readf to struct.readf
-      if (auto read = dyn_cast<mlir::zkleanstruct::ReadOp>(op)) {
-        Value component = argMap.lookup(read.getComponent());
+      // ZKLeanStruct.accessor to struct.readf
+      if (auto accessor = dyn_cast<mlir::zkleanstruct::AccessorOp>(op)) {
+        Value component = argMap.lookup(accessor.getComponent());
         if (!component) {
-          read.emitError("unsupported struct source in ZKLean conversion");
+          accessor.emitError("unsupported struct source in ZKLean conversion");
           continue;
         }
         OpBuilder::InsertionGuard guard(builder);
         builder.setInsertionPointToEnd(newBlock);
         auto fieldAttr =
-            builder.getStringAttr(read.getFieldNameAttr().getValue());
+            builder.getStringAttr(accessor.getFieldNameAttr().getValue());
         auto newRead = builder.create<llzk::component::FieldReadOp>(
-            read.getLoc(), feltType, component, fieldAttr);
-        zkToFeltMap[read.getValue()] = newRead.getVal();
+            accessor.getLoc(), feltType, component, fieldAttr);
+        zkToFeltMap[accessor.getValue()] = newRead.getVal();
         continue;
       }
 
