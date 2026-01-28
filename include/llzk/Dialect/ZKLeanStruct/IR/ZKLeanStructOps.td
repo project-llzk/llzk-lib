@@ -46,8 +46,8 @@ def ZKLeanStruct_FieldDefOp
 // Struct operations
 //===------------------------------------------------------------------===//
 
-def ZKLeanStruct_ReadOp : ZKLeanStructOp<"readf", [Pure]> {
-  let summary = "read value of a struct field";
+def ZKLeanStruct_AccessorOp : ZKLeanStructOp<"accessor", [Pure]> {
+  let summary = "access value of a struct field";
   let arguments = (ins ZKLeanStruct_StructType:$component,
                        FlatSymbolRefAttr:$field_name);
   let results = (outs ZKExpr:$value);
