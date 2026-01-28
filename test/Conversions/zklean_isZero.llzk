@@ -1,18 +1,22 @@
 module @ZKLean attributes {veridise.lang = "llzk"} {
-  function.def @IsZero__constrain(%arg0: !felt.type) attributes {function.allow_constraint} {
-    %felt_const_0 = felt.const  0
-    %0 = ZKExpr.Literal %felt_const_0
-    %felt_const_1 = felt.const  1
-    %1 = ZKExpr.Literal %felt_const_1
-    %2 = ZKExpr.Witnessable.witness
-    %3 = ZKExpr.Witnessable.witness
-    %4 = ZKExpr.Literal %arg0
-    %5 = ZKExpr.Neg %4
-    %6 = ZKExpr.Mul %5 %3
-    %7 = ZKExpr.Add %6 %1
-    %8 = ZKBuilder.ConstrainEq %2 %7
-    %9 = ZKExpr.Mul %4 %2
-    %10 = ZKBuilder.ConstrainEq %9 %0
-    function.return
-  }
+    ZKLeanStruct.def @IsZero {
+        ZKLeanStruct.field @out : !ZKExpr.zkexpr
+        ZKLeanStruct.field @inv : !ZKExpr.zkexpr
+    }
+    func.func @IsZero__constrain(%arg0: !ZKLeanStruct.type<@IsZero>, %arg1: !felt.type) {
+        %felt_const_0 = felt.const  0
+        %0 = ZKExpr.Literal %felt_const_0
+        %felt_const_1 = felt.const  1
+        %1 = ZKExpr.Literal %felt_const_1
+        %2 = ZKLeanStruct.readf %arg0[@out] : <@IsZero>, !ZKExpr.zkexpr
+        %3 = ZKLeanStruct.readf %arg0[@inv] : <@IsZero>, !ZKExpr.zkexpr
+        %4 = ZKExpr.Literal %arg1
+        %5 = ZKExpr.Neg %4
+        %6 = ZKExpr.Mul %5 %3
+        %7 = ZKExpr.Add %6 %1
+        %8 = ZKBuilder.ConstrainEq %2 %7
+        %9 = ZKExpr.Mul %4 %2
+        %10 = ZKBuilder.ConstrainEq %9 %0
+        return
+    }
 }
