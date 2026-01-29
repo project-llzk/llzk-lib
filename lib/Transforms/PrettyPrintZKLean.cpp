@@ -4,7 +4,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "llzk/Dialect/ZKLeanStruct/IR/ZKLeanStructOps.h"
+#include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 #include "llzk/Transforms/ZKLeanPasses.h"
 
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -59,7 +59,7 @@ static std::string buildLeanFunctionName(llzk::function::FuncDefOp func) {
 
 // Extract a struct name from either ZKLean or LLZK struct types.
 static std::optional<std::string> getStructTypeName(Type type) {
-  if (auto structType = dyn_cast<mlir::zkleanstruct::StructType>(type))
+  if (auto structType = dyn_cast<mlir::zkleanlean::StructType>(type))
     return structType.getNameRef().getLeafReference().str();
   if (auto structType = dyn_cast<llzk::component::StructType>(type))
     return structType.getNameRef().getLeafReference().str();
@@ -132,6 +132,15 @@ static std::string formatOperationName(Operation &op) {
   if (name.consume_front("zkbuilder."))
     return name.str();
   return name.str();
+}
+
+static std::string formatLeanCallee(SymbolRefAttr callee) {
+  std::string name = callee.getRootReference().str();
+  for (SymbolRefAttr nested : callee.getNestedReferences()) {
+    name.append("__");
+    name.append(nested.getLeafReference().str());
+  }
+  return name;
 }
 
 static std::string formatOperationCall(Operation &op,
@@ -269,7 +278,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto accessor = dyn_cast<mlir::zkleanstruct::AccessorOp>(op)) {
+  if (auto accessor = dyn_cast<mlir::zkleanlean::AccessorOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
@@ -277,6 +286,24 @@ formatLeanStatement(Operation &op,
     line.append(lookupValueName(accessor.getComponent(), valueNames));
     line.push_back('.');
     line.append(accessor.getFieldNameAttr().getValue());
+    return line;
+  }
+
+  if (auto call = dyn_cast<mlir::zkleanlean::CallOp>(op)) {
+    std::string callee = formatLeanCallee(call.getCallee());
+    std::string callLine = callee;
+    for (Value operand : op.getOperands()) {
+      callLine.push_back(' ');
+      callLine.append(lookupValueName(operand, valueNames));
+    }
+    if (op.getNumResults() == 0) {
+      return std::string("  ") + callLine;
+    }
+    auto resultNames = assignResultNames(op, valueNames, nextValueId);
+    std::string line = "  let ";
+    line.append(wrapResultNames(resultNames));
+    line.append(" := ");
+    line.append(callLine);
     return line;
   }
 
@@ -581,13 +608,13 @@ static bool emitLeanStructsFromLLZK(
 
 // Emit Lean structure declarations from ZKLean structs.
 static bool emitLeanStructsFromZKLean(
-    ArrayRef<mlir::zkleanstruct::StructDefOp> structs,
+    ArrayRef<mlir::zkleanlean::StructDefOp> structs,
     raw_ostream &os) {
   bool printed = false;
   for (auto def : structs) {
     os << "structure " << def.getSymName() << " where\n";
     for (auto field :
-         def.getBodyRegion().getOps<mlir::zkleanstruct::FieldDefOp>()) {
+         def.getBodyRegion().getOps<mlir::zkleanlean::FieldDefOp>()) {
       os << "  " << field.getSymName() << " : "
          << formatLeanType(field.getType()) << '\n';
     }
@@ -650,9 +677,9 @@ struct PrettyPrintZKLeanPass
     bool printedSomething = false;
 
     if (hasZkOps) {
-      llvm::SmallVector<mlir::zkleanstruct::StructDefOp, 8> structDefs;
+      llvm::SmallVector<mlir::zkleanlean::StructDefOp, 8> structDefs;
       llvm::DenseSet<StringRef> structNames;
-      module.walk([&](mlir::zkleanstruct::StructDefOp def) {
+      module.walk([&](mlir::zkleanlean::StructDefOp def) {
         StringRef name = def.getSymName();
         if (structNames.insert(name).second)
           structDefs.push_back(def);

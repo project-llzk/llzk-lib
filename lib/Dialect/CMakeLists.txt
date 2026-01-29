@@ -18,7 +18,7 @@ add_subdirectory(Polymorphic)
 add_subdirectory(String)
 add_subdirectory(Struct)
 add_subdirectory(Undef)
-add_subdirectory(ZKLeanStruct)
+add_subdirectory(ZKLeanLean)
 add_subdirectory(ZKBuilder)
 add_subdirectory(ZKExpr)
 
