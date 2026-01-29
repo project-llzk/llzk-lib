@@ -14,9 +14,11 @@ target_link_libraries(
     LLVMHeaders
     MLIRHeaders
   PRIVATE
+    LLZKBoolDialect
+    LLZKCastDialect
     LLZKFeltDialect
     LLZKZKExprDialect
-    LLZKZKLeanStructDialect
+    LLZKZKLeanLeanDialect
 )
 
 llzk_target_add_mlir_link_settings(LLZKConversions)

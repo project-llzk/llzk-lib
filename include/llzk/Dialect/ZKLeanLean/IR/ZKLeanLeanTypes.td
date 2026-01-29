@@ -1,13 +1,13 @@
-#ifndef LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTTYPES_TD_
-#define LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTTYPES_TD_
+#ifndef LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANTYPES_TD_
+#define LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANTYPES_TD_
 
-include "ZKLeanStructDialect.td"
+include "ZKLeanLeanDialect.td"
 
 include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinAttributes.td"
 
 // ZKLean struct instance type.
-def ZKLeanStruct_StructType : TypeDef<ZKLeanStruct_Dialect, "Struct"> {
+def ZKLeanLean_StructType : TypeDef<ZKLeanLean_Dialect, "Struct"> {
   let summary = "ZKLean struct value type";
   let mnemonic = "type";
   let description = [{
@@ -22,4 +22,4 @@ def ZKLeanStruct_StructType : TypeDef<ZKLeanStruct_Dialect, "Struct"> {
   let assemblyFormat = "`<` $nameRef `>`";
 }
 
-#endif  // LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTTYPES_TD_
+#endif  // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANTYPES_TD_
