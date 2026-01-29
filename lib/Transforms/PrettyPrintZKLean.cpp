@@ -333,7 +333,7 @@ formatLeanStatement(Operation &op,
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
-    line.append(" := ");
+    line.append(" <- ");
     line.append(callLine);
     return line;
   }
