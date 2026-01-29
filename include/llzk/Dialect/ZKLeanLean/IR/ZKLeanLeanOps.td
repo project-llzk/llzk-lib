@@ -1,8 +1,8 @@
-#ifndef LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTOPS_TD_
-#define LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTOPS_TD_
+#ifndef LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANOPS_TD_
+#define LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANOPS_TD_
 
-include "ZKLeanStructDialect.td"
-include "ZKLeanStructTypes.td"
+include "ZKLeanLeanDialect.td"
+include "ZKLeanLeanTypes.td"
 include "llzk/Dialect/ZKExpr/IR/ZKExprTypes.td"
 
 include "mlir/IR/BuiltinAttributes.td"
@@ -11,15 +11,15 @@ include "mlir/IR/RegionKindInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-class ZKLeanStructOp<string mnemonic, list<Trait> traits = []>
-    : Op<ZKLeanStruct_Dialect, mnemonic, traits>;
+class ZKLeanLeanOp<string mnemonic, list<Trait> traits = []>
+    : Op<ZKLeanLean_Dialect, mnemonic, traits>;
 
 //===------------------------------------------------------------------===//
 // Struct definitions
 //===------------------------------------------------------------------===//
 
-def ZKLeanStruct_StructDefOp
-    : ZKLeanStructOp<
+def ZKLeanLean_StructDefOp
+    : ZKLeanLeanOp<
           "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                   IsolatedFromAbove,
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
@@ -34,8 +34,8 @@ def ZKLeanStruct_StructDefOp
   let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 }
 
-def ZKLeanStruct_FieldDefOp
-    : ZKLeanStructOp<"field", [HasParent<"::mlir::zkleanstruct::StructDefOp">,
+def ZKLeanLean_FieldDefOp
+    : ZKLeanLeanOp<"field", [HasParent<"::mlir::zkleanlean::StructDefOp">,
                                Symbol]> {
   let summary = "ZKLean struct field definition";
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<ZKExpr>:$type);
@@ -46,9 +46,9 @@ def ZKLeanStruct_FieldDefOp
 // Struct operations
 //===------------------------------------------------------------------===//
 
-def ZKLeanStruct_AccessorOp : ZKLeanStructOp<"accessor", [Pure]> {
+def ZKLeanLean_AccessorOp : ZKLeanLeanOp<"accessor", [Pure]> {
   let summary = "access value of a struct field";
-  let arguments = (ins ZKLeanStruct_StructType:$component,
+  let arguments = (ins ZKLeanLean_StructType:$component,
                        FlatSymbolRefAttr:$field_name);
   let results = (outs ZKExpr:$value);
   let assemblyFormat = [{
@@ -56,4 +56,22 @@ def ZKLeanStruct_AccessorOp : ZKLeanStructOp<"accessor", [Pure]> {
   }];
 }
 
-#endif  // LIB_DIALECT_ZKLEANSTRUCT_ZKLEANSTRUCTOPS_TD_
+//===------------------------------------------------------------------===//
+// Lean operations
+//===------------------------------------------------------------------===//
+
+def ZKLeanLean_CallOp : ZKLeanLeanOp<"call", [Pure]> {
+  let summary = "call a Lean function";
+  let description = [{
+    Represents a call to a Lean function by name with explicit argument and
+    result types.
+  }];
+
+  let arguments = (ins SymbolRefAttr:$callee, Variadic<AnyType>:$args);
+  let results = (outs Variadic<AnyType>:$results);
+  let assemblyFormat = [{
+    $callee `(` $args `)` `:` functional-type($args, results) attr-dict
+  }];
+}
+
+#endif  // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANOPS_TD_

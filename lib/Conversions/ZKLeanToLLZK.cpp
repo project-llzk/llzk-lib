@@ -4,6 +4,9 @@
 
 #include "llzk/Conversions/Passes.h"
 
+#include "llzk/Dialect/Bool/IR/Attrs.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
@@ -11,7 +14,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "llzk/Dialect/ZKLeanStruct/IR/ZKLeanStructOps.h"
+#include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 #include "llzk/Util/Constants.h"
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -35,12 +38,29 @@ namespace llzk {
 
 namespace {
 
+static std::optional<llzk::boolean::FeltCmpPredicate>
+parseCmpPredicate(StringRef name) {
+  if (name == "eq")
+    return llzk::boolean::FeltCmpPredicate::EQ;
+  if (name == "ne")
+    return llzk::boolean::FeltCmpPredicate::NE;
+  if (name == "lt")
+    return llzk::boolean::FeltCmpPredicate::LT;
+  if (name == "le")
+    return llzk::boolean::FeltCmpPredicate::LE;
+  if (name == "gt")
+    return llzk::boolean::FeltCmpPredicate::GT;
+  if (name == "ge")
+    return llzk::boolean::FeltCmpPredicate::GE;
+  return std::nullopt;
+}
+
 // Create new @LLZK module from ZKLean dialects
 static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
   OpBuilder builder(dest.getContext());
   bool hadError = false;
   auto mapType = [&](Type type) -> Type {
-    if (auto structType = dyn_cast<mlir::zkleanstruct::StructType>(type)) {
+    if (auto structType = dyn_cast<mlir::zkleanlean::StructType>(type)) {
       return llzk::component::StructType::get(structType.getNameRef());
     }
     return type;
@@ -53,12 +73,12 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
     bool hasConstrain = false;
   };
 
-  // Pre-pass: materialize LLZK struct.defs from ZKLeanStruct.defs first so
+  // Pre-pass: materialize LLZK struct.defs from ZKLeanLean.defs first so
   // struct.type<@Name> symbols exist before function conversion.
   llvm::StringSet<> seenStructs;
   llvm::StringMap<StructState> structStates;
   auto feltType = llzk::felt::FeltType::get(dest.getContext());
-  for (auto def : source.getBody()->getOps<mlir::zkleanstruct::StructDefOp>()) {
+  for (auto def : source.getBody()->getOps<mlir::zkleanlean::StructDefOp>()) {
     StringRef name = def.getSymName();
     if (!seenStructs.insert(name).second)
       continue;
@@ -70,7 +90,7 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
     auto &body = structDef.getBodyRegion().front();
     OpBuilder fieldBuilder(&body, body.begin());
     for (auto field :
-         def.getBody()->getOps<mlir::zkleanstruct::FieldDefOp>()) {
+         def.getBody()->getOps<mlir::zkleanlean::FieldDefOp>()) {
       fieldBuilder.create<llzk::component::FieldDefOp>(
           field.getLoc(), field.getSymName(), feltType);
     }
@@ -226,6 +246,7 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
 
     DenseMap<Value, Value> feltValueMap;
     DenseMap<Value, Value> zkToFeltMap;
+    DenseMap<Value, Value> leanValueMap;
     DenseMap<Value, Value> argMap;
     DenseMap<Operation *, Value> witnessArgs;
 
@@ -259,6 +280,17 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
       return Value();
     };
 
+    // Map non-ZKExpr values (e.g. i1) to their LLZK equivalents.
+    auto mapLeanValue = [&](Value v, Operation *userOp) -> Value {
+      if (auto it = leanValueMap.find(v); it != leanValueMap.end())
+        return it->second;
+      if (auto blockArg = mlir::dyn_cast<BlockArgument>(v))
+        return argMap.lookup(blockArg);
+      userOp->emitError("unsupported value producer in ZKLean conversion");
+      hadError = true;
+      return Value();
+    };
+
     for (Operation *op : ops) {
       // Felt constants to felt constants
       if (auto constOp = dyn_cast<llzk::felt::FeltConstantOp>(op)) {
@@ -285,8 +317,62 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
         continue;
       }
 
-      // ZKLeanStruct.accessor to struct.readf
-      if (auto accessor = dyn_cast<mlir::zkleanstruct::AccessorOp>(op)) {
+      // ZKLeanLean.call to LLZK operations
+      if (auto call = dyn_cast<mlir::zkleanlean::CallOp>(op)) {
+        StringRef calleeName =
+            call.getCallee().getRootReference().getValue();
+        if (calleeName.consume_front("bool.cmp_")) {
+          auto predicate = parseCmpPredicate(calleeName);
+          if (!predicate) {
+            call.emitError("unsupported bool.cmp predicate in ZKLean conversion");
+            hadError = true;
+            continue;
+          }
+          if (call.getNumOperands() != 2 || call.getNumResults() != 1) {
+            call.emitError("bool.cmp expects two operands and one result");
+            hadError = true;
+            continue;
+          }
+          Value lhs = mapZK(call.getOperand(0));
+          Value rhs = mapZK(call.getOperand(1));
+          if (!lhs || !rhs) {
+            call.emitError("unsupported bool.cmp operands in ZKLean conversion");
+            hadError = true;
+            continue;
+          }
+          OpBuilder::InsertionGuard guard(builder);
+          builder.setInsertionPointToEnd(newBlock);
+          auto predAttr = llzk::boolean::FeltCmpPredicateAttr::get(
+              dest.getContext(), *predicate);
+          auto cmpOp =
+              builder.create<llzk::boolean::CmpOp>(call.getLoc(), predAttr,
+                                                   lhs, rhs);
+          leanValueMap[call.getResult(0)] = cmpOp.getResult();
+          continue;
+        }
+        if (calleeName == "cast.tofelt") {
+          if (call.getNumOperands() != 1 || call.getNumResults() != 1) {
+            call.emitError("cast.tofelt expects one operand and one result");
+            hadError = true;
+            continue;
+          }
+          Value value = mapLeanValue(call.getOperand(0), call.getOperation());
+          if (!value)
+            continue;
+          OpBuilder::InsertionGuard guard(builder);
+          builder.setInsertionPointToEnd(newBlock);
+          auto castOp = builder.create<llzk::cast::IntToFeltOp>(
+              call.getLoc(), feltType, value);
+          zkToFeltMap[call.getResult(0)] = castOp.getResult();
+          continue;
+        }
+        call.emitError("unsupported ZKLeanLean call in ZKLean conversion");
+        hadError = true;
+        continue;
+      }
+
+      // ZKLeanLean.accessor to struct.readf
+      if (auto accessor = dyn_cast<mlir::zkleanlean::AccessorOp>(op)) {
         Value component = argMap.lookup(accessor.getComponent());
         if (!component) {
           accessor.emitError("unsupported struct source in ZKLean conversion");
@@ -381,12 +467,14 @@ class ConvertZKLeanToLLZKPass
 public:
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
     registry.insert<llzk::constrain::ConstrainDialect,
+                    llzk::boolean::BoolDialect,
+                    llzk::cast::CastDialect,
                     llzk::felt::FeltDialect,
                     llzk::function::FunctionDialect,
                     llzk::component::StructDialect,
                     mlir::func::FuncDialect,
                     mlir::zkexpr::ZKExprDialect,
-                    mlir::zkleanstruct::ZKLeanStructDialect>();
+                    mlir::zkleanlean::ZKLeanLeanDialect>();
   }
 
   void runOnOperation() override {

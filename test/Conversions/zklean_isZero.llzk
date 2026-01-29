@@ -1,15 +1,15 @@
 module @ZKLean attributes {veridise.lang = "llzk"} {
-    ZKLeanStruct.def @IsZero {
-        ZKLeanStruct.field @out : !ZKExpr.zkexpr
-        ZKLeanStruct.field @inv : !ZKExpr.zkexpr
+    ZKLeanLean.def @IsZero {
+        ZKLeanLean.field @out : !ZKExpr.zkexpr
+        ZKLeanLean.field @inv : !ZKExpr.zkexpr
     }
-    func.func @IsZero__constrain(%arg0: !ZKLeanStruct.type<@IsZero>, %arg1: !felt.type) {
+    func.func @IsZero__constrain(%arg0: !ZKLeanLean.type<@IsZero>, %arg1: !felt.type) {
         %felt_const_0 = felt.const  0
         %0 = ZKExpr.Literal %felt_const_0
         %felt_const_1 = felt.const  1
         %1 = ZKExpr.Literal %felt_const_1
-        %2 = ZKLeanStruct.accessor %arg0[@out] : <@IsZero>, !ZKExpr.zkexpr
-        %3 = ZKLeanStruct.accessor %arg0[@inv] : <@IsZero>, !ZKExpr.zkexpr
+        %2 = ZKLeanLean.accessor %arg0[@out] : <@IsZero>, !ZKExpr.zkexpr
+        %3 = ZKLeanLean.accessor %arg0[@inv] : <@IsZero>, !ZKExpr.zkexpr
         %4 = ZKExpr.Literal %arg1
         %5 = ZKExpr.Neg %4
         %6 = ZKExpr.Mul %5 %3
