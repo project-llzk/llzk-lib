@@ -32,24 +32,7 @@ jobs:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
-      - name: Build CAPI
-        run: |
-          nix develop --command bash -c "
-            phases=configurePhase genericBuild
-            cd build
-            cmake --build . --target LLZKCAPI
-          "
-
-      - name: Build C Compatibility Test
-        run: |
-          nix develop --command bash -c "
-            cd build
-            cmake --build . --target LLZK_CAPI_C_Test
-          "
-
-      - name: Run C Compatibility Test
-        run: |
-          nix develop --command bash -c "
-            cd build
-            ctest --output-on-failure -R LLZK_CAPI_C_Test
-          "
+      - uses: nicknovitski/nix-develop@v1
+      - run: runPhase configurePhase
+      - run: cmake --build . --target LLZK_CAPI_C_Test
+      - run: ctest --output-on-failure -R LLZK_CAPI_C_Test
