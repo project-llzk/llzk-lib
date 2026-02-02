@@ -14,6 +14,9 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
+#include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
@@ -102,6 +105,10 @@ void registerInliningExtensions(DialectRegistry &registry) {
   registry.addExtension(FullyLegalForInlining<global::GlobalDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<boolean::BoolDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<array::ArrayDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<cast::CastDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<include::IncludeDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<llzk::LLZKDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<pod::PODDialect>::registrationHook);
 }
 
 } // namespace llzk
