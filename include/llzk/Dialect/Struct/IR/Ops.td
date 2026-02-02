@@ -203,7 +203,7 @@ def LLZK_MemberDefOp
     - Members marked with the `{llzk.pub}` attribute are considered public
       and represent outputs of their defining struct/component.
     - Members marked with the `{column}` attribute can be read/written with
-      table offsets using the `readf` and `writef` operations.
+      table offsets using the `readm` and `writem` operations.
     - Members marked with the `{signal}` attribute are constraint variables that
       are stored in the witness; non-signal values are intermediate expressions.
   }];

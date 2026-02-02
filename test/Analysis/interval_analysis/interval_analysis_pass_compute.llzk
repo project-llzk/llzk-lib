@@ -606,13 +606,13 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @ConstBools {
-    struct.field @out : i1
+    struct.member @out : i1
     function.def @compute() -> !struct.type<@ConstBools> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@ConstBools>
       %true = arith.constant true
       %false = arith.constant false
       %res = bool.and %true, %false
-      struct.writef %self[@out] = %res : !struct.type<@ConstBools>, i1
+      struct.writem %self[@out] = %res : !struct.type<@ConstBools>, i1
       function.return %self : !struct.type<@ConstBools>
     }
     function.def @constrain(%arg0: !struct.type<@ConstBools>) attributes {function.allow_constraint} {
