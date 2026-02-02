@@ -34,6 +34,5 @@ jobs:
 
       - uses: nicknovitski/nix-develop@v1
       - run: cmake --preset=debug
-      - run: cd build/debug
-      - run: cmake --build . --target LLZK_CAPI_C_Test
-      - run: ctest --output-on-failure -R LLZK_CAPI_C_Test
+      - run: cmake --build build/debug --target LLZK_CAPI_C_Test
+      - run: cd build/debug && ctest --output-on-failure -R LLZK_CAPI_C_Test
