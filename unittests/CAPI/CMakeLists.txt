@@ -1,6 +1,8 @@
 # C compatibility test - verifies the C API can be consumed from pure C code
 add_executable(LLZK_CAPI_C_Test c_compatibility_test.c)
 set_target_properties(LLZK_CAPI_C_Test PROPERTIES LINKER_LANGUAGE CXX)
+# Remove C++-specific warnings that don't apply to C code
+target_compile_options(LLZK_CAPI_C_Test PRIVATE -Wno-non-virtual-dtor)
 target_link_libraries(
   LLZK_CAPI_C_Test
   PRIVATE
