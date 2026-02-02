@@ -33,6 +33,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - uses: nicknovitski/nix-develop@v1
-      - run: runPhase configurePhase
+      - run: cmake --preset=debug
+      - run: cd build/debug
       - run: cmake --build . --target LLZK_CAPI_C_Test
       - run: ctest --output-on-failure -R LLZK_CAPI_C_Test
