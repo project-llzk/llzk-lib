@@ -39,35 +39,45 @@ class BoolUnaryOpBase<string mnemonic, Type resultType, list<Trait> traits = []>
 // Boolean operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
+def LLZK_AndBoolOp
+    : BoolBinaryOpBase<"and", I1, [NotFieldNative, Commutative]> {
   let summary = "logical AND operator";
   let description = [{
     This operation computes the logical AND (i.e., conjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `a*b` on felt operands.
   }];
 }
 
-def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
+def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [NotFieldNative, Commutative]> {
   let summary = "logical OR operator";
   let description = [{
     This operation computes the logical OR (i.e., disjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `a+b - a*b` on felt operands.
   }];
 }
 
-def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
+def LLZK_XorBoolOp
+    : BoolBinaryOpBase<"xor", I1, [NotFieldNative, Commutative]> {
   let summary = "logical XOR operator";
   let description = [{
     This operation computes the logical XOR (i.e., exclusive disjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `a+b - 2*a*b` on felt operands.
   }];
 }
 
-def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [WitnessGen]> {
+def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [NotFieldNative]> {
   let summary = "logical NOT operator";
   let description = [{
     This operation computes the logical NOT (i.e., negation) of an `i1` (i.e., boolean)
     value as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `1+a - 2*a` on felt operands.
   }];
 }
 

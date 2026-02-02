@@ -2,7 +2,7 @@
 // COM: This could be merged with `inline_structs_pass.llzk` once the issue with the default cleanup method of `llzk-flatten` is fixed (LLZK-303).
 
 // TESTS: Inlining after `llzk-flatten` pass removes struct parameters
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @ComponentY<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentY<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentY<[@A, @B]>>
@@ -57,7 +57,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: The relevant member is an array of subcomponents
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Pair<[@Fst, @Snd]> {
     function.def @compute() -> !struct.type<@Pair<[@Fst, @Snd]>> {
       %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>

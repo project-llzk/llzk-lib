@@ -5,5 +5,5 @@ on:
 
 jobs:
   call-workflow-create-release-pr:
-    uses: Veridise/open-source-release-helpers/.github/workflows/create-release-pr.yml@main
+    uses: project-llzk/open-source-release-helpers/.github/workflows/create-release-pr.yml@main
     secrets: inherit

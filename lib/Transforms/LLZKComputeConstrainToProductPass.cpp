@@ -15,6 +15,7 @@
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKComputeConstrainToProductPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -58,24 +59,29 @@ bool isValidRoot(StructDefOp root) {
   return true;
 }
 
+LogicalResult alignStartingAt(
+    component::StructDefOp root, SymbolTableCollection &tables,
+    LightweightSignalEquivalenceAnalysis &equivalence
+) {
+  if (!isValidRoot(root)) {
+    return failure();
+  }
+
+  ProductAligner aligner {tables, equivalence};
+  if (!aligner.alignFuncs(root, root.getComputeFuncOp(), root.getConstrainFuncOp())) {
+    return failure();
+  }
+
+  for (auto s : aligner.alignedStructs) {
+    s.getComputeFuncOp()->erase();
+    s.getConstrainFuncOp()->erase();
+  }
+
+  return success();
+}
+
 class ComputeConstrainToProductPass
     : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
-
-  std::vector<StructDefOp> alignedStructs;
-
-  // Given a @product function body, try to match up calls to @A::@compute and @A::@constrain for
-  // every sub-struct @A and replace them with a call to @A::@product
-  LogicalResult alignCalls(
-      FuncDefOp product, SymbolTableCollection &tables,
-      LightweightSignalEquivalenceAnalysis &equivalence
-  );
-
-  // Given a StructDefOp @root, replace the @root::@compute and @root::@constrain functions with a
-  // @root::@product
-  FuncDefOp alignFuncs(
-      StructDefOp root, FuncDefOp compute, FuncDefOp constrain, SymbolTableCollection &tables,
-      LightweightSignalEquivalenceAnalysis &equivalence
-  );
 
 public:
   void runOnOperation() override {
@@ -93,31 +99,24 @@ public:
         root = structDef;
       }
     });
-    if (!isValidRoot(root)) {
-      signalPassFailure();
-      return;
-    }
 
-    // Try aligning the root functions
-    if (!alignFuncs(
-            root, root.getComputeFuncOp(), root.getConstrainFuncOp(), tables, equivalence
-        )) {
+    if (failed(alignStartingAt(root, tables, equivalence))) {
       signalPassFailure();
-      return;
-    }
-
-    for (auto s : alignedStructs) {
-      s.getComputeFuncOp()->erase();
-      s.getConstrainFuncOp()->erase();
     }
   }
 };
 
-FuncDefOp ComputeConstrainToProductPass::alignFuncs(
-    StructDefOp root, FuncDefOp compute, FuncDefOp constrain, SymbolTableCollection &tables,
-    LightweightSignalEquivalenceAnalysis &equivalence
-) {
+FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDefOp constrain) {
   OpBuilder funcBuilder(compute);
+
+  // Add compute/constrain attributes
+  compute.walk([&funcBuilder](Operation *op) {
+    op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
+  });
+
+  constrain.walk([&funcBuilder](Operation *op) {
+    op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
+  });
 
   // Create an empty @product func...
   FuncDefOp productFunc = funcBuilder.create<FuncDefOp>(
@@ -153,16 +152,13 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
   alignedStructs.push_back(root);
 
   // Make sure we can align sub-calls to @compute and @constrain
-  if (failed(alignCalls(productFunc, tables, equivalence))) {
+  if (failed(alignCalls(productFunc))) {
     return nullptr;
   }
   return productFunc;
 }
 
-LogicalResult ComputeConstrainToProductPass::alignCalls(
-    FuncDefOp product, SymbolTableCollection &tables,
-    LightweightSignalEquivalenceAnalysis &equivalence
-) {
+LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
   // Gather up all the remaining calls to @compute and @constrain
   llvm::SetVector<CallOp> computeCalls, constrainCalls;
   product.walk([&](CallOp callOp) {
@@ -223,9 +219,8 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
     // If @A::@compute matches @A::@constrain, recursively align the functions in @A...
     auto newRoot = compute.getCalleeTarget(tables)->get()->getParentOfType<StructDefOp>();
     assert(newRoot);
-    FuncDefOp newProduct = alignFuncs(
-        newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp(), tables, equivalence
-    );
+    FuncDefOp newProduct =
+        alignFuncs(newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp());
     if (!newProduct) {
       return failure();
     }
@@ -244,7 +239,7 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
   return success();
 }
 
-std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass() {
+std::unique_ptr<Pass> createComputeConstrainToProductPass() {
   return make_unique<ComputeConstrainToProductPass>();
 }
 

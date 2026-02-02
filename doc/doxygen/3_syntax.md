@@ -1,7 +1,7 @@
 # LLZK Language Specification {#syntax}
 
 <!--
-TODO: Update this specification (https://veridise.atlassian.net/browse/LLZK-240)
+TODO: Update this specification (https://github.com/project-llzk/llzk-lib/issues/262)
 Based on: https://www.notion.so/veridise/ZK-IR-Design-5d4e6b675c9142e9b1583bdca3c8c8a6
 -->
 

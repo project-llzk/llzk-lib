@@ -9,6 +9,8 @@
 
 #include "llzk-c/Dialect/Array.h"
 
+#include "llzk-c/Support.h"
+
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
@@ -134,28 +136,12 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto dims_per_map = mlirDenseI32ArrayGet(context, 0, NULL);
+  auto mapOperands = llzkAffineMapOperandsBuilderCreate();
 
-  auto op =
-      llzkCreateArrayOpBuildWithMapOperands(builder, location, test_type, 0, NULL, dims_per_map);
-
-  EXPECT_TRUE(mlirOperationVerify(op));
-  mlirOperationDestroy(op);
-  mlirOpBuilderDestroy(builder);
-}
-
-TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
-  int64_t dims[1] = {1};
-  auto elt_type = mlirIndexTypeGet(context);
-  auto test_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
-
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-
-  auto op =
-      llzkCreateArrayOpBuildWithMapOperandsAndDims(builder, location, test_type, 0, NULL, 0, NULL);
+  auto op = llzkCreateArrayOpBuildWithMapOperands(builder, location, test_type, mapOperands);
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);
+  llzkAffineMapOperandsBuilderDestroy(&mapOperands);
   mlirOpBuilderDestroy(builder);
 }

@@ -30,50 +30,50 @@ function.def private @d(%x: !array.type<index x i256>)
 function.def private @e(%x: !array.type<index,"string",[] x !felt.type>)
 // -----
 
-// expected-error@+1 {{expected a valid LLZK type but found 'f32'}}
-function.def private @f(%x: !array.type<5 x f32>)
+// expected-error@+1 {{expected a valid LLZK type but found 'i256'}}
+function.def private @f(%x: !array.type<5 x i256>)
 // -----
 
 // expected-error@+2 {{'array.type' element type cannot be 'array.type'}}
 // expected-error@+1 {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
-function.def private @f(%x: !array.type<2 x !array.type<3 x !array.type<2 x i1>>>)
+function.def private @g(%x: !array.type<2 x !array.type<3 x !array.type<2 x i1>>>)
 // -----
 
 // expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref', 'builtin.affine_map'] but found 'builtin.type'}}
-function.def private @g(%x: !array.type<!felt.type>)
+function.def private @h(%x: !array.type<!felt.type>)
 // -----
 
 // expected-error@+2 {{expected attribute value}}
 // expected-error@+1 {{failed to parse array dimensions}}
-function.def private @h(%x: !array.type<,, x !felt.type>)
+function.def private @i(%x: !array.type<,, x !felt.type>)
 // -----
 
 // expected-error@+2 {{expected attribute value}}
 // expected-error@+1 {{failed to parse array dimensions}}
-function.def private @i(%x: !array.type< x !felt.type>)
+function.def private @j(%x: !array.type< x !felt.type>)
 // -----
 
 // expected-error@+2 {{expected attribute value}}
 // expected-error@+1 {{failed to parse array dimensions}}
-function.def private @j(%x: !array.type<1,private, x !felt.type>)
+function.def private @k(%x: !array.type<1,private, x !felt.type>)
 // -----
 
 // expected-error@+2 {{expected attribute value}}
 // expected-error@+1 {{failed to parse array dimensions}}
-function.def private @k(%x: !array.type<1,3, x !felt.type>)
+function.def private @l(%x: !array.type<1,3, x !felt.type>)
 // -----
 
 // expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref', 'builtin.affine_map'] but found 'builtin.string'}}
-function.def private @l(%x: !array.type<1,"string",3 x !felt.type>)
+function.def private @m(%x: !array.type<1,"string",3 x !felt.type>)
 // -----
 
 // expected-error@+1 {{'array.type' element type cannot be 'array.type'}}
-function.def private @m(%x: !array.type<1,3 x !array.type<2 x !felt.type>>)
+function.def private @n(%x: !array.type<1,3 x !array.type<2 x !felt.type>>)
 // -----
 
 // expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref', 'builtin.affine_map'] but found 'builtin.array'}}
-function.def private @n(%x: !array.type<[] x !felt.type>)
+function.def private @o(%x: !array.type<[] x !felt.type>)
 // -----
 
 // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
-function.def private @o(%x: !array.type<affine_map<(i) -> ()> x !felt.type>)
+function.def private @p(%x: !array.type<affine_map<(i) -> ()> x !felt.type>)

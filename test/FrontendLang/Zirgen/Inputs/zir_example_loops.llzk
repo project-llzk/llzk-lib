@@ -38,7 +38,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   struct.def @EqzExt<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_0 = felt.const  0
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
@@ -89,7 +89,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.member @"$super" : !struct.type<@NondetExtReg<[]>>
     struct.member @"$temp" : !struct.type<@EqzExt<[]>>
     struct.member @reg : !struct.type<@NondetExtReg<[]>> {column}
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
       %c1 = arith.constant 1 : index
@@ -147,7 +147,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Div<[]> {
     struct.member @"$super" : !felt.type {llzk.pub}
     struct.member @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
       struct.writem %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type

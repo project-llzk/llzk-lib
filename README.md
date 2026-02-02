@@ -2,7 +2,7 @@
 
 An MLIR intermediate representation for Zero Knowledge (ZK) Circuit languages.
 
-For our full documentation, please refer to our [GitHub pages site](https://veridise.github.io/llzk-lib).
+For our full documentation, please refer to our [GitHub pages site](https://project-llzk.github.io/llzk-lib).
 For quick reference, refer to the below links.
 
 > [!WARNING]

@@ -77,7 +77,7 @@ public:
 // of this function should be updated.
 void assertValidAttrForParamOfType(mlir::Attribute attr);
 
-/// valid types: {IntegerType, Index, String, FeltType, StructType, ArrayType, TypeVarType}
+/// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType}
 bool isValidType(mlir::Type type);
 
 /// valid types: {FeltType, StructType (with columns), ArrayType (that contains a valid column
@@ -92,7 +92,7 @@ bool isValidGlobalType(mlir::Type type);
 /// valid types: isValidType() - {String, StructType} (excluded via any type parameter nesting)
 bool isValidEmitEqType(mlir::Type type);
 
-/// valid types: {IntegerType, Index, FeltType, TypeVarType}
+/// valid types: {I1, Index, FeltType, TypeVarType}
 bool isValidConstReadType(mlir::Type type);
 
 /// valid types: isValidType() - {ArrayType}
@@ -101,7 +101,11 @@ bool isValidArrayElemType(mlir::Type type);
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
 bool isValidArrayType(mlir::Type type);
 
-/// Return `false` iff the type contains any `TypeVarType`
+/// Return `false` if the type contains any of the following:
+/// - `TypeVarType`
+/// - `SymbolRefAttr`
+/// - `AffineMapAttr`
+/// - `StructType` with parameters if `allowStructParams==false`
 bool isConcreteType(mlir::Type type, bool allowStructParams = true);
 
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {

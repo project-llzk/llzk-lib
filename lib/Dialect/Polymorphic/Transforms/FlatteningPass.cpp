@@ -1768,7 +1768,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   }
 
   inline LogicalResult runOn(ModuleOp modOp) {
-    // If the cleanup mode is set to remove anything not reachable from the "Main" struct, do an
+    // If the cleanup mode is set to remove anything not reachable from the main struct, do an
     // initial pass to remove things that are not reachable (as an optimization) because creating
     // an instantiated version of a struct will not cause something to become reachable that was
     // not already reachable in parameterized form.
@@ -1898,22 +1898,26 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     Step5_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
-    StructDefOp main =
-        cleaner.tables.getSymbolTable(rootMod).lookup<StructDefOp>(COMPONENT_NAME_MAIN);
+    FailureOr<SymbolLookupResult<StructDefOp>> mainOpt =
+        getMainInstanceDef(cleaner.tables, rootMod.getOperation());
+    if (failed(mainOpt)) {
+      return failure();
+    }
+    SymbolLookupResult<StructDefOp> main = mainOpt.value();
     if (emitWarning && !main) {
-      // Emit warning if there is no "Main" because all structs may be removed (only structs that
-      // are reachable from a global def or free function will be preserved since those constructs
-      // are not candidate for removal in this pass).
+      // Emit warning if there is no main specified because all structs may be removed (only
+      // structs that are reachable from a global def or free function will be preserved since
+      // those constructs are not candidate for removal in this pass).
       rootMod.emitWarning()
           .append(
               "using option '", cleanupMode.getArgStr(), '=',
               stringifyStructCleanupMode(StructCleanupMode::MainAsRoot), "' with no \"",
-              COMPONENT_NAME_MAIN, "\" struct may remove all structs!"
+              MAIN_ATTR_NAME, "\" attribute on the top-level module may remove all structs!"
           )
           .report();
     }
     return cleaner.eraseUnreachableFrom(
-        main ? ArrayRef<StructDefOp> {main} : ArrayRef<StructDefOp> {}
+        main ? ArrayRef<StructDefOp> {*main} : ArrayRef<StructDefOp> {}
     );
   }
 };

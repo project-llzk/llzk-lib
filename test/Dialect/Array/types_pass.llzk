@@ -8,10 +8,6 @@ function.def private @d(%x: !array.type<54 x index>) -> index
 //CHECK-LABEL:  function.def private @d(!array.type<54 x index>) -> index
 // -----
 
-function.def private @f(%x: !array.type<5 x i256>)
-//CHECK-LABEL:  function.def private @f(!array.type<5 x i256>)
-// -----
-
 function.def private @g(%x: !array.type<2,3,2 x index>)
 //CHECK-LABEL:  function.def private @g(!array.type<2,3,2 x index>)
 // -----

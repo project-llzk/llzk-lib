@@ -109,6 +109,19 @@ getPathFromTopRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullp
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
+/// @brief Lookup the `StructType` of the main instance.
+///
+/// This is specified by a `TypeAttr` on the top-level module with the key `LLZK_MAIN_ATTR_NAME`
+/// and is optional, in which case the result will be `success(nullptr)`.
+mlir::FailureOr<llzk::component::StructType> getMainInstanceType(mlir::Operation *lookupFrom);
+
+/// @brief Lookup the `StructDefOp` of the main instance.
+///
+/// This is specified by a `TypeAttr` on the top-level module with the key `LLZK_MAIN_ATTR_NAME`
+/// and is optional, in which case the result will be `success(nullptr)`.
+mlir::FailureOr<SymbolLookupResult<llzk::component::StructDefOp>>
+getMainInstanceDef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *lookupFrom);
+
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., function::FuncDefOp)
 /// @param symbolTable

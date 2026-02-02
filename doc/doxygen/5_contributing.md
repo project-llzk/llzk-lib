@@ -25,11 +25,11 @@ To keep the LLZK codebase maintainable and approachable, we follow these guiding
 #### Create a new issue
 
 If you spot a problem, encounter a bug, or want to request a new feature, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments).
-If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/Veridise/llzk-lib/issues/new/choose).
+If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/project-llzk/llzk-lib/issues/new/choose).
 
 #### Solve an issue
 
-Scan through our [existing issues](https://github.com/Veridise/llzk-lib/issues) to find one that interests you.
+Scan through our [existing issues](https://github.com/project-llzk/llzk-lib/issues) to find one that interests you.
 You can narrow down the search using `labels` as filters.
 See ["Label reference"](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference) for more information.
 As a general rule, we don’t assign issues to anyone.
@@ -80,7 +80,7 @@ You can make any other changes in your fork, then commit them to your branch.
 
 Congratulations! The LLZK team thanks you.
 
-Once your PR is merged, your contributions will be publicly available in the [LLZK-lib repository](https://github.com/Veridise/llzk-lib).
+Once your PR is merged, your contributions will be publicly available in the [LLZK-lib repository](https://github.com/project-llzk/llzk-lib).
 
 <div class="section_buttons">
 | Previous          |                              Next |

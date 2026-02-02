@@ -213,6 +213,14 @@ void FuncDefOp::setAllowWitnessAttr(bool newValue) {
   }
 }
 
+void FuncDefOp::setAllowNonNativeFieldOpsAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(AllowNonNativeFieldOpsAttr::name, UnitAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(AllowNonNativeFieldOpsAttr::name);
+  }
+}
+
 bool FuncDefOp::hasArgPublicAttr(unsigned index) {
   if (index < this->getNumArguments()) {
     DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);
@@ -475,6 +483,9 @@ protected:
       }
       if (target.hasAllowWitnessAttr() && !caller.hasAllowWitnessAttr()) {
         emitAttrErr(AllowWitnessAttr::name);
+      }
+      if (target.hasAllowNonNativeFieldOpsAttr() && !caller.hasAllowNonNativeFieldOpsAttr()) {
+        emitAttrErr(AllowNonNativeFieldOpsAttr::name);
       }
     }
     return aggregateRes;

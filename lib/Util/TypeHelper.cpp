@@ -10,6 +10,8 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
@@ -18,7 +20,12 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
+
+#include <cstdint>
+#include <numeric>
 
 using namespace mlir;
 
@@ -29,6 +36,7 @@ using namespace component;
 using namespace felt;
 using namespace polymorphic;
 using namespace string;
+using namespace pod;
 
 /// Template pattern for performing some operation by cases based on a given LLZK type. This
 /// pattern allows any missing cases in a new implementation to be reported by the compiler.
@@ -50,11 +58,12 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
         .template Case<ArrayType>([this](auto t) {
       return static_cast<Derived *>(this)->caseArray(t);
     })
+        .template Case<PodType>([this](auto t) { return static_cast<Derived *>(this)->casePod(t); })
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
     }).Default([this](Type t) {
-      if (t.isSignlessInteger()) {
-        return static_cast<Derived *>(this)->caseInt(cast<IntegerType>(t));
+      if (t.isSignlessInteger(1)) {
+        return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
       } else {
         return static_cast<Derived *>(this)->caseInvalid(t);
       }
@@ -87,14 +96,8 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
     void caseInvalid(Type) { outer.ss << "!INVALID"; }
-    void caseInt(IntegerType t) {
-      if (t.getWidth() == 1) {
-        outer.ss << 'b';
-      } else {
-        outer.ss << 'i' << t.getWidth();
-      }
-    }
-    void caseIndex(IndexType) { outer.ss << 'k'; }
+    void caseBool(IntegerType) { outer.ss << 'b'; }
+    void caseIndex(IndexType) { outer.ss << 'i'; }
     void caseFelt(FeltType) { outer.ss << 'f'; }
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
@@ -107,6 +110,13 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
       outer.append(t.getElementType());
       outer.ss << ':';
       outer.append(t.getDimensionSizes());
+      outer.ss << '>';
+    }
+    void casePod(PodType t) {
+      outer.ss << "!r<";
+      for (auto record : t.getRecords()) {
+        outer.appendSymRef(record.getNameSym());
+      }
       outer.ss << '>';
     }
     void caseStruct(StructType t) {
@@ -141,7 +151,7 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
   if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
     Type ty = ia.getType();
-    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger();
+    bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
     ia.getValue().print(ss, !isUnsigned);
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
     appendSymRef(sra);
@@ -293,6 +303,7 @@ class AllowedTypes {
   bool no_string : 1 = false;
   bool no_struct : 1 = false;
   bool no_array : 1 = false;
+  bool no_pod : 1 = false;
   bool no_var : 1 = false;
   bool no_int : 1 = false;
   bool no_struct_params : 1 = false;
@@ -333,6 +344,11 @@ public:
     return *this;
   }
 
+  constexpr AllowedTypes &noPod() {
+    no_pod = true;
+    return *this;
+  }
+
   constexpr AllowedTypes &noVar() {
     no_var = true;
     return *this;
@@ -350,7 +366,7 @@ public:
 
   constexpr AllowedTypes &onlyInt() {
     no_int = false;
-    return noFelt().noString().noStruct().noArray().noVar();
+    return noFelt().noString().noStruct().noArray().noPod().noVar();
   }
 
   constexpr AllowedTypes &mustBeColumn(SymbolTableCollection &symbolTable, Operation *op) {
@@ -461,18 +477,22 @@ public:
 
     return success;
   }
+
+  bool areValidPodRecords(ArrayRef<RecordAttr> records) {
+    return llvm::all_of(records, [this](auto record) { return isValidTypeImpl(record.getType()); });
+  }
 };
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
   assert(
-      !(no_int && no_felt && no_string && no_var && no_struct && no_array) &&
+      !(no_int && no_felt && no_string && no_var && no_struct && no_array && no_pod) &&
       "All types have been deactivated"
   );
   struct Impl : LLZKTypeSwitch<Impl, bool> {
     AllowedTypes &outer;
     Impl(AllowedTypes &outerRef) : outer(outerRef) {}
 
-    bool caseInt(IntegerType t) { return !outer.no_int && t.isSignlessInteger(); }
+    bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
     bool caseIndex(IndexType) { return !outer.no_int; }
     bool caseFelt(FeltType) { return !outer.no_felt; }
     bool caseString(StringType) { return !outer.no_string; }
@@ -481,6 +501,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
       return !outer.no_array &&
              outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
     }
+    bool casePod(PodType t) { return !outer.no_pod && outer.areValidPodRecords(t.getRecords()); }
     bool caseStruct(StructType t) {
       // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
       if (outer.no_struct || !outer.validColumns(t)) {
@@ -533,15 +554,23 @@ bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(int
 
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
-    uint64_t caseInt(IntegerType) { return 1; }
+    uint64_t caseBool(IntegerType) { return 1; }
     uint64_t caseIndex(IndexType) { return 1; }
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
       int64_t n = t.getNumElements();
       assert(n >= 0);
-      return static_cast<uint64_t>(n);
+      return static_cast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
     }
     uint64_t caseStruct(StructType t) { llvm_unreachable("not a valid EmitEq type"); }
+    uint64_t casePod(PodType t) {
+      return std::accumulate(
+          t.getRecords().begin(), t.getRecords().end(), 0,
+          [](const uint64_t &acc, const RecordAttr &record) {
+        return computeEmitEqCardinality(record.getType()) + acc;
+      }
+      );
+    }
     uint64_t caseString(StringType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t caseTypeVar(TypeVarType) { llvm_unreachable("tvar has unknown cardinality"); }
     uint64_t caseInvalid(Type) { llvm_unreachable("not a valid LLZK type"); }
@@ -628,6 +657,19 @@ struct UnifierImpl {
     return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
 
+  bool podTypesUnify(PodType lhs, PodType rhs) {
+    // Same number of records, with the same names in the same order and record types unify.
+    auto lhsRecords = lhs.getRecords();
+    auto rhsRecords = rhs.getRecords();
+
+    return lhsRecords.size() == rhsRecords.size() &&
+           llvm::all_of(llvm::zip_equal(lhsRecords, rhsRecords), [this](auto &&records) {
+      auto &&[lhsRecord, rhsRecord] = records;
+      return lhsRecord.getName() == rhsRecord.getName() &&
+             typesUnify(lhsRecord.getType(), rhsRecord.getType());
+    });
+  }
+
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
       return true;
@@ -649,6 +691,9 @@ struct UnifierImpl {
     }
     if (llvm::isa<ArrayType>(lhs) && llvm::isa<ArrayType>(rhs)) {
       return arrayTypesUnify(llvm::cast<ArrayType>(lhs), llvm::cast<ArrayType>(rhs));
+    }
+    if (llvm::isa<PodType>(lhs) && llvm::isa<PodType>(rhs)) {
+      return podTypesUnify(llvm::cast<PodType>(lhs), llvm::cast<PodType>(rhs));
     }
     return false;
   }

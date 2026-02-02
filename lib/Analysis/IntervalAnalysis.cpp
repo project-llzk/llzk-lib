@@ -463,7 +463,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   // Now, the way we update is dependent on the type of the operation.
   if (isConstOp(op)) {
     llvm::DynamicAPInt constVal = getConst(op);
-    llvm::SMTExprRef expr = createConstBitvectorExpr(constVal);
+    llvm::SMTExprRef expr;
+    if (isBoolConstOp(op)) {
+      expr = createConstBoolExpr(constVal != 0);
+    } else {
+      expr = createConstBitvectorExpr(constVal);
+    }
+
     ExpressionValue latticeVal(field.get(), expr, constVal);
     propagateIfChanged(results[0], results[0]->setValue(latticeVal));
   } else if (isArithmeticOp(op)) {
@@ -612,23 +618,28 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) co
 llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
 
-  llvm::DynamicAPInt fieldConst =
-      TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
-          .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
-    llvm::APSInt constOpVal(feltConst.getValue());
-    return field.get().reduce(constOpVal);
-  })
-          .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
-    return DynamicAPInt(indexConst.value());
-  })
-          .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
-    return DynamicAPInt(intConst.value());
-  }).Default([](Operation *illegalOp) {
-    std::string err;
-    debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
-    llvm::report_fatal_error(Twine(err));
-    return llvm::DynamicAPInt();
-  });
+  // NOTE: I think clang-format makes these hard to read by default
+  // clang-format off
+  llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
+      .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
+        llvm::APSInt constOpVal(feltConst.getValue());
+        return field.get().reduce(constOpVal);
+      })
+      .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
+        return DynamicAPInt(indexConst.value());
+      })
+      .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
+        auto valAttr = dyn_cast<IntegerAttr>(intConst.getValue());
+        ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
+        return toDynamicAPInt(valAttr.getValue());
+      })
+      .Default([](Operation *illegalOp) {
+        std::string err;
+        debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
+        llvm::report_fatal_error(Twine(err));
+        return llvm::DynamicAPInt();
+      });
+  // clang-format on
   return fieldConst;
 }
 
@@ -646,7 +657,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<SubFeltOp>([&](auto _) { return sub(smtSolver, lhs, rhs); })
                  .Case<MulFeltOp>([&](auto _) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](auto divOp) { return div(smtSolver, divOp, lhs, rhs); })
-                 .Case<ModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
+                 .Case<UnsignedModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
                  .Case<AndFeltOp>([&](auto _) { return bitAnd(smtSolver, lhs, rhs); })
                  .Case<ShlFeltOp>([&](auto _) { return shiftLeft(smtSolver, lhs, rhs); })
                  .Case<ShrFeltOp>([&](auto _) { return shiftRight(smtSolver, lhs, rhs); })

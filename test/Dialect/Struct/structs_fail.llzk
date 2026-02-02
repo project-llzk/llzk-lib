@@ -312,9 +312,9 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Main {
-    // expected-error@+1 {{"@Main" component "@compute" function parameters must be one of: {!felt.type, !array.type<.. x !felt.type>}}}
+    // expected-error@+1 {{main entry component "@compute" function parameters must be one of: {!felt.type, !array.type<.. x !felt.type>}}}
     function.def @compute(%0: i1) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -325,27 +325,92 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
-  struct.def @Main {
-    function.def @compute() -> !struct.type<@Main> {
-      %self = struct.new : !struct.type<@Main>
-      function.return %self : !struct.type<@Main>
+module attributes {llzk.main = !struct.type<@MyMain>, veridise.lang = "llzk"} {
+  struct.def @MyMain {
+    function.def @compute() -> !struct.type<@MyMain> {
+      %self = struct.new : !struct.type<@MyMain>
+      function.return %self : !struct.type<@MyMain>
     }
-    // expected-error@+1 {{"@Main" component "@constrain" function parameters must be one of: {!struct.type<@Main>, !felt.type, !array.type<.. x !felt.type>}}}
-    function.def @constrain(%self: !struct.type<@Main>, %0: i1)  {
+    // expected-error@+1 {{main entry component "@constrain" function parameters must be one of: {!struct.type<@MyMain>, !felt.type, !array.type<.. x !felt.type>}}}
+    function.def @constrain(%self: !struct.type<@MyMain>, %0: i1)  {
       function.return
     }
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{The "@Main" component must have no parameters}}
-  struct.def @Main<[@T]> {
-    function.def @compute() -> !struct.type<@Main<[@T]>> {
-      %self = struct.new : !struct.type<@Main<[@T]>>
-      function.return %self : !struct.type<@Main<[@T]>>
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: 12}}
+module attributes {llzk.main = 12, veridise.lang = "llzk"} {
+  struct.def @MustBeStruct<[@N]> {
+    function.def @compute() -> !struct.type<@MustBeStruct<[@N]>> {
+      %self = struct.new : !struct.type<@MustBeStruct<[@N]>>
+      function.return %self : !struct.type<@MustBeStruct<[@N]>>
     }
-    function.def @constrain(%self: !struct.type<@Main<[@T]>>)  {
+    function.def @constrain(%self: !struct.type<@MustBeStruct<[@N]>>)  {
+      function.return
+    }
+  }
+}
+// -----
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !felt.type}}
+module attributes {llzk.main = !felt.type, veridise.lang = "llzk"} {
+  struct.def @MustBeStruct<[@N]> {
+    function.def @compute() -> !struct.type<@MustBeStruct<[@N]>> {
+      %self = struct.new : !struct.type<@MustBeStruct<[@N]>>
+      function.return %self : !struct.type<@MustBeStruct<[@N]>>
+    }
+    function.def @constrain(%self: !struct.type<@MustBeStruct<[@N]>>)  {
+      function.return
+    }
+  }
+}
+// -----
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@NotAffine<[affine_map}}
+module attributes {llzk.main = !struct.type<@NotAffine<[affine_map<(i)->(i)>]>>, veridise.lang = "llzk"} {
+  struct.def @NotAffine<[@N]> {
+    function.def @compute() -> !struct.type<@NotAffine<[@N]>> {
+      %self = struct.new : !struct.type<@NotAffine<[@N]>>
+      function.return %self : !struct.type<@NotAffine<[@N]>>
+    }
+    function.def @constrain(%self: !struct.type<@NotAffine<[@N]>>)  {
+      function.return
+    }
+  }
+}
+// -----
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@NotSymbol<[@X]>>}}
+module attributes {llzk.main = !struct.type<@NotSymbol<[@X]>>, veridise.lang = "llzk"} {
+  struct.def @NotSymbol<[@N]> {
+    function.def @compute() -> !struct.type<@NotSymbol<[@N]>> {
+      %self = struct.new : !struct.type<@NotSymbol<[@N]>>
+      function.return %self : !struct.type<@NotSymbol<[@N]>>
+    }
+    function.def @constrain(%self: !struct.type<@NotSymbol<[@N]>>)  {
+      function.return
+    }
+  }
+}
+// -----
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@NotVar<[!poly.tvar<@X>]>>}}
+module attributes {llzk.main = !struct.type<@NotVar<[!poly.tvar<@X>]>>, veridise.lang = "llzk"} {
+  struct.def @NotVar<[@N]> {
+    function.def @compute() -> !struct.type<@NotVar<[@N]>> {
+      %self = struct.new : !struct.type<@NotVar<[@N]>>
+      function.return %self : !struct.type<@NotVar<[@N]>>
+    }
+    function.def @constrain(%self: !struct.type<@NotVar<[@N]>>)  {
+      function.return
+    }
+  }
+}
+// -----
+// expected-error@+1 {{duplicate key 'llzk.main' in dictionary attribute}}
+module attributes {llzk.main = !struct.type<@Multiple<[2]>>, llzk.main = !struct.type<@Multiple<[3]>>, veridise.lang = "llzk"} {
+  struct.def @Multiple<[@N]> {
+    function.def @compute() -> !struct.type<@Multiple<[@N]>> {
+      %self = struct.new : !struct.type<@Multiple<[@N]>>
+      function.return %self : !struct.type<@Multiple<[@N]>>
+    }
+    function.def @constrain(%self: !struct.type<@Multiple<[@N]>>)  {
       function.return
     }
   }

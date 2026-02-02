@@ -22,19 +22,31 @@ class FunctionDialectAttr<string name, string attrMnemonic,
 
 def LLZK_AllowConstraintAttr
     : FunctionDialectAttr<"AllowConstraint", "allow_constraint"> {
-  let summary = "Marks functions to allow `ConstraintGen` ops";
+  let summary =
+      "Marks functions to allow `ConstraintGen` ops within their body";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
-    marked with `ConstraintGen` (ex: emit ops) are allowed within its body.
+    marked with `ConstraintGen` (e.g., emit ops) are allowed within its body.
   }];
 }
 
 def LLZK_AllowWitnessAttr
     : FunctionDialectAttr<"AllowWitness", "allow_witness"> {
-  let summary = "Marks functions to allow `WitnessGen` ops";
+  let summary = "Marks functions to allow `WitnessGen` ops within their body";
   let description = [{
-    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
-    marked with `WitnessGen` (i.e., boolean and bitwise ops) are allowed within its body.
+    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops marked
+    with `WitnessGen` (e.g., construct and write ops) are allowed within its body.
+  }];
+}
+
+def LLZK_AllowNonNativeFieldOpsAttr
+    : FunctionDialectAttr<"AllowNonNativeFieldOps",
+                          "allow_non_native_field_ops"> {
+  let summary =
+      "Marks functions to allow `NotFieldNative` ops within their body";
+  let description = [{
+    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops marked
+    with `NotFieldNative` (e.g., boolean and bitwise ops) are allowed within its body.
   }];
 }
 

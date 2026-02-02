@@ -497,7 +497,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @UnaryBool<[@T]> {
-    function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@UnaryBool<[@T]>> {
+    function.def @compute(%a: !poly.tvar<@T>) -> !struct.type<@UnaryBool<[@T]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@UnaryBool<[@T]>>
       %c = bool.not %a : !poly.tvar<@T>
       function.return %self : !struct.type<@UnaryBool<[@T]>>
@@ -506,7 +506,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @BinaryBool<[@T, @U]> {
-    function.def @compute(%a: !poly.tvar<@T>, %b: !poly.tvar<@U>) -> !struct.type<@BinaryBool<[@T, @U]>> {
+    function.def @compute(%a: !poly.tvar<@T>, %b: !poly.tvar<@U>) -> !struct.type<@BinaryBool<[@T, @U]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@BinaryBool<[@T, @U]>>
       %c = bool.xor %a, %b : !poly.tvar<@T>, !poly.tvar<@U>
       function.return %self : !struct.type<@BinaryBool<[@T, @U]>>
@@ -535,7 +535,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @UnaryBool<[@T]> {
-//CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>) -> !struct.type<@UnaryBool<[@T]>> attributes {function.allow_witness} {
+//CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>) -> !struct.type<@UnaryBool<[@T]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@UnaryBool<[@T]>>
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = bool.not %arg0 : !poly.tvar<@T>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@UnaryBool<[@T]>>
@@ -545,7 +545,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @BinaryBool<[@T, @U]> {
-//CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@U>) -> !struct.type<@BinaryBool<[@T, @U]>> attributes {function.allow_witness} {
+//CHECK-NEXT:    function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@U>) -> !struct.type<@BinaryBool<[@T, @U]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@BinaryBool<[@T, @U]>>
 //CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = bool.xor %arg0, %arg1 : !poly.tvar<@T>, !poly.tvar<@U>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@BinaryBool<[@T, @U]>>

@@ -388,31 +388,31 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Component05_5_k {
+// CHECK-LABEL: struct.def @Component05_5_i {
 // CHECK-NEXT:    struct.member @f : !array.type<5 x index>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component05_5_k> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component05_5_i> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05_5_k>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05_5_i>
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.new  : <5 x index>
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V4]]] = %[[V4]] : <5 x index>, index
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V3]]] = %[[V3]] : <5 x index>, index
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V2]]] = %[[V2]] : <5 x index>, index
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V1]]] = %[[V1]] : <5 x index>, index
 // CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V0]]] = %[[V0]] : <5 x index>, index
-// CHECK-NEXT:      struct.writem %[[V5]][@f] = %[[V6]] : <@Component05_5_k>, !array.type<5 x index>
-// CHECK-NEXT:      function.return %[[V5]] : !struct.type<@Component05_5_k>
+// CHECK-NEXT:      struct.writem %[[V5]][@f] = %[[V6]] : <@Component05_5_i>, !array.type<5 x index>
+// CHECK-NEXT:      function.return %[[V5]] : !struct.type<@Component05_5_i>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05_5_k>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05_5_i>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@f] : <@Component05_5_k>, !array.type<5 x index>
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@f] : <@Component05_5_i>, !array.type<5 x index>
 // CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V12]]] : <5 x index>, index
 // CHECK-NEXT:      constrain.eq %[[V14]], %[[V12]] : index, index
 // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V11]]] : <5 x index>, index
@@ -428,16 +428,16 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@Component05_5_k>
+// CHECK-NEXT:    struct.member @sub : !struct.type<@Component05_5_i>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component05_5_k::@compute() : () -> !struct.type<@Component05_5_k>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_1]] : <@Main>, !struct.type<@Component05_5_k>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component05_5_i::@compute() : () -> !struct.type<@Component05_5_i>
+// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_1]] : <@Main>, !struct.type<@Component05_5_i>
 // CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@sub] : <@Main>, !struct.type<@Component05_5_k>
-// CHECK-NEXT:      function.call @Component05_5_k::@constrain(%[[VAL_3]]) : (!struct.type<@Component05_5_k>) -> ()
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@sub] : <@Main>, !struct.type<@Component05_5_i>
+// CHECK-NEXT:      function.call @Component05_5_i::@constrain(%[[VAL_3]]) : (!struct.type<@Component05_5_i>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

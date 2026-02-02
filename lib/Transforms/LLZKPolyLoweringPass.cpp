@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -273,9 +274,8 @@ private:
         }
       });
 
-      // The pass doesn't currently support EmitContainmentOp as it depends on
-      // https://veridise.atlassian.net/browse/LLZK-245 being fixed Once this is fixed, the op
-      // should lower all the elements in the row being looked up
+      // The pass doesn't currently support EmitContainmentOp.
+      // See https://github.com/project-llzk/llzk-lib/issues/261
       constrainFunc.walk([this, &moduleOp](EmitContainmentOp /*containOp*/) {
         auto diag = moduleOp.emitError();
         diag << "EmitContainmentOp is unsupported for now in the lowering pass";

@@ -44,15 +44,3 @@ function.def @lt_felt(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[T0]] : i1
 //CHECK-NEXT:    function.return %[[T1]] : !felt.type
 //CHECK-NEXT:  }
-// -----
-
-function.def @felt_to_int(%a: !felt.type) -> i45 {
-  %1 = cast.toint %a : i45
-  function.return %1: i45
-}
-
-//CHECK-LABEL: function.def @felt_to_int(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> i45 {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.toint %[[A0]] : i45
-//CHECK-NEXT:    function.return %[[T0]] : i45
-//CHECK-NEXT:  }

@@ -12,9 +12,9 @@ project(
   LLZK
   # Keeping this description short since it's also used by doxygen
   DESCRIPTION
-    "Veridise's ZK Language IR"
+    "An open-source IR for Zero Knowledge (ZK) circuits"
   VERSION "${LLZK_VERSION}"
-  HOMEPAGE_URL https://github.com/Veridise/llzk-lib)
+  HOMEPAGE_URL https://github.com/project-llzk/llzk-lib)
 
 option(LLZK_TEMPLATE_BACKTRACE_LIMIT
        "Add -ftemplate-backtrace-limit=0 to the compile flags")
@@ -159,7 +159,7 @@ if(LLZK_TEMPLATE_BACKTRACE_LIMIT)
 endif()
 
 # MAYBE FIXME: If we want to hide inline functions we need to setup macros See
-# https://github.com/Veridise/llzk-lib/pull/3#discussion_r1726140891
+# https://github.com/project-llzk/llzk-lib/pull/3#discussion_r1726140891
 
 # Python bindings
 

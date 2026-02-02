@@ -363,9 +363,7 @@ def main():
         input_line = process_attribute_references(input_line, attribute_namer)
 
         # Split the line at the each SSA value name.
-        print(f"{input_line = }")
         ssa_split = input_line.split("%")
-        print(f"{ssa_split = }")
 
         # If this is a top-level operation use 'CHECK-LABEL', otherwise 'CHECK-NEXT:'.
         if len(output_segments[-1]) != 0 or not ssa_split[0]:

@@ -9,7 +9,7 @@ on:
 
 jobs:
   call-workflow-release:
-    uses: Veridise/open-source-release-helpers/.github/workflows/release.yml@main
+    uses: project-llzk/open-source-release-helpers/.github/workflows/release.yml@main
     secrets: inherit
   call-deploy-github-pages:
     needs: call-workflow-release

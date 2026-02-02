@@ -36,7 +36,8 @@ constexpr int DEFAULT_ELTS = 5;
 template <int N = DEFAULT_ELTS> class MapOperandsHelper {
 public:
   MapOperandsHelper(intptr_t nMapOperands, MlirValueRange const *mapOperands) {
-    storage.reserve(nMapOperands);
+    // resize allocates elements (needed for operator[] access on line 44)
+    storage.resize(nMapOperands);
     ranges.reserve(nMapOperands);
 
     for (intptr_t i = 0; i < nMapOperands; i++) {

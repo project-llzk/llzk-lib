@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -llzk-inline-structs -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @ResultOfComputeUnused {
     struct.member @f : !felt.type
 
@@ -38,7 +38,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @ResultOfComputeDoubleUse {
     struct.member @f : !felt.type
 
@@ -81,7 +81,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   function.def private @temp(%0: !struct.type<@StructAsParamToFreeFunc>)
 
   struct.def @StructAsParamToFreeFunc {
@@ -128,7 +128,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @ComponentY<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentY<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentY<[@A, @B]>>

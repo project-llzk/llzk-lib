@@ -173,7 +173,7 @@ def LLZK_StructDefOp
     /// any surrounding module scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
-    /// Return `true` iff this StructDefOp is named "Main".
+    /// Return `true` iff this StructDefOp is the main struct. See `llzk::MAIN_ATTR_NAME`.
     bool isMainComponent();
   }];
 

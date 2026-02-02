@@ -3,18 +3,6 @@
 function.def private @abort()
 //CHECK-LABEL:  function.def private @abort()
 // -----
-function.def private @int_fn_01(i32)
-//CHECK-LABEL:  function.def private @int_fn_01(i32)
-// -----
-function.def private @int_fn_02(i1) -> i32
-//CHECK-LABEL:  function.def private @int_fn_02(i1) -> i32
-// -----
-function.def private @int_fn_03(i1) -> (i32, i32)
-//CHECK-LABEL:  function.def private @int_fn_03(i1) -> (i32, i32)
-// -----
-function.def private @int_fn_04(i1, index, i32)
-//CHECK-LABEL:  function.def private @int_fn_04(i1, index, i32)
-// -----
 
 function.def private @scribble(!felt.type, !felt.type)
 //CHECK-LABEL:  function.def private @scribble(!felt.type, !felt.type)

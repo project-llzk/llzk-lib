@@ -1,44 +1,44 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-function.def @f_and(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
+function.def @f_and(%a: i1, %b: i1) -> i1 attributes {function.allow_non_native_field_ops} {
   %c = bool.and %a, %b
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_and
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.and %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_or(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
+function.def @f_or(%a: i1, %b: i1) -> i1 attributes {function.allow_non_native_field_ops} {
   %c = bool.or %a, %b
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_or
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.or %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_xor(%a: i1, %b: i1) -> i1 attributes {function.allow_witness} {
+function.def @f_xor(%a: i1, %b: i1) -> i1 attributes {function.allow_non_native_field_ops} {
   %c = bool.xor %a, %b
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_xor
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1, %[[A1:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_not(%a: i1) -> i1 attributes {function.allow_witness} {
+function.def @f_not(%a: i1) -> i1 attributes {function.allow_non_native_field_ops} {
   %c = bool.not %a
   function.return %c: i1
 }
 //CHECK-LABEL:  function.def @f_not
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: i1) -> i1 attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.not %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }

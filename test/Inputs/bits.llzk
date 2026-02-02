@@ -36,7 +36,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   struct.def @EqzExt<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>> {llzk.pub}
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@EqzExt<[]>>
       %c0 = arith.constant 0 : index
       %0 = array.read %arg0[%c0] : <4 x !felt.type>, !felt.type
@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.member @"$super" : !struct.type<@NondetExtReg<[]>>
     struct.member @"$temp" : !struct.type<@EqzExt<[]>>
     struct.member @reg : !struct.type<@NondetExtReg<[]>>
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@ExtReg<[]>>
       %0 = function.call @NondetExtReg::@compute(%arg0) : (!array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>>
       struct.writem %self[@reg] = %0 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
@@ -156,7 +156,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Div<[]> {
     struct.member @"$super" : !felt.type {llzk.pub}
     struct.member @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
       struct.writem %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
@@ -411,7 +411,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.member @"$temp_0" : !struct.type<@BitAnd<[]>>
     struct.member @reg0 : !struct.type<@NondetBitReg<[]>>
     struct.member @"$temp" : !struct.type<@BitAnd<[]>>
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetFakeTwitReg<[]>> {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetFakeTwitReg<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@NondetFakeTwitReg<[]>>
       %felt_const_1 = felt.const  1
       %0 = function.call @BitAnd::@compute(%arg0, %felt_const_1) : (!felt.type, !felt.type) -> !struct.type<@BitAnd<[]>>
@@ -504,7 +504,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @FakeTwitReg<[]> {
     struct.member @"$super" : !struct.type<@NondetFakeTwitReg<[]>>
     struct.member @reg : !struct.type<@NondetFakeTwitReg<[]>>
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@FakeTwitReg<[]>> {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@FakeTwitReg<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@FakeTwitReg<[]>>
       %0 = function.call @NondetFakeTwitReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetFakeTwitReg<[]>>
       struct.writem %self[@reg] = %0 : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>

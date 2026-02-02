@@ -11,7 +11,7 @@
 
 #include "llzk-c/Constants.h"
 
-const char *LLZK_COMPONENT_NAME_MAIN = llzk::COMPONENT_NAME_MAIN;
 const char *LLZK_FUNC_NAME_COMPUTE = llzk::FUNC_NAME_COMPUTE;
 const char *LLZK_FUNC_NAME_CONSTRAIN = llzk::FUNC_NAME_CONSTRAIN;
 const char *LLZK_LANG_ATTR_NAME = llzk::LANG_ATTR_NAME;
+const char *LLZK_MAIN_ATTR_NAME = llzk::MAIN_ATTR_NAME;

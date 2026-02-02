@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim="remove-structs" %s 2>&1 | FileCheck %s --check-prefix STRICT
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim %s 2>&1 | FileCheck %s --check-prefix RELAX
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component {
     struct.member @matrix : !array.type<7,3 x !felt.type>
 
@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-// STRICT-LABEL: module attributes {veridise.lang = "llzk"} {
+// STRICT-LABEL: module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 // STRICT-NEXT: }
 
 // RELAX-LABEL: struct.def @Component {
@@ -30,7 +30,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @A {
     function.def @compute() -> !struct.type<@A> {
       %self = struct.new : !struct.type<@A>
@@ -145,7 +145,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @VarArray<[@N, @T]> {
     struct.member @val: !array.type<@N x !poly.tvar<@T>>
 
@@ -218,7 +218,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 
   module @std {
     struct.def @Wrapper<[@T]> {
@@ -363,7 +363,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 
   module @nested {
     // @val is read-only in this module, but not read-only in all modules,
@@ -473,7 +473,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Overloading symbol names
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   module @nested {
     // @val is read-only in this module, but not read-only in all modules,
     // so this test will examine if our symbol lookup works across modules

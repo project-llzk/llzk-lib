@@ -52,7 +52,11 @@ MLIR_CAPI_EXPORTED bool llzkIsValidArrayElemType(MlirType type);
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
 MLIR_CAPI_EXPORTED bool llzkIsValidArrayType(MlirType type);
 
-/// Return `false` iff the type contains any `TypeVarType`
+/// Return `false` if the type contains any of the following:
+/// - `TypeVarType`
+/// - `SymbolRefAttr`
+/// - `AffineMapAttr`
+/// - `StructType` with parameters if `allowStructParams==false`
 MLIR_CAPI_EXPORTED bool llzkIsConcreteType(MlirType type, bool allowStructParams);
 
 /// @brief Return `true` iff the given type contains an AffineMapAttr.

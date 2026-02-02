@@ -138,7 +138,7 @@ module attributes {veridise.lang = "llzk"} {
     // ZIR frontend should mark function.return value with `pub`
     struct.member @synthetic_return: !felt.type {llzk.pub}
 
-    function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>, %mode: !felt.type) -> !struct.type<@AddrDecomposeBits> {
+    function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>, %mode: !felt.type) -> !struct.type<@AddrDecomposeBits> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@AddrDecomposeBits>
       // low0 := NondetBitReg.compute(x.low & 0x1);
       %t01 = struct.readm %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.type
@@ -360,7 +360,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      struct.member @addr : !felt.type
 //CHECK-NEXT:      struct.member @synthetic_return : !felt.type {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@std::@risc0::@ValU32>,
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@AddrDecomposeBits>  attributes {function.allow_witness} {
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@AddrDecomposeBits>  attributes {function.allow_non_native_field_ops, function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AddrDecomposeBits>
 //CHECK-NEXT:        %[[T00:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@low] : <@std::@risc0::@ValU32>, !felt.type
 //CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = felt.const 1

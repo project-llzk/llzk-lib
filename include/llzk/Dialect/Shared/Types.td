@@ -25,4 +25,6 @@ def EmitEqType
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
 
+def AnyLLZKIntType : AnyTypeOf<[I1, Index]>;
+
 #endif // LLZK_SHARED_TYPES

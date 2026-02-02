@@ -66,16 +66,8 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 );
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-/// The Attribute argument must be a DenseI32ArrayAttr.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperands, MlirType arrType, intptr_t nMapOperands,
-    MlirValueRange const *mapOperands, MlirAttribute dimsPerMap
-);
-
-/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperandsAndDims, MlirType arrType, intptr_t nMapOperands,
-    MlirValueRange const *mapOperands, intptr_t nDimsPerMap, int32_t const *dimsPerMap
+    CreateArrayOp, WithMapOperands, MlirType arrType, LlzkAffineMapOperandsBuilder mapOperands
 );
 
 #ifdef __cplusplus

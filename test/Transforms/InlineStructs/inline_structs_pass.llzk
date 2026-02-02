@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -llzk-inline-structs -verify-diagnostics %s | FileCheck %s
 
 // TESTS: a basic scenario of inling 2 levels deep
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component1A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -80,7 +80,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: multiple callees inlined into the same caller
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component2A {
     struct.member @f1 : index
     struct.member @f2 : i1
@@ -177,7 +177,7 @@ module attributes {veridise.lang = "llzk"} {
 // TESTS:
 //  - same callee inlined multiple times into one caller
 //  - a struct that has multiple members of the same StructType
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component3A {
     struct.member @f1 : index
     struct.member @f2 : i1
@@ -283,7 +283,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: same callee inlined into different callers
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component4A {
     struct.member @f : !array.type<4 x !felt.type>
 
@@ -402,7 +402,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: no main struct
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component5A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -460,7 +460,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: Call to "constrain" but not "compute"
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component6A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -518,7 +518,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS: Call to "compute" but not "constrain"
 // Inlining does not occur since it's based on "constrain" calls.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component7A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -592,7 +592,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS: Neither "compute" nor "constrain" is called
 // Inlining does not occur since it's based on "constrain" calls.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component8A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -659,7 +659,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: Result of a member read has use(s) other than parameter to constrain function.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component9A {
     struct.member @f : !felt.type {llzk.pub}
 
@@ -713,7 +713,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: Passing struct as function parameter
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component10A {
     struct.member @f : !felt.type {llzk.pub}
 
@@ -803,7 +803,7 @@ module attributes {veridise.lang = "llzk"} {
 //  - Passing struct as `constrain` parameter, multiple levels. Specifically,
 //    "@Component11C::@constrain()" where the '%a' parameter is passed through.
 //  - Attributes on members are propagated correctly.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component11A {
     struct.member @f : !felt.type {llzk.pub}
 
@@ -908,7 +908,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS: "self" parameter of "@constrain" call comes from a global read rather than member read.
 //        This prevents A->B inlining via `canInline()` check.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   global.def @g : !struct.type<@Component12A>
 
   struct.def @Component12A {
@@ -997,7 +997,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS: "self" parameter of "@constrain" call comes from a function parameter rather than member read.
 //        This prevents A->B inlining via `canInline()` check.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component13A {
     struct.member @f : !felt.type {llzk.pub}
 

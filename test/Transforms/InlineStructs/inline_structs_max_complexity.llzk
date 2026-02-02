@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten,llzk-inline-structs{max-merge-complexity=2})' -verify-diagnostics %s | FileCheck %s
 
 // TESTS: full inlining is within `maxComplexity` limit
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component1A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -80,7 +80,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: A->B inlining succeeds but `maxComplexity` prevents inlining B->Main
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component2A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -176,7 +176,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS:  `maxComplexity` prevents A->B inlining but B->Main inlining succeeds
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component3A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type
@@ -274,7 +274,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: `maxComplexity` prevents some inlining for multiple callees inlined into the same caller
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component4A {
     struct.member @f1 : !felt.type
 
@@ -374,7 +374,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: full inlining is within `maxComplexity` limit (multiple calls from same struct)
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component5B {
     struct.member @f1 : !felt.type
 
@@ -453,7 +453,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: 'max-merge-complexity' prevents inlining A to Main but the others are inlined.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component6A {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -589,7 +589,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS: 'max-merge-complexity' prevents inlining C to Main (although B->C and A->Main are inlined) resulting in a
 // remaining parameter of type A in the calls to C. Since A was inlined, the param must be split into members.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component7A {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -721,7 +721,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // TESTS: 'max-merge-complexity' prevents inlining B to C and A to B which exercises additional
 // conditions in the algorithm that converts a struct parameter to multiple parameters.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component8A {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -879,7 +879,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: parameter attributes are replicated when splitting a struct param to members.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @Component9A {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
