@@ -72,12 +72,14 @@ def LLZK_StructDefOp
       }
       ```
 
-      A special component named `Main` can be defined to represent the main entry point
-      of the circuit. This component has additional restrictions:
-      1. It cannot have struct parameters.
-      2. The parameter types of its functions (besides the required "self" parameter) can
+      The optional `llzk.main = !struct.type<...>` attribute on the top-level module in an
+      LLZK IR program expresses the main entry point of the circuit as a concrete instantiation
+      of a specific struct. For example, `llzk.main = !struct.type<@Top<[52,12]>>` or
+      `llzk.main = !struct.type<@Main<[i1, !felt.type, 256]>>`.
+      This component has additional restrictions:
+      1. The parameter types of its functions (besides the required "self" parameter) can
          only be `!felt.type` or `!array.type<.. x !felt.type>`.
-      3. The members marked as public (i.e., with the `{llzk.pub}` attribute) represent
+      2. The members marked as public (i.e., with the `{llzk.pub}` attribute) represent
          the public outputs of the overall circuit.
 
       Example of a `Main` component:
