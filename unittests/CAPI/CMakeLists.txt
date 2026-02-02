@@ -1,3 +1,16 @@
+# C compatibility test - verifies the C API can be consumed from pure C code
+add_executable(LLZK_CAPI_C_Test c_compatibility_test.c)
+set_target_properties(LLZK_CAPI_C_Test PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(
+  LLZK_CAPI_C_Test
+  PRIVATE
+  LLZK::LLZKCAPI
+  MLIRCAPIIR
+  MLIRCAPIRegisterEverything)
+add_test(NAME LLZK_CAPI_C_Test COMMAND LLZK_CAPI_C_Test)
+list(APPEND LLZK_UNITTESTS LLZK_CAPI_C_Test)
+
+# CAPI unit tests defined via C++ sources
 file(GLOB_RECURSE LLZK_CAPI_TEST_SOURCES "*.cpp")
 add_executable(LLZK_CAPI_Tests ${LLZK_CAPI_TEST_SOURCES})
 
@@ -9,14 +22,3 @@ target_link_libraries(
   LLZK::LLZKAnalysis LLZK::LLZKCAPI LLZK::LLZKTransforms LLZK::LLZKValidators)
 
 llzk_gtest_suite(LLZK_CAPI_Tests)
-
-# C compatibility test - verifies the C API can be consumed from pure C code
-add_executable(LLZK_CAPI_C_Test c_compatibility_test.c)
-set_target_properties(LLZK_CAPI_C_Test PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(
-  LLZK_CAPI_C_Test
-  PRIVATE
-  LLZK::LLZKCAPI
-  MLIRCAPIIR
-  MLIRCAPIRegisterEverything)
-add_test(NAME LLZK_CAPI_C_Test COMMAND LLZK_CAPI_C_Test)
