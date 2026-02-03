@@ -2,7 +2,7 @@
 
 #mapDiv = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 #mapAdd = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {llzk.lang} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @Foo<[@Aff]> {
     struct.member @bar: !struct.type<@Bar<[@Aff]>>
     function.def @compute(%arg: !struct.type<@Bar<[@Aff]>>) -> !struct.type<@Foo<[@Aff]>> {
