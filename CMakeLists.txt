@@ -99,7 +99,7 @@ add_compile_options(
   -Wextra
   -Wno-unused-parameter
   -Wshadow
-  -Wnon-virtual-dtor
+  $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
   -pedantic
   -fno-omit-frame-pointer)
 
