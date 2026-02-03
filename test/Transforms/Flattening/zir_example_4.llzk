@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 #map = affine_map<()[s0, s1] -> (s0 floordiv s1)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @S<[@X, @N, @P]> {
     function.def @compute(%arg0: !array.type<@X x !felt.type>) -> !struct.type<@S<[@X, @N, @P]>> {
       %self = struct.new : !struct.type<@S<[@X, @N, @P]>>

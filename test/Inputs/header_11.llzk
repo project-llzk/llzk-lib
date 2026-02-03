@@ -1,6 +1,6 @@
 // Imported via `call_with_affinemap_fail.llzk`
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @D0 {
     function.def @compute() -> !struct.type<@D0> {
       %self = struct.new : !struct.type<@D0>

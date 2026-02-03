@@ -1,4 +1,4 @@
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component<[]> {
     function.def @compute() -> !struct.type<@Component<[]>> {
       %self = struct.new : <@Component<[]>>

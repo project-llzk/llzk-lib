@@ -4,7 +4,7 @@
 //  - CreateArrayOp using only constant values and no loops
 //  - Instantiated array Value used in MemberWriteOp requires manual update of MemberDefOp type
 !Ty = !array.type<affine_map<(i)->(i)>, affine_map<(i,j)->(i+j)>, affine_map<(i)[j]->(i+j)> x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component01 {
     struct.member @out: !Ty
 
@@ -48,7 +48,7 @@ module attributes {veridise.lang = "llzk"} {
 #M2 = affine_map<(i,j)->(i+j)>
 #M3 = affine_map<(i)[j]->(i+j)>
 !Ty = !array.type<#M1,#M2,#M3 x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component02 {
     struct.member @out: !Ty
 
@@ -103,7 +103,7 @@ module attributes {veridise.lang = "llzk"} {
 #M2 = affine_map<(i)->(i+2)>
 #M3 = affine_map<()[i,j]->(i+j)>
 !Ty = !array.type<#M1,#M2,#M3 x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component03 {
     struct.member @a: !array.type<#M3 x index>
     struct.member @b: !array.type<#M3 x index>
@@ -160,7 +160,7 @@ module attributes {veridise.lang = "llzk"} {
 #M2 = affine_map<(i)->(i+2)>
 #M3 = affine_map<()[i,j]->(i+j)>
 !Ty = !array.type<#M1,#M2,#M3 x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component04 {
     struct.member @f: index
 
@@ -223,7 +223,7 @@ module attributes {veridise.lang = "llzk"} {
 #M3 = affine_map<()[i,j]->(i+j)>
 !Ty1 = !array.type<#M1,#M2,#M3 x index>
 !Ty2 = !array.type<#M2,#M3 x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component05 {
     struct.member @f: index
 
@@ -284,7 +284,7 @@ module attributes {veridise.lang = "llzk"} {
 #M3 = affine_map<()[i,j]->(i+j)>
 !Ty1 = !array.type<#M1,#M2,#M3 x index>
 !Ty2 = !array.type<#M2,#M3 x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component05B {
     struct.member @f: index
 
@@ -346,7 +346,7 @@ module attributes {veridise.lang = "llzk"} {
 #M2 = affine_map<()[c] -> (c)>
 #M3 = affine_map<(j) -> (j+2)>
 !Ty = !array.type<#M1, #M2, #M3 x !felt.type>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @test06() -> !Ty {
     %a = arith.constant 2 : index
     %b = arith.constant 4 : index
@@ -392,7 +392,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // Test: affine_map folding unsuccessful due to division by 0
 !Ty = !array.type<affine_map<(i)->(i mod 0)> x index>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component10 {
     struct.member @out: !Ty
 

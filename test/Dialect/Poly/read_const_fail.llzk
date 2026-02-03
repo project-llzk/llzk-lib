@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @bad(%0: !felt.type) {
     // expected-error@+1 {{'poly.read_const' op only valid within a 'struct.def' ancestor}}
     %1 = poly.read_const @X : !felt.type
@@ -8,7 +8,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentV<[@A]> { // expected-note {{must reference a parameter of this struct}}
     function.def @compute(%0: !felt.type) -> !struct.type<@ComponentV<[@A]>> {
       %self = struct.new : !struct.type<@ComponentV<[@A]>>
@@ -23,7 +23,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ReadConstBadTypeA<[@T]> {
     function.def @compute() -> !struct.type<@ReadConstBadTypeA<[@T]>> {
       %self = struct.new : !struct.type<@ReadConstBadTypeA<[@T]>>
@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ReadConstBadTypeB<[@T]> {
     function.def @compute() -> !struct.type<@ReadConstBadTypeB<[@T]>> {
       %self = struct.new : !struct.type<@ReadConstBadTypeB<[@T]>>
@@ -51,7 +51,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ReadConstBadTypeC<[@T]> {
     function.def @compute() -> !struct.type<@ReadConstBadTypeC<[@T]>> {
       %self = struct.new : !struct.type<@ReadConstBadTypeC<[@T]>>

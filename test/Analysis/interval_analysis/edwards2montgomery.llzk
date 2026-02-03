@@ -2,7 +2,7 @@
 // RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s 2>&1 | FileCheck %s --check-prefix CMP
 // RUN: llzk-opt -I %S -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s --check-prefix PROP
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @globals {
   }
   struct.def @Component<[]> {

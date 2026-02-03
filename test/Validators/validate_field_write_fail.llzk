@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-validate-member-writes -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @MultipleWrites {
     struct.member @f : !felt.type
 
@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @MissingWrite {
     struct.member @a : index
     struct.member @b : index
@@ -35,7 +35,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @NoWrites {
     struct.member @a : !felt.type
     struct.member @b : !felt.type

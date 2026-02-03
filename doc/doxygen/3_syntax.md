@@ -102,6 +102,6 @@ digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 - If loop bounds are known, `scf.for` should be used to make loop bounds explicit. However, `scf.while` is available to handle the general case if that information is not available but this should not be used in the `constrain()` function.
 - Global functions (i.e., user-defined or helper functions, located outside of `struct` definitions) are pure. There is no global state and parameters are pass-by-value (i.e., a copy is created) so there is nothing external they can modify.
 - Source line information should be handled via MLIR so frontend components must provide that information when building the MLIR AST.
-- Only the outermost module should have the `veridise.lang = "llzk"` attribute (because the presence of that attribute is used to determine the “root” symbol table for symbol resolution).
+- Only the outermost module should have the `llzk.lang` attribute (because the presence of that attribute is used to determine the “root” symbol table for symbol resolution).
 - All inner modules must be named because their names are used to build the fully-qualified path names for symbol references.
 - All references to functions and types must use fully-qualified paths.

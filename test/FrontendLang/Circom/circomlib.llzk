@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
-  module @Comparators attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "circom"} {
+  module @Comparators attributes {llzk.lang = "circom"} {
     //////////////////////////////////////////////////////////////////////////////////
     // Circom source
     //////////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // A struct that stores if the input is 0 or not
   // to showcase `scf.if`.
   // Only constraints that the stored value is a boolean.
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // This test case showcases that you don't need to add `scf.yield`
   // if the `scf.if` operation does not function.return a value.
   struct.def @C {

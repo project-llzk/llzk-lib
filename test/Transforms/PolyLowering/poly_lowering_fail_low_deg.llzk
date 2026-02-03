@@ -1,7 +1,7 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=1" -verify-diagnostics %s
 
 // expected-error@+1 {{Invalid max degree: 1. Must be >= 2.}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @CmpConstraint {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
       %self = struct.new : !struct.type<@CmpConstraint>

@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {llzk.pub}
 
@@ -45,7 +45,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB1 {
     struct.member @f1 : !felt.type {llzk.pub}
 
@@ -95,7 +95,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentC1 {
     struct.member @f1 : !felt.type
 
@@ -145,7 +145,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentD1 {
     struct.member @f1 : !felt.type
 
@@ -201,7 +201,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentF1 {
     struct.member @f1 : !felt.type
 

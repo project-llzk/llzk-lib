@@ -2,7 +2,7 @@
 
 // TEST: partial instantiation where 'read_const' cannot be removed
 #id = affine_map<(i)->(i)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
     struct.member @"$array" : !array.type<#id x !felt.type>
 

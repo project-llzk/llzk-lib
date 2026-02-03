@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Pair<[@Fst, @Snd]> {
     function.def @compute() -> !struct.type<@Pair<[@Fst, @Snd]>> {
       %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>

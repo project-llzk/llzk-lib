@@ -1,19 +1,19 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def private @a()
   // expected-error@+1 {{ref "@a" in type '!array.type<@a x !felt.type>' refers to a 'function.def' which is not allowed}}
   function.def private @b(%x: !array.type<@a x !felt.type>)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'function.def' op references unknown symbol "@B"}}
   function.def private @c1(%x: !array.type<5,@B x index>)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@A"}}
   // expected-error@+1 {{'function.def' op references unknown symbol "@C"}}
   function.def private @c2(%x: !array.type<@A,3,@C x index>)

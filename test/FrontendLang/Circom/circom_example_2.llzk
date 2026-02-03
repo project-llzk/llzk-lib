@@ -28,7 +28,7 @@
 #MulBy5 = affine_map<(i)[] -> (i*5)>
 !GetWeightStride5 = !struct.type<@GetWeight<[#MulBy5]>>
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "circom"} {
   struct.def @GetWeight<[@A]> { // instantiations of A are {0, 5, 10, ... 5*P}
     struct.member @out: !felt.type {llzk.pub}
 

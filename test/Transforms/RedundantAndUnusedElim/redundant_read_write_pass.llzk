@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim %s 2>&1 | FileCheck %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   struct.def @Subcomponent {
     function.def @compute() -> !struct.type<@Subcomponent> {
@@ -50,7 +50,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @f : !felt.type
 
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @arr : !array.type<3 x !felt.type>
 
@@ -113,7 +113,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @matrix : !array.type<7,3 x !felt.type>
 
@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @arr : !array.type<3 x !felt.type>
 
@@ -214,7 +214,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // A modified version of IsZero that includes some redundancy
   struct.def @IsZero {
     struct.member @bit : !felt.type
@@ -291,7 +291,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @matrix : !array.type<7,3 x !felt.type>
 

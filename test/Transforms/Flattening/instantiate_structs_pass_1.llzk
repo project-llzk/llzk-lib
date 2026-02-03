@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 /// Test calling a global function named "compute"; should have no change
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @compute(%x: i1) -> i1 {
     function.return %x : i1
   }
@@ -34,7 +34,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 /// Test calling a struct "compute" without params; should have no change
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @StructA {
     function.def @compute() -> !struct.type<@StructA> {
       %self = struct.new : !struct.type<@StructA>
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component01A<[@A, @B]> {
     function.def @compute() -> !struct.type<@Component01A<[@A, @B]>> {
       %self = struct.new : !struct.type<@Component01A<[@A, @B]>>
@@ -173,7 +173,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // No change because there is no compute function.call that instantiates all of the parameters
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component02<[@A]> {
     function.def @compute(%0: !felt.type) -> !struct.type<@Component02<[@A]>> {
       %self = struct.new : !struct.type<@Component02<[@A]>>
@@ -186,7 +186,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
 //CHECK-NEXT:    struct.def @Component02<[@A]> {
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type) -> !struct.type<@Component02<[@A]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@A]>>
@@ -201,7 +201,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @Component03A<[@Z]> {
       function.def @compute() -> !struct.type<@a::@Component03A<[@Z]>> {
@@ -265,7 +265,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component04A<[@A]> {
     struct.member @f : !array.type<@A,@A x index>
 
@@ -341,7 +341,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component05<[@S, @T]> {
     struct.member @f : !array.type<@S x !poly.tvar<@T>>
 
@@ -444,7 +444,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 /// Ensure a StructType using a param somewhere in the type is not converted.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component06A<[@C]> {
     struct.member @f1 : !poly.tvar<@C>
 
@@ -503,7 +503,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 /// Test "Parameterized struct still has uses!" warning
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-warning@+1 {{Parameterized struct still has uses!}}
   struct.def @Component07A<[@C]> {
     struct.member @f1 : !poly.tvar<@C>
@@ -605,7 +605,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestReadConstAsBool0<[@A]> {
     function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBool0<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsBool0<[@A]>>
@@ -665,7 +665,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestReadConstAsBool1<[@A]> {
     function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBool1<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsBool1<[@A]>>
@@ -725,7 +725,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestReadConstAsBool2<[@A]> {
     function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBool2<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsBool2<[@A]>>
@@ -787,7 +787,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestReadConstAsBoolTrue<[@A]> {
     function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBoolTrue<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsBoolTrue<[@A]>>
@@ -847,7 +847,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestReadConstAsBoolFalse<[@A]> {
     function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBoolFalse<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsBoolFalse<[@A]>>
@@ -907,7 +907,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestReadConstAsFelt<[@A]> {
     function.def @compute(%0: !felt.type) -> !struct.type<@TestReadConstAsFelt<[@A]>> {
       %self = struct.new : !struct.type<@TestReadConstAsFelt<[@A]>>
@@ -968,7 +968,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 /// Test naming collisions.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // The name of this component would conflict with the default-generated name when
   // instantiating @Component09B<[43]> and since this has a different number of arguments
   // in its functions, there would be an "incorrect number of operands for callee" error.

@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentA1<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentA1<[@A, @B]>>
@@ -22,7 +22,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB1<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentB1<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentB1<[@A, @B]>>
@@ -47,7 +47,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentC1<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentC1<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentC1<[@A, @B]>>
@@ -72,7 +72,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentD1<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentD1<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentD1<[@A, @B]>>
@@ -97,7 +97,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentE1<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentE1<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentE1<[@A, @B]>>
@@ -124,7 +124,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentF1<[@A, @B]> {
     function.def @compute() -> !struct.type<@ComponentF1<[@A, @B]>> {
       %self = struct.new : !struct.type<@ComponentF1<[@A, @B]>>
@@ -147,7 +147,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 // No parameters used to reference self type within component
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentG<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
     // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentG<[@A, @B]>" as return type}}
     function.def @compute() -> !struct.type<@ComponentG> {
@@ -159,7 +159,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 // Fewer parameters used to reference self type within component
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentH<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
     // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentH<[@A, @B]>" as return type}}
     function.def @compute() -> !struct.type<@ComponentH<[@A]>> {
@@ -171,7 +171,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 // More parameters used to reference self type within component
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentI<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
     // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentI<[@A, @B]>" as return type}}
     function.def @compute() -> !struct.type<@ComponentI<[@A, @B, @B]>> {
@@ -183,7 +183,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 // Different parameters used to reference self type within component
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentJ<[@A, @B]> { // expected-note {{should be type of this 'struct.def'}}
     // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@ComponentJ<[@A, @B]>" as return type}}
     function.def @compute() -> !struct.type<@ComponentJ<[@B, @A]>> {
@@ -195,7 +195,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 // Unknown parameters used to reference self type within component
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentK<[@A, @B]> {
     // expected-error@+2 {{'function.def' op references unknown symbol "@C"}}
     // expected-error@+1 {{'function.def' op references unknown symbol "@D"}}
@@ -207,7 +207,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentL1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
     function.def @compute() -> !struct.type<@ComponentL1<[@Z]>> {
       %self = struct.new : !struct.type<@ComponentL1<[@Z]>>
@@ -227,7 +227,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentM1<[@Z]> { // expected-note {{type parameters must unify with parameters defined here}}
       function.def @compute() -> !struct.type<@a::@ComponentM1<[@Z]>> {
@@ -251,7 +251,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentN1 {
       function.def @compute() -> !struct.type<@a::@ComponentN1> {
@@ -275,7 +275,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentO1<[@Z]> {
       function.def @compute() -> !struct.type<@a::@ComponentO1<[@Z]>> {
@@ -299,7 +299,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentP1<[@Z]> {
       function.def @compute() -> !struct.type<@a::@ComponentP1<[@Z]>> {
@@ -323,7 +323,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentQ1<[@Z]> {
       function.def @compute() -> !struct.type<@a::@ComponentQ1<[@Z]>> {
@@ -347,7 +347,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentR1<[@Z]> {
       function.def @compute() -> !struct.type<@a::@ComponentR1<[@Z]>> {
@@ -371,7 +371,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentS1<[@Z]> {
     function.def @compute() -> !struct.type<@ComponentS1<[@Z]>> {
       %self = struct.new : !struct.type<@ComponentS1<[@Z]>>
@@ -391,7 +391,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def private @some_function() -> ()
   struct.def @ComponentT1<[@Z]> {
     function.def @compute() -> !struct.type<@ComponentT1<[@Z]>> {
@@ -412,7 +412,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     struct.def @ComponentU1<[@Z]> {
       function.def @compute() -> !struct.type<@a::@ComponentU1<[@Z]>> {
@@ -428,7 +428,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'struct.def' op has more than one parameter named "@A"}}
   struct.def @ComponentW<[@A, @A]> {
     function.def @compute() -> !struct.type<@ComponentW<[@A, @A]>> {
@@ -439,7 +439,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @F() { function.return } // expected-note {{symbol already defined here}}
   // expected-error@+1 {{'struct.def' op parameter name "@F" conflicts with an existing symbol}}
   struct.def @ComponentX<[@F]> {
@@ -451,7 +451,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BadParamTypeA<[@C]> {
     function.def @compute() -> !struct.type<@BadParamTypeA<[@C]>> {
       %self = struct.new : !struct.type<@BadParamTypeA<[@C]>>
@@ -477,7 +477,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @DeepInvalidArrayTypeA<[@C]> {
     function.def @compute() -> !struct.type<@DeepInvalidArrayTypeA<[@C]>> {
       %self = struct.new : !struct.type<@DeepInvalidArrayTypeA<[@C]>>
@@ -506,7 +506,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map = affine_map<(i) -> (i, 2)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // This would also trigger {{'struct.def' op attribute 'const_params' failed to satisfy constraint: flat symbol ref array attribute}},
   // but the below error fires first.
   struct.def @Foo<[@N, @P, #map]> {
@@ -525,7 +525,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map = affine_map<(i) -> ()>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Foo<[@N, @P, @A]> {
     function.def @compute() -> !struct.type<@Foo<[@N, @P, @A]>> {
       %self = struct.new : !struct.type<@Foo<[@N, @P, @A]>>

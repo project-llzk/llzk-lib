@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     // expected-note@+1 {{member defined here}}
     struct.member @f1 : !felt.type
@@ -28,7 +28,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type '!string.type'}}
     struct.member @f1 : !string.type {column}
@@ -45,7 +45,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type 'index'}}
     struct.member @f1 : index {column}
@@ -62,7 +62,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type 'i1'}}
     struct.member @f1 : i1 {column}
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type '!array.type<2 x !string.type>'}}
     struct.member @f1 : !array.type<2 x !string.type> {column}
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type '!array.type<2 x index>'}}
     struct.member @f1 : !array.type<2 x index> {column}
@@ -113,7 +113,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     // Even if the struct's member is of felt type, it is not marked as a column.
     struct.member @f1 : !felt.type

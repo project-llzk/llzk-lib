@@ -2,7 +2,7 @@
 
 #id = affine_map<(i)->(i)>
 !ToFelt = !struct.type<@ToFelt<[#id]>>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ToFelt<[@A]> {
     function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
       %self = struct.new : !struct.type<@ToFelt<[@A]>>
@@ -38,7 +38,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component02<[@A,@B]> {
     // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writem' with different value types}}
     struct.member @f : !array.type<@A x !felt.type> {llzk.pub}

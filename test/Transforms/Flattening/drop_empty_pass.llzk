@@ -1,6 +1,6 @@
 // RUN: llzk-opt -llzk-drop-empty-params %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component<[]> {
     function.def @compute() -> !struct.type<@Component<[]>> {
       %self = struct.new : !struct.type<@Component<[]>>

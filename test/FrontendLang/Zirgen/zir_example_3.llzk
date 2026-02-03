@@ -17,7 +17,7 @@
 //   b := B();
 //   a = b;
 // }
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @Head<[@T, @N]> {
     struct.member @"$super" : !poly.tvar<@T> {llzk.pub}
 
@@ -132,7 +132,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang = "zirgen"} {
 //CHECK-LABEL: struct.def @Head<[@T, @N]> {
 //CHECK-NEXT:    struct.member @"$super" : !poly.tvar<@T>
 //CHECK-NEXT:    function.def @compute(%arg0: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@Head<[@T, @N]>> attributes {function.allow_witness} {

@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s -llzk-flatten -verify-diagnostics
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1<[@T]> {
     // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type 'index'}}
     struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}

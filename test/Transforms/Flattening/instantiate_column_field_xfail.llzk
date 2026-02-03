@@ -2,7 +2,7 @@
 // XFAIL: *
 // COM: Should fail until LLZK-203 is completed.
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @i : index = -1
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {column}
@@ -71,7 +71,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @mod {
     global.def @i : index = -1
   }

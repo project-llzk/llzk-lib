@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file %s | FileCheck %s
 
 // TEST: uninitialized globals
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @s : !string.type
   global.def @i : index
   global.def @b : i1
@@ -46,7 +46,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: initialized globals
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @s : !string.type = "Hello World!"
   global.def @i : index = 1
 
@@ -76,7 +76,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalReadOp in "compute()"
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @g : !felt.type = 23452
   struct.def @Component02 {
     function.def @compute() -> !struct.type<@Component02> {
@@ -101,7 +101,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalReadOp in "constrain()"
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @g : i1 = false
   struct.def @Component03 {
     function.def @compute() -> !struct.type<@Component03> {
@@ -128,7 +128,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalReadOp in free function
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @g : !string.type = "Hello"
   function.def @test() -> !string.type {
     %t = global.read @g : !string.type
@@ -143,7 +143,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalWriteOp (can only be within "compute()")
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !felt.type = 125
   struct.def @Component04 {
     function.def @compute() -> !struct.type<@Component04> {
@@ -170,7 +170,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: Using a global value as a type parameter
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @N : index = 3
 
   function.def @b(%x: !array.type<@N x !felt.type>) {
@@ -194,7 +194,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.type<@Component05B>) { function.return }
   }
 }
-// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    global.def const @N : index = 3
 // CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) {
 // CHECK-NEXT:      function.return
@@ -222,7 +222,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: Read and write involving a struct-type global
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @gvar : !struct.type<@Component06<[4]>>
 
   struct.def @Component06<[@Z]> {

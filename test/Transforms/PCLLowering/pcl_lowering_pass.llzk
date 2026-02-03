@@ -2,7 +2,7 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 // Add chip from Sp1-hypercube in LLZK
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Add<[]> {
     struct.member @fresh_output_1 : !felt.type {llzk.pub}
     struct.member @fresh_output_2 : !felt.type {llzk.pub}
@@ -472,7 +472,7 @@ module attributes {veridise.lang = "llzk"} {
 
 
 // Subw chip from Sp1-hypercube in LLZK
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Subw<[]> {
     struct.member @fresh_output_1 : !felt.type {llzk.pub}
     struct.member @fresh_output_2 : !felt.type {llzk.pub}
@@ -922,7 +922,7 @@ module attributes {veridise.lang = "llzk"} {
 
 
 // DivRem chip from sp1-hypercube
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @DIV<[]> {
     struct.member @fresh_output_1 : !felt.type {llzk.pub}
     struct.member @fresh_output_2 : !felt.type {llzk.pub}

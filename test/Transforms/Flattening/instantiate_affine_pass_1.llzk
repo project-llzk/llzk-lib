@@ -4,7 +4,7 @@
 #Values = affine_map<(i,j)->(5*j+i)>
 !ToFelt = !struct.type<@ToFelt<[#Values]>>
 !HeterArr = !struct.type<@VarArray<[#IdxToLen, !ToFelt]>>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
     struct.member @val: !array.type<@N x !poly.tvar<@T>>

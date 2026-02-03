@@ -36,7 +36,7 @@ function.def @i1_to_index(
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @C1 {
     function.def @compute() -> !struct.type<@C1> {
       %self = struct.new : !struct.type<@C1>
@@ -68,7 +68,7 @@ function.def @array_to_felt(%a: !array.type<7 x i1>) -> !felt.type {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @C2 {
     function.def @compute() -> !struct.type<@C2> {
       %self = struct.new : !struct.type<@C2>

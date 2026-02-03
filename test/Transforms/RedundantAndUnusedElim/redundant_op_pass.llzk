@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim %s 2>&1 | FileCheck %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @matrix : !array.type<7,3 x !felt.type>
 
@@ -55,7 +55,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component {
     struct.member @matrix : !array.type<7,3 x !felt.type>
 
@@ -105,12 +105,13 @@ module attributes {veridise.lang = "llzk"} {
 
 // This tests that nothing that shouldn't be removed is removed, since
 // there are no redundant ops to remove here.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_1.llzk" as @std
 }
 
-// CHECK-LABEL: module @std attributes {veridise.lang = "llzk"} {
-// CHECK-NEXT:    module @std attributes {veridise.lang = "llzk"} {
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  module @std attributes {llzk.lang = "zirgen"} {
+// CHECK-NEXT:    module @std attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:      module @risc0 {
 // CHECK-NEXT:        struct.def @ValU32 {
 // CHECK-NEXT:          struct.member @low : !felt.type
@@ -201,10 +202,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK-NEXT:  }
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @A {
     function.def @compute() -> !struct.type<@A> {
       %self = struct.new : !struct.type<@A>

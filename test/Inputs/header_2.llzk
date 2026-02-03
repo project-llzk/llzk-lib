@@ -1,6 +1,6 @@
 // Imported via `include_pass.llzk`
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_1.llzk" as @std
 
   function.def @test_func() {

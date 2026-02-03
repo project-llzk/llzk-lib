@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @compute(%a: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @compute(%a: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -78,7 +78,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @compute(%a: !felt.type, %d: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>

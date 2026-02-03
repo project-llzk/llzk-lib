@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_1.llzk" as @alias1
 
   function.def @test_func() {
@@ -8,8 +8,8 @@ module attributes {veridise.lang = "llzk"} {
     function.return
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:    module @alias1 attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
+//CHECK-NEXT:    module @alias1 attributes {llzk.lang} {
 //CHECK-NEXT:      function.def private @my_func_0()
 //CHECK-NEXT:      module @pkg_one {
 //CHECK-NEXT:        function.def private @my_func_1()
@@ -25,7 +25,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @outer {
     include.from "Inputs/header_1.llzk" as @alias2
 
@@ -35,9 +35,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
 //CHECK-NEXT:    module @outer {
-//CHECK-NEXT:      module @alias2 attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:      module @alias2 attributes {llzk.lang} {
 //CHECK-NEXT:        function.def private @my_func_0()
 //CHECK-NEXT:        module @pkg_one {
 //CHECK-NEXT:          function.def private @my_func_1()
@@ -54,7 +54,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     module @b {
       module @c {
@@ -68,11 +68,11 @@ module attributes {veridise.lang = "llzk"} {
     function.return
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
 //CHECK-NEXT:    module @a {
 //CHECK-NEXT:      module @b {
 //CHECK-NEXT:        module @c {
-//CHECK-NEXT:          module @alias3 attributes {veridise.lang = "llzk"} {
+//CHECK-NEXT:          module @alias3 attributes {llzk.lang} {
 //CHECK-NEXT:            function.def private @my_func_0()
 //CHECK-NEXT:            module @pkg_one {
 //CHECK-NEXT:              function.def private @my_func_1()
@@ -91,7 +91,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_2.llzk" as @double
 
   function.def @test_func() {
@@ -100,9 +100,9 @@ module attributes {veridise.lang = "llzk"} {
     function.return
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:    module @double attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:      module @std attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
+//CHECK-NEXT:    module @double attributes {llzk.lang} {
+//CHECK-NEXT:      module @std attributes {llzk.lang} {
 //CHECK-NEXT:        function.def private @my_func_0()
 //CHECK-NEXT:        module @pkg_one {
 //CHECK-NEXT:          function.def private @my_func_1()
@@ -124,7 +124,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   struct.def @C1 {
@@ -146,8 +146,8 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:    module @std attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
+//CHECK-NEXT:    module @std attributes {llzk.lang = "zirgen"} {
 //CHECK-NEXT:      module @risc0 {
 //CHECK-NEXT:        struct.def @ValU32 {
 //CHECK-NEXT:          struct.member @low : !felt.type
@@ -218,7 +218,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_9.llzk" as @libA
 
   struct.def @D {
@@ -238,9 +238,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-//CHECK-LABEL:  module attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL:  module attributes {llzk.lang} {
+//CHECK-NEXT:    module @libA attributes {llzk.lang} {
+//CHECK-NEXT:      module @libB attributes {llzk.lang} {
 //CHECK-NEXT:        module @libC {
 //CHECK-NEXT:          struct.def @StructC {
 //CHECK-NEXT:            function.def @compute() -> !struct.type<@libC::@StructC> attributes {function.allow_witness} {
@@ -271,7 +271,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_10.llzk" as @libA
 
   struct.def @StructD {
@@ -301,9 +301,9 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-//CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:    module @libA attributes {veridise.lang = "llzk"} {
-//CHECK-NEXT:      module @libB attributes {veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang} {
+//CHECK-NEXT:    module @libA attributes {llzk.lang} {
+//CHECK-NEXT:      module @libB attributes {llzk.lang} {
 //CHECK-NEXT:        module @libC {
 //CHECK-NEXT:          struct.def @StructC {
 //CHECK-NEXT:            function.def @compute() -> !struct.type<@libC::@StructC> attributes {function.allow_witness} {

@@ -1,7 +1,7 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes -llzk-print-constraint-dependency-graphs %s 2>&1 | FileCheck --enable-var-scope %s
 // RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes -llzk-print-constraint-dependency-graphs="intraprocedural" %s 2>&1 | FileCheck --enable-var-scope %s --check-prefix INTRA
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @NoConstraints {
     function.def @compute(%a: !felt.type) -> !struct.type<@NoConstraints> {
       %self = struct.new : !struct.type<@NoConstraints>
@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-LABEL: @NoConstraints ConstraintDependencyGraph { }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   function.def @global_add(%a: !felt.type, %b: !felt.type) -> !felt.type {
     %c = felt.add %a, %b
@@ -52,7 +52,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   function.def @global_add(%a: !felt.type, %b: !felt.type) -> !felt.type {
     %c = felt.add %a, %b
@@ -87,7 +87,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB {
     function.def @constrain(%self: !struct.type<@ComponentB>, %a: !felt.type, %b: !array.type<5 x !felt.type>) {
       constrain.in %b, %a : !array.type<5 x !felt.type>, !felt.type
@@ -109,7 +109,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   struct.def @EnsureZero {
     function.def @compute(%a: !felt.type) -> !struct.type<@EnsureZero> {
@@ -157,7 +157,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   struct.def @Passthrough {
     struct.member @out : !felt.type {llzk.pub}
@@ -211,7 +211,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArrayCheck {
     function.def @constrain(%self: !struct.type<@ArrayCheck>, %in: !array.type<5 x !felt.type>) {
       %fval = felt.const 7
@@ -236,7 +236,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArrayForCheck {
     function.def @constrain(%self: !struct.type<@ArrayForCheck>, %in: !array.type<5 x !felt.type>) {
       %lb = arith.constant 0 : index
@@ -265,7 +265,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   struct.def @ConstConstraints {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ConstConstraints> {
@@ -292,7 +292,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // Constrains arr[0] === @A and arr[2] === @B, leaving arr[1] unconstrained
   struct.def @ArrayConstrain<[@A, @B]> {
     function.def @compute(%arr: !array.type<3 x !felt.type>) -> !struct.type<@ArrayConstrain<[@A, @B]>> {
@@ -357,7 +357,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: @MatrixConstrain ConstraintDependencyGraph { }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // Constrains arr[1] === 7, leaving other indices unconstrained
   struct.def @ArrayConstrain {
     function.def @compute(%arr: !array.type<3 x !felt.type>) -> !struct.type<@ArrayConstrain> {
@@ -421,7 +421,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: @MatrixConstrain ConstraintDependencyGraph { }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @UnknownArrayConstrain<[@N]> {
     function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@UnknownArrayConstrain<[@N]>> {
       %self = struct.new : !struct.type<@UnknownArrayConstrain<[@N]>>
@@ -446,7 +446,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @UnknownArrayConstrain<[@N]> {
     function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@UnknownArrayConstrain<[@N]>> {
       %self = struct.new : !struct.type<@UnknownArrayConstrain<[@N]>>
@@ -492,7 +492,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: @UnknownMatrixConstrain ConstraintDependencyGraph { }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @zir
 }
 
@@ -516,7 +516,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_1.llzk" as @zir
 }
 
@@ -551,7 +551,7 @@ module attributes {veridise.lang = "llzk"} {
 // INTRA-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_2.llzk" as @zir
 }
 
@@ -601,7 +601,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_3.llzk" as @zir
 }
 
@@ -623,7 +623,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // This check ensures that calling the same function from multiple different
 // contexts will converge correctly.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/bits.llzk" as @bits
 }
 
@@ -696,7 +696,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // Testing external calls
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   function.def private @extern_add(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {extern}
 
@@ -723,7 +723,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
 
   function.def @global_add(%a: !felt.type, %b: !felt.type) -> !felt.type {
     %c = felt.add %a, %b
@@ -760,7 +760,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map = affine_map<()[s0] -> (s0)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Foo<[@N]> {
     struct.member @"$temp_0" : !array.type<#map x !felt.type> {column}
     struct.member @outp : !array.type<#map x !felt.type> {column}
@@ -873,7 +873,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map = affine_map<()[s0] -> (s0)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Foo<[@N]> {
     function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
       %self = struct.new : <@Foo<[@N]>>

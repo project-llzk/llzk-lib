@@ -1,6 +1,6 @@
 // Imported via `include_pass.llzk`
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_8.llzk" as @libB
 
   struct.def @StructB {

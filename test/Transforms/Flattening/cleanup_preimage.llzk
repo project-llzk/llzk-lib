@@ -5,7 +5,7 @@
 // removed. For example, `@MakeGuess<[@PEGS]>` has a concrete instantiation `@MakeGuess_4` and
 // there are no remaining uses of `@MakeGuess<[@PEGS]>` so it is removed.
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Main<[]> {
     function.def @compute() -> !struct.type<@Main<[]>> {
       %self = struct.new : !struct.type<@Main<[]>>

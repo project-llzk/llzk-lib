@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=3" -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // lowers constraints to be at most degree 3 polynomials
   struct.def @CmpConstraint {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
@@ -48,7 +48,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:         }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // in this test, no new members should be introduced.
   struct.def @CmpConstraint {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
