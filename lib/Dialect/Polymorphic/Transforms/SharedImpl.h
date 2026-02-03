@@ -55,9 +55,9 @@ static struct OpClassesWithStructTypes {
       llzk::array::ExtractArrayOp,
       llzk::constrain::EmitEqualityOp,
       llzk::constrain::EmitContainmentOp,
-      llzk::component::FieldDefOp,
-      llzk::component::FieldReadOp,
-      llzk::component::FieldWriteOp,
+      llzk::component::MemberDefOp,
+      llzk::component::MemberReadOp,
+      llzk::component::MemberWriteOp,
       llzk::component::CreateStructOp,
       llzk::function::FuncDefOp,
       llzk::function::ReturnOp,
@@ -260,7 +260,7 @@ mlir::RewritePatternSet newGeneralRewritePatternSet(
 mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
-/// based on the given `TypeConverter` for Ops listed in both fields of `OpClassesWithStructTypes`
+/// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
 /// and in `AdditionalOpClasses`.
 /// Additional legality checks can be included for certain ops that will run along with the default
 /// check. For an op to be considered legal all checks (default plus additional checks if any) must

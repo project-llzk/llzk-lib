@@ -13,6 +13,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
@@ -37,6 +38,11 @@ auto llzk::LLZKDialect::initialize() -> void {
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
+  >();
+
+  addOperations<
+    #define GET_OP_LIST
+    #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
   >();
   // clang-format on
   addInterfaces<LLZKDialectBytecodeInterface<LLZKDialect>>();

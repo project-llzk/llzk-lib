@@ -22,8 +22,7 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/POD.cpp
   Dialect/Poly.cpp 
   Dialect/String.cpp 
-  Dialect/Struct.cpp 
-  Dialect/Undef.cpp)
+  Dialect/Struct.cpp)
 target_link_libraries(
   LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} 
   MLIRIR

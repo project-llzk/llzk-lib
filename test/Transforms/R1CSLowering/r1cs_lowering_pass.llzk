@@ -3,7 +3,7 @@
 module attributes {veridise.lang = "llzk"} {
   // lowers constraints to be at most degree 2 polynomials
   struct.def @CmpConstraint {
-    struct.field @val: !felt.type {llzk.pub}
+    struct.member @val: !felt.type {llzk.pub}
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@CmpConstraint> {
       %self = struct.new : !struct.type<@CmpConstraint>
       function.return %self : !struct.type<@CmpConstraint>
@@ -13,7 +13,7 @@ module attributes {veridise.lang = "llzk"} {
       %z = felt.mul %a, %b
       %0 = felt.mul %b, %c
       %1 = felt.add %0, %z
-      %7 = struct.readf %self[@val] : !struct.type<@CmpConstraint>, !felt.type
+      %7 = struct.readm %self[@val] : !struct.type<@CmpConstraint>, !felt.type
       constrain.eq %1, %z : !felt.type
       %2 = felt.add %z, %b
       constrain.eq %7, %2 : !felt.type
@@ -50,7 +50,7 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   // lowers constraints to be at most degree 2 polynomials
   struct.def @CmpConstraint {
-    struct.field @val: !felt.type {llzk.pub}
+    struct.member @val: !felt.type {llzk.pub}
     function.def @compute(%a: !felt.type , %b: !felt.type, %c: !felt.type) -> !struct.type<@CmpConstraint> {
       %self = struct.new : !struct.type<@CmpConstraint>
       function.return %self : !struct.type<@CmpConstraint>
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
       %0 = felt.mul %b, %c
       %1 = felt.sub %0, %z
       %2 = felt.neg %1
-      %7 = struct.readf %self[@val] : !struct.type<@CmpConstraint>, !felt.type
+      %7 = struct.readm %self[@val] : !struct.type<@CmpConstraint>, !felt.type
       constrain.eq %2, %z : !felt.type
       %3 = felt.sub %z, %b
       constrain.eq %7, %3 : !felt.type

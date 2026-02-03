@@ -10,11 +10,11 @@
 module attributes {veridise.lang = "llzk"} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
-    struct.field @val: !array.type<@N x !poly.tvar<@T>>
+    struct.member @val: !array.type<@N x !poly.tvar<@T>>
 
     function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
       %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
-      struct.writef %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+      struct.writem %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
       function.return %self : !struct.type<@VarArray<[@N, @T]>>
     }
 
@@ -24,12 +24,12 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ToFelt<[@A]> {
-    struct.field @out: !felt.type {llzk.pub}
+    struct.member @out: !felt.type {llzk.pub}
 
     function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
       %self = struct.new : !struct.type<@ToFelt<[@A]>>
       %constA = poly.read_const @A : !felt.type
-      struct.writef %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.type
+      struct.writem %self[@out] = %constA : !struct.type<@ToFelt<[@A]>>, !felt.type
       function.return %self: !struct.type<@ToFelt<[@A]>>
     }
 
@@ -63,10 +63,10 @@ module attributes {veridise.lang = "llzk"} {
 
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
 // CHECK-LABEL: struct.def @"VarArray_11_\1A"<[@T]> {
-// CHECK-NEXT:    struct.field @val : !array.type<11 x !poly.tvar<@T>>
+// CHECK-NEXT:    struct.member @val : !array.type<11 x !poly.tvar<@T>>
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<11 x !poly.tvar<@T>>) -> !struct.type<@"VarArray_11_\1A"<[@T]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@"VarArray_11_\1A"<[@T]>>
-// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@"VarArray_11_\1A"<[@T]>>, !array.type<11 x !poly.tvar<@T>>
+// CHECK-NEXT:      struct.writem %[[V1]][@val] = %[[V0]] : <@"VarArray_11_\1A"<[@T]>>, !array.type<11 x !poly.tvar<@T>>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@"VarArray_11_\1A"<[@T]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@"VarArray_11_\1A"<[@T]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !array.type<11 x !poly.tvar<@T>>) attributes {function.allow_constraint} {
@@ -75,11 +75,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @ToFelt<[@A]> {
-// CHECK-NEXT:    struct.field @out : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt<[@A]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt<[@A]>>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
-// CHECK-NEXT:      struct.writef %[[V0]][@out] = %[[V1]] : <@ToFelt<[@A]>>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V0]][@out] = %[[V1]] : <@ToFelt<[@A]>>, !felt.type
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@ToFelt<[@A]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt<[@A]>>) attributes {function.allow_constraint} {

@@ -13,19 +13,19 @@ module attributes { veridise.lang = "llzk" } {
     }
   }
   struct.def @B<[@X, @Y, @N]> {
-    struct.field @a : !struct.type<@A<[@X, @Y, #map]>>
+    struct.member @a : !struct.type<@A<[@X, @Y, #map]>>
     function.def @compute(%a0: !array.type<@N x !felt.type>) -> !struct.type<@B<[@X, @Y, @N]>> {
       %self = struct.new : <@B<[@X, @Y, @N]>>
       %0 = poly.read_const @X : index
       %1 = poly.read_const @Y : index
       %2 = poly.unifiable_cast %a0 : (!array.type<@N x !felt.type>) -> !array.type<#map x !felt.type>
       %3 = function.call @A::@compute(%2){()[%0, %1]} : (!array.type<#map x !felt.type>) -> !struct.type<@A<[@X, @Y, #map]>>
-      struct.writef %self[@a] = %3 : !struct.type<@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
+      struct.writem %self[@a] = %3 : !struct.type<@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
       function.return %self : !struct.type<@B<[@X, @Y, @N]>>
     }
     function.def @constrain(%self: !struct.type<@B<[@X, @Y, @N]>>, %a0: !array.type<@N x !felt.type>) {
       %2 = poly.unifiable_cast %a0 : (!array.type<@N x !felt.type>) -> !array.type<#map x !felt.type>
-      %a = struct.readf %self[@a] : !struct.type<@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
+      %a = struct.readm %self[@a] : !struct.type<@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
       function.call @A::@constrain(%a, %2) : (!struct.type<@A<[@X, @Y, #map]>>, !array.type<#map x !felt.type>) -> ()
       function.return
     }
@@ -45,7 +45,7 @@ module attributes { veridise.lang = "llzk" } {
 //  CHECK-NEXT:     }
 //  CHECK-NEXT:   }
 // CHECK-LABEL:   struct.def @B<[@X, @Y, @N]> {
-//  CHECK-NEXT:     struct.field @a : !struct.type<@A<[@X, @Y, #map]>>
+//  CHECK-NEXT:     struct.member @a : !struct.type<@A<[@X, @Y, #map]>>
 // CHECK-LABEL:     function.def @compute
 //  CHECK-SAME:                  (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@B<[@X, @Y, @N]>> attributes {function.allow_witness} {
 //  CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@B<[@X, @Y, @N]>>
@@ -53,13 +53,13 @@ module attributes { veridise.lang = "llzk" } {
 //  CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = poly.read_const @Y : index
 //  CHECK-NEXT:       %[[T2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A0]] : (!array.type<@N x !felt.type>) -> !array.type<#map x !felt.type>
 //  CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = function.call @A::@compute(%[[T2]]) {()[%[[T0]], %[[T1]]]} : (!array.type<#map x !felt.type>) -> !struct.type<@A<[@X, @Y, #map]>>
-//  CHECK-NEXT:       struct.writef %[[SELF]][@a] = %[[T3]] : <@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
+//  CHECK-NEXT:       struct.writem %[[SELF]][@a] = %[[T3]] : <@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
 //  CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@B<[@X, @Y, @N]>>
 //  CHECK-NEXT:     }
 // CHECK-LABEL:     function.def @constrain
 //  CHECK-SAME:                    (%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@B<[@X, @Y, @N]>>, %[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
 //  CHECK-NEXT:       %[[T0:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A0]] : (!array.type<@N x !felt.type>) -> !array.type<#map x !felt.type>
-//  CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@a] : <@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
+//  CHECK-NEXT:       %[[T1:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@a] : <@B<[@X, @Y, @N]>>, !struct.type<@A<[@X, @Y, #map]>>
 //  CHECK-NEXT:       function.call @A::@constrain(%[[T1]], %[[T0]]) : (!struct.type<@A<[@X, @Y, #map]>>, !array.type<#map x !felt.type>) -> ()
 //  CHECK-NEXT:       function.return
 //  CHECK-NEXT:     }

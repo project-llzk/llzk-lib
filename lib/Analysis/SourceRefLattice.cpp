@@ -61,8 +61,8 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
 }
 
 std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-SourceRefLatticeValue::referenceField(SymbolLookupResult<FieldDefOp> fieldRef) const {
-  SourceRefIndex idx(fieldRef);
+SourceRefLatticeValue::referenceMember(SymbolLookupResult<MemberDefOp> memberRef) const {
+  SourceRefIndex idx(memberRef);
   auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
   return elementwiseTransform(transform);
 }

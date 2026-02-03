@@ -12,7 +12,6 @@
 #include <gtest/gtest.h>
 
 TEST(LLZKConstants, HaveCorrectValues) {
-  EXPECT_EQ(strcmp(LLZK_COMPONENT_NAME_SIGNAL, "Signal"), 0);
   EXPECT_EQ(strcmp(LLZK_FUNC_NAME_COMPUTE, "compute"), 0);
   EXPECT_EQ(strcmp(LLZK_FUNC_NAME_CONSTRAIN, "constrain"), 0);
   EXPECT_EQ(strcmp(LLZK_LANG_ATTR_NAME, "veridise.lang"), 0);

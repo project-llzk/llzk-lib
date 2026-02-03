@@ -6,7 +6,7 @@ module attributes {veridise.lang = "llzk"} {
   // Only constraints that the stored value is a boolean.
   // A real circuit would have more stuff
   struct.def @IsZero {
-    struct.field @bit : !felt.type
+    struct.member @bit : !felt.type
 
     function.def @compute(%a: !felt.type) -> !struct.type<@IsZero> {
       %self = struct.new : !struct.type<@IsZero>
@@ -18,12 +18,12 @@ module attributes {veridise.lang = "llzk"} {
         %2 = felt.const 1
         scf.yield %2 : !felt.type
       }
-      struct.writef %self[@bit] = %0 : !struct.type<@IsZero>, !felt.type
+      struct.writem %self[@bit] = %0 : !struct.type<@IsZero>, !felt.type
       function.return %self : !struct.type<@IsZero>
     }
 
     function.def @constrain(%self : !struct.type<@IsZero>, %a: !felt.type) {
-      %0 = struct.readf %self[@bit] : !struct.type<@IsZero>, !felt.type
+      %0 = struct.readm %self[@bit] : !struct.type<@IsZero>, !felt.type
       %1 = felt.const 1
       %2 = felt.sub %0, %1
       %3 = felt.mul %0, %2
@@ -35,7 +35,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:  struct.def @IsZero {
-// CHECK-NEXT:     struct.field @bit : !felt.type
+// CHECK-NEXT:     struct.member @bit : !felt.type
 // CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.type) -> !struct.type<@IsZero> attributes {function.allow_witness} {
 // CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@IsZero>
 // CHECK-NEXT:       %[[Z:[0-9a-zA-Z_.]+]] = felt.const 0
@@ -46,11 +46,11 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:         %[[T2:[0-9a-zA-Z_.]+]] = felt.const 1
 // CHECK-NEXT:         scf.yield %[[T2]] : !felt.type
 // CHECK-NEXT:       }
-// CHECK-NEXT:       struct.writef %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !felt.type
+// CHECK-NEXT:       struct.writem %[[SELF]][@bit] = %[[T1]] : <@IsZero>, !felt.type
 // CHECK-NEXT:       function.return %[[SELF]]
 // CHECK-NEXT:     }
 // CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_.]+]]: !struct.type<@IsZero>, %[[A0:[0-9a-zA-Z_.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = struct.readf %[[SELF]][@bit] : <@IsZero>, !felt.type
+// CHECK-NEXT:       %[[T0:[0-9a-zA-Z_.]+]] = struct.readm %[[SELF]][@bit] : <@IsZero>, !felt.type
 // CHECK-NEXT:       %[[T1:[0-9a-zA-Z_.]+]] = felt.const 1
 // CHECK-NEXT:       %[[T2:[0-9a-zA-Z_.]+]] = felt.sub %[[T0]], %[[T1]]
 // CHECK-NEXT:       %[[T3:[0-9a-zA-Z_.]+]] = felt.mul %[[T0]], %[[T2]]
@@ -65,14 +65,14 @@ module attributes {veridise.lang = "llzk"} {
   // This test case showcases that you don't need to add `scf.yield`
   // if the `scf.if` operation does not function.return a value.
   struct.def @C {
-    struct.field @data : !felt.type
+    struct.member @data : !felt.type
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@C> {
       %self = struct.new : !struct.type<@C>
       %z = felt.const 0
       %0 = bool.cmp ne(%a, %z)
       scf.if %0 {
-        struct.writef %self[@data] = %b : !struct.type<@C>, !felt.type
+        struct.writem %self[@data] = %b : !struct.type<@C>, !felt.type
       }
       function.return %self : !struct.type<@C>
     }
@@ -84,13 +84,13 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // CHECK-LABEL:  struct.def @C {
-// CHECK-NEXT:    struct.field @data : !felt.type
+// CHECK-NEXT:    struct.member @data : !felt.type
 // CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.]+]]: !felt.type) -> !struct.type<@C> attributes {function.allow_witness} {
 // CHECK-NEXT:     %[[SELF:[0-9a-zA-Z_.]+]] = struct.new : <@C>
 // CHECK-NEXT:     %[[T0:[0-9a-zA-Z_.]+]] = felt.const 0
 // CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.]+]] = bool.cmp ne(%[[A0]], %[[T0]])
 // CHECK-NEXT:     scf.if %[[T1]] {
-// CHECK-NEXT:       struct.writef %[[SELF]][@data] = %[[A1]] : <@C>, !felt.type
+// CHECK-NEXT:       struct.writem %[[SELF]][@data] = %[[A1]] : <@C>, !felt.type
 // CHECK-NEXT:     }
 // CHECK-NEXT:     function.return %[[SELF]]
 // CHECK-NEXT:   }

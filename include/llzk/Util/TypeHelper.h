@@ -116,12 +116,6 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
   }
 }
 
-/// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
-bool isSignalType(mlir::Type type);
-
-/// Return `true` iff the given StructType is referencing the `COMPONENT_NAME_SIGNAL` struct.
-bool isSignalType(component::StructType sType);
-
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
 

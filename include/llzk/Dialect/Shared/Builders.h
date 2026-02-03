@@ -169,13 +169,13 @@ public:
    */
   ModuleBuilder &insertConstrainCall(
       component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc,
-      mlir::Location fieldDefLoc
+      mlir::Location memberDefLoc
   );
   ModuleBuilder &insertConstrainCall(
       std::string_view caller, std::string_view callee, mlir::Location callLoc,
-      mlir::Location fieldDefLoc
+      mlir::Location memberDefLoc
   ) {
-    return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc, fieldDefLoc);
+    return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc, memberDefLoc);
   }
   ModuleBuilder &insertConstrainCall(std::string_view caller, std::string_view callee) {
     return insertConstrainCall(caller, callee, getUnknownLoc(), getUnknownLoc());

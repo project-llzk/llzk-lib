@@ -185,7 +185,7 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%self: !struct.type<@Component05A<[@Z]>>) { function.return }
   }
   struct.def @Component05B {
-    struct.field @f : !struct.type<@Component05A<[@N]>>
+    struct.member @f : !struct.type<@Component05A<[@N]>>
 
     function.def @compute() -> !struct.type<@Component05B> {
       %self = struct.new : !struct.type<@Component05B>
@@ -209,7 +209,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Component05B {
-// CHECK-NEXT:      struct.field @f : !struct.type<@Component05A<[@N]>>
+// CHECK-NEXT:      struct.member @f : !struct.type<@Component05A<[@N]>>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Component05B> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05B>
 // CHECK-NEXT:        function.return %[[V3]] : !struct.type<@Component05B>

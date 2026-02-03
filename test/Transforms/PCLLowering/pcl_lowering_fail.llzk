@@ -7,7 +7,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1>, !array.type<4,3 x !F>
+      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !array.type<4,3 x !F>
       function.return %self : !struct.type<@ComponentA2>
     }
 
@@ -18,7 +18,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentA1 {
-    struct.field @f1 : !array.type<4,3 x !F> {llzk.pub}
+    struct.member @f1 : !array.type<4,3 x !F> {llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -30,12 +30,12 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-// Expect the test to fail because the ComponentA1 has a non-felt field
+// Expect the test to fail because the ComponentA1 has a non-felt member
 !F = !felt.type
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA1 {
-    // expected-error@+1 {{Field must be felt type. Found '!array.type<4,3 x !felt.type>' for field: f1}}
-    struct.field @f1 : !array.type<4,3 x !F>
+    // expected-error@+1 {{Member must be felt type. Found '!array.type<4,3 x !felt.type>' for member: f1}}
+    struct.member @f1 : !array.type<4,3 x !F>
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {

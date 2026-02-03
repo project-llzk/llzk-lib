@@ -30,15 +30,15 @@
 
 namespace llzk {
 
-/// @brief Defines an index into an LLZK object. For structs, this is a field
+/// @brief Defines an index into an LLZK object. For structs, this is a member
 /// definition, and for arrays, this is an element index.
 /// Effectively a wrapper around a std::variant with extra utility methods.
 class SourceRefIndex {
   using IndexRange = std::pair<llvm::DynamicAPInt, llvm::DynamicAPInt>;
 
 public:
-  explicit SourceRefIndex(component::FieldDefOp f) : index(f) {}
-  explicit SourceRefIndex(SymbolLookupResult<component::FieldDefOp> f) : index(f) {}
+  explicit SourceRefIndex(component::MemberDefOp f) : index(f) {}
+  explicit SourceRefIndex(SymbolLookupResult<component::MemberDefOp> f) : index(f) {}
   explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
   explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
   explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
@@ -46,16 +46,16 @@ public:
       : index(IndexRange {toDynamicAPInt(low), toDynamicAPInt(high)}) {}
   explicit SourceRefIndex(IndexRange r) : index(r) {}
 
-  bool isField() const {
-    return std::holds_alternative<SymbolLookupResult<component::FieldDefOp>>(index) ||
-           std::holds_alternative<component::FieldDefOp>(index);
+  bool isMember() const {
+    return std::holds_alternative<SymbolLookupResult<component::MemberDefOp>>(index) ||
+           std::holds_alternative<component::MemberDefOp>(index);
   }
-  component::FieldDefOp getField() const {
-    ensure(isField(), "SourceRefIndex: field requested but not contained");
-    if (std::holds_alternative<component::FieldDefOp>(index)) {
-      return std::get<component::FieldDefOp>(index);
+  component::MemberDefOp getMember() const {
+    ensure(isMember(), "SourceRefIndex: member requested but not contained");
+    if (std::holds_alternative<component::MemberDefOp>(index)) {
+      return std::get<component::MemberDefOp>(index);
     }
-    return std::get<SymbolLookupResult<component::FieldDefOp>>(index).get();
+    return std::get<SymbolLookupResult<component::MemberDefOp>>(index).get();
   }
 
   bool isIndex() const { return std::holds_alternative<llvm::DynamicAPInt>(index); }
@@ -74,10 +74,10 @@ public:
   void print(mlir::raw_ostream &os) const;
 
   inline bool operator==(const SourceRefIndex &rhs) const {
-    if (isField() && rhs.isField()) {
-      // We compare the underlying fields, since the field could be in a symbol
+    if (isMember() && rhs.isMember()) {
+      // We compare the underlying members, since the member could be in a symbol
       // lookup or not.
-      return getField() == rhs.getField();
+      return getMember() == rhs.getMember();
     }
     if (isIndex() && rhs.isIndex()) {
       return getIndex() == rhs.getIndex();
@@ -97,13 +97,13 @@ public:
 
 private:
   /// Either:
-  /// 1. A field within a struct (possibly as a SymbolLookupResult to be cautious of external module
-  /// scopes)
+  /// 1. A member within a struct (possibly as a SymbolLookupResult to be cautious of external
+  /// module scopes)
   /// 2. An index into an array
   /// 3. A half-open range of indices into an array, for when we're unsure about a specific index
   /// Likely, this will be from [0, size) at this point.
   std::variant<
-      component::FieldDefOp, SymbolLookupResult<component::FieldDefOp>, llvm::DynamicAPInt,
+      component::MemberDefOp, SymbolLookupResult<component::MemberDefOp>, llvm::DynamicAPInt,
       IndexRange>
       index;
 };
@@ -118,12 +118,12 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// The object may be a reference to an individual felt, felt.const, or a composite type,
 /// like an array or an entire struct.
 /// - SourceRefs are allowed to reference composite types so that references can be generated
-/// for intermediate operations (e.g., readf to read a nested struct).
+/// for intermediate operations (e.g., readm to read a nested struct).
 ///
 /// These references are relative to a particular function call, so they are either (1) constants,
 /// or (2) rooted at a block argument (which is either "self" in @constrain
 /// functions or another input) and optionally contain indices into that block
-/// argument (e.g., a field reference in a struct or a index into an array).
+/// argument (e.g., a member reference in a struct or a index into an array).
 class SourceRef {
 
 public:
@@ -135,25 +135,25 @@ public:
   static std::vector<SourceRef>
   getAllSourceRefs(component::StructDefOp structDef, function::FuncDefOp fnOp);
 
-  /// Produce all possible SourceRefs from a specific field in a struct.
-  /// May produce multiple if the given field is of an aggregate type.
+  /// Produce all possible SourceRefs from a specific member in a struct.
+  /// May produce multiple if the given member is of an aggregate type.
   static std::vector<SourceRef>
-  getAllSourceRefs(component::StructDefOp structDef, component::FieldDefOp fieldDef);
+  getAllSourceRefs(component::StructDefOp structDef, component::MemberDefOp memberDef);
 
-  explicit SourceRef(mlir::BlockArgument b) : root(b), fieldRefs(), constantVal(std::nullopt) {}
+  explicit SourceRef(mlir::BlockArgument b) : root(b), memberRefs(), constantVal(std::nullopt) {}
   SourceRef(mlir::BlockArgument b, std::vector<SourceRefIndex> f)
-      : root(b), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
+      : root(b), memberRefs(std::move(f)), constantVal(std::nullopt) {}
 
   explicit SourceRef(component::CreateStructOp createOp)
-      : root(createOp), fieldRefs(), constantVal(std::nullopt) {}
+      : root(createOp), memberRefs(), constantVal(std::nullopt) {}
   SourceRef(component::CreateStructOp createOp, std::vector<SourceRefIndex> f)
-      : root(createOp), fieldRefs(std::move(f)), constantVal(std::nullopt) {}
+      : root(createOp), memberRefs(std::move(f)), constantVal(std::nullopt) {}
 
-  explicit SourceRef(felt::FeltConstantOp c) : root(std::nullopt), fieldRefs(), constantVal(c) {}
+  explicit SourceRef(felt::FeltConstantOp c) : root(std::nullopt), memberRefs(), constantVal(c) {}
   explicit SourceRef(mlir::arith::ConstantIndexOp c)
-      : root(std::nullopt), fieldRefs(), constantVal(c) {}
+      : root(std::nullopt), memberRefs(), constantVal(c) {}
   explicit SourceRef(polymorphic::ConstReadOp c)
-      : root(std::nullopt), fieldRefs(), constantVal(c) {}
+      : root(std::nullopt), memberRefs(), constantVal(c) {}
 
   mlir::Type getType() const;
 
@@ -178,7 +178,6 @@ public:
   bool isScalar() const {
     return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal() || isTypeVarVal();
   }
-  bool isSignal() const { return isSignalType(getType()); }
 
   bool isBlockArgument() const {
     return root.has_value() && std::holds_alternative<mlir::BlockArgument>(*root);
@@ -237,11 +236,11 @@ public:
 
   /// @brief Create a new reference that is the immediate prefix of this reference if possible.
   mlir::FailureOr<SourceRef> getParentPrefix() const {
-    if (isConstantFelt() || fieldRefs.empty()) {
+    if (isConstantFelt() || memberRefs.empty()) {
       return mlir::failure();
     }
     auto copy = *this;
-    copy.fieldRefs.pop_back();
+    copy.memberRefs.pop_back();
     return copy;
   }
 
@@ -251,7 +250,7 @@ public:
 
   SourceRef createChild(SourceRefIndex r) const {
     auto copy = *this;
-    copy.fieldRefs.push_back(r);
+    copy.memberRefs.push_back(r);
     return copy;
   }
 
@@ -260,7 +259,7 @@ public:
     return createChild(SourceRefIndex(other.getConstantIndexValue()));
   }
 
-  const std::vector<SourceRefIndex> &getPieces() const { return fieldRefs; }
+  const std::vector<SourceRefIndex> &getPieces() const { return memberRefs; }
 
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
@@ -290,7 +289,7 @@ private:
    */
   std::optional<std::variant<mlir::BlockArgument, component::CreateStructOp>> root;
 
-  std::vector<SourceRefIndex> fieldRefs;
+  std::vector<SourceRefIndex> memberRefs;
   // using mutable to reduce constant casts for certain get* functions.
   mutable std::optional<
       std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, polymorphic::ConstReadOp>>

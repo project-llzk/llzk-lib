@@ -42,8 +42,8 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA {
-    // expected-error@+1 {{'struct.field' op references unknown symbol "@T"}}
-    struct.field @f3 : !poly.tvar<@T>
+    // expected-error@+1 {{'struct.member' op references unknown symbol "@T"}}
+    struct.member @f3 : !poly.tvar<@T>
 
     function.def @compute() -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -92,7 +92,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentC2<[@T]> {
-    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+    struct.member @f : !array.type<2 x !poly.tvar<@T>>
 
     function.def @compute() -> !struct.type<@ComponentC2<[@T]>> {
       %self = struct.new : !struct.type<@ComponentC2<[@T]>>
@@ -100,7 +100,7 @@ module attributes {veridise.lang = "llzk"} {
       %a2 = function.call @ComponentC1::@compute() : () -> !struct.type<@ComponentC1<[7]>>
       // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!poly.tvar<@T>' vs '!struct.type<@ComponentC1<[5]>>'}}
       %arr = array.new %a1, %a2 : !array.type<2 x !poly.tvar<@T>>
-      struct.writef %self[@f] = %arr : !struct.type<@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
+      struct.writem %self[@f] = %arr : !struct.type<@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
       function.return %self : !struct.type<@ComponentC2<[@T]>>
     }
 

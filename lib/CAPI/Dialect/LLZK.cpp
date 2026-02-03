@@ -10,6 +10,7 @@
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include "llzk-c/Dialect/LLZK.h"
 
@@ -30,3 +31,5 @@ MlirAttribute llzkLoopBoundsAttrGet(MlirContext ctx, int64_t lower, int64_t uppe
 bool llzkAttributeIsALoopBoundsAttr(MlirAttribute attr) {
   return llvm::isa<LoopBoundsAttr>(unwrap(attr));
 }
+
+bool llzkOperationIsANonDetOp(MlirOperation op) { return llvm::isa<NonDetOp>(unwrap(op)); }

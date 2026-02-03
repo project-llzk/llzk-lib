@@ -28,7 +28,7 @@ module attributes {veridise.lang = "llzk"} {
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @CJ {
-    struct.field @s : !string.type
+    struct.member @s : !string.type
     function.def @compute() -> !struct.type<@CJ> {
       %self = struct.new : !struct.type<@CJ>
       function.return %self : !struct.type<@CJ>
@@ -37,7 +37,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @CJ {
-//CHECK-NEXT:    struct.field @s : !string.type
+//CHECK-NEXT:    struct.member @s : !string.type
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@CJ> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CJ>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@CJ>

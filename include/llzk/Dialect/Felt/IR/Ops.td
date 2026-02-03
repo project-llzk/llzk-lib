@@ -63,27 +63,6 @@ def LLZK_FeltConstantOp
   let hasFolder = 1;
 }
 
-def LLZK_FeltNonDetOp
-    : FeltDialectOp<"nondet", [ConstantLike, Pure,
-                               DeclareOpInterfaceMethods<
-                                   OpAsmOpInterface, ["getAsmResultNames"]>]> {
-  let summary = "uninitialized field element";
-  let description = [{
-    This operation produces a felt-typed SSA value without a specified value.
-    This can be used in `constrain()` functions in place of expressions that
-    cannot be included in constraints.
-
-    Example:
-
-    ```llzk
-    %0 = felt.nondet
-    ```
-  }];
-
-  let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = [{ attr-dict }];
-}
-
 //===------------------------------------------------------------------===//
 // Operators
 //===------------------------------------------------------------------===//

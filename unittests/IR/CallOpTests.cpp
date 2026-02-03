@@ -591,9 +591,9 @@ TEST_F(OpTests, test_calleeIs_withStructConstrain) {
   //     }
   //   }
   //   struct.def @StructA {
-  //     field @StructB1 : !struct.type<@StructB>
+  //     member @StructB1 : !struct.type<@StructB>
   //     function.def @constrain(%arg0: !struct.type<@StructA>) {
-  //       %0 = readf %arg0[@StructB1] : <@StructA>, !struct.type<@StructB>
+  //       %0 = readm %arg0[@StructB1] : <@StructA>, !struct.type<@StructB>
   //       call @StructB::@constrain(%0) : (!struct.type<@StructB>) -> ()
   //     }
   //     function.def @compute() -> !struct.type<@StructA> {

@@ -32,8 +32,8 @@ using namespace string;
 /* SourceRefIndex */
 
 void SourceRefIndex::print(raw_ostream &os) const {
-  if (isField()) {
-    os << '@' << getField().getName();
+  if (isMember()) {
+    os << '@' << getMember().getName();
   } else if (isIndex()) {
     os << getIndex();
   } else {
@@ -47,8 +47,8 @@ void SourceRefIndex::print(raw_ostream &os) const {
 }
 
 bool SourceRefIndex::operator<(const SourceRefIndex &rhs) const {
-  if (isField() && rhs.isField()) {
-    return NamedOpLocationLess<FieldDefOp> {}(getField(), rhs.getField());
+  if (isMember() && rhs.isMember()) {
+    return NamedOpLocationLess<MemberDefOp> {}(getMember(), rhs.getMember());
   }
   if (isIndex() && rhs.isIndex()) {
     return getIndex() < rhs.getIndex();
@@ -59,10 +59,10 @@ bool SourceRefIndex::operator<(const SourceRefIndex &rhs) const {
     return ll < rl || (ll == rl && lu < ru);
   }
 
-  if (isField()) {
+  if (isMember()) {
     return true;
   }
-  if (isIndex() && !rhs.isField()) {
+  if (isIndex() && !rhs.isMember()) {
     return true;
   }
 
@@ -83,7 +83,7 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
     auto r = c.getIndexRange();
     return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
   } else {
-    return OpHash<component::FieldDefOp> {}(c.getField());
+    return OpHash<component::MemberDefOp> {}(c.getMember());
   }
 }
 
@@ -133,7 +133,7 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDe
     res.insert(res.end(), argRes.begin(), argRes.end());
   }
 
-  // For compute functions, the "self" field is not arg0 like for constrain, but
+  // For compute functions, the "self" member is not arg0 like for constrain, but
   // rather the struct value returned from the function.
   if (fnOp.isStructCompute()) {
     Value selfVal = fnOp.getSelfValueFromCompute();
@@ -146,23 +146,23 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDe
   return res;
 }
 
-std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FieldDefOp fieldDef) {
+std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, MemberDefOp memberDef) {
   std::vector<SourceRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
-      fieldDef->getParentOfType<StructDefOp>() == structDef, "Field " + Twine(fieldDef.getName()) +
-                                                                 " is not a field of struct " +
-                                                                 Twine(structDef.getName())
+      memberDef->getParentOfType<StructDefOp>() == structDef,
+      "Member " + Twine(memberDef.getName()) + " is not a member of struct " +
+          Twine(structDef.getName())
   );
   FailureOr<ModuleOp> modOp = getRootModule(structDef);
   ensure(succeeded(modOp), "could not lookup module from struct " + Twine(structDef.getName()));
 
   // Get the self argument (like `FuncDefOp::getSelfValueFromConstrain()`)
   BlockArgument self = constrainFnOp.getArguments().front();
-  SourceRef fieldRef = SourceRef(self, {SourceRefIndex(fieldDef)});
+  SourceRef memberRef = SourceRef(self, {SourceRefIndex(memberDef)});
 
   SymbolTableCollection tables;
-  return getAllSourceRefs(tables, modOp.value(), fieldRef);
+  return getAllSourceRefs(tables, modOp.value(), memberRef);
 }
 
 Type SourceRef::getType() const {
@@ -174,15 +174,15 @@ Type SourceRef::getType() const {
     return std::get<ConstReadOp>(*constantVal).getType();
   } else {
     int array_derefs = 0;
-    int idx = fieldRefs.size() - 1;
-    while (idx >= 0 && fieldRefs[idx].isIndex()) {
+    int idx = memberRefs.size() - 1;
+    while (idx >= 0 && memberRefs[idx].isIndex()) {
       array_derefs++;
       idx--;
     }
 
     Type currTy = nullptr;
     if (idx >= 0) {
-      currTy = fieldRefs[idx].getField().getType();
+      currTy = memberRefs[idx].getMember().getType();
     } else {
       currTy = isBlockArgument() ? getBlockArgument().getType() : getCreateStructOp().getType();
     }
@@ -200,11 +200,11 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
     return false;
   }
 
-  if (root != prefix.root || fieldRefs.size() < prefix.fieldRefs.size()) {
+  if (root != prefix.root || memberRefs.size() < prefix.memberRefs.size()) {
     return false;
   }
-  for (size_t i = 0; i < prefix.fieldRefs.size(); i++) {
-    if (fieldRefs[i] != prefix.fieldRefs[i]) {
+  for (size_t i = 0; i < prefix.memberRefs.size(); i++) {
+    if (memberRefs[i] != prefix.memberRefs[i]) {
       return false;
     }
   }
@@ -216,8 +216,8 @@ FailureOr<std::vector<SourceRefIndex>> SourceRef::getSuffix(const SourceRef &pre
     return failure();
   }
   std::vector<SourceRefIndex> suffix;
-  for (size_t i = prefix.fieldRefs.size(); i < fieldRefs.size(); i++) {
-    suffix.push_back(fieldRefs[i]);
+  for (size_t i = prefix.memberRefs.size(); i < memberRefs.size(); i++) {
+    suffix.push_back(memberRefs[i]);
   }
   return suffix;
 }
@@ -232,7 +232,7 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
   }
 
   auto newSignalUsage = other;
-  newSignalUsage.fieldRefs.insert(newSignalUsage.fieldRefs.end(), suffix->begin(), suffix->end());
+  newSignalUsage.memberRefs.insert(newSignalUsage.memberRefs.end(), suffix->begin(), suffix->end());
   return newSignalUsage;
 }
 
@@ -253,21 +253,21 @@ std::vector<SourceRef> getAllChildren(
     SourceRef root
 ) {
   std::vector<SourceRef> res;
-  // Recurse into struct types by iterating over all their field definitions
-  for (auto f : structDefRes.get().getOps<FieldDefOp>()) {
-    // We want to store the FieldDefOp, but without the possibility of accidentally dropping the
+  // Recurse into struct types by iterating over all their member definitions
+  for (auto f : structDefRes.get().getOps<MemberDefOp>()) {
+    // We want to store the MemberDefOp, but without the possibility of accidentally dropping the
     // reference, so we need to re-lookup the symbol to create a SymbolLookupResult, which will
-    // manage the external module containing the field defs, if needed.
+    // manage the external module containing the member defs, if needed.
     // TODO: It would be nice if we could manage module op references differently
     // so we don't have to do this.
     auto structDefCopy = structDefRes;
-    auto fieldLookup = lookupSymbolIn<FieldDefOp>(
+    auto memberLookup = lookupSymbolIn<MemberDefOp>(
         tables, SymbolRefAttr::get(f.getContext(), f.getSymNameAttr()), std::move(structDefCopy),
         mod.getOperation()
     );
-    ensure(succeeded(fieldLookup), "could not get SymbolLookupResult of existing FieldDefOp");
-    SourceRef childRef = root.createChild(SourceRefIndex(fieldLookup.value()));
-    // Make a reference to the current field, regardless of if it is a composite
+    ensure(succeeded(memberLookup), "could not get SymbolLookupResult of existing MemberDefOp");
+    SourceRef childRef = root.createChild(SourceRefIndex(memberLookup.value()));
+    // Make a reference to the current member, regardless of if it is a composite
     // type or not.
     res.push_back(childRef);
   }
@@ -304,7 +304,7 @@ void SourceRef::print(raw_ostream &os) const {
       os << "%arg" << getInputNum();
     }
 
-    for (auto f : fieldRefs) {
+    for (auto f : memberRefs) {
       os << "[" << f << "]";
     }
   }
@@ -316,7 +316,7 @@ bool SourceRef::operator==(const SourceRef &rhs) const {
     DynamicAPInt lhsVal = getConstantValue(), rhsVal = rhs.getConstantValue();
     return getType() == rhs.getType() && lhsVal == rhsVal;
   }
-  return (root == rhs.root) && (fieldRefs == rhs.fieldRefs) && (constantVal == rhs.constantVal);
+  return (root == rhs.root) && (memberRefs == rhs.memberRefs) && (constantVal == rhs.constantVal);
 }
 
 // required for EquivalenceClasses usage
@@ -374,14 +374,14 @@ bool SourceRef::operator<(const SourceRef &rhs) const {
     llvm_unreachable("unhandled operator< case");
   }
 
-  for (size_t i = 0; i < fieldRefs.size() && i < rhs.fieldRefs.size(); i++) {
-    if (fieldRefs[i] < rhs.fieldRefs[i]) {
+  for (size_t i = 0; i < memberRefs.size() && i < rhs.memberRefs.size(); i++) {
+    if (memberRefs[i] < rhs.memberRefs[i]) {
       return true;
-    } else if (fieldRefs[i] > rhs.fieldRefs[i]) {
+    } else if (memberRefs[i] > rhs.memberRefs[i]) {
       return false;
     }
   }
-  return fieldRefs.size() < rhs.fieldRefs.size();
+  return memberRefs.size() < rhs.memberRefs.size();
 }
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
@@ -394,7 +394,7 @@ size_t SourceRef::Hash::operator()(const SourceRef &val) const {
 
     size_t hash = val.isBlockArgument() ? std::hash<unsigned> {}(val.getInputNum())
                                         : OpHash<CreateStructOp> {}(val.getCreateStructOp());
-    for (auto f : val.fieldRefs) {
+    for (auto f : val.memberRefs) {
       hash ^= f.getHash();
     }
     return hash;

@@ -2,35 +2,35 @@
 
 module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @ResultOfComputeUnused {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@ResultOfComputeUnused> {
       %self = struct.new : !struct.type<@ResultOfComputeUnused>
       %12 = felt.const 12
-      struct.writef %self[@f] = %12 : !struct.type<@ResultOfComputeUnused>, !felt.type
+      struct.writem %self[@f] = %12 : !struct.type<@ResultOfComputeUnused>, !felt.type
       function.return %self : !struct.type<@ResultOfComputeUnused>
     }
 
     function.def @constrain(%self: !struct.type<@ResultOfComputeUnused>) {
       %12 = felt.const 12
-      %c = struct.readf %self[@f] : !struct.type<@ResultOfComputeUnused>, !felt.type
+      %c = struct.readm %self[@f] : !struct.type<@ResultOfComputeUnused>, !felt.type
       constrain.eq %12, %c : !felt.type
       function.return
     }
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@ResultOfComputeUnused>
+    struct.member @fa : !struct.type<@ResultOfComputeUnused>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{'function.call' op "@compute" result should be written to a field.}}
+      // expected-error@+1 {{'function.call' op "@compute" result should be written to a member.}}
       %a = function.call @ResultOfComputeUnused::@compute() : () -> !struct.type<@ResultOfComputeUnused>
       function.return %self : !struct.type<@Main>
     }
 
     function.def @constrain(%self: !struct.type<@Main>) {
-      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@ResultOfComputeUnused>
+      %a = struct.readm %self[@fa] : !struct.type<@Main>, !struct.type<@ResultOfComputeUnused>
       function.call @ResultOfComputeUnused::@constrain(%a) : (!struct.type<@ResultOfComputeUnused>) -> ()
       function.return
     }
@@ -40,40 +40,40 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 
 module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   struct.def @ResultOfComputeDoubleUse {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute() -> !struct.type<@ResultOfComputeDoubleUse> {
       %self = struct.new : !struct.type<@ResultOfComputeDoubleUse>
       %12 = felt.const 12
-      struct.writef %self[@f] = %12 : !struct.type<@ResultOfComputeDoubleUse>, !felt.type
+      struct.writem %self[@f] = %12 : !struct.type<@ResultOfComputeDoubleUse>, !felt.type
       function.return %self : !struct.type<@ResultOfComputeDoubleUse>
     }
 
     function.def @constrain(%self: !struct.type<@ResultOfComputeDoubleUse>) {
       %12 = felt.const 12
-      %c = struct.readf %self[@f] : !struct.type<@ResultOfComputeDoubleUse>, !felt.type
+      %c = struct.readm %self[@f] : !struct.type<@ResultOfComputeDoubleUse>, !felt.type
       constrain.eq %12, %c : !felt.type
       function.return
     }
   }
 
   struct.def @Main {
-    struct.field @fa : !struct.type<@ResultOfComputeDoubleUse>
-    struct.field @fb : !struct.type<@ResultOfComputeDoubleUse>
+    struct.member @fa : !struct.type<@ResultOfComputeDoubleUse>
+    struct.member @fb : !struct.type<@ResultOfComputeDoubleUse>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{'function.call' op "@compute" result should not be written to more than one field.}}
+      // expected-error@+1 {{'function.call' op "@compute" result should not be written to more than one member.}}
       %a = function.call @ResultOfComputeDoubleUse::@compute() : () -> !struct.type<@ResultOfComputeDoubleUse>
       // expected-note@+1 {{written here}}
-      struct.writef %self[@fa] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
+      struct.writem %self[@fa] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
       // expected-note@+1 {{written here}}
-      struct.writef %self[@fb] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
+      struct.writem %self[@fb] = %a : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
       function.return %self : !struct.type<@Main>
     }
 
     function.def @constrain(%self: !struct.type<@Main>) {
-      %a = struct.readf %self[@fa] : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
+      %a = struct.readm %self[@fa] : !struct.type<@Main>, !struct.type<@ResultOfComputeDoubleUse>
       function.call @ResultOfComputeDoubleUse::@constrain(%a) : (!struct.type<@ResultOfComputeDoubleUse>) -> ()
       function.return
     }
@@ -85,34 +85,34 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
   function.def private @temp(%0: !struct.type<@StructAsParamToFreeFunc>)
 
   struct.def @StructAsParamToFreeFunc {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type
 
     function.def @compute(%z: !felt.type) -> !struct.type<@StructAsParamToFreeFunc> {
       // expected-error@+1 {{'struct.new' op as argument to a no-body free function is not supported by this pass.}}
       %self = struct.new : !struct.type<@StructAsParamToFreeFunc>
-      struct.writef %self[@f1] = %z : !struct.type<@StructAsParamToFreeFunc>, !felt.type
-      struct.writef %self[@f2] = %z : !struct.type<@StructAsParamToFreeFunc>, !felt.type
+      struct.writem %self[@f1] = %z : !struct.type<@StructAsParamToFreeFunc>, !felt.type
+      struct.writem %self[@f2] = %z : !struct.type<@StructAsParamToFreeFunc>, !felt.type
       function.return %self : !struct.type<@StructAsParamToFreeFunc>
     }
 
     function.def @constrain(%self: !struct.type<@StructAsParamToFreeFunc>, %z: !felt.type) {
-      %a = struct.readf %self[@f1] : !struct.type<@StructAsParamToFreeFunc>, !felt.type
+      %a = struct.readm %self[@f1] : !struct.type<@StructAsParamToFreeFunc>, !felt.type
       constrain.eq %a, %z : !felt.type
-      %b = struct.readf %self[@f2] : !struct.type<@StructAsParamToFreeFunc>, !felt.type
+      %b = struct.readm %self[@f2] : !struct.type<@StructAsParamToFreeFunc>, !felt.type
       constrain.eq %b, %z : !felt.type
       function.return
     }
   }
 
   struct.def @Main {
-    struct.field @f2 : !struct.type<@StructAsParamToFreeFunc>
+    struct.member @f2 : !struct.type<@StructAsParamToFreeFunc>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %z = felt.const 42
       %q = function.call @StructAsParamToFreeFunc::@compute(%z) : (!felt.type) -> !struct.type<@StructAsParamToFreeFunc>
-      struct.writef %self[@f2] = %q : !struct.type<@Main>, !struct.type<@StructAsParamToFreeFunc>
+      struct.writem %self[@f2] = %q : !struct.type<@Main>, !struct.type<@StructAsParamToFreeFunc>
       // expected-note@+1 {{used by this call}}
       function.call @temp(%q) : (!struct.type<@StructAsParamToFreeFunc>) -> ()
       function.return %self : !struct.type<@Main>
@@ -120,7 +120,7 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.type<@Main>) {
       %z = felt.const 42
-      %q = struct.readf %self[@f2] : !struct.type<@Main>, !struct.type<@StructAsParamToFreeFunc>
+      %q = struct.readm %self[@f2] : !struct.type<@Main>, !struct.type<@StructAsParamToFreeFunc>
       function.call @StructAsParamToFreeFunc::@constrain(%q, %z) : (!struct.type<@StructAsParamToFreeFunc>,!felt.type) -> ()
       function.return
     }
@@ -139,17 +139,17 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 
   // expected-error@+1 {{Cannot inline structs with parameters.}}
   struct.def @ComponentX<[@C]> {
-    struct.field @f2 : !struct.type<@ComponentY<[5, @C]>>
+    struct.member @f2 : !struct.type<@ComponentY<[5, @C]>>
 
     function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
       %self = struct.new : !struct.type<@ComponentX<[@C]>>
       %x = function.call @ComponentY::@compute() : () -> (!struct.type<@ComponentY<[5, @C]>>)
-      struct.writef %self[@f2] = %x : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
+      struct.writem %self[@f2] = %x : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
       function.return %self : !struct.type<@ComponentX<[@C]>>
     }
 
     function.def @constrain(%self: !struct.type<@ComponentX<[@C]>>) {
-      %b = struct.readf %self[@f2] : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
+      %b = struct.readm %self[@f2] : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
       function.call @ComponentY::@constrain(%b) : (!struct.type<@ComponentY<[5, @C]>>) -> ()
       function.return
     }

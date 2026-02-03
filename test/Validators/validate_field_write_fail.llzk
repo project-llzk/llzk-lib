@@ -1,15 +1,15 @@
-// RUN: llzk-opt -split-input-file -llzk-validate-field-writes -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -llzk-validate-member-writes -verify-diagnostics %s
 
 module attributes {veridise.lang = "llzk"} {
   struct.def @MultipleWrites {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute(%1: !felt.type) -> !struct.type<@MultipleWrites> {
       %self = struct.new : !struct.type<@MultipleWrites>
       // expected-note@+1 {{earlier write here}}
-      struct.writef %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
-      // expected-warning@+1 {{found multiple writes to 'struct.field' named "@f"}}
-      struct.writef %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
+      struct.writem %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
+      // expected-warning@+1 {{found multiple writes to 'struct.member' named "@f"}}
+      struct.writem %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
       function.return %self : !struct.type<@MultipleWrites>
     }
 
@@ -19,15 +19,15 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @MissingWrite {
-    struct.field @a : index
-    struct.field @b : index
-    struct.field @c : index
+    struct.member @a : index
+    struct.member @b : index
+    struct.member @c : index
 
-    // expected-warning@+1 {{'function.def' op "@compute" missing write to 'struct.field' named "@b"}}
+    // expected-warning@+1 {{'function.def' op "@compute" missing write to 'struct.member' named "@b"}}
     function.def @compute(%1: index) -> !struct.type<@MissingWrite> {
       %self = struct.new : !struct.type<@MissingWrite>
-      struct.writef %self[@a] = %1 : !struct.type<@MissingWrite>, index
-      struct.writef %self[@c] = %1 : !struct.type<@MissingWrite>, index
+      struct.writem %self[@a] = %1 : !struct.type<@MissingWrite>, index
+      struct.writem %self[@c] = %1 : !struct.type<@MissingWrite>, index
       function.return %self : !struct.type<@MissingWrite>
     }
 
@@ -37,13 +37,13 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   struct.def @NoWrites {
-    struct.field @a : !felt.type
-    struct.field @b : !felt.type
-    struct.field @c : !felt.type
+    struct.member @a : !felt.type
+    struct.member @b : !felt.type
+    struct.member @c : !felt.type
 
-    // expected-warning@+3 {{'function.def' op "@compute" missing write to 'struct.field' named "@a"}}
-    // expected-warning@+2 {{'function.def' op "@compute" missing write to 'struct.field' named "@b"}}
-    // expected-warning@+1 {{'function.def' op "@compute" missing write to 'struct.field' named "@c"}}
+    // expected-warning@+3 {{'function.def' op "@compute" missing write to 'struct.member' named "@a"}}
+    // expected-warning@+2 {{'function.def' op "@compute" missing write to 'struct.member' named "@b"}}
+    // expected-warning@+1 {{'function.def' op "@compute" missing write to 'struct.member' named "@c"}}
     function.def @compute() -> !struct.type<@NoWrites> {
       %self = struct.new : !struct.type<@NoWrites>
       function.return %self : !struct.type<@NoWrites>

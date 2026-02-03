@@ -12,18 +12,18 @@
 ///
 /// The steps of this transformation are as follows:
 ///
-/// 1. Run a dialect conversion that replaces `ArrayType` fields with `N` scalar fields.
+/// 1. Run a dialect conversion that replaces `ArrayType` members with `N` scalar members.
 ///
 /// 2. Run a dialect conversion that does the following:
 ///
-///    - Replace `FieldReadOp` and `FieldWriteOp` targeting the fields that were split in step 1 so
-///      they instead perform scalar reads and writes from the new fields. The transformation is
-///      local to the current op. Therefore, when replacing the `FieldReadOp` a new array is created
-///      locally and all uses of the `FieldReadOp` are replaced with the new array Value, then each
-///      scalar field read is followed by scalar write into the new array. Similarly, when replacing
-///      a `FieldWriteOp`, each element in the array operand needs a scalar read from the array
-///      followed by a scalar write to the new field. Making only local changes keeps this step
-///      simple and later steps will optimize.
+///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the members that were split in step 1
+///      so they instead perform scalar reads and writes from the new members. The transformation is
+///      local to the current op. Therefore, when replacing the `MemberReadOp` a new array is
+///      created locally and all uses of the `MemberReadOp` are replaced with the new array Value,
+///      then each scalar member read is followed by scalar write into the new array. Similarly,
+///      when replacing a `MemberWriteOp`, each element in the array operand needs a scalar read
+///      from the array followed by a scalar write to the new member. Making only local changes
+///      keeps this step simple and later steps will optimize.
 ///
 ///    - Replace `ArrayLengthOp` with the constant size of the selected dimension.
 ///
@@ -34,7 +34,7 @@
 ///
 ///    - Split arrays to scalars in `FuncDefOp`, `CallOp`, and `ReturnOp` and insert the necessary
 ///      create/read/write ops so the changes are as local as possible (just as described for
-///      `FieldReadOp` and `FieldWriteOp`)
+///      `MemberReadOp` and `MemberWriteOp`)
 ///
 /// 3. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1 (to
 ///    prepare for "mem2reg" pass because it's API does not allow for indexing to split aggregates).
@@ -47,7 +47,7 @@
 /// be necessary before/during this pass so that multiple writes to the same index can be handled
 /// properly while they still exist.
 ///
-/// Note: This transformation will introduce an undef op when there exists a read from an array
+/// Note: This transformation will introduce a `nondet` op when there exists a read from an array
 /// index that was not earlier written to.
 ///
 //===----------------------------------------------------------------------===//
@@ -532,31 +532,31 @@ public:
   }
 };
 
-/// field name and type
-using FieldInfo = std::pair<StringAttr, Type>;
-/// ArrayAttr index -> scalar field info
-using LocalFieldReplacementMap = DenseMap<ArrayAttr, FieldInfo>;
-/// struct -> array-type field name -> LocalFieldReplacementMap
-using FieldReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalFieldReplacementMap>>;
+/// member name and type
+using MemberInfo = std::pair<StringAttr, Type>;
+/// ArrayAttr index -> scalar member info
+using LocalMemberReplacementMap = DenseMap<ArrayAttr, MemberInfo>;
+/// struct -> array-type member name -> LocalMemberReplacementMap
+using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
 
-class SplitArrayInFieldDefOp : public OpConversionPattern<FieldDefOp> {
+class SplitArrayInMemberDefOp : public OpConversionPattern<MemberDefOp> {
   SymbolTableCollection &tables;
-  FieldReplacementMap &repMapRef;
+  MemberReplacementMap &repMapRef;
 
 public:
-  SplitArrayInFieldDefOp(
-      MLIRContext *ctx, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap
+  SplitArrayInMemberDefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap
   )
-      : OpConversionPattern<FieldDefOp>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+      : OpConversionPattern<MemberDefOp>(ctx), tables(symTables), repMapRef(memberRepMap) {}
 
-  inline static bool legal(FieldDefOp op) { return !containsSplittableArrayType(op.getType()); }
+  inline static bool legal(MemberDefOp op) { return !containsSplittableArrayType(op.getType()); }
 
-  LogicalResult match(FieldDefOp op) const override { return failure(legal(op)); }
+  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
 
-  void rewrite(FieldDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  void rewrite(MemberDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     StructDefOp inStruct = op->getParentOfType<StructDefOp>();
     assert(inStruct);
-    LocalFieldReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
+    LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
 
     ArrayType arrTy = dyn_cast<ArrayType>(op.getType());
     assert(arrTy); // follows from legal() check
@@ -566,119 +566,122 @@ public:
 
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
-      // Create scalar version of the field
-      FieldDefOp newField =
-          rewriter.create<FieldDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
-      newField.setPublicAttr(op.hasPublicAttr());
+      // Create scalar version of the member
+      MemberDefOp newMember = rewriter.create<MemberDefOp>(
+          op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn(), op.getSignal()
+      );
+      newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
-      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);
+      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newMember), elemTy);
     }
     rewriter.eraseOp(op);
   }
 };
 
-/// Common implementation for handling `FieldWriteOp` and `FieldReadOp`.
+/// Common implementation for handling `MemberWriteOp` and `MemberReadOp`.
 ///
 /// @tparam ImplClass         the concrete subclass
-/// @tparam FieldRefOpClass   the concrete op class
+/// @tparam MemberRefOpClass   the concrete op class
 /// @tparam GenHeaderType     return type of `genHeader()`, used to pass data to `forIndex()`
 template <
-    typename ImplClass, HasInterface<FieldRefOpInterface> FieldRefOpClass, typename GenHeaderType>
-class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpClass> {
+    typename ImplClass, HasInterface<MemberRefOpInterface> MemberRefOpClass, typename GenHeaderType>
+class SplitArrayInMemberRefOp : public OpConversionPattern<MemberRefOpClass> {
   SymbolTableCollection &tables;
-  const FieldReplacementMap &repMapRef;
+  const MemberReplacementMap &repMapRef;
 
   // static check to ensure the functions are implemented in all subclasses
   inline static void ensureImplementedAtCompile() {
     static_assert(
-        sizeof(FieldRefOpClass) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
+        sizeof(MemberRefOpClass) == 0, "SplitArrayInMemberRefOp not implemented for requested type."
     );
   }
 
 protected:
-  using OpAdaptor = typename FieldRefOpClass::Adaptor;
+  using OpAdaptor = typename MemberRefOpClass::Adaptor;
 
   /// Executed at the start of `rewrite()` to (optionally) generate anything that should be before
   /// the element-wise operations that will be added by `forIndex()`.
-  static GenHeaderType genHeader(FieldRefOpClass, ConversionPatternRewriter &) {
+  static GenHeaderType genHeader(MemberRefOpClass, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
     llvm_unreachable("must have concrete instantiation");
   }
 
-  /// Executed for each multi-dimensional array index in the ArrayType of the original field to
-  /// generate the element-wise scalar operations on the new scalar fields.
+  /// Executed for each multi-dimensional array index in the ArrayType of the original member to
+  /// generate the element-wise scalar operations on the new scalar members.
   static void
-  forIndex(Location, GenHeaderType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
+  forIndex(Location, GenHeaderType, ArrayAttr, MemberInfo, OpAdaptor, ConversionPatternRewriter &) {
     ensureImplementedAtCompile();
     llvm_unreachable("must have concrete instantiation");
   }
 
 public:
-  SplitArrayInFieldRefOp(
-      MLIRContext *ctx, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap
+  SplitArrayInMemberRefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap
   )
-      : OpConversionPattern<FieldRefOpClass>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+      : OpConversionPattern<MemberRefOpClass>(ctx), tables(symTables), repMapRef(memberRepMap) {}
 
-  static bool legal(FieldRefOpClass) {
+  static bool legal(MemberRefOpClass) {
     ensureImplementedAtCompile();
     llvm_unreachable("must have concrete instantiation");
     return false;
   }
 
-  LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }
+  LogicalResult match(MemberRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
   void rewrite(
-      FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+      MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
+    StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
     assert(succeeded(tgtStructDef));
 
     GenHeaderType prefixResult = ImplClass::genHeader(op, rewriter);
 
-    const LocalFieldReplacementMap &idxToName =
-        repMapRef.at(tgtStructDef->get()).at(op.getFieldNameAttr().getAttr());
-    // Split the array field write into a series of read array + write scalar field
-    for (auto [idx, newField] : idxToName) {
-      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newField, adaptor, rewriter);
+    const LocalMemberReplacementMap &idxToName =
+        repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
+    // Split the array member write into a series of read array + write scalar member
+    for (auto [idx, newMember] : idxToName) {
+      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newMember, adaptor, rewriter);
     }
     rewriter.eraseOp(op);
   }
 };
 
-class SplitArrayInFieldWriteOp
-    : public SplitArrayInFieldRefOp<SplitArrayInFieldWriteOp, FieldWriteOp, void *> {
+class SplitArrayInMemberWriteOp
+    : public SplitArrayInMemberRefOp<SplitArrayInMemberWriteOp, MemberWriteOp, void *> {
 public:
-  using SplitArrayInFieldRefOp<
-      SplitArrayInFieldWriteOp, FieldWriteOp, void *>::SplitArrayInFieldRefOp;
+  using SplitArrayInMemberRefOp<
+      SplitArrayInMemberWriteOp, MemberWriteOp, void *>::SplitArrayInMemberRefOp;
 
-  static bool legal(FieldWriteOp op) { return !containsSplittableArrayType(op.getVal().getType()); }
+  static bool legal(MemberWriteOp op) {
+    return !containsSplittableArrayType(op.getVal().getType());
+  }
 
-  static void *genHeader(FieldWriteOp, ConversionPatternRewriter &) { return nullptr; }
+  static void *genHeader(MemberWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
   static void forIndex(
-      Location loc, void *, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      Location loc, void *, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
     ReadArrayOp scalarRead = genRead(loc, adaptor.getVal(), idx, rewriter);
-    rewriter.create<FieldWriteOp>(
-        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newField.first), scalarRead
+    rewriter.create<MemberWriteOp>(
+        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
 
-class SplitArrayInFieldReadOp
-    : public SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, CreateArrayOp> {
+class SplitArrayInMemberReadOp
+    : public SplitArrayInMemberRefOp<SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp> {
 public:
-  using SplitArrayInFieldRefOp<
-      SplitArrayInFieldReadOp, FieldReadOp, CreateArrayOp>::SplitArrayInFieldRefOp;
+  using SplitArrayInMemberRefOp<
+      SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp>::SplitArrayInMemberRefOp;
 
-  static bool legal(FieldReadOp op) {
+  static bool legal(MemberReadOp op) {
     return !containsSplittableArrayType(op.getResult().getType());
   }
 
-  static CreateArrayOp genHeader(FieldReadOp op, ConversionPatternRewriter &rewriter) {
+  static CreateArrayOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
     CreateArrayOp newArray =
         rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
     rewriter.replaceAllUsesWith(op, newArray);
@@ -686,22 +689,23 @@ public:
   }
 
   static void forIndex(
-      Location loc, CreateArrayOp newArray, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+      Location loc, CreateArrayOp newArray, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    FieldReadOp scalarRead =
-        rewriter.create<FieldReadOp>(loc, newField.second, adaptor.getComponent(), newField.first);
+    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
+        loc, newMember.second, adaptor.getComponent(), newMember.first
+    );
     genWrite(loc, newArray, idx, scalarRead, rewriter);
   }
 };
 
 LogicalResult
-step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap) {
+step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
 
-  patterns.add<SplitArrayInFieldDefOp>(ctx, symTables, fieldRepMap);
+  patterns.add<SplitArrayInMemberDefOp>(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
@@ -710,14 +714,14 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fie
       component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect,
       scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
-  target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
+  target.addDynamicallyLegalOp<MemberDefOp>(SplitArrayInMemberDefOp::legal);
 
-  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array fields\n";);
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array members\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
 LogicalResult
-step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap) {
+step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
@@ -735,17 +739,16 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
 
   patterns.add<
       // clang-format off
-      SplitArrayInFieldWriteOp,
-      SplitArrayInFieldReadOp
+      SplitArrayInMemberWriteOp,
+      SplitArrayInMemberReadOp
       // clang-format on
-      >(ctx, symTables, fieldRepMap);
+      >(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, component::StructDialect,
       constrain::ConstrainDialect, felt::FeltDialect, function::FunctionDialect,
-      global::GlobalDialect, include::IncludeDialect, undef::UndefDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      global::GlobalDialect, include::IncludeDialect, arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);
@@ -754,8 +757,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
   target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);
-  target.addDynamicallyLegalOp<FieldWriteOp>(SplitArrayInFieldWriteOp::legal);
-  target.addDynamicallyLegalOp<FieldReadOp>(SplitArrayInFieldReadOp::legal);
+  target.addDynamicallyLegalOp<MemberWriteOp>(SplitArrayInMemberWriteOp::legal);
+  target.addDynamicallyLegalOp<MemberReadOp>(SplitArrayInMemberReadOp::legal);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 2: update/split other array ops\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
@@ -763,20 +766,20 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
 
 LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   SymbolTableCollection symTables;
-  FieldReplacementMap fieldRepMap;
+  MemberReplacementMap memberRepMap;
 
-  // This is divided into 2 steps to simplify the implementation for field-related ops. The issue is
-  // that the conversions for field read/write expect the mapping of array index to field name+type
-  // to already be populated for the referenced field (although this could be computed on demand if
-  // desired but it complicates the implementation a bit).
-  if (failed(step1(modOp, symTables, fieldRepMap))) {
+  // This is divided into 2 steps to simplify the implementation for member-related ops. The issue
+  // is that the conversions for member read/write expect the mapping of array index to member
+  // name+type to already be populated for the referenced member (although this could be computed on
+  // demand if desired but it complicates the implementation a bit).
+  if (failed(step1(modOp, symTables, memberRepMap))) {
     return failure();
   }
   LLVM_DEBUG({
     llvm::dbgs() << "After step 1:\n";
     modOp.dump();
   });
-  if (failed(step2(modOp, symTables, fieldRepMap))) {
+  if (failed(step2(modOp, symTables, memberRepMap))) {
     return failure();
   }
   LLVM_DEBUG({
