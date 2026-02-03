@@ -41,7 +41,7 @@ llzkLoopBoundsAttrGet(MlirContext context, int64_t lower, int64_t upper, int64_t
 /// Returns true if the attribute is a LoopBoundsAttr.
 LLZK_DECLARE_ATTR_ISA(LoopBoundsAttr);
 
-/// Returns true if the op is a NonDetOp
+/// Returns true if the op is a NonDetOp.
 LLZK_DECLARE_OP_ISA(NonDetOp);
 
 #ifdef __cplusplus
