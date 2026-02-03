@@ -8,6 +8,8 @@ target_link_libraries(
   LLZK::LLZKCAPI
   MLIRCAPIIR
   MLIRCAPIRegisterEverything)
+add_test(NAME LLZK_CAPI_C_Test COMMAND LLZK_CAPI_C_Test)
+list(APPEND LLZK_UNITTESTS LLZK_CAPI_C_Test)
 
 # CAPI unit tests defined via C++ sources
 file(GLOB_RECURSE LLZK_CAPI_TEST_SOURCES "*.cpp")
