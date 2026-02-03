@@ -109,7 +109,8 @@ module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_1.llzk" as @std
 }
 
-// CHECK-LABEL: module @std attributes {llzk.lang} {
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  module @std attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:    module @std attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:      module @risc0 {
 // CHECK-NEXT:        struct.def @ValU32 {
@@ -200,6 +201,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // CHECK-NEXT:  }
 
 // -----
