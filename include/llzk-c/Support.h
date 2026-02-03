@@ -120,7 +120,7 @@ typedef struct LlzkAffineMapOperandsBuilder {
 } LlzkAffineMapOperandsBuilder;
 
 /// Creates a new struct. The owner is responsible for cleaning the struct.
-MLIR_CAPI_EXPORTED LlzkAffineMapOperandsBuilder llzkAffineMapOperandsBuilderCreate();
+MLIR_CAPI_EXPORTED LlzkAffineMapOperandsBuilder llzkAffineMapOperandsBuilderCreate(void);
 
 /// Destroys the struct releasing its resources.
 MLIR_CAPI_EXPORTED void llzkAffineMapOperandsBuilderDestroy(LlzkAffineMapOperandsBuilder *builder);
