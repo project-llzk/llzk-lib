@@ -31,7 +31,7 @@ constexpr char FUNC_NAME_PRODUCT[] = "product";
 /// Name of the attribute on the top-level ModuleOp that specifies the IR language name.
 constexpr char LANG_ATTR_NAME[] = "veridise.lang";
 
-/// Name of the attribute on aligned product program ops that specifies where they came from
+/// Name of the attribute on aligned product program ops that specifies where they came from.
 constexpr char PRODUCT_SOURCE[] = "product_source";
 
 } // namespace llzk
