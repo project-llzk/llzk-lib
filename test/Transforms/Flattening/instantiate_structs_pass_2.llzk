@@ -8,7 +8,7 @@
 // RUN:   && FileCheck %s --check-prefix CHECK3 < %t \
 // RUN:   && FileCheck %s < %t
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component08A<[@A, @B]> {
     function.def @compute() -> !struct.type<@Component08A<[@A, @B]>> {
       %self = struct.new : !struct.type<@Component08A<[@A, @B]>>

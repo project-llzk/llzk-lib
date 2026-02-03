@@ -16,7 +16,7 @@ function.def @identity(%x: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) {
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index

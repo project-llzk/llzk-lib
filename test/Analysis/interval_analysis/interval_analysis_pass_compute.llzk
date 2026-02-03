@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %input_dir -llzk-inline-includes -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BoolAnd {
     struct.member @case0 : i1
     struct.member @case1 : i1
@@ -67,7 +67,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BoolOr {
     struct.member @case0 : i1
     struct.member @case1 : i1
@@ -134,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BoolXor {
     struct.member @case0 : i1
     struct.member @case1 : i1
@@ -201,7 +201,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BoolNot {
     struct.member @case0 : i1
     struct.member @case1 : i1
@@ -244,7 +244,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BitAnd {
     struct.member @case0 : !felt.type
     struct.member @case1 : !felt.type
@@ -288,7 +288,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ShiftLeft {
     struct.member @case0 : !felt.type
     struct.member @case1 : !felt.type
@@ -336,7 +336,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ShiftRight {
     struct.member @case0 : !felt.type
     struct.member @case1 : !felt.type
@@ -384,7 +384,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // yield-less if that modifies intervals internally
   struct.def @NoYieldIf {
     struct.member @data : !felt.type
@@ -417,7 +417,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // A struct that stores if the input is 0 or not
   // to showcase `scf.if`.
   // Only constraints that the stored value is a boolean.
@@ -464,7 +464,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @MultiYield {
     struct.member @a : !felt.type
     struct.member @b : !felt.type
@@ -505,7 +505,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @NoYieldFor {
     struct.member @a: !felt.type
 
@@ -533,7 +533,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @YieldForConst {
     struct.member @a: !felt.type
 
@@ -565,7 +565,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // No guesses will be made about the computed value over the loop
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @YieldForSum {
     struct.member @a: !felt.type
 
@@ -598,13 +598,13 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // COM: Regression test for convergence of the interval analysis.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/Inputs/zir_example_loops.llzk" as @zir_loops
 }
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ConstBools {
     struct.member @out : i1
     function.def @compute() -> !struct.type<@ConstBools> attributes {function.allow_non_native_field_ops, function.allow_witness} {
@@ -628,7 +628,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArithConstraint {
 
     function.def @constrain(%self: !struct.type<@ArithConstraint>, %a: !felt.type, %b: !felt.type) {

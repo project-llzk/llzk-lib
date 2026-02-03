@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component1A<[]> {
     function.def @constrain(%self: !struct.type<@Component1A<[]>>) { function.return }
     function.def @compute() -> !struct.type<@Component1A<[]>> {
@@ -41,7 +41,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component2A<[]> {
     function.def @constrain(%self: !struct.type<@Component2A<[]>>) { function.return }
     function.def @compute() -> !struct.type<@Component2A<[]>> {

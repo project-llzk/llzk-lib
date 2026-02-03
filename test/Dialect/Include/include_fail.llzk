@@ -1,7 +1,7 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -llzk-inline-includes -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to have "llzk.lang" attribute}}
   include.from "Inputs/header_3.llzk" as @alias1
 
   function.def @test_func() {
@@ -11,7 +11,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @outer {
     // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to be unnamed}}
     include.from "Inputs/header_4.llzk" as @alias2
@@ -24,7 +24,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @a {
     module @b {
       module @c {
@@ -43,7 +43,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // Note: there's also an error within this included file
   include.from "Inputs/header_5.llzk" as @double
   // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to be unnamed}}
@@ -51,18 +51,18 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'include.from' op could not parse file "Inputs/header_6.llzk"}}
   include.from "Inputs/header_6.llzk" as @a
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_7A.llzk" as @a // expected-note {{included from here}}
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_7A.llzk" as @a // expected-note {{included from here}}
   function.def @test_func_A() {
     // Note: The error only occurs during inlining, not during the symbol
@@ -73,7 +73,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_7A.llzk" as @entry // expected-note {{included from here}}
   function.def @test_func_B() {
     // Note: Even in this case, symbol lookup will traverse the include cycle but

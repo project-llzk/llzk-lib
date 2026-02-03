@@ -4,7 +4,7 @@
 // If there is no main struct, all structs are removed (except those that have a reference from
 // a global def or from a free function since those are not subject to removal during this pass).
 
-module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   global.def @g : !struct.type<@HasUseFromGlobal>
 
   function.def @free(%a: !struct.type<@HasUseFromFreeFunc>) {
@@ -79,7 +79,7 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 // -----
 
 // expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUse>
 
   // preserved
@@ -114,7 +114,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
 
   module @StructsWithinNestedModule {
@@ -154,7 +154,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @GlobalWithinNestedModule {
     global.def @a : !struct.type<@HasUse<[!felt.type]>>
   }
@@ -192,7 +192,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @FreeFuncInModule {
     function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@HasUse<[!felt.type]>>) -> !felt.type {
       %b = felt.const 42
@@ -235,7 +235,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
     global.def @a : !struct.type<@HasUse<[!felt.type]>>
     module @NestedAgain {
@@ -286,7 +286,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {
@@ -344,7 +344,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NOT:   struct.def @HasUse<[@T]> {
 // -----
 
-module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   global.def @gvar : !struct.type<@Component06<[4]>>
 
   // preserved instantiated version
@@ -379,7 +379,7 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 // CHECK-NOT: struct.def @Component06<[@Z]> {
 // -----
 
-module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   // always preserved because of "llzk.main = !struct.type<@Main>"
   struct.def @Main {
     struct.member @f : !struct.type<@M1::@S>
@@ -488,7 +488,7 @@ module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
 // CHECK-NOT:   struct.def @T {
 // -----
 
-module attributes {llzk.main = !struct.type<@Main>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   // always preserved because of "llzk.main = !struct.type<@Main>"
   struct.def @Main {
     struct.member @f : !struct.type<@DirectUseFromMain>

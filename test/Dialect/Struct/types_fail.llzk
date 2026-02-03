@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @q {
     // expected-error@+1 {{AffineMapAttr must yield a single result, but found 3 results}}
     struct.member @foo : !array.type<affine_map<(i) -> (1, 2, i)> x !felt.type>

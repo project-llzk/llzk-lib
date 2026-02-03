@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @constrain(%self: !struct.type<@ComponentA>, %a: !felt.type, %b: !felt.type) {
       constrain.eq %a, %b : !felt.type
@@ -27,7 +27,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB {
     function.def @constrain(%self: !struct.type<@ComponentB>, %a: !felt.type, %b: !array.type<5 x !felt.type>) {
       constrain.in %b, %a : !array.type<5 x !felt.type>, !felt.type
@@ -54,7 +54,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentC {
     function.def @constrain(%self: !struct.type<@ComponentC>, %a: index, %b: !array.type<89 x index>) {
       constrain.in %b, %a : !array.type<89 x index>, index
@@ -81,7 +81,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentD {
     function.def @constrain(%self: !struct.type<@ComponentD>, %a: !array.type<2 x index>, %b: !array.type<89,2 x index>) {
       constrain.in %b, %a : !array.type<89,2 x index>, !array.type<2 x index>
@@ -108,7 +108,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentE {
     function.def @constrain(%self: !struct.type<@ComponentE>, %a: index, %b: !array.type<89,2 x index>) {
       constrain.in %b, %a : !array.type<89,2 x index>, index

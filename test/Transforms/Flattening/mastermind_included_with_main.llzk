@@ -15,7 +15,7 @@
 // is to add another pass to the "Preliminary step" in FlatteningPass that will flatten nested modules so
 // that StructType lookups are no longer context-sensitive.
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/mastermind.llzk" as @Mastermind
 
   struct.def @Main<[]> {

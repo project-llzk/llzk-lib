@@ -2,7 +2,7 @@
 
 // This demonstrates one way that zirgen runtime checks for globals could be handled. Requires boilerplate
 // code to track if globals have been initialized and requires LLZK to have zero-initialization semantics.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @NondetReg<[]> {
     struct.member @"$super" : !felt.type
     struct.member @reg : !felt.type {llzk.pub}

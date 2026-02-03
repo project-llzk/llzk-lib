@@ -1,6 +1,6 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=S1" %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
     struct.def @S1 {
         struct.member @foo : !felt.type
         function.def @compute(%a: !felt.type) -> !struct.type<@S1> {

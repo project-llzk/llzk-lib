@@ -2,7 +2,7 @@
 // _RUN_: llzk-opt -I %input_dir -llzk-print-call-graph %s 2>&1 | FileCheck --enable-var-scope %s --check-prefix CG
 // _RUN_: llzk-opt -I %input_dir -llzk-print-call-graph-sccs %s 2>&1 | FileCheck --enable-var-scope %s --check-prefix SCC
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   struct.def @C1 {

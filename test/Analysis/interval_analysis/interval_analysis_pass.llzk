@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis %s 2>&1 | FileCheck %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ConstantConstraint {
     function.def @compute(%a: !felt.type) -> !struct.type<@ConstantConstraint> {
       %self = struct.new : !struct.type<@ConstantConstraint>
@@ -23,7 +23,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @CmpConstraint {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
       %self = struct.new : !struct.type<@CmpConstraint>
@@ -49,7 +49,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @MemberRangeConstraint {
 
     struct.member @foo : !felt.type
@@ -85,7 +85,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArrayConstraint {
 
     struct.member @arr : !array.type<3 x !felt.type>
@@ -130,7 +130,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Div<[]> {
     struct.member @"$super" : !felt.type
     struct.member @reciprocal : !felt.type
@@ -167,7 +167,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // Ensure we still report all structs if they're all at an unknown location
 #loc = loc(unknown)
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // A correctly constrained byte decomposition checker for a 16 bit val.
   struct.def @ByteDecompCorrect {
     struct.member @b1 : !felt.type
@@ -262,7 +262,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Bit pattern s * (s - 1) = 0
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BitConstraint {
     struct.member @bit : !felt.type
 
@@ -289,7 +289,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Twit pattern s * (s - 1) * (s - 2) * (s - 3) = 0
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BitConstraint {
     struct.member @bit : !felt.type
 
@@ -322,7 +322,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Sparse pattern s * (s - 3) = 0
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @BitConstraint {
     struct.member @bit : !felt.type
 
@@ -348,7 +348,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @CheckBit {
     function.def @compute(%maybeBit: !felt.type) -> !struct.type<@CheckBit> {
       %self = struct.new : <@CheckBit>
@@ -393,7 +393,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @IntTest<[]> {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -427,7 +427,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @IntTest<[]> {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -474,7 +474,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @IntTest<[]> {
     struct.member @x: !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -515,7 +515,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @IntTest<[]> {
     struct.member @x: !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -556,7 +556,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @SubTest<[]> {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -593,7 +593,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @SubTest<[]> {
     struct.member @x : !felt.type {llzk.pub}
     struct.member @y : !felt.type {llzk.pub}
@@ -630,4 +630,4 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // COM: Regression test to avoid assertion failure on empty modules
-module attributes {veridise.lang = "llzk"} { }
+module attributes {llzk.lang} { }

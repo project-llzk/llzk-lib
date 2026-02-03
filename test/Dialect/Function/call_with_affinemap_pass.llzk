@@ -3,7 +3,7 @@
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>
 !ToFelt = !struct.type<@ToFelt<[#id]>>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
     struct.member @val: !array.type<@N x !poly.tvar<@T>>

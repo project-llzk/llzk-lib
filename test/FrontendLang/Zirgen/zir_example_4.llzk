@@ -1,6 +1,6 @@
 // RUN: llzk-opt -llzk-flatten -llzk-inline-structs -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @NondetReg {
     struct.member @inner : !felt.type {column, llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg> attributes {function.allow_witness} {

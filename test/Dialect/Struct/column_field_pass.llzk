@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {column, llzk.pub}
 
@@ -45,7 +45,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     struct.member @f1 : !felt.type {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
@@ -72,7 +72,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     struct.member @f1 : !array.type<3 x !felt.type> {column}
     function.def @compute() -> !struct.type<@ComponentA2> {
@@ -99,7 +99,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {column}
 
@@ -144,7 +144,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {column}
 
@@ -190,7 +190,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1<[@T]> {
     struct.member @f1 : !poly.tvar<@T> {column}
 

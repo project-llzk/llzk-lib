@@ -54,7 +54,7 @@ function.def @trival() -> !array.type<0 x index> {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component01 {
     struct.member @f : !array.type<2 x !felt.type>
 

@@ -7,7 +7,7 @@
 // the `!struct.type<@ToFelt<[#id]>>` StructType (i.e., no calls to `@ToFelt::@compute()`) so no
 // flattened versions of `@ToFelt` or `@VarArray` are created (the latter has an instantiation but
 // only the first parameter is concrete due to the aforementioned and we do not do partial flattening).
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // pre-defined
   struct.def @VarArray<[@N, @T]> {
     struct.member @val: !array.type<@N x !poly.tvar<@T>>

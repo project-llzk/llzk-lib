@@ -35,7 +35,7 @@
 #IdxToLen = affine_map<(i)[] -> (5*i+1)> // LLZK should always use dimension identifiers, in parens
 !IdxToLenSigArray = !struct.type<@VarArray<[#IdxToLen, !felt.type]>>
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "circom"} {
   struct.def @GetSum<[@A]> { // instantiations of A are {1, 6, 11, ... 5*P+1}
     struct.member @out: !felt.type {llzk.pub}
     struct.member @sum: !felt.type

@@ -3,7 +3,7 @@
 // TEST: partial instantiation of '@Zip' in first round of flattening pass and then the loop in '@Main'
 //  unrolls allowing a subsequent round of the flattening pass loop to make complete instantiations.
 #id = affine_map<(i)->(i)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Pair<[@Fst, @Snd]> {
     function.def @compute() -> !struct.type<@Pair<[@Fst, @Snd]>> {
       %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>

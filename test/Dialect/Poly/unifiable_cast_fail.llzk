@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%0: index) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
@@ -14,7 +14,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%0: !array.type<1 x !felt.type>) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
@@ -30,7 +30,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%0: index) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
@@ -46,7 +46,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%1: i1) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
@@ -63,7 +63,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Tester<[@S0, @S1]> {
     function.def @compute(%2: !felt.type) -> !struct.type<@Tester<[@S0, @S1]>> {
       %self = struct.new : <@Tester<[@S0, @S1]>>
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @T1<[]> {
     function.def @compute() -> !struct.type<@T1<[]>> {
       %self = struct.new : <@T1<[]>>
@@ -113,7 +113,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @T2<[@N]> {
     function.def @compute() -> !struct.type<@T2<[@N]>> {
       %self = struct.new : <@T2<[@N]>>
@@ -140,7 +140,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @T2<[@N]> {
     function.def @compute() -> !struct.type<@T2<[@N]>> {
       %self = struct.new : <@T2<[@N]>>
@@ -166,7 +166,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @T2<[@N]> {
     function.def @compute() -> !struct.type<@T2<[@N]>> {
       %self = struct.new : <@T2<[@N]>>
@@ -192,7 +192,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @T2<[@N]> {
     function.def @compute() -> !struct.type<@T2<[@N]>> {
       %self = struct.new : <@T2<[@N]>>

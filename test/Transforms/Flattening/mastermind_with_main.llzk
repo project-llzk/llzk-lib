@@ -1,7 +1,7 @@
 // RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 #map = affine_map<()[s0] -> (s0)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component<[]> {
     function.def @compute() -> !struct.type<@Component<[]>> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Component<[]>>

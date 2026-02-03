@@ -1,7 +1,7 @@
 // Imported via `include_fail.llzk`
 
-module attributes {veridise.lang = "llzk"} {
-  // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to have "veridise.lang" attribute}}
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'include.from' op expected 'builtin.module' from included file to have "llzk.lang" attribute}}
   include.from "Inputs/header_3.llzk" as @std
 
   function.def @test_func() {

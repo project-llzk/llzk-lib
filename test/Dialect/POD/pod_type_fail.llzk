@@ -33,7 +33,7 @@ function.def @different_number_records(%0: !pod.type<[@x: !felt.type]>) -> !pod.
 
 // -----
 
-module attributes { veridise.lang = "llzk"} {
+module attributes { llzk.lang} {
   struct.def @ConstraintPod {
     function.def @compute(
         %0: !pod.type<[@n: !felt.type]>,
@@ -56,7 +56,7 @@ module attributes { veridise.lang = "llzk"} {
 
 // -----
 
-module attributes { veridise.lang = "llzk"} {
+module attributes { llzk.lang} {
   struct.def @ConstraintPod {
     function.def @compute(
         %0: !pod.type<[@n: !string.type]>,

@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 // Test: [constrain.in] type annotation does not match type of parameter 2 in size
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent01 {
     function.def @compute() -> !struct.type<@TestComponent01> {
       %self = struct.new : !struct.type<@TestComponent01>
@@ -20,7 +20,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] type annotation does not match type of parameter 2 in element type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent02 {
     function.def @compute() -> !struct.type<@TestComponent02> {
       %self = struct.new : !struct.type<@TestComponent02>
@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] type of parameter 1 does not match array element type of annotation
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent03 {
     function.def @compute() -> !struct.type<@TestComponent03> {
       %self = struct.new : !struct.type<@TestComponent03>
@@ -58,7 +58,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] type annotation is not an array type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent04 {
     function.def @compute() -> !struct.type<@TestComponent04> {
       %self = struct.new : !struct.type<@TestComponent04>
@@ -74,7 +74,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] type of parameter 2 is not an array
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent05 {
     function.def @compute() -> !struct.type<@TestComponent05> {
       %self = struct.new : !struct.type<@TestComponent05>
@@ -93,7 +93,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] type of parameter 1 does not match array element type of parameter 2
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent06 {
     function.def @compute() -> !struct.type<@TestComponent06> {
       %self = struct.new : !struct.type<@TestComponent06>
@@ -112,7 +112,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] lhs has invalid type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent07 {
     function.def @compute() -> !struct.type<@TestComponent07> {
       %self = struct.new : !struct.type<@TestComponent07>
@@ -131,7 +131,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] rhs has invalid type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent08 {
     function.def @compute() -> !struct.type<@TestComponent08> {
       %self = struct.new : !struct.type<@TestComponent08>
@@ -150,7 +150,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] lhs type does not match the given type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent09 {
     function.def @compute() -> !struct.type<@TestComponent09> {
       %self = struct.new : !struct.type<@TestComponent09>
@@ -169,7 +169,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] rhs type does not match the given type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent10 {
     function.def @compute() -> !struct.type<@TestComponent10> {
       %self = struct.new : !struct.type<@TestComponent10>
@@ -188,7 +188,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] both sides have invalid (although the same) type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent11 {
     function.def @compute() -> !struct.type<@TestComponent11> {
       %self = struct.new : !struct.type<@TestComponent11>
@@ -207,7 +207,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] both sides have invalid (although the same) type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent12 {
     function.def @compute() -> !struct.type<@TestComponent12> {
       %self = struct.new : !struct.type<@TestComponent12>
@@ -226,7 +226,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] both sides have invalid (although the same) type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent13 {
     function.def @compute() -> !struct.type<@TestComponent13> {
       %self = struct.new : !struct.type<@TestComponent13>
@@ -245,7 +245,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] lhs array size does not match the type given
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent14 {
     function.def @compute() -> !struct.type<@TestComponent14> {
       %self = struct.new : !struct.type<@TestComponent14>
@@ -264,7 +264,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] rhs array size does not match the type given
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent15 {
     function.def @compute() -> !struct.type<@TestComponent15> {
       %self = struct.new : !struct.type<@TestComponent15>
@@ -283,7 +283,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] neither array size matches the type given
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent16 {
     function.def @compute() -> !struct.type<@TestComponent16> {
       %self = struct.new : !struct.type<@TestComponent16>
@@ -302,7 +302,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] lhs array size does not match the type given
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent17 {
     function.def @compute() -> !struct.type<@TestComponent17> {
       %self = struct.new : !struct.type<@TestComponent17>
@@ -321,7 +321,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] rhs array size does not match the type given
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent18 {
     function.def @compute() -> !struct.type<@TestComponent18> {
       %self = struct.new : !struct.type<@TestComponent18>
@@ -340,7 +340,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] neither array size matches the type given
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @TestComponent19 {
     function.def @compute() -> !struct.type<@TestComponent19> {
       %self = struct.new : !struct.type<@TestComponent19>
@@ -359,7 +359,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] outside of a function body
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
     %a = felt.const 7653
     %b = felt.const 34572
     // expected-error@+1 {{'constrain.eq' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
@@ -368,7 +368,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] outside of a function body
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
     %a = arith.constant 433 : index
     %b = arith.constant 535 : index
     %z = array.new %a, %b: !array.type<2 x index>
@@ -378,7 +378,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] attempt to assign to an SSA value but it has no result
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component20 {
     function.def @constrain(%a: !felt.type, %b: !array.type<5 x !felt.type>) {
       // expected-error@+1 {{cannot name an operation with no results}}
@@ -395,7 +395,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] attempt to assign to an SSA value but it has no result
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component21 {
     function.def @constrain(%a: !felt.type, %b: !felt.type) {
       // expected-error@+1 {{cannot name an operation with no results}}
@@ -412,7 +412,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.eq] LHS and RHS types do not unify
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component22 {
     function.def @constrain(%a: !felt.type, %b: index) {
       // expected-error@+1 {{'constrain.eq' op failed to verify that rhs type matches with lhs type}}
@@ -429,7 +429,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: [constrain.in] RHS and LHS element types do not unify
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component23 {
     function.def @constrain(%a: !array.type<4 x !felt.type>, %b: index) {
       // expected-error@+1 {{'constrain.in' op incorrect array element type; expected: '!felt.type', found: 'index'}}
@@ -446,7 +446,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: cannot use string type with [constrain.eq] op
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component24 {
     function.def @compute(%a: !string.type, %b: !string.type) -> !struct.type<@Component24> {
       %self = struct.new : !struct.type<@Component24>
@@ -462,7 +462,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: cannot use string type with [constrain.eq] op (at depth)
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component25 {
     function.def @compute(%a: !array.type<2 x !string.type>, %b: !array.type<2 x !string.type>) -> !struct.type<@Component25> {
       %self = struct.new : !struct.type<@Component25>
@@ -479,7 +479,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: cannot use struct type with [constrain.in] op
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component26 {
     function.def @constrain(%self: !struct.type<@Component26>, %b: !array.type<89 x !struct.type<@Component26>>) {
       // expected-error@+1 {{'constrain.in' op element type must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.type<@Component26>'}}
@@ -496,7 +496,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: mismatched dimensions with [constrain.in] op
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component27 {
     function.def @constrain(%self: !struct.type<@Component27>, %a: !array.type<7,3,2 x index>, %b: !array.type<89,2 x index>) {
       // expected-error@+1 {{'constrain.in' op cannot unify array dimensions [3, 2] with [89, 2]}}
@@ -514,7 +514,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Test: rhs has more dimensions than lhs, not allowed for [constrain.in] op
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component28 {
     function.def @constrain(%self: !struct.type<@ComponentE>, %a: !array.type<2 x index>, %b: !array.type<89,2 x index>) {
       // expected-error@+1 {{'constrain.in' op subarray type '!array.type<89,2 x index>' has more dimensions than array type '!array.type<2 x index>'}}

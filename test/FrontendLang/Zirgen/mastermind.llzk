@@ -1,7 +1,7 @@
 // RUN: llzk-opt %s
 
 #map = affine_map<()[s0] -> (s0)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   module @globals {
   }
   struct.def @Component<[]> {

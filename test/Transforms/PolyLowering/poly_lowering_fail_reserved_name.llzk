@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=2" -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @CmpConstraint {
     // expected-error@+1 {{Member name '__llzk_poly_lowering_pass_aux_member_0' conflicts with reserved prefix '__llzk_poly_lowering_pass_aux_member_'}}
     struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type

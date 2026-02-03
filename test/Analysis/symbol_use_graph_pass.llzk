@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-print-symbol-use-graph{stream=outs})' %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUse>
 
   struct.def @HasUse {
@@ -78,7 +78,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
   global.def @b : !felt.type
 
@@ -160,7 +160,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
     global.def @a : !struct.type<@HasUse<[!felt.type]>>
     module @NestedAgain {
@@ -263,7 +263,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {
@@ -360,7 +360,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @gvar : !struct.type<@Component06<[4]>>
 
   struct.def @Component06<[@Z]> {
@@ -438,7 +438,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Main {
     struct.member @f : !struct.type<@DirectUseFromMain>
     function.def @compute() -> !struct.type<@Main> {
@@ -564,7 +564,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Main {
     struct.member @f : !struct.type<@M1::@S>
     function.def @compute() -> !struct.type<@Main> {
@@ -805,7 +805,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  ------------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component1B<[@T]> {
     function.def @compute() -> !struct.type<@Component1B<[@T]>> {
       %self = struct.new : !struct.type<@Component1B<[@T]>>

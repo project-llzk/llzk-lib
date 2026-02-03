@@ -17,8 +17,10 @@ constexpr char FUNC_NAME_COMPUTE[] = "compute";
 constexpr char FUNC_NAME_CONSTRAIN[] = "constrain";
 constexpr char FUNC_NAME_PRODUCT[] = "product";
 
-/// Name of the attribute on the top-level ModuleOp that specifies the IR language name.
-constexpr char LANG_ATTR_NAME[] = "veridise.lang";
+/// Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the
+/// root module and specifies the frontend language name that the IR was compiled from, if
+/// available.
+constexpr char LANG_ATTR_NAME[] = "llzk.lang";
 
 /// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.
 /// This attribute can appear zero or one times on the top-level ModuleOp and is associated with

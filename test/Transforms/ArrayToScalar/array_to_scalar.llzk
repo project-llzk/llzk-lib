@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_read() -> index {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -21,7 +21,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @multiple_read_and_write() -> !felt.type {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -58,7 +58,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_return() -> !array.type<2,1,2 x !felt.type> {
     %a = felt.const 45
     %b = felt.const 214
@@ -78,7 +78,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @len() -> index {
     %a = array.new  : !array.type<6,1,2,1,5,1 x !felt.type>
     %4 = arith.constant 4 : index
@@ -92,7 +92,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @convert_arg(%a: !array.type<3,1,2,1,4,1 x !felt.type>) -> !felt.type {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -129,7 +129,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @uninitialized() -> index {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -145,7 +145,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @f1(%arg: !felt.type) -> !array.type<3,2 x !felt.type> {
     %0 = arith.constant 0 : index
     %a = function.call @f2() : () -> !array.type<3,2 x !felt.type>
@@ -175,7 +175,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_write_then_read() -> !felt.type {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -214,7 +214,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 !F = !felt.type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArrayMembers {
     struct.member @arr : !array.type<2,3 x !F>
 
@@ -292,7 +292,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 !F = !felt.type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArrayMembersAndParams {
     struct.member @arr : !array.type<2,3 x !F>
 
@@ -375,7 +375,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 !F = !felt.type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // Order the structs so that the member ref is converted before the member itself
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
@@ -444,7 +444,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_insert() -> !felt.type {
     %a = felt.const 45
     %b = felt.const 214
@@ -467,7 +467,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_insert_then_insert() -> !array.type<2,2,2 x !felt.type> {
     %a = felt.const 45
     %b = felt.const 214
@@ -513,7 +513,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_extract() -> !array.type<3,1 x !felt.type> {
     %a = felt.const 45
     %b = felt.const 214
@@ -537,7 +537,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_extract_then_read() -> !felt.type {
     %a = felt.const 45
     %b = felt.const 214
@@ -561,7 +561,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @new_then_extract_then_extract_then_read() -> !felt.type {
     %a = felt.const 45
     %b = felt.const 214
@@ -587,7 +587,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // MemberDef and MemberRead w/ non-static shape (i.e., cannot be flattened to scalars)
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB2<[@N]> {
     function.def @compute(%p: !struct.type<@ComponentB1<[@N]>>) -> !struct.type<@ComponentB2<[@N]>> {
       %self = struct.new : !struct.type<@ComponentB2<[@N]>>
@@ -634,7 +634,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // Func and CallOp w/ non-static shape (i.e., cannot be flattened to scalars)
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentC1<[@N]> {
     function.def @compute(%p: !array.type<@N x !felt.type>) -> !struct.type<@ComponentC1<[@N]>> {
       %self = struct.new : !struct.type<@ComponentC1<[@N]>>
@@ -686,7 +686,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 !F = !felt.type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ArrayMembersAndParamsWithPubModifier {
     struct.member @arr : !array.type<2,3 x !F> {llzk.pub}
 

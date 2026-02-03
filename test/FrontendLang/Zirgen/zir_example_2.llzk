@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %input_dir -llzk-inline-includes %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   function.def private @LookupDelta(%table: !felt.type, %index: !felt.type, %count: !felt.type)

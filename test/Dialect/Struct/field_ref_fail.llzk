@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB {
     function.def @compute() -> !struct.type<@ComponentB> {
       %self = struct.new : !struct.type<@ComponentB>
@@ -16,7 +16,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentC {
     struct.member @f2 : index
 
@@ -33,7 +33,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentD {
     struct.member @f2 : index
 
@@ -50,7 +50,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentF {
     struct.member @f2 : index
 
@@ -67,7 +67,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentH {
     function.def @compute(%0: !felt.type) -> !struct.type<@ComponentH> {
       %self = struct.new : !struct.type<@ComponentH>
@@ -83,7 +83,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentJ {
     struct.member @f2 : index
 
@@ -100,7 +100,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentK {
     struct.member @f2 : index
 
@@ -117,7 +117,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentL {
     struct.member @f2 : index
 
@@ -134,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentM {
     struct.member @f2 : !array.type<2 x index>
 
@@ -151,7 +151,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @WrongComponent { // expected-note {{uses this type instead}}
     struct.member @f : !felt.type
     function.def @compute() -> !struct.type<@WrongComponent> {
@@ -173,7 +173,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @PrivateComponent {
     struct.member @f : !felt.type // expected-note {{member defined here}}
     function.def @compute() -> !struct.type<@PrivateComponent> {

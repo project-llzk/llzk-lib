@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s -llzk-flatten 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1<[@T]> {
     struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
 
@@ -46,7 +46,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {column, llzk.pub}
 
@@ -114,7 +114,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     struct.member @f1 : !felt.type {column, llzk.pub}
 
@@ -183,7 +183,7 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1<[@T]> {
     struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
 
