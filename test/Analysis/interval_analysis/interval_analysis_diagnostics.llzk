@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -verify-diagnostics -llzk-print-interval-analysis %s 2>&1
+// RUN: llzk-opt -split-input-file -verify-diagnostics -llzk-print-interval-analysis %s
 
 // expected-warning@+1{{circuit does not support field "bn128", so analysis results may be inaccurate. Supported fields: [ koalabear ]}}
 module attributes {llzk.lang, llzk.fields = "koalabear"} { }

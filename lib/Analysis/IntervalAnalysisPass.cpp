@@ -54,8 +54,9 @@ protected:
 
     auto supportedFieldsRes = getSupportedFields(modOp);
     if (mlir::failed(supportedFieldsRes)) {
-      const llvm::Twine msg = llvm::Twine("IntervalAnalysisPrinterPass error: could not parse \"") +
-                              FIELD_ATTR_NAME + "\" attribute";
+      std::string msg = (llvm::Twine("IntervalAnalysisPrinterPass error: could not parse \"") +
+                         FIELD_ATTR_NAME + "\" attribute")
+                            .str();
       modOp->emitError(msg).report();
       return;
     }
