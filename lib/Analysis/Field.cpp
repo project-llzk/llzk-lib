@@ -91,39 +91,40 @@ DynamicAPInt Field::inv(const llvm::APInt &i) const {
 
 // Parses Fields from the given attribute, if able.
 static FailureOr<SmallVector<std::reference_wrapper<const Field>>> parseFields(mlir::Attribute a) {
+  // clang-format off
   return llvm::TypeSwitch<
              mlir::Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
-      .Case<mlir::UnitAttr>([](auto _) {
-    return SmallVector<std::reference_wrapper<const Field>> {};
-  })
+      .Case<mlir::UnitAttr>(
+          [](auto _) {
+            return SmallVector<std::reference_wrapper<const Field>> {};
+          })
       .Case<mlir::StringAttr>(
           [](auto s) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
-    auto fieldRes = Field::tryGetField(s.getValue().data());
-    if (mlir::failed(fieldRes)) {
-      return failure();
-    }
-    return SmallVector<std::reference_wrapper<const Field>> {fieldRes.value()};
-  }
-      )
+            auto fieldRes = Field::tryGetField(s.getValue().data());
+            if (mlir::failed(fieldRes)) {
+              return failure();
+            }
+            return SmallVector<std::reference_wrapper<const Field>> {fieldRes.value()};
+          })
       .Case<mlir::ArrayAttr>(
           [](auto arr) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
-    // An ArrayAttr may only contain inner StringAttr
-    SmallVector<std::reference_wrapper<const Field>> res;
-    for (mlir::Attribute a : arr) {
-      if (auto s = llvm::dyn_cast<mlir::StringAttr>(a)) {
-        auto fieldRes = Field::tryGetField(s.getValue().data());
-        if (mlir::failed(fieldRes)) {
-          return failure();
-        }
-        res.push_back(fieldRes.value());
-      } else {
-        return failure();
-      }
-    }
-    return res;
-  }
-      )
+            // An ArrayAttr may only contain inner StringAttr
+            SmallVector<std::reference_wrapper<const Field>> res;
+            for (mlir::Attribute elem : arr) {
+              if (auto s = llvm::dyn_cast<mlir::StringAttr>(elem)) {
+                auto fieldRes = Field::tryGetField(s.getValue().data());
+                if (mlir::failed(fieldRes)) {
+                  return failure();
+                }
+                res.push_back(fieldRes.value());
+              } else {
+                return failure();
+              }
+            }
+            return res;
+          })
       .Default([](auto _) { return failure(); });
+  // clang-format on
 }
 
 FailureOr<SmallVector<std::reference_wrapper<const Field>>>
