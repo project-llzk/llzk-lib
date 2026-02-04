@@ -1,8 +1,8 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "llzk"} {
     struct.def @A<[@N]> {
-        struct.field @arr : !array.type<@N, @N x !felt.type>
+        struct.member @arr : !array.type<@N, @N x !felt.type>
 
         function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@A<[@N]>> {
             %self = struct.new : <@A<[@N]>>
@@ -21,7 +21,7 @@ module attributes {veridise.lang = "llzk"} {
                 }
             }
 
-            struct.writef %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
+            struct.writem %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
             function.return %self : !struct.type<@A<[@N]>>
         }
 
@@ -31,7 +31,7 @@ module attributes {veridise.lang = "llzk"} {
             %c2 = arith.constant 2 : index
             %N = poly.read_const @N : index
 
-            %arr = struct.readf %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
+            %arr = struct.readm %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
 
             scf.for %i = %c0 to %N step %c2 {
                 scf.for %j = %c0 to %N step %c1 {
