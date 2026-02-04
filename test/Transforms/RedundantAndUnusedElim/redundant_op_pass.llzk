@@ -141,7 +141,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        struct.def @Div {
 // CHECK-NEXT:          struct.field @reciprocal : !felt.type
 // CHECK-NEXT:          struct.field @synthetic_return : !felt.type {llzk.pub}
-// CHECK-NEXT:          function.def @compute(%[[VAL_11:.*]]: !felt.type, %[[VAL_12:.*]]: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_witness} {
+// CHECK-NEXT:          function.def @compute(%[[VAL_11:.*]]: !felt.type, %[[VAL_12:.*]]: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:            %[[VAL_13:.*]] = struct.new : <@risc0::@Div>
 // CHECK-NEXT:            %[[VAL_14:.*]] = felt.inv %[[VAL_12]] : !felt.type
 // CHECK-NEXT:            struct.writef %[[VAL_13]][@reciprocal] = %[[VAL_14]] : <@risc0::@Div>, !felt.type

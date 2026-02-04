@@ -1,16 +1,16 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_01(f32)
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_01(i32)
 // -----
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_02(i1) -> f32
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_02(i1) -> i32
 // -----
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_03(i1) -> (f32, f32)
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_03(i1) -> (i32, i32)
 // -----
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_04(i1, index, f32)
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_04(i1, index, i32)
 // -----
 // expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'none'}}
 function.def @fail_05(%x: i1) -> none {

@@ -19,6 +19,7 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/Global.cpp 
   Dialect/Include.cpp 
   Dialect/LLZK.cpp 
+  Dialect/POD.cpp
   Dialect/Poly.cpp 
   Dialect/String.cpp 
   Dialect/Struct.cpp 

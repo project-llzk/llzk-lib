@@ -150,6 +150,14 @@ def FuncDefOp
     /// Add (resp. remove) the `allow_witness` attribute to (resp. from) the function def.
     void setAllowWitnessAttr(bool newValue = true);
 
+    /// Return `true` iff the function def has the `allow_non_native_field_ops` attribute.
+    inline bool hasAllowNonNativeFieldOpsAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowNonNativeFieldOpsAttr::name);
+    }
+
+    /// Add (resp. remove) the `allow_non_native_field_ops` attribute to (resp. from) the function def.
+    void setAllowNonNativeFieldOpsAttr(bool newValue = true);
+
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 

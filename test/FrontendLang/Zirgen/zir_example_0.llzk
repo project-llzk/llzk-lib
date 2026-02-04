@@ -41,7 +41,7 @@ module attributes {veridise.lang = "llzk"} {
       // ZIR frontend should mark function.return value with `pub`
       struct.field @synthetic_return : !felt.type {llzk.pub}
 
-      function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@risc0::@Div> {
+      function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_non_native_field_ops} {
         %self = struct.new : !struct.type<@risc0::@Div>
         // res_inv := inv(rhs);
         %res_inv = felt.inv %rhs
@@ -102,7 +102,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:      struct.def @Div {
 //CHECK-NEXT:        struct.field @reciprocal : !felt.type
 //CHECK-NEXT:        struct.field @synthetic_return : !felt.type {llzk.pub}
-//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_witness} {
+//CHECK-NEXT:        function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@risc0::@Div> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 //CHECK-NEXT:          %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@risc0::@Div>
 //CHECK-NEXT:          %[[T0:[0-9a-zA-Z_\.]+]] = felt.inv %[[A1]]
 //CHECK-NEXT:          struct.writef %[[SELF]][@reciprocal] = %[[T0]] : <@risc0::@Div>, !felt.type

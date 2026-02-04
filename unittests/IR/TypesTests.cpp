@@ -115,8 +115,7 @@ TEST_F(TypeTests, testStructTypeIsConcreteWithParams) {
 TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", BuildShortTypeString::from(bldr.getIntegerType(1)));
-  EXPECT_EQ("i39", BuildShortTypeString::from(bldr.getIntegerType(39)));
-  EXPECT_EQ("k", BuildShortTypeString::from(bldr.getIndexType()));
+  EXPECT_EQ("i", BuildShortTypeString::from(bldr.getIndexType()));
   EXPECT_EQ(
       "!t<@A>", BuildShortTypeString::from(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A")))
   );

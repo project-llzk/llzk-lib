@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
   }
   struct.def @EqzExt<[]> {
     struct.field @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_0 = felt.const 0
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
@@ -90,7 +90,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$super" : !struct.type<@NondetExtReg<[]>>
     struct.field @"$temp" : !struct.type<@EqzExt<[]>>
     struct.field @reg : !struct.type<@NondetExtReg<[]>> {column}
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
       %c1 = arith.constant 1 : index
@@ -148,7 +148,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Div<[]> {
     struct.field @"$super" : !felt.type
     struct.field @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
       struct.writef %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
@@ -2000,7 +2000,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @inv : !struct.type<@NondetReg<[]>> {column}
     struct.field @"$temp" : !felt.type
     struct.field @isZero : !struct.type<@NondetReg<[]>> {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@IsZero<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@IsZero<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_0 = felt.const 0
       %self = struct.new : !struct.type<@IsZero<[]>>
       %0 = bool.cmp eq(%arg0, %felt_const_0)
@@ -2057,7 +2057,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Eq<[]> {
     struct.field @"$super" : !struct.type<@IsZero<[]>> {llzk.pub}
     struct.field @"$temp" : !struct.type<@IsZero<[]>> {column}
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Eq<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Eq<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Eq<[]>>
       %0 = felt.sub %arg0, %arg1 : !felt.type, !felt.type
       %1 = function.call @IsZero::@compute(%0) : (!felt.type) -> !struct.type<@IsZero<[]>>
@@ -2077,7 +2077,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$super" : !struct.type<@Eq<[]>>
     struct.field @"$temp" : !struct.type<@Assert<[]>>
     struct.field @r : !struct.type<@Eq<[]>> {column}
-    function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@T>) -> !struct.type<@EnsureEq<[@T]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !poly.tvar<@T>, %arg1: !poly.tvar<@T>) -> !struct.type<@EnsureEq<[@T]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %0 = string.new "Provided values are not equal"
       %felt_const_0 = felt.const 0
       %self = struct.new : !struct.type<@EnsureEq<[@T]>>
@@ -2721,7 +2721,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$temp_0" : !array.type<@N x !felt.type>
     struct.field @"$temp" : !array.type<@N x !struct.type<@IsZero<[]>>> {column}
     struct.field @"$array" : !array.type<@N x !struct.type<@IsZero<[]>>> {column}
-    function.def @compute(%arg0: !struct.type<@Pegs<[@N]>>, %arg1: !felt.type) -> !struct.type<@CountColors<[@N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Pegs<[@N]>>, %arg1: !felt.type) -> !struct.type<@CountColors<[@N]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_0 = felt.const 0
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -2907,7 +2907,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$temp_0" : !array.type<#map x !struct.type<@EnsureEq<[!poly.tvar<@T>]>>> {column}
     struct.field @"$array" : !array.type<#map x !struct.type<@Component<[]>>>
     struct.field @"$temp" : !struct.type<@Zip<[!poly.tvar<@T>, !poly.tvar<@T>, @N]>>
-    function.def @compute(%arg0: !array.type<@N x !poly.tvar<@T>>, %arg1: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@AssertArrsEq<[@T, @N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<@N x !poly.tvar<@T>>, %arg1: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@AssertArrsEq<[@T, @N]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %self = struct.new : !struct.type<@AssertArrsEq<[@T, @N]>>
@@ -2991,7 +2991,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$temp_0" : !struct.type<@AssertArrsEq<[!felt.type, 24]>>
     struct.field @code : !struct.type<@SetCode<[@COLORS, @PEGS]>>
     struct.field @"$temp" : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
-    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>, %arg2: !struct.type<@CodeHash<[]>>, %arg3: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@MakeGuess<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>, %arg2: !struct.type<@CodeHash<[]>>, %arg3: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@MakeGuess<[@COLORS, @PEGS]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %0 = string.new "Partial guesses: %u"
       %1 = string.new "Correct guesses: %u"
       %felt_const_0 = felt.const 0
@@ -3270,7 +3270,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @"$super" : !struct.type<@MakeGuess<[@COLORS, @PEGS]>> {llzk.pub}
     struct.field @"$temp" : !struct.type<@Assert<[]>>
     struct.field @guess : !struct.type<@MakeGuess<[@COLORS, @PEGS]>> {column}
-    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>, %arg2: !struct.type<@CodeHash<[]>>, %arg3: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@MakeGuessWithChecks<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>, %arg2: !struct.type<@CodeHash<[]>>, %arg3: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@MakeGuessWithChecks<[@COLORS, @PEGS]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %0 = string.new "Guess check post condition failed"
       %felt_const_1 = felt.const 1
       %felt_const_0 = felt.const 0
@@ -3398,7 +3398,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @codeHash : !struct.type<@SetCode<[6, 4]>>
     struct.field @codemakerCode : !struct.type<@Pegs<[4]>> {column}
     struct.field @codemakerNonce : !struct.type<@Nonce<[]>> {column}
-    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_3 = felt.const 3
       %felt_const_4 = felt.const 4
       %felt_const_1 = felt.const 1

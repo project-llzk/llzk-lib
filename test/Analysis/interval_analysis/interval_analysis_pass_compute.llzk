@@ -12,7 +12,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case7 : i1
     struct.field @case8 : i1
 
-    function.def @compute(%a: !felt.type) -> !struct.type<@BoolAnd> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolAnd> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@BoolAnd>
 
       %1 = felt.const 1
@@ -79,7 +79,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case7 : i1
     struct.field @case8 : i1
 
-    function.def @compute(%a: !felt.type) -> !struct.type<@BoolOr> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolOr> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@BoolOr>
 
       %1 = felt.const 1
@@ -146,7 +146,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case7 : i1
     struct.field @case8 : i1
 
-    function.def @compute(%a: !felt.type) -> !struct.type<@BoolXor> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolXor> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@BoolXor>
 
       %1 = felt.const 1
@@ -207,7 +207,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case1 : i1
     struct.field @case2 : i1
 
-    function.def @compute(%a: !felt.type) -> !struct.type<@BoolNot> {
+    function.def @compute(%a: !felt.type) -> !struct.type<@BoolNot> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@BoolNot>
 
       %1 = felt.const 1
@@ -251,7 +251,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case2 : !felt.type
     struct.field @case3 : !felt.type
 
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@BitAnd> {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@BitAnd> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@BitAnd>
 
       %ff = felt.const 255 // 0xff
@@ -296,7 +296,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case3 : !felt.type
     struct.field @case4 : !felt.type
 
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftLeft> {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftLeft> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@ShiftLeft>
 
       %ff = felt.const 255 // 0xff
@@ -344,7 +344,7 @@ module attributes {veridise.lang = "llzk"} {
     struct.field @case3 : !felt.type
     struct.field @case4 : !felt.type
 
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftRight> {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ShiftRight> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@ShiftRight>
 
       %ff = felt.const 255 // 0xff
@@ -601,3 +601,73 @@ module attributes {veridise.lang = "llzk"} {
 module attributes {veridise.lang = "llzk"} {
   include.from "FrontendLang/Zirgen/Inputs/zir_example_loops.llzk" as @zir_loops
 }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ConstBools {
+    struct.field @out : i1
+    function.def @compute() -> !struct.type<@ConstBools> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : !struct.type<@ConstBools>
+      %true = arith.constant true
+      %false = arith.constant false
+      %res = bool.and %true, %false
+      struct.writef %self[@out] = %res : !struct.type<@ConstBools>, i1
+      function.return %self : !struct.type<@ConstBools>
+    }
+    function.def @constrain(%arg0: !struct.type<@ConstBools>) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConstBools StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %self[@out] in Degenerate(0)
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {veridise.lang = "llzk"} {
+  struct.def @ArithConstraint {
+
+    function.def @constrain(%self: !struct.type<@ArithConstraint>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ArithConstraint> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@ArithConstraint>
+
+      %5 = felt.const 5
+      %7 = felt.const 7
+      %11 = felt.const 11
+      %cmp1 = bool.cmp ge(%a, %5)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp le(%a, %7)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp gt(%b, %7)
+      bool.assert %cmp3
+      %cmp4 = bool.cmp le(%b, %11)
+      bool.assert %cmp4
+
+      %mul = felt.mul %a, %5
+      %sub = felt.sub %mul, %5
+      %1 = felt.div %11, %11
+      %mod = felt.umod %sub, %b
+      %neg = felt.neg %mod
+      %final = felt.add %mul, %neg
+
+      %0 = felt.const 0
+      %notzero = bool.cmp ne(%final, %0)
+      bool.assert %notzero
+
+      function.return %self : !struct.type<@ArithConstraint>
+    }
+  }
+}
+
+// CHECK-LABEL: @ArithConstraint StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 5, 7 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 8, 11 ]
+// CHECK-NEXT: }

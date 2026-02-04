@@ -166,7 +166,7 @@ LLZK_DECLARE_OP_BUILD_METHOD(
 /// number of arguments in the map that are dimensions.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     FieldReadOp, WithAffineMapDistance, MlirType type, MlirValue component, MlirStringRef fieldName,
-    MlirAffineMap affineMap, MlirValueRange mapOperands, int32_t nDimensions
+    MlirAffineMap affineMap, MlirValueRange mapOperands
 );
 
 /// Creates a FieldReadOp to a column offset by the given distance defined by a name to a constant

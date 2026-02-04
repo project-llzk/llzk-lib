@@ -43,4 +43,12 @@ LogicalResult verifyWitnessGenTraitImpl(Operation *op) {
   return success();
 }
 
+LogicalResult verifyNotFieldNativeTraitImpl(Operation *op) {
+  if (!parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowNonNativeFieldOpsAttr)) {
+    return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName()
+                             << "' with '" << AllowNonNativeFieldOpsAttr::name << "' attribute";
+  }
+  return success();
+}
+
 } // namespace llzk::function

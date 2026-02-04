@@ -77,7 +77,7 @@ public:
 // of this function should be updated.
 void assertValidAttrForParamOfType(mlir::Attribute attr);
 
-/// valid types: {IntegerType, Index, String, FeltType, StructType, ArrayType, TypeVarType}
+/// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType}
 bool isValidType(mlir::Type type);
 
 /// valid types: {FeltType, StructType (with columns), ArrayType (that contains a valid column
@@ -92,7 +92,7 @@ bool isValidGlobalType(mlir::Type type);
 /// valid types: isValidType() - {String, StructType} (excluded via any type parameter nesting)
 bool isValidEmitEqType(mlir::Type type);
 
-/// valid types: {IntegerType, Index, FeltType, TypeVarType}
+/// valid types: {I1, Index, FeltType, TypeVarType}
 bool isValidConstReadType(mlir::Type type);
 
 /// valid types: isValidType() - {ArrayType}

@@ -9,6 +9,14 @@
 
 #include "llzk-c/Support.h"
 
+#include <mlir-c/BuiltinAttributes.h>
+#include <mlir-c/IR.h>
+
+#include <llvm/ADT/ArrayRef.h>
+
+#include <cstdint>
+#include <gtest/gtest.h>
+
 #include "CAPITestBase.h"
 
 TEST_F(CAPITest, MlirOperationReplaceUsesOfWith) {
@@ -101,4 +109,97 @@ TEST_F(CAPITest, MlirOperationWalkReverse) {
   EXPECT_TRUE(mlirOperationEqual(visitedOps[3], const1));
   // Clean up
   mlirOperationDestroy(parentOp);
+}
+
+class LlzkAffineMapOperandsBuilderTests : public ::testing::Test {
+protected:
+  MlirContext context;
+  LlzkAffineMapOperandsBuilder builder;
+  MlirValueRange maps[3];
+  int32_t dims[3] = {1, 2, 0};
+
+  LlzkAffineMapOperandsBuilderTests()
+      : context(mlirContextCreate()), builder(llzkAffineMapOperandsBuilderCreate()) {
+    int32_t sizes[] = {2, 3, 1};
+    for (auto i = 0; i < 3; i++) {
+      auto size = sizes[i];
+      maps[i] = MlirValueRange {.values = new MlirValue[size], .size = size};
+    }
+  }
+
+  ~LlzkAffineMapOperandsBuilderTests() override {
+    llzkAffineMapOperandsBuilderDestroy(&builder);
+    mlirContextDestroy(context);
+    for (auto i = 0; i < 3; i++) {
+      delete[] maps[i].values;
+    }
+  }
+};
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, AppendOperandsOnce) {
+  llzkAffineMapOperandsBuilderAppendOperands(&builder, 2, maps);
+  ASSERT_EQ(builder.nMapOperands, 2);
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, AppendOperandsTwice) {
+  llzkAffineMapOperandsBuilderAppendOperands(&builder, 2, maps);
+  ASSERT_EQ(builder.nMapOperands, 2);
+  llzkAffineMapOperandsBuilderAppendOperands(&builder, 1, maps + 2);
+  ASSERT_EQ(builder.nMapOperands, 3);
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, AppendOperandsAndDimsOnce) {
+  llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(&builder, 2, maps, dims);
+  ASSERT_EQ(builder.nMapOperands, 2);
+  ASSERT_EQ(builder.nDimsPerMap, 2);
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, AppendOperandsAndDimsTwice) {
+  llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(&builder, 2, maps, dims);
+  ASSERT_EQ(builder.nMapOperands, 2);
+  ASSERT_EQ(builder.nDimsPerMap, 2);
+  llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(&builder, 1, maps + 2, dims + 2);
+  ASSERT_EQ(builder.nMapOperands, 3);
+  ASSERT_EQ(builder.nDimsPerMap, 3);
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, AppendOperandsAndDimsSeparateOnce) {
+  llzkAffineMapOperandsBuilderAppendOperands(&builder, 2, maps);
+  ASSERT_EQ(builder.nMapOperands, 2);
+  ASSERT_EQ(builder.nDimsPerMap, 0);
+  llzkAffineMapOperandsBuilderAppendDimCount(&builder, 2, dims);
+  ASSERT_EQ(builder.nDimsPerMap, 2);
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, AppendOperandsAndDimsSeparateTwice) {
+  llzkAffineMapOperandsBuilderAppendOperands(&builder, 2, maps);
+  ASSERT_EQ(builder.nMapOperands, 2);
+  ASSERT_EQ(builder.nDimsPerMap, 0);
+  llzkAffineMapOperandsBuilderAppendDimCount(&builder, 2, dims);
+  ASSERT_EQ(builder.nDimsPerMap, 2);
+  llzkAffineMapOperandsBuilderAppendOperands(&builder, 1, maps + 2);
+  ASSERT_EQ(builder.nMapOperands, 3);
+  llzkAffineMapOperandsBuilderAppendDimCount(&builder, 1, dims + 2);
+  ASSERT_EQ(builder.nDimsPerMap, 3);
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, ConversionToAttr) {
+  ASSERT_EQ(builder.nDimsPerMap, 0);
+  llzkAffineMapOperandsBuilderAppendDimCount(&builder, 3, dims);
+  ASSERT_EQ(builder.nDimsPerMap, 3);
+  llzkAffineMapOperandsBuilderConvertDimsPerMapToAttr(&builder, context);
+  ASSERT_EQ(builder.nDimsPerMap, -1);
+  ASSERT_TRUE(mlirAttributeIsADenseI32Array(builder.dimsPerMap.attr));
+}
+
+TEST_F(LlzkAffineMapOperandsBuilderTests, ConversionToAttrAndBackToArray) {
+  ASSERT_EQ(builder.nDimsPerMap, 0);
+  llzkAffineMapOperandsBuilderAppendDimCount(&builder, 3, dims);
+  ASSERT_EQ(builder.nDimsPerMap, 3);
+  llzkAffineMapOperandsBuilderConvertDimsPerMapToAttr(&builder, context);
+  ASSERT_EQ(builder.nDimsPerMap, -1);
+  ASSERT_TRUE(mlirAttributeIsADenseI32Array(builder.dimsPerMap.attr));
+  llzkAffineMapOperandsBuilderConvertDimsPerMapToArray(&builder);
+  ASSERT_EQ(builder.nDimsPerMap, 3);
+  ASSERT_EQ(llvm::ArrayRef(builder.dimsPerMap.array, builder.nDimsPerMap), llvm::ArrayRef(dims, 3));
 }

@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
@@ -42,6 +43,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::global::GlobalDialect,
       llzk::include::IncludeDialect,
       llzk::string::StringDialect,
+      llzk::pod::PODDialect,
       llzk::polymorphic::PolymorphicDialect,
       llzk::undef::UndefDialect,
       mlir::arith::ArithDialect,

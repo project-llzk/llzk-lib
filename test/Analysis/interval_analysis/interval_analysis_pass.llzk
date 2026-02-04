@@ -86,50 +86,6 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 module attributes {veridise.lang = "llzk"} {
-  struct.def @ArithConstraint {
-
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ArithConstraint> {
-      %self = struct.new : !struct.type<@ArithConstraint>
-      function.return %self : !struct.type<@ArithConstraint>
-    }
-
-    function.def @constrain(%self: !struct.type<@ArithConstraint>, %a: !felt.type, %b: !felt.type) {
-      %5 = felt.const 5
-      %7 = felt.const 7
-      %11 = felt.const 11
-      %cmp1 = bool.cmp ge(%a, %5)
-      bool.assert %cmp1
-      %cmp2 = bool.cmp le(%a, %7)
-      bool.assert %cmp2
-      %cmp3 = bool.cmp gt(%b, %7)
-      bool.assert %cmp3
-      %cmp4 = bool.cmp le(%b, %11)
-      bool.assert %cmp4
-
-      %mul = felt.mul %a, %5
-      %sub = felt.sub %mul, %5
-      %1 = felt.div %11, %11
-      %mod = felt.mod %sub, %b
-      %neg = felt.neg %mod
-      %final = felt.add %mul, %neg
-
-      %0 = felt.const 0
-      %notzero = bool.cmp ne(%final, %0)
-      bool.assert %notzero
-
-      function.return
-    }
-  }
-}
-
-// CHECK-LABEL: @ArithConstraint StructIntervals {
-// CHECK-NEXT:     %arg1 in TypeA:[ 5, 7 ]
-// CHECK-NEXT:     %arg2 in TypeA:[ 8, 11 ]
-// CHECK-NEXT: }
-
-// -----
-
-module attributes {veridise.lang = "llzk"} {
   struct.def @ArrayConstraint {
 
     struct.field @arr : !array.type<3 x !felt.type>
@@ -178,7 +134,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @Div<[]> {
     struct.field @"$super" : !felt.type
     struct.field @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
       struct.writef %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
@@ -714,3 +670,8 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:     %arg0[@y] in TypeA:[ 0, 255 ]
 // CHECK-NEXT:     %arg0[@z] in TypeF:[ 21888242871839275222246405745257275088696311157297823662689037894645226208328, 255 ]
 // CHECK-NEXT: }
+
+// -----
+
+// COM: Regression test to avoid assertion failure on empty modules
+module attributes {veridise.lang = "llzk"} { }

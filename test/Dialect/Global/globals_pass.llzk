@@ -270,9 +270,3 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-
-// -----
-module attributes {veridise.lang = "llzk"} {
-  global.def @g : i64
-}
-// CHECK: global.def @g : i64

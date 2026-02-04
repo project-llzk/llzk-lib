@@ -8,7 +8,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module attributes {veridise.lang = "llzk"} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : f64
+  global.def @g : i64
 }
 // -----
 module attributes {veridise.lang = "llzk"} {

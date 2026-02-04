@@ -1,0 +1,13 @@
+# This is a template that lists the available options when creating a changelog entry file
+# Edit according to your changes, before marking a PR as ready for review.
+
+added:
+  - CAPI:
+      - Adds a builder to simplify working with affine map operands.
+changed:
+  - CAPI:
+      - Refactor constructors that accept affine map operands to use the new API.
+
+removed:
+  - CAPI:
+      - Removed constructors that are now redundant due to the new builder type.

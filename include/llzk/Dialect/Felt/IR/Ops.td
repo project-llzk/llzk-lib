@@ -103,7 +103,8 @@ def LLZK_MulFeltOp : FeltDialectBinaryOp<"mul", LLZK_FeltType, [Commutative]> {
   let description = [{}];
 }
 
-def LLZK_PowFeltOp : FeltDialectBinaryOp<"pow", LLZK_FeltType, [WitnessGen]> {
+def LLZK_PowFeltOp
+    : FeltDialectBinaryOp<"pow", LLZK_FeltType, [NotFieldNative]> {
   let summary = "exponentiation operator for field elements";
   let description = [{
 
@@ -121,9 +122,49 @@ def LLZK_DivFeltOp : FeltDialectBinaryOp<"div", LLZK_FeltType> {
   let description = [{}];
 }
 
-def LLZK_ModFeltOp : FeltDialectBinaryOp<"mod", LLZK_FeltType> {
-  let summary = "modulus/remainder operator for field elements";
-  let description = [{}];
+def LLZK_UnsignedIntDivFeltOp
+    : FeltDialectBinaryOp<"uintdiv", LLZK_FeltType, [NotFieldNative]> {
+  let summary = "unsigned integer division operator for field elements";
+  let description = [{
+    Treats the operands as if they were unsigned integers with bitwidth
+    equal to that of the prime modulus and performs division rounding towards zero.
+  }];
+}
+
+def LLZK_SignedIntDivFeltOp
+    : FeltDialectBinaryOp<"sintdiv", LLZK_FeltType, [NotFieldNative]> {
+  let summary = "signed integer division operator for field elements";
+  let description = [{
+    Treats the operands as if they were signed integers with bitwidth
+    equal to that of the prime modulus (no additional sign bit is added)
+    and performs division rounding towards zero.
+
+    The signed integer representation of felt `f` in prime field with modulus
+    `p` follows the following formula:
+
+        signed_int(f) = f    if 0 <= f < p/2 + 1
+            "p/2" here is unsigned integer division rounding towards 0
+        signed_int(f) = f-p  if p/2 + 1 <= f < p
+  }];
+}
+
+def LLZK_UnsignedModFeltOp
+    : FeltDialectBinaryOp<"umod", LLZK_FeltType, [NotFieldNative]> {
+  let summary =
+      "unsigned integer modulus/remainder operator for field elements";
+  let description = [{
+    Computes the remainder that would result from the division operation performed
+    by `felt.uintdiv`.
+  }];
+}
+
+def LLZK_SignedModFeltOp
+    : FeltDialectBinaryOp<"smod", LLZK_FeltType, [NotFieldNative]> {
+  let summary = "signed integer modulus/remainder operator for field elements";
+  let description = [{
+    Computes the remainder that would result from the division operation performed
+    by `felt.sintdiv`.
+  }];
 }
 
 def LLZK_NegFeltOp : FeltDialectUnaryOp<"neg", LLZK_FeltType> {
@@ -131,41 +172,51 @@ def LLZK_NegFeltOp : FeltDialectUnaryOp<"neg", LLZK_FeltType> {
   let description = [{}];
 }
 
-def LLZK_InvFeltOp : FeltDialectUnaryOp<"inv", LLZK_FeltType, [WitnessGen]> {
+def LLZK_InvFeltOp
+    : FeltDialectUnaryOp<"inv", LLZK_FeltType, [NotFieldNative]> {
   let summary = "inverse operator for field elements";
   let description = [{}];
 }
 
 def LLZK_AndFeltOp
-    : FeltDialectBinaryOp<"bit_and", LLZK_FeltType, [WitnessGen, Commutative]> {
+    : FeltDialectBinaryOp<"bit_and",
+                          LLZK_FeltType, [NotFieldNative, Commutative]> {
   let summary = "bitwise AND operator for field elements";
   let description = [{}];
 }
 
 def LLZK_OrFeltOp
-    : FeltDialectBinaryOp<"bit_or", LLZK_FeltType, [WitnessGen, Commutative]> {
+    : FeltDialectBinaryOp<"bit_or",
+                          LLZK_FeltType, [NotFieldNative, Commutative]> {
   let summary = "bitwise OR operator for field elements";
   let description = [{}];
 }
 
 def LLZK_XorFeltOp
-    : FeltDialectBinaryOp<"bit_xor", LLZK_FeltType, [WitnessGen, Commutative]> {
+    : FeltDialectBinaryOp<"bit_xor",
+                          LLZK_FeltType, [NotFieldNative, Commutative]> {
   let summary = "bitwise XOR operator for field elements";
   let description = [{}];
 }
 
 def LLZK_NotFeltOp
-    : FeltDialectUnaryOp<"bit_not", LLZK_FeltType, [WitnessGen]> {
-  let summary = "bit flip operator for field elements";
-  let description = [{}];
+    : FeltDialectUnaryOp<"bit_not", LLZK_FeltType, [NotFieldNative]> {
+  let summary = "integer complement (bitwise-not) operator for field elements";
+  let description = [{
+    Treats the operand as an integer with a bitwidth equal to the bitwidth
+    of the prime field's modulus and compute the one's complement of the integer.
+    The result is converted back to a field element by applying the prime modulus.
+  }];
 }
 
-def LLZK_ShlFeltOp : FeltDialectBinaryOp<"shl", LLZK_FeltType, [WitnessGen]> {
+def LLZK_ShlFeltOp
+    : FeltDialectBinaryOp<"shl", LLZK_FeltType, [NotFieldNative]> {
   let summary = "left shift operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ShrFeltOp : FeltDialectBinaryOp<"shr", LLZK_FeltType, [WitnessGen]> {
+def LLZK_ShrFeltOp
+    : FeltDialectBinaryOp<"shr", LLZK_FeltType, [NotFieldNative]> {
   let summary = "right shift operator for field elements";
   let description = [{}];
 }

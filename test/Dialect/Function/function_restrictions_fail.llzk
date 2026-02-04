@@ -237,22 +237,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@inv_in_constrain>, %a: !felt.type) {
-      // expected-error@+1 {{'felt.inv' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
-      %c = felt.inv %a
-      function.return
-    }
-  }
-}
-// -----
-module attributes {veridise.lang = "llzk"} {
-  struct.def @inv_in_constrain {
-    function.def @compute(%a: !felt.type) -> !struct.type<@inv_in_constrain> {
-      %self = struct.new : !struct.type<@inv_in_constrain>
-      function.return %self : !struct.type<@inv_in_constrain>
-    }
-
-    function.def @constrain(%self: !struct.type<@inv_in_constrain>, %a: !felt.type) {
-      // expected-error@+1 {{'felt.inv' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+      // expected-error@+1 {{'felt.inv' op only valid within a 'function.def' with 'function.allow_non_native_field_ops' attribute}}
       %c = felt.inv %a
       function.return
     }

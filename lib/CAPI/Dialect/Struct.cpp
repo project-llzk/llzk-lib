@@ -196,7 +196,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     FieldReadOp, WithAffineMapDistance, MlirType fieldType, MlirValue component, MlirStringRef name,
-    MlirAffineMap map, MlirValueRange mapOperands, int32_t numDimsPerMap
+    MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
@@ -204,7 +204,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   return wrap(
       create<FieldReadOp>(
           builder, location, unwrap(fieldType), unwrap(component), nameAttr, mapAttr,
-          unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto), numDimsPerMap
+          unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto),
+          mapAttr.getAffineMap().getNumDims()
       )
   );
 }
