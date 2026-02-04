@@ -15,8 +15,10 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -41,14 +43,36 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    if (!llvm::isa<mlir::ModuleOp>(getOperation())) {
-      const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
+    auto modOp = llvm::dyn_cast<mlir::ModuleOp>(getOperation());
+    if (!modOp) {
+      constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg).report();
-      llvm::report_fatal_error(msg);
+      return;
+    }
+
+    const Field &field = Field::getField(fieldName.c_str());
+
+    auto supportedFieldsRes = getSupportedFields(modOp);
+    if (mlir::failed(supportedFieldsRes)) {
+      const llvm::Twine msg = llvm::Twine("IntervalAnalysisPrinterPass error: could not parse \"") +
+                              FIELD_ATTR_NAME + "\" attribute";
+      modOp->emitError(msg).report();
+      return;
+    }
+
+    const auto &supportedFields = supportedFieldsRes.value();
+    if (!supportsField(supportedFields, field)) {
+      std::string msg;
+      llvm::raw_string_ostream ss(msg);
+      ss << "IntervalAnalysisPrinterPass warning: circuit does not support field \"" << fieldName
+         << "\", so analysis results may be inaccurate. Supported fields: [ ";
+      llvm::interleaveComma(supportedFields, ss, [&ss](auto f) { ss << f.get().name(); });
+      ss << " ]";
+      modOp->emitWarning(msg).report();
     }
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
-    mia.setField(Field::getField(fieldName.c_str()));
+    mia.setField(field);
     mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);

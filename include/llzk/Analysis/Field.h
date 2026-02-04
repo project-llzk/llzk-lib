@@ -11,8 +11,11 @@
 
 #include "llzk/Util/DynamicAPIntHelper.h"
 
+#include <mlir/IR/BuiltinOps.h>
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DynamicAPInt.h>
+#include <llvm/Support/LogicalResult.h>
 #include <llvm/Support/SMTAPI.h>
 
 #include <string_view>
@@ -26,7 +29,13 @@ namespace llzk {
 /// modulus).
 class Field {
 public:
-  /// @brief Get a Field from a given field name string.
+  /// @brief Get a Field from a given field name string, or failure if the
+  /// field is unsupported.
+  /// @param fieldName The name of the field.
+  static llvm::FailureOr<std::reference_wrapper<const Field>> tryGetField(const char *fieldName);
+
+  /// @brief Get a Field from a given field name string. Throws a fatal error
+  /// if the field is unsupported.
   /// @param fieldName The name of the field.
   static const Field &getField(const char *fieldName);
 
@@ -67,6 +76,8 @@ public:
 
   inline unsigned bitWidth() const { return bitwidth; }
 
+  inline llvm::StringRef name() const { return primeName; }
+
   /// @brief Create a SMT solver symbol with the current field's bitwidth.
   llvm::SMTExprRef createSymbol(llvm::SMTSolverRef solver, const char *name) const {
     return solver->mkSymbol(name, solver->getBitvectorSort(bitWidth()));
@@ -77,12 +88,29 @@ public:
   }
 
 private:
-  Field(std::string_view primeStr);
+  Field(std::string_view primeStr, llvm::StringRef name);
 
+  /// Name of the prime for debugging purposes
+  llvm::StringRef primeName;
   llvm::DynamicAPInt primeMod, halfPrime;
   unsigned bitwidth;
 
   static void initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields);
 };
+
+/// @brief Get a list of primes that the circuit is compatible with.
+/// @param modOp a ModuleOp in the circuit. The search for the field attribute begins
+/// at this module and continues until a field attribute is encountered.
+/// @return Failure if the field attribute is malformed (i.e., is the wrong type of attribute).
+/// Otherwise, a list of supported fields if specified. If the returned list is empty,
+/// then any field is presumed to be supported.
+llvm::FailureOr<llvm::SmallVector<std::reference_wrapper<const Field>>>
+getSupportedFields(mlir::ModuleOp modOp);
+
+/// @brief Return true if the list of fields is empty (meaning any field is supported)
+/// or the given field is contained within the given list of fields
+bool supportsField(
+    const llvm::SmallVector<std::reference_wrapper<const Field>> &fields, const Field &f
+);
 
 } // namespace llzk
