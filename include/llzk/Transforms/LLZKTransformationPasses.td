@@ -16,7 +16,7 @@ def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";
   let description = [{
-    Remove read and write operations to struct fields and arrays that are redundant or unnecessary.
+    Remove read and write operations to struct members and arrays that are redundant or unnecessary.
   }];
   let constructor = "llzk::createRedundantReadAndWriteEliminationPass()";
 }
@@ -34,11 +34,11 @@ def RedundantOperationEliminationPass : LLZKPass<"llzk-duplicate-op-elim"> {
 
 def UnusedDeclarationEliminationPass
     : LLZKPass<"llzk-unused-declaration-elim"> {
-  let summary = "Remove unused field and struct declarations";
+  let summary = "Remove unused member and struct declarations";
   let description = [{
-    Remove field and struct declarations that are unused within the current compilation
+    Remove member and struct declarations that are unused within the current compilation
     unit. Note that this pass may cause linking issues with external modules that
-    depend on any unused field and struct declarations from this compilation unit.
+    depend on any unused member and struct declarations from this compilation unit.
 
     Pass should be run after `llzk-duplicate-read-write-elim`
     and `llzk-duplicate-op-elim` for maximum effect.
@@ -73,10 +73,10 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
 def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   let summary = "Inlines nested structs (i.e., subcomponents).";
   let description = [{
-    This pass inlines nested structs (i.e., subcomponents) at struct-type fields and at calls to the
+    This pass inlines nested structs (i.e., subcomponents) at struct-type members and at calls to the
     subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of
     "constrain" functions.
-    
+
     The `max-merge-complexity` parameter can be used to limit the complexity of the resulting structs such
     that a potential inlining will not take place if doing so would push the sum of constraint and
     multiplications in the combined struct over the limit. The default value `0` indicates no limits
@@ -84,10 +84,10 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
 
     This pass should be run after `llzk-flatten` to ensure structs do not have template parameters
     because structs with template parameters cannot (currently) be inlined. Inlining is also not
-    (currently) supported for subcomponent structs stored in an array-type field.
+    (currently) supported for subcomponent structs stored in an array-type member.
 
     This pass also assumes that all subcomponents that are created by calling a struct "@compute"
-    function are ultimately written to exactly one field within the current struct.
+    function are ultimately written to exactly one member within the current struct.
   }];
   let constructor = "llzk::createInlineStructsPass()";
   let options = [Option<"maxComplexity", "max-merge-complexity", "uint64_t",
@@ -134,7 +134,7 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
                 "used by Picus";
   let description = [{
       Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
-      This pass currently expects the flattening and inlining passes to be run prior to its use. 
+      This pass currently expects the flattening and inlining passes to be run prior to its use.
     }];
   let constructor = "llzk::createPCLLoweringPass()";
   let options = [Option<

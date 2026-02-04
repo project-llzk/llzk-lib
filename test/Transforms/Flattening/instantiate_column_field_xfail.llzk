@@ -2,10 +2,10 @@
 // XFAIL: *
 // COM: Should fail until LLZK-203 is completed.
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @i : index = -1
   struct.def @ComponentA1 {
-    struct.field @f1 : !felt.type {column}
+    struct.member @f1 : !felt.type {column}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -17,7 +17,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @i}
+      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @i}
       function.return %self : !struct.type<@ComponentA2>
     }
 
@@ -39,7 +39,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentA1 {
-//CHECK-NEXT:    struct.field @f1 : !felt.type {column}
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -51,7 +51,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: struct.def @ComponentA2 {
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA2>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
@@ -71,12 +71,12 @@ module attributes {veridise.lang = "llzk"} {
 
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @mod {
     global.def @i : index = -1
   }
   struct.def @ComponentA1 {
-    struct.field @f1 : !felt.type {column}
+    struct.member @f1 : !felt.type {column}
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
@@ -88,7 +88,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @mod::@i}
+      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @mod::@i}
       function.return %self : !struct.type<@ComponentA2>
     }
 
@@ -110,7 +110,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @ComponentA1 {
-//CHECK-NEXT:    struct.field @f1 : !felt.type {column}
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column}
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
@@ -122,7 +122,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-LABEL: struct.def @ComponentA2 {
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[A0]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA2>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {

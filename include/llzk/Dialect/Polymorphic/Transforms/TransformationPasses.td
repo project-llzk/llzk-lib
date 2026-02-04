@@ -30,7 +30,7 @@ def StructCleanupMode
                       // use-def chain from some concrete struct are deleted.
                       I32EnumAttrCase<"ConcreteAsRoot", 2, "concrete-as-root">,
                       // MainAsRoot: All structs that cannot be reached by a
-                      // use-def chain from the "Main" struct are deleted.
+                      // use-def chain from the main struct are deleted.
                       I32EnumAttrCase<"MainAsRoot", 3, "main-as-root">,
 ]> {
   let cppNamespace = "::llzk::polymorphic";

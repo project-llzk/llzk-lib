@@ -1,5 +1,5 @@
 // Imported via `include_fail.llzk`
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_7C.llzk" as @c // expected-note {{included from here}}
 }

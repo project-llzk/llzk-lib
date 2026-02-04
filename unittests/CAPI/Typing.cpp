@@ -46,8 +46,6 @@ TEST_F(TypingTest, is_valid_array_type) { EXPECT_TRUE(!llzkIsValidArrayType(inde
 
 TEST_F(TypingTest, is_concrete_type) { EXPECT_TRUE(llzkIsConcreteType(indexType(), true)); }
 
-TEST_F(TypingTest, is_signal_type) { EXPECT_TRUE(!llzkIsSignalType(indexType())); }
-
 TEST_F(TypingTest, has_affine_map_attr) { EXPECT_TRUE(!llzkHasAffineMapAttr(indexType())); }
 
 TEST_F(TypingTest, type_params_unify_empty) { EXPECT_TRUE(llzkTypeParamsUnify(0, NULL, 0, NULL)); }

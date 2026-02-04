@@ -55,10 +55,6 @@ protected:
 
     for (auto &[s, si] : mia.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
-      // Don't print the analysis for built-ins.
-      if (isSignalType(structDef.getType())) {
-        continue;
-      }
       auto fullName = getPathFromTopRoot(structDef);
       ensure(
           mlir::succeeded(fullName),

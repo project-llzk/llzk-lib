@@ -49,48 +49,48 @@
 // Parameters of the Sum template.
 !sums_params = !pod.type<[@N: index]>
 
-module attributes { veridise.lang = "llzk" } {
+module attributes { llzk.lang = "circom" } {
 
   struct.def @Sum<[@N]> {
-    struct.field @sum : !felt.type {llzk.pub}
+    struct.member @sum : !felt.type {llzk.pub}
     function.def @compute(%vec: !pod.type<[@p: !array.type<@N x !felt.type>]>, %c: !felt.type) -> !struct.type<@Sum<[@N]>> {
       %self = struct.new : <@Sum<[@N]>>
-      %n = poly.read_const @N : index 
+      %n = poly.read_const @N : index
       %const_0 = arith.constant 0 : index
       %const_1 = arith.constant 1 : index
-      %acc = scf.for %i = %const_0 to %n step %const_1 
+      %acc = scf.for %i = %const_0 to %n step %const_1
         iter_args(%acc_iter = %c) -> (!felt.type)
       {
         %0 = pod.read %vec[@p] : !pod.type<[@p: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
-        %1 = array.read %0[%i] : !array.type<@N x !felt.type>, !felt.type 
+        %1 = array.read %0[%i] : !array.type<@N x !felt.type>, !felt.type
         %2 = felt.add %acc_iter, %1
         scf.yield %2 : !felt.type
       }
-      struct.writef %self[@sum] = %acc : !struct.type<@Sum<[@N]>>, !felt.type
+      struct.writem %self[@sum] = %acc : !struct.type<@Sum<[@N]>>, !felt.type
       function.return %self : !struct.type<@Sum<[@N]>>
     }
     function.def @constrain(%self: !struct.type<@Sum<[@N]>>, %vec: !pod.type<[@p: !array.type<@N x !felt.type>]>, %c: !felt.type) {
-      %n = poly.read_const @N : index 
+      %n = poly.read_const @N : index
       %const_0 = arith.constant 0 : index
       %const_1 = arith.constant 1 : index
-      %acc = scf.for %i = %const_0 to %n step %const_1 
+      %acc = scf.for %i = %const_0 to %n step %const_1
         iter_args(%acc_iter = %c) -> (!felt.type)
       {
         %0 = pod.read %vec[@p] : !pod.type<[@p: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
-        %1 = array.read %0[%i] : !array.type<@N x !felt.type>, !felt.type 
+        %1 = array.read %0[%i] : !array.type<@N x !felt.type>, !felt.type
         %2 = felt.add %acc_iter, %1
         scf.yield %2 : !felt.type
       }
-      %3 = struct.readf %self[@sum] : !struct.type<@Sum<[@N]>>, !felt.type
+      %3 = struct.readm %self[@sum] : !struct.type<@Sum<[@N]>>, !felt.type
       constrain.eq %3, %acc : !felt.type
       function.return
     }
   }
 
   struct.def @SumUser {
-    struct.field @out : !array.type<2 x !felt.type> {llzk.pub}
-    struct.field @sums : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
-    struct.field @"sums$inputs" : !array.type<2 x !sums_inputs>
+    struct.member @out : !array.type<2 x !felt.type> {llzk.pub}
+    struct.member @sums : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+    struct.member @"sums$inputs" : !array.type<2 x !sums_inputs>
     function.def @compute(%x: !array.type<7 x !felt.type>) -> !struct.type<@SumUser> {
       // Prologue
       %self = struct.new : <@SumUser>
@@ -110,7 +110,7 @@ module attributes { veridise.lang = "llzk" } {
       array.write %sums_inputs[%const_0] = %0 : !array.type<2 x !sums_inputs>, !sums_inputs
 
       // sums[0].c <== 0;
-      %const_felt_0 = felt.const  0 
+      %const_felt_0 = felt.const  0
       %1 = array.read %sums_inputs[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
       pod.write %1[@c] = %const_felt_0 : !sums_inputs, !felt.type
       array.write %sums_inputs[%const_0] = %1 : !array.type<2 x !sums_inputs>, !sums_inputs
@@ -141,7 +141,7 @@ module attributes { veridise.lang = "llzk" } {
 
       scf.for %i = %const_0 to %const_3 step %const_1 {
         // sums[1].vec.p[i] <== x[i+4];
-        %12 = arith.addi %i, %const_4 : index 
+        %12 = arith.addi %i, %const_4 : index
         %13 = array.read %x[%12] : !array.type<7 x !felt.type>, !felt.type
         %14 = array.read %sums_inputs[%const_1] : !array.type<2 x !sums_inputs>, !sums_inputs
         %15 = pod.read %14[@vec] : !sums_inputs, !Vec
@@ -165,18 +165,18 @@ module attributes { veridise.lang = "llzk" } {
 
       // out[0] <== sums[0].sum;
       %4 = array.read %sums[%const_0] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
-      %5 = struct.readf %4[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
+      %5 = struct.readm %4[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
       array.write %out[%const_0] = %5 : !array.type<2 x !felt.type>, !felt.type
 
       // out[1] <== sums[1].sum;
       %6 = array.read %sums[%const_1] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
-      %7 = struct.readf %6[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
+      %7 = struct.readm %6[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
       array.write %out[%const_1] = %7 : !array.type<2 x !felt.type>, !felt.type
 
       // Epilogue
-      struct.writef %self[@out] = %out : <@SumUser>, !array.type<2 x !felt.type>
-      struct.writef %self[@sums] = %sums : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
-      struct.writef %self[@"sums$inputs"] = %sums_inputs : <@SumUser>, !array.type<2 x !sums_inputs>
+      struct.writem %self[@out] = %out : <@SumUser>, !array.type<2 x !felt.type>
+      struct.writem %self[@sums] = %sums : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+      struct.writem %self[@"sums$inputs"] = %sums_inputs : <@SumUser>, !array.type<2 x !sums_inputs>
       function.return %self : !struct.type<@SumUser>
     }
     function.def @constrain(%self: !struct.type<@SumUser>, %x: !array.type<7 x !felt.type>) {
@@ -190,15 +190,15 @@ module attributes { veridise.lang = "llzk" } {
       // do nothing
 
       // sums[0].c <== 0;
-      %0 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+      %0 = struct.readm %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
       %1 = array.read %0[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
       %2 = pod.read %1[@c] : !sums_inputs, !felt.type
-      %const_felt_0 = felt.const  0 
+      %const_felt_0 = felt.const  0
       constrain.eq %2, %const_felt_0 : !felt.type
 
       scf.for %i = %const_0 to %const_4 step %const_1 {
         // sums[0].vec.p[i] <== x[i];
-        %16 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+        %16 = struct.readm %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
         %17 = array.read %16[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
         %18 = pod.read %17[@vec] : !sums_inputs, !Vec
         %19 = pod.read %18[@p] : !Vec, !array.type<affine_map<(d0) -> (d0)> x !felt.type>
@@ -211,7 +211,7 @@ module attributes { veridise.lang = "llzk" } {
       // do nothing
 
       // sums[1].c <== 1;
-      %3 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+      %3 = struct.readm %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
       %4 = array.read %3[%const_0] : !array.type<2 x !sums_inputs>, !sums_inputs
       %5 = pod.read %4[@c] : !sums_inputs, !felt.type
       %const_felt_1 = felt.const  1
@@ -219,7 +219,7 @@ module attributes { veridise.lang = "llzk" } {
 
       scf.for %i = %const_0 to %const_3 step %const_1 {
         // sums[1].vec.p[i] <== x[i+4];
-        %22 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+        %22 = struct.readm %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
         %23 = array.read %22[%const_1] : !array.type<2 x !sums_inputs>, !sums_inputs
         %24 = pod.read %23[@vec] : !sums_inputs, !Vec
         %25 = pod.read %24[@p] : !Vec, !array.type<affine_map<(d0) -> (d0)> x !felt.type>
@@ -230,29 +230,29 @@ module attributes { veridise.lang = "llzk" } {
       }
 
       // out[0] <== sums[0].sum;
-      %6 = struct.readf %self[@out] : <@SumUser>, !array.type<2 x !felt.type>
+      %6 = struct.readm %self[@out] : <@SumUser>, !array.type<2 x !felt.type>
       %7 = array.read %6[%const_0] : !array.type<2 x !felt.type>, !felt.type
-      %8 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+      %8 = struct.readm %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
       %9 = array.read %8[%const_0] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
-      %10 = struct.readf %9[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
+      %10 = struct.readm %9[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
       constrain.eq %7, %10 : !felt.type
 
       // out[1] <== sums[1].sum;
-      %11 = struct.readf %self[@out] : <@SumUser>, !array.type<2 x !felt.type>
+      %11 = struct.readm %self[@out] : <@SumUser>, !array.type<2 x !felt.type>
       %12 = array.read %11[%const_1] : !array.type<2 x !felt.type>, !felt.type
-      %13 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+      %13 = struct.readm %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
       %14 = array.read %13[%const_1] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
-      %15 = struct.readf %14[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
+      %15 = struct.readm %14[@sum] : !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !felt.type
       constrain.eq %12, %15 : !felt.type
 
       // Epilogue
       // Call constrain on the subcomponents
       scf.for %i = %const_0 to %const_1 step %const_1 {
-        %29 = struct.readf %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
+        %29 = struct.readm %self[@"sums$inputs"] : <@SumUser>, !array.type<2 x !sums_inputs>
         %30 = array.read %29[%i] : !array.type<2 x !sums_inputs>, !sums_inputs
         %31 = pod.read %30[@vec] : !sums_inputs, !Vec
         %32 = pod.read %30[@c] : !sums_inputs, !felt.type
-        %34 = struct.readf %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
+        %34 = struct.readm %self[@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>
         %35 = array.read %34[%i] : !array.type<2 x !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>>, !struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>
         function.call @Sum::@constrain(%35, %31, %32) : (!struct.type<@Sum<[affine_map<(d0) -> (d0)>]>>, !Vec, !felt.type) -> ()
       }
@@ -263,9 +263,9 @@ module attributes { veridise.lang = "llzk" } {
 
 // CHECK: #[[$ATTR_0:.+]] = affine_map<(d0) -> (d0)>
 
-// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-LABEL: module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    struct.def @Sum<[@N]> {
-// CHECK-NEXT:      struct.field @sum : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @sum : !felt.type {llzk.pub}
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pod.type<[@p: !array.type<@N x !felt.type>]>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Sum<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Sum<[@N]>>
 // CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
@@ -277,7 +277,7 @@ module attributes { veridise.lang = "llzk" } {
 // CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_8]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK-NEXT:          scf.yield %[[VAL_11]] : !felt.type
 // CHECK-NEXT:        }
-// CHECK-NEXT:        struct.writef %[[VAL_2]][@sum] = %[[VAL_6]] : <@Sum<[@N]>>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@sum] = %[[VAL_6]] : <@Sum<[@N]>>, !felt.type
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Sum<[@N]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@Sum<[@N]>>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !pod.type<[@p: !array.type<@N x !felt.type>]>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
@@ -290,15 +290,15 @@ module attributes { veridise.lang = "llzk" } {
 // CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_20]], %[[VAL_22]] : !felt.type, !felt.type
 // CHECK-NEXT:          scf.yield %[[VAL_23]] : !felt.type
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_12]][@sum] : <@Sum<[@N]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@sum] : <@Sum<[@N]>>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_24]], %[[VAL_18]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @SumUser {
-// CHECK-NEXT:      struct.field @out : !array.type<2 x !felt.type> {llzk.pub}
-// CHECK-NEXT:      struct.field @sums : !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:      struct.field @sums$inputs : !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:      struct.member @out : !array.type<2 x !felt.type> {llzk.pub}
+// CHECK-NEXT:      struct.member @sums : !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:      struct.member @sums$inputs : !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:      function.def @compute(%[[VAL_25:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@SumUser> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = struct.new : <@SumUser>
 // CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
@@ -356,14 +356,14 @@ module attributes { veridise.lang = "llzk" } {
 // CHECK-NEXT:          array.write %[[VAL_28]]{{\[}}%[[VAL_54]]] = %[[VAL_60]] : <2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>, !struct.type<@Sum<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        %[[VAL_61:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_28]]{{\[}}%[[VAL_31]]] : <2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>, !struct.type<@Sum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[VAL_62:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_61]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_62:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_61]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
 // CHECK-NEXT:        array.write %[[VAL_27]]{{\[}}%[[VAL_31]]] = %[[VAL_62]] : <2 x !felt.type>, !felt.type
 // CHECK-NEXT:        %[[VAL_63:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_28]]{{\[}}%[[VAL_32]]] : <2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>, !struct.type<@Sum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[VAL_64:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_63]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_64:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_63]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
 // CHECK-NEXT:        array.write %[[VAL_27]]{{\[}}%[[VAL_32]]] = %[[VAL_64]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:        struct.writef %[[VAL_26]][@out] = %[[VAL_27]] : <@SumUser>, !array.type<2 x !felt.type>
-// CHECK-NEXT:        struct.writef %[[VAL_26]][@sums] = %[[VAL_28]] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
-// CHECK-NEXT:        struct.writef %[[VAL_26]][@sums$inputs] = %[[VAL_29]] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:        struct.writem %[[VAL_26]][@out] = %[[VAL_27]] : <@SumUser>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_26]][@sums] = %[[VAL_28]] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:        struct.writem %[[VAL_26]][@sums$inputs] = %[[VAL_29]] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:        function.return %[[VAL_26]] : !struct.type<@SumUser>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_65:[0-9a-zA-Z_\.]+]]: !struct.type<@SumUser>, %[[VAL_66:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
@@ -371,13 +371,13 @@ module attributes { veridise.lang = "llzk" } {
 // CHECK-NEXT:        %[[VAL_68:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:        %[[VAL_69:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
 // CHECK-NEXT:        %[[VAL_70:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:        %[[VAL_71:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:        %[[VAL_71:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:        %[[VAL_72:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_71]]{{\[}}%[[VAL_67]]] : <2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>, !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>
 // CHECK-NEXT:        %[[VAL_73:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_72]][@c] : <[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>, !felt.type
 // CHECK-NEXT:        %[[VAL_74:[0-9a-zA-Z_\.]+]] = felt.const  0
 // CHECK-NEXT:        constrain.eq %[[VAL_73]], %[[VAL_74]] : !felt.type, !felt.type
 // CHECK-NEXT:        scf.for %[[VAL_75:[0-9a-zA-Z_\.]+]] = %[[VAL_67]] to %[[VAL_69]] step %[[VAL_68]] {
-// CHECK-NEXT:          %[[VAL_76:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:          %[[VAL_76:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:          %[[VAL_77:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_76]]{{\[}}%[[VAL_67]]] : <2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>, !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>
 // CHECK-NEXT:          %[[VAL_78:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_77]][@vec] : <[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>, !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>
 // CHECK-NEXT:          %[[VAL_79:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_78]][@p] : <[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, !array.type<#[[$ATTR_0]] x !felt.type>
@@ -385,13 +385,13 @@ module attributes { veridise.lang = "llzk" } {
 // CHECK-NEXT:          %[[VAL_81:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_66]]{{\[}}%[[VAL_75]]] : <7 x !felt.type>, !felt.type
 // CHECK-NEXT:          constrain.eq %[[VAL_80]], %[[VAL_81]] : !felt.type, !felt.type
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_82:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:        %[[VAL_82:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:        %[[VAL_83:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_82]]{{\[}}%[[VAL_67]]] : <2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>, !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>
 // CHECK-NEXT:        %[[VAL_84:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_83]][@c] : <[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>, !felt.type
 // CHECK-NEXT:        %[[VAL_85:[0-9a-zA-Z_\.]+]] = felt.const  1
 // CHECK-NEXT:        constrain.eq %[[VAL_84]], %[[VAL_85]] : !felt.type, !felt.type
 // CHECK-NEXT:        scf.for %[[VAL_86:[0-9a-zA-Z_\.]+]] = %[[VAL_67]] to %[[VAL_70]] step %[[VAL_68]] {
-// CHECK-NEXT:          %[[VAL_87:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:          %[[VAL_87:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:          %[[VAL_88:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_87]]{{\[}}%[[VAL_68]]] : <2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>, !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>
 // CHECK-NEXT:          %[[VAL_89:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_88]][@vec] : <[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>, !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>
 // CHECK-NEXT:          %[[VAL_90:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_89]][@p] : <[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, !array.type<#[[$ATTR_0]] x !felt.type>
@@ -400,24 +400,24 @@ module attributes { veridise.lang = "llzk" } {
 // CHECK-NEXT:          %[[VAL_93:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_66]]{{\[}}%[[VAL_92]]] : <7 x !felt.type>, !felt.type
 // CHECK-NEXT:          constrain.eq %[[VAL_91]], %[[VAL_93]] : !felt.type, !felt.type
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_94:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@out] : <@SumUser>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_94:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@out] : <@SumUser>, !array.type<2 x !felt.type>
 // CHECK-NEXT:        %[[VAL_95:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_94]]{{\[}}%[[VAL_67]]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_96:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:        %[[VAL_96:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:        %[[VAL_97:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_96]]{{\[}}%[[VAL_67]]] : <2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>, !struct.type<@Sum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[VAL_98:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_97]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_98:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_97]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_95]], %[[VAL_98]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_99:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@out] : <@SumUser>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_99:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@out] : <@SumUser>, !array.type<2 x !felt.type>
 // CHECK-NEXT:        %[[VAL_100:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_99]]{{\[}}%[[VAL_68]]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_101:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:        %[[VAL_101:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:        %[[VAL_102:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_101]]{{\[}}%[[VAL_68]]] : <2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>, !struct.type<@Sum<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:        %[[VAL_103:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_102]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_103:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_102]][@sum] : <@Sum<[#[[$ATTR_0]]]>>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_100]], %[[VAL_103]] : !felt.type, !felt.type
 // CHECK-NEXT:        scf.for %[[VAL_104:[0-9a-zA-Z_\.]+]] = %[[VAL_67]] to %[[VAL_68]] step %[[VAL_68]] {
-// CHECK-NEXT:          %[[VAL_105:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
+// CHECK-NEXT:          %[[VAL_105:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums$inputs] : <@SumUser>, !array.type<2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>
 // CHECK-NEXT:          %[[VAL_106:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_105]]{{\[}}%[[VAL_104]]] : <2 x !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>>, !pod.type<[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>
 // CHECK-NEXT:          %[[VAL_107:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_106]][@vec] : <[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>, !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>
 // CHECK-NEXT:          %[[VAL_108:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_106]][@c] : <[@vec: !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, @c: !felt.type]>, !felt.type
-// CHECK-NEXT:          %[[VAL_109:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_65]][@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
+// CHECK-NEXT:          %[[VAL_109:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_65]][@sums] : <@SumUser>, !array.type<2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>
 // CHECK-NEXT:          %[[VAL_110:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_109]]{{\[}}%[[VAL_104]]] : <2 x !struct.type<@Sum<[#[[$ATTR_0]]]>>>, !struct.type<@Sum<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:          function.call @Sum::@constrain(%[[VAL_110]], %[[VAL_107]], %[[VAL_108]]) : (!struct.type<@Sum<[#[[$ATTR_0]]]>>, !pod.type<[@p: !array.type<#[[$ATTR_0]] x !felt.type>]>, !felt.type) -> ()
 // CHECK-NEXT:        }

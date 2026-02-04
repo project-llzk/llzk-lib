@@ -1,0 +1,6 @@
+changed:
+  - felt.nondet is now llzk.nondet and includes a type argument
+  - replace uses of undef op with llzk.nondet
+
+removed:
+  - undef op and dialect

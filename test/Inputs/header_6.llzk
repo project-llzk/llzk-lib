@@ -1,6 +1,6 @@
 // Imported via `include_fail.llzk`
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{Array dimension must be one of ['builtin.integer', 'builtin.symbol_ref', 'builtin.affine_map'] but found 'builtin.type'}}
   function.def private @b(%x: !array.type<!felt.type>)
 }

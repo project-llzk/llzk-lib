@@ -35,10 +35,10 @@ Value replaceReadWithWrite(Value v) {
   if (!v.getDefiningOp()) {
     return v;
   }
-  if (auto read = dyn_cast<FieldReadOp>(v.getDefiningOp())) {
+  if (auto read = dyn_cast<MemberReadOp>(v.getDefiningOp())) {
     // Traverse backwards through the block until we find a write
     for (Operation *cur = read; cur != nullptr; cur = cur->getPrevNode()) {
-      if (auto write = dyn_cast<FieldWriteOp>(cur)) {
+      if (auto write = dyn_cast<MemberWriteOp>(cur)) {
         // Return the written value
         return write.getVal();
       }

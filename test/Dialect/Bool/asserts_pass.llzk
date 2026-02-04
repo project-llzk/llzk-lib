@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component01<[@C]> {
     function.def @compute(%a: !felt.type) -> !struct.type<@Component01<[@C]>> {
       %self = struct.new : !struct.type<@Component01<[@C]>>

@@ -15,8 +15,8 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
-#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
@@ -45,12 +45,12 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 
 #define DEBUG_TYPE "llzk-poly-lowering-pass"
-#define AUXILIARY_FIELD_PREFIX "__llzk_poly_lowering_pass_aux_field_"
+#define AUXILIARY_MEMBER_PREFIX "__llzk_poly_lowering_pass_aux_member_"
 
 namespace {
 
 struct AuxAssignment {
-  std::string auxFieldName;
+  std::string auxMemberName;
   Value computedValue;
 };
 
@@ -81,10 +81,10 @@ private:
     if (val.getDefiningOp<FeltConstantOp>()) {
       return memo[val] = 0;
     }
-    if (val.getDefiningOp<FeltNonDetOp>()) {
+    if (val.getDefiningOp<NonDetOp>()) {
       return memo[val] = 1;
     }
-    if (val.getDefiningOp<FieldReadOp>()) {
+    if (val.getDefiningOp<MemberReadOp>()) {
       return memo[val] = 1;
     }
     if (auto addOp = val.getDefiningOp<AddFeltOp>()) {
@@ -138,11 +138,11 @@ private:
       bool eraseMul = lhsDeg + rhsDeg > maxDegree;
       // Optimization: If lhs == rhs, factor it only once
       if (lhs == rhs && eraseMul) {
-        std::string auxName = AUXILIARY_FIELD_PREFIX + std::to_string(this->auxCounter++);
-        FieldDefOp auxField = addAuxField(structDef, auxName);
+        std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
+        MemberDefOp auxMember = addAuxMember(structDef, auxName);
 
-        auto auxVal = builder.create<FieldReadOp>(
-            lhs.getLoc(), lhs.getType(), selfVal, auxField.getNameAttr()
+        auto auxVal = builder.create<MemberReadOp>(
+            lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
         );
         auxAssignments.push_back({auxName, lhs});
         Location loc = builder.getFusedLoc({auxVal.getLoc(), lhs.getLoc()});
@@ -165,13 +165,13 @@ private:
       while (lhsDeg + rhsDeg > maxDegree) {
         Value &toFactor = (lhsDeg >= rhsDeg) ? lhs : rhs;
 
-        // Create auxiliary field for toFactor
-        std::string auxName = AUXILIARY_FIELD_PREFIX + std::to_string(this->auxCounter++);
-        FieldDefOp auxField = addAuxField(structDef, auxName);
+        // Create auxiliary member for toFactor
+        std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
+        MemberDefOp auxMember = addAuxMember(structDef, auxName);
 
-        // Read back as FieldReadOp (new SSA value)
-        auto auxVal = builder.create<FieldReadOp>(
-            toFactor.getLoc(), toFactor.getType(), selfVal, auxField.getNameAttr()
+        // Read back as MemberReadOp (new SSA value)
+        auto auxVal = builder.create<MemberReadOp>(
+            toFactor.getLoc(), toFactor.getType(), selfVal, auxMember.getNameAttr()
         );
 
         // Emit constraint: auxVal == toFactor
@@ -244,7 +244,7 @@ private:
         return;
       }
 
-      if (failed(checkForAuxFieldConflicts(structDef, AUXILIARY_FIELD_PREFIX))) {
+      if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
         signalPassFailure();
         return;
       }
@@ -322,8 +322,8 @@ private:
       for (const auto &assign : auxAssignments) {
         Value rebuiltExpr =
             rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        builder.create<FieldWriteOp>(
-            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxFieldName),
+        builder.create<MemberWriteOp>(
+            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
             rebuiltExpr
         );
       }

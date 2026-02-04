@@ -2,15 +2,15 @@
 
 // TEST: partial instantiation where 'read_const' cannot be removed
 #id = affine_map<(i)->(i)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
-    struct.field @"$array" : !array.type<#id x !felt.type>
+    struct.member @"$array" : !array.type<#id x !felt.type>
 
     function.def @compute() -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> {
       %self = struct.new : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
       %1 = poly.read_const @N : index
       %array = array.new{(%1)[]} : !array.type<#id x !felt.type>
-      struct.writef %self[@"$array"] = %array : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#id x !felt.type>
+      struct.writem %self[@"$array"] = %array : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#id x !felt.type>
       function.return %self : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
     }
 
@@ -36,12 +36,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK: #[[$M0:.+]] = affine_map<(d0) -> (d0)>
 //
 // CHECK-LABEL: struct.def @"Zip_f_f_\1A"<[@N]> {
-// CHECK-NEXT:    struct.field @"$array" : !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:    struct.member @"$array" : !array.type<#[[$M0]] x !felt.type>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@"Zip_f_f_\1A"<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@"Zip_f_f_\1A"<[@N]>>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new{(%[[V1]])} : <#[[$M0]] x !felt.type>
-// CHECK-NEXT:      struct.writef %[[V0]][@"$array"] = %[[V2]] : <@"Zip_f_f_\1A"<[@N]>>, !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:      struct.writem %[[V0]][@"$array"] = %[[V2]] : <@"Zip_f_f_\1A"<[@N]>>, !array.type<#[[$M0]] x !felt.type>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@"Zip_f_f_\1A"<[@N]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@"Zip_f_f_\1A"<[@N]>>) attributes {function.allow_constraint} {

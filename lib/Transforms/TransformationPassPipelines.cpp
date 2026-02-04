@@ -48,7 +48,7 @@ void registerTransformationPassPipelines() {
 
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops-and-defs",
-      "Remove unnecessary operations, field definitions, and struct definitions",
+      "Remove unnecessary operations, member definitions, and struct definitions",
       [](OpPassManager &pm) { addRemoveUnnecessaryOpsAndDefsPipeline(pm); }
   );
 

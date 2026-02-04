@@ -1,10 +1,10 @@
 // RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-print-symbol-def-tree{stream=outs})' %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUse>
 
   struct.def @HasUse {
-    struct.field @f1 : i1
+    struct.member @f1 : i1
     function.def @compute() -> !struct.type<@HasUse> {
       %self = struct.new : !struct.type<@HasUse>
       function.return %self : !struct.type<@HasUse>
@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @NoUse<[@T]> {
-    struct.field @f2 : !poly.tvar<@T>
+    struct.member @f2 : !poly.tvar<@T>
     function.def @compute() -> !struct.type<@NoUse<[@T]>> {
       %self = struct.new : !struct.type<@NoUse<[@T]>>
       function.return %self : !struct.type<@NoUse<[@T]>>
@@ -32,7 +32,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] 'struct.def' named "HasUse"
 //CHECK-NEXT:  --- Children : [0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.field' named "f1"
+//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.member' named "f1"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -40,7 +40,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] 'struct.def' named "NoUse"
 //CHECK-NEXT:  --- Children : [0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]], 0x[[R10:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R08]]] 'struct.field' named "f2"
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'struct.member' named "f2"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R09]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -49,13 +49,13 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  -----------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
   global.def @b : !felt.type
 
   module @StructsWithinNestedModule {
     struct.def @HasUse<[@T]> {
-      struct.field @f1 : !poly.tvar<@T>
+      struct.member @f1 : !poly.tvar<@T>
       function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
         %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
         function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
@@ -66,8 +66,8 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     struct.def @NoUse {
-      struct.field @f2 : i1
-      struct.field @f3 : !felt.type
+      struct.member @f2 : i1
+      struct.member @f3 : !felt.type
       function.def @compute() -> !struct.type<@StructsWithinNestedModule::@NoUse> {
         %self = struct.new : !struct.type<@StructsWithinNestedModule::@NoUse>
         function.return %self : !struct.type<@StructsWithinNestedModule::@NoUse>
@@ -89,7 +89,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : [0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.def' named "HasUse"
 //CHECK-NEXT:  --- Children : [0x[[R07:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R07]]] 'struct.field' named "f1"
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'struct.member' named "f1"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R08]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -97,9 +97,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] 'struct.def' named "NoUse"
 //CHECK-NEXT:  --- Children : [0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]], 0x[[R12:[0-9a-f]+]], 0x[[R13:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R10]]] 'struct.field' named "f2"
+//CHECK-NEXT:  - Node : [0x[[R10]]] 'struct.member' named "f2"
 //CHECK-NEXT:  --- Children : []
-//CHECK-NEXT:  - Node : [0x[[R11]]] 'struct.field' named "f3"
+//CHECK-NEXT:  - Node : [0x[[R11]]] 'struct.member' named "f3"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R12]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -108,7 +108,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  -----------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
     global.def @a : !struct.type<@HasUse<[!felt.type]>>
     module @NestedAgain {
@@ -179,7 +179,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  -----------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {

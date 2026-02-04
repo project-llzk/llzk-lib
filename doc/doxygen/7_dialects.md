@@ -19,4 +19,3 @@
 \include{doc} build/doc/mlir/dialect/PolymorphicDialect.md
 \include{doc} build/doc/mlir/dialect/StringDialect.md
 \include{doc} build/doc/mlir/dialect/StructDialect.md
-\include{doc} build/doc/mlir/dialect/UndefDialect.md

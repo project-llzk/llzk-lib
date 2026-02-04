@@ -45,7 +45,7 @@ function.def @f_not(%a: i1) -> i1 attributes {function.allow_non_native_field_op
 // -----
 
 !F = !felt.type
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @compute(%a: !F, %b: !F, %c: !F, %d: !F, %e: !F, %f: !F) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -64,7 +64,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK-LABEL: module attributes {veridise.lang = "llzk"} {
+// CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ComponentA {
 // CHECK-NEXT:      function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type,
 // CHECK-SAME:      %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentA>  attributes {function.allow_witness} {

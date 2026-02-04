@@ -9,6 +9,8 @@
 
 #include "llzk-c/Dialect/LLZK.h"
 
+#include "llzk-c/Dialect/Felt.h"
+
 #include "../CAPITestBase.h"
 
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk) { (void)mlirGetDialectHandle__llzk__(); }
@@ -21,4 +23,14 @@ TEST_F(CAPITest, llzk_public_attr_get) {
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
   auto attr = llzkPublicAttrGet(context);
   EXPECT_TRUE(llzkAttributeIsAPublicAttr(attr));
+}
+
+TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
+  auto op_name = mlirStringRefCreateFromCString("llzk.nondet");
+  auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
+  auto t = llzkFeltTypeGet(context);
+  mlirOperationStateAddResults(&state, 1, &t);
+
+  auto op = mlirOperationCreate(&state);
+  EXPECT_TRUE(llzkOperationIsANonDetOp(op));
 }

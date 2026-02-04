@@ -192,7 +192,7 @@ ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Locatio
 }
 
 ModuleBuilder &ModuleBuilder::insertConstrainCall(
-    StructDefOp caller, StructDefOp callee, Location callLoc, Location fieldDefLoc
+    StructDefOp caller, StructDefOp callee, Location callLoc, Location memberDefLoc
 ) {
   ensureConstrainFnExists(caller.getName());
   ensureConstrainFnExists(callee.getName());
@@ -202,23 +202,23 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   StructType calleeTy = callee.getType();
 
   size_t numOps = caller.getBody()->getOperations().size();
-  auto fieldName = StringAttr::get(context, callee.getName().str() + std::to_string(numOps));
+  auto memberName = StringAttr::get(context, callee.getName().str() + std::to_string(numOps));
 
-  // Insert the field declaration op
+  // Insert the member declaration op
   {
     OpBuilder builder(caller.getBodyRegion());
-    builder.create<FieldDefOp>(fieldDefLoc, fieldName, calleeTy);
+    builder.create<MemberDefOp>(memberDefLoc, memberName, calleeTy);
   }
 
   // Insert the constrain function ops
   {
     OpBuilder builder(callerFn.getBody());
 
-    auto field = builder.create<FieldReadOp>(
-        callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), fieldName
+    auto member = builder.create<MemberReadOp>(
+        callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), memberName
     );
     builder.create<CallOp>(
-        callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {field}
+        callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}
     );
   }
   updateConstrainReachability(caller, callee);
