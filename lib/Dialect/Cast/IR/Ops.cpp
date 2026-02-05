@@ -26,25 +26,25 @@ namespace llzk::cast {
 //===------------------------------------------------------------------===//
 
 LogicalResult FeltToIndexOp::verify() {
-  if (auto parentOr = getParentOfType<FuncDefOp>(*this);
-      succeeded(parentOr) && !parentOr->hasAllowWitnessAttr()) {
-    // Traverse the def-use chain to see if this operand, which is a felt, ever
-    // derives from a Signal struct.
-    SmallVector<Value, 2> frontier {getValue()};
-    DenseSet<Value> visited;
-
-    while (!frontier.empty()) {
-      Value v = frontier.pop_back_val();
-      if (visited.contains(v)) {
-        continue;
-      }
-      visited.insert(v);
-
-      if (Operation *op = v.getDefiningOp()) {
-        frontier.insert(frontier.end(), op->operand_begin(), op->operand_end());
-      }
-    }
-  }
+  // if (auto parentOr = getParentOfType<FuncDefOp>(*this);
+  //     succeeded(parentOr) && !parentOr->hasAllowWitnessAttr()) {
+  //   // Traverse the def-use chain to see if this operand, which is a felt, ever
+  //   // derives from a member with the `signal` attribute.
+  //   SmallVector<Value, 2> frontier {getValue()};
+  //   DenseSet<Value> visited;
+  //
+  //   while (!frontier.empty()) {
+  //     Value v = frontier.pop_back_val();
+  //     if (visited.contains(v)) {
+  //       continue;
+  //     }
+  //     visited.insert(v);
+  //
+  //     if (Operation *op = v.getDefiningOp()) {
+  //       frontier.insert(frontier.end(), op->operand_begin(), op->operand_end());
+  //     }
+  //   }
+  // }
 
   return success();
 }

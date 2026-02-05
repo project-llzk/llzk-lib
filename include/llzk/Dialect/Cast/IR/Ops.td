@@ -39,9 +39,9 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
 def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
   let summary = "convert a field element into an index";
   let description = [{
-    This operation converts a field element value into an index value to allow
-    use as an array index or loop bound. In struct @constrain functions, the
-    argument to this op is not allowed to be derived from a Signal struct.
+    This operation converts a field element value into an index value to allow use
+    as an array index or loop bound. In struct @constrain functions, the argument to
+    this op is not allowed to be derived from a member with the `signal` attribute.
 
     Example:
     ```llzk
