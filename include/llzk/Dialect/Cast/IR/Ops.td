@@ -42,8 +42,9 @@ def LLZK_FeltToIndexOp
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow use
-    as an array index or loop bound. In struct @constrain functions, the argument to
-    this op is not allowed to be derived from a member with the `signal` attribute.
+    as an array index or loop bound. It is illegal for the argument to this op to be
+    derived from a struct member with the `signal` attribute unless the function
+    containing the op is marked with the `allow_non_native_field_ops` attribute.
 
     Example:
     ```llzk
