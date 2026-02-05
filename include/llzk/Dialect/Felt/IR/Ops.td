@@ -45,7 +45,9 @@ class FeltDialectUnaryOp<string mnemonic, Type resultType,
 def LLZK_FeltConstantOp
     : FeltDialectOp<"const", [ConstantLike, Pure,
                               DeclareOpInterfaceMethods<
-                                  OpAsmOpInterface, ["getAsmResultNames"]>]> {
+                                  OpAsmOpInterface, ["getAsmResultNames"]>,
+                              TypeUnifyWithResult<"value">,
+                              InferTypeOpAdaptorWithIsCompatible]> {
   let summary = "field element constant";
   let description = [{
     This operation produces a felt-typed SSA value holding an integer constant.
@@ -53,12 +55,13 @@ def LLZK_FeltConstantOp
     Example:
 
     ```llzk
-    %0 = llzk.const 42
+    %0 = felt.const 42
+    %0 = felt.const 99 <"bn254">
     ```
   }];
 
   let arguments = (ins LLZK_FeltConstAttr:$value);
-  let results = (outs LLZK_FeltType:$result);
+  let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
 }

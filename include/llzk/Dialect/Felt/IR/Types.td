@@ -20,12 +20,28 @@ include "mlir/Interfaces/MemorySlotInterfaces.td"
 def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
   let mnemonic = "type";
   let summary = "finite field element";
-  let description = [{}];
+  let description = [{
+    An element of a finite field. The field element is either of the specified
+    field or of an unspecified field to be filled in by any backend translations.
+
+    Field names are either built-in or specified using `felt.field` specification
+    attributes on the root module.
+  }];
+
+  let parameters = (ins OptionalParameter<"::mlir::StringAttr">:$fieldName);
+
+  let assemblyFormat = "(`<` $fieldName^ `>`)?";
+
+  // Default when omitted: felt.type with no fieldName
+  let builderCall = "::llzk::felt::FeltType::get($_builder.getContext(), "
+                    "::mlir::StringAttr())";
 
   let extraClassDeclaration = [{
     static ::llzk::felt::FeltType get(::mlir::MLIRContext *context) {
-      return Base::get(context);
+      return ::llzk::felt::FeltType::get(context, ::mlir::StringAttr());
     }
+
+    // const Field &getField() const;
   }];
 }
 

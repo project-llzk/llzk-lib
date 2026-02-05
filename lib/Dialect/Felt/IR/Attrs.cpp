@@ -12,6 +12,10 @@
 
 namespace llzk::felt {
 
-mlir::Type FeltConstAttr::getType() const { return FeltType::get(this->getContext()); }
+mlir::Type FeltConstAttr::getType() const {
+  return FeltType::get(this->getContext(), this->getFieldName());
+}
+
+FeltConstAttr::operator ::llvm::APInt() const { return getValue(); }
 
 } // namespace llzk::felt

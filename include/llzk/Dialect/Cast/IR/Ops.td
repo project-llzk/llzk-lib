@@ -13,12 +13,17 @@
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Cast/IR/Dialect.td"
 include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/SHared/OpsBase.td"
+include "mlir/Interfaces/InferTypeOpInterface.td"
 
 include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/IR/SymbolInterfaces.td"
 
-def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
+class CastOp<string mnemonic, list<Trait> traits = []>
+    : NaryOpBase<CastDialect, mnemonic, LLZK_FeltType.builderCall, traits>;
+
+def LLZK_IntToFeltOp : CastOp<"tofelt", [Pure]> {
   let summary = "convert an integer into a field element";
   let description = [{
     This operation converts a supported integer type value into a field element value.
@@ -33,10 +38,11 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
 
   let arguments = (ins AnyLLZKIntType:$value);
   let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat = [{ $value `:` type($value) attr-dict }];
+  let assemblyFormat =
+      [{ $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
 }
 
-def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
+def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure]> {
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow
@@ -52,7 +58,8 @@ def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
 
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
-  let assemblyFormat = [{ $value attr-dict }];
+  let assemblyFormat =
+      [{ $value attr-dict `` custom<InferredOrParsedType>(type($value), "false") }];
 
   let hasVerifier = 1;
 }

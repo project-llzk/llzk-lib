@@ -24,24 +24,42 @@ def LLZK_FeltConstAttr
     A felt attribute represents a finite field element.
   }];
 
-  let parameters = (ins APIntParameter<"The felt constant value">:$value);
+  let parameters = (ins APIntParameter<"The felt constant value">:$value,
+      OptionalParameter<"::mlir::StringAttr">:$fieldName);
 
-  let returnType = "::llvm::APInt";
-  let convertFromStorage = "$_self.getValue()";
-
-  let assemblyFormat = [{ $value }];
+  let assemblyFormat = [{ $value ( ` ` `<` $fieldName^ `>` )? }];
 
   let builders =
-      [AttrBuilder<(ins "unsigned":$numBits, "::llvm::StringRef":$str), [{
-      return $_get(context, ::llvm::APInt(numBits, str, 10));
-    }]>,
+      [AttrBuilder<(ins "unsigned":$numBits, "::llvm::StringRef":$str,
+                       "::llvm::StringRef":$fieldName),
+                   [{
+        return $_get(context, ::llvm::APInt(numBits, str, 10), ::mlir::StringAttr::get(context, fieldName));
+      }]>,
+       AttrBuilder<(ins "unsigned":$numBits,
+                       "::llvm::ArrayRef<uint64_t>":$parts,
+                       "::llvm::StringRef":$fieldName),
+                   [{
+        return $_get(context, ::llvm::APInt(numBits, parts), ::mlir::StringAttr::get(context, fieldName));
+      }]>,
+       AttrBuilder<(ins "unsigned":$numBits, "::llvm::StringRef":$str), [{
+        return $_get(context, ::llvm::APInt(numBits, str, 10), ::mlir::StringAttr());
+      }]>,
        AttrBuilder<
            (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts), [{
-      return $_get(context, ::llvm::APInt(numBits, parts));
-    }]>];
+        return $_get(context, ::llvm::APInt(numBits, parts), ::mlir::StringAttr());
+      }]>,
+       AttrBuilder<(ins "::llvm::APInt":$value, "::llvm::StringRef":$fieldName),
+                   [{
+        return $_get(context, value, ::mlir::StringAttr::get(context, fieldName));
+      }]>,
+       AttrBuilder<(ins "::llvm::APInt":$value), [{
+        return $_get(context, value, ::mlir::StringAttr());
+      }]>];
 
   let extraClassDeclaration = [{
     ::mlir::Type getType() const;
+
+    operator ::llvm::APInt() const;
   }];
 }
 

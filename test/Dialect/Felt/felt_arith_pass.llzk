@@ -4,11 +4,21 @@
 
 function.def @f_constant() -> !felt.type {
   %c = felt.const 42
-  function.return %c: !felt.type
+  function.return %c : !felt.type
 }
 //CHECK-LABEL:  function.def @f_constant() -> !felt.type {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 42
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_constant_babybear() -> !felt.type<"babybear"> {
+  %c = felt.const 42 <"babybear">
+  function.return %c : !felt.type<"babybear">
+}
+//CHECK-LABEL:  function.def @f_constant_babybear() -> !felt.type<"babybear"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 42 <"babybear">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"babybear">
 //CHECK-NEXT:   }
 // -----
 
