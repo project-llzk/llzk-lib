@@ -22,8 +22,8 @@ constexpr char FUNC_NAME_PRODUCT[] = "product";
 /// available.
 constexpr char LANG_ATTR_NAME[] = "llzk.lang";
 
-/// Name of the attribute on the top-level ModuleOp that specifies the prime fields
-/// that the circuit supports.
+/// Name of the attribute on the top-level ModuleOp that defines prime fields
+/// used in the circuit.
 constexpr char FIELD_ATTR_NAME[] = "llzk.fields";
 
 /// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.

@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/Field.h"
+#include "llzk/Util/Field.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Debug.h"
 
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/SlowDynamicAPInt.h>
@@ -23,18 +24,19 @@ using namespace llvm;
 
 namespace llzk {
 
-Field::Field(std::string_view primeStr, llvm::StringRef name) : primeName(name) {
-  APSInt parsedInt(primeStr);
+static DenseMap<StringRef, Field> knownFields;
 
-  primeMod = toDynamicAPInt(parsedInt);
+Field::Field(std::string_view primeStr, llvm::StringRef name) : Field(APSInt(primeStr), name) {}
+
+Field::Field(llvm::APInt prime, llvm::StringRef name) : primeName(name) {
+  primeMod = toDynamicAPInt(prime);
   halfPrime = (primeMod + felt(1)) / felt(2);
-  bitwidth = parsedInt.getBitWidth();
+  bitwidth = prime.getBitWidth();
 }
 
-FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(const char *fieldName) {
-  static DenseMap<StringRef, Field> knownFields;
+FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(llvm::StringRef fieldName) {
   static std::once_flag fieldsInit;
-  std::call_once(fieldsInit, initKnownFields, knownFields);
+  std::call_once(fieldsInit, initKnownFields);
 
   if (auto it = knownFields.find(fieldName); it != knownFields.end()) {
     return {it->second};
@@ -42,35 +44,52 @@ FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(const char *fi
   return failure();
 }
 
-const Field &Field::getField(const char *fieldName) {
+const Field &Field::getField(llvm::StringRef fieldName, EmitErrorFn errFn) {
   auto res = tryGetField(fieldName);
   if (mlir::failed(res)) {
-    report_fatal_error("field \"" + Twine(fieldName) + "\" is unsupported");
+    auto msg = "field \"" + Twine(fieldName) + "\" is unsupported";
+    if (errFn) {
+      errFn().append(msg).report();
+    } else {
+      report_fatal_error(msg);
+    }
   }
   return res.value().get();
 }
 
-void Field::initKnownFields(DenseMap<StringRef, Field> &knownFields) {
+void Field::addField(Field &&f, EmitErrorFn errFn) {
+  auto it = knownFields.find(f.name());
+  if (it == knownFields.end()) {
+    // Field does not exist, add it.
+    knownFields.try_emplace(f.name(), f);
+  } else if (it->second != f) {
+    // Field exists and conflicts with existing definition.
+    std::string msg;
+    debug::Appender(msg) << "Definition of \"" << f.name() << "\" conflicts with prior definition: prior=" << it->second.prime() << ", new=" << f.prime();
+    if (errFn) {
+      errFn().append(msg).report();
+    } else {
+      report_fatal_error(msg.c_str());
+    }
+  }
+  // Field exists and does not conflict, so do nothing.
+}
+
+void Field::initKnownFields() {
   static constexpr const char BN128[] = "bn128", BN254[] = "bn254", BABYBEAR[] = "babybear",
                               GOLDILOCKS[] = "goldilocks", MERSENNE31[] = "mersenne31",
                               KOALABEAR[] = "koalabear";
   // bn128/254, default for circom
-  knownFields.try_emplace(
-      BN128,
-      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN128)
-  );
-  knownFields.try_emplace(
-      BN254,
-      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN254)
-  );
+  addField(Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN128));
+  addField(Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN254));
   // 15 * 2^27 + 1, default for zirgen
-  knownFields.try_emplace(BABYBEAR, Field("2013265921", BABYBEAR));
+  addField(Field("2013265921", BABYBEAR));
   // 2^64 - 2^32 + 1, used for plonky2
-  knownFields.try_emplace(GOLDILOCKS, Field("18446744069414584321", GOLDILOCKS));
+  addField(Field("18446744069414584321", GOLDILOCKS));
   // 2^31 - 1, used for Plonky3
-  knownFields.try_emplace(MERSENNE31, Field("2147483647", MERSENNE31));
+  addField(Field("2147483647", MERSENNE31));
   // 2^31 - 2^24 + 1, also for Plonky3
-  knownFields.try_emplace(KOALABEAR, Field("2130706433", KOALABEAR));
+  addField(Field("2130706433", KOALABEAR));
 }
 
 DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
@@ -90,13 +109,13 @@ DynamicAPInt Field::inv(const llvm::APInt &i) const {
 }
 
 // Parses Fields from the given attribute, if able.
-static FailureOr<SmallVector<std::reference_wrapper<const Field>>> parseFields(mlir::Attribute a) {
+static LogicalResult parseFields(mlir::Attribute a) {
   // clang-format off
   return llvm::TypeSwitch<
              mlir::Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
       .Case<mlir::UnitAttr>(
           [](auto _) {
-            return SmallVector<std::reference_wrapper<const Field>> {};
+            return success();
           })
       .Case<mlir::StringAttr>(
           [](auto s) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
@@ -127,18 +146,16 @@ static FailureOr<SmallVector<std::reference_wrapper<const Field>>> parseFields(m
   // clang-format on
 }
 
-FailureOr<SmallVector<std::reference_wrapper<const Field>>>
-getSupportedFields(mlir::ModuleOp modOp) {
+LogicalResult addSpecifiedFields(mlir::ModuleOp modOp) {
   if (mlir::Attribute a = modOp->getAttr(FIELD_ATTR_NAME)) {
     return parseFields(a);
-  } else if (mlir::ModuleOp parentMod = modOp->getParentOfType<mlir::ModuleOp>()) {
-    return getSupportedFields(parentMod);
   }
-  return SmallVector<std::reference_wrapper<const Field>> {};
+  // Always recurse.
+  if (mlir::ModuleOp parentMod = modOp->getParentOfType<mlir::ModuleOp>()) {
+    return addSpecifiedFields(parentMod);
+  }
+  return success();
 }
 
-bool supportsField(const SmallVector<std::reference_wrapper<const Field>> &fields, const Field &f) {
-  return fields.empty() || std::find(fields.begin(), fields.end(), f) != fields.end();
-}
 
 } // namespace llzk

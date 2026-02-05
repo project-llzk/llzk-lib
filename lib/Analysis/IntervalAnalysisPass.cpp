@@ -50,30 +50,18 @@ protected:
       return;
     }
 
-    const Field &field = Field::getField(fieldName.c_str());
+    auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
 
-    auto supportedFieldsRes = getSupportedFields(modOp);
-    if (mlir::failed(supportedFieldsRes)) {
-      std::string msg = (llvm::Twine("IntervalAnalysisPrinterPass error: could not parse \"") +
-                         FIELD_ATTR_NAME + "\" attribute")
+    if (mlir::failed(fieldLookupRes)) {
+      std::string msg = (llvm::Twine("IntervalAnalysisPrinterPass error: unknown field \"") +
+                         fieldName.c_str() + "\" specified")
                             .str();
       modOp->emitError(msg).report();
       return;
     }
 
-    const auto &supportedFields = supportedFieldsRes.value();
-    if (!supportsField(supportedFields, field)) {
-      std::string msg;
-      llvm::raw_string_ostream ss(msg);
-      ss << "IntervalAnalysisPrinterPass warning: circuit does not support field \"" << fieldName
-         << "\", so analysis results may be inaccurate. Supported fields: [ ";
-      llvm::interleaveComma(supportedFields, ss, [&ss](auto f) { ss << f.get().name(); });
-      ss << " ]";
-      modOp->emitWarning(msg).report();
-    }
-
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
-    mia.setField(field);
+    mia.setField(fieldLookupRes.value());
     mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);

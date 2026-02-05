@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -29,15 +30,27 @@ namespace llzk {
 /// modulus).
 class Field {
 public:
+  /// @brief Add a new field to the set of available prime fields.
+  /// Reports an error if the field is invalid or conflicts with an existing definition.
+  inline static void addField(llvm::StringRef fieldName, llvm::APInt prime, EmitErrorFn errFn) {
+    return addField(Field(prime, fieldName), errFn);
+  }
+  inline static void addField(llvm::StringRef fieldName, llvm::StringRef primeStr, EmitErrorFn errFn) {
+    return addField(Field(primeStr, fieldName), errFn);
+  }
+
   /// @brief Get a Field from a given field name string, or failure if the
-  /// field is unsupported.
+  /// field is not defined.
   /// @param fieldName The name of the field.
-  static llvm::FailureOr<std::reference_wrapper<const Field>> tryGetField(const char *fieldName);
+  static llvm::FailureOr<std::reference_wrapper<const Field>> tryGetField(llvm::StringRef fieldName);
 
   /// @brief Get a Field from a given field name string. Throws a fatal error
   /// if the field is unsupported.
   /// @param fieldName The name of the field.
-  static const Field &getField(const char *fieldName);
+  static const Field &getField(llvm::StringRef fieldName, EmitErrorFn errFn);
+  inline static const Field &getField(llvm::StringRef fieldName) {
+    return getField(fieldName, nullptr);
+  }
 
   Field() = delete;
   Field(const Field &) = default;
@@ -89,28 +102,32 @@ public:
 
 private:
   Field(std::string_view primeStr, llvm::StringRef name);
+  Field(llvm::APInt primeInt, llvm::StringRef name);
+
 
   /// Name of the prime for debugging purposes
   llvm::StringRef primeName;
   llvm::DynamicAPInt primeMod, halfPrime;
   unsigned bitwidth;
 
-  static void initKnownFields(llvm::DenseMap<llvm::StringRef, Field> &knownFields);
+  /// Initialize known prime fields.
+  static void initKnownFields();
+
+  /// @brief Add a new field to the set of available prime fields.
+  /// @return Failure if the field is invalid or conflicts with an existing definition.
+  static void addField(Field &&f, EmitErrorFn errFn);
+  inline static void addField(Field &&f) {
+    addField(std::move(f), nullptr);
+  }
 };
 
-/// @brief Get a list of primes that the circuit is compatible with.
+/// @brief Update the set of available prime fields with the fields specified on the
+/// root module.
 /// @param modOp a ModuleOp in the circuit. The search for the field attribute begins
 /// at this module and continues until a field attribute is encountered.
+/// The operation is recursive as include operations introduce their own root modules,
+/// which may include new prime specifications.
 /// @return Failure if the field attribute is malformed (i.e., is the wrong type of attribute).
-/// Otherwise, a list of supported fields if specified. If the returned list is empty,
-/// then any field is presumed to be supported.
-llvm::FailureOr<llvm::SmallVector<std::reference_wrapper<const Field>>>
-getSupportedFields(mlir::ModuleOp modOp);
-
-/// @brief Return true if the list of fields is empty (meaning any field is supported)
-/// or the given field is contained within the given list of fields
-bool supportsField(
-    const llvm::SmallVector<std::reference_wrapper<const Field>> &fields, const Field &f
-);
+llvm::LogicalResult addSpecifiedFields(mlir::ModuleOp modOp);
 
 } // namespace llzk

@@ -1,19 +1,9 @@
-// RUN: llzk-opt -split-input-file -verify-diagnostics -llzk-print-interval-analysis %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics -llzk-print-interval-analysis="field=moo" %s
 
-// expected-warning@+1{{circuit does not support field "bn128", so analysis results may be inaccurate. Supported fields: [ koalabear ]}}
-module attributes {llzk.lang, llzk.fields = "koalabear"} { }
-
-// -----
-
-// expected-warning@+1{{circuit does not support field "bn128", so analysis results may be inaccurate. Supported fields: [ babybear, mersenne31 ]}}
-module attributes {llzk.lang, llzk.fields = ["babybear", "mersenne31"]} { }
+// expected-error@+1{{IntervalAnalysisPrinterPass error: unknown field "moo" specified}}
+module attributes {llzk.lang} { }
 
 // -----
 
-// expected-error@+1{{IntervalAnalysisPrinterPass error: could not parse "llzk.fields" attribute}}
-module attributes {llzk.lang, llzk.fields = ["moo"]} { }
-
-// -----
-
-// expected-error@+1{{IntervalAnalysisPrinterPass error: could not parse "llzk.fields" attribute}}
-module attributes {llzk.lang, llzk.fields = [["bn128"], ["babybear"]]} { }
+// COM: Now there will be no diagnostics, since "moo" is defined.
+module attributes {llzk.lang, llzk.fields = #felt.field<"moo", 7>} {}

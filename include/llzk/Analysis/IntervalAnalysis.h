@@ -13,7 +13,7 @@
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/DenseAnalysis.h"
-#include "llzk/Analysis/Field.h"
+#include "llzk/Util/Field.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"

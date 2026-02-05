@@ -29,8 +29,8 @@ extern const char *LLZK_FUNC_NAME_CONSTRAIN;
 /// available.
 extern const char *LLZK_LANG_ATTR_NAME;
 
-/// Name of the attribute on the top-level ModuleOp that specifies the prime fields
-/// that the circuit supports.
+/// Name of the attribute on the top-level ModuleOp that defines prime fields
+/// used in the circuit.
 extern const char *FIELD_ATTR_NAME;
 
 /// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.
