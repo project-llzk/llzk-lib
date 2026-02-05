@@ -36,7 +36,9 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
   let assemblyFormat = [{ $value `:` type($value) attr-dict }];
 }
 
-def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
+def LLZK_FeltToIndexOp
+    : Op<CastDialect,
+         "toindex", [Pure, DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow use
@@ -53,8 +55,6 @@ def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat = [{ $value attr-dict }];
-
-  let hasVerifier = 1;
 }
 
 #endif // LLZK_CAST_OPS

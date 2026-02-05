@@ -25,27 +25,40 @@ namespace llzk::cast {
 // FeltToIndexOp
 //===------------------------------------------------------------------===//
 
-LogicalResult FeltToIndexOp::verify() {
-  // if (auto parentOr = getParentOfType<FuncDefOp>(*this);
-  //     succeeded(parentOr) && !parentOr->hasAllowWitnessAttr()) {
-  //   // Traverse the def-use chain to see if this operand, which is a felt, ever
-  //   // derives from a member with the `signal` attribute.
-  //   SmallVector<Value, 2> frontier {getValue()};
-  //   DenseSet<Value> visited;
-  //
-  //   while (!frontier.empty()) {
-  //     Value v = frontier.pop_back_val();
-  //     if (visited.contains(v)) {
-  //       continue;
-  //     }
-  //     visited.insert(v);
-  //
-  //     if (Operation *op = v.getDefiningOp()) {
-  //       frontier.insert(frontier.end(), op->operand_begin(), op->operand_end());
-  //     }
-  //   }
-  // }
+LogicalResult FeltToIndexOp::verifySymbolUses(SymbolTableCollection &tables) {
+  if (auto parentOr = getParentOfType<FuncDefOp>(*this);
+      succeeded(parentOr) && !parentOr->hasAllowNonNativeFieldOpsAttr()) {
+    // Traverse the def-use chain to see if this operand, which is a felt,
+    // derives from a member with the `signal` attribute.
+    SmallVector<Value, 2> frontier {getValue()};
+    DenseSet<Value> visited;
 
+    while (!frontier.empty()) {
+      Value v = frontier.pop_back_val();
+      if (visited.contains(v)) {
+        continue;
+      }
+      visited.insert(v);
+
+      if (Operation *op = v.getDefiningOp()) {
+        if (MemberReadOp read = llvm::dyn_cast<MemberReadOp>(op)) {
+          auto readFrom = read.getMemberDefOp(tables);
+          if (succeeded(readFrom) && readFrom->get().getSignal()) {
+            return emitOpError()
+                .append(
+                    "input is derived from a '", MemberDefOp::getOperationName(),
+                    "' with 'signal' attribute, which is only valid within a '",
+                    FuncDefOp::getOperationName(), "' with '", AllowNonNativeFieldOpsAttr::name,
+                    "' attribute"
+                )
+                .attachNote(read.getLoc())
+                .append("signal value is read here");
+          }
+        }
+        frontier.insert(frontier.end(), op->operand_begin(), op->operand_end());
+      }
+    }
+  }
   return success();
 }
 

@@ -44,3 +44,32 @@ function.def @lt_felt(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[T0]] : i1
 //CHECK-NEXT:    function.return %[[T1]] : !felt.type
 //CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @C3 {
+    struct.member @f1 : !felt.type {signal}
+    function.def @compute() -> !struct.type<@C3> {
+      %self = struct.new : !struct.type<@C3>
+      function.return %self : !struct.type<@C3>
+    }
+    function.def @constrain(%self: !struct.type<@C3>) attributes { function.allow_non_native_field_ops} {
+      %f = struct.readm %self[@f1] : !struct.type<@C3>, !felt.type
+      %i = cast.toindex %f
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: struct.def @C3 {
+//CHECK-NEXT:    struct.member @f1 : !felt.type {signal}
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@C3> attributes {function.allow_witness} {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C3>
+//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@C3>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    function.def @constrain(
+//CHECK-SAME:    %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@C3>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@C3>, !felt.type
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cast.toindex %[[T0]]
+//CHECK-NEXT:      function.return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
