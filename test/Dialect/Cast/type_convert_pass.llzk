@@ -53,7 +53,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@C3>
       function.return %self : !struct.type<@C3>
     }
-    function.def @constrain(%self: !struct.type<@C3>) attributes { function.allow_non_native_field_ops} {
+    function.def @constrain(%self: !struct.type<@C3>) attributes {function.allow_non_native_field_ops} {
       %f = struct.readm %self[@f1] : !struct.type<@C3>, !felt.type
       %i = cast.toindex %f
       function.return
