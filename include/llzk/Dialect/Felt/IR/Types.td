@@ -41,8 +41,10 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
       return ::llzk::felt::FeltType::get(context, ::mlir::StringAttr());
     }
 
-    // const Field &getField() const;
+    const ::llzk::Field &getField() const;
   }];
+
+  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_FELT_TYPES

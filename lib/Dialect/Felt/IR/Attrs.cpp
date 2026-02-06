@@ -12,6 +12,12 @@
 
 namespace llzk::felt {
 
+llvm::LogicalResult FeltConstAttr::verify(
+    llvm::function_ref<mlir::InFlightDiagnostic()> errFn, llvm::APInt, mlir::StringAttr fieldName
+) {
+  return fieldName ? Field::verifyFieldDefined(fieldName.getValue(), errFn) : mlir::success();
+}
+
 mlir::Type FeltConstAttr::getType() const {
   return FeltType::get(this->getContext(), this->getFieldName());
 }

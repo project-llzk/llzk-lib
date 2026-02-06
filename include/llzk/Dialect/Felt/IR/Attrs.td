@@ -61,6 +61,8 @@ def LLZK_FeltConstAttr
 
     operator ::llvm::APInt() const;
   }];
+
+  let genVerifyDecl = 1;
 }
 
 def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {

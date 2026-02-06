@@ -7,13 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Field.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Util/ErrorHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <mlir/IR/DialectImplementation.h>
 
@@ -94,6 +95,17 @@ void FieldSpecAttr::print(mlir::AsmPrinter &odsPrinter) const {
   odsPrinter << ", ";
   odsPrinter.printStrippedAttrOrType(getPrime());
   odsPrinter << '>';
+}
+
+//===------------------------------------------------------------------===//
+// FeltType
+//===------------------------------------------------------------------===//
+
+const Field &FeltType::getField() const { return Field::getField(getFieldName().getValue()); }
+
+llvm::LogicalResult
+FeltType::verify(llvm::function_ref<mlir::InFlightDiagnostic()> errFn, mlir::StringAttr fieldName) {
+  return fieldName ? Field::verifyFieldDefined(fieldName.getValue(), errFn) : mlir::success();
 }
 
 //===------------------------------------------------------------------===//

@@ -44,6 +44,11 @@ public:
   /// @param fieldName The name of the field.
   static llvm::FailureOr<std::reference_wrapper<const Field>> tryGetField(llvm::StringRef fieldName);
 
+  /// Search for a field with the given name, reporting an error if the field is not found.
+  static llvm::LogicalResult verifyFieldDefined(
+      llvm::StringRef fieldName, llvm::function_ref<mlir::InFlightDiagnostic()> errFn
+  );
+
   /// @brief Get a Field from a given field name string. Throws a fatal error
   /// if the field is unsupported.
   /// @param fieldName The name of the field.

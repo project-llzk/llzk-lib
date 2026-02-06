@@ -44,6 +44,16 @@ FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(llvm::StringRe
   return failure();
 }
 
+llvm::LogicalResult Field::verifyFieldDefined(
+    llvm::StringRef fieldName, llvm::function_ref<mlir::InFlightDiagnostic()> errFn
+) {
+  if (mlir::failed(Field::tryGetField(fieldName))) {
+    errFn().append("field '", fieldName, "' is not defined").report();
+    return mlir::failure();
+  }
+  return mlir::success();
+}
+
 const Field &Field::getField(llvm::StringRef fieldName, EmitErrorFn errFn) {
   auto res = tryGetField(fieldName);
   if (mlir::failed(res)) {

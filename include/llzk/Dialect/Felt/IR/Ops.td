@@ -29,14 +29,77 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 class FeltDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<FeltDialect, mnemonic, traits>;
 
-class FeltDialectBinaryOp<string mnemonic, Type resultType,
-                          list<Trait> traits = []>
-    : BinaryOpBase<FeltDialect, mnemonic, resultType,
-                   traits#[DeclareOpInterfaceMethods<FeltBinaryOpInterface>]>;
+class FeltDialectBinaryOp<string mnemonic, list<Trait> traits = []>
+    : NaryOpBase<FeltDialect, mnemonic, LLZK_FeltType.builderCall,
+                 traits#[Pure, TypeUnifyWithResult<"lhs">,
+                         TypeUnifyWithResult<"rhs">, TypesUnify<"lhs", "rhs">,
+                         DeclareOpInterfaceMethods<FeltBinaryOpInterface>,
+                         InferTypeOpAdaptorWithIsCompatible]> {
 
-class FeltDialectUnaryOp<string mnemonic, Type resultType,
-                         list<Trait> traits = []>
-    : UnaryOpBase<FeltDialect, mnemonic, resultType, traits>;
+  let arguments = (ins VarTypeOr<LLZK_FeltType>:$lhs,
+      VarTypeOr<LLZK_FeltType>:$rhs);
+  // Allow any type to avoid building default felt for the result type, we
+  // employ our own inference below.
+  let results = (outs AnyLLZKType:$result);
+
+  let hasCustomAssemblyFormat = 1;
+  let assemblyFormat = [{
+      $lhs `,` $rhs
+      `` custom<InferredOrParsedType>(type($lhs), "true")
+      `` custom<InferredOrParsedType>(type($rhs), "false")
+      attr-dict
+  }];
+
+  let extraClassDefinition = [{
+    ::llvm::LogicalResult $cppClass::inferReturnTypes(
+        mlir::MLIRContext *context, std::optional<mlir::Location> loc, Adaptor adaptor,
+        llvm::SmallVectorImpl<mlir::Type> &inferred
+    ) {
+      inferred.resize(1);
+      auto value = adaptor.getLhs();
+      inferred[0] = value ? value.getType() : FeltType::get(context, mlir::StringAttr());
+      return mlir::success();
+    }
+
+    bool $cppClass::isCompatibleReturnTypes(mlir::TypeRange l, mlir::TypeRange r) {
+      return l == r;
+    }
+  }];
+}
+
+class FeltDialectUnaryOp<string mnemonic, list<Trait> traits = []>
+    : NaryOpBase<FeltDialect, mnemonic, LLZK_FeltType.builderCall,
+                 traits#[Pure, TypeUnifyWithResult<"operand">,
+                         InferTypeOpAdaptorWithIsCompatible]> {
+
+  let arguments = (ins VarTypeOr<LLZK_FeltType>:$operand);
+  // Allow any type to avoid building default felt for the result type, we
+  // employ our own inference below.
+  let results = (outs AnyLLZKType:$result);
+
+  let hasCustomAssemblyFormat = 1;
+  let assemblyFormat = [{
+      $operand
+      `` custom<InferredOrParsedType>(type($operand), "true")
+      attr-dict
+  }];
+
+  let extraClassDefinition = [{
+    ::llvm::LogicalResult $cppClass::inferReturnTypes(
+        mlir::MLIRContext *context, std::optional<mlir::Location> loc, Adaptor adaptor,
+        llvm::SmallVectorImpl<mlir::Type> &inferred
+    ) {
+      inferred.resize(1);
+      auto value = adaptor.getOperand();
+      inferred[0] = value ? value.getType() : FeltType::get(context, mlir::StringAttr());
+      return mlir::success();
+    }
+
+    bool $cppClass::isCompatibleReturnTypes(mlir::TypeRange l, mlir::TypeRange r) {
+      return l == r;
+    }
+  }];
+}
 
 //===------------------------------------------------------------------===//
 // Constants
@@ -70,23 +133,22 @@ def LLZK_FeltConstantOp
 // Operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AddFeltOp : FeltDialectBinaryOp<"add", LLZK_FeltType, [Commutative]> {
+def LLZK_AddFeltOp : FeltDialectBinaryOp<"add", [Commutative]> {
   let summary = "addition operator for field elements";
   let description = [{}];
 }
 
-def LLZK_SubFeltOp : FeltDialectBinaryOp<"sub", LLZK_FeltType> {
+def LLZK_SubFeltOp : FeltDialectBinaryOp<"sub"> {
   let summary = "subtraction operator for field elements";
   let description = [{}];
 }
 
-def LLZK_MulFeltOp : FeltDialectBinaryOp<"mul", LLZK_FeltType, [Commutative]> {
+def LLZK_MulFeltOp : FeltDialectBinaryOp<"mul", [Commutative]> {
   let summary = "multiplication operator for field elements";
   let description = [{}];
 }
 
-def LLZK_PowFeltOp
-    : FeltDialectBinaryOp<"pow", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_PowFeltOp : FeltDialectBinaryOp<"pow", [NotFieldNative]> {
   let summary = "exponentiation operator for field elements";
   let description = [{
 
@@ -99,13 +161,13 @@ def LLZK_PowFeltOp
   }];
 }
 
-def LLZK_DivFeltOp : FeltDialectBinaryOp<"div", LLZK_FeltType> {
+def LLZK_DivFeltOp : FeltDialectBinaryOp<"div"> {
   let summary = "division operator for field elements";
   let description = [{}];
 }
 
 def LLZK_UnsignedIntDivFeltOp
-    : FeltDialectBinaryOp<"uintdiv", LLZK_FeltType, [NotFieldNative]> {
+    : FeltDialectBinaryOp<"uintdiv", [NotFieldNative]> {
   let summary = "unsigned integer division operator for field elements";
   let description = [{
     Treats the operands as if they were unsigned integers with bitwidth
@@ -113,8 +175,7 @@ def LLZK_UnsignedIntDivFeltOp
   }];
 }
 
-def LLZK_SignedIntDivFeltOp
-    : FeltDialectBinaryOp<"sintdiv", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_SignedIntDivFeltOp : FeltDialectBinaryOp<"sintdiv", [NotFieldNative]> {
   let summary = "signed integer division operator for field elements";
   let description = [{
     Treats the operands as if they were signed integers with bitwidth
@@ -130,8 +191,7 @@ def LLZK_SignedIntDivFeltOp
   }];
 }
 
-def LLZK_UnsignedModFeltOp
-    : FeltDialectBinaryOp<"umod", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_UnsignedModFeltOp : FeltDialectBinaryOp<"umod", [NotFieldNative]> {
   let summary =
       "unsigned integer modulus/remainder operator for field elements";
   let description = [{
@@ -140,8 +200,7 @@ def LLZK_UnsignedModFeltOp
   }];
 }
 
-def LLZK_SignedModFeltOp
-    : FeltDialectBinaryOp<"smod", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_SignedModFeltOp : FeltDialectBinaryOp<"smod", [NotFieldNative]> {
   let summary = "signed integer modulus/remainder operator for field elements";
   let description = [{
     Computes the remainder that would result from the division operation performed
@@ -149,40 +208,35 @@ def LLZK_SignedModFeltOp
   }];
 }
 
-def LLZK_NegFeltOp : FeltDialectUnaryOp<"neg", LLZK_FeltType> {
+def LLZK_NegFeltOp : FeltDialectUnaryOp<"neg"> {
   let summary = "negation operator for field elements";
   let description = [{}];
 }
 
-def LLZK_InvFeltOp
-    : FeltDialectUnaryOp<"inv", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_InvFeltOp : FeltDialectUnaryOp<"inv", [NotFieldNative]> {
   let summary = "inverse operator for field elements";
   let description = [{}];
 }
 
 def LLZK_AndFeltOp
-    : FeltDialectBinaryOp<"bit_and",
-                          LLZK_FeltType, [NotFieldNative, Commutative]> {
+    : FeltDialectBinaryOp<"bit_and", [NotFieldNative, Commutative]> {
   let summary = "bitwise AND operator for field elements";
   let description = [{}];
 }
 
 def LLZK_OrFeltOp
-    : FeltDialectBinaryOp<"bit_or",
-                          LLZK_FeltType, [NotFieldNative, Commutative]> {
+    : FeltDialectBinaryOp<"bit_or", [NotFieldNative, Commutative]> {
   let summary = "bitwise OR operator for field elements";
   let description = [{}];
 }
 
 def LLZK_XorFeltOp
-    : FeltDialectBinaryOp<"bit_xor",
-                          LLZK_FeltType, [NotFieldNative, Commutative]> {
+    : FeltDialectBinaryOp<"bit_xor", [NotFieldNative, Commutative]> {
   let summary = "bitwise XOR operator for field elements";
   let description = [{}];
 }
 
-def LLZK_NotFeltOp
-    : FeltDialectUnaryOp<"bit_not", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_NotFeltOp : FeltDialectUnaryOp<"bit_not", [NotFieldNative]> {
   let summary = "integer complement (bitwise-not) operator for field elements";
   let description = [{
     Treats the operand as an integer with a bitwidth equal to the bitwidth
@@ -191,14 +245,12 @@ def LLZK_NotFeltOp
   }];
 }
 
-def LLZK_ShlFeltOp
-    : FeltDialectBinaryOp<"shl", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_ShlFeltOp : FeltDialectBinaryOp<"shl", [NotFieldNative]> {
   let summary = "left shift operator for field elements";
   let description = [{}];
 }
 
-def LLZK_ShrFeltOp
-    : FeltDialectBinaryOp<"shr", LLZK_FeltType, [NotFieldNative]> {
+def LLZK_ShrFeltOp : FeltDialectBinaryOp<"shr", [NotFieldNative]> {
   let summary = "right shift operator for field elements";
   let description = [{}];
 }
