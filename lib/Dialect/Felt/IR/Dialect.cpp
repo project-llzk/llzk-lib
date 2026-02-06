@@ -107,7 +107,10 @@ const Field &FeltType::getField() const { return Field::getField(getFieldName().
 
 llvm::LogicalResult
 FeltType::verify(llvm::function_ref<mlir::InFlightDiagnostic()> errFn, mlir::StringAttr fieldName) {
-  return fieldName ? Field::verifyFieldDefined(fieldName.getValue(), errFn) : mlir::success();
+  return fieldName ? Field::verifyFieldDefined(
+                         fieldName.getValue(), wrapNonNullableInFlightDiagnostic(errFn)
+                     )
+                   : mlir::success();
 }
 
 //===------------------------------------------------------------------===//
