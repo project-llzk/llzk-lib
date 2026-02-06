@@ -59,7 +59,7 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure]> {
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat =
-      [{ $value attr-dict `` custom<InferredOrParsedType>(type($value), "false") }];
+      [{ $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
 
   let hasVerifier = 1;
 }

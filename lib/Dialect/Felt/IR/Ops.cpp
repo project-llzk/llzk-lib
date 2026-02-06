@@ -31,7 +31,7 @@ namespace llzk::felt {
 //===------------------------------------------------------------------===//
 
 void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  llvm::SmallString<32> buf;
+  SmallString<32> buf;
   llvm::raw_svector_ostream os(buf);
   os << "felt_const_";
   getValue().getValue().toStringUnsigned(buf);
@@ -40,18 +40,16 @@ void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 
 OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValueAttr(); }
 
-llvm::LogicalResult llzk::felt::FeltConstantOp::inferReturnTypes(
-    mlir::MLIRContext *context, std::optional<mlir::Location> loc, Adaptor adaptor,
-    llvm::SmallVectorImpl<mlir::Type> &inferred
+LogicalResult FeltConstantOp::inferReturnTypes(
+    MLIRContext *context, std::optional<Location> loc, Adaptor adaptor,
+    SmallVectorImpl<Type> &inferred
 ) {
   inferred.resize(1);
   auto value = adaptor.getValue(); // FeltConstAttr
-  inferred[0] = value ? value.getType() : FeltType::get(context, mlir::StringAttr());
-  return mlir::success();
+  inferred[0] = value ? value.getType() : FeltType::get(context, StringAttr());
+  return success();
 }
 
-bool llzk::felt::FeltConstantOp::isCompatibleReturnTypes(mlir::TypeRange l, mlir::TypeRange r) {
-  return l == r;
-}
+bool FeltConstantOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) { return l == r; }
 
 } // namespace llzk::felt

@@ -21,9 +21,10 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
   let mnemonic = "type";
   let summary = "finite field element";
   let description = [{
-    An element of a finite field. The field element is either of the specified
-    field (e.g., !felt.type<"bn254">) or of an unspecified field (!felt.type)
-    to be filled in by any backend translations.
+    An element of a finite field. The field can be specified (e.g.,
+    !felt.type<"bn254">) or left unspecified (!felt.type), to be filled in by the
+    backend consumer of LLZK IR.
+    Leaving the field unspecified may reduce the power of certain transformation passes.
 
     Backends are responsible for performing conversions between felts of different
     fields. If a circuit needs to encode translations between fields, the circuit
@@ -31,11 +32,11 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
 
        function.def @convert(%a : !felt.type<"bn254">) -> !felt.type<"goldilocks">;
 
-    And perform the lowering of function calls to this conversion function in a
+    and perform the lowering of calls to this conversion function in a
     backend-specific manner.
 
-    Field names are either built-in or specified using `felt.field` specification
-    attributes on the root module.
+    The field name can be chosen from one of the built-in fields or specified using
+    `felt.field` specification attributes on the root module.
   }];
 
   let parameters = (ins OptionalParameter<"::mlir::StringAttr">:$fieldName);

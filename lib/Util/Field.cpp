@@ -26,15 +26,15 @@ namespace llzk {
 
 static DenseMap<StringRef, Field> knownFields;
 
-Field::Field(std::string_view primeStr, llvm::StringRef name) : Field(APSInt(primeStr), name) {}
+Field::Field(std::string_view primeStr, StringRef name) : Field(APSInt(primeStr), name) {}
 
-Field::Field(llvm::APInt prime, llvm::StringRef name) : primeName(name) {
+Field::Field(APInt prime, StringRef name) : primeName(name) {
   primeMod = toDynamicAPInt(prime);
   halfPrime = (primeMod + felt(1)) / felt(2);
   bitwidth = prime.getBitWidth();
 }
 
-FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(llvm::StringRef fieldName) {
+FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fieldName) {
   static std::once_flag fieldsInit;
   std::call_once(fieldsInit, initKnownFields);
 
@@ -51,7 +51,7 @@ LogicalResult Field::verifyFieldDefined(StringRef fieldName, EmitErrorFn errFn) 
   return mlir::success();
 }
 
-const Field &Field::getField(llvm::StringRef fieldName, EmitErrorFn errFn) {
+const Field &Field::getField(StringRef fieldName, EmitErrorFn errFn) {
   auto res = tryGetField(fieldName);
   if (mlir::failed(res)) {
     auto msg = "field \"" + Twine(fieldName) + "\" is unsupported";
@@ -117,14 +117,14 @@ DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(
 
 DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i, prime()); }
 
-DynamicAPInt Field::inv(const llvm::APInt &i) const {
+DynamicAPInt Field::inv(const APInt &i) const {
   return modInversePrime(toDynamicAPInt(i), prime());
 }
 
 // Parses Fields from the given attribute, if able.
 static LogicalResult parseFields(mlir::Attribute a) {
   // clang-format off
-  return llvm::TypeSwitch<
+  return TypeSwitch<
              mlir::Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
       .Case<mlir::UnitAttr>(
           [](auto _) {
