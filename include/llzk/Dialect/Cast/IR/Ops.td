@@ -13,7 +13,7 @@
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Cast/IR/Dialect.td"
 include "llzk/Dialect/Felt/IR/Types.td"
-include "llzk/Dialect/SHared/OpsBase.td"
+include "llzk/Dialect/Shared/OpsBase.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 
 include "mlir/IR/OpBase.td"
