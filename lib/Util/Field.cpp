@@ -7,10 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Field.h"
 #include "llzk/Util/Constants.h"
-#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Debug.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/SlowDynamicAPInt.h>
@@ -75,7 +75,9 @@ void Field::addField(Field &&f, EmitErrorFn errFn) {
   } else if (it->second != f) {
     // Field exists and conflicts with existing definition.
     std::string msg;
-    debug::Appender(msg) << "Definition of \"" << f.name() << "\" conflicts with prior definition: prior=" << it->second.prime() << ", new=" << f.prime();
+    debug::Appender(msg) << "Definition of \"" << f.name()
+                         << "\" conflicts with prior definition: prior=" << it->second.prime()
+                         << ", new=" << f.prime();
     if (errFn) {
       errFn().append(msg).report();
     } else {
@@ -90,8 +92,12 @@ void Field::initKnownFields() {
                               GOLDILOCKS[] = "goldilocks", MERSENNE31[] = "mersenne31",
                               KOALABEAR[] = "koalabear";
   // bn128/254, default for circom
-  addField(Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN128));
-  addField(Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN254));
+  addField(
+      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN128)
+  );
+  addField(
+      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN254)
+  );
   // 15 * 2^27 + 1, default for zirgen
   addField(Field("2013265921", BABYBEAR));
   // 2^64 - 2^32 + 1, used for plonky2
@@ -166,6 +172,5 @@ LogicalResult addSpecifiedFields(mlir::ModuleOp modOp) {
   }
   return success();
 }
-
 
 } // namespace llzk

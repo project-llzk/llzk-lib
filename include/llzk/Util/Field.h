@@ -35,14 +35,16 @@ public:
   inline static void addField(llvm::StringRef fieldName, llvm::APInt prime, EmitErrorFn errFn) {
     return addField(Field(prime, fieldName), errFn);
   }
-  inline static void addField(llvm::StringRef fieldName, llvm::StringRef primeStr, EmitErrorFn errFn) {
+  inline static void
+  addField(llvm::StringRef fieldName, llvm::StringRef primeStr, EmitErrorFn errFn) {
     return addField(Field(primeStr, fieldName), errFn);
   }
 
   /// @brief Get a Field from a given field name string, or failure if the
   /// field is not defined.
   /// @param fieldName The name of the field.
-  static llvm::FailureOr<std::reference_wrapper<const Field>> tryGetField(llvm::StringRef fieldName);
+  static llvm::FailureOr<std::reference_wrapper<const Field>>
+  tryGetField(llvm::StringRef fieldName);
 
   /// Search for a field with the given name, reporting an error if the field is not found.
   static llvm::LogicalResult verifyFieldDefined(
@@ -109,7 +111,6 @@ private:
   Field(std::string_view primeStr, llvm::StringRef name);
   Field(llvm::APInt primeInt, llvm::StringRef name);
 
-
   /// Name of the prime for debugging purposes
   llvm::StringRef primeName;
   llvm::DynamicAPInt primeMod, halfPrime;
@@ -121,9 +122,7 @@ private:
   /// @brief Add a new field to the set of available prime fields.
   /// @return Failure if the field is invalid or conflicts with an existing definition.
   static void addField(Field &&f, EmitErrorFn errFn);
-  inline static void addField(Field &&f) {
-    addField(std::move(f), nullptr);
-  }
+  inline static void addField(Field &&f) { addField(std::move(f), nullptr); }
 };
 
 /// @brief Update the set of available prime fields with the fields specified on the

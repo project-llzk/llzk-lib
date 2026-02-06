@@ -44,14 +44,16 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   mlir::FailureOr<::llvm::APInt> primeRes;
 
   // Parse literal '<'
-  if (odsParser.parseLess()) return {};
+  if (odsParser.parseLess()) {
+    return {};
+  }
 
   // Parse variable 'fieldName'
   fieldNameAttrRes = mlir::FieldParser<::mlir::StringAttr>::parse(odsParser);
   if (::mlir::failed(fieldNameAttrRes)) {
     odsParser.emitError(
-        odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FieldSpecAttr parameter 'fieldName' which is to be a `::mlir::StringAttr`"
+        odsParser.getCurrentLocation(), "failed to parse LLZK_FieldSpecAttr parameter 'fieldName' "
+                                        "which is to be a `::mlir::StringAttr`"
     );
     return {};
   }

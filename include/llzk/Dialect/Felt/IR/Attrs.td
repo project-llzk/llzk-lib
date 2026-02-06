@@ -85,18 +85,22 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
     - mersenne31
   }];
 
-  let parameters = (ins "::mlir::StringAttr":$fieldName, APIntParameter<"The prime modulus">:$prime);
+  let parameters = (ins "::mlir::StringAttr":$fieldName,
+      APIntParameter<"The prime modulus">:$prime);
 
   // Format is [{ `<` $fieldName `,` $prime `>` }], but with custom parsing
   // to enable caching of the Field object definition.
   let hasCustomAssemblyFormat = 1;
 
   let builders =
-      [AttrBuilder<(ins "::llvm::StringRef":$fieldName, "unsigned":$numBits, "::llvm::StringRef":$primeStr), [{
+      [AttrBuilder<(ins "::llvm::StringRef":$fieldName, "unsigned":$numBits,
+                       "::llvm::StringRef":$primeStr),
+                   [{
       return $_get(context, ::mlir::StringAttr::get(context, fieldName), ::llvm::APInt(numBits, primeStr, 10));
     }]>,
-       AttrBuilder<
-           (ins "::llvm::StringRef":$fieldName, "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts), [{
+       AttrBuilder<(ins "::llvm::StringRef":$fieldName, "unsigned":$numBits,
+                       "::llvm::ArrayRef<uint64_t>":$parts),
+                   [{
       return $_get(context, ::mlir::StringAttr::get(context, fieldName), ::llvm::APInt(numBits, parts));
     }]>];
 }
