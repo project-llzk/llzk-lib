@@ -10,8 +10,22 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 
+using namespace mlir;
+
 namespace llzk::felt {
 
-mlir::Type FeltConstAttr::getType() const { return FeltType::get(this->getContext()); }
+LogicalResult
+FeltConstAttr::verify(function_ref<InFlightDiagnostic()> errFn, APInt, StringAttr fieldName) {
+  return fieldName ? Field::verifyFieldDefined(
+                         fieldName.getValue(), wrapNonNullableInFlightDiagnostic(errFn)
+                     )
+                   : success();
+}
+
+Type FeltConstAttr::getType() const {
+  return FeltType::get(this->getContext(), this->getFieldName());
+}
+
+FeltConstAttr::operator APInt() const { return getValue(); }
 
 } // namespace llzk::felt

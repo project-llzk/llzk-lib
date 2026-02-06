@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "llzk/Analysis/Field.h"
+#include "llzk/Util/Field.h"
 
 #include <mlir/Support/LogicalResult.h>
 
