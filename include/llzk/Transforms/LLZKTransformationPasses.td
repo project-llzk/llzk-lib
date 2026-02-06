@@ -128,6 +128,14 @@ def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
   let options = [];
 }
 
+def FuseProductIfsPass : LLZKPass<"llzk-fuse-product-ifs"> {
+  let summary =
+      "Fuses matching witness/constraint scf.if ops in a @product function";
+  let description = summary;
+  let constructor = "llzk::createFuseProductIfsPass()";
+  let options = [];
+}
+
 #ifdef WITH_PCL
 def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
   let summary = "Rewrites constraints to be compatible with PCL constraints "
