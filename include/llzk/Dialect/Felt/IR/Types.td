@@ -22,7 +22,17 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
   let summary = "finite field element";
   let description = [{
     An element of a finite field. The field element is either of the specified
-    field or of an unspecified field to be filled in by any backend translations.
+    field (e.g., !felt.type<"bn254">) or of an unspecified field (!felt.type)
+    to be filled in by any backend translations.
+
+    Backends are responsible for performing conversions between felts of different
+    fields. If a circuit needs to encode translations between fields, the circuit
+    may define a function prototype, e.g.:
+
+       function.def @convert(%a : !felt.type<"bn254">) -> !felt.type<"goldilocks">;
+
+    And perform the lowering of function calls to this conversion function in a
+    backend-specific manner.
 
     Field names are either built-in or specified using `felt.field` specification
     attributes on the root module.
