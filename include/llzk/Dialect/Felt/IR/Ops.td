@@ -30,25 +30,13 @@ class FeltDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<FeltDialect, mnemonic, traits>;
 
 class FeltDialectBinaryOp<string mnemonic, list<Trait> traits = []>
-    : NaryOpBase<FeltDialect, mnemonic, LLZK_FeltType.builderCall,
-                 traits#[Pure, TypeUnifyWithResult<"lhs">,
-                         TypeUnifyWithResult<"rhs">, TypesUnify<"lhs", "rhs">,
-                         DeclareOpInterfaceMethods<FeltBinaryOpInterface>,
-                         InferTypeOpAdaptorWithIsCompatible]> {
-
-  let arguments = (ins VarTypeOr<LLZK_FeltType>:$lhs,
-      VarTypeOr<LLZK_FeltType>:$rhs);
+    : BinaryOpBase<FeltDialect, mnemonic, LLZK_FeltType,
+                   traits#[TypesUnify<"lhs", "rhs">,
+                           DeclareOpInterfaceMethods<FeltBinaryOpInterface>,
+                           InferTypeOpAdaptorWithIsCompatible]> {
   // Allow any type to avoid building default felt for the result type, we
   // employ our own inference below.
   let results = (outs AnyLLZKType:$result);
-
-  let hasCustomAssemblyFormat = 1;
-  let assemblyFormat = [{
-      $lhs `,` $rhs
-      `` custom<InferredOrParsedType>(type($lhs), "true")
-      `` custom<InferredOrParsedType>(type($rhs), "false")
-      attr-dict
-  }];
 
   let extraClassDefinition = [{
     ::llvm::LogicalResult $cppClass::inferReturnTypes(
@@ -68,21 +56,11 @@ class FeltDialectBinaryOp<string mnemonic, list<Trait> traits = []>
 }
 
 class FeltDialectUnaryOp<string mnemonic, list<Trait> traits = []>
-    : NaryOpBase<FeltDialect, mnemonic, LLZK_FeltType.builderCall,
-                 traits#[Pure, TypeUnifyWithResult<"operand">,
-                         InferTypeOpAdaptorWithIsCompatible]> {
-
-  let arguments = (ins VarTypeOr<LLZK_FeltType>:$operand);
+    : UnaryOpBase<FeltDialect, mnemonic, LLZK_FeltType,
+                  traits#[InferTypeOpAdaptorWithIsCompatible]> {
   // Allow any type to avoid building default felt for the result type, we
   // employ our own inference below.
   let results = (outs AnyLLZKType:$result);
-
-  let hasCustomAssemblyFormat = 1;
-  let assemblyFormat = [{
-      $operand
-      `` custom<InferredOrParsedType>(type($operand), "true")
-      attr-dict
-  }];
 
   let extraClassDefinition = [{
     ::llvm::LogicalResult $cppClass::inferReturnTypes(
