@@ -111,11 +111,11 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
 
   // Add compute/constrain attributes
   compute.walk([&funcBuilder](Operation *op) {
-    op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
+    op->setAttr(PRODUCT_SOURCE, funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
   });
 
   constrain.walk([&funcBuilder](Operation *op) {
-    op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
+    op->setAttr(PRODUCT_SOURCE, funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
   });
 
   // Create an empty @product func...

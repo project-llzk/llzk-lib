@@ -119,6 +119,15 @@ def ComputeConstrainToProductPass
                         "Root struct at which to start alignment "
                         "(default to `@Main`)">];
 }
+
+def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
+  let summary =
+      "Fuses matching witness/constraint loops in a @product function";
+  let description = summary;
+  let constructor = "llzk::createFuseProductLoopsPass()";
+  let options = [];
+}
+
 #ifdef WITH_PCL
 def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
   let summary = "Rewrites constraints to be compatible with PCL constraints "

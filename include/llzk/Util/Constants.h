@@ -27,4 +27,7 @@ constexpr char LANG_ATTR_NAME[] = "llzk.lang";
 /// a `TypeAttr` specifying the `StructType` of the main struct.
 constexpr char MAIN_ATTR_NAME[] = "llzk.main";
 
+/// Name of the attribute on aligned product program ops that specifies where they came from.
+constexpr char PRODUCT_SOURCE[] = "product_source";
+
 } // namespace llzk
