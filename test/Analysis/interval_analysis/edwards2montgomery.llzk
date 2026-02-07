@@ -264,7 +264,7 @@ module attributes {llzk.lang} {
       struct.writem %self[@"$super"] = %array : <@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@NondetReg<[]>>>
       function.return %self : !struct.type<@Edwards2Montgomery<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Edwards2Montgomery<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Edwards2Montgomery<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_0 = felt.const  0
       %felt_const_1 = felt.const  1
       %0 = cast.toindex %felt_const_1

@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Function/IR/OpTraits.h"
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
