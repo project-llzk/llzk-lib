@@ -13,6 +13,7 @@
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Cast/IR/Dialect.td"
 include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/Function/IR/OpTraits.td"
 
 include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -36,15 +37,11 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
   let assemblyFormat = [{ $value `:` type($value) attr-dict }];
 }
 
-def LLZK_FeltToIndexOp
-    : Op<CastDialect,
-         "toindex", [Pure, DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure, NotFieldNative]> {
   let summary = "convert a field element into an index";
   let description = [{
     This operation converts a field element value into an index value to allow use
-    as an array index or loop bound. It is illegal for the argument to this op to be
-    derived from a struct member with the `signal` attribute unless the function
-    containing the op is marked with the `allow_non_native_field_ops` attribute.
+    as an array index or loop bound.
 
     Example:
     ```llzk
