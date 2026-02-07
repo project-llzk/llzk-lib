@@ -1,11 +1,11 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-function.def @felt_to_index(%a: !felt.type) -> index {
+function.def @felt_to_index(%a: !felt.type) -> index attributes {function.allow_non_native_field_ops} {
   %b = cast.toindex %a
   function.return %b: index
 }
 //CHECK-LABEL: function.def @felt_to_index(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> index {
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> index attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.toindex %[[A0]]
 //CHECK-NEXT:    function.return %[[T0]] : index
 //CHECK-NEXT:  }

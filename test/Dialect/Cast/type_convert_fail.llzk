@@ -101,9 +101,8 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@C3>
     }
     function.def @constrain(%self: !struct.type<@C3>) {
-      // expected-note@+1 {{signal value is read here}}
       %f = struct.readm %self[@f1] : !struct.type<@C3>, !felt.type
-      // expected-error@+1 {{'cast.toindex' op input is derived from a 'struct.member' with 'signal' attribute, which is only valid within a 'function.def' with 'function.allow_non_native_field_ops' attribute}}
+      // expected-error@+1 {{'cast.toindex' op only valid within a 'function.def' with 'function.allow_non_native_field_ops' attribute}}
       %i = cast.toindex %f
       function.return
     }
