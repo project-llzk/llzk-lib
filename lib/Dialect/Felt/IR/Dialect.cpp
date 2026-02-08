@@ -85,8 +85,7 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   Field::addField(fieldNameAttrRes.value(), primeRes.value(), errFn);
 
   return odsParser.getChecked<FieldSpecAttr>(
-      odsLoc, odsParser.getContext(), mlir::StringAttr((*fieldNameAttrRes)),
-      llvm::APInt((*primeRes))
+      odsLoc, odsParser.getContext(), mlir::StringAttr(*fieldNameAttrRes), llvm::APInt(*primeRes)
   );
 }
 
