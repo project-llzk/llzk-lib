@@ -5,37 +5,37 @@ module attributes {llzk.lang = "zirgen"} {
   module @globals {
   }
   struct.def @Component<[]> {
-    function.def @compute() -> !struct.type<@Component<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@Component<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Component<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Component<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Component<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
   struct.def @NondetReg<[]> {
     struct.member @"$super" : !felt.type {llzk.pub}
     struct.member @reg : !felt.type {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@NondetReg<[]>>
       struct.writem %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
       struct.writem %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.type
       function.return %self : !struct.type<@NondetReg<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
   struct.def @NondetExtReg<[]> {
     struct.member @"$super" : !array.type<4 x !felt.type> {llzk.pub}
     struct.member @reg : !array.type<4 x !felt.type> {column}
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@NondetExtReg<[]>>
       struct.writem %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
       struct.writem %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
       function.return %self : !struct.type<@NondetExtReg<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@NondetExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@NondetExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -64,14 +64,14 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@EqzExt<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@EqzExt<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@EqzExt<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
   struct.def @Reg<[]> {
     struct.member @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.member @reg : !struct.type<@NondetReg<[]>> {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Reg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
       struct.writem %self[@reg] = %0 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
@@ -80,7 +80,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@Reg<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Reg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Reg<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg0[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
       %1 = struct.readm %0[@"$super"] : <@NondetReg<[]>>, !felt.type
@@ -121,7 +121,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
       function.return %self : !struct.type<@ExtReg<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@ExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@ExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c3 = arith.constant 3 : index
       %c2 = arith.constant 2 : index
       %c1 = arith.constant 1 : index
@@ -159,7 +159,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %2 : <@Div<[]>>, !felt.type
       function.return %self : !struct.type<@Div<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_1 = felt.const 1
       %0 = struct.readm %arg0[@reciprocal] : <@Div<[]>>, !felt.type
       %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
@@ -169,13 +169,13 @@ module attributes {llzk.lang = "zirgen"} {
   }
   struct.def @Log<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !string.type, %arg1: !array.type<? x !felt.type>) -> !struct.type<@Log<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !string.type, %arg1: !array.type<? x !felt.type>) -> !struct.type<@Log<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Log<[]>>
       %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>>
       struct.writem %self[@"$super"] = %0 : <@Log<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Log<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Log<[]>>, %arg1: !string.type, %arg2: !array.type<? x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Log<[]>>, %arg1: !string.type, %arg2: !array.type<? x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>>
       function.return
     }
@@ -183,13 +183,13 @@ module attributes {llzk.lang = "zirgen"} {
   function.def private @Log$$extern(!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Abort<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute() -> !struct.type<@Abort<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@Abort<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Abort<[]>>
       %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
       struct.writem %self[@"$super"] = %0 : <@Abort<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Abort<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Abort<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Abort<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
       function.return
     }
@@ -197,13 +197,13 @@ module attributes {llzk.lang = "zirgen"} {
   function.def private @Abort$$extern() -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Assert<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Assert<[]>>
       %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
       struct.writem %self[@"$super"] = %0 : <@Assert<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Assert<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Assert<[]>>, %arg1: !felt.type, %arg2: !string.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Assert<[]>>, %arg1: !felt.type, %arg2: !string.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
       function.return
     }
@@ -212,7 +212,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @AssertBit<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>>
     struct.member @"$temp" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@AssertBit<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@AssertBit<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@AssertBit<[]>>
       %0 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
       struct.writem %self[@"$temp"] = %0 : <@AssertBit<[]>>, !struct.type<@Component<[]>>
@@ -220,7 +220,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@AssertBit<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@AssertBit<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@AssertBit<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@AssertBit<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_0 = felt.const 0
       %felt_const_1 = felt.const 1
       %0 = felt.sub %felt_const_1, %arg1 : !felt.type, !felt.type
@@ -235,7 +235,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.member @"$temp" : !struct.type<@AssertBit<[]>>
     struct.member @reg : !struct.type<@NondetReg<[]>> {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetBitReg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetBitReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@NondetBitReg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
       struct.writem %self[@reg] = %0 : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
@@ -247,7 +247,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@NondetBitReg<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@NondetBitReg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@NondetBitReg<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg0[@reg] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
       %1 = struct.readm %0[@"$super"] : <@NondetReg<[]>>, !felt.type
@@ -258,13 +258,13 @@ module attributes {llzk.lang = "zirgen"} {
   }
   struct.def @BitAnd<[]> {
     struct.member @"$super" : !felt.type {llzk.pub}
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@BitAnd<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@BitAnd<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@BitAnd<[]>>
       %0 = felt.mul %arg0, %arg1 : !felt.type, !felt.type
       struct.writem %self[@"$super"] = %0 : <@BitAnd<[]>>, !felt.type
       function.return %self : !struct.type<@BitAnd<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@BitAnd<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@BitAnd<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -275,7 +275,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp_0" : !array.type<#map x !felt.type>
     struct.member @"$temp" : !array.type<#map x !struct.type<@NondetBitReg<[]>>> {column}
     struct.member @bits : !array.type<#map x !struct.type<@NondetBitReg<[]>>> {column, llzk.pub}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@OneHot<[@N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@OneHot<[@N]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %felt_const_0 = felt.const 0
@@ -353,7 +353,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %5 : <@OneHot<[@N]>>, !array.type<#map x !struct.type<@NondetBitReg<[]>>>
       function.return %self : !struct.type<@OneHot<[@N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@OneHot<[@N]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@OneHot<[@N]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_1 = felt.const 1
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -426,7 +426,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @Switch<[@N, @idx]> {
     struct.member @"$super" : !array.type<#map x !felt.type>
     struct.member @"$array" : !array.type<#map x !felt.type>
-    function.def @compute() -> !struct.type<@Switch<[@N, @idx]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@Switch<[@N, @idx]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %felt_const_0 = felt.const 0
@@ -455,7 +455,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %6 : <@Switch<[@N, @idx]>>, !array.type<#map x !felt.type>
       function.return %self : !struct.type<@Switch<[@N, @idx]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Switch<[@N, @idx]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Switch<[@N, @idx]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %felt_const_0 = felt.const 0
@@ -484,7 +484,7 @@ module attributes {llzk.lang = "zirgen"} {
   }
   struct.def @M_INT_DIAG_HZN<[]> {
     struct.member @"$super" : !array.type<24 x !felt.type> {llzk.pub}
-    function.def @compute() -> !struct.type<@M_INT_DIAG_HZN<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@M_INT_DIAG_HZN<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_918610824 = felt.const 918610824
       %felt_const_13683276 = felt.const 13683276
       %felt_const_606789471 = felt.const 606789471
@@ -514,7 +514,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %array : <@M_INT_DIAG_HZN<[]>>, !array.type<24 x !felt.type>
       function.return %self : !struct.type<@M_INT_DIAG_HZN<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@M_INT_DIAG_HZN<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@M_INT_DIAG_HZN<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -523,7 +523,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp_0" : !array.type<24 x !struct.type<@M_INT_DIAG_HZN<[]>>>
     struct.member @"$array" : !array.type<24 x !felt.type>
     struct.member @"$temp" : !array.type<24 x !felt.type>
-    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@MultiplyByMInt<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@MultiplyByMInt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_23 = felt.const 23
       %felt_const_22 = felt.const 22
       %felt_const_21 = felt.const 21
@@ -586,7 +586,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@MultiplyByMInt<[]>>, !array.type<24 x !felt.type>
       function.return %self : !struct.type<@MultiplyByMInt<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MultiplyByMInt<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MultiplyByMInt<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_23 = felt.const 23
       %felt_const_22 = felt.const 22
       %felt_const_21 = felt.const 21
@@ -644,7 +644,7 @@ module attributes {llzk.lang = "zirgen"} {
   }
   struct.def @INT_ROUND_CONSTANTS<[]> {
     struct.member @"$super" : !array.type<21 x !felt.type> {llzk.pub}
-    function.def @compute() -> !struct.type<@INT_ROUND_CONSTANTS<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@INT_ROUND_CONSTANTS<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_1810596765 = felt.const 1810596765
       %felt_const_1210751726 = felt.const 1210751726
       %felt_const_1327682690 = felt.const 1327682690
@@ -671,7 +671,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %array : <@INT_ROUND_CONSTANTS<[]>>, !array.type<21 x !felt.type>
       function.return %self : !struct.type<@INT_ROUND_CONSTANTS<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@INT_ROUND_CONSTANTS<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@INT_ROUND_CONSTANTS<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -679,7 +679,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !struct.type<@Reg<[]>> {llzk.pub}
     struct.member @out : !struct.type<@Reg<[]>> {column}
     struct.member @cubed : !struct.type<@Reg<[]>> {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@SBox<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@SBox<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@SBox<[]>>
       %0 = felt.mul %arg0, %arg0 : !felt.type, !felt.type
       %1 = felt.mul %0, %arg0 : !felt.type, !felt.type
@@ -698,7 +698,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %11 : <@SBox<[]>>, !struct.type<@Reg<[]>>
       function.return %self : !struct.type<@SBox<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@SBox<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@SBox<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = felt.mul %arg1, %arg1 : !felt.type, !felt.type
       %1 = felt.mul %0, %arg1 : !felt.type, !felt.type
       %2 = struct.readm %arg0[@cubed] : <@SBox<[]>>, !struct.type<@Reg<[]>>
@@ -720,7 +720,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @mat_in : !array.type<24 x !felt.type>
     struct.member @sbox : !struct.type<@SBox<[]>> {column}
     struct.member @x : !felt.type
-    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@DoIntRound<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@DoIntRound<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -784,7 +784,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %8 : <@DoIntRound<[]>>, !struct.type<@MultiplyByMInt<[]>>
       function.return %self : !struct.type<@DoIntRound<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@DoIntRound<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@DoIntRound<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -848,7 +848,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp_0" : !array.type<21 x !struct.type<@DoIntRound<[]>>>
     struct.member @"$array" : !array.type<21 x !felt.type>
     struct.member @"$temp" : !struct.type<@INT_ROUND_CONSTANTS<[]>>
-    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@DoIntRounds<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@DoIntRounds<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c21 = arith.constant 21 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -880,7 +880,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %4 : <@DoIntRounds<[]>>, !array.type<24 x !felt.type>
       function.return %self : !struct.type<@DoIntRounds<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@DoIntRounds<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@DoIntRounds<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c21 = arith.constant 21 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -917,7 +917,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @t2 : !felt.type
     struct.member @t1 : !felt.type
     struct.member @t0 : !felt.type
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@MultiplyByCirculant<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@MultiplyByCirculant<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_4 = felt.const 4
       %felt_const_3 = felt.const 3
       %felt_const_2 = felt.const 2
@@ -960,7 +960,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %array : <@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>
       function.return %self : !struct.type<@MultiplyByCirculant<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MultiplyByCirculant<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MultiplyByCirculant<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_3 = felt.const 3
       %felt_const_2 = felt.const 2
       %felt_const_1 = felt.const 1
@@ -983,7 +983,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @ReduceVec4<[]> {
     struct.member @"$super" : !array.type<4 x !felt.type> {llzk.pub}
     struct.member @"$array" : !array.type<4 x !felt.type>
-    function.def @compute(%arg0: !array.type<4 x !felt.type>, %arg1: !array.type<4 x !felt.type>) -> !struct.type<@ReduceVec4<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<4 x !felt.type>, %arg1: !array.type<4 x !felt.type>) -> !struct.type<@ReduceVec4<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c4 = arith.constant 4 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1008,7 +1008,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %0 : <@ReduceVec4<[]>>, !array.type<4 x !felt.type>
       function.return %self : !struct.type<@ReduceVec4<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@ReduceVec4<[]>>, %arg1: !array.type<4 x !felt.type>, %arg2: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@ReduceVec4<[]>>, %arg1: !array.type<4 x !felt.type>, %arg2: !array.type<4 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c4 = arith.constant 4 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1042,7 +1042,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp" : !array.type<6 x !struct.type<@MultiplyByCirculant<[]>>>
     struct.member @chunk : !array.type<6,4 x !felt.type>
     struct.member @grouped : !array.type<6 x !struct.type<@block$_2<[]>>>
-    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@MultiplyByMExt<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@MultiplyByMExt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_1509949441 = felt.const 1509949441
       %c24 = arith.constant 24 : index
       %felt_const_23 = felt.const 23
@@ -1171,7 +1171,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %2 : <@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
       function.return %self : !struct.type<@MultiplyByMExt<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MultiplyByMExt<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MultiplyByMExt<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_1509949441 = felt.const 1509949441
       %c24 = arith.constant 24 : index
       %felt_const_23 = felt.const 23
@@ -1285,7 +1285,7 @@ module attributes {llzk.lang = "zirgen"} {
   }
   struct.def @ExtRoundConstants<[]> {
     struct.member @"$super" : !array.type<8,24 x !felt.type> {llzk.pub}
-    function.def @compute() -> !struct.type<@ExtRoundConstants<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@ExtRoundConstants<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c7 = arith.constant 7 : index
       %c6 = arith.constant 6 : index
       %c5 = arith.constant 5 : index
@@ -1507,7 +1507,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %array_7 : <@ExtRoundConstants<[]>>, !array.type<8,24 x !felt.type>
       function.return %self : !struct.type<@ExtRoundConstants<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@ExtRoundConstants<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@ExtRoundConstants<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -1516,7 +1516,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp_0" : !struct.type<@MultiplyByMExt<[]>>
     struct.member @"$temp" : !array.type<24 x !struct.type<@SBox<[]>>> {column}
     struct.member @"$array" : !array.type<24 x !struct.type<@SBox<[]>>> {column}
-    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !array.type<24 x !felt.type>) -> !struct.type<@DoExtRound<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !array.type<24 x !felt.type>) -> !struct.type<@DoExtRound<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1579,7 +1579,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %3 : <@DoExtRound<[]>>, !struct.type<@MultiplyByMExt<[]>>
       function.return %self : !struct.type<@DoExtRound<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@DoExtRound<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !array.type<24 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@DoExtRound<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1640,7 +1640,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @AddConsts<[]> {
     struct.member @"$super" : !array.type<24 x !felt.type> {llzk.pub}
     struct.member @"$array" : !array.type<24 x !felt.type> {llzk.pub}
-    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !array.type<24 x !felt.type>) -> !struct.type<@AddConsts<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !array.type<24 x !felt.type>) -> !struct.type<@AddConsts<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1685,7 +1685,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %0 : <@AddConsts<[]>>, !array.type<24 x !felt.type>
       function.return %self : !struct.type<@AddConsts<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@AddConsts<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !array.type<24 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@AddConsts<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1731,7 +1731,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @MultBy<[]> {
     struct.member @"$super" : !array.type<24 x !felt.type> {llzk.pub}
     struct.member @"$array" : !array.type<24 x !felt.type> {llzk.pub}
-    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@MultBy<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@MultBy<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1747,7 +1747,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %0 : <@MultBy<[]>>, !array.type<24 x !felt.type>
       function.return %self : !struct.type<@MultBy<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MultBy<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MultBy<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
@@ -1770,7 +1770,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$array" : !array.type<8 x !struct.type<@MultBy<[]>>>
     struct.member @zeroConsts : !array.type<24 x !felt.type>
     struct.member @idxHot : !struct.type<@OneHot<[8]>> {column}
-    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@DoExtRoundByIdx<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>, %arg1: !felt.type) -> !struct.type<@DoExtRoundByIdx<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c8 = arith.constant 8 : index
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
@@ -1859,7 +1859,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %6 : <@DoExtRoundByIdx<[]>>, !struct.type<@DoExtRound<[]>>
       function.return %self : !struct.type<@DoExtRoundByIdx<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@DoExtRoundByIdx<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@DoExtRoundByIdx<[]>>, %arg1: !array.type<24 x !felt.type>, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c8 = arith.constant 8 : index
       %c24 = arith.constant 24 : index
       %c0 = arith.constant 0 : index
@@ -1941,7 +1941,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !array.type<@N x !struct.type<@Reg<[]>>> {llzk.pub}
     struct.member @"$temp" : !array.type<@N x !struct.type<@Reg<[]>>> {column}
     struct.member @"$array" : !array.type<@N x !struct.type<@Reg<[]>>> {column}
-    function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Pegs<[@N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Pegs<[@N]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %self = struct.new : !struct.type<@Pegs<[@N]>>
@@ -1962,7 +1962,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@Pegs<[@N]>>, !array.type<@N x !struct.type<@Reg<[]>>>
       function.return %self : !struct.type<@Pegs<[@N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Pegs<[@N]>>, %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Pegs<[@N]>>, %arg1: !array.type<@N x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %array = array.new  : <@N x !struct.type<@Reg<[]>>>
@@ -1982,7 +1982,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @Nonce<[]> {
     struct.member @"$super" : !struct.type<@Reg<[]>> {llzk.pub}
     struct.member @"$temp" : !struct.type<@Reg<[]>> {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@Nonce<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@Nonce<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Nonce<[]>>
       %0 = function.call @Reg::@compute(%arg0) : (!felt.type) -> !struct.type<@Reg<[]>>
       struct.writem %self[@"$temp"] = %0 : <@Nonce<[]>>, !struct.type<@Reg<[]>>
@@ -1990,7 +1990,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@Nonce<[]>>, !struct.type<@Reg<[]>>
       function.return %self : !struct.type<@Nonce<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Nonce<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Nonce<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg0[@"$temp"] : <@Nonce<[]>>, !struct.type<@Reg<[]>>
       function.call @Reg::@constrain(%0, %arg1) : (!struct.type<@Reg<[]>>, !felt.type) -> ()
       function.return
@@ -2028,7 +2028,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %3 : <@IsZero<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@IsZero<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@IsZero<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@IsZero<[]>>, %arg1: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_1 = felt.const 1
       %felt_const_0 = felt.const 0
       %0 = bool.cmp eq(%arg1, %felt_const_0)
@@ -2068,7 +2068,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %2 : <@Eq<[]>>, !struct.type<@IsZero<[]>>
       function.return %self : !struct.type<@Eq<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Eq<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Eq<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = felt.sub %arg1, %arg2 : !felt.type, !felt.type
       %1 = struct.readm %arg0[@"$temp"] : <@Eq<[]>>, !struct.type<@IsZero<[]>>
       function.call @IsZero::@constrain(%1, %0) : (!struct.type<@IsZero<[]>>, !felt.type) -> ()
@@ -2099,7 +2099,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %4 : <@EnsureEq<[@T]>>, !struct.type<@Eq<[]>>
       function.return %self : !struct.type<@EnsureEq<[@T]>>
     }
-    function.def @constrain(%arg0: !struct.type<@EnsureEq<[@T]>>, %arg1: !poly.tvar<@T>, %arg2: !poly.tvar<@T>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@EnsureEq<[@T]>>, %arg1: !poly.tvar<@T>, %arg2: !poly.tvar<@T>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = string.new "Provided values are not equal"
       %felt_const_0 = felt.const 0
       constrain.eq %arg1, %arg2 : !poly.tvar<@T>, !poly.tvar<@T>
@@ -2120,7 +2120,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @MulReg<[]> {
     struct.member @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
     struct.member @"$temp" : !struct.type<@NondetReg<[]>> {column}
-    function.def @compute(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !struct.type<@NondetReg<[]>>) -> !struct.type<@MulReg<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !struct.type<@NondetReg<[]>>) -> !struct.type<@MulReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@MulReg<[]>>
       %0 = struct.readm %arg0[@"$super"] : <@NondetReg<[]>>, !felt.type
       %1 = struct.readm %arg1[@"$super"] : <@NondetReg<[]>>, !felt.type
@@ -2131,7 +2131,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %4 : <@MulReg<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@MulReg<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MulReg<[]>>, %arg1: !struct.type<@NondetReg<[]>>, %arg2: !struct.type<@NondetReg<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MulReg<[]>>, %arg1: !struct.type<@NondetReg<[]>>, %arg2: !struct.type<@NondetReg<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg1[@"$super"] : <@NondetReg<[]>>, !felt.type
       %1 = struct.readm %arg2[@"$super"] : <@NondetReg<[]>>, !felt.type
       %2 = felt.mul %0, %1 : !felt.type, !felt.type
@@ -2151,7 +2151,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp" : !array.type<@PEGS,#map x !struct.type<@NondetReg<[]>>> {column}
     struct.member @"$array_0" : !array.type<@PEGS,#map x !struct.type<@NondetReg<[]>>> {column}
     struct.member @"$array" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-    function.def @compute(%arg0: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@CheckBounds<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@CheckBounds<[@COLORS, @PEGS]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %0 = string.new "Not a valid color"
       %felt_const_1 = felt.const 1
       %c0 = arith.constant 0 : index
@@ -2247,7 +2247,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %4 : <@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
       function.return %self : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
     }
-    function.def @constrain(%arg0: !struct.type<@CheckBounds<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@CheckBounds<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = string.new "Not a valid color"
       %felt_const_1 = felt.const 1
       %felt_const_0 = felt.const 0
@@ -2329,12 +2329,12 @@ module attributes {llzk.lang = "zirgen"} {
   }
   struct.def @CodeHash<[]> {
     struct.member @"$super" : !array.type<24 x !felt.type> {llzk.pub}
-    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@CodeHash<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@CodeHash<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@CodeHash<[]>>
       struct.writem %self[@"$super"] = %arg0 : <@CodeHash<[]>>, !array.type<24 x !felt.type>
       function.return %self : !struct.type<@CodeHash<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@CodeHash<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@CodeHash<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -2346,7 +2346,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp" : !array.type<4 x !struct.type<@DoExtRoundByIdx<[]>>>
     struct.member @stage0 : !struct.type<@MultiplyByMExt<[]>>
     struct.member @in : !array.type<24 x !felt.type>
-    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@N]>>) -> !struct.type<@GenerateCodeHash<[@N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@N]>>) -> !struct.type<@GenerateCodeHash<[@N]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c4 = arith.constant 4 : index
       %felt_const_0 = felt.const 0
       %felt_const_24 = felt.const 24
@@ -2491,7 +2491,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %12 : <@GenerateCodeHash<[@N]>>, !struct.type<@CodeHash<[]>>
       function.return %self : !struct.type<@GenerateCodeHash<[@N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@GenerateCodeHash<[@N]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@N]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@GenerateCodeHash<[@N]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@N]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c4 = arith.constant 4 : index
       %felt_const_0 = felt.const 0
       %felt_const_24 = felt.const 24
@@ -2631,7 +2631,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !struct.type<@GenerateCodeHash<[@PEGS]>> {llzk.pub}
     struct.member @"$temp_0" : !struct.type<@GenerateCodeHash<[@PEGS]>>
     struct.member @"$temp" : !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
-    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@SetCode<[@COLORS, @PEGS]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Nonce<[]>>, %arg1: !struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@SetCode<[@COLORS, @PEGS]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@SetCode<[@COLORS, @PEGS]>>
       %0 = function.call @CheckBounds::@compute(%arg1) : (!struct.type<@Pegs<[@PEGS]>>) -> !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
       struct.writem %self[@"$temp"] = %0 : <@SetCode<[@COLORS, @PEGS]>>, !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
@@ -2642,7 +2642,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %3 : <@SetCode<[@COLORS, @PEGS]>>, !struct.type<@GenerateCodeHash<[@PEGS]>>
       function.return %self : !struct.type<@SetCode<[@COLORS, @PEGS]>>
     }
-    function.def @constrain(%arg0: !struct.type<@SetCode<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@SetCode<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg0[@"$temp"] : <@SetCode<[@COLORS, @PEGS]>>, !struct.type<@CheckBounds<[@COLORS, @PEGS]>>
       function.call @CheckBounds::@constrain(%0, %arg2) : (!struct.type<@CheckBounds<[@COLORS, @PEGS]>>, !struct.type<@Pegs<[@PEGS]>>) -> ()
       %1 = struct.readm %arg0[@"$temp_0"] : <@SetCode<[@COLORS, @PEGS]>>, !struct.type<@GenerateCodeHash<[@PEGS]>>
@@ -2654,7 +2654,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !felt.type {llzk.pub}
     struct.member @"$temp_0" : !struct.type<@NondetReg<[]>> {column}
     struct.member @"$temp" : !struct.type<@NondetReg<[]>> {column}
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Minimum<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Minimum<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %felt_const_0 = felt.const 0
       %felt_const_1 = felt.const 1
       %felt_const_0_0 = felt.const 0
@@ -2688,7 +2688,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %18 : <@Minimum<[]>>, !felt.type
       function.return %self : !struct.type<@Minimum<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Minimum<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Minimum<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %felt_const_0 = felt.const 0
       %felt_const_1 = felt.const 1
       %felt_const_0_0 = felt.const 0
@@ -2762,7 +2762,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %4 : <@CountColors<[@N]>>, !felt.type
       function.return %self : !struct.type<@CountColors<[@N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@CountColors<[@N]>>, %arg1: !struct.type<@Pegs<[@N]>>, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@CountColors<[@N]>>, %arg1: !struct.type<@Pegs<[@N]>>, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %0 = struct.readm %arg1[@"$super"] : <@Pegs<[@N]>>, !array.type<@N x !struct.type<@Reg<[]>>>
@@ -2797,7 +2797,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp" : !struct.type<@Component<[]>>
     struct.member @partial : !struct.type<@Reg<[]>> {column, llzk.pub}
     struct.member @correct : !struct.type<@Reg<[]>> {column, llzk.pub}
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Guess<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Guess<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Guess<[]>>
       %0 = function.call @Reg::@compute(%arg0) : (!felt.type) -> !struct.type<@Reg<[]>>
       struct.writem %self[@correct] = %0 : <@Guess<[]>>, !struct.type<@Reg<[]>>
@@ -2811,7 +2811,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %5 : <@Guess<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Guess<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Guess<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Guess<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg0[@correct] : <@Guess<[]>>, !struct.type<@Reg<[]>>
       function.call @Reg::@constrain(%0, %arg1) : (!struct.type<@Reg<[]>>, !felt.type) -> ()
       %1 = struct.readm %arg0[@partial] : <@Guess<[]>>, !struct.type<@Reg<[]>>
@@ -2826,7 +2826,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp" : !struct.type<@Component<[]>>
     struct.member @snd : !poly.tvar<@Snd> {llzk.pub}
     struct.member @fst : !poly.tvar<@Fst> {llzk.pub}
-    function.def @compute(%arg0: !poly.tvar<@Fst>, %arg1: !poly.tvar<@Snd>) -> !struct.type<@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !poly.tvar<@Fst>, %arg1: !poly.tvar<@Snd>) -> !struct.type<@Pair<[@Fst, @Snd]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>
       struct.writem %self[@fst] = %arg0 : <@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>
       struct.writem %self[@snd] = %arg1 : <@Pair<[@Fst, @Snd]>>, !poly.tvar<@Snd>
@@ -2836,7 +2836,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %1 : <@Pair<[@Fst, @Snd]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Pair<[@Fst, @Snd]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Pair<[@Fst, @Snd]>>, %arg1: !poly.tvar<@Fst>, %arg2: !poly.tvar<@Snd>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Pair<[@Fst, @Snd]>>, %arg1: !poly.tvar<@Fst>, %arg2: !poly.tvar<@Snd>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = struct.readm %arg0[@"$temp"] : <@Pair<[@Fst, @Snd]>>, !struct.type<@Component<[]>>
       function.call @Component::@constrain(%0) : (!struct.type<@Component<[]>>) -> ()
       function.return
@@ -2845,7 +2845,7 @@ module attributes {llzk.lang = "zirgen"} {
   struct.def @Zip<[@Lhs, @Rhs, @N]> {
     struct.member @"$super" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
     struct.member @"$array" : !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
-    function.def @compute(%arg0: !array.type<@N x !poly.tvar<@Lhs>>, %arg1: !array.type<@N x !poly.tvar<@Rhs>>) -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<@N x !poly.tvar<@Lhs>>, %arg1: !array.type<@N x !poly.tvar<@Rhs>>) -> !struct.type<@Zip<[@Lhs, @Rhs, @N]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %self = struct.new : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
@@ -2874,7 +2874,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %5 : <@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#map x !struct.type<@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>>
       function.return %self : !struct.type<@Zip<[@Lhs, @Rhs, @N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Zip<[@Lhs, @Rhs, @N]>>, %arg1: !array.type<@N x !poly.tvar<@Lhs>>, %arg2: !array.type<@N x !poly.tvar<@Rhs>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Zip<[@Lhs, @Rhs, @N]>>, %arg1: !array.type<@N x !poly.tvar<@Lhs>>, %arg2: !array.type<@N x !poly.tvar<@Rhs>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %0 = poly.read_const @N : !felt.type
@@ -2947,7 +2947,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %5 : <@AssertArrsEq<[@T, @N]>>, !array.type<#map x !struct.type<@Component<[]>>>
       function.return %self : !struct.type<@AssertArrsEq<[@T, @N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@AssertArrsEq<[@T, @N]>>, %arg1: !array.type<@N x !poly.tvar<@T>>, %arg2: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@AssertArrsEq<[@T, @N]>>, %arg1: !array.type<@N x !poly.tvar<@T>>, %arg2: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %0 = struct.readm %arg0[@"$temp"] : <@AssertArrsEq<[@T, @N]>>, !struct.type<@Zip<[!poly.tvar<@T>, !poly.tvar<@T>, @N]>>
@@ -3144,7 +3144,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %40 : <@MakeGuess<[@COLORS, @PEGS]>>, !struct.type<@Guess<[]>>
       function.return %self : !struct.type<@MakeGuess<[@COLORS, @PEGS]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MakeGuess<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@PEGS]>>, %arg3: !struct.type<@CodeHash<[]>>, %arg4: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MakeGuess<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@PEGS]>>, %arg3: !struct.type<@CodeHash<[]>>, %arg4: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = string.new "Partial guesses: %u"
       %1 = string.new "Correct guesses: %u"
       %felt_const_0 = felt.const 0
@@ -3304,7 +3304,7 @@ module attributes {llzk.lang = "zirgen"} {
       struct.writem %self[@"$super"] = %3 : <@MakeGuessWithChecks<[@COLORS, @PEGS]>>, !struct.type<@MakeGuess<[@COLORS, @PEGS]>>
       function.return %self : !struct.type<@MakeGuessWithChecks<[@COLORS, @PEGS]>>
     }
-    function.def @constrain(%arg0: !struct.type<@MakeGuessWithChecks<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@PEGS]>>, %arg3: !struct.type<@CodeHash<[]>>, %arg4: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@MakeGuessWithChecks<[@COLORS, @PEGS]>>, %arg1: !struct.type<@Nonce<[]>>, %arg2: !struct.type<@Pegs<[@PEGS]>>, %arg3: !struct.type<@CodeHash<[]>>, %arg4: !struct.type<@Pegs<[@PEGS]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       %0 = string.new "Guess check post condition failed"
       %felt_const_1 = felt.const 1
       %felt_const_0 = felt.const 0
@@ -3337,14 +3337,14 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !felt.type {llzk.pub}
     struct.member @g : !felt.type
     struct.member @j : !struct.type<@BitAnd<[]>>
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type, %arg2: !struct.type<@BitAnd<[]>>) -> !struct.type<@block$<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type, %arg2: !struct.type<@BitAnd<[]>>) -> !struct.type<@block$<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@block$<[]>>
       struct.writem %self[@"$super"] = %arg0 : <@block$<[]>>, !felt.type
       struct.writem %self[@g] = %arg1 : <@block$<[]>>, !felt.type
       struct.writem %self[@j] = %arg2 : <@block$<[]>>, !struct.type<@BitAnd<[]>>
       function.return %self : !struct.type<@block$<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@block$<[]>>, %arg1: !felt.type, %arg2: !felt.type, %arg3: !struct.type<@BitAnd<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@block$<[]>>, %arg1: !felt.type, %arg2: !felt.type, %arg3: !struct.type<@BitAnd<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
@@ -3352,40 +3352,40 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$super" : !struct.type<@Minimum<[]>> {llzk.pub}
     struct.member @guessCount : !struct.type<@CountColors<[@PEGS]>>
     struct.member @pegsCount : !struct.type<@CountColors<[@PEGS]>>
-    function.def @compute(%arg0: !struct.type<@Minimum<[]>>, %arg1: !struct.type<@CountColors<[@PEGS]>>, %arg2: !struct.type<@CountColors<[@PEGS]>>) -> !struct.type<@block$_0<[@PEGS]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Minimum<[]>>, %arg1: !struct.type<@CountColors<[@PEGS]>>, %arg2: !struct.type<@CountColors<[@PEGS]>>) -> !struct.type<@block$_0<[@PEGS]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@block$_0<[@PEGS]>>
       struct.writem %self[@"$super"] = %arg0 : <@block$_0<[@PEGS]>>, !struct.type<@Minimum<[]>>
       struct.writem %self[@guessCount] = %arg1 : <@block$_0<[@PEGS]>>, !struct.type<@CountColors<[@PEGS]>>
       struct.writem %self[@pegsCount] = %arg2 : <@block$_0<[@PEGS]>>, !struct.type<@CountColors<[@PEGS]>>
       function.return %self : !struct.type<@block$_0<[@PEGS]>>
     }
-    function.def @constrain(%arg0: !struct.type<@block$_0<[@PEGS]>>, %arg1: !struct.type<@Minimum<[]>>, %arg2: !struct.type<@CountColors<[@PEGS]>>, %arg3: !struct.type<@CountColors<[@PEGS]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@block$_0<[@PEGS]>>, %arg1: !struct.type<@Minimum<[]>>, %arg2: !struct.type<@CountColors<[@PEGS]>>, %arg3: !struct.type<@CountColors<[@PEGS]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
   struct.def @block$_1<[]> {
     struct.member @"$super" : !struct.type<@Component<[]>> {llzk.pub}
     struct.member @check : !struct.type<@Reg<[]>> {column}
-    function.def @compute(%arg0: !struct.type<@Component<[]>>, %arg1: !struct.type<@Reg<[]>>) -> !struct.type<@block$_1<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@Component<[]>>, %arg1: !struct.type<@Reg<[]>>) -> !struct.type<@block$_1<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@block$_1<[]>>
       struct.writem %self[@"$super"] = %arg0 : <@block$_1<[]>>, !struct.type<@Component<[]>>
       struct.writem %self[@check] = %arg1 : <@block$_1<[]>>, !struct.type<@Reg<[]>>
       function.return %self : !struct.type<@block$_1<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@block$_1<[]>>, %arg1: !struct.type<@Component<[]>>, %arg2: !struct.type<@Reg<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@block$_1<[]>>, %arg1: !struct.type<@Component<[]>>, %arg2: !struct.type<@Reg<[]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }
   struct.def @block$_2<[]> {
     struct.member @"$super" : !struct.type<@MultiplyByCirculant<[]>> {llzk.pub}
     struct.member @chunk : !array.type<4 x !felt.type>
-    function.def @compute(%arg0: !struct.type<@MultiplyByCirculant<[]>>, %arg1: !array.type<4 x !felt.type>) -> !struct.type<@block$_2<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@MultiplyByCirculant<[]>>, %arg1: !array.type<4 x !felt.type>) -> !struct.type<@block$_2<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
       %self = struct.new : !struct.type<@block$_2<[]>>
       struct.writem %self[@"$super"] = %arg0 : <@block$_2<[]>>, !struct.type<@MultiplyByCirculant<[]>>
       struct.writem %self[@chunk] = %arg1 : <@block$_2<[]>>, !array.type<4 x !felt.type>
       function.return %self : !struct.type<@block$_2<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@block$_2<[]>>, %arg1: !struct.type<@MultiplyByCirculant<[]>>, %arg2: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@block$_2<[]>>, %arg1: !struct.type<@MultiplyByCirculant<[]>>, %arg2: !array.type<4 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
       function.return
     }
   }

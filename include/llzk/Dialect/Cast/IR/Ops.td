@@ -13,6 +13,7 @@
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Cast/IR/Dialect.td"
 include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/Function/IR/OpTraits.td"
 
 include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -36,12 +37,11 @@ def LLZK_IntToFeltOp : Op<CastDialect, "tofelt", [Pure]> {
   let assemblyFormat = [{ $value `:` type($value) attr-dict }];
 }
 
-def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
+def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure, NotFieldNative]> {
   let summary = "convert a field element into an index";
   let description = [{
-    This operation converts a field element value into an index value to allow
-    use as an array index or loop bound. In struct @constrain functions, the
-    argument to this op is not allowed to be derived from a Signal struct.
+    This operation converts a field element value into an index value to allow use
+    as an array index or loop bound.
 
     Example:
     ```llzk
@@ -53,8 +53,6 @@ def LLZK_FeltToIndexOp : Op<CastDialect, "toindex", [Pure]> {
   let arguments = (ins LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat = [{ $value attr-dict }];
-
-  let hasVerifier = 1;
 }
 
 #endif // LLZK_CAST_OPS

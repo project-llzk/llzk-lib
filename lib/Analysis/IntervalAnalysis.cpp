@@ -577,7 +577,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     }
   } else if (
       // We do not need to explicitly handle read ops since they are resolved at the operand value
-      // step where `SourceRef`s are queries (with the exception of the Signal struct, see above).
+      // step where `SourceRef`s are queries.
       !isReadOp(op)
       // We do not currently handle return ops as the analysis is currently limited to constrain
       // functions, which return no value.
