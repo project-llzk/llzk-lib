@@ -60,9 +60,7 @@ LogicalResult EmitContainmentOp::verify() {
   Type elemTy = arrType.getElementType();
   if (!isValidEmitEqType(elemTy)) {
     return errFn().append(
-        "element type must be any LLZK type, excluding non-Signal struct and string types, but "
-        "got ",
-        elemTy
+        "element type must be any LLZK type, excluding struct and string types, but got ", elemTy
     );
   }
   return success();

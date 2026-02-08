@@ -198,7 +198,7 @@ module attributes {llzk.lang} {
           %a: !struct.type<@TestComponent11>,
           %b: !struct.type<@TestComponent11>
           ) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.type<@TestComponent11>'}}
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding struct and string types, but got '!struct.type<@TestComponent11>'}}
       constrain.eq %a, %b : !struct.type<@TestComponent11>
       function.return
     }
@@ -217,7 +217,7 @@ module attributes {llzk.lang} {
           %a: !array.type<3 x !struct.type<@TestComponent12>>,
           %b: !array.type<3 x !struct.type<@TestComponent12>>
           ) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<3 x !struct.type<@TestComponent12>>'}}
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding struct and string types, but got '!array.type<3 x !struct.type<@TestComponent12>>'}}
       constrain.eq %a, %b : !array.type<3 x !struct.type<@TestComponent12>>
       function.return
     }
@@ -236,7 +236,7 @@ module attributes {llzk.lang} {
           %a: !array.type<3,2 x !struct.type<@TestComponent13>>,
           %b: !array.type<3,2 x !struct.type<@TestComponent13>>
           ) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<3,2 x !struct.type<@TestComponent13>>'}}
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding struct and string types, but got '!array.type<3,2 x !struct.type<@TestComponent13>>'}}
       constrain.eq %a, %b : !array.type<3,2 x !struct.type<@TestComponent13>>
       function.return
     }
@@ -453,7 +453,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@Component24>
     }
     function.def @constrain(%a: !string.type, %b: !string.type) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!string.type'}}
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding struct and string types, but got '!string.type'}}
       constrain.eq %a, %b : !string.type
       function.return
     }
@@ -469,7 +469,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@Component25>
     }
     function.def @constrain(%self: !struct.type<@Component25>, %a: !array.type<2 x !string.type>, %b: !array.type<2 x !string.type>) {
-      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding non-Signal struct and string types, but got '!array.type<2 x !string.type>'}}
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding struct and string types, but got '!array.type<2 x !string.type>'}}
       constrain.eq %a, %b : !array.type<2 x !string.type>
       function.return
     }
@@ -482,7 +482,7 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   struct.def @Component26 {
     function.def @constrain(%self: !struct.type<@Component26>, %b: !array.type<89 x !struct.type<@Component26>>) {
-      // expected-error@+1 {{'constrain.in' op element type must be any LLZK type, excluding non-Signal struct and string types, but got '!struct.type<@Component26>'}}
+      // expected-error@+1 {{'constrain.in' op element type must be any LLZK type, excluding struct and string types, but got '!struct.type<@Component26>'}}
       constrain.in %b, %self : !array.type<89 x !struct.type<@Component26>>, !struct.type<@Component26>
       function.return
     }

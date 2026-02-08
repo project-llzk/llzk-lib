@@ -766,7 +766,7 @@ module attributes {llzk.lang} {
     struct.member @outp : !array.type<#map x !felt.type> {column}
     struct.member @"$temp" : !array.type<#map x !felt.type> {column}
     struct.member @internal : !array.type<#map x !felt.type> {column}
-    function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness, function.allow_non_native_field_ops} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %self = struct.new : <@Foo<[@N]>>
@@ -817,7 +817,7 @@ module attributes {llzk.lang} {
       struct.writem %self[@outp] = %array_2 : <@Foo<[@N]>>, !array.type<#map x !felt.type>
       function.return %self : !struct.type<@Foo<[@N]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
       %0 = poly.read_const @N : !felt.type

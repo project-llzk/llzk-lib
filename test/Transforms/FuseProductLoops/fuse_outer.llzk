@@ -1,0 +1,72 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+    struct.def @A<[@N]> {
+        struct.member @arr : !array.type<@N x !felt.type>
+        
+        function.def @compute(%as: !array.type<@N x !felt.type>) -> !struct.type<@A<[@N]>> {
+            %self = struct.new : <@A<[@N]>>
+
+            %N = poly.read_const @N : index
+            %c0 = arith.constant 0 : index
+            %c1 = arith.constant 1 : index
+
+            %arr = array.new : !array.type<@N x !felt.type>
+
+            scf.for %i = %c0 to %N step %c1 {
+                %sum0 = felt.const 0
+                %sum = scf.for %j = %i to %N step %c1 iter_args(%iter_sum = %sum0) -> !felt.type {
+                    %a_j = array.read %as[%j] : !array.type<@N x !felt.type>, !felt.type
+                    %0 = felt.add %iter_sum, %a_j
+                    scf.yield %0 : !felt.type
+                }
+                array.write %arr[%i] = %sum : !array.type<@N x !felt.type>, !felt.type
+                scf.yield
+            }
+
+            struct.writem %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N x !felt.type>
+            function.return %self : !struct.type<@A<[@N]>>
+        }
+        function.def @constrain(%self : !struct.type<@A<[@N]>>, %as: !array.type<@N x !felt.type>) {
+            %N = poly.read_const @N : index
+            %c0 = arith.constant 0 : index
+            %c1 = arith.constant 1 : index
+
+            %arr = struct.readm %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N x !felt.type>
+
+            scf.for %i = %c0 to %N step %c1 {
+                %j = arith.addi %i, %c1 : index
+                
+                %arr_i = array.read %arr[%i] : !array.type<@N x !felt.type>, !felt.type
+                %arr_j = array.read %arr[%j] : !array.type<@N x !felt.type>, !felt.type
+                %a = array.read %as[%i] : !array.type<@N x !felt.type>, !felt.type
+                %diff = felt.sub %arr_j, %arr_i
+                constrain.eq %a, %diff : !felt.type
+                scf.yield
+            }
+
+            function.return
+        }
+    }
+}
+
+// CHECK-LABEL: scf.for
+// CHECK-SAME:          %[[VAL_0:[0-9a-zA-Z_\.]+]] =
+// CHECK-SAME:          %[[VAL_1:[0-9a-zA-Z_\.]+]] to
+// CHECK-SAME:          %[[VAL_2:[0-9a-zA-Z_\.]+]] step
+// CHECK-SAME:          %[[VAL_3:[0-9a-zA-Z_\.]+]] {
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_0]] to %[[VAL_7:[0-9a-zA-Z_\.]+]] step %[[VAL_8:[0-9a-zA-Z_\.]+]] iter_args(%[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_4]]) -> (!felt.type) {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_6]]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:      scf.yield {product_source = "compute"} %[[VAL_12]] : !felt.type
+// CHECK-NEXT:    } {product_source = "compute"}
+// CHECK-NEXT:    array.write %[[VAL_13:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] = %[[VAL_5]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:    %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_3]] {product_source = "constrain"} : index
+// CHECK-NEXT:    %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:    %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_14]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:    %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:    %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_17]], %[[VAL_15]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:    constrain.eq %[[VAL_18]], %[[VAL_20]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:  } {product_source = "fused"}
+// CHECK-NOT: scf.for
