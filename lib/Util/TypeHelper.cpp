@@ -23,6 +23,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/Debug.h>
 
 #include <cstdint>
 #include <numeric>
@@ -606,6 +607,10 @@ struct UnifierImpl {
       const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
       bool unifyDynamicSize = false
   ) {
+    llvm::interleaveComma(lhsParams, llvm::dbgs() << "[typeParamsUnify:ArrayRef] lhsParams = [");
+    llvm::interleaveComma(rhsParams, llvm::dbgs() << "], rhsParams = [");
+    llvm::dbgs() << "]\n";
+
     auto pred = [this, unifyDynamicSize](auto lhsAttr, auto rhsAttr) {
       return paramAttrUnify(lhsAttr, rhsAttr, unifyDynamicSize);
     };
@@ -628,6 +633,8 @@ struct UnifierImpl {
   bool typeParamsUnify(
       const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, bool unifyDynamicSize = false
   ) {
+    llvm::dbgs() << "[typeParamsUnify:ArrayAttr] lhsParams = " << lhsParams
+                 << ", rhsParams = " << rhsParams << "\n";
     if (lhsParams && rhsParams) {
       return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue(), unifyDynamicSize);
     }
@@ -647,12 +654,19 @@ struct UnifierImpl {
   }
 
   bool structTypesUnify(StructType lhs, StructType rhs) {
+    llvm::dbgs() << "[structTypesUnify] lhs = " << lhs << ", rhs = " << rhs << "\n";
     // Check if it references the same StructDefOp, considering the additional RHS path prefix.
     SmallVector<StringRef> rhsNames = getNames(rhs.getNameRef());
     rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
-    if (rhsNames != getNames(lhs.getNameRef())) {
+    auto lhsNames = getNames(lhs.getNameRef());
+    llvm::interleaveComma(rhsNames, llvm::dbgs() << "rhsNames = [");
+    llvm::interleaveComma(lhsNames, llvm::dbgs() << "]\nlhsNames = [");
+    llvm::dbgs() << "]\n";
+    if (rhsNames != lhsNames) {
+      llvm::dbgs() << "[structTypesUnify]    rhsNames != getNames(lhs.getNameRef())\n";
       return false;
     }
+    llvm::dbgs() << "[structTypesUnify]    delegating to typeParamsUnify\n";
     // Check if the parameters unify between the LHS and RHS
     return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
@@ -836,6 +850,7 @@ bool typeParamsUnify(
     const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
     UnificationMap *unifications
 ) {
+  llvm::dbgs() << "[func:typeParamsUnify1]\n";
   return UnifierImpl(unifications).typeParamsUnify(lhsParams, rhsParams);
 }
 
@@ -844,12 +859,14 @@ bool typeParamsUnify(
 bool typeParamsUnify(
     const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, UnificationMap *unifications
 ) {
+  llvm::dbgs() << "[func:typeParamsUnify2]\n";
   return UnifierImpl(unifications).typeParamsUnify(lhsParams, rhsParams);
 }
 
 bool arrayTypesUnify(
     ArrayType lhs, ArrayType rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
 ) {
+  llvm::dbgs() << "[func:arrayTypesUnify]\n";
   return UnifierImpl(unifications, rhsReversePrefix).arrayTypesUnify(lhs, rhs);
 }
 
@@ -857,18 +874,23 @@ bool structTypesUnify(
     StructType lhs, StructType rhs, ArrayRef<StringRef> rhsReversePrefix,
     UnificationMap *unifications
 ) {
+  llvm::dbgs() << "[func:structTypesUnify]\n";
   return UnifierImpl(unifications, rhsReversePrefix).structTypesUnify(lhs, rhs);
 }
 
 bool typesUnify(
     Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
 ) {
+  llvm::dbgs() << "[func:typesUnify]\n";
+
   return UnifierImpl(unifications, rhsReversePrefix).typesUnify(lhs, rhs);
 }
 
 bool isMoreConcreteUnification(
     Type oldTy, Type newTy, llvm::function_ref<bool(Type oldTy, Type newTy)> knownOldToNew
 ) {
+  llvm::dbgs() << "[func:isMoreConcreteUnification]\n";
+
   UnificationMap unifications;
   AffineInstantiations affineInstantiations;
   // Run type unification with the addition that affine map can become integer in the new type.
