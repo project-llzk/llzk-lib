@@ -31,7 +31,7 @@ extern const char *LLZK_LANG_ATTR_NAME;
 
 /// Name of the attribute on the top-level ModuleOp that defines prime fields
 /// used in the circuit.
-extern const char *FIELD_ATTR_NAME;
+extern const char *LLZK_FIELD_ATTR_NAME;
 
 /// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.
 /// This attribute can appear zero or one times on the top-level ModuleOp and is associated with
