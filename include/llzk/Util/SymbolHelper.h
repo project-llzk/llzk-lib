@@ -20,7 +20,7 @@ namespace llzk {
 namespace component {
 class StructType;
 class StructDefOp;
-class FieldDefOp;
+class MemberDefOp;
 } // namespace component
 
 namespace function {
@@ -93,7 +93,7 @@ getPathFromRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullptr)
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
-getPathFromRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 
@@ -105,7 +105,7 @@ getPathFromTopRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullp
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
-getPathFromTopRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+getPathFromTopRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 

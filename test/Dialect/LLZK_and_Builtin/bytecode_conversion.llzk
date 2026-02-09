@@ -2,7 +2,7 @@
 // COM: This chained `llzk-opt` construction converts text -> bytecode -> text
 // COM: https://veridise.atlassian.net/browse/LLZK-205
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @compute(%a: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>

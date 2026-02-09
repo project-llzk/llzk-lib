@@ -301,8 +301,7 @@ class AllowedTypes {
 
   bool no_felt : 1 = false;
   bool no_string : 1 = false;
-  bool no_non_signal_struct : 1 = false;
-  bool no_signal_struct : 1 = false;
+  bool no_struct : 1 = false;
   bool no_array : 1 = false;
   bool no_pod : 1 = false;
   bool no_var : 1 = false;
@@ -336,14 +335,7 @@ public:
   }
 
   constexpr AllowedTypes &noStruct() {
-    no_non_signal_struct = true;
-    no_signal_struct = true;
-    return *this;
-  }
-
-  constexpr AllowedTypes &noStructExceptSignal() {
-    no_non_signal_struct = true;
-    no_signal_struct = false;
+    no_struct = true;
     return *this;
   }
 
@@ -493,8 +485,7 @@ public:
 
 bool AllowedTypes::isValidTypeImpl(Type type) {
   assert(
-      !(no_int && no_felt && no_string && no_var && no_non_signal_struct && no_signal_struct &&
-        no_array && no_pod) &&
+      !(no_int && no_felt && no_string && no_var && no_struct && no_array && no_pod) &&
       "All types have been deactivated"
   );
   struct Impl : LLZKTypeSwitch<Impl, bool> {
@@ -513,11 +504,10 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
     bool casePod(PodType t) { return !outer.no_pod && outer.areValidPodRecords(t.getRecords()); }
     bool caseStruct(StructType t) {
       // Note: The `no*` flags here refer to Types nested within a TypeAttr parameter.
-      if ((outer.no_signal_struct && outer.no_non_signal_struct) || !outer.validColumns(t)) {
+      if (outer.no_struct || !outer.validColumns(t)) {
         return false;
       }
-      return (!outer.no_signal_struct && isSignalType(t)) ||
-             (!outer.no_non_signal_struct && outer.areValidStructTypeParams(t.getParams()));
+      return !outer.no_struct && outer.areValidStructTypeParams(t.getParams());
     }
     bool caseInvalid(Type _) { return false; }
   };
@@ -535,7 +525,7 @@ bool isValidColumnType(Type type, SymbolTableCollection &symbolTable, Operation 
 bool isValidGlobalType(Type type) { return AllowedTypes().noVar().isValidTypeImpl(type); }
 
 bool isValidEmitEqType(Type type) {
-  return AllowedTypes().noString().noStructExceptSignal().isValidTypeImpl(type);
+  return AllowedTypes().noString().noStruct().isValidTypeImpl(type);
 }
 
 // Allowed types must align with StructParamTypes (defined below)
@@ -549,20 +539,6 @@ bool isValidArrayType(Type type) { return AllowedTypes().isValidArrayTypeImpl(ty
 
 bool isConcreteType(Type type, bool allowStructParams) {
   return AllowedTypes().noVar().noStructParams(!allowStructParams).isValidTypeImpl(type);
-}
-
-bool isSignalType(Type type) {
-  if (auto structParamTy = llvm::dyn_cast<StructType>(type)) {
-    return isSignalType(structParamTy);
-  }
-  return false;
-}
-
-bool isSignalType(StructType sType) {
-  // Only check the leaf part of the reference (i.e., just the struct name itself) to allow cases
-  // where the `COMPONENT_NAME_SIGNAL` struct may be placed within some nesting of modules, as
-  // happens when it's imported via an IncludeOp.
-  return sType.getNameRef().getLeafReference() == COMPONENT_NAME_SIGNAL;
 }
 
 bool hasAffineMapAttr(Type type) {
@@ -586,12 +562,7 @@ uint64_t computeEmitEqCardinality(Type type) {
       assert(n >= 0);
       return static_cast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
     }
-    uint64_t caseStruct(StructType t) {
-      if (isSignalType(t)) {
-        return 1;
-      }
-      llvm_unreachable("not a valid EmitEq type");
-    }
+    uint64_t caseStruct(StructType t) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t casePod(PodType t) {
       return std::accumulate(
           t.getRecords().begin(), t.getRecords().end(), 0,

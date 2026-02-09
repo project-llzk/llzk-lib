@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {llzk.main = !struct.type<@Top>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Top>, llzk.lang} {
   struct.def @Top {
     function.def @compute() -> !struct.type<@Top> {
       %self = struct.new : !struct.type<@Top>
@@ -11,7 +11,7 @@ module attributes {llzk.main = !struct.type<@Top>, veridise.lang = "llzk"} {
     }
   }
 }
-//CHECK-LABEL: module attributes {llzk.main = !struct.type<@Top>, veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Top>} {
 //CHECK-LABEL:   struct.def @Top {
 //CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
@@ -24,7 +24,7 @@ module attributes {llzk.main = !struct.type<@Top>, veridise.lang = "llzk"} {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {llzk.main = !struct.type<@Entry<[]>>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Entry<[]>>, llzk.lang} {
   struct.def @Entry<[]> {
     function.def @compute() -> !struct.type<@Entry<[]>> {
       %self = struct.new : !struct.type<@Entry<[]>>
@@ -35,7 +35,7 @@ module attributes {llzk.main = !struct.type<@Entry<[]>>, veridise.lang = "llzk"}
     }
   }
 }
-//CHECK-LABEL: module attributes {llzk.main = !struct.type<@Entry<[]>>, veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Entry<[]>>} {
 //CHECK-LABEL:   struct.def @Entry<[]> {
 //CHECK-NEXT:      function.def @compute() -> !struct.type<@Entry<[]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Entry<[]>>
@@ -48,7 +48,7 @@ module attributes {llzk.main = !struct.type<@Entry<[]>>, veridise.lang = "llzk"}
 //CHECK-NEXT:  }
 // -----
 
-module attributes {llzk.main = !struct.type<@MostImportant<[52,12]>>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@MostImportant<[52,12]>>, llzk.lang} {
   struct.def @MostImportant<[@N,@T]> {
     function.def @compute() -> !struct.type<@MostImportant<[@N,@T]>> {
       %self = struct.new : !struct.type<@MostImportant<[@N,@T]>>
@@ -59,7 +59,7 @@ module attributes {llzk.main = !struct.type<@MostImportant<[52,12]>>, veridise.l
     }
   }
 }
-//CHECK-LABEL: module attributes {llzk.main = !struct.type<@MostImportant<[52, 12]>>, veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@MostImportant<[52, 12]>>} {
 //CHECK-LABEL:   struct.def @MostImportant<[@N, @T]> {
 //CHECK-NEXT:      function.def @compute() -> !struct.type<@MostImportant<[@N, @T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@MostImportant<[@N, @T]>>
@@ -72,7 +72,7 @@ module attributes {llzk.main = !struct.type<@MostImportant<[52,12]>>, veridise.l
 //CHECK-NEXT:  }
 // -----
 
-module attributes {llzk.main = !struct.type<@AnyName<[i1,!felt.type]>>, veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@AnyName<[i1,!felt.type]>>, llzk.lang} {
   struct.def @AnyName<[@N,@T]> {
     function.def @compute() -> !struct.type<@AnyName<[@N,@T]>> {
       %self = struct.new : !struct.type<@AnyName<[@N,@T]>>
@@ -83,7 +83,7 @@ module attributes {llzk.main = !struct.type<@AnyName<[i1,!felt.type]>>, veridise
     }
   }
 }
-//CHECK-LABEL: module attributes {llzk.main = !struct.type<@AnyName<[i1, !felt.type]>>, veridise.lang = "llzk"} {
+//CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@AnyName<[i1, !felt.type]>>} {
 //CHECK-LABEL:   struct.def @AnyName<[@N, @T]> {
 //CHECK-NEXT:      function.def @compute() -> !struct.type<@AnyName<[@N, @T]>> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@AnyName<[@N, @T]>>
@@ -96,7 +96,80 @@ module attributes {llzk.main = !struct.type<@AnyName<[i1,!felt.type]>>, veridise
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
+  struct.def @Main<[]> {
+    struct.member @f1 : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Main<[]>> {
+      %self = struct.new : !struct.type<@Main<[]>>
+      function.return %self : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%self: !struct.type<@Main<[]>>)  {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: struct.def @Main<[]> {
+//CHECK-NEXT:    struct.member @f1 : !felt.type {llzk.pub}
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main<[]>>
+//CHECK-NEXT:      function.return %[[SELF:[0-9a-zA-Z_\.]+]] : !struct.type<@Main<[]>>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
+//CHECK-NEXT:      function.return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Main<[]> {
+    struct.member @f1 : !felt.type {llzk.pub, signal}
+    function.def @compute() -> !struct.type<@Main<[]>> {
+      %self = struct.new : !struct.type<@Main<[]>>
+      function.return %self : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%self: !struct.type<@Main<[]>>)  {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: struct.def @Main<[]> {
+//CHECK-NEXT:    struct.member @f1 : !felt.type {llzk.pub, signal}
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main<[]>>
+//CHECK-NEXT:      function.return %[[SELF:[0-9a-zA-Z_\.]+]] : !struct.type<@Main<[]>>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
+//CHECK-NEXT:      function.return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Main<[]> {
+    // These get sorted in alphabetical order in the output
+    struct.member @f1 : !felt.type {llzk.pub, column, signal}
+    function.def @compute() -> !struct.type<@Main<[]>> {
+      %self = struct.new : !struct.type<@Main<[]>>
+      function.return %self : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%self: !struct.type<@Main<[]>>)  {
+      function.return
+    }
+  }
+}
+//CHECK-LABEL: struct.def @Main<[]> {
+//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub, signal}
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main<[]>>
+//CHECK-NEXT:      function.return %[[SELF:[0-9a-zA-Z_\.]+]] : !struct.type<@Main<[]>>
+//CHECK-NEXT:    }
+//CHECK-NEXT:    function.def @constrain(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
+//CHECK-NEXT:      function.return
+//CHECK-NEXT:    }
+//CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ComponentA {
     function.def @compute(%a: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -119,7 +192,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB<[]> {
     function.def @compute(%a: index) -> !struct.type<@ComponentB<[]>> {
       %self = struct.new : !struct.type<@ComponentB<[]>>
@@ -142,7 +215,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentC<[@A]> {
     function.def @constrain(%self: !struct.type<@ComponentC<[@A]>>, %a: !felt.type, %b: !felt.type) { function.return }
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentC<[@A]>> {
@@ -163,7 +236,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentD<[@B, @D, @C]> {
     function.def @constrain(%self: !struct.type<@ComponentD<[@B, @D, @C]>>, %a: !felt.type, %b: !felt.type) {
       function.return
@@ -187,10 +260,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentE<[@B, @D, @C]> {
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type {llzk.pub}
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type {llzk.pub}
 
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentE<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentE<[@B, @D, @C]>>
@@ -203,8 +276,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL:  struct.def @ComponentE<[@B, @D, @C]> {
-//CHECK-NEXT:     struct.field @f1 : !felt.type
-//CHECK-NEXT:     struct.field @f2 : !felt.type {llzk.pub}
+//CHECK-NEXT:     struct.member @f1 : !felt.type
+//CHECK-NEXT:     struct.member @f2 : !felt.type {llzk.pub}
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentE<[@B, @D, @C]>> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentE<[@B, @D, @C]>>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentE<[@B, @D, @C]>>
@@ -216,7 +289,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentG1 {
     function.def @compute(%a: !felt.type) -> !struct.type<@ComponentG1> {
       %self = struct.new : !struct.type<@ComponentG1>
@@ -226,7 +299,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentG2 {
-    struct.field @f2 : !struct.type<@ComponentG1>
+    struct.member @f2 : !struct.type<@ComponentG1>
 
     function.def @compute() -> !struct.type<@ComponentG2> {
       %self = struct.new : !struct.type<@ComponentG2>
@@ -234,7 +307,7 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@ComponentG2>) {
-      %b = felt.nondet
+      %b = llzk.nondet : !felt.type
       function.return
     }
   }
@@ -249,19 +322,19 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  struct.def @ComponentG2 {
-//CHECK-NEXT:     struct.field @f2 : !struct.type<@ComponentG1>
+//CHECK-NEXT:     struct.member @f2 : !struct.type<@ComponentG1>
 //CHECK-NEXT:     function.def @compute() -> !struct.type<@ComponentG2> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentG2>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentG2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentG2>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       %felt_nondet = felt.nondet
+//CHECK-NEXT:       %nondet = llzk.nondet : !felt.type
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentH {
     function.def @compute() -> !struct.type<@ComponentH> {
       %self = struct.new : !struct.type<@ComponentH>
@@ -286,9 +359,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentJ1 {
-    struct.field @f1 : !felt.type
+    struct.member @f1 : !felt.type
 
     function.def @compute(%p: !felt.type) -> !struct.type<@ComponentJ1> {
       %self = struct.new : !struct.type<@ComponentJ1>
@@ -298,8 +371,8 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @ComponentJ2 {
-    struct.field @f2 : !felt.type
-    struct.field @f3 : !struct.type<@ComponentJ1>
+    struct.member @f2 : !felt.type
+    struct.member @f3 : !struct.type<@ComponentJ1>
 
     function.def @compute() -> !struct.type<@ComponentJ2> {
       %self = struct.new : !struct.type<@ComponentJ2>
@@ -307,15 +380,15 @@ module attributes {veridise.lang = "llzk"} {
     }
 
     function.def @constrain(%self: !struct.type<@ComponentJ2>) {
-      %a = struct.readf %self[@f2] : !struct.type<@ComponentJ2>, !felt.type
-      %b = struct.readf %self[@f3] : !struct.type<@ComponentJ2>, !struct.type<@ComponentJ1>
+      %a = struct.readm %self[@f2] : !struct.type<@ComponentJ2>, !felt.type
+      %b = struct.readm %self[@f3] : !struct.type<@ComponentJ2>, !struct.type<@ComponentJ1>
       function.call @ComponentJ1::@constrain(%b, %a) : (!struct.type<@ComponentJ1>, !felt.type) -> ()
       function.return
     }
   }
 }
 //CHECK-LABEL:  struct.def @ComponentJ1 {
-//CHECK-NEXT:     struct.field @f1 : !felt.type
+//CHECK-NEXT:     struct.member @f1 : !felt.type
 //CHECK-NEXT:     function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ComponentJ1> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentJ1>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentJ1>
@@ -325,22 +398,22 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  struct.def @ComponentJ2 {
-//CHECK-NEXT:     struct.field @f2 : !felt.type
-//CHECK-NEXT:     struct.field @f3 : !struct.type<@ComponentJ1>
+//CHECK-NEXT:     struct.member @f2 : !felt.type
+//CHECK-NEXT:     struct.member @f3 : !struct.type<@ComponentJ1>
 //CHECK-NEXT:     function.def @compute() -> !struct.type<@ComponentJ2> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentJ2>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentJ2>
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentJ2>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       %0 = struct.readf %[[SELF]][@f2] : <@ComponentJ2>, !felt.type
-//CHECK-NEXT:       %1 = struct.readf %[[SELF]][@f3] : <@ComponentJ2>, !struct.type<@ComponentJ1>
+//CHECK-NEXT:       %0 = struct.readm %[[SELF]][@f2] : <@ComponentJ2>, !felt.type
+//CHECK-NEXT:       %1 = struct.readm %[[SELF]][@f3] : <@ComponentJ2>, !struct.type<@ComponentJ1>
 //CHECK-NEXT:       function.call @ComponentJ1::@constrain(%1, %0) : (!struct.type<@ComponentJ1>, !felt.type) -> ()
 //CHECK-NEXT:       function.return
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @identity(%x: !felt.type) -> !felt.type {
     function.return %x: !felt.type
   }
@@ -373,11 +446,11 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentM {
     function.def @compute(%p: !felt.type) -> !struct.type<@ComponentM> {
       %self = struct.new : !struct.type<@ComponentM>
-      // initialize all fields of `%self` here
+      // initialize all members of `%self` here
       function.return %self : !struct.type<@ComponentM>
     }
     function.def @constrain(%self: !struct.type<@ComponentM>, %p: !felt.type) { function.return }
@@ -394,7 +467,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:    }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @mod1 {
     struct.def @ComponentP1 {
       function.def @compute() -> !struct.type<@mod1::@ComponentP1> {
@@ -414,10 +487,10 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @ComponentP3 {
-    struct.field @f1 : !struct.type<@mod1::@ComponentP1>
-    struct.field @f2 : !struct.type<@mod1::@mod2::@ComponentP2>
-    struct.field @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@mod1::@ComponentP1>>
-    struct.field @f4 : !array.type<2 x !struct.type<@mod1::@mod2::@ComponentP2>>
+    struct.member @f1 : !struct.type<@mod1::@ComponentP1>
+    struct.member @f2 : !struct.type<@mod1::@mod2::@ComponentP2>
+    struct.member @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@mod1::@ComponentP1>>
+    struct.member @f4 : !array.type<2 x !struct.type<@mod1::@mod2::@ComponentP2>>
 
     function.def @compute() -> !struct.type<@ComponentP3> {
       %self = struct.new : !struct.type<@ComponentP3>
@@ -449,10 +522,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:     }
 //CHECK-NEXT:   }
 //CHECK-LABEL:  struct.def @ComponentP3 {
-//CHECK-NEXT:     struct.field @f1 : !struct.type<@mod1::@ComponentP1>
-//CHECK-NEXT:     struct.field @f2 : !struct.type<@mod1::@mod2::@ComponentP2>
-//CHECK-NEXT:     struct.field @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@mod1::@ComponentP1>>
-//CHECK-NEXT:     struct.field @f4 : !array.type<2 x !struct.type<@mod1::@mod2::@ComponentP2>>
+//CHECK-NEXT:     struct.member @f1 : !struct.type<@mod1::@ComponentP1>
+//CHECK-NEXT:     struct.member @f2 : !struct.type<@mod1::@mod2::@ComponentP2>
+//CHECK-NEXT:     struct.member @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@mod1::@ComponentP1>>
+//CHECK-NEXT:     struct.member @f4 : !array.type<2 x !struct.type<@mod1::@mod2::@ComponentP2>>
 //CHECK-NEXT:     function.def @compute() -> !struct.type<@ComponentP3> attributes {function.allow_witness} {
 //CHECK-NEXT:       %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentP3>
 //CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ComponentP3>
@@ -463,7 +536,7 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentP1 {
     function.def @compute() -> !struct.type<@ComponentP1> {
       %self = struct.new : !struct.type<@ComponentP1>
@@ -482,10 +555,10 @@ module attributes {veridise.lang = "llzk"} {
   }
   module @mod1 {
     struct.def @ComponentP3 {
-      struct.field @f1 : !struct.type<@ComponentP1>
-      struct.field @f2 : !struct.type<@mod2::@ComponentP2>
-      struct.field @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@ComponentP1>>
-      struct.field @f4 : !array.type<2 x !struct.type<@mod2::@ComponentP2>>
+      struct.member @f1 : !struct.type<@ComponentP1>
+      struct.member @f2 : !struct.type<@mod2::@ComponentP2>
+      struct.member @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@ComponentP1>>
+      struct.member @f4 : !array.type<2 x !struct.type<@mod2::@ComponentP2>>
 
       function.def @compute() -> !struct.type<@mod1::@ComponentP3> {
         %self = struct.new : !struct.type<@mod1::@ComponentP3>
@@ -517,10 +590,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:   }
 //CHECK-LABEL:  module @mod1 {
 //CHECK-LABEL:    struct.def @ComponentP3 {
-//CHECK-NEXT:       struct.field @f1 : !struct.type<@ComponentP1>
-//CHECK-NEXT:       struct.field @f2 : !struct.type<@mod2::@ComponentP2>
-//CHECK-NEXT:       struct.field @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@ComponentP1>>
-//CHECK-NEXT:       struct.field @f4 : !array.type<2 x !struct.type<@mod2::@ComponentP2>>
+//CHECK-NEXT:       struct.member @f1 : !struct.type<@ComponentP1>
+//CHECK-NEXT:       struct.member @f2 : !struct.type<@mod2::@ComponentP2>
+//CHECK-NEXT:       struct.member @f3 : !array.type<27,3,2,1,1,7 x !struct.type<@ComponentP1>>
+//CHECK-NEXT:       struct.member @f4 : !array.type<2 x !struct.type<@mod2::@ComponentP2>>
 //CHECK-NEXT:       function.def @compute() -> !struct.type<@mod1::@ComponentP3> attributes {function.allow_witness} {
 //CHECK-NEXT:         %self = struct.new : <@mod1::@ComponentP3>
 //CHECK-NEXT:         function.return %self : !struct.type<@mod1::@ComponentP3>

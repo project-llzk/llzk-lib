@@ -30,7 +30,7 @@ function.def @fail_07() {
   function.return
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @user() {
     // expected-error@+2 {{'function.call' op references unknown symbol "@missing_fn"}}
     // expected-error@+1 {{expected 'function.def' named "@missing_fn"}}
@@ -41,14 +41,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
   function.def @user() {
-    // expected-error@+2 {{'function.call' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+    // expected-error@+2 {{'function.call' op has ancestor 'builtin.module' without "llzk.lang" attribute or a name}}
     // expected-error@+1 {{expected 'function.def' named "@missing_fn"}}
     function.call @missing_fn() : () -> ()
     function.return
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def @constrain(%p: !struct.type<@WasNotDefined>) {
@@ -57,14 +57,14 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
-  // expected-error@+2 {{'function.def' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+  // expected-error@+2 {{'function.def' op has ancestor 'builtin.module' without "llzk.lang" attribute or a name}}
   // expected-error@+1 {{could not find 'struct.def' named "@MissingComponent"}}
   function.def @constrain(%p: !struct.type<@MissingComponent>) {
     function.return
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !struct.type<@WasNotDefined>) {
@@ -72,19 +72,19 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !struct.type<@WasNotDefined>
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!felt.type, i1, !struct.type<@WasNotDefined>)
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+8 {{'function.def' op references unknown symbol "@A"}}
   // expected-error@+7 {{could not find 'struct.def' named "@A"}}
   // expected-error@+6 {{'function.def' op references unknown symbol "@B"}}
@@ -96,7 +96,7 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @f(%1: !struct.type<@A>, %7: !struct.type<@B>) -> (!struct.type<@C>, !struct.type<@D>)
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @identity(%x: index) -> (index) { // expected-note {{callee defined here}}
     function.return %x : index
   }
@@ -107,7 +107,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @identity(%x: index) -> (index) {
     function.return %x : index
   }
@@ -118,7 +118,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) { // expected-note {{callee defined here}}
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index
@@ -130,7 +130,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) {
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index
@@ -142,7 +142,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     function.def @compute() -> !struct.type<@ComponentA1> { // expected-note {{callee defined here}}
       %self = struct.new : !struct.type<@ComponentA1>
@@ -163,7 +163,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB1 {
     function.def @compute() -> !struct.type<@ComponentB1> {
       %self = struct.new : !struct.type<@ComponentB1>

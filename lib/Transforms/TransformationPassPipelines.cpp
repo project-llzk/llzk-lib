@@ -48,7 +48,7 @@ void registerTransformationPassPipelines() {
 
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops-and-defs",
-      "Remove unnecessary operations, field definitions, and struct definitions",
+      "Remove unnecessary operations, member definitions, and struct definitions",
       [](OpPassManager &pm) { addRemoveUnnecessaryOpsAndDefsPipeline(pm); }
   );
 
@@ -84,7 +84,10 @@ void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
       "llzk-product-program",
       "Convert @compute/@constrain functions to @product function and perform alignment",
-      [](OpPassManager &pm) { pm.addPass(llzk::createComputeConstrainToProductPass()); }
+      [](OpPassManager &pm) {
+    pm.addPass(llzk::createComputeConstrainToProductPass());
+    pm.addPass(llzk::createFuseProductLoopsPass());
+  }
   );
 }
 

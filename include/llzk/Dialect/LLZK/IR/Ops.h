@@ -9,8 +9,9 @@
 
 #pragma once
 
-#include "llzk/Dialect/Undef/IR/Dialect.h"
+#include <mlir/IR/OpImplementation.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
-#include "llzk/Dialect/Undef/IR/Ops.h.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.h.inc"

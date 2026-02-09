@@ -34,7 +34,7 @@ def LLZK_PODType : PODDialectType<"Pod", "type"> {
     Two `PODType` types unify if they have the same record names, defined in the 
     same order, and if the types of corresponding records unify.
 
-    This type can be used in the `struct.field` op, and it can be declared as a column,
+    This type can be used in the `struct.member` op, and it can be declared as a column,
     in which case that annotation is also implied on the inner records (except those that
     cannot be column such as `string.type` records).
 

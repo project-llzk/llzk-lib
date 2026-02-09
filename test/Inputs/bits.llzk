@@ -1,4 +1,4 @@
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component<[]> {
     function.def @compute() -> !struct.type<@Component<[]>> {
       %self = struct.new : <@Component<[]>>
@@ -9,12 +9,12 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type {llzk.pub}
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @"$super" : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> {
       %self = struct.new : <@NondetReg<[]>>
-      struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
-      struct.writef %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.type
       function.return %self : !struct.type<@NondetReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !felt.type) {
@@ -22,12 +22,12 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @NondetExtReg<[]> {
-    struct.field @"$super" : !array.type<4 x !felt.type> {llzk.pub}
-    struct.field @reg : !array.type<4 x !felt.type> {llzk.pub}
+    struct.member @"$super" : !array.type<4 x !felt.type> {llzk.pub}
+    struct.member @reg : !array.type<4 x !felt.type> {llzk.pub}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> {
       %self = struct.new : <@NondetExtReg<[]>>
-      struct.writef %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
-      struct.writef %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+      struct.writem %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+      struct.writem %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
       function.return %self : !struct.type<@NondetExtReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@NondetExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) {
@@ -35,7 +35,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @EqzExt<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>> {llzk.pub}
+    struct.member @"$super" : !struct.type<@Component<[]>> {llzk.pub}
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@EqzExt<[]>>
       %c0 = arith.constant 0 : index
@@ -57,9 +57,9 @@ module attributes {veridise.lang = "llzk"} {
       %8 = bool.and %4, %5 : i1, i1
       %9 = bool.and %8, %6 : i1, i1
       %10 = bool.and %9, %7 : i1, i1
-      bool.assert %10, "failed assertion: extended field element is not equal to zero"
+      bool.assert %10, "failed assertion: extended member element is not equal to zero"
       %11 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@EqzExt<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@EqzExt<[]>>, %arg1: !array.type<4 x !felt.type>) {
@@ -67,35 +67,35 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Reg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
-    struct.field @reg : !struct.type<@NondetReg<[]>>
+    struct.member @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
+    struct.member @reg : !struct.type<@NondetReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> {
       %self = struct.new : <@Reg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
-      struct.writef %self[@reg] = %0 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %1 = struct.readf %self[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.type
-      struct.writef %self[@"$super"] = %1 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      struct.writem %self[@reg] = %0 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %1 = struct.readm %self[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %1 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@Reg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Reg<[]>>, %arg1: !felt.type) {
-      %0 = struct.readf %arg0[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %1 = struct.readm %0[@"$super"] : <@NondetReg<[]>>, !felt.type
       constrain.eq %arg1, %1 : !felt.type, !felt.type
       function.return
     }
   }
   struct.def @ExtReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetExtReg<[]>>
-    struct.field @"$temp" : !struct.type<@EqzExt<[]>>
-    struct.field @reg : !struct.type<@NondetExtReg<[]>>
+    struct.member @"$super" : !struct.type<@NondetExtReg<[]>>
+    struct.member @"$temp" : !struct.type<@EqzExt<[]>>
+    struct.member @reg : !struct.type<@NondetExtReg<[]>>
     function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@ExtReg<[]>>
       %0 = function.call @NondetExtReg::@compute(%arg0) : (!array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>>
-      struct.writef %self[@reg] = %0 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
-      %1 = struct.readf %self[@reg] : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+      struct.writem %self[@reg] = %0 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
+      %1 = struct.readm %self[@reg] : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
       %c0 = arith.constant 0 : index
       %3 = array.read %2[%c0] : <4 x !felt.type>, !felt.type
       %c1 = arith.constant 1 : index
@@ -118,15 +118,15 @@ module attributes {veridise.lang = "llzk"} {
       %14 = felt.sub %6, %10 : !felt.type, !felt.type
       %array = array.new %11, %12, %13, %14 : <4 x !felt.type>
       %15 = function.call @EqzExt::@compute(%array) : (!array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>>
-      struct.writef %self[@"$temp"] = %15 : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
-      %16 = struct.readf %self[@"$temp"] : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
-      struct.writef %self[@"$super"] = %1 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
+      struct.writem %self[@"$temp"] = %15 : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
+      %16 = struct.readm %self[@"$temp"] : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
+      struct.writem %self[@"$super"] = %1 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
       function.return %self : !struct.type<@ExtReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@ExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) {
-      %0 = struct.readf %arg0[@reg] : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
       function.call @NondetExtReg::@constrain(%0, %arg1) : (!struct.type<@NondetExtReg<[]>>, !array.type<4 x !felt.type>) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+      %1 = struct.readm %0[@"$super"] : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
       %c0 = arith.constant 0 : index
       %2 = array.read %1[%c0] : <4 x !felt.type>, !felt.type
       %c1 = arith.constant 1 : index
@@ -148,27 +148,27 @@ module attributes {veridise.lang = "llzk"} {
       %12 = felt.sub %4, %8 : !felt.type, !felt.type
       %13 = felt.sub %5, %9 : !felt.type, !felt.type
       %array = array.new %10, %11, %12, %13 : <4 x !felt.type>
-      %14 = struct.readf %arg0[@"$temp"] : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
+      %14 = struct.readm %arg0[@"$temp"] : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
       function.call @EqzExt::@constrain(%14, %array) : (!struct.type<@EqzExt<[]>>, !array.type<4 x !felt.type>) -> ()
       function.return
     }
   }
   struct.def @Div<[]> {
-    struct.field @"$super" : !felt.type {llzk.pub}
-    struct.field @reciprocal : !felt.type
+    struct.member @"$super" : !felt.type {llzk.pub}
+    struct.member @reciprocal : !felt.type
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@Div<[]>>
       %0 = felt.inv %arg1 : !felt.type
-      struct.writef %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
-      %1 = struct.readf %self[@reciprocal] : <@Div<[]>>, !felt.type
+      struct.writem %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
+      %1 = struct.readm %self[@reciprocal] : <@Div<[]>>, !felt.type
       %2 = felt.mul %1, %arg1 : !felt.type, !felt.type
       %felt_const_1 = felt.const  1
       %3 = felt.mul %1, %arg0 : !felt.type, !felt.type
-      struct.writef %self[@"$super"] = %3 : <@Div<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %3 : <@Div<[]>>, !felt.type
       function.return %self : !struct.type<@Div<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) {
-      %0 = struct.readf %arg0[@reciprocal] : <@Div<[]>>, !felt.type
+      %0 = struct.readm %arg0[@reciprocal] : <@Div<[]>>, !felt.type
       %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
       %felt_const_1 = felt.const  1
       constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
@@ -177,11 +177,11 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Log<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !string.type, %arg1: !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Log<[]>> {
       %self = struct.new : <@Log<[]>>
       %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %0 : <@Log<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %0 : <@Log<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Log<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Log<[]>>, %arg1: !string.type, %arg2: !array.type<-9223372036854775808 x !felt.type>) {
@@ -191,11 +191,11 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Log$$extern(!string.type, !array.type<-9223372036854775808 x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Abort<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute() -> !struct.type<@Abort<[]>> {
       %self = struct.new : <@Abort<[]>>
       %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %0 : <@Abort<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %0 : <@Abort<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Abort<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Abort<[]>>) {
@@ -205,11 +205,11 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Abort$$extern() -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @Assert<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> {
       %self = struct.new : <@Assert<[]>>
       %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %0 : <@Assert<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %0 : <@Assert<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Assert<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Assert<[]>>, %arg1: !felt.type, %arg2: !string.type) {
@@ -219,8 +219,8 @@ module attributes {veridise.lang = "llzk"} {
   }
   function.def private @Assert$$extern(!felt.type, !string.type) -> !struct.type<@Component<[]>> attributes {extern}
   struct.def @AssertBit<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@AssertBit<[]>> {
       %self = struct.new : <@AssertBit<[]>>
       %felt_const_1 = felt.const  1
@@ -228,9 +228,9 @@ module attributes {veridise.lang = "llzk"} {
       %1 = felt.mul %arg0, %0 : !felt.type, !felt.type
       %felt_const_0 = felt.const  0
       %2 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$temp"] = %2 : <@AssertBit<[]>>, !struct.type<@Component<[]>>
-      %3 = struct.readf %self[@"$temp"] : <@AssertBit<[]>>, !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %3 : <@AssertBit<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$temp"] = %2 : <@AssertBit<[]>>, !struct.type<@Component<[]>>
+      %3 = struct.readm %self[@"$temp"] : <@AssertBit<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %3 : <@AssertBit<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@AssertBit<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@AssertBit<[]>>, %arg1: !felt.type) {
@@ -239,61 +239,61 @@ module attributes {veridise.lang = "llzk"} {
       %1 = felt.mul %arg1, %0 : !felt.type, !felt.type
       %felt_const_0 = felt.const  0
       constrain.eq %1, %felt_const_0 : !felt.type, !felt.type
-      %2 = struct.readf %arg0[@"$temp"] : <@AssertBit<[]>>, !struct.type<@Component<[]>>
+      %2 = struct.readm %arg0[@"$temp"] : <@AssertBit<[]>>, !struct.type<@Component<[]>>
       function.call @Component::@constrain(%2) : (!struct.type<@Component<[]>>) -> ()
       function.return
     }
   }
   struct.def @NondetBitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
-    struct.field @"$temp" : !struct.type<@AssertBit<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>> {llzk.pub}
+    struct.member @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
+    struct.member @"$temp" : !struct.type<@AssertBit<[]>>
+    struct.member @reg : !struct.type<@NondetReg<[]>> {llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetBitReg<[]>> {
       %self = struct.new : <@NondetBitReg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
-      struct.writef %self[@reg] = %0 : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %1 = struct.readf %self[@reg] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@reg] = %0 : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %1 = struct.readm %self[@reg] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetReg<[]>>, !felt.type
       %3 = function.call @AssertBit::@compute(%2) : (!felt.type) -> !struct.type<@AssertBit<[]>>
-      struct.writef %self[@"$temp"] = %3 : <@NondetBitReg<[]>>, !struct.type<@AssertBit<[]>>
-      %4 = struct.readf %self[@"$temp"] : <@NondetBitReg<[]>>, !struct.type<@AssertBit<[]>>
-      struct.writef %self[@"$super"] = %1 : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      struct.writem %self[@"$temp"] = %3 : <@NondetBitReg<[]>>, !struct.type<@AssertBit<[]>>
+      %4 = struct.readm %self[@"$temp"] : <@NondetBitReg<[]>>, !struct.type<@AssertBit<[]>>
+      struct.writem %self[@"$super"] = %1 : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@NondetBitReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@NondetBitReg<[]>>, %arg1: !felt.type) {
-      %0 = struct.readf %arg0[@reg] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %2 = struct.readf %arg0[@"$temp"] : <@NondetBitReg<[]>>, !struct.type<@AssertBit<[]>>
+      %1 = struct.readm %0[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %2 = struct.readm %arg0[@"$temp"] : <@NondetBitReg<[]>>, !struct.type<@AssertBit<[]>>
       function.call @AssertBit::@constrain(%2, %1) : (!struct.type<@AssertBit<[]>>, !felt.type) -> ()
       function.return
     }
   }
   struct.def @BitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetBitReg<[]>>
-    struct.field @reg : !struct.type<@NondetBitReg<[]>>
+    struct.member @"$super" : !struct.type<@NondetBitReg<[]>>
+    struct.member @reg : !struct.type<@NondetBitReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@BitReg<[]>> {
       %self = struct.new : <@BitReg<[]>>
       %0 = function.call @NondetBitReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetBitReg<[]>>
-      struct.writef %self[@reg] = %0 : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
-      %1 = struct.readf %self[@reg] : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %3 = struct.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.type
-      struct.writef %self[@"$super"] = %1 : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      struct.writem %self[@reg] = %0 : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %1 = struct.readm %self[@reg] : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %3 = struct.readm %2[@"$super"] : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %1 : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
       function.return %self : !struct.type<@BitReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@BitReg<[]>>, %arg1: !felt.type) {
-      %0 = struct.readf %arg0[@reg] : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@BitReg<[]>>, !struct.type<@NondetBitReg<[]>>
       function.call @NondetBitReg::@constrain(%0, %arg1) : (!struct.type<@NondetBitReg<[]>>, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %1 = struct.readm %0[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetReg<[]>>, !felt.type
       constrain.eq %arg1, %2 : !felt.type, !felt.type
       function.return
     }
   }
   struct.def @AssertTwit<[]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Component<[]>>
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Component<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@AssertTwit<[]>> {
       %self = struct.new : <@AssertTwit<[]>>
       %felt_const_1 = felt.const  1
@@ -307,9 +307,9 @@ module attributes {veridise.lang = "llzk"} {
       %5 = felt.mul %3, %4 : !felt.type, !felt.type
       %felt_const_0 = felt.const  0
       %6 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$temp"] = %6 : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
-      %7 = struct.readf %self[@"$temp"] : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %7 : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$temp"] = %6 : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
+      %7 = struct.readm %self[@"$temp"] : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %7 : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@AssertTwit<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@AssertTwit<[]>>, %arg1: !felt.type) {
@@ -324,33 +324,33 @@ module attributes {veridise.lang = "llzk"} {
       %5 = felt.mul %3, %4 : !felt.type, !felt.type
       %felt_const_0 = felt.const  0
       constrain.eq %5, %felt_const_0 : !felt.type, !felt.type
-      %6 = struct.readf %arg0[@"$temp"] : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
+      %6 = struct.readm %arg0[@"$temp"] : <@AssertTwit<[]>>, !struct.type<@Component<[]>>
       function.call @Component::@constrain(%6) : (!struct.type<@Component<[]>>) -> ()
       function.return
     }
   }
   struct.def @BitAnd<[]> {
-    struct.field @"$super" : !struct.type<@Reg<[]>> {llzk.pub}
-    struct.field @"$temp" : !struct.type<@Reg<[]>>
+    struct.member @"$super" : !struct.type<@Reg<[]>> {llzk.pub}
+    struct.member @"$temp" : !struct.type<@Reg<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@BitAnd<[]>> {
       %self = struct.new : <@BitAnd<[]>>
       %0 = felt.mul %arg0, %arg1 : !felt.type, !felt.type
       %1 = function.call @Reg::@compute(%0) : (!felt.type) -> !struct.type<@Reg<[]>>
-      struct.writef %self[@"$temp"] = %1 : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
-      %2 = struct.readf %self[@"$temp"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
-      struct.writef %self[@"$super"] = %2 : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      struct.writem %self[@"$temp"] = %1 : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      %2 = struct.readm %self[@"$temp"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      struct.writem %self[@"$super"] = %2 : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
       function.return %self : !struct.type<@BitAnd<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@BitAnd<[]>>, %arg1: !felt.type, %arg2: !felt.type) {
       %0 = felt.mul %arg1, %arg2 : !felt.type, !felt.type
-      %1 = struct.readf %arg0[@"$temp"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      %1 = struct.readm %arg0[@"$temp"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
       function.call @Reg::@constrain(%1, %0) : (!struct.type<@Reg<[]>>, !felt.type) -> ()
       function.return
     }
   }
   struct.def @BitOr<[]> {
-    struct.field @"$super" : !struct.type<@Reg<[]>>
-    struct.field @"$temp" : !struct.type<@Reg<[]>>
+    struct.member @"$super" : !struct.type<@Reg<[]>>
+    struct.member @"$temp" : !struct.type<@Reg<[]>>
     function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@BitOr<[]>> {
       %self = struct.new : <@BitOr<[]>>
       %felt_const_1 = felt.const  1
@@ -361,9 +361,9 @@ module attributes {veridise.lang = "llzk"} {
       %2 = felt.mul %0, %1 : !felt.type, !felt.type
       %3 = felt.sub %felt_const_1, %2 : !felt.type, !felt.type
       %4 = function.call @Reg::@compute(%3) : (!felt.type) -> !struct.type<@Reg<[]>>
-      struct.writef %self[@"$temp"] = %4 : <@BitOr<[]>>, !struct.type<@Reg<[]>>
-      %5 = struct.readf %self[@"$temp"] : <@BitOr<[]>>, !struct.type<@Reg<[]>>
-      struct.writef %self[@"$super"] = %5 : <@BitOr<[]>>, !struct.type<@Reg<[]>>
+      struct.writem %self[@"$temp"] = %4 : <@BitOr<[]>>, !struct.type<@Reg<[]>>
+      %5 = struct.readm %self[@"$temp"] : <@BitOr<[]>>, !struct.type<@Reg<[]>>
+      struct.writem %self[@"$super"] = %5 : <@BitOr<[]>>, !struct.type<@Reg<[]>>
       function.return %self : !struct.type<@BitOr<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@BitOr<[]>>, %arg1: !felt.type, %arg2: !felt.type) {
@@ -374,149 +374,149 @@ module attributes {veridise.lang = "llzk"} {
       %1 = felt.sub %felt_const_1_1, %arg2 : !felt.type, !felt.type
       %2 = felt.mul %0, %1 : !felt.type, !felt.type
       %3 = felt.sub %felt_const_1, %2 : !felt.type, !felt.type
-      %4 = struct.readf %arg0[@"$temp"] : <@BitOr<[]>>, !struct.type<@Reg<[]>>
+      %4 = struct.readm %arg0[@"$temp"] : <@BitOr<[]>>, !struct.type<@Reg<[]>>
       function.call @Reg::@constrain(%4, %3) : (!struct.type<@Reg<[]>>, !felt.type) -> ()
       function.return
     }
   }
   struct.def @NondetTwitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
-    struct.field @"$temp" : !struct.type<@AssertTwit<[]>>
-    struct.field @reg : !struct.type<@NondetReg<[]>>
+    struct.member @"$super" : !struct.type<@NondetReg<[]>> {llzk.pub}
+    struct.member @"$temp" : !struct.type<@AssertTwit<[]>>
+    struct.member @reg : !struct.type<@NondetReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetTwitReg<[]>> {
       %self = struct.new : <@NondetTwitReg<[]>>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
-      struct.writef %self[@reg] = %0 : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %1 = struct.readf %self[@reg] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@reg] = %0 : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %1 = struct.readm %self[@reg] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetReg<[]>>, !felt.type
       %3 = function.call @AssertTwit::@compute(%2) : (!felt.type) -> !struct.type<@AssertTwit<[]>>
-      struct.writef %self[@"$temp"] = %3 : <@NondetTwitReg<[]>>, !struct.type<@AssertTwit<[]>>
-      %4 = struct.readf %self[@"$temp"] : <@NondetTwitReg<[]>>, !struct.type<@AssertTwit<[]>>
-      struct.writef %self[@"$super"] = %1 : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
+      struct.writem %self[@"$temp"] = %3 : <@NondetTwitReg<[]>>, !struct.type<@AssertTwit<[]>>
+      %4 = struct.readm %self[@"$temp"] : <@NondetTwitReg<[]>>, !struct.type<@AssertTwit<[]>>
+      struct.writem %self[@"$super"] = %1 : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
       function.return %self : !struct.type<@NondetTwitReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@NondetTwitReg<[]>>, %arg1: !felt.type) {
-      %0 = struct.readf %arg0[@reg] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %2 = struct.readf %arg0[@"$temp"] : <@NondetTwitReg<[]>>, !struct.type<@AssertTwit<[]>>
+      %1 = struct.readm %0[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %2 = struct.readm %arg0[@"$temp"] : <@NondetTwitReg<[]>>, !struct.type<@AssertTwit<[]>>
       function.call @AssertTwit::@constrain(%2, %1) : (!struct.type<@AssertTwit<[]>>, !felt.type) -> ()
       function.return
     }
   }
   struct.def @NondetFakeTwitReg<[]> {
-    struct.field @"$super" : !felt.type {llzk.pub}
-    struct.field @reg1 : !struct.type<@NondetBitReg<[]>>
-    struct.field @"$temp_1" : !struct.type<@Div<[]>>
-    struct.field @"$temp_0" : !struct.type<@BitAnd<[]>>
-    struct.field @reg0 : !struct.type<@NondetBitReg<[]>>
-    struct.field @"$temp" : !struct.type<@BitAnd<[]>>
+    struct.member @"$super" : !felt.type {llzk.pub}
+    struct.member @reg1 : !struct.type<@NondetBitReg<[]>>
+    struct.member @"$temp_1" : !struct.type<@Div<[]>>
+    struct.member @"$temp_0" : !struct.type<@BitAnd<[]>>
+    struct.member @reg0 : !struct.type<@NondetBitReg<[]>>
+    struct.member @"$temp" : !struct.type<@BitAnd<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetFakeTwitReg<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@NondetFakeTwitReg<[]>>
       %felt_const_1 = felt.const  1
       %0 = function.call @BitAnd::@compute(%arg0, %felt_const_1) : (!felt.type, !felt.type) -> !struct.type<@BitAnd<[]>>
-      struct.writef %self[@"$temp"] = %0 : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
-      %1 = struct.readf %self[@"$temp"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
-      %2 = struct.readf %1[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
-      %3 = struct.readf %2[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %4 = struct.readf %3[@"$super"] : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@"$temp"] = %0 : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
+      %1 = struct.readm %self[@"$temp"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
+      %2 = struct.readm %1[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      %3 = struct.readm %2[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %4 = struct.readm %3[@"$super"] : <@NondetReg<[]>>, !felt.type
       %5 = function.call @NondetBitReg::@compute(%4) : (!felt.type) -> !struct.type<@NondetBitReg<[]>>
-      struct.writef %self[@reg0] = %5 : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
-      %6 = struct.readf %self[@reg0] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      struct.writem %self[@reg0] = %5 : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %6 = struct.readm %self[@reg0] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
       %felt_const_2 = felt.const  2
       %7 = function.call @BitAnd::@compute(%arg0, %felt_const_2) : (!felt.type, !felt.type) -> !struct.type<@BitAnd<[]>>
-      struct.writef %self[@"$temp_0"] = %7 : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
-      %8 = struct.readf %self[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
+      struct.writem %self[@"$temp_0"] = %7 : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
+      %8 = struct.readm %self[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
       %felt_const_2_0 = felt.const  2
-      %9 = struct.readf %8[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
-      %10 = struct.readf %9[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %11 = struct.readf %10[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %9 = struct.readm %8[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      %10 = struct.readm %9[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %11 = struct.readm %10[@"$super"] : <@NondetReg<[]>>, !felt.type
       %12 = function.call @Div::@compute(%11, %felt_const_2_0) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writef %self[@"$temp_1"] = %12 : <@NondetFakeTwitReg<[]>>, !struct.type<@Div<[]>>
-      %13 = struct.readf %self[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !struct.type<@Div<[]>>
-      %14 = struct.readf %13[@"$super"] : <@Div<[]>>, !felt.type
+      struct.writem %self[@"$temp_1"] = %12 : <@NondetFakeTwitReg<[]>>, !struct.type<@Div<[]>>
+      %13 = struct.readm %self[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !struct.type<@Div<[]>>
+      %14 = struct.readm %13[@"$super"] : <@Div<[]>>, !felt.type
       %15 = function.call @NondetBitReg::@compute(%14) : (!felt.type) -> !struct.type<@NondetBitReg<[]>>
-      struct.writef %self[@reg1] = %15 : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
-      %16 = struct.readf %self[@reg1] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      struct.writem %self[@reg1] = %15 : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %16 = struct.readm %self[@reg1] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
       %felt_const_2_1 = felt.const  2
-      %17 = struct.readf %16[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %18 = struct.readf %17[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %17 = struct.readm %16[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %18 = struct.readm %17[@"$super"] : <@NondetReg<[]>>, !felt.type
       %19 = felt.mul %18, %felt_const_2_1 : !felt.type, !felt.type
-      %20 = struct.readf %6[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %21 = struct.readf %20[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %20 = struct.readm %6[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %21 = struct.readm %20[@"$super"] : <@NondetReg<[]>>, !felt.type
       %22 = felt.add %19, %21 : !felt.type, !felt.type
-      struct.writef %self[@"$super"] = %22 : <@NondetFakeTwitReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %22 : <@NondetFakeTwitReg<[]>>, !felt.type
       function.return %self : !struct.type<@NondetFakeTwitReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@NondetFakeTwitReg<[]>>, %arg1: !felt.type) {
       %felt_const_1 = felt.const  1
-      %0 = struct.readf %arg0[@"$temp"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
+      %0 = struct.readm %arg0[@"$temp"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
       function.call @BitAnd::@constrain(%0, %arg1, %felt_const_1) : (!struct.type<@BitAnd<[]>>, !felt.type, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %3 = struct.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %4 = struct.readf %arg0[@reg0] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %1 = struct.readm %0[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %3 = struct.readm %2[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %4 = struct.readm %arg0[@reg0] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
       function.call @NondetBitReg::@constrain(%4, %3) : (!struct.type<@NondetBitReg<[]>>, !felt.type) -> ()
       %felt_const_2 = felt.const  2
-      %5 = struct.readf %arg0[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
+      %5 = struct.readm %arg0[@"$temp_0"] : <@NondetFakeTwitReg<[]>>, !struct.type<@BitAnd<[]>>
       function.call @BitAnd::@constrain(%5, %arg1, %felt_const_2) : (!struct.type<@BitAnd<[]>>, !felt.type, !felt.type) -> ()
       %felt_const_2_0 = felt.const  2
-      %6 = struct.readf %5[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
-      %7 = struct.readf %6[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %8 = struct.readf %7[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %9 = struct.readf %arg0[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !struct.type<@Div<[]>>
+      %6 = struct.readm %5[@"$super"] : <@BitAnd<[]>>, !struct.type<@Reg<[]>>
+      %7 = struct.readm %6[@"$super"] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
+      %8 = struct.readm %7[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %9 = struct.readm %arg0[@"$temp_1"] : <@NondetFakeTwitReg<[]>>, !struct.type<@Div<[]>>
       function.call @Div::@constrain(%9, %8, %felt_const_2_0) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %10 = struct.readf %9[@"$super"] : <@Div<[]>>, !felt.type
-      %11 = struct.readf %arg0[@reg1] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
+      %10 = struct.readm %9[@"$super"] : <@Div<[]>>, !felt.type
+      %11 = struct.readm %arg0[@reg1] : <@NondetFakeTwitReg<[]>>, !struct.type<@NondetBitReg<[]>>
       function.call @NondetBitReg::@constrain(%11, %10) : (!struct.type<@NondetBitReg<[]>>, !felt.type) -> ()
       %felt_const_2_1 = felt.const  2
-      %12 = struct.readf %11[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %13 = struct.readf %12[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %12 = struct.readm %11[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %13 = struct.readm %12[@"$super"] : <@NondetReg<[]>>, !felt.type
       %14 = felt.mul %13, %felt_const_2_1 : !felt.type, !felt.type
-      %15 = struct.readf %4[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %16 = struct.readf %15[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %15 = struct.readm %4[@"$super"] : <@NondetBitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %16 = struct.readm %15[@"$super"] : <@NondetReg<[]>>, !felt.type
       %17 = felt.add %14, %16 : !felt.type, !felt.type
       function.return
     }
   }
   struct.def @TwitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetTwitReg<[]>>
-    struct.field @reg : !struct.type<@NondetTwitReg<[]>>
+    struct.member @"$super" : !struct.type<@NondetTwitReg<[]>>
+    struct.member @reg : !struct.type<@NondetTwitReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@TwitReg<[]>> {
       %self = struct.new : <@TwitReg<[]>>
       %0 = function.call @NondetTwitReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetTwitReg<[]>>
-      struct.writef %self[@reg] = %0 : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
-      %1 = struct.readf %self[@reg] : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %3 = struct.readf %2[@"$super"] : <@NondetReg<[]>>, !felt.type
-      struct.writef %self[@"$super"] = %1 : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
+      struct.writem %self[@reg] = %0 : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
+      %1 = struct.readm %self[@reg] : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %3 = struct.readm %2[@"$super"] : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %1 : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
       function.return %self : !struct.type<@TwitReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@TwitReg<[]>>, %arg1: !felt.type) {
-      %0 = struct.readf %arg0[@reg] : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@TwitReg<[]>>, !struct.type<@NondetTwitReg<[]>>
       function.call @NondetTwitReg::@constrain(%0, %arg1) : (!struct.type<@NondetTwitReg<[]>>, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetReg<[]>>, !felt.type
+      %1 = struct.readm %0[@"$super"] : <@NondetTwitReg<[]>>, !struct.type<@NondetReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetReg<[]>>, !felt.type
       constrain.eq %arg1, %2 : !felt.type, !felt.type
       function.return
     }
   }
   struct.def @FakeTwitReg<[]> {
-    struct.field @"$super" : !struct.type<@NondetFakeTwitReg<[]>>
-    struct.field @reg : !struct.type<@NondetFakeTwitReg<[]>>
+    struct.member @"$super" : !struct.type<@NondetFakeTwitReg<[]>>
+    struct.member @reg : !struct.type<@NondetFakeTwitReg<[]>>
     function.def @compute(%arg0: !felt.type) -> !struct.type<@FakeTwitReg<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : <@FakeTwitReg<[]>>
       %0 = function.call @NondetFakeTwitReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetFakeTwitReg<[]>>
-      struct.writef %self[@reg] = %0 : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
-      %1 = struct.readf %self[@reg] : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
-      %2 = struct.readf %1[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.type
-      struct.writef %self[@"$super"] = %1 : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
+      struct.writem %self[@reg] = %0 : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
+      %1 = struct.readm %self[@reg] : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
+      %2 = struct.readm %1[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %1 : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
       function.return %self : !struct.type<@FakeTwitReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@FakeTwitReg<[]>>, %arg1: !felt.type) {
-      %0 = struct.readf %arg0[@reg] : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
+      %0 = struct.readm %arg0[@reg] : <@FakeTwitReg<[]>>, !struct.type<@NondetFakeTwitReg<[]>>
       function.call @NondetFakeTwitReg::@constrain(%0, %arg1) : (!struct.type<@NondetFakeTwitReg<[]>>, !felt.type) -> ()
-      %1 = struct.readf %0[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.type
+      %1 = struct.readm %0[@"$super"] : <@NondetFakeTwitReg<[]>>, !felt.type
       constrain.eq %arg1, %1 : !felt.type, !felt.type
       function.return
     }

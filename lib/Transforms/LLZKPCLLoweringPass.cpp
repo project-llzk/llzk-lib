@@ -105,13 +105,13 @@ private:
     registry.insert<pcl::PCLDialect, func::FuncDialect>();
   }
 
-  /// The translation only works now on LLZK structs where all the fields are felts.
+  /// The translation only works now on LLZK structs where all the members are felts.
   LogicalResult validateStruct(StructDefOp structDef) {
-    for (auto field : structDef.getFieldDefs()) {
-      auto fieldType = field.getType();
-      if (!llvm::isa<FeltType>(fieldType)) {
-        return field.emitError() << "Field must be felt type. Found " << fieldType
-                                 << " for field: " << field.getName();
+    for (auto member : structDef.getMemberDefs()) {
+      auto memberType = member.getType();
+      if (!llvm::isa<FeltType>(memberType)) {
+        return member.emitError() << "Member must be felt type. Found " << memberType
+                                  << " for member: " << member.getName();
       }
     }
     return success();
@@ -198,8 +198,8 @@ private:
     // As we build, map llzk values to their pcl ones
     llvm::DenseMap<Value, Value> llzkToPcl;
     OpBuilder b(dstFunc.getBody());
-    // Map field name to PCL vars; public fields are outputs, privates are intermediates
-    llvm::DenseMap<StringRef, Value> field2pclvar;
+    // Map member name to PCL vars; public members are outputs, privates are intermediates
+    llvm::DenseMap<StringRef, Value> member2pclvar;
     llvm::SmallVector<Value> outVars;
 
     auto srcFunc = structDef.getConstrainFuncOp();
@@ -213,12 +213,12 @@ private:
     for (auto [src, dst] : llvm::zip(srcArgs, dstArgs)) {
       llzkToPcl.try_emplace(src, dst);
     }
-    for (auto fieldDef : structDef.getFieldDefs()) {
-      // Create a PCL var for each struct field. Public fields are outputs in PCL
+    for (auto memberDef : structDef.getMemberDefs()) {
+      // Create a PCL var for each struct member. Public members are outputs in PCL
       auto pclVar =
-          b.create<pcl::VarOp>(fieldDef.getLoc(), fieldDef.getName(), fieldDef.hasPublicAttr());
-      field2pclvar.insert({fieldDef.getName(), pclVar});
-      if (fieldDef.hasPublicAttr()) {
+          b.create<pcl::VarOp>(memberDef.getLoc(), memberDef.getName(), memberDef.hasPublicAttr());
+      member2pclvar.insert({memberDef.getName(), pclVar});
+      if (memberDef.hasPublicAttr()) {
         outVars.push_back(pclVar);
       }
     }
@@ -307,15 +307,15 @@ private:
           return;
         }
       })
-          .Case<FieldReadOp>([&field2pclvar, &llzkToPcl, &srcFunc](auto read) {
-        // At this point every field in the struct should have a var associated with it
-        // so we should simply retrieve the var associated with the field.
+          .Case<MemberReadOp>([&member2pclvar, &llzkToPcl, &srcFunc](auto read) {
+        // At this point every member in the struct should have a var associated with it
+        // so we should simply retrieve the var associated with the member.
         (void)srcFunc; // to silence unused variable warning if asserts are disabled
         assert(read.getComponent() == srcFunc.getArguments()[0]);
-        if (auto it = field2pclvar.find(read.getFieldName()); it != field2pclvar.end()) {
+        if (auto it = member2pclvar.find(read.getMemberName()); it != member2pclvar.end()) {
           rememberResult(read.getResult(), it->getSecond(), llzkToPcl);
         } else {
-          llvm_unreachable("Every field should have been mapped to a pcl var");
+          llvm_unreachable("Every member should have been mapped to a pcl var");
         }
       })
           .Case<ReturnOp>([&b, &outVars](auto ret) {
@@ -346,13 +346,13 @@ private:
       }
       pclInputTypes.push_back(pcl::FeltType::get(ctx));
     }
-    for (auto field : structDef.getFieldDefs()) {
-      auto fieldType = field.getType();
-      if (!llvm::isa<FeltType>(fieldType)) {
-        return structDef.emitError() << "Field must be felt type. Found " << fieldType
-                                     << " for field: " << field.getName();
+    for (auto member : structDef.getMemberDefs()) {
+      auto memberType = member.getType();
+      if (!llvm::isa<FeltType>(memberType)) {
+        return structDef.emitError() << "Member must be felt type. Found " << memberType
+                                     << " for member: " << member.getName();
       }
-      if (field.hasPublicAttr()) {
+      if (member.hasPublicAttr()) {
         pclOutputTypes.push_back(pcl::FeltType::get(ctx));
       }
     }

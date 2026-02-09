@@ -147,22 +147,22 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
   ChangeResult res = after->setValues(operandVals);
 
   // We will now join the the operand refs based on the type of operand.
-  if (auto fieldRefOp = llvm::dyn_cast<FieldRefOpInterface>(op)) {
-    // The operand is indexed into by the FieldDefOp.
-    auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
-    ensure(mlir::succeeded(fieldOpRes), "could not find field read");
+  if (auto memberRefOp = llvm::dyn_cast<MemberRefOpInterface>(op)) {
+    // The operand is indexed into by the MemberDefOp.
+    auto memberOpRes = memberRefOp.getMemberDefOp(tables);
+    ensure(mlir::succeeded(memberOpRes), "could not find member read");
 
-    SourceRefLattice::ValueTy fieldRefRes;
-    if (fieldRefOp.isRead()) {
-      fieldRefRes = fieldRefOp.getVal();
+    SourceRefLattice::ValueTy memberRefRes;
+    if (memberRefOp.isRead()) {
+      memberRefRes = memberRefOp.getVal();
     } else {
-      fieldRefRes = fieldRefOp;
+      memberRefRes = memberRefOp;
     }
 
-    const auto &ops = operandVals.at(fieldRefOp.getComponent());
-    auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
+    const auto &ops = operandVals.at(memberRefOp.getComponent());
+    auto [memberVals, _] = ops.referenceMember(memberOpRes.value());
 
-    res |= after->setValue(fieldRefRes, fieldVals);
+    res |= after->setValue(memberRefRes, memberVals);
   } else if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
     // Covers read/write/extract/insert array ops
     arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);

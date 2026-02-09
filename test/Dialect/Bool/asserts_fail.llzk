@@ -9,7 +9,7 @@ function.def @wrong_arg_type(
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component01<[@T]> {
     function.def @compute(
           %c: !poly.tvar<@T> // expected-note {{prior use here}}

@@ -72,7 +72,7 @@ function.def @unify_cast_pod(
 //CHECK-LABEL:  function.def @unify_cast_pod(
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @x: !array.type<10 x !felt.type>]>
 //CHECK-SAME:   ) -> !pod.type<[@n: index, @x: !array.type<#[[$M0]] x !felt.type>]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A1]] : 
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A1]] :
 //CHECK-SAME:         (!pod.type<[@n: index, @x: !array.type<10 x !felt.type>]>) ->
 //CHECK-SAME:            !pod.type<[@n: index, @x: !array.type<#[[$M0]] x !felt.type>]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: index, @x: !array.type<#[[$M0]] x !felt.type>]>
@@ -80,7 +80,7 @@ function.def @unify_cast_pod(
 
 // -----
 
-module attributes { veridise.lang = "llzk"} {
+module attributes { llzk.lang} {
   struct.def @ConstraintPod {
     function.def @compute(
         %0: !pod.type<[@n: !felt.type]>,
@@ -103,14 +103,14 @@ module attributes { veridise.lang = "llzk"} {
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type]>,
 //CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type]>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
-//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] : 
+//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !pod.type<[@n: !felt.type]>, !pod.type<[@n: !felt.type]>
-//CHECK-NEXT:     function.return 
+//CHECK-NEXT:     function.return
 //CHECK-NEXT:   }
 
 // -----
 
-module attributes { veridise.lang = "llzk"} {
+module attributes { llzk.lang} {
   struct.def @ConstraintPod {
     function.def @compute(
         %0: !pod.type<[@n: !felt.type, @m: !felt.type]>,
@@ -133,14 +133,14 @@ module attributes { veridise.lang = "llzk"} {
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>,
 //CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
-//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] : 
+//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !pod.type<[@n: !felt.type, @m: !felt.type]>, !pod.type<[@n: !felt.type, @m: !felt.type]>
-//CHECK-NEXT:     function.return 
+//CHECK-NEXT:     function.return
 //CHECK-NEXT:   }
 
 // -----
 
-module attributes { veridise.lang = "llzk"} {
+module attributes { llzk.lang} {
   struct.def @ConstraintPod {
     function.def @compute(
         %0: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
@@ -163,14 +163,14 @@ module attributes { veridise.lang = "llzk"} {
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
 //CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
-//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] : 
+//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>, !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
-//CHECK-NEXT:     function.return 
+//CHECK-NEXT:     function.return
 //CHECK-NEXT:   }
 
 // -----
 
-module attributes { veridise.lang = "llzk"} {
+module attributes { llzk.lang} {
   struct.def @ConstraintPod {
     function.def @compute(
         %0: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
@@ -193,9 +193,9 @@ module attributes { veridise.lang = "llzk"} {
 //CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
 //CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
-//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] : 
+//CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>, !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
-//CHECK-NEXT:     function.return 
+//CHECK-NEXT:     function.return
 //CHECK-NEXT:   }
 
 // -----

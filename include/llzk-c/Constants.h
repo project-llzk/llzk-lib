@@ -19,10 +19,6 @@
 extern "C" {
 #endif
 
-/// Symbol name for the struct/component representing a signal. A "signal" has direct correspondence
-/// to a circom signal or AIR/PLONK column, opposed to intermediate values or other expressions.
-extern const char *LLZK_COMPONENT_NAME_SIGNAL;
-
 /// Symbol name for the witness generation (and resp. constraint generation) functions within a
 /// component.
 extern const char *LLZK_FUNC_NAME_COMPUTE;

@@ -1,11 +1,11 @@
 // RUN: llzk-opt -llzk-flatten -llzk-inline-structs -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @NondetReg {
-    struct.field @inner : !felt.type {column, llzk.pub}
+    struct.member @inner : !felt.type {column, llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg> attributes {function.allow_witness} {
       %self = struct.new : <@NondetReg>
-      struct.writef %self[@inner] = %arg0 : <@NondetReg>, !felt.type
+      struct.writem %self[@inner] = %arg0 : <@NondetReg>, !felt.type
       function.return %self : !struct.type<@NondetReg>
     }
     function.def @constrain(%arg0: !struct.type<@NondetReg>, %arg1: !felt.type) attributes {function.allow_constraint} {
@@ -13,43 +13,43 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
   struct.def @Reg {
-    struct.field @"$super" : !struct.type<@NondetReg>
-    struct.field @reg : !struct.type<@NondetReg> {column}
+    struct.member @"$super" : !struct.type<@NondetReg>
+    struct.member @reg : !struct.type<@NondetReg> {column}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
       %self = struct.new : <@Reg>
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg>
-      struct.writef %self[@reg] = %0 : <@Reg>, !struct.type<@NondetReg>
-      %1 = struct.readf %self[@reg] : <@Reg>, !struct.type<@NondetReg>
-      %2 = struct.readf %1[@inner] : <@NondetReg>, !felt.type
-      struct.writef %self[@"$super"] = %1 : <@Reg>, !struct.type<@NondetReg>
+      struct.writem %self[@reg] = %0 : <@Reg>, !struct.type<@NondetReg>
+      %1 = struct.readm %self[@reg] : <@Reg>, !struct.type<@NondetReg>
+      %2 = struct.readm %1[@inner] : <@NondetReg>, !felt.type
+      struct.writem %self[@"$super"] = %1 : <@Reg>, !struct.type<@NondetReg>
       function.return %self : !struct.type<@Reg>
     }
     function.def @constrain(%arg0: !struct.type<@Reg>, %arg1: !felt.type) attributes {function.allow_constraint} {
-      %0 = struct.readf %arg0[@reg] : <@Reg>, !struct.type<@NondetReg>
+      %0 = struct.readm %arg0[@reg] : <@Reg>, !struct.type<@NondetReg>
       function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg>, !felt.type) -> ()
-      %1 = struct.readf %0[@inner] : <@NondetReg>, !felt.type
+      %1 = struct.readm %0[@inner] : <@NondetReg>, !felt.type
       constrain.eq %arg1, %1 : !felt.type, !felt.type
-      %2 = struct.readf %arg0[@"$super"] : <@Reg>, !struct.type<@NondetReg>
+      %2 = struct.readm %arg0[@"$super"] : <@Reg>, !struct.type<@NondetReg>
       function.call @NondetReg::@constrain(%2, %arg1) : (!struct.type<@NondetReg>, !felt.type) -> ()
-      %3 = struct.readf %2[@inner] : <@NondetReg>, !felt.type
+      %3 = struct.readm %2[@inner] : <@NondetReg>, !felt.type
       constrain.eq %arg1, %3 : !felt.type, !felt.type
       function.return
     }
   }
 }
 // CHECK-LABEL:   struct.def @Reg {
-// CHECK-NEXT:      struct.field @"$super:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
-// CHECK-NEXT:      struct.field @"reg:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      struct.member @"$super:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      struct.member @"reg:!s<@NondetReg>+inner" : !felt.type {column, llzk.pub}
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
-// CHECK-NEXT:        struct.writef %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] = %[[VAL_0]] : <@Reg>, !felt.type
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] = %[[VAL_0]] : <@Reg>, !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Reg>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_3]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_5]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readf %[[VAL_3]][@"$super:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@"$super:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_6]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

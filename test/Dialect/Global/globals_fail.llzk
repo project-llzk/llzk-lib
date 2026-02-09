@@ -1,27 +1,27 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 // TESTS: invalid type for a global
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : !poly.tvar<@X>
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : i64
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : !array.type<@b x i1>
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : !array.type<affine_map<(i)->(i)> x i1>
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : !struct.type<@Component01<[affine_map<(i)->(i)>]>>
   struct.def @Component01<[@N]> {
@@ -33,7 +33,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : !struct.type<@Component01<[@any_symbol_here_is_illegal]>>
   struct.def @Component01<[@N]> {
@@ -47,7 +47,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: 'felt' type global initialized with unparsable attribute
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
   // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
   global.def const @g : !felt.type = unparseable
@@ -55,14 +55,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: any other type global initialized with unparsable attribute
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{expected attribute value}}
   global.def const @g : index = unparseable
 }
 // -----
 
 // TEST: 'felt' type global initialized with incorrect attribute kind
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
   // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
   global.def const @g : !felt.type = "Hello"
@@ -70,70 +70,70 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TESTS: any other type global initialized with incorrect attribute kind
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{integer constant out of range for attribute}}
   global.def const @g : i1 = 123
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{integer constant out of range for attribute}}
   global.def const @g : i1 = -2
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type 'i1' expected builtin.bool or builtin.integer attribute value but found builtin.array}}
   global.def const @g : i1 = [7,8,0]
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type 'index' expected builtin.index attribute value but found builtin.bool}}
   global.def const @g : index = false
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type 'index' expected builtin.index attribute value but found builtin.string}}
   global.def const @g : index = "hello"
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{integer literal not valid for specified type}}
   global.def const @g : !string.type = 65723456
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.array attribute value but found builtin.string}}
   global.def const @g : !array.type<2 x !string.type> = "a string and something else"
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.array attribute value to contain 2 elements but found 0}}
   global.def const @g : !array.type<2 x !string.type> = []
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.string array element but found builtin.integer}}
   global.def const @g : !array.type<2 x !string.type> = [7, 8]
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.array attribute value to contain 2 elements but found 3}}
   global.def const @g : !array.type<2 x !string.type> = ["too", "many", "strings"]
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'global.def' op with type '!array.type<4 x !string.type>' expected builtin.string array element but found builtin.integer}}
   // expected-error@+1 {{'global.def' op with type '!array.type<4 x !string.type>' expected builtin.string array element but found builtin.affine_map}}
   global.def const @g : !array.type<4 x !string.type> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type '!array.type<2,2,1,2 x !felt.type>' expected builtin.array attribute value to contain 8 elements but found 4}}
   global.def const @g : !array.type<2,2,1,2 x !felt.type> = [6, 12134, 45523, 15623]
 }
 // -----
 
 // TEST: 'felt' type global initialized with incorrect attribute kind
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{custom op 'global.def' expected integer value}}
   // expected-error@+1 {{custom op 'global.def' failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`}}
   global.def const @g : !felt.type = "Hello"
@@ -141,14 +141,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: global with "const" not initialized
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op marked as 'const' must be assigned a value}}
   global.def const @g : !string.type
 }
 // -----
 
 // TEST: GlobalReadOp with unknown symbol name
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !string.type = "Hello"
   struct.def @Component02 {
     function.def @compute() -> !struct.type<@Component02> {
@@ -163,7 +163,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalReadOp with type that does not match the GlobalDefOp
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !felt.type = 6546
   struct.def @Component03 {
     function.def @compute() -> !struct.type<@Component03> {
@@ -178,7 +178,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalWriteOp with unknown symbol name
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !felt.type = 125
   struct.def @Component04 {
     function.def @compute() -> !struct.type<@Component04> {
@@ -194,7 +194,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalWriteOp with type that does not match the GlobalDefOp
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : index = 125
   struct.def @Component05 {
     function.def @compute() -> !struct.type<@Component05> {
@@ -210,7 +210,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalWriteOp with type that does not Value
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !felt.type = 125
   struct.def @Component06 {
     function.def @compute() -> !struct.type<@Component06> {
@@ -226,7 +226,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: GlobalWriteOp targeting a "const" GlobalDefOp
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @t : i1 = true
   struct.def @Component07 {
     function.def @compute() -> !struct.type<@Component07> {
@@ -242,7 +242,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: Struct parameter conflicts with a global name
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def const @N : index = 3 // expected-note {{symbol already defined here}}
   // expected-error@+1 {{'struct.def' op parameter name "@N" conflicts with an existing symbol}}
   struct.def @Component08<[@N]> {
@@ -256,7 +256,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: `writeg` cannot be used in a "constrain" function
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @t : i1 = true
   struct.def @Component09 {
     function.def @compute() -> !struct.type<@Component09> {
@@ -274,7 +274,7 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 
 // TEST: `writeg` cannot be used in a free function
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !felt.type
   function.def @test() {
     %c = felt.const 99999

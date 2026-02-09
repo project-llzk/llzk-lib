@@ -33,7 +33,7 @@ TEST_F(OpTests, testCallNoAffine_GoodNoArgs) {
 
   OpBuilder bldr(funcA->getBody());
   CallOp op = bldr.create<CallOp>(loc, funcB->getResultTypes(), funcB->getFullyQualifiedName());
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @FuncA() -> index {
   //     %0 = call @FuncB() : () -> index
   //   }
@@ -58,7 +58,7 @@ TEST_F(OpTests, testCallNoAffine_GoodWithArgs) {
   CallOp op = bldr.create<CallOp>(
       loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1, v2}
   );
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @FuncA(%arg0: index, %arg1: index) -> index {
   //     %idx5 = arith.constant 5 : index
   //     %idx2 = arith.constant 2 : index
@@ -84,7 +84,7 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
   CallOp op = bldr.create<CallOp>(
       loc, funcB->getResultTypes(), funcB->getFullyQualifiedName(), ValueRange {v1}
   );
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @FuncA(%arg0: index, %arg1: index) -> index {
   //     %idx5 = arith.constant 5 : index
   //     %0 = call @FuncB(%idx5) : (index) -> index
@@ -114,7 +114,7 @@ TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
   CallOp op = bldr.create<CallOp>(
       loc, TypeRange {bldr.getI1Type()}, funcB->getFullyQualifiedName(), ValueRange {v1}
   );
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @FuncA(%arg0: index) -> index {
   //     %idx5 = arith.constant 5 : index
   //     %0 = call @FuncB(%idx5) : (index) -> i1
@@ -140,7 +140,7 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
 
   OpBuilder bldr(funcA->getBody());
   CallOp op = bldr.create<CallOp>(loc, TypeRange {}, FlatSymbolRefAttr::get(&ctx, "invalidName"));
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @FuncA() -> index {
   //     call @invalidName() : () -> ()
   //   }
@@ -550,7 +550,7 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
 TEST_F(OpTests, test_calleeIs_withStructCompute) {
   ModuleBuilder llzkBldr = newStructExample();
   llzkBldr.insertComputeCall(structNameA, structNameB);
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   struct.def @StructB {
   //     function.def @constrain(%arg0: !struct.type<@StructB>) {
   //     }
@@ -583,7 +583,7 @@ TEST_F(OpTests, test_calleeIs_withStructCompute) {
 TEST_F(OpTests, test_calleeIs_withStructConstrain) {
   ModuleBuilder llzkBldr = newStructExample();
   llzkBldr.insertConstrainCall(structNameA, structNameB);
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   struct.def @StructB {
   //     function.def @constrain(%arg0: !struct.type<@StructB>) {
   //     }
@@ -591,9 +591,9 @@ TEST_F(OpTests, test_calleeIs_withStructConstrain) {
   //     }
   //   }
   //   struct.def @StructA {
-  //     field @StructB1 : !struct.type<@StructB>
+  //     member @StructB1 : !struct.type<@StructB>
   //     function.def @constrain(%arg0: !struct.type<@StructA>) {
-  //       %0 = readf %arg0[@StructB1] : <@StructA>, !struct.type<@StructB>
+  //       %0 = readm %arg0[@StructB1] : <@StructA>, !struct.type<@StructB>
   //       call @StructB::@constrain(%0) : (!struct.type<@StructB>) -> ()
   //     }
   //     function.def @compute() -> !struct.type<@StructA> {
@@ -620,7 +620,7 @@ TEST_F(OpTests, test_calleeIs_withGlobalCompute) {
   auto funcEntry = llzkBldr.getFreeFunc("entry");
   ASSERT_TRUE(succeeded(funcEntry));
   llzkBldr.insertFreeCall(*funcEntry, "compute");
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @entry() -> index {
   //     %0 = call @compute() : () -> index
   //   }
@@ -645,7 +645,7 @@ TEST_F(OpTests, test_calleeIs_withGlobalConstrain) {
   auto funcEntry = llzkBldr.getFreeFunc("entry");
   ASSERT_TRUE(succeeded(funcEntry));
   llzkBldr.insertFreeCall(*funcEntry, "constrain");
-  // module attributes {veridise.lang = "llzk"} {
+  // module attributes {llzk.lang} {
   //   function.def @entry() -> index {
   //     %0 = call @constrain() : () -> index
   //   }

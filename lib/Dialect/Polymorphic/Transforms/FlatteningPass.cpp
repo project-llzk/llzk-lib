@@ -250,7 +250,7 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
 
 namespace Step1_InstantiateStructs {
 
-static inline bool tableOffsetIsntSymbol(FieldReadOp op) {
+static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
   return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
 
@@ -452,28 +452,29 @@ class StructCloner {
     }
   };
 
-  class ClonedStructFieldReadOpPattern
+  class ClonedStructMemberReadOpPattern
       : public SymbolUserHelper<
-            ClonedStructFieldReadOpPattern, FieldReadOp, IntegerAttr, FeltConstAttr> {
+            ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr, FeltConstAttr> {
     using super =
-        SymbolUserHelper<ClonedStructFieldReadOpPattern, FieldReadOp, IntegerAttr, FeltConstAttr>;
+        SymbolUserHelper<ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr, FeltConstAttr>;
 
   public:
-    ClonedStructFieldReadOpPattern(
+    ClonedStructMemberReadOpPattern(
         TypeConverter &converter, MLIRContext *ctx,
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
         // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-        // instead of the GeneralTypeReplacePattern<FieldReadOp> from newGeneralRewritePatternSet().
+        // instead of the GeneralTypeReplacePattern<MemberReadOp> from
+        // newGeneralRewritePatternSet().
         : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue) {}
 
-    Attribute getNameAttr(FieldReadOp op) const override {
+    Attribute getNameAttr(MemberReadOp op) const override {
       return op.getTableOffset().value_or(nullptr);
     }
 
     template <typename Attr>
     LogicalResult handleRewrite(
-        Attribute, FieldReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, Attr a
+        Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, Attr a
     ) const {
       rewriter.modifyOpInPlace(op, [&]() {
         op.setTableOffsetAttr(rewriter.getIndexAttr(fromAPInt(a.getValue())));
@@ -483,7 +484,7 @@ class StructCloner {
     }
 
     LogicalResult matchAndRewrite(
-        FieldReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+        MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
     ) const override {
       if (tableOffsetIsntSymbol(op)) {
         return failure();
@@ -590,7 +591,7 @@ class StructCloner {
     patterns.add<ClonedStructConstReadOpPattern>(
         tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newRemoteType)
     );
-    patterns.add<ClonedStructFieldReadOpPattern>(tyConv, ctx, paramNameToConcrete);
+    patterns.add<ClonedStructMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
       return failure();
@@ -701,26 +702,26 @@ public:
   }
 };
 
-// This one ensures FieldDefOp types are converted even if there are no reads/writes to them.
-class FieldDefOpPattern : public OpConversionPattern<FieldDefOp> {
+// This one ensures MemberDefOp types are converted even if there are no reads/writes to them.
+class MemberDefOpPattern : public OpConversionPattern<MemberDefOp> {
 public:
-  FieldDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
+  MemberDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
       // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-      // instead of the GeneralTypeReplacePattern<FieldDefOp> from newGeneralRewritePatternSet().
-      : OpConversionPattern<FieldDefOp>(converter, ctx, /*benefit=*/2) {}
+      // instead of the GeneralTypeReplacePattern<MemberDefOp> from newGeneralRewritePatternSet().
+      : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/2) {}
 
   LogicalResult matchAndRewrite(
-      FieldDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+      MemberDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
   ) const override {
-    LLVM_DEBUG(llvm::dbgs() << "[FieldDefOpPattern] FieldDefOp: " << op << '\n');
+    LLVM_DEBUG(llvm::dbgs() << "[MemberDefOpPattern] MemberDefOp: " << op << '\n');
 
-    Type oldFieldType = op.getType();
-    Type newFieldType = getTypeConverter()->convertType(oldFieldType);
-    if (oldFieldType == newFieldType) {
+    Type oldMemberType = op.getType();
+    Type newMemberType = getTypeConverter()->convertType(oldMemberType);
+    if (oldMemberType == newMemberType) {
       // nothing changed
       return failure();
     }
-    rewriter.modifyOpInPlace(op, [&op, &newFieldType]() { op.setType(newFieldType); });
+    rewriter.modifyOpInPlace(op, [&op, &newMemberType]() { op.setType(newMemberType); });
     return success();
   }
 };
@@ -730,7 +731,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  patterns.add<CallStructFuncPattern, FieldDefOpPattern>(tyConv, ctx, tracker);
+  patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
@@ -1221,40 +1222,42 @@ public:
   }
 };
 
-/// Update the type of FieldDefOp instances by checking the updated types from FieldWriteOp.
-class UpdateFieldDefTypeFromWrite final : public OpRewritePattern<FieldDefOp> {
+/// Update the type of MemberDefOp instances by checking the updated types from MemberWriteOp.
+class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateFieldDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateMemberDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(FieldDefOp op, PatternRewriter &rewriter) const override {
-    // Find all uses of the field symbol name within its parent struct.
+  LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
+    // Find all uses of the member symbol name within its parent struct.
     FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(op);
-    assert(succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
+    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
 
-    // If the symbol is used by a FieldWriteOp with a different result type then change
-    // the type of the FieldDefOp to match the FieldWriteOp result type.
+    // If the symbol is used by a MemberWriteOp with a different result type then change
+    // the type of the MemberDefOp to match the MemberWriteOp result type.
     Type newType = nullptr;
-    if (auto fieldUsers = llzk::getSymbolUses(op, parentRes.value())) {
+    if (auto memberUsers = llzk::getSymbolUses(op, parentRes.value())) {
       std::optional<Location> newTypeLoc = std::nullopt;
-      for (SymbolTable::SymbolUse symUse : fieldUsers.value()) {
-        if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(symUse.getUser())) {
+      for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
+        if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
           Type writeToType = writeOp.getVal().getType();
-          LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldDefTypeFromWrite] checking " << writeOp << '\n');
+          LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] checking " << writeOp << '\n');
           if (!newType) {
             // If a new type has not yet been discovered, store the new type.
             newType = writeToType;
             newTypeLoc = writeOp.getLoc();
           } else if (writeToType != newType) {
-            // Typically, there will only be one write for each field of a struct but do not rely on
-            // that assumption. If multiple writes with a different types A and B are found where
+            // Typically, there will only be one write for each member of a struct but do not rely
+            // on that assumption. If multiple writes with a different types A and B are found where
             // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.
-            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateFieldDefTypeFromWrite")) {
-              if (tracker_.isLegalConversion(newType, writeToType, "UpdateFieldDefTypeFromWrite")) {
+            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateMemberDefTypeFromWrite")) {
+              if (tracker_.isLegalConversion(
+                      newType, writeToType, "UpdateMemberDefTypeFromWrite"
+                  )) {
                 // 'writeToType' is the more concrete type
                 newType = writeToType;
                 newTypeLoc = writeOp.getLoc();
@@ -1262,8 +1265,8 @@ public:
                 // Give an error if the types are incompatible.
                 return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
                   diag.append(
-                      "Cannot update type of '", FieldDefOp::getOperationName(),
-                      "' because there are multiple '", FieldWriteOp::getOperationName(),
+                      "Cannot update type of '", MemberDefOp::getOperationName(),
+                      "' because there are multiple '", MemberWriteOp::getOperationName(),
                       "' with different value types"
                   );
                   if (newTypeLoc) {
@@ -1281,11 +1284,11 @@ public:
       // nothing changed
       return failure();
     }
-    if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateFieldDefTypeFromWrite")) {
+    if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateMemberDefTypeFromWrite")) {
       return failure();
     }
     rewriter.modifyOpInPlace(op, [&op, &newType]() { op.setType(newType); });
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateFieldDefTypeFromWrite] updated type of " << op << '\n');
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] updated type of " << op << '\n');
     return success();
   }
 };
@@ -1428,52 +1431,52 @@ public:
 
 namespace {
 
-LogicalResult updateFieldRefValFromFieldDef(
-    FieldRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
+LogicalResult updateMemberRefValFromMemberDef(
+    MemberRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
 ) {
   SymbolTableCollection tables;
-  auto def = op.getFieldDefOp(tables);
+  auto def = op.getMemberDefOp(tables);
   if (failed(def)) {
     return failure();
   }
   Type oldResultType = op.getVal().getType();
   Type newResultType = def->get().getType();
   if (oldResultType == newResultType ||
-      !tracker.isLegalConversion(oldResultType, newResultType, "updateFieldRefValFromFieldDef")) {
+      !tracker.isLegalConversion(oldResultType, newResultType, "updateMemberRefValFromMemberDef")) {
     return failure();
   }
   rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
   LLVM_DEBUG(
-      llvm::dbgs() << "[updateFieldRefValFromFieldDef] updated value type in " << op << '\n'
+      llvm::dbgs() << "[updateMemberRefValFromMemberDef] updated value type in " << op << '\n'
   );
   return success();
 }
 
 } // namespace
 
-/// Update the type of FieldReadOp result based on updated types from FieldDefOp.
-class UpdateFieldReadValFromDef final : public OpRewritePattern<FieldReadOp> {
+/// Update the type of MemberReadOp result based on updated types from MemberDefOp.
+class UpdateMemberReadValFromDef final : public OpRewritePattern<MemberReadOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateFieldReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateMemberReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(FieldReadOp op, PatternRewriter &rewriter) const override {
-    return updateFieldRefValFromFieldDef(op, tracker_, rewriter);
+  LogicalResult matchAndRewrite(MemberReadOp op, PatternRewriter &rewriter) const override {
+    return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
   }
 };
 
-/// Update the type of FieldWriteOp value based on updated types from FieldDefOp.
-class UpdateFieldWriteValFromDef final : public OpRewritePattern<FieldWriteOp> {
+/// Update the type of MemberWriteOp value based on updated types from MemberDefOp.
+class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateFieldWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateMemberWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
-  LogicalResult matchAndRewrite(FieldWriteOp op, PatternRewriter &rewriter) const override {
-    return updateFieldRefValFromFieldDef(op, tracker_, rewriter);
+  LogicalResult matchAndRewrite(MemberWriteOp op, PatternRewriter &rewriter) const override {
+    return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
   }
 };
 
@@ -1486,14 +1489,14 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       //  benefit = 6
       UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
       //  benefit = 3
-      UpdateGlobalCallOpTypes,     // CallOp, targeting non-struct functions
-      UpdateFuncTypeFromReturn,    // FuncDefOp
-      UpdateNewArrayElemFromWrite, // CreateArrayOp
-      UpdateArrayElemFromArrRead,  // ReadArrayOp
-      UpdateArrayElemFromArrWrite, // WriteArrayOp
-      UpdateFieldDefTypeFromWrite, // FieldDefOp
-      UpdateFieldReadValFromDef,   // FieldReadOp
-      UpdateFieldWriteValFromDef   // FieldWriteOp
+      UpdateGlobalCallOpTypes,      // CallOp, targeting non-struct functions
+      UpdateFuncTypeFromReturn,     // FuncDefOp
+      UpdateNewArrayElemFromWrite,  // CreateArrayOp
+      UpdateArrayElemFromArrRead,   // ReadArrayOp
+      UpdateArrayElemFromArrWrite,  // WriteArrayOp
+      UpdateMemberDefTypeFromWrite, // MemberDefOp
+      UpdateMemberReadValFromDef,   // MemberReadOp
+      UpdateMemberWriteValFromDef   // MemberWriteOp
       >(ctx, tracker);
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));

@@ -54,24 +54,24 @@ function.def @trival() -> !array.type<0 x index> {
 //CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component01 {
-    struct.field @f : !array.type<2 x !felt.type>
+    struct.member @f : !array.type<2 x !felt.type>
 
     function.def @compute(%0: !array.type<2 x !felt.type>) -> !struct.type<@Component01> {
       %self = struct.new : !struct.type<@Component01>
-      struct.writef %self[@f] = %0 : !struct.type<@Component01>, !array.type<2 x !felt.type>
+      struct.writem %self[@f] = %0 : !struct.type<@Component01>, !array.type<2 x !felt.type>
       function.return %self : !struct.type<@Component01>
     }
     function.def @constrain(%self: !struct.type<@Component01>, %0: !array.type<2 x !felt.type>) {
-      %b = struct.readf %self[@f] : !struct.type<@Component01>, !array.type<2 x !felt.type>
+      %b = struct.readm %self[@f] : !struct.type<@Component01>, !array.type<2 x !felt.type>
       constrain.eq %0, %b : !array.type<2 x !felt.type>
       function.return
     }
   }
 
   struct.def @Component02<[@N]> {
-    struct.field @g : !array.type<@N x !struct.type<@Component01>>
+    struct.member @g : !array.type<@N x !struct.type<@Component01>>
 
     function.def @compute(%in: !array.type<@N,2 x !felt.type>) -> !struct.type<@Component02<[@N]>> {
       %self = struct.new : !struct.type<@Component02<[@N]>>
@@ -86,12 +86,12 @@ module attributes {veridise.lang = "llzk"} {
         array.write %a[%iv] = %c : !array.type<@N x !struct.type<@Component01>>, !struct.type<@Component01>
       }
 
-      struct.writef %self[@g] = %a : !struct.type<@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
+      struct.writem %self[@g] = %a : !struct.type<@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
       function.return %self : !struct.type<@Component02<[@N]>>
     }
 
     function.def @constrain(%self: !struct.type<@Component02<[@N]>>, %in: !array.type<@N,2 x !felt.type>) {
-      %a = struct.readf %self[@g] : !struct.type<@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
+      %a = struct.readm %self[@g] : !struct.type<@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
 
       %lb = arith.constant 0 : index
       %up = poly.read_const @N : index
@@ -106,20 +106,20 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 //CHECK-LABEL: struct.def @Component01 {
-//CHECK-NEXT:    struct.field @f : !array.type<2 x !felt.type>
+//CHECK-NEXT:    struct.member @f : !array.type<2 x !felt.type>
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@Component01> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01>
-//CHECK-NEXT:      struct.writef %[[SELF]][@f] = %[[A0]] : <@Component01>, !array.type<2 x !felt.type>
+//CHECK-NEXT:      struct.writem %[[SELF]][@f] = %[[A0]] : <@Component01>, !array.type<2 x !felt.type>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Component01>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@f] : <@Component01>, !array.type<2 x !felt.type>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@f] : <@Component01>, !array.type<2 x !felt.type>
 //CHECK-NEXT:      constrain.eq %[[A1]], %[[T0]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
 //CHECK-LABEL: struct.def @Component02<[@N]> {
-//CHECK-NEXT:    struct.field @g : !array.type<@N x !struct.type<@Component01>>
+//CHECK-NEXT:    struct.member @g : !array.type<@N x !struct.type<@Component01>>
 //CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N,2 x !felt.type>) -> !struct.type<@Component02<[@N]>> attributes {function.allow_witness} {
 //CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@N]>>
 //CHECK-NEXT:      %array = array.new  : <@N x !struct.type<@Component01>>
@@ -131,11 +131,11 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[T1]]) : (!array.type<2 x !felt.type>) -> !struct.type<@Component01>
 //CHECK-NEXT:        array.write %array[%[[IV]]] = %[[T2]] : <@N x !struct.type<@Component01>>, !struct.type<@Component01>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      struct.writef %[[SELF]][@g] = %array : <@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
+//CHECK-NEXT:      struct.writem %[[SELF]][@g] = %array : <@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Component02<[@N]>>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component02<[@N]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<@N,2 x !felt.type>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@g] : <@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@g] : <@Component02<[@N]>>, !array.type<@N x !struct.type<@Component01>>
 //CHECK-NEXT:      %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 //CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 //CHECK-NEXT:      %[[T4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index

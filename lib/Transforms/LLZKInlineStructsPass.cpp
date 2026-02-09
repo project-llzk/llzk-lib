@@ -14,7 +14,7 @@
 /// (this restriction may be removed in the future).
 ///
 /// This pass also assumes that all subcomponents that are created by calling a struct "@compute"
-/// function are ultimately written to exactly one field within the current struct.
+/// function are ultimately written to exactly one member within the current struct.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -61,16 +61,16 @@ using namespace llzk::function;
 
 namespace {
 
-using DestFieldWithSrcStructType = FieldDefOp;
-using DestCloneOfSrcStructField = FieldDefOp;
-/// Mapping of the name of each field in the inlining source struct to the new cloned version of the
-/// source field in the destination struct. Uses `std::map` for consistent ordering between multiple
-/// compilations of the same LLZK IR input.
-using SrcStructFieldToCloneInDest = std::map<StringRef, DestCloneOfSrcStructField>;
-/// Mapping of `FieldDefOp` in the inlining destination struct to each `FieldDefOp` from the
-/// inlining source struct to the new cloned version of the source field in the destination struct.
+using DestMemberWithSrcStructType = MemberDefOp;
+using DestCloneOfSrcStructMember = MemberDefOp;
+/// Mapping of the name of each member in the inlining source struct to the new cloned version of
+/// the source member in the destination struct. Uses `std::map` for consistent ordering between
+/// multiple compilations of the same LLZK IR input.
+using SrcStructMemberToCloneInDest = std::map<StringRef, DestCloneOfSrcStructMember>;
+/// Mapping of `MemberDefOp` in the inlining destination struct to each `MemberDefOp` from the
+/// inlining source struct to the new cloned version of the source member in the destination struct.
 using DestToSrcToClonedSrcInDest =
-    DenseMap<DestFieldWithSrcStructType, SrcStructFieldToCloneInDest>;
+    DenseMap<DestMemberWithSrcStructType, SrcStructMemberToCloneInDest>;
 
 /// Get the "self" value for the given `FuncDefOp`, which must be either a "compute" or
 /// "constrain" function.
@@ -84,26 +84,26 @@ static inline Value getSelfValue(FuncDefOp f) {
   }
 }
 
-/// Get the `FieldDefOp` that defines the field referenced by the given `FieldRefOpInterface` with
-/// an assertion failure if it is not found.
-static inline FieldDefOp getDef(SymbolTableCollection &tables, FieldRefOpInterface fRef) {
-  auto r = fRef.getFieldDefOp(tables);
+/// Get the `MemberDefOp` that defines the member referenced by the given `MemberRefOpInterface`
+/// with an assertion failure if it is not found.
+static inline MemberDefOp getDef(SymbolTableCollection &tables, MemberRefOpInterface fRef) {
+  auto r = fRef.getMemberDefOp(tables);
   assert(succeeded(r));
   return r->get();
 }
 
-/// Find the `FieldWriteOp` that writes the given subcomponent struct `Value`. Produce an error
-/// (using the given callback) if there is not exactly once such `FieldWriteOp`.
-static FailureOr<FieldWriteOp>
+/// Find the `MemberWriteOp` that writes the given subcomponent struct `Value`. Produce an error
+/// (using the given callback) if there is not exactly once such `MemberWriteOp`.
+static FailureOr<MemberWriteOp>
 findOpThatStoresSubcmp(Value writtenValue, function_ref<InFlightDiagnostic()> emitError) {
-  FieldWriteOp foundWrite = nullptr;
+  MemberWriteOp foundWrite = nullptr;
   for (Operation *user : writtenValue.getUsers()) {
-    if (FieldWriteOp writeOp = llvm::dyn_cast<FieldWriteOp>(user)) {
+    if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(user)) {
       // Find the write op that stores the created value
       if (writeOp.getVal() == writtenValue) {
         if (foundWrite) {
-          // Note: There is no reason for a subcomponent to be stored to more than one field.
-          auto diag = emitError().append("result should not be written to more than one field.");
+          // Note: There is no reason for a subcomponent to be stored to more than one member.
+          auto diag = emitError().append("result should not be written to more than one member.");
           diag.attachNote(foundWrite.getLoc()).append("written here");
           diag.attachNote(writeOp.getLoc()).append("written here");
           return diag;
@@ -114,87 +114,89 @@ findOpThatStoresSubcmp(Value writtenValue, function_ref<InFlightDiagnostic()> em
     }
   }
   if (!foundWrite) {
-    // Note: There is no reason to construct a subcomponent and not store it to a field.
-    return emitError().append("result should be written to a field.");
+    // Note: There is no reason to construct a subcomponent and not store it to a member.
+    return emitError().append("result should be written to a member.");
   }
   return foundWrite;
 }
 
-/// If there exists a field ref chain in `destToSrcToClone` for the given `FieldReadOp` (as
+/// If there exists a member ref chain in `destToSrcToClone` for the given `MemberReadOp` (as
 /// described in `combineReadChain()` or `combineNewThenReadChain()`), replace it with a
-/// new `FieldReadOp` that directly reads from the given cloned field and delete it.
+/// new `MemberReadOp` that directly reads from the given cloned member and delete it.
 static bool combineHelper(
-    FieldReadOp readOp, SymbolTableCollection &tables,
-    const DestToSrcToClonedSrcInDest &destToSrcToClone, FieldRefOpInterface destFieldRefOp
+    MemberReadOp readOp, SymbolTableCollection &tables,
+    const DestToSrcToClonedSrcInDest &destToSrcToClone, MemberRefOpInterface destMemberRefOp
 ) {
-  LLVM_DEBUG({ llvm::dbgs() << "[combineHelper] " << readOp << " => " << destFieldRefOp << '\n'; });
+  LLVM_DEBUG({
+    llvm::dbgs() << "[combineHelper] " << readOp << " => " << destMemberRefOp << '\n';
+  });
 
-  auto srcToClone = destToSrcToClone.find(getDef(tables, destFieldRefOp));
+  auto srcToClone = destToSrcToClone.find(getDef(tables, destMemberRefOp));
   if (srcToClone == destToSrcToClone.end()) {
     return false;
   }
-  SrcStructFieldToCloneInDest oldToNewFields = srcToClone->second;
-  auto resNewField = oldToNewFields.find(readOp.getFieldName());
-  if (resNewField == oldToNewFields.end()) {
+  SrcStructMemberToCloneInDest oldToNewMembers = srcToClone->second;
+  auto resNewMember = oldToNewMembers.find(readOp.getMemberName());
+  if (resNewMember == oldToNewMembers.end()) {
     return false;
   }
 
-  // Replace this FieldReadOp with a new one that targets the cloned field.
+  // Replace this MemberReadOp with a new one that targets the cloned member.
   OpBuilder builder(readOp);
-  FieldReadOp newRead = builder.create<FieldReadOp>(
-      readOp.getLoc(), readOp.getType(), destFieldRefOp.getComponent(),
-      resNewField->second.getNameAttr()
+  MemberReadOp newRead = builder.create<MemberReadOp>(
+      readOp.getLoc(), readOp.getType(), destMemberRefOp.getComponent(),
+      resNewMember->second.getNameAttr()
   );
   readOp.replaceAllUsesWith(newRead.getOperation());
-  readOp.erase(); // delete the original FieldReadOp
+  readOp.erase(); // delete the original MemberReadOp
   return true;
 }
 
-/// If the base component Value of the given FieldReadOp is the result of reading from a field in
-/// `destToSrcToClone` and the field referenced by this FieldReadOp has a cloned field mapping in
-/// `destToSrcToClone`, replace this read with a new FieldReadOp referencing the cloned field.
+/// If the base component Value of the given MemberReadOp is the result of reading from a member in
+/// `destToSrcToClone` and the member referenced by this MemberReadOp has a cloned member mapping in
+/// `destToSrcToClone`, replace this read with a new MemberReadOp referencing the cloned member.
 ///
 /// Example:
 ///   Given the mapping (@fa, !struct.type<@Component10A>) -> @f -> \@"fa:!s<@Component10A>+f"
 ///   And the input:
-///     %0 = struct.readf %arg0[@fa] : !struct.type<@Main>, !struct.type<@Component10A>
-///     %3 = struct.readf %0[@f] : !struct.type<@Component10A>, !felt.type
+///     %0 = struct.readm %arg0[@fa] : !struct.type<@Main>, !struct.type<@Component10A>
+///     %3 = struct.readm %0[@f] : !struct.type<@Component10A>, !felt.type
 ///   Replace the final read with:
-///     %3 = struct.readf %arg0[@"fa:!s<@Component10A>+f"] : !struct.type<@Main>, !felt.type
+///     %3 = struct.readm %arg0[@"fa:!s<@Component10A>+f"] : !struct.type<@Main>, !felt.type
 ///
 /// Return true if replaced, false if not.
 static bool combineReadChain(
-    FieldReadOp readOp, SymbolTableCollection &tables,
+    MemberReadOp readOp, SymbolTableCollection &tables,
     const DestToSrcToClonedSrcInDest &destToSrcToClone
 ) {
   LLVM_DEBUG({ llvm::dbgs() << "[combineReadChain] " << readOp << '\n'; });
 
-  FieldReadOp readThatDefinesBaseComponent =
-      llvm::dyn_cast_if_present<FieldReadOp>(readOp.getComponent().getDefiningOp());
+  MemberReadOp readThatDefinesBaseComponent =
+      llvm::dyn_cast_if_present<MemberReadOp>(readOp.getComponent().getDefiningOp());
   if (!readThatDefinesBaseComponent) {
     return false;
   }
   return combineHelper(readOp, tables, destToSrcToClone, readThatDefinesBaseComponent);
 }
 
-/// If the base component Value of the given FieldReadOp is the result of `struct.new` which is
-/// written to a field in `destToSrcToClone` and the field referenced by the given FieldReadOp has a
-/// cloned field mapping in `destToSrcToClone`, replace the given FieldReadOp with a new FieldReadOp
-/// referencing the cloned field.
+/// If the base component Value of the given MemberReadOp is the result of `struct.new` which is
+/// written to a member in `destToSrcToClone` and the member referenced by the given MemberReadOp
+/// has a cloned member mapping in `destToSrcToClone`, replace the given MemberReadOp with a new
+/// MemberReadOp referencing the cloned member.
 ///
 /// Example:
 ///   Given the mapping (@fa, !struct.type<@Component10A>) -> @f -> \@"fa:!s<@Component10A>+f"
 ///   And the input:
 ///     %0 = struct.new : !struct.type<@Main>
 ///     %2 = struct.new : !struct.type<@Component10A>
-///     struct.writef %0[@fa] = %2 : !struct.type<@Main>, !struct.type<@Component10A>
-///     %4 = struct.readf %2[@f] : !struct.type<@Component10A>, !felt.type
+///     struct.writem %0[@fa] = %2 : !struct.type<@Main>, !struct.type<@Component10A>
+///     %4 = struct.readm %2[@f] : !struct.type<@Component10A>, !felt.type
 ///   Replace the final read with:
-///     %4 = struct.readf %0[@"fa:!s<@Component10A>+f"] : !struct.type<@Main>, !felt.type
+///     %4 = struct.readm %0[@"fa:!s<@Component10A>+f"] : !struct.type<@Main>, !felt.type
 ///
 /// Return true if replaced, false if not.
 static LogicalResult combineNewThenReadChain(
-    FieldReadOp readOp, SymbolTableCollection &tables,
+    MemberReadOp readOp, SymbolTableCollection &tables,
     const DestToSrcToClonedSrcInDest &destToSrcToClone
 ) {
   LLVM_DEBUG({ llvm::dbgs() << "[combineNewThenReadChain] " << readOp << '\n'; });
@@ -204,7 +206,7 @@ static LogicalResult combineNewThenReadChain(
   if (!createThatDefinesBaseComponent) {
     return success(); // No error. The pattern simply doesn't match.
   }
-  FailureOr<FieldWriteOp> foundWrite =
+  FailureOr<MemberWriteOp> foundWrite =
       findOpThatStoresSubcmp(createThatDefinesBaseComponent, [&createThatDefinesBaseComponent]() {
     return createThatDefinesBaseComponent.emitOpError();
   });
@@ -214,18 +216,18 @@ static LogicalResult combineNewThenReadChain(
   return success(combineHelper(readOp, tables, destToSrcToClone, foundWrite.value()));
 }
 
-static inline FieldReadOp getFieldReadThatDefinesSelfValuePassedToConstrain(CallOp callOp) {
+static inline MemberReadOp getMemberReadThatDefinesSelfValuePassedToConstrain(CallOp callOp) {
   Value selfArgFromCall = callOp.getSelfValueFromConstrain();
-  return llvm::dyn_cast_if_present<FieldReadOp>(selfArgFromCall.getDefiningOp());
+  return llvm::dyn_cast_if_present<MemberReadOp>(selfArgFromCall.getDefiningOp());
 }
 
 /// Cache various ops from the caller struct that should be erased but only after all callees are
 /// fully handled (to avoid "still has uses" errors).
 struct PendingErasure {
-  SmallPtrSet<Operation *, 8> fieldReadOps;
-  SmallPtrSet<Operation *, 8> fieldWriteOps;
+  SmallPtrSet<Operation *, 8> memberReadOps;
+  SmallPtrSet<Operation *, 8> memberWriteOps;
   SmallVector<CreateStructOp> newStructOps;
-  SmallVector<DestFieldWithSrcStructType> fieldDefs;
+  SmallVector<DestMemberWithSrcStructType> memberDefs;
 };
 
 /// Handles the bulk of inlining one struct into another.
@@ -237,54 +239,56 @@ class StructInliner {
   /// The struct whose body will be augmented with the inlined content.
   StructDefOp destStruct;
 
-  inline FieldDefOp getDef(FieldRefOpInterface fRef) const { return ::getDef(tables, fRef); }
+  inline MemberDefOp getDef(MemberRefOpInterface fRef) const { return ::getDef(tables, fRef); }
 
-  // Update field read/write ops that target the "self" value of the FuncDefOp plus some key in
-  // `oldToNewFieldDef` to instead target the new base Value provided to the constructor plus the
-  // mapped Value from `oldToNewFieldDef`.
+  // Update member read/write ops that target the "self" value of the FuncDefOp plus some key in
+  // `oldToNewMemberDef` to instead target the new base Value provided to the constructor plus the
+  // mapped Value from `oldToNewMemberDef`.
   // Example:
-  //  old:  %1 = struct.readf %0[@f1] : <@Component1A>, !felt.type
-  //  new:  %1 = struct.readf %self[@"f2:!s<@Component1A>+f1"] : <@Component1B>, !felt.type
-  class FieldRefRewriter final : public OpInterfaceRewritePattern<FieldRefOpInterface> {
+  //  old:  %1 = struct.readm %0[@f1] : <@Component1A>, !felt.type
+  //  new:  %1 = struct.readm %self[@"f2:!s<@Component1A>+f1"] : <@Component1B>, !felt.type
+  class MemberRefRewriter final : public OpInterfaceRewritePattern<MemberRefOpInterface> {
     /// This is initially the `originalFunc` parameter from the constructor but after the clone is
-    /// created within `cloneWithFieldRefUpdate()`, it is reassigned to the cloned function.
+    /// created within `cloneWithMemberRefUpdate()`, it is reassigned to the cloned function.
     FuncDefOp funcRef;
     /// The "self" value in the cloned function.
     Value oldBaseVal;
-    /// The new base value for updated field references.
+    /// The new base value for updated member references.
     Value newBaseVal;
-    const SrcStructFieldToCloneInDest &oldToNewFields;
+    const SrcStructMemberToCloneInDest &oldToNewMembers;
 
   public:
-    FieldRefRewriter(
+    MemberRefRewriter(
         FuncDefOp originalFunc, Value newRefBase,
-        const SrcStructFieldToCloneInDest &oldToNewFieldDef
+        const SrcStructMemberToCloneInDest &oldToNewMemberDef
     )
         : OpInterfaceRewritePattern(originalFunc.getContext()), funcRef(originalFunc),
-          oldBaseVal(nullptr), newBaseVal(newRefBase), oldToNewFields(oldToNewFieldDef) {}
+          oldBaseVal(nullptr), newBaseVal(newRefBase), oldToNewMembers(oldToNewMemberDef) {}
 
-    LogicalResult match(FieldRefOpInterface op) const final {
-      assert(oldBaseVal); // ensure it's used via `cloneWithFieldRefUpdate()` only
-      // Check if the FieldRef accesses a field of "self" within the `oldToNewFields` map.
-      // Per `cloneWithFieldRefUpdate()`, `oldBaseVal` is the "self" value of `funcRef` so
-      // check for a match there and then check that the referenced field name is in the map.
-      return success(op.getComponent() == oldBaseVal && oldToNewFields.contains(op.getFieldName()));
+    LogicalResult match(MemberRefOpInterface op) const final {
+      assert(oldBaseVal); // ensure it's used via `cloneWithMemberRefUpdate()` only
+      // Check if the MemberRef accesses a member of "self" within the `oldToNewMembers` map.
+      // Per `cloneWithMemberRefUpdate()`, `oldBaseVal` is the "self" value of `funcRef` so
+      // check for a match there and then check that the referenced member name is in the map.
+      return success(
+          op.getComponent() == oldBaseVal && oldToNewMembers.contains(op.getMemberName())
+      );
     }
 
-    void rewrite(FieldRefOpInterface op, PatternRewriter &rewriter) const final {
+    void rewrite(MemberRefOpInterface op, PatternRewriter &rewriter) const final {
       rewriter.modifyOpInPlace(op, [this, &op]() {
-        DestCloneOfSrcStructField newF = oldToNewFields.at(op.getFieldName());
-        op.setFieldName(newF.getSymName());
+        DestCloneOfSrcStructMember newF = oldToNewMembers.at(op.getMemberName());
+        op.setMemberName(newF.getSymName());
         op.getComponentMutable().set(this->newBaseVal);
       });
     }
 
-    /// Create a clone of the `FuncDefOp` and update field references according to the
-    /// `SrcStructFieldToCloneInDest` map (both are within the given `FieldRefRewriter`).
-    static FuncDefOp cloneWithFieldRefUpdate(std::unique_ptr<FieldRefRewriter> thisPat) {
+    /// Create a clone of the `FuncDefOp` and update member references according to the
+    /// `SrcStructMemberToCloneInDest` map (both are within the given `MemberRefRewriter`).
+    static FuncDefOp cloneWithMemberRefUpdate(std::unique_ptr<MemberRefRewriter> thisPat) {
       IRMapping mapper;
       FuncDefOp srcFuncClone = thisPat->funcRef.clone(mapper);
-      // Update some data in the `FieldRefRewriter` instance before moving it.
+      // Update some data in the `MemberRefRewriter` instance before moving it.
       thisPat->funcRef = srcFuncClone;
       thisPat->oldBaseVal = getSelfValue(srcFuncClone);
       // Run the rewriter to replace read/write ops
@@ -302,9 +306,9 @@ class StructInliner {
     const StructInliner &data;
     const DestToSrcToClonedSrcInDest &destToSrcToClone;
 
-    /// Get the "self" struct parameter from the CallOp and determine which field that struct was
+    /// Get the "self" struct parameter from the CallOp and determine which member that struct was
     /// stored in within the caller.
-    virtual FieldRefOpInterface getSelfRefField(CallOp callOp) = 0;
+    virtual MemberRefOpInterface getSelfRefMember(CallOp callOp) = 0;
     virtual void processCloneBeforeInlining(FuncDefOp func) {}
     virtual ~ImplBase() = default;
 
@@ -331,21 +335,21 @@ class StructInliner {
           return WalkResult::advance();
         }
 
-        // Get the "self" struct parameter from the CallOp and determine which field that struct
+        // Get the "self" struct parameter from the CallOp and determine which member that struct
         // was stored in within the caller (i.e. `destFunc`).
-        FieldRefOpInterface selfFieldRefOp = this->getSelfRefField(callOp);
-        if (!selfFieldRefOp) {
-          // Note: error message was already printed within `getSelfRefField()`
+        MemberRefOpInterface selfMemberRefOp = this->getSelfRefMember(callOp);
+        if (!selfMemberRefOp) {
+          // Note: error message was already printed within `getSelfRefMember()`
           return WalkResult::interrupt(); // use interrupt to signal failure
         }
 
         // Create a clone of the source function (must do the whole function not just the body
-        // region because `inlineCall()` expects the Region to have a parent op) and update field
-        // references to the old struct fields to instead use the new struct fields.
-        FuncDefOp srcFuncClone = FieldRefRewriter::cloneWithFieldRefUpdate(
-            std::make_unique<FieldRefRewriter>(
-                srcFunc, selfFieldRefOp.getComponent(),
-                this->destToSrcToClone.at(this->data.getDef(selfFieldRefOp))
+        // region because `inlineCall()` expects the Region to have a parent op) and update member
+        // references to the old struct members to instead use the new struct members.
+        FuncDefOp srcFuncClone = MemberRefRewriter::cloneWithMemberRefUpdate(
+            std::make_unique<MemberRefRewriter>(
+                srcFunc, selfMemberRefOp.getComponent(),
+                this->destToSrcToClone.at(this->data.getDef(selfMemberRefOp))
             )
         );
         this->processCloneBeforeInlining(srcFuncClone);
@@ -362,22 +366,22 @@ class StructInliner {
         return WalkResult::skip(); // Must skip because the CallOp was erased.
       };
 
-      auto fieldWriteHandler = [this](FieldWriteOp writeOp) {
-        // Check if the field ref op should be deleted in the end
+      auto memberWriteHandler = [this](MemberWriteOp writeOp) {
+        // Check if the member ref op should be deleted in the end
         if (this->destToSrcToClone.contains(this->data.getDef(writeOp))) {
-          this->data.toDelete.fieldWriteOps.insert(writeOp);
+          this->data.toDelete.memberWriteOps.insert(writeOp);
         }
         return WalkResult::advance();
       };
 
-      /// Combine chained FieldReadOp according to replacements in `destToSrcToClone`.
+      /// Combine chained MemberReadOp according to replacements in `destToSrcToClone`.
       /// See `combineReadChain()`
-      auto fieldReadHandler = [this](FieldReadOp readOp) {
-        // Check if the field ref op should be deleted in the end
+      auto memberReadHandler = [this](MemberReadOp readOp) {
+        // Check if the member ref op should be deleted in the end
         if (this->destToSrcToClone.contains(this->data.getDef(readOp))) {
-          this->data.toDelete.fieldReadOps.insert(readOp);
+          this->data.toDelete.memberReadOps.insert(readOp);
         }
-        // If the FieldReadOp was replaced/erased, must skip.
+        // If the MemberReadOp was replaced/erased, must skip.
         return combineReadChain(readOp, this->data.tables, destToSrcToClone)
                    ? WalkResult::skip()
                    : WalkResult::advance();
@@ -386,8 +390,8 @@ class StructInliner {
       WalkResult walkRes = destFunc.getBody().walk<WalkOrder::PreOrder>([&](Operation *op) {
         return TypeSwitch<Operation *, WalkResult>(op)
             .Case<CallOp>(callHandler)
-            .Case<FieldWriteOp>(fieldWriteHandler)
-            .Case<FieldReadOp>(fieldReadHandler)
+            .Case<MemberWriteOp>(memberWriteHandler)
+            .Case<MemberReadOp>(memberReadHandler)
             .Default([](Operation *) { return WalkResult::advance(); });
       });
 
@@ -398,21 +402,22 @@ class StructInliner {
   class ConstrainImpl : public ImplBase {
     using ImplBase::ImplBase;
 
-    FieldRefOpInterface getSelfRefField(CallOp callOp) override {
-      LLVM_DEBUG({ llvm::dbgs() << "[ConstrainImpl::getSelfRefField] " << callOp << '\n'; });
+    MemberRefOpInterface getSelfRefMember(CallOp callOp) override {
+      LLVM_DEBUG({ llvm::dbgs() << "[ConstrainImpl::getSelfRefMember] " << callOp << '\n'; });
 
-      // The typical pattern is to read a struct instance from a field and then call "constrain()"
-      // on it. Get the Value passed as the "self" struct to the CallOp and determine which field it
-      // was read from in the current struct (i.e., `destStruct`).
-      FieldRefOpInterface selfFieldRef = getFieldReadThatDefinesSelfValuePassedToConstrain(callOp);
-      if (selfFieldRef &&
-          selfFieldRef.getComponent().getType() == this->data.destStruct.getType()) {
-        return selfFieldRef;
+      // The typical pattern is to read a struct instance from a member and then call "constrain()"
+      // on it. Get the Value passed as the "self" struct to the CallOp and determine which member
+      // it was read from in the current struct (i.e., `destStruct`).
+      MemberRefOpInterface selfMemberRef =
+          getMemberReadThatDefinesSelfValuePassedToConstrain(callOp);
+      if (selfMemberRef &&
+          selfMemberRef.getComponent().getType() == this->data.destStruct.getType()) {
+        return selfMemberRef;
       }
       callOp.emitError()
           .append(
               "expected \"self\" parameter to \"@", FUNC_NAME_CONSTRAIN,
-              "\" to be passed a value read from a field in the current stuct."
+              "\" to be passed a value read from a member in the current stuct."
           )
           .report();
       return nullptr;
@@ -422,19 +427,19 @@ class StructInliner {
   class ComputeImpl : public ImplBase {
     using ImplBase::ImplBase;
 
-    FieldRefOpInterface getSelfRefField(CallOp callOp) override {
-      LLVM_DEBUG({ llvm::dbgs() << "[ComputeImpl::getSelfRefField] " << callOp << '\n'; });
+    MemberRefOpInterface getSelfRefMember(CallOp callOp) override {
+      LLVM_DEBUG({ llvm::dbgs() << "[ComputeImpl::getSelfRefMember] " << callOp << '\n'; });
 
-      // The typical pattern is to write the return value of "compute()" to a field in
+      // The typical pattern is to write the return value of "compute()" to a member in
       // the current struct (i.e., `destStruct`).
       // It doesn't really make sense (although there is no semantic restriction against it) to just
-      // pass the "compute()" result into another function and never write it to a field since that
+      // pass the "compute()" result into another function and never write it to a member since that
       // leaves no way for the "constrain()" function to call "constrain()" on that result struct.
-      FailureOr<FieldWriteOp> foundWrite =
+      FailureOr<MemberWriteOp> foundWrite =
           findOpThatStoresSubcmp(callOp.getSelfValueFromCompute(), [&callOp]() {
         return callOp.emitOpError().append("\"@", FUNC_NAME_COMPUTE, "\" ");
       });
-      return static_cast<FieldRefOpInterface>(foundWrite.value_or(nullptr));
+      return static_cast<MemberRefOpInterface>(foundWrite.value_or(nullptr));
     }
 
     void processCloneBeforeInlining(FuncDefOp func) override {
@@ -449,37 +454,37 @@ class StructInliner {
     }
   };
 
-  // Find any field(s) in `destStruct` whose type matches `srcStruct` (allowing any parameters, if
-  // applicable). For each such field, clone all fields from `srcStruct` into `destStruct` and cache
-  // the mapping of `destStruct` to `srcStruct` to cloned fields in the return value.
-  DestToSrcToClonedSrcInDest cloneFields() {
+  // Find any member(s) in `destStruct` whose type matches `srcStruct` (allowing any parameters, if
+  // applicable). For each such member, clone all members from `srcStruct` into `destStruct` and
+  // cache the mapping of `destStruct` to `srcStruct` to cloned members in the return value.
+  DestToSrcToClonedSrcInDest cloneMembers() {
     DestToSrcToClonedSrcInDest destToSrcToClone;
 
     SymbolTable &destStructSymTable = tables.getSymbolTable(destStruct);
     StructType srcStructType = srcStruct.getType();
-    for (FieldDefOp destField : destStruct.getFieldDefs()) {
-      if (StructType destFieldType = llvm::dyn_cast<StructType>(destField.getType())) {
+    for (MemberDefOp destMember : destStruct.getMemberDefs()) {
+      if (StructType destMemberType = llvm::dyn_cast<StructType>(destMember.getType())) {
         UnificationMap unifications;
-        if (!structTypesUnify(srcStructType, destFieldType, {}, &unifications)) {
+        if (!structTypesUnify(srcStructType, destMemberType, {}, &unifications)) {
           continue;
         }
         assert(unifications.empty()); // `makePlan()` reports failure earlier
-        // Mark the original `destField` for deletion
-        toDelete.fieldDefs.push_back(destField);
-        // Clone each field from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
-        // even if there are no fields in `srcStruct` so its presence can be used as a marker.
-        SrcStructFieldToCloneInDest &srcToClone = destToSrcToClone[destField];
-        std::vector<FieldDefOp> srcFields = srcStruct.getFieldDefs();
-        if (srcFields.empty()) {
+        // Mark the original `destMember` for deletion
+        toDelete.memberDefs.push_back(destMember);
+        // Clone each member from 'srcStruct' into 'destStruct'. Add an entry to `destToSrcToClone`
+        // even if there are no members in `srcStruct` so its presence can be used as a marker.
+        SrcStructMemberToCloneInDest &srcToClone = destToSrcToClone[destMember];
+        std::vector<MemberDefOp> srcMembers = srcStruct.getMemberDefs();
+        if (srcMembers.empty()) {
           continue;
         }
-        OpBuilder builder(destField);
+        OpBuilder builder(destMember);
         std::string newNameBase =
-            destField.getName().str() + ':' + BuildShortTypeString::from(destFieldType);
-        for (FieldDefOp srcField : srcFields) {
-          DestCloneOfSrcStructField newF = llvm::cast<FieldDefOp>(builder.clone(*srcField));
+            destMember.getName().str() + ':' + BuildShortTypeString::from(destMemberType);
+        for (MemberDefOp srcMember : srcMembers) {
+          DestCloneOfSrcStructMember newF = llvm::cast<MemberDefOp>(builder.clone(*srcMember));
           newF.setName(builder.getStringAttr(newNameBase + '+' + newF.getName()));
-          srcToClone[srcField.getSymNameAttr()] = newF;
+          srcToClone[srcMember.getSymNameAttr()] = newF;
           // Also update the cached SymbolTable
           destStructSymTable.insert(newF);
         }
@@ -512,7 +517,7 @@ public:
                      << destStruct.getSymNameAttr() << '\n'
     );
 
-    DestToSrcToClonedSrcInDest destToSrcToClone = cloneFields();
+    DestToSrcToClonedSrcInDest destToSrcToClone = cloneMembers();
     if (failed(inlineConstrainCall(destToSrcToClone)) ||
         failed(inlineComputeCall(destToSrcToClone))) {
       return failure(); // error already printed within doInlining()
@@ -545,7 +550,7 @@ public:
   /// Call before erasing an Operation to ensure that any remaining uses of the Operation's result
   /// are removed if possible, else report an error (the subsequent call to erase() would fail
   /// anyway if the result Value still has uses). Handles the following cases:
-  /// - If the op is used as argument to a function with a body, convert to take fields separately.
+  /// - If the op is used as argument to a function with a body, convert to take members separately.
   /// - If the op is used as argument to a function without a body, report an error.
   LogicalResult handle(Operation *op) const {
     if (op->use_empty()) {
@@ -564,7 +569,7 @@ public:
         }
       } else {
         Operation *user = use.getOwner();
-        // Report an error for any user other than some field ref that will be deleted anyway.
+        // Report an error for any user other than some member ref that will be deleted anyway.
         if (!opWillBeDeleted(user)) {
           return op->emitOpError()
               .append(
@@ -618,9 +623,10 @@ private:
           .append("used by this call");
     }
 
-    FieldRefOpInterface paramFromField = TypeSwitch<Operation *, FieldRefOpInterface>(origin)
-                                             .template Case<FieldReadOp>([](auto p) { return p; })
-                                             .template Case<CreateStructOp>([](auto p) {
+    MemberRefOpInterface paramFromMember =
+        TypeSwitch<Operation *, MemberRefOpInterface>(origin)
+            .template Case<MemberReadOp>([](auto p) { return p; })
+            .template Case<CreateStructOp>([](auto p) {
       return findOpThatStoresSubcmp(p, [&p]() { return p.emitOpError(); }).value_or(nullptr);
     }).Default([](Operation *p) {
       llvm::errs() << "Encountered unexpected op: "
@@ -629,21 +635,21 @@ private:
       return nullptr;
     });
     LLVM_DEBUG({
-      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   field ref op for param: "
-                   << (paramFromField ? debug::toStringOne(paramFromField) : "<<null>>") << '\n';
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   member ref op for param: "
+                   << (paramFromMember ? debug::toStringOne(paramFromMember) : "<<null>>") << '\n';
     });
-    if (!paramFromField) {
+    if (!paramFromMember) {
       return failure(); // error already printed within findOpThatStoresSubcmp()
     }
-    const SrcStructFieldToCloneInDest &newFields =
-        destToSrcToClone.at(getDef(tables, paramFromField));
+    const SrcStructMemberToCloneInDest &newMembers =
+        destToSrcToClone.at(getDef(tables, paramFromMember));
     LLVM_DEBUG({
-      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   fields to split: "
-                   << debug::toStringList(newFields) << '\n';
+      llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   members to split: "
+                   << debug::toStringList(newMembers) << '\n';
     });
 
     // Convert the FuncDefOp side first (to use the easier builder for the new CallOp).
-    splitFunctionParam(tgtFunc, argIdx, newFields);
+    splitFunctionParam(tgtFunc, argIdx, newMembers);
     LLVM_DEBUG({
       llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED call target: " << tgtFunc
                    << '\n';
@@ -651,16 +657,16 @@ private:
                    << tgtFunc.getFunctionType() << '\n';
     });
 
-    // Convert the CallOp side. Add a FieldReadOp for each value from the struct and pass them
+    // Convert the CallOp side. Add a MemberReadOp for each value from the struct and pass them
     // individually in place of the struct parameter.
     OpBuilder builder(inCall);
     SmallVector<Value> splitArgs;
-    // Before the CallOp, insert a read from every new field. These Values will replace the
+    // Before the CallOp, insert a read from every new member. These Values will replace the
     // original argument in the CallOp.
-    Value originalBaseVal = paramFromField.getComponent();
-    for (auto [origName, newFieldRef] : newFields) {
-      splitArgs.push_back(builder.create<FieldReadOp>(
-          inCall.getLoc(), newFieldRef.getType(), originalBaseVal, newFieldRef.getNameAttr()
+    Value originalBaseVal = paramFromMember.getComponent();
+    for (auto [origName, newMemberRef] : newMembers) {
+      splitArgs.push_back(builder.create<MemberReadOp>(
+          inCall.getLoc(), newMemberRef.getType(), originalBaseVal, newMemberRef.getNameAttr()
       ));
     }
     // Generate the new argument list from the original but replace 'argIdx'
@@ -689,26 +695,26 @@ private:
   }
 
   /// Replace the function parameter at `paramIdx` with multiple parameters according to the types
-  /// of the values in the given `SrcStructFieldToCloneInDest` map. Within the body, replace reads
-  /// from the original parameter with direct uses of the new block argument Values per the field
+  /// of the values in the given `SrcStructMemberToCloneInDest` map. Within the body, replace reads
+  /// from the original parameter with direct uses of the new block argument Values per the member
   /// name keys in the map.
   static void splitFunctionParam(
-      FuncDefOp func, unsigned paramIdx, const SrcStructFieldToCloneInDest &nameToNewField
+      FuncDefOp func, unsigned paramIdx, const SrcStructMemberToCloneInDest &nameToNewMember
   ) {
     class Impl : public FunctionTypeConverter {
       unsigned inputIdx;
-      const SrcStructFieldToCloneInDest &newFields;
+      const SrcStructMemberToCloneInDest &newMembers;
 
     public:
-      Impl(unsigned paramIdx, const SrcStructFieldToCloneInDest &nameToNewField)
-          : inputIdx(paramIdx), newFields(nameToNewField) {}
+      Impl(unsigned paramIdx, const SrcStructMemberToCloneInDest &nameToNewMember)
+          : inputIdx(paramIdx), newMembers(nameToNewMember) {}
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
         SmallVector<Type> newTypes(origTypes);
         auto it = newTypes.erase(newTypes.begin() + inputIdx);
-        for (auto [_, newField] : newFields) {
-          newTypes.insert(it, newField.getType());
+        for (auto [_, newMember] : newMembers) {
+          newTypes.insert(it, newMember.getType());
           ++it;
         }
         return newTypes;
@@ -718,9 +724,9 @@ private:
       }
       ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type>) override {
         if (origAttrs) {
-          // Replicate the value at `origAttrs[inputIdx]` to have `newFields.size()`
+          // Replicate the value at `origAttrs[inputIdx]` to have `newMembers.size()`
           SmallVector<Attribute> newAttrs(origAttrs.getValue());
-          newAttrs.insert(newAttrs.begin() + inputIdx, newFields.size() - 1, origAttrs[inputIdx]);
+          newAttrs.insert(newAttrs.begin() + inputIdx, newMembers.size() - 1, origAttrs[inputIdx]);
           return ArrayAttr::get(origAttrs.getContext(), newAttrs);
         }
         return nullptr;
@@ -732,23 +738,23 @@ private:
       void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
         Value oldStructRef = entryBlock.getArgument(inputIdx);
 
-        // Insert new Block arguments, one per field, following the original one. Keep a map
-        // of field name to the associated block argument for replacing FieldReadOp.
-        llvm::StringMap<BlockArgument> fieldNameToNewArg;
+        // Insert new Block arguments, one per member, following the original one. Keep a map
+        // of member name to the associated block argument for replacing MemberReadOp.
+        llvm::StringMap<BlockArgument> memberNameToNewArg;
         Location loc = oldStructRef.getLoc();
         unsigned idx = inputIdx;
-        for (auto [fieldName, newField] : newFields) {
+        for (auto [memberName, newMember] : newMembers) {
           // note: pre-increment so the original to be erased is still at `inputIdx`
-          BlockArgument newArg = entryBlock.insertArgument(++idx, newField.getType(), loc);
-          fieldNameToNewArg[fieldName] = newArg;
+          BlockArgument newArg = entryBlock.insertArgument(++idx, newMember.getType(), loc);
+          memberNameToNewArg[memberName] = newArg;
         }
 
-        // Find all field reads from the original Block argument and replace uses of those
+        // Find all member reads from the original Block argument and replace uses of those
         // reads with the appropriate new Block argument.
         for (OpOperand &oldBlockArgUse : llvm::make_early_inc_range(oldStructRef.getUses())) {
-          if (FieldReadOp readOp = llvm::dyn_cast<FieldReadOp>(oldBlockArgUse.getOwner())) {
+          if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(oldBlockArgUse.getOwner())) {
             if (readOp.getComponent() == oldStructRef) {
-              BlockArgument newArg = fieldNameToNewArg.at(readOp.getFieldName());
+              BlockArgument newArg = memberNameToNewArg.at(readOp.getMemberName());
               rewriter.replaceAllUsesWith(readOp, newArg);
               rewriter.eraseOp(readOp);
               continue;
@@ -765,7 +771,7 @@ private:
       }
     };
     IRRewriter rewriter(func.getContext());
-    Impl(paramIdx, nameToNewField).convert(func, rewriter);
+    Impl(paramIdx, nameToNewMember).convert(func, rewriter);
   }
 };
 
@@ -780,12 +786,12 @@ static LogicalResult finalizeStruct(
   });
 
   // Compress chains of reads that result after inlining multiple callees.
-  caller.getConstrainFuncOp().walk([&tables, &destToSrcToClone](FieldReadOp readOp) {
+  caller.getConstrainFuncOp().walk([&tables, &destToSrcToClone](MemberReadOp readOp) {
     combineReadChain(readOp, tables, destToSrcToClone);
   });
   FuncDefOp computeFn = caller.getComputeFuncOp();
   Value computeSelfVal = computeFn.getSelfValueFromCompute();
-  auto res = computeFn.walk([&tables, &destToSrcToClone, &computeSelfVal](FieldReadOp readOp) {
+  auto res = computeFn.walk([&tables, &destToSrcToClone, &computeSelfVal](MemberReadOp readOp) {
     combineReadChain(readOp, tables, destToSrcToClone);
     // Reads targeting the "self" value from "compute()" are not eligible for the compression
     // provided in `combineNewThenReadChain()` and will actually cause an error within.
@@ -804,39 +810,39 @@ static LogicalResult finalizeStruct(
     caller.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());
     llvm::dbgs() << '\n';
     llvm::dbgs() << "[finalizeStruct] ops marked for deletion:\n";
-    for (Operation *op : toDelete.fieldReadOps) {
+    for (Operation *op : toDelete.memberReadOps) {
       llvm::dbgs().indent(2) << *op << '\n';
     }
-    for (Operation *op : toDelete.fieldWriteOps) {
+    for (Operation *op : toDelete.memberWriteOps) {
       llvm::dbgs().indent(2) << *op << '\n';
     }
     for (CreateStructOp op : toDelete.newStructOps) {
       llvm::dbgs().indent(2) << op << '\n';
     }
-    for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
+    for (DestMemberWithSrcStructType op : toDelete.memberDefs) {
       llvm::dbgs().indent(2) << op << '\n';
     }
   });
 
   // Handle remaining uses of CreateStructOp before deleting anything because this process
-  // needs to be able to find the FieldWriteOp instances that store the result of these ops.
+  // needs to be able to find the MemberWriteOp instances that store the result of these ops.
   DanglingUseHandler<SmallPtrSet<Operation *, 8>, SmallPtrSet<Operation *, 8>> useHandler(
-      tables, destToSrcToClone, toDelete.fieldWriteOps, toDelete.fieldReadOps
+      tables, destToSrcToClone, toDelete.memberWriteOps, toDelete.memberReadOps
   );
   for (CreateStructOp op : toDelete.newStructOps) {
     if (failed(useHandler.handle(op))) {
       return failure(); // error already printed within handle()
     }
   }
-  // Next, to avoid "still has uses" errors, must erase FieldWriteOp first, then FieldReadOp, before
-  // erasing the CreateStructOp or FieldDefOp.
-  for (Operation *op : toDelete.fieldWriteOps) {
+  // Next, to avoid "still has uses" errors, must erase MemberWriteOp first, then MemberReadOp,
+  // before erasing the CreateStructOp or MemberDefOp.
+  for (Operation *op : toDelete.memberWriteOps) {
     if (failed(useHandler.handle(op))) {
       return failure(); // error already printed within handle()
     }
     op->erase();
   }
-  for (Operation *op : toDelete.fieldReadOps) {
+  for (Operation *op : toDelete.memberReadOps) {
     if (failed(useHandler.handle(op))) {
       return failure(); // error already printed within handle()
     }
@@ -845,9 +851,9 @@ static LogicalResult finalizeStruct(
   for (CreateStructOp op : toDelete.newStructOps) {
     op.erase();
   }
-  // Finally, erase FieldDefOp via SymbolTable so table itself is updated too.
+  // Finally, erase MemberDefOp via SymbolTable so table itself is updated too.
   SymbolTable &callerSymTab = tables.getSymbolTable(caller);
-  for (DestFieldWithSrcStructType op : toDelete.fieldDefs) {
+  for (DestMemberWithSrcStructType op : toDelete.memberDefs) {
     assert(op.getParentOp() == caller); // using correct SymbolTable
     callerSymTab.erase(op);
   }
@@ -862,7 +868,7 @@ LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan)
     // Cache operations that should be deleted but must wait until all callees are processed
     // to ensure that all uses of the values defined by these operations are replaced.
     PendingErasure toDelete;
-    // Cache old-to-new field mappings across all callees inlined for the current struct.
+    // Cache old-to-new member mappings across all callees inlined for the current struct.
     DestToSrcToClonedSrcInDest aggregateReplacements;
     // Inline callees/subcomponents of the current struct
     for (StructDefOp toInline : callees) {
@@ -871,7 +877,7 @@ LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan)
       if (failed(res)) {
         return failure();
       }
-      // Add current field replacements to the aggregate
+      // Add current member replacements to the aggregate
       for (auto &[k, v] : res.value()) {
         assert(!aggregateReplacements.contains(k) && "duplicate not possible");
         aggregateReplacements[k] = std::move(v);
@@ -936,18 +942,18 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// implementation).
   static inline bool canInline(FuncDefOp currentFunc, FuncDefOp successorFunc) {
     // Find CallOp for `successorFunc` within `currentFunc` and check the condition used by
-    // `ConstrainImpl::getSelfRefField()`.
+    // `ConstrainImpl::getSelfRefMember()`.
     //
-    // Implementation Note: There is a possibility that the "self" value is not from a field read.
+    // Implementation Note: There is a possibility that the "self" value is not from a member read.
     // It could be a parameter to the current/destination function or a global read. Inlining a
     // struct stored to a global would probably require splitting up the global into multiple, one
-    // for each field in the successor/source struct. That may not be a good idea. The parameter
+    // for each member in the successor/source struct. That may not be a good idea. The parameter
     // case could be handled but it will not have a mapping in `destToSrcToClone` in
-    // `getSelfRefField()` and new fields will still need to be added. They can be prefixed with
-    // parameter index since there is no current field name to use as the unique prefix. Handling
+    // `getSelfRefMember()` and new members will still need to be added. They can be prefixed with
+    // parameter index since there is no current member name to use as the unique prefix. Handling
     // that would require refactoring the inlining process a bit.
     WalkResult res = currentFunc.walk([](CallOp c) {
-      return getFieldReadThatDefinesSelfValuePassedToConstrain(c)
+      return getMemberReadThatDefinesSelfValuePassedToConstrain(c)
                  ? WalkResult::interrupt() // use interrupt to indicate success
                  : WalkResult::advance();
     });
@@ -978,7 +984,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
 
     // NOTE: The assumption that the use graph has no cycles allows `complexityMemo` to only
     // store the result for relevant nodes and assume nodes without a mapped value are `0`. This
-    // must be true of the "compute"/"constrain" function uses and field defs because circuits
+    // must be true of the "compute"/"constrain" function uses and member defs because circuits
     // must be acyclic. This is likely true to for the symbol use graph is general but if a
     // counterexample is ever found, the algorithm below must be re-evaluated.
     assert(!hasCycle(&useGraph));

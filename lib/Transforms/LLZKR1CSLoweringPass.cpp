@@ -47,11 +47,11 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 
 #define DEBUG_TYPE "llzk-r1cs-lowering"
-#define R1CS_AUXILIARY_FIELD_PREFIX "__llzk_r1cs_lowering_pass_aux_field_"
+#define R1CS_AUXILIARY_MEMBER_PREFIX "__llzk_r1cs_lowering_pass_aux_member_"
 
 namespace {
 
-/// A LinearCombination is a map from a Value (like a variable or FieldRead) to a felt constant.
+/// A LinearCombination is a map from a Value (like a variable or MemberRead) to a felt constant.
 struct LinearCombination {
   DenseMap<Value, DynamicAPInt> terms; // variable -> coeff
   DynamicAPInt constant;
@@ -256,7 +256,7 @@ private:
   ///
   /// - Has at most one multiplication per constraint (R1CS-compatible)
   /// - Avoids unnecessary introduction of auxiliary variables
-  /// - Preserves semantic equivalence via auxiliary field equality constraints
+  /// - Preserves semantic equivalence via auxiliary member equality constraints
   ///
   /// Rewriting is done **bottom-up** using post-order traversal of the def-use chain.
   /// The transformation is minimal:
@@ -265,14 +265,14 @@ private:
   /// - Avoids rewriting expressions that are already linear or already normalized
   ///
   /// The function memoizes all degrees and rewrites for efficiency and correctness,
-  /// and records any auxiliary field assignments for later reconstruction in compute().
+  /// and records any auxiliary member assignments for later reconstruction in compute().
   ///
   /// \param root           The root felt-valued expression to normalize.
-  /// \param structDef      The enclosing struct definition (for adding aux fields).
+  /// \param structDef      The enclosing struct definition (for adding aux members).
   /// \param constrainFunc  The constrain() function containing the constraint logic.
   /// \param degreeMemo     Memoized degrees of expressions (to avoid recomputation).
   /// \param rewrites       Memoized rewrites of expressions.
-  /// \param auxAssignments Records auxiliary field assignments introduced during normalization.
+  /// \param auxAssignments Records auxiliary member assignments introduced during normalization.
   /// \param builder        Builder used to insert new ops in the constrain() block.
   /// \returns              A Value representing the normalized (possibly rewritten) expression.
   Value normalizeForR1CS(
@@ -310,8 +310,8 @@ private:
         continue;
       }
 
-      // Case 2: Field read op. The degree is 1 and no rewrite needed.
-      if (auto fr = llvm::dyn_cast<FieldReadOp>(op)) {
+      // Case 2: Member read op. The degree is 1 and no rewrite needed.
+      if (auto fr = llvm::dyn_cast<MemberReadOp>(op)) {
         degreeMemo[val] = 1;
         rewrites[val] = val;
         continue;
@@ -336,11 +336,11 @@ private:
 
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(op);
-          std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
-          FieldDefOp auxField = addAuxField(structDef, auxName);
-          Value aux = builder.create<FieldReadOp>(
+          std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
+          MemberDefOp auxMember = addAuxMember(structDef, auxName);
+          Value aux = builder.create<MemberReadOp>(
               val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
-              auxField.getNameAttr()
+              auxMember.getNameAttr()
           );
           auto eqOp = builder.create<EmitEqualityOp>(val.getLoc(), aux, lhs);
           auxAssignments.push_back({auxName, lhs});
@@ -420,8 +420,8 @@ private:
     // Bottom-up construction of R1CSConstraints
     for (Value v : postorder) {
       Operation *op = v.getDefiningOp();
-      if (!op || llvm::isa<FieldReadOp>(op)) {
-        // Leaf (input variable or field read)
+      if (!op || llvm::isa<MemberReadOp>(op)) {
+        // Leaf (input variable or member read)
         R1CSConstraint eq;
         eq.c.addTerm(v, 1);
         constraintMap[v] = eq;
@@ -466,18 +466,18 @@ private:
   }
 
   Value emitLinearCombination(
-      LinearCombination lc, IRMapping &valueMap, DenseMap<StringRef, Value> &fieldMap,
+      LinearCombination lc, IRMapping &valueMap, DenseMap<StringRef, Value> &memberMap,
       OpBuilder &builder, Location loc
   ) {
     Value result = nullptr;
 
-    auto getMapping = [&valueMap, &fieldMap, this](const Value &v) {
+    auto getMapping = [&valueMap, &memberMap, this](const Value &v) {
       if (!valueMap.contains(v)) {
         Operation *op = v.getDefiningOp();
-        if (auto read = dyn_cast<FieldReadOp>(op)) {
-          auto fieldVal = fieldMap.find(read.getFieldName());
-          assert(fieldVal != fieldMap.end() && "Field read not associated with a value");
-          return fieldVal->second;
+        if (auto read = dyn_cast<MemberReadOp>(op)) {
+          auto memberVal = memberMap.find(read.getMemberName());
+          assert(memberVal != memberMap.end() && "Member read not associated with a value");
+          return memberVal->second;
         }
         op->emitError("Value not mapped in R1CS lowering").report();
         signalPassFailure();
@@ -541,15 +541,15 @@ private:
     Location loc = structDef.getLoc();
     OpBuilder topBuilder(moduleOp.getBodyRegion());
 
-    // Validate struct fields are felt and prepare signal types for circuit result types
+    // Validate struct members are felt and prepare signal types for circuit result types
     bool hasPublicSignals = false;
-    for (auto field : structDef.getFieldDefs()) {
-      if (!llvm::isa<FeltType>(field.getType())) {
-        field.emitError("Only felt fields are supported as output signals").report();
+    for (auto member : structDef.getMemberDefs()) {
+      if (!llvm::isa<FeltType>(member.getType())) {
+        member.emitError("Only felt members are supported as output signals").report();
         signalPassFailure();
         return;
       }
-      if (field.isPublic()) {
+      if (member.isPublic()) {
         hasPublicSignals = true;
       }
     }
@@ -585,28 +585,28 @@ private:
       valueMap.map(arg, blockArg);
     }
 
-    // Step 4: For every struct field we a) create a signaldefop and b) add that signal to our
+    // Step 4: For every struct member we a) create a signaldefop and b) add that signal to our
     // outputs
-    DenseMap<StringRef, Value> fieldSignalMap;
+    DenseMap<StringRef, Value> memberSignalMap;
     uint32_t signalDefCntr = 0;
-    for (auto field : structDef.getFieldDefs()) {
+    for (auto member : structDef.getMemberDefs()) {
       r1cs::PublicAttr pubAttr;
-      if (field.hasPublicAttr()) {
+      if (member.hasPublicAttr()) {
         pubAttr = bodyBuilder.getAttr<r1cs::PublicAttr>();
       }
       auto defOp = bodyBuilder.create<r1cs::SignalDefOp>(
-          field.getLoc(), bodyBuilder.getType<r1cs::SignalType>(),
+          member.getLoc(), bodyBuilder.getType<r1cs::SignalType>(),
           bodyBuilder.getUI32IntegerAttr(signalDefCntr), pubAttr
       );
       signalDefCntr++;
-      fieldSignalMap.insert({field.getName(), defOp.getOut()});
+      memberSignalMap.insert({member.getName(), defOp.getOut()});
     }
     DenseMap<std::tuple<Value, Value, StringRef>, Value> binaryOpCache;
     // Step 5: Emit the R1CS constraints
     for (const R1CSConstraint &constraint : constraints) {
-      Value aVal = emitLinearCombination(constraint.a, valueMap, fieldSignalMap, bodyBuilder, loc);
-      Value bVal = emitLinearCombination(constraint.b, valueMap, fieldSignalMap, bodyBuilder, loc);
-      Value cVal = emitLinearCombination(constraint.c, valueMap, fieldSignalMap, bodyBuilder, loc);
+      Value aVal = emitLinearCombination(constraint.a, valueMap, memberSignalMap, bodyBuilder, loc);
+      Value bVal = emitLinearCombination(constraint.b, valueMap, memberSignalMap, bodyBuilder, loc);
+      Value cVal = emitLinearCombination(constraint.c, valueMap, memberSignalMap, bodyBuilder, loc);
       bodyBuilder.create<r1cs::ConstrainOp>(loc, aVal, bVal, cVal);
     }
   }
@@ -629,7 +629,7 @@ private:
         return;
       }
 
-      if (failed(checkForAuxFieldConflicts(structDef, R1CS_AUXILIARY_FIELD_PREFIX))) {
+      if (failed(checkForAuxMemberConflicts(structDef, R1CS_AUXILIARY_MEMBER_PREFIX))) {
         signalPassFailure();
         return;
       }
@@ -653,11 +653,11 @@ private:
         // If both sides are degree 2, isolate one side
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(eqOp);
-          std::string auxName = R1CS_AUXILIARY_FIELD_PREFIX + std::to_string(auxCounter++);
-          FieldDefOp auxField = addAuxField(structDef, auxName);
-          Value aux = builder.create<FieldReadOp>(
+          std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
+          MemberDefOp auxMember = addAuxMember(structDef, auxName);
+          Value aux = builder.create<MemberReadOp>(
               eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
-              auxField.getNameAttr()
+              auxMember.getNameAttr()
           );
           auto eqAux = builder.create<EmitEqualityOp>(eqOp.getLoc(), aux, lhs);
           auxAssignments.push_back({auxName, lhs});
@@ -677,8 +677,9 @@ private:
 
       for (const auto &assign : auxAssignments) {
         Value expr = rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        builder.create<FieldWriteOp>(
-            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxFieldName), expr
+        builder.create<MemberWriteOp>(
+            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
+            expr
         );
       }
       buildAndEmitR1CS(moduleOp, structDef, constrainFunc, degreeMemo);

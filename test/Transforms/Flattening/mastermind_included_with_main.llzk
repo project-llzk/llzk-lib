@@ -15,19 +15,19 @@
 // is to add another pass to the "Preliminary step" in FlatteningPass that will flatten nested modules so
 // that StructType lookups are no longer context-sensitive.
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/mastermind.llzk" as @Mastermind
- 
+
   struct.def @Main<[]> {
-    struct.field @"$super" : !struct.type<@Mastermind::@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Mastermind::@Component<[]>>
-    struct.field @result2 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
-    struct.field @guess2 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
-    struct.field @result1 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
-    struct.field @guess1 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
-    struct.field @codeHash : !struct.type<@Mastermind::@SetCode<[6, 4]>>
-    struct.field @codemakerCode : !struct.type<@Mastermind::@Pegs<[4]>> {column}
-    struct.field @codemakerNonce : !struct.type<@Mastermind::@Nonce<[]>> {column}
+    struct.member @"$super" : !struct.type<@Mastermind::@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Mastermind::@Component<[]>>
+    struct.member @result2 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
+    struct.member @guess2 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
+    struct.member @result1 : !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>> {column}
+    struct.member @guess1 : !struct.type<@Mastermind::@Pegs<[4]>> {column}
+    struct.member @codeHash : !struct.type<@Mastermind::@SetCode<[6, 4]>>
+    struct.member @codemakerCode : !struct.type<@Mastermind::@Pegs<[4]>> {column}
+    struct.member @codemakerNonce : !struct.type<@Mastermind::@Nonce<[]>> {column}
     function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
       %felt_const_3 = felt.const 3
       %felt_const_4 = felt.const 4
@@ -37,56 +37,56 @@ module attributes {veridise.lang = "llzk"} {
       %felt_const_987654321 = felt.const 987654321
       %self = struct.new : !struct.type<@Main<[]>>
       %0 = function.call @Mastermind::@Nonce::@compute(%felt_const_987654321) : (!felt.type) -> !struct.type<@Mastermind::@Nonce<[]>>
-      struct.writef %self[@codemakerNonce] = %0 : <@Main<[]>>, !struct.type<@Mastermind::@Nonce<[]>>
-      %1 = struct.readf %self[@codemakerNonce] : <@Main<[]>>, !struct.type<@Mastermind::@Nonce<[]>>
+      struct.writem %self[@codemakerNonce] = %0 : <@Main<[]>>, !struct.type<@Mastermind::@Nonce<[]>>
+      %1 = struct.readm %self[@codemakerNonce] : <@Main<[]>>, !struct.type<@Mastermind::@Nonce<[]>>
       %array = array.new %felt_const_0, %felt_const_2, %felt_const_1, %felt_const_4 : <4 x !felt.type>
       %2 = function.call @Mastermind::@Pegs::@compute(%array) : (!array.type<4 x !felt.type>) -> !struct.type<@Mastermind::@Pegs<[4]>>
-      struct.writef %self[@codemakerCode] = %2 : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
-      %3 = struct.readf %self[@codemakerCode] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      struct.writem %self[@codemakerCode] = %2 : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %3 = struct.readm %self[@codemakerCode] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
       %4 = function.call @Mastermind::@SetCode::@compute(%1, %3) : (!struct.type<@Mastermind::@Nonce<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>) -> !struct.type<@Mastermind::@SetCode<[6, 4]>>
-      struct.writef %self[@codeHash] = %4 : <@Main<[]>>, !struct.type<@Mastermind::@SetCode<[6, 4]>>
-      %5 = struct.readf %self[@codeHash] : <@Main<[]>>, !struct.type<@Mastermind::@SetCode<[6, 4]>>
+      struct.writem %self[@codeHash] = %4 : <@Main<[]>>, !struct.type<@Mastermind::@SetCode<[6, 4]>>
+      %5 = struct.readm %self[@codeHash] : <@Main<[]>>, !struct.type<@Mastermind::@SetCode<[6, 4]>>
       %array_0 = array.new %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4 : <4 x !felt.type>
       %6 = function.call @Mastermind::@Pegs::@compute(%array_0) : (!array.type<4 x !felt.type>) -> !struct.type<@Mastermind::@Pegs<[4]>>
-      struct.writef %self[@guess1] = %6 : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
-      %7 = struct.readf %self[@guess1] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
-      %8 = struct.readf %5[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
-      %9 = struct.readf %8[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
+      struct.writem %self[@guess1] = %6 : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %7 = struct.readm %self[@guess1] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %8 = struct.readm %5[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
+      %9 = struct.readm %8[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
       %10 = function.call @Mastermind::@MakeGuessWithChecks::@compute(%1, %3, %9, %7) : (!struct.type<@Mastermind::@Nonce<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>) -> !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
-      struct.writef %self[@result1] = %10 : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
-      %11 = struct.readf %self[@result1] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
-      %12 = struct.readf %11[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %13 = struct.readf %12[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %14 = struct.readf %13[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %15 = struct.readf %14[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %16 = struct.readf %15[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
-      %17 = struct.readf %11[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %18 = struct.readf %17[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %19 = struct.readf %18[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %20 = struct.readf %19[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %21 = struct.readf %20[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      struct.writem %self[@result1] = %10 : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
+      %11 = struct.readm %self[@result1] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
+      %12 = struct.readm %11[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %13 = struct.readm %12[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %14 = struct.readm %13[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %15 = struct.readm %14[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %16 = struct.readm %15[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      %17 = struct.readm %11[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %18 = struct.readm %17[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %19 = struct.readm %18[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %20 = struct.readm %19[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %21 = struct.readm %20[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
       %22 = function.call @Mastermind::@Pegs::@compute(%array) : (!array.type<4 x !felt.type>) -> !struct.type<@Mastermind::@Pegs<[4]>>
-      struct.writef %self[@guess2] = %22 : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
-      %23 = struct.readf %self[@guess2] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
-      %24 = struct.readf %5[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
-      %25 = struct.readf %24[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
+      struct.writem %self[@guess2] = %22 : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %23 = struct.readm %self[@guess2] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %24 = struct.readm %5[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
+      %25 = struct.readm %24[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
       %26 = function.call @Mastermind::@MakeGuessWithChecks::@compute(%1, %3, %25, %23) : (!struct.type<@Mastermind::@Nonce<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>) -> !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
-      struct.writef %self[@result2] = %26 : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
-      %27 = struct.readf %self[@result2] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
-      %28 = struct.readf %27[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %29 = struct.readf %28[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %30 = struct.readf %29[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %31 = struct.readf %30[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %32 = struct.readf %31[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
-      %33 = struct.readf %27[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %34 = struct.readf %33[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %35 = struct.readf %34[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %36 = struct.readf %35[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %37 = struct.readf %36[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      struct.writem %self[@result2] = %26 : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
+      %27 = struct.readm %self[@result2] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
+      %28 = struct.readm %27[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %29 = struct.readm %28[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %30 = struct.readm %29[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %31 = struct.readm %30[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %32 = struct.readm %31[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      %33 = struct.readm %27[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %34 = struct.readm %33[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %35 = struct.readm %34[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %36 = struct.readm %35[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %37 = struct.readm %36[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
       %38 = function.call @Mastermind::@Component::@compute() : () -> !struct.type<@Mastermind::@Component<[]>>
-      struct.writef %self[@"$temp"] = %38 : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
-      %39 = struct.readf %self[@"$temp"] : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
-      struct.writef %self[@"$super"] = %39 : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
+      struct.writem %self[@"$temp"] = %38 : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
+      %39 = struct.readm %self[@"$temp"] : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
+      struct.writem %self[@"$super"] = %39 : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
       function.return %self : !struct.type<@Main<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
@@ -96,51 +96,51 @@ module attributes {veridise.lang = "llzk"} {
       %felt_const_2 = felt.const 2
       %felt_const_0 = felt.const 0
       %felt_const_987654321 = felt.const 987654321
-      %0 = struct.readf %arg0[@codemakerNonce] : <@Main<[]>>, !struct.type<@Mastermind::@Nonce<[]>>
+      %0 = struct.readm %arg0[@codemakerNonce] : <@Main<[]>>, !struct.type<@Mastermind::@Nonce<[]>>
       function.call @Mastermind::@Nonce::@constrain(%0, %felt_const_987654321) : (!struct.type<@Mastermind::@Nonce<[]>>, !felt.type) -> ()
       %array = array.new %felt_const_0, %felt_const_2, %felt_const_1, %felt_const_4 : <4 x !felt.type>
-      %1 = struct.readf %arg0[@codemakerCode] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %1 = struct.readm %arg0[@codemakerCode] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
       function.call @Mastermind::@Pegs::@constrain(%1, %array) : (!struct.type<@Mastermind::@Pegs<[4]>>, !array.type<4 x !felt.type>) -> ()
-      %2 = struct.readf %arg0[@codeHash] : <@Main<[]>>, !struct.type<@Mastermind::@SetCode<[6, 4]>>
+      %2 = struct.readm %arg0[@codeHash] : <@Main<[]>>, !struct.type<@Mastermind::@SetCode<[6, 4]>>
       function.call @Mastermind::@SetCode::@constrain(%2, %0, %1) : (!struct.type<@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@Nonce<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>) -> ()
       %array_0 = array.new %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4 : <4 x !felt.type>
-      %3 = struct.readf %arg0[@guess1] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %3 = struct.readm %arg0[@guess1] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
       function.call @Mastermind::@Pegs::@constrain(%3, %array_0) : (!struct.type<@Mastermind::@Pegs<[4]>>, !array.type<4 x !felt.type>) -> ()
-      %4 = struct.readf %2[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
-      %5 = struct.readf %4[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
-      %6 = struct.readf %arg0[@result1] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
+      %4 = struct.readm %2[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
+      %5 = struct.readm %4[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
+      %6 = struct.readm %arg0[@result1] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
       function.call @Mastermind::@MakeGuessWithChecks::@constrain(%6, %0, %1, %5, %3) : (!struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@Nonce<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>) -> ()
-      %7 = struct.readf %6[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %8 = struct.readf %7[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %9 = struct.readf %8[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %10 = struct.readf %9[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %11 = struct.readf %10[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      %7 = struct.readm %6[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %8 = struct.readm %7[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %9 = struct.readm %8[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %10 = struct.readm %9[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %11 = struct.readm %10[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
       constrain.eq %11, %felt_const_2 : !felt.type, !felt.type
-      %12 = struct.readf %6[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %13 = struct.readf %12[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %14 = struct.readf %13[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %15 = struct.readf %14[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %16 = struct.readf %15[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      %12 = struct.readm %6[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %13 = struct.readm %12[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %14 = struct.readm %13[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %15 = struct.readm %14[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %16 = struct.readm %15[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
       constrain.eq %16, %felt_const_1 : !felt.type, !felt.type
-      %17 = struct.readf %arg0[@guess2] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
+      %17 = struct.readm %arg0[@guess2] : <@Main<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>
       function.call @Mastermind::@Pegs::@constrain(%17, %array) : (!struct.type<@Mastermind::@Pegs<[4]>>, !array.type<4 x !felt.type>) -> ()
-      %18 = struct.readf %2[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
-      %19 = struct.readf %18[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
-      %20 = struct.readf %arg0[@result2] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
+      %18 = struct.readm %2[@"$super"] : <@Mastermind::@SetCode<[6, 4]>>, !struct.type<@Mastermind::@GenerateCodeHash<[4]>>
+      %19 = struct.readm %18[@"$super"] : <@Mastermind::@GenerateCodeHash<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>
+      %20 = struct.readm %arg0[@result2] : <@Main<[]>>, !struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>
       function.call @Mastermind::@MakeGuessWithChecks::@constrain(%20, %0, %1, %19, %17) : (!struct.type<@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@Nonce<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>, !struct.type<@Mastermind::@CodeHash<[]>>, !struct.type<@Mastermind::@Pegs<[4]>>) -> ()
-      %21 = struct.readf %20[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %22 = struct.readf %21[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %23 = struct.readf %22[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %24 = struct.readf %23[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %25 = struct.readf %24[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      %21 = struct.readm %20[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %22 = struct.readm %21[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %23 = struct.readm %22[@correct] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %24 = struct.readm %23[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %25 = struct.readm %24[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
       constrain.eq %25, %felt_const_4 : !felt.type, !felt.type
-      %26 = struct.readf %20[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
-      %27 = struct.readf %26[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
-      %28 = struct.readf %27[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
-      %29 = struct.readf %28[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
-      %30 = struct.readf %29[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
+      %26 = struct.readm %20[@"$super"] : <@Mastermind::@MakeGuessWithChecks<[6, 4]>>, !struct.type<@Mastermind::@MakeGuess<[6, 4]>>
+      %27 = struct.readm %26[@"$super"] : <@Mastermind::@MakeGuess<[6, 4]>>, !struct.type<@Mastermind::@Guess<[]>>
+      %28 = struct.readm %27[@partial] : <@Mastermind::@Guess<[]>>, !struct.type<@Mastermind::@Reg<[]>>
+      %29 = struct.readm %28[@"$super"] : <@Mastermind::@Reg<[]>>, !struct.type<@Mastermind::@NondetReg<[]>>
+      %30 = struct.readm %29[@"$super"] : <@Mastermind::@NondetReg<[]>>, !felt.type
       constrain.eq %30, %felt_const_0 : !felt.type, !felt.type
-      %31 = struct.readf %arg0[@"$temp"] : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
+      %31 = struct.readm %arg0[@"$temp"] : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
       function.call @Mastermind::@Component::@constrain(%31) : (!struct.type<@Mastermind::@Component<[]>>) -> ()
       function.return
     }

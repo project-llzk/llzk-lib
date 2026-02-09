@@ -47,7 +47,7 @@ using namespace llzk::component;
 namespace {
 
 /// @brief An reference to a value, represented either by an SSA value, a
-/// symbol reference (e.g., a field name), or an int (e.g., a constant array index).
+/// symbol reference (e.g., a member name), or an int (e.g., a constant array index).
 class ReferenceID {
 public:
   explicit ReferenceID(Value v) {
@@ -111,7 +111,7 @@ public:
 
 private:
   /// @brief Three cases:
-  /// FlatSymbolRefAttr: identifier refers to a named field in a struct
+  /// FlatSymbolRefAttr: identifier refers to a named member in a struct
   /// APInt: identifier refers to a constant index in an array
   /// Value: identifier refers to a dynamic index in an array
   std::variant<FlatSymbolRefAttr, APInt, Value> identifier;
@@ -147,7 +147,7 @@ namespace {
 /// @brief A node in a tree of references that represent known values. A node consists of:
 /// - An identifier (e.g., %self)
 /// - A stored value (i.e., the allocation site or the value last written to the identifier)
-/// - A map of children (e.g., fields of a struct or elements of an array).
+/// - A map of children (e.g., members of a struct or elements of an array).
 /// An example:
 /// %self -> @arr -> 1 represents %self[@arr][1].
 ///
@@ -155,7 +155,7 @@ namespace {
 /// elimination until they become known and can be eliminated when redundant operations
 /// are performed.
 ///
-/// A node may have "constant identifiers" as children (field refs, constant indices)
+/// A node may have "constant identifiers" as children (member refs, constant indices)
 /// or a single non-constant child index (just an mlir::Value), as the dynamic
 /// index may or may not alias any constant identifiers. If a dynamic index is
 /// added, the user should clear the prior known children to prevent accidental aliasing.
@@ -594,49 +594,49 @@ class RedundantReadAndWriteEliminationPass
       LLVM_DEBUG(llvm::dbgs() << newStruct.getOperationName() << ": " << *state[newStruct] << '\n');
       // adding this to readVals
       readVals.push_back(newStruct);
-    } else if (auto readf = dyn_cast<FieldReadOp>(op)) {
-      auto structVal = state.at(translate(readf.getComponent()));
-      FlatSymbolRefAttr symbol = readf.getFieldNameAttr();
-      Value resVal = translate(readf.getVal());
+    } else if (auto readm = dyn_cast<MemberReadOp>(op)) {
+      auto structVal = state.at(translate(readm.getComponent()));
+      FlatSymbolRefAttr symbol = readm.getMemberNameAttr();
+      Value resVal = translate(readm.getVal());
       // Check if such a child already exists.
       if (auto child = structVal->getChild(symbol)) {
         LLVM_DEBUG(
-            llvm::dbgs() << readf.getOperationName() << ": adding replacement map entry { "
+            llvm::dbgs() << readm.getOperationName() << ": adding replacement map entry { "
                          << resVal << " => " << child->getStoredValue() << " }\n"
         );
         replacementMap[resVal] = child->getStoredValue();
       } else {
         // If we have no previous store, we create a new symbolic value for
         // this location.
-        state[readf] = structVal->createChild(symbol, resVal);
-        LLVM_DEBUG(llvm::dbgs() << readf.getOperationName() << ": " << *state[readf] << '\n');
+        state[readm] = structVal->createChild(symbol, resVal);
+        LLVM_DEBUG(llvm::dbgs() << readm.getOperationName() << ": " << *state[readm] << '\n');
       }
       // specifically add the untranslated value back for removal checks
-      readVals.push_back(readf.getVal());
-    } else if (auto writef = dyn_cast<FieldWriteOp>(op)) {
-      auto structVal = state.at(translate(writef.getComponent()));
-      Value writeVal = translate(writef.getVal());
-      FlatSymbolRefAttr symbol = writef.getFieldNameAttr();
+      readVals.push_back(readm.getVal());
+    } else if (auto writem = dyn_cast<MemberWriteOp>(op)) {
+      auto structVal = state.at(translate(writem.getComponent()));
+      Value writeVal = translate(writem.getVal());
+      FlatSymbolRefAttr symbol = writem.getMemberNameAttr();
       auto valTree = tryGetValTree(writeVal);
 
       auto child = structVal->getOrCreateChild(symbol);
       if (child->getStoredValue() == writeVal) {
         LLVM_DEBUG(
-            llvm::dbgs() << writef.getOperationName() << ": recording redundant write " << writef
+            llvm::dbgs() << writem.getOperationName() << ": recording redundant write " << writem
                          << '\n'
         );
-        redundantWrites.push_back(writef);
+        redundantWrites.push_back(writem);
       } else {
-        if (auto *lastWrite = child->updateLastWrite(writef)) {
+        if (auto *lastWrite = child->updateLastWrite(writem)) {
           LLVM_DEBUG(
-              llvm::dbgs() << writef.getOperationName() << ": recording overwritten write "
+              llvm::dbgs() << writem.getOperationName() << ": recording overwritten write "
                            << *lastWrite << '\n'
           );
           redundantWrites.push_back(lastWrite);
         }
         child->setCurrentValue(writeVal, valTree);
         LLVM_DEBUG(
-            llvm::dbgs() << writef.getOperationName() << ": " << *child << " set to " << writeVal
+            llvm::dbgs() << writem.getOperationName() << ": " << *child << " set to " << writeVal
                          << '\n'
         );
       }

@@ -105,7 +105,7 @@ namespace llzk {
 /// For example, a CDG of the form: {
 ///     {%arg1, %arg2, %arg3[@foo]}
 /// }
-/// Means that %arg1, %arg2, and field @foo of %arg3, are connected
+/// Means that %arg1, %arg2, and member @foo of %arg3, are connected
 /// via some constraints. These constraints could take the form of (in Circom notation):
 ///     %arg1 + %arg3[@foo] === %arg2
 /// Or
