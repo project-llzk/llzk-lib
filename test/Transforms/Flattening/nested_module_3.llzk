@@ -1,0 +1,45 @@
+// RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
+// X_FAIL:*
+//
+// TODO: This will be handled at a later time. There's a larger issue that breaks the flattening pass
+// when `include` is used. The current approach to inlining included modules ends up making StructType
+// context-sensitive. For instance, you can create a type `!struct.type<@Main<[]>>` from the struct
+// defined in this file (let's call it A) but there could also be another `struct.def @Main<[]>` defined
+// within the included module (let's call that B). From the scope of this file, that struct type must be
+// prefixed with the included module alias, giving `!struct.type<@Mastermind:@Main<[]>>`. However,
+// from within the included module, B would still be referenced simply as `!struct.type<@Main<[]>>` and
+// that's identical to how we reference A from within this file. Thus, resolving the `struct.def` for a
+// StructType is dependent on the context where the StructType appears. This causes a problem in the
+// ParameterizedStructUseTypeConverter because TypeConverter is not context-sensitive. When it sees
+// `!struct.type<@Main<[]>>` there is no way to know if that is referring to A or B. The proposed solution
+// is to add another pass to the "Preliminary step" in FlatteningPass that will flatten nested modules so
+// that StructType lookups are no longer context-sensitive.
+
+module attributes {llzk.main = !struct.type<@Main<[]>>, llzk.lang} {
+  module @Bar attributes {llzk.lang} {
+    struct.def @Foo<[@N]> {
+      struct.member @x : !array.type<@N x !felt.type>
+      function.def @compute() -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
+        %self = struct.new : <@Foo<[@N]>>
+        function.return %self : !struct.type<@Foo<[@N]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>) attributes {function.allow_constraint} {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main<[]> {
+    struct.member @foo : !struct.type<@Bar::@Foo<[1]>>
+    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@Main<[]>>
+      function.return %self : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Foo_1 {
+// CHECK-LABEL: struct.def @Main {

@@ -22,6 +22,7 @@
 
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
 
 #include <optional>
@@ -561,6 +562,8 @@ getMemberDefOpImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables, St
   if (failed(structDefRes)) {
     return failure(); // getDefinition() already emits a sufficient error message
   }
+  // Copy namespace because we will need it later.
+  llvm::SmallVector<llvm::StringRef> structDefOpNs(structDefRes->getNamespace());
   auto res = llzk::lookupSymbolIn<MemberDefOp>(
       tables, SymbolRefAttr::get(refOp->getContext(), refOp.getMemberName()),
       std::move(*structDefRes), op
@@ -570,6 +573,9 @@ getMemberDefOpImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables, St
                               << "' named \"@" << refOp.getMemberName() << "\" in \""
                               << tyStruct.getNameRef() << '"';
   }
+  // Prepend the namespace of the struct lookup since the type of the member is meant to be resolved
+  // within that scope.
+  res->prependNamespace(structDefOpNs);
   return std::move(res.value());
 }
 
@@ -591,7 +597,7 @@ static LogicalResult verifySymbolUsesImpl(
   // Ensure the type of the referenced member declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
   Type memberType = member.get().getType();
-  if (!typesUnify(actualType, memberType, member.getIncludeSymNames())) {
+  if (!typesUnify(actualType, memberType, member.getNamespace())) {
     return refOp->emitOpError() << "has wrong type; expected " << memberType << ", got "
                                 << actualType;
   }

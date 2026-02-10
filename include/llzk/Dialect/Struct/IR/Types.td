@@ -94,7 +94,7 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
     /// used as a starting point for the lookup. Should not be assumed to
     /// be non-`null` as we don't verify all types during verification.
     ::mlir::FailureOr<SymbolLookupResult<StructDefOp>> getDefinition
-        (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op) const;
+        (::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op, bool reportMissing = true) const;
 
     // Verifies that this type references a valid struct, relative to the given `op`.
     ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);

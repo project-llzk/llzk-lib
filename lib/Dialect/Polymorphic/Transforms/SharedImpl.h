@@ -34,8 +34,11 @@
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Debug.h>
 
 #include <tuple>
+
+#define DEBUG_TYPE "poly-dialect-shared"
 
 namespace llzk::polymorphic::detail {
 
@@ -273,7 +276,17 @@ mlir::ConversionTarget newConverterDefinedTarget(
   auto inserter = [&](auto... opClasses) {
     target.addDynamicallyLegalOp<decltype(opClasses)...>([&tyConv,
                                                           &checks...](mlir::Operation *op) {
-      return defaultLegalityCheck(tyConv, op) && (runCheck<AdditionalChecks>(op, checks) && ...);
+      LLVM_DEBUG(if (op) {
+        llvm::dbgs() << "[newConverterDefinedTarget] checking legality of ";
+        op->dump();
+      });
+      auto legality =
+          defaultLegalityCheck(tyConv, op) && (runCheck<AdditionalChecks>(op, checks) && ...);
+
+      LLVM_DEBUG(if (legality) { llvm::dbgs() << "[newConverterDefinedTarget] is legal\n"; } else {
+        llvm::dbgs() << "[newConverterDefinedTarget] is not legal\n";
+      });
+      return legality;
     });
   };
   std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
@@ -283,3 +296,5 @@ mlir::ConversionTarget newConverterDefinedTarget(
 }
 
 } // namespace llzk::polymorphic::detail
+
+#undef DEBUG_TYPE

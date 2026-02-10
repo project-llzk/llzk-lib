@@ -1,0 +1,12 @@
+ module attributes {llzk.lang} {
+    struct.def @Foo<[@N]> {
+      struct.member @x : !array.type<@N x !felt.type>
+      function.def @compute() -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
+        %self = struct.new : <@Foo<[@N]>>
+        function.return %self : !struct.type<@Foo<[@N]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>) attributes {function.allow_constraint} {
+        function.return
+      }
+    }
+  }
