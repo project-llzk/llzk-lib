@@ -820,7 +820,8 @@ SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
 }
 
 Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {
-  FailureOr<SymbolLookupResult<FuncDefOp>> res = llzk::resolveCallable<FuncDefOp>(*symbolTable, *this);
+  FailureOr<SymbolLookupResult<FuncDefOp>> res =
+      llzk::resolveCallable<FuncDefOp>(*symbolTable, *this);
   if (LogicalResult(res).failed() || res->isManaged()) {
     return nullptr;
   }
