@@ -67,9 +67,12 @@ public:
   }
 
   ChangeResult join(const AbstractDenseLattice &rhs) override {
-    const auto &other = static_cast<const PredecessorLattice &>(rhs);
+    const auto *other = dynamic_cast<const PredecessorLattice *>(&rhs);
+    if (!other) {
+      llvm::report_fatal_error("wrong lattice type provided for join");
+    }
     ChangeResult r = ChangeResult::NoChange;
-    for (auto &[op, preds] : other.predecessors) {
+    for (auto &[op, preds] : other->predecessors) {
       for (auto pred : preds) {
         r |= visit(op, pred);
       }
