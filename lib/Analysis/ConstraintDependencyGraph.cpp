@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
-#include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -18,6 +17,7 @@
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 #include <mlir/IR/Value.h>
 
 #include <llvm/Support/Debug.h>
@@ -39,7 +39,7 @@ using namespace function;
 /* SourceRefAnalysis */
 
 void SourceRefAnalysis::visitCallControlFlowTransfer(
-    mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
+    CallOpInterface call, mlir::dataflow::CallControlFlowAction action,
     const SourceRefLattice &before, SourceRefLattice *after
 ) {
   LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitCallControlFlowTransfer: " << call << '\n');
@@ -61,7 +61,7 @@ void SourceRefAnalysis::visitCallControlFlowTransfer(
   /// `action == CallControlFlowAction::Enter` indicates that:
   ///   - `before` is the state before the call operation;
   ///   - `after` is the state at the beginning of the callee entry block;
-  if (action == dataflow::CallControlFlowAction::EnterCallee) {
+  if (action == mlir::dataflow::CallControlFlowAction::EnterCallee) {
     // We skip updating the incoming lattice for function calls,
     // as SourceRefs are relative to the containing function/struct, so we don't need to pollute
     // the callee with the callers values.
@@ -74,7 +74,7 @@ void SourceRefAnalysis::visitCallControlFlowTransfer(
   /// `action == CallControlFlowAction::Exit` indicates that:
   ///   - `before` is the state at the end of a callee exit block;
   ///   - `after` is the state after the call operation.
-  else if (action == dataflow::CallControlFlowAction::ExitCallee) {
+  else if (action == mlir::dataflow::CallControlFlowAction::ExitCallee) {
     // Get the argument values of the lattice by getting the state as it would
     // have been for the callsite.
     const SourceRefLattice *beforeCall = getLattice(getProgramPointBefore(call));
@@ -125,8 +125,8 @@ void SourceRefAnalysis::visitCallControlFlowTransfer(
   }
 }
 
-mlir::LogicalResult SourceRefAnalysis::visitOperation(
-    mlir::Operation *op, const SourceRefLattice &before, SourceRefLattice *after
+LogicalResult SourceRefAnalysis::visitOperation(
+    Operation *op, const SourceRefLattice &before, SourceRefLattice *after
 ) {
   LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitOperation: " << *op << '\n');
   // Collect the references that are made by the operands to `op`.
@@ -201,11 +201,11 @@ mlir::LogicalResult SourceRefAnalysis::visitOperation(
 }
 
 // Perform a standard union of operands into the results value.
-mlir::ChangeResult SourceRefAnalysis::fallbackOpUpdate(
-    mlir::Operation *op, const SourceRefLattice::ValueMap &operandVals,
-    const SourceRefLattice &before, SourceRefLattice *after
+ChangeResult SourceRefAnalysis::fallbackOpUpdate(
+    Operation *op, const SourceRefLattice::ValueMap &operandVals, const SourceRefLattice &before,
+    SourceRefLattice *after
 ) {
-  auto updated = mlir::ChangeResult::NoChange;
+  auto updated = ChangeResult::NoChange;
   for (auto res : op->getResults()) {
     auto cur = before.getOrDefault(res);
 
@@ -278,8 +278,8 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
 
 /* ConstraintDependencyGraph */
 
-mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
-    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
+FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
+    ModuleOp m, StructDefOp s, DataFlowSolver &solver, AnalysisManager &am,
     const CDGAnalysisContext &ctx
 ) {
   ConstraintDependencyGraph cdg(m, s, ctx);
