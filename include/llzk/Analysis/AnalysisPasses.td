@@ -108,9 +108,10 @@ def SymbolUseGraphPrinterPass : LLZKPass<"llzk-print-symbol-use-graph"> {
   let options = [OutputStreamOption, SaveDotGraphOption];
 }
 
-def TestAnalysisPass : LLZKPass<"llzk-test-pass"> {
-  let summary = "Print the results from the test analysis.";
-  let constructor = "llzk::createTestAnalysisPass()";
+def PredecessorAnalysisPass : LLZKPass<"llzk-predecessor-pass"> {
+  let summary = "Print the predecessors of all operations.";
+  let constructor = "llzk::createPredecessorAnalysisPass()";
+  let options = [OutputStreamOption];
 }
 
 #endif // LLZK_ANALYSIS_TD
