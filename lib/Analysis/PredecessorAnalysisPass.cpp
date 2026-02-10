@@ -130,7 +130,7 @@ class PredecessorAnalysis
 public:
   using Base = DenseForwardDataFlowAnalysis<PredecessorLattice>;
 
-  PredecessorAnalysis(DataFlowSolver &solver, raw_ostream &ro) : Base(solver), os(ro) {}
+  PredecessorAnalysis(DataFlowSolver &s, raw_ostream &ro) : Base(s), os(ro) {}
 
   LogicalResult visitOperation(
       Operation *op, const PredecessorLattice &before, PredecessorLattice *after
