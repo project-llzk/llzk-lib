@@ -10,9 +10,10 @@
 #pragma once
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
-#include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Util/ErrorHelper.h"
+
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 
 #include <llvm/ADT/PointerUnion.h>
 
@@ -86,7 +87,7 @@ protected:
 };
 
 /// A lattice for use in dense analysis.
-class SourceRefLattice : public dataflow::AbstractDenseLattice {
+class SourceRefLattice : public mlir::dataflow::AbstractDenseLattice {
 public:
   // mlir::Value is used for read-like operations that create references in their results,
   // mlir::Operation* is used for write-like operations that reference values as their destinations

@@ -212,7 +212,7 @@ protected:
   /// in the `ModuleOp` that is being subjected to this analysis.
   /// @param am The module's analysis manager.
   void constructChildAnalyses(mlir::AnalysisManager &am) {
-    dataflow::markAllOpsAsLive(solver, modOp);
+    dataflow::loadRequiredAnalyses(solver);
 
     // The analysis is run at the module level so that lattices are computed
     // for global functions as well.
