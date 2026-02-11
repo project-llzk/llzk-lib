@@ -502,8 +502,6 @@ class StructCloner {
   FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> typeAtCallerParams) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   attempting clone of " << typeAtCaller << '\n');
     // Find the StructDefOp for the original StructType
-    // TODO: Make report missing configurable s.t. it reports the missing types where it makes
-    // sense.
     FailureOr<SymbolLookupResult<StructDefOp>> r =
         typeAtCaller.getDefinition(symTables, rootMod, reportMissing);
     if (failed(r)) {
