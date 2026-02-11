@@ -509,7 +509,7 @@ protected:
 struct KnownTargetVerifier : public CallOpVerifier {
   KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncDefOp> &&tgtRes)
       : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        includeSymNames(tgtRes.getIncludeSymNames()) {}
+        includeSymNames(tgtRes.getNamespace()) {}
 
   LogicalResult verifyTargetAttributes() override {
     return CallOpVerifier::verifyTargetAttributesMatch(tgt);

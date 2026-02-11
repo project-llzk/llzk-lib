@@ -21,6 +21,7 @@
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 
 #include <variant>
@@ -40,20 +41,22 @@ public:
 
   SymbolLookupResultUntyped(const SymbolLookupResultUntyped &other)
       : op(other.op), managedResources(other.managedResources),
-        includeSymNameStack(other.includeSymNameStack) {}
+        includeSymNameStack(other.includeSymNameStack), namespaceStack(other.namespaceStack) {}
   template <typename T> SymbolLookupResultUntyped(const SymbolLookupResult<T> &other);
 
   SymbolLookupResultUntyped &operator=(const SymbolLookupResultUntyped &other) {
     this->op = other.op;
     this->managedResources = other.managedResources;
     this->includeSymNameStack = other.includeSymNameStack;
+    this->namespaceStack = other.namespaceStack;
     return *this;
   }
   template <typename T> SymbolLookupResultUntyped &operator=(const SymbolLookupResult<T> &other);
 
   SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
       : op(other.op), managedResources(std::move(other.managedResources)),
-        includeSymNameStack(std::move(other.includeSymNameStack)) {
+        includeSymNameStack(std::move(other.includeSymNameStack)),
+        namespaceStack(std::move(other.namespaceStack)) {
     other.op = nullptr;
   }
   template <typename T> SymbolLookupResultUntyped(SymbolLookupResult<T> &&other);
@@ -64,6 +67,7 @@ public:
       other.op = nullptr;
       this->managedResources = std::move(other.managedResources);
       this->includeSymNameStack = std::move(other.includeSymNameStack);
+      this->namespaceStack = std::move(other.namespaceStack);
     }
     return *this;
   }
@@ -82,6 +86,10 @@ public:
   /// Return the stack of symbol names from the IncludeOp that were traversed to load this result.
   std::vector<llvm::StringRef> getIncludeSymNames() const { return includeSymNameStack; }
 
+  /// Return the stack of symbol names from either IncludeOp or ModuleOp that were traversed to load
+  /// this result.
+  llvm::ArrayRef<llvm::StringRef> getNamespace() const { return namespaceStack; }
+
   /// Return 'true' if at least one IncludeOp was traversed to load this result.
   bool viaInclude() const { return !includeSymNameStack.empty(); }
 
@@ -99,6 +107,12 @@ public:
   /// Adds the symbol name from the IncludeOp that caused the module to be loaded.
   void trackIncludeAsName(llvm::StringRef includeOpSymName);
 
+  /// Adds the symbol name from an IncludeOp or ModuleOp where the op is contained.
+  void pushNamespace(llvm::StringRef symName);
+
+  /// Adds the given namespace to the beginning of this result's namespace.
+  void prependNamespace(llvm::ArrayRef<llvm::StringRef> ns);
+
   bool operator==(const SymbolLookupResultUntyped &rhs) const { return op == rhs.op; }
 
 private:
@@ -108,6 +122,9 @@ private:
   ManagedResources managedResources;
   /// Stack of symbol names from the IncludeOp that were traversed in order to load the Operation.
   std::vector<llvm::StringRef> includeSymNameStack;
+  /// Stack of symbol names from the IncludeOp or ModuleOp that were traversed in order to load the
+  /// Operation.
+  std::vector<llvm::StringRef> namespaceStack;
 
   friend class Within;
 };
@@ -128,6 +145,13 @@ public:
 
   /// Return the stack of symbol names from the IncludeOp that were traversed to load this result.
   std::vector<llvm::StringRef> getIncludeSymNames() const { return inner.getIncludeSymNames(); }
+
+  /// Return the stack of symbol names from either IncludeOp or ModuleOp that were traversed to load
+  /// this result.
+  llvm::ArrayRef<llvm::StringRef> getNamespace() const { return inner.getNamespace(); }
+
+  /// Adds the given namespace to the beginning of this result's namespace.
+  void prependNamespace(llvm::ArrayRef<llvm::StringRef> ns) { inner.prependNamespace(ns); }
 
   /// Return 'true' if at least one IncludeOp was traversed to load this result.
   bool viaInclude() const { return inner.viaInclude(); }

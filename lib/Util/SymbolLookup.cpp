@@ -20,6 +20,12 @@
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
 
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Debug.h>
+
+#define DEBUG_TYPE "llzk-symbol-lookup"
+
 namespace llzk {
 using namespace mlir;
 using namespace include;
@@ -36,7 +42,13 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
       for (auto it = symbolsFound.rbegin(); it != symbolsFound.rend(); ++it) {
         Operation *op = *it;
         if (op->hasAttr(LANG_ATTR_NAME)) {
-          ret.trackIncludeAsName(op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()));
+          auto symName = op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName());
+          ret.pushNamespace(symName);
+          if (!llvm::isa<ModuleOp>(op)) {
+            LLVM_DEBUG({ llvm::dbgs() << "[lookupSymbolRec]   tracking op as include\n"; });
+
+            ret.trackIncludeAsName(symName);
+          }
         }
       }
       return ret;
@@ -56,7 +68,9 @@ lookupSymbolRec(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *
         auto result = lookupSymbolRec(external, getTailAsSymbolRefAttr(symbol), otherMod->get());
         if (result) {
           result.manage(std::move(*otherMod), std::move(external));
-          result.trackIncludeAsName(rootOpInc.getSymName());
+          auto symName = rootOpInc.getSymName();
+          result.pushNamespace(symName);
+          result.trackIncludeAsName(symName);
         }
         return result;
       }
@@ -100,6 +114,16 @@ void SymbolLookupResultUntyped::manage(
 /// Adds the symbol name from the IncludeOp that caused the module to be loaded.
 void SymbolLookupResultUntyped::trackIncludeAsName(llvm::StringRef includeOpSymName) {
   includeSymNameStack.push_back(includeOpSymName);
+}
+
+void SymbolLookupResultUntyped::pushNamespace(llvm::StringRef symName) {
+  namespaceStack.push_back(symName);
+}
+
+void SymbolLookupResultUntyped::prependNamespace(llvm::ArrayRef<llvm::StringRef> ns) {
+  std::vector<llvm::StringRef> newNamespace = ns;
+  newNamespace.insert(newNamespace.end(), namespaceStack.begin(), namespaceStack.end());
+  namespaceStack = newNamespace;
 }
 
 //===------------------------------------------------------------------===//

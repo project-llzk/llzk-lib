@@ -377,17 +377,28 @@ LogicalResult verifyParamsOfType(
   // Rather than immediately returning on failure, we check all params and aggregate to provide as
   // many errors are possible in a single verifier run.
   LogicalResult paramCheckResult = success();
+  LLVM_DEBUG({
+    llvm::dbgs() << "[verifyParamOfType] parameterizedType = " << parameterizedType << '\n';
+  });
   for (Attribute attr : tyParams) {
+    LLVM_DEBUG({ llvm::dbgs() << "[verifyParamOfType]   checking attribute " << attr << '\n'; });
     assertValidAttrForParamOfType(attr);
     if (SymbolRefAttr symRefParam = llvm::dyn_cast<SymbolRefAttr>(attr)) {
       if (failed(verifyParamOfType(tables, symRefParam, parameterizedType, origin))) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[verifyParamOfType]     failed to verify symbol attribute\n";
+        });
         paramCheckResult = failure();
       }
     } else if (TypeAttr typeParam = llvm::dyn_cast<TypeAttr>(attr)) {
       if (failed(verifyTypeResolution(tables, origin, typeParam.getValue()))) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[verifyParamOfType]     failed to verify type attribute\n";
+        });
         paramCheckResult = failure();
       }
     }
+    LLVM_DEBUG({ llvm::dbgs() << "[verifyParamOfType]     verified attribute\n"; });
     // IntegerAttr and AffineMapAttr cannot contain symbol references
   }
   return paramCheckResult;
@@ -400,7 +411,7 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
     return failure();
   }
   StructDefOp defForType = res.value().get();
-  if (!structTypesUnify(ty, defForType.getType({}), res->getIncludeSymNames())) {
+  if (!structTypesUnify(ty, defForType.getType({}), res->getNamespace())) {
     return origin->emitError()
         .append(
             "Cannot unify parameters of type ", ty, " with parameters of '",

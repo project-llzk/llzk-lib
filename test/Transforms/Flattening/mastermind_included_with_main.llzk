@@ -28,7 +28,7 @@ module attributes {llzk.lang} {
     struct.member @codeHash : !struct.type<@Mastermind::@SetCode<[6, 4]>>
     struct.member @codemakerCode : !struct.type<@Mastermind::@Pegs<[4]>> {column}
     struct.member @codemakerNonce : !struct.type<@Mastermind::@Nonce<[]>> {column}
-    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_non_native_field_ops,function.allow_witness} {
       %felt_const_3 = felt.const 3
       %felt_const_4 = felt.const 4
       %felt_const_1 = felt.const 1
@@ -89,7 +89,7 @@ module attributes {llzk.lang} {
       struct.writem %self[@"$super"] = %39 : <@Main<[]>>, !struct.type<@Mastermind::@Component<[]>>
       function.return %self : !struct.type<@Main<[]>>
     }
-    function.def @constrain(%arg0: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
+    function.def @constrain(%arg0: !struct.type<@Main<[]>>) attributes {function.allow_non_native_field_ops,function.allow_constraint} {
       %felt_const_3 = felt.const 3
       %felt_const_4 = felt.const 4
       %felt_const_1 = felt.const 1

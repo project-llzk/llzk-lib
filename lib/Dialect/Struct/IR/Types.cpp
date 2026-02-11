@@ -43,18 +43,23 @@ LogicalResult StructType::verify(
   return verifyStructTypeParams(wrapNonNullableInFlightDiagnostic(emitError), params);
 }
 
-FailureOr<SymbolLookupResult<StructDefOp>>
-StructType::getDefinition(SymbolTableCollection &symbolTable, Operation *op) const {
+FailureOr<SymbolLookupResult<StructDefOp>> StructType::getDefinition(
+    SymbolTableCollection &symbolTable, Operation *op, bool reportMissing
+) const {
   // First ensure this StructType passes verification
   ArrayAttr typeParams = this->getParams();
   if (failed(StructType::verify([op] { return op->emitError(); }, getNameRef(), typeParams))) {
     return failure();
   }
   // Perform lookup and ensure the symbol references a StructDefOp
-  auto res = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op);
+  auto res = lookupTopLevelSymbol<StructDefOp>(symbolTable, getNameRef(), op, reportMissing);
   if (failed(res) || !res.value()) {
-    return op->emitError() << "could not find '" << StructDefOp::getOperationName() << "' named \""
-                           << getNameRef() << '"';
+    if (reportMissing) {
+      return op->emitError() << "could not find '" << StructDefOp::getOperationName()
+                             << "' named \"" << getNameRef() << '"';
+    } else {
+      return failure();
+    }
   }
   // If this StructType contains parameters, make sure they match the number from the StructDefOp.
   if (typeParams) {

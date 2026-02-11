@@ -260,6 +260,7 @@ class StructCloner {
   ConversionTracker &tracker_;
   ModuleOp rootMod;
   SymbolTableCollection symTables;
+  bool reportMissing = true;
 
   class MappedTypeConverter : public TypeConverter {
     StructType origTy;
@@ -362,6 +363,7 @@ class StructCloner {
 
     LogicalResult
     matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+      LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
       auto res = this->paramNameToValue.find(getNameAttr(op));
       if (res == this->paramNameToValue.end()) {
         LLVM_DEBUG(llvm::dbgs() << "[StructCloner] no instantiation for " << op << '\n');
@@ -486,6 +488,9 @@ class StructCloner {
     LogicalResult matchAndRewrite(
         MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
     ) const override {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[ClonedStructMemberReadOpPattern]   MemberReadOp: " << op << '\n';
+      );
       if (tableOffsetIsntSymbol(op)) {
         return failure();
       }
@@ -495,12 +500,15 @@ class StructCloner {
   };
 
   FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> typeAtCallerParams) {
+    LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   attempting clone of " << typeAtCaller << '\n');
     // Find the StructDefOp for the original StructType
-    FailureOr<SymbolLookupResult<StructDefOp>> r = typeAtCaller.getDefinition(symTables, rootMod);
+    FailureOr<SymbolLookupResult<StructDefOp>> r =
+        typeAtCaller.getDefinition(symTables, rootMod, reportMissing);
     if (failed(r)) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: cannot find StructDefOp \n");
       return failure(); // getDefinition() already emits a sufficient error message
     }
+    LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   found definition\n";);
 
     StructDefOp origStruct = r->get();
     StructType typeAtDef = origStruct.getType();
@@ -568,11 +576,25 @@ class StructCloner {
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
     // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
     // use the remaining non-concrete parameters from the original type.
-    StructType newRemoteType = newStruct.getType(reducedCallerParams);
+    StructType newLocalType = newStruct.getType(reducedCallerParams);
+    auto typeAtCallerSym = typeAtCaller.getNameRef();
+    // Copy the leafs of the type at the caller.
+    SmallVector<FlatSymbolRefAttr> newLeafs(typeAtCallerSym.getNestedReferences());
+    auto rootSym = typeAtCallerSym.getRootReference();
+    if (!newLeafs.empty()) {
+      // Replace the last one with the new name.
+      newLeafs.back() = FlatSymbolRefAttr::get(newLocalType.getNameRef().getLeafReference());
+    } else {
+      // If there's only one symbol then write the new name on the root.
+      rootSym = newLocalType.getNameRef().getLeafReference();
+    }
+    StructType newRemoteType =
+        StructType::get(SymbolRefAttr::get(rootSym, newLeafs), newLocalType.getParams());
     LLVM_DEBUG({
       llvm::dbgs() << "[StructCloner]   original def type: " << typeAtDef << '\n';
       llvm::dbgs() << "[StructCloner]   cloned def type: " << newStruct.getType() << '\n';
       llvm::dbgs() << "[StructCloner]   original remote type: " << typeAtCaller << '\n';
+      llvm::dbgs() << "[StructCloner]   cloned local type: " << newLocalType << '\n';
       llvm::dbgs() << "[StructCloner]   cloned remote type: " << newRemoteType << '\n';
     });
 
@@ -589,7 +611,7 @@ class StructCloner {
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedStructConstReadOpPattern>(
-        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newRemoteType)
+        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
     );
     patterns.add<ClonedStructMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
@@ -611,11 +633,19 @@ public:
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: nullptr for params \n");
     return failure();
   }
+
+  void enableReportMissing() { reportMissing = true; }
+
+  void disableReportMissing() { reportMissing = false; }
 };
+
+class DisableReportMissing;
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   ConversionTracker &tracker_;
   StructCloner cloner;
+
+  friend DisableReportMissing;
 
 public:
   ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
@@ -624,6 +654,10 @@ public:
     addConversion([](Type inputTy) { return inputTy; });
 
     addConversion([this](StructType inputTy) -> StructType {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[ParameterizedStructUseTypeConverter] attempting conversion of "
+                       << inputTy << '\n';
+      );
       // First check for a cached entry
       if (auto opt = tracker_.getInstantiation(inputTy)) {
         return opt.value();
@@ -726,10 +760,24 @@ public:
   }
 };
 
+/// Disables reporting of missing struct symbols during legality checks to avoid showing error
+/// diagnostics that are not actually errors.
+class DisableReportMissing : public LegalityCheckCallback {
+  ParameterizedStructUseTypeConverter &tyConv;
+
+public:
+  explicit DisableReportMissing(ParameterizedStructUseTypeConverter &tc) : tyConv(tc) {}
+
+  void checkStarted() override { tyConv.cloner.disableReportMissing(); }
+
+  void checkEnded(bool) override { tyConv.cloner.enableReportMissing(); }
+};
+
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
-  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
+  DisableReportMissing drm(tyConv);
+  ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));
@@ -1618,11 +1666,19 @@ struct FromEraseSet : public CleanupBase {
       : CleanupBase(root, symDefTree, symUseGraph) {
     // Convert the set of paths targeted for erasure into a set of the StructDefOp
     for (SymbolRefAttr path : tryToErasePaths) {
+      LLVM_DEBUG(llvm::dbgs() << "[FromEraseSet] path to erase: " << path << '\n';);
       Operation *lookupFrom = rootMod.getOperation();
       auto res = lookupSymbolIn<StructDefOp>(tables, path, lookupFrom, lookupFrom);
       assert(succeeded(res) && "inputs must be valid StructDefOp references");
       if (!res->viaInclude()) { // do not remove if it's from another source file
-        tryToErase.insert(res->get());
+        auto op = res->get();
+        LLVM_DEBUG(llvm::dbgs() << "[FromEraseSet]   added op to the erase set: " << op << '\n';);
+        tryToErase.insert(op);
+      } else {
+        LLVM_DEBUG(
+            llvm::dbgs() << "[FromEraseSet]   ignored op because it comes from an include: "
+                         << res->get() << '\n';
+        );
       }
     }
   }
@@ -1798,6 +1854,10 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       }
       tracker.resetModifiedFlag();
 
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 1: struct instantiation\n";
+      });
       // Find calls to "compute()" that return a parameterized struct and replace it to call a
       // flattened version of the struct that has parameters replaced with the constant values.
       // Create the necessary instantiated/flattened struct in the same location as the original.
@@ -1806,18 +1866,30 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
         return failure();
       }
 
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 2: loop unrolling\n";
+      });
       // Unroll loops with known iterations.
       if (failed(Step2_Unroll::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
         return failure();
       }
 
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 3: affine maps instantiation\n";
+      });
       // Instantiate affine_map parameters of StructType and ArrayType.
       if (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
         return failure();
       }
 
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 4: type propagation\n";
+      });
       // Propagate updated types using the semantics of various ops.
       if (failed(Step4_PropagateTypes::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while propagating instantiated types\n";
@@ -1832,15 +1904,20 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
+    LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
     // Perform cleanup according to the 'cleanupMode' option.
     switch (cleanupMode) {
     case StructCleanupMode::MainAsRoot:
+      LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);
     case StructCleanupMode::ConcreteAsRoot:
+      LLVM_DEBUG(llvm::dbgs() << "(concrete structs mode)\n");
       return eraseUnreachableFromConcreteStructs(modOp);
     case StructCleanupMode::Preimage:
+      LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
     case StructCleanupMode::Disabled:
+      LLVM_DEBUG(llvm::dbgs() << "(disabled)\n");
       return success();
     }
     llvm_unreachable("switch cases cover all options");
@@ -1858,6 +1935,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     );
     LogicalResult res = cleaner.eraseUnusedStructs();
     if (succeeded(res)) {
+      LLVM_DEBUG(llvm::dbgs() << "[Cleanup(preimage)] success\n";);
       // Warn about any structs that were instantiated but still have uses elsewhere.
       const SymbolUseGraph *useGraph = nullptr;
       rootMod->walk([this, &cleaner, &useGraph](StructDefOp op) {
@@ -1873,6 +1951,8 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
         }
         return WalkResult::skip(); // StructDefOp cannot be nested
       });
+    } else {
+      LLVM_DEBUG(llvm::dbgs() << "[Cleanup(preimage)] failed\n";);
     }
     return res;
   }

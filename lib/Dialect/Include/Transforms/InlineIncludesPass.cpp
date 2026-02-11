@@ -18,6 +18,8 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/Support/LogicalResult.h>
+
 // Include the generated base pass class definitions.
 namespace llzk::include {
 #define GEN_PASS_DEF_INLINEINCLUDESPASS
@@ -57,6 +59,7 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
             FailureOr<ModuleOp> result = incOp.inlineAndErase();
             if (succeeded(result)) {
               ModuleOp newMod = std::move(result.value());
+              assert(succeeded(newMod.verify()) && "newMod must pass verification");
               nextLevel.push_back(make_pair(newMod, includeStack));
             }
           }
@@ -67,6 +70,10 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
       currLevel = nextLevel;
     } while (!currLevel.empty());
 
+    if (failed(getOperation().verify())) {
+      signalPassFailure();
+      return;
+    }
     markAllAnalysesPreserved();
   }
 };
