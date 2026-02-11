@@ -126,6 +126,10 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
   Block *entryBlock = productFunc.addEntryBlock();
   funcBuilder.setInsertionPointToStart(entryBlock);
 
+  productFunc.setAllowNonNativeFieldOpsAttr(
+      compute.hasAllowNonNativeFieldOpsAttr() || constrain.hasAllowNonNativeFieldOpsAttr()
+  );
+
   // ...with the right arguments
   llvm::SmallVector<Value> args {productFunc.getArguments()};
 
