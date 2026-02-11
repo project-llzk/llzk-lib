@@ -1,0 +1,294 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=LessThan_1" %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@LessThan_1<[]>>} {
+  struct.def @Num2Bits_0<[]> {
+    struct.member @out : !array.type<33 x !felt.type> {llzk.pub}
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@Num2Bits_0<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@Num2Bits_0<[]>>
+      %nondet = llzk.nondet : !array.type<33 x !felt.type>
+      %felt_const_33 = felt.const  33
+      %felt_const_0 = felt.const  0
+      %felt_const_1 = felt.const  1
+      %felt_const_0_0 = felt.const  0
+      %0:3 = scf.while (%arg1 = %felt_const_1, %arg2 = %felt_const_0, %arg3 = %felt_const_0_0) : (!felt.type, !felt.type, !felt.type) -> (!felt.type, !felt.type, !felt.type) {
+        %felt_const_33_1 = felt.const  33
+        %1 = bool.cmp lt(%arg3, %felt_const_33_1)
+        scf.condition(%1) %arg1, %arg2, %arg3 : !felt.type, !felt.type, !felt.type
+      } do {
+      ^bb0(%arg1: !felt.type, %arg2: !felt.type, %arg3: !felt.type):
+        %1 = felt.shr %arg0, %arg3 : !felt.type, !felt.type
+        %felt_const_1_1 = felt.const  1
+        %2 = felt.bit_and %1, %felt_const_1_1 : !felt.type, !felt.type
+        %3 = cast.toindex %arg3
+        array.write %nondet[%3] = %2 : <33 x !felt.type>, !felt.type
+        %4 = cast.toindex %arg3
+        %5 = array.read %nondet[%4] : <33 x !felt.type>, !felt.type
+        %6 = felt.mul %5, %felt_const_1 : !felt.type, !felt.type
+        %7 = felt.add %arg2, %6 : !felt.type, !felt.type
+        %8 = felt.add %arg1, %arg1 : !felt.type, !felt.type
+        %felt_const_1_2 = felt.const  1
+        %9 = felt.add %arg3, %felt_const_1_2 : !felt.type, !felt.type
+        scf.yield %8, %7, %9 : !felt.type, !felt.type, !felt.type
+      }
+      struct.writem %self[@out] = %nondet : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type>
+      function.return %self : !struct.type<@Num2Bits_0<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@Num2Bits_0<[]>>, %arg1: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %0 = struct.readm %arg0[@out] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type>
+      %felt_const_33 = felt.const  33
+      %felt_const_0 = felt.const  0
+      %felt_const_1 = felt.const  1
+      %felt_const_0_0 = felt.const  0
+      %1:3 = scf.while (%arg2 = %felt_const_0_0, %arg3 = %felt_const_1, %arg4 = %felt_const_0) : (!felt.type, !felt.type, !felt.type) -> (!felt.type, !felt.type, !felt.type) {
+        %felt_const_33_1 = felt.const  33
+        %2 = bool.cmp lt(%arg2, %felt_const_33_1)
+        scf.condition(%2) %arg2, %arg3, %arg4 : !felt.type, !felt.type, !felt.type
+      } do {
+      ^bb0(%arg2: !felt.type, %arg3: !felt.type, %arg4: !felt.type):
+        %2 = cast.toindex %arg2
+        %3 = array.read %0[%2] : <33 x !felt.type>, !felt.type
+        %4 = cast.toindex %arg2
+        %5 = array.read %0[%4] : <33 x !felt.type>, !felt.type
+        %felt_const_1_1 = felt.const  1
+        %6 = felt.sub %5, %felt_const_1_1 : !felt.type, !felt.type
+        %7 = felt.mul %3, %6 : !felt.type, !felt.type
+        %felt_const_0_2 = felt.const  0
+        constrain.eq %7, %felt_const_0_2 : !felt.type, !felt.type
+        %8 = cast.toindex %arg2
+        %9 = array.read %0[%8] : <33 x !felt.type>, !felt.type
+        %10 = felt.mul %9, %felt_const_1 : !felt.type, !felt.type
+        %11 = felt.add %arg4, %10 : !felt.type, !felt.type
+        %12 = felt.add %arg3, %arg3 : !felt.type, !felt.type
+        %felt_const_1_3 = felt.const  1
+        %13 = felt.add %arg2, %felt_const_1_3 : !felt.type, !felt.type
+        scf.yield %13, %12, %11 : !felt.type, !felt.type, !felt.type
+      }
+      constrain.eq %1#2, %arg1 : !felt.type, !felt.type
+      function.return
+    }
+  }
+  struct.def @LessThan_1<[]> {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @n2b : !struct.type<@Num2Bits_0<[]>>
+    struct.member @n2b$inputs : !pod.type<[@in: !felt.type]>
+    function.def @compute(%arg0: !array.type<2 x !felt.type>) -> !struct.type<@LessThan_1<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@LessThan_1<[]>>
+      %c1 = arith.constant 1 : index
+      %pod = pod.new { @count = %c1 }  : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>
+      %pod_0 = pod.new : <[@in: !felt.type]>
+      %felt_const_32 = felt.const  32
+      %felt_const_1 = felt.const  1
+      %felt_const_0 = felt.const  0
+      %0 = bool.cmp ne(%felt_const_1, %felt_const_0)
+      bool.assert %0, "assertion failed"
+      %felt_const_0_1 = felt.const  0
+      %1 = cast.toindex %felt_const_0_1
+      %2 = array.read %arg0[%1] : <2 x !felt.type>, !felt.type
+      %felt_const_4294967296 = felt.const  4294967296
+      %3 = felt.add %2, %felt_const_4294967296 : !felt.type, !felt.type
+      %felt_const_1_2 = felt.const  1
+      %4 = cast.toindex %felt_const_1_2
+      %5 = array.read %arg0[%4] : <2 x !felt.type>, !felt.type
+      %6 = felt.sub %3, %5 : !felt.type, !felt.type
+      pod.write %pod_0[@in] = %6 : <[@in: !felt.type]>, !felt.type
+      %7 = pod.read %pod[@count] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, index
+      %c1_3 = arith.constant 1 : index
+      %8 = arith.subi %7, %c1_3 : index
+      pod.write %pod[@count] = %8 : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, index
+      %c0 = arith.constant 0 : index
+      %9 = arith.cmpi eq, %8, %c0 : index
+      scf.if %9 {
+        %16 = pod.read %pod_0[@in] : <[@in: !felt.type]>, !felt.type
+        %17 = function.call @Num2Bits_0::@compute(%16) : (!felt.type) -> !struct.type<@Num2Bits_0<[]>> 
+        pod.write %pod[@comp] = %17 : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, !struct.type<@Num2Bits_0<[]>>
+      } else {
+      }
+      %felt_const_1_4 = felt.const  1
+      %10 = pod.read %pod[@comp] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, !struct.type<@Num2Bits_0<[]>>
+      %11 = struct.readm %10[@out] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type>
+      %felt_const_32_5 = felt.const  32
+      %12 = cast.toindex %felt_const_32_5
+      %13 = array.read %11[%12] : <33 x !felt.type>, !felt.type
+      %14 = felt.sub %felt_const_1_4, %13 : !felt.type, !felt.type
+      struct.writem %self[@out] = %14 : <@LessThan_1<[]>>, !felt.type
+      struct.writem %self[@n2b$inputs] = %pod_0 : <@LessThan_1<[]>>, !pod.type<[@in: !felt.type]>
+      %15 = pod.read %pod[@comp] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, !struct.type<@Num2Bits_0<[]>>
+      struct.writem %self[@n2b] = %15 : <@LessThan_1<[]>>, !struct.type<@Num2Bits_0<[]>>
+      function.return %self : !struct.type<@LessThan_1<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@LessThan_1<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %0 = struct.readm %arg0[@out] : <@LessThan_1<[]>>, !felt.type
+      %1 = struct.readm %arg0[@n2b] : <@LessThan_1<[]>>, !struct.type<@Num2Bits_0<[]>>
+      %2 = struct.readm %arg0[@n2b$inputs] : <@LessThan_1<[]>>, !pod.type<[@in: !felt.type]>
+      %felt_const_32 = felt.const  32
+      %felt_const_1 = felt.const  1
+      %felt_const_0 = felt.const  0
+      %3 = bool.cmp ne(%felt_const_1, %felt_const_0)
+      bool.assert %3, "assertion failed"
+      %felt_const_0_0 = felt.const  0
+      %4 = cast.toindex %felt_const_0_0
+      %5 = array.read %arg1[%4] : <2 x !felt.type>, !felt.type
+      %felt_const_4294967296 = felt.const  4294967296
+      %6 = felt.add %5, %felt_const_4294967296 : !felt.type, !felt.type
+      %felt_const_1_1 = felt.const  1
+      %7 = cast.toindex %felt_const_1_1
+      %8 = array.read %arg1[%7] : <2 x !felt.type>, !felt.type
+      %9 = felt.sub %6, %8 : !felt.type, !felt.type
+      %10 = pod.read %2[@in] : <[@in: !felt.type]>, !felt.type
+      constrain.eq %10, %9 : !felt.type, !felt.type
+      %felt_const_1_2 = felt.const  1
+      %11 = struct.readm %1[@out] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type>
+      %felt_const_32_3 = felt.const  32
+      %12 = cast.toindex %felt_const_32_3
+      %13 = array.read %11[%12] : <33 x !felt.type>, !felt.type
+      %14 = felt.sub %felt_const_1_2, %13 : !felt.type, !felt.type
+      constrain.eq %0, %14 : !felt.type, !felt.type
+      %15 = pod.read %2[@in] : <[@in: !felt.type]>, !felt.type
+      function.call @Num2Bits_0::@constrain(%1, %15) : (!struct.type<@Num2Bits_0<[]>>, !felt.type) -> () 
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@LessThan_1<[]>>} {
+// CHECK-NEXT:    struct.def @Num2Bits_0<[]> {
+// CHECK-NEXT:      struct.member @out : !array.type<33 x !felt.type> {llzk.pub}
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Num2Bits_0<[]>> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Num2Bits_0<[]>> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<33 x !felt.type> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  33 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]]:3 = scf.while (%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_5]], %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_4]], %[[VAL_10:[0-9a-zA-Z_\.]+]] = %[[VAL_6]]) : (!felt.type, !felt.type, !felt.type) -> (!felt.type, !felt.type, !felt.type) {
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  33 {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_10]], %[[VAL_11]]) {product_source = "compute"}
+// CHECK-NEXT:          scf.condition(%[[VAL_12]]) {product_source = "compute"} %[[VAL_8]], %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type, !felt.type
+// CHECK-NEXT:        } do {
+// CHECK-NEXT:        ^bb0(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !felt.type):
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.shr %[[VAL_0]], %[[VAL_15]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[VAL_16]], %[[VAL_17]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_19:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_15]] {product_source = "compute"}
+// CHECK-NEXT:          array.write %[[VAL_2]]{{\[}}%[[VAL_19]]] = %[[VAL_18]] : <33 x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_15]] {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_20]]] : <33 x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_21]], %[[VAL_5]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_14]], %[[VAL_22]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_24:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_15]], %[[VAL_25]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          scf.yield {product_source = "compute"} %[[VAL_24]], %[[VAL_23]], %[[VAL_26]] : !felt.type, !felt.type, !felt.type
+// CHECK-NEXT:        } attributes {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@out] = %[[VAL_2]] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@out] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = felt.const  33 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]]:3 = scf.while (%[[VAL_33:[0-9a-zA-Z_\.]+]] = %[[VAL_31]], %[[VAL_34:[0-9a-zA-Z_\.]+]] = %[[VAL_30]], %[[VAL_35:[0-9a-zA-Z_\.]+]] = %[[VAL_29]]) : (!felt.type, !felt.type, !felt.type) -> (!felt.type, !felt.type, !felt.type) {
+// CHECK-NEXT:          %[[VAL_36:[0-9a-zA-Z_\.]+]] = felt.const  33 {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_37:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_33]], %[[VAL_36]]) {product_source = "constrain"}
+// CHECK-NEXT:          scf.condition(%[[VAL_37]]) {product_source = "constrain"} %[[VAL_33]], %[[VAL_34]], %[[VAL_35]] : !felt.type, !felt.type, !felt.type
+// CHECK-NEXT:        } do {
+// CHECK-NEXT:        ^bb0(%[[VAL_38:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_39:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_40:[0-9a-zA-Z_\.]+]]: !felt.type):
+// CHECK-NEXT:          %[[VAL_41:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_38]] {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_42:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_27]]{{\[}}%[[VAL_41]]] : <33 x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_43:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_38]] {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_44:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_27]]{{\[}}%[[VAL_43]]] : <33 x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_45:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_46:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_44]], %[[VAL_45]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_47:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_42]], %[[VAL_46]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_48:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:          constrain.eq %[[VAL_47]], %[[VAL_48]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_49:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_38]] {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_50:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_27]]{{\[}}%[[VAL_49]]] : <33 x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_51:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_50]], %[[VAL_30]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_52:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_40]], %[[VAL_51]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_53:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_39]], %[[VAL_39]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_54:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_55:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_38]], %[[VAL_54]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:          scf.yield {product_source = "constrain"} %[[VAL_55]], %[[VAL_53]], %[[VAL_52]] : !felt.type, !felt.type, !felt.type
+// CHECK-NEXT:        } attributes {product_source = "constrain"}
+// CHECK-NEXT:        constrain.eq %[[VAL_32]]#2, %[[VAL_0]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Num2Bits_0<[]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @LessThan_1<[]> {
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      struct.member @n2b : !struct.type<@Num2Bits_0<[]>>
+// CHECK-NEXT:      struct.member @n2b$inputs : !pod.type<[@in: !felt.type]>
+// CHECK-NEXT:      function.def @product(%[[VAL_56:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@LessThan_1<[]>> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1<[]>> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 1 : index
+// CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = pod.new { @count = %[[VAL_58]] }  : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_60:[0-9a-zA-Z_\.]+]] = pod.new : <[@in: !felt.type]> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_61:[0-9a-zA-Z_\.]+]] = felt.const  32 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_62:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_63:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_64:[0-9a-zA-Z_\.]+]] = bool.cmp ne(%[[VAL_62]], %[[VAL_63]]) {product_source = "compute"}
+// CHECK-NEXT:        bool.assert %[[VAL_64]], "assertion failed" {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_65:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_66:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_65]] {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_67:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_56]]{{\[}}%[[VAL_66]]] : <2 x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_68:[0-9a-zA-Z_\.]+]] = felt.const  4294967296 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_69:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_67]], %[[VAL_68]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_70:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_71:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_70]] {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_72:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_56]]{{\[}}%[[VAL_71]]] : <2 x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_73:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_69]], %[[VAL_72]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        pod.write %[[VAL_60]][@in] = %[[VAL_73]] : <[@in: !felt.type]>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_74:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_59]][@count] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, index {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_75:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 1 : index
+// CHECK-NEXT:        %[[VAL_76:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_74]], %[[VAL_75]] {product_source = "compute"} : index
+// CHECK-NEXT:        pod.write %[[VAL_59]][@count] = %[[VAL_76]] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, index {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_77:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 0 : index
+// CHECK-NEXT:        %[[VAL_78:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_76]], %[[VAL_77]] {product_source = "compute"} : index
+// CHECK-NEXT:        scf.if %[[VAL_78]] {
+// CHECK-NEXT:          %[[VAL_79:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_60]][@in] : <[@in: !felt.type]>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_80:[0-9a-zA-Z_\.]+]] = function.call @Num2Bits_0::@product(%[[VAL_79]]) : (!felt.type) -> !struct.type<@Num2Bits_0<[]>>
+// CHECK-NEXT:          pod.write %[[VAL_59]][@comp] = %[[VAL_80]] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, !struct.type<@Num2Bits_0<[]>> {product_source = "compute"}
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:        } {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_81:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_82:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_59]][@comp] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, !struct.type<@Num2Bits_0<[]>> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_83:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_82]][@out] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_84:[0-9a-zA-Z_\.]+]] = felt.const  32 {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_85:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_84]] {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_86:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_83]]{{\[}}%[[VAL_85]]] : <33 x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_87:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_81]], %[[VAL_86]] : !felt.type, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_57]][@out] = %[[VAL_87]] : <@LessThan_1<[]>>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_57]][@n2b$inputs] = %[[VAL_60]] : <@LessThan_1<[]>>, !pod.type<[@in: !felt.type]> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_88:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_59]][@comp] : <[@count: index, @comp: !struct.type<@Num2Bits_0<[]>>, @params: !pod.type<[]>]>, !struct.type<@Num2Bits_0<[]>> {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_57]][@n2b] = %[[VAL_88]] : <@LessThan_1<[]>>, !struct.type<@Num2Bits_0<[]>> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_89:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_57]][@out] : <@LessThan_1<[]>>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_90:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_57]][@n2b] : <@LessThan_1<[]>>, !struct.type<@Num2Bits_0<[]>> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_91:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_57]][@n2b$inputs] : <@LessThan_1<[]>>, !pod.type<[@in: !felt.type]> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_92:[0-9a-zA-Z_\.]+]] = felt.const  32 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_93:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_94:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_95:[0-9a-zA-Z_\.]+]] = bool.cmp ne(%[[VAL_93]], %[[VAL_94]]) {product_source = "constrain"}
+// CHECK-NEXT:        bool.assert %[[VAL_95]], "assertion failed" {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_96:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_97:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_96]] {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_98:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_56]]{{\[}}%[[VAL_97]]] : <2 x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_99:[0-9a-zA-Z_\.]+]] = felt.const  4294967296 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_100:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_98]], %[[VAL_99]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_101:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_102:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_101]] {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_103:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_56]]{{\[}}%[[VAL_102]]] : <2 x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_104:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_100]], %[[VAL_103]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_105:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_91]][@in] : <[@in: !felt.type]>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        constrain.eq %[[VAL_105]], %[[VAL_104]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_106:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_107:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_90]][@out] : <@Num2Bits_0<[]>>, !array.type<33 x !felt.type> {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_108:[0-9a-zA-Z_\.]+]] = felt.const  32 {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_109:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_108]] {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_110:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_107]]{{\[}}%[[VAL_109]]] : <33 x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_111:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_106]], %[[VAL_110]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        constrain.eq %[[VAL_89]], %[[VAL_111]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        %[[VAL_112:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_91]][@in] : <[@in: !felt.type]>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[VAL_57]] : !struct.type<@LessThan_1<[]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
