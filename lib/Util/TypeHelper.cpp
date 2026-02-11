@@ -635,14 +635,10 @@ struct UnifierImpl {
       const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, bool unifyDynamicSize = false
   ) {
     ArrayRef<Attribute> emptyParams;
-    // if (lhsParams && rhsParams) {
     return typeParamsUnify(
         lhsParams ? lhsParams.getValue() : emptyParams,
         rhsParams ? rhsParams.getValue() : emptyParams, unifyDynamicSize
     );
-    // }
-    // // When one or the other is null, they're only equivalent if both are null
-    // return !lhsParams && !rhsParams;
   }
 
   bool arrayTypesUnify(ArrayType lhs, ArrayType rhs) {
@@ -889,14 +885,12 @@ bool structTypesUnify(
 bool typesUnify(
     Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
 ) {
-
   return UnifierImpl(unifications, rhsReversePrefix).typesUnify(lhs, rhs);
 }
 
 bool isMoreConcreteUnification(
     Type oldTy, Type newTy, llvm::function_ref<bool(Type oldTy, Type newTy)> knownOldToNew
 ) {
-
   UnificationMap unifications;
   AffineInstantiations affineInstantiations;
   // Run type unification with the addition that affine map can become integer in the new type.

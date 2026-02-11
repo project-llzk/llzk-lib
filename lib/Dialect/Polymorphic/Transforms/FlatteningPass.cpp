@@ -260,6 +260,7 @@ class StructCloner {
   ConversionTracker &tracker_;
   ModuleOp rootMod;
   SymbolTableCollection symTables;
+  bool reportMissing = true;
 
   class MappedTypeConverter : public TypeConverter {
     StructType origTy;
@@ -504,7 +505,7 @@ class StructCloner {
     // TODO: Make report missing configurable s.t. it reports the missing types where it makes
     // sense.
     FailureOr<SymbolLookupResult<StructDefOp>> r =
-        typeAtCaller.getDefinition(symTables, rootMod, /*reportMissing=*/false);
+        typeAtCaller.getDefinition(symTables, rootMod, reportMissing);
     if (failed(r)) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: cannot find StructDefOp \n");
       return failure(); // getDefinition() already emits a sufficient error message
@@ -634,11 +635,19 @@ public:
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: nullptr for params \n");
     return failure();
   }
+
+  void enableReportMissing() { reportMissing = true; }
+
+  void disableReportMissing() { reportMissing = false; }
 };
+
+class DisableReportMissing;
 
 class ParameterizedStructUseTypeConverter : public TypeConverter {
   ConversionTracker &tracker_;
   StructCloner cloner;
+
+  friend DisableReportMissing;
 
 public:
   ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
@@ -655,10 +664,6 @@ public:
       if (auto opt = tracker_.getInstantiation(inputTy)) {
         return opt.value();
       }
-
-      // Check if the name can be found in the current scope. If not found, return the original type
-      // unchanged to indicate that it's still legal for now. Checking here avoid emitting errors
-      // for types that couldn't be found by the cloner.
 
       // Otherwise, try to create a clone of the struct with instantiated params. If that can't be
       // done, return the original type to indicate that it's still legal (for this step at least).
@@ -757,10 +762,24 @@ public:
   }
 };
 
+/// Disables reporting of missing struct symbols during legality checks to avoid showing error
+/// diagnostics that are not actually errors.
+class DisableReportMissing : public LegalityCheckCallback {
+  ParameterizedStructUseTypeConverter &tyConv;
+
+public:
+  explicit DisableReportMissing(ParameterizedStructUseTypeConverter &tc) : tyConv(tc) {}
+
+  void checkStarted() override { tyConv.cloner.disableReportMissing(); }
+
+  void checkEnded(bool) override { tyConv.cloner.enableReportMissing(); }
+};
+
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
-  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
+  DisableReportMissing drm(tyConv);
+  ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
   return applyPartialConversion(modOp, target, std::move(patterns));

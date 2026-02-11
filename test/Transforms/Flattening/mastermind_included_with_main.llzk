@@ -1,5 +1,5 @@
 // RUN: llzk-opt -I %input_dir -llzk-inline-includes -llzk-flatten %s | FileCheck --enable-var-scope %s
-// X_FAIL:*
+// XFAIL:*
 //
 // TODO: This will be handled at a later time. There's a larger issue that breaks the flattening pass
 // when `include` is used. The current approach to inlining included modules ends up making StructType
