@@ -24,8 +24,14 @@ extern "C" {
 extern const char *LLZK_FUNC_NAME_COMPUTE;
 extern const char *LLZK_FUNC_NAME_CONSTRAIN;
 
-/// Name of the attribute on the top-level ModuleOp that specifies the IR language name.
+/// Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the
+/// root module and specifies the frontend language name that the IR was compiled from, if
+/// available.
 extern const char *LLZK_LANG_ATTR_NAME;
+
+/// Name of the attribute on the top-level ModuleOp that defines prime fields
+/// used in the circuit.
+extern const char *LLZK_FIELD_ATTR_NAME;
 
 /// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.
 /// This attribute can appear zero or one times on the top-level ModuleOp and is associated with

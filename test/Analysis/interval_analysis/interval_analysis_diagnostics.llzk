@@ -1,0 +1,9 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics -llzk-print-interval-analysis="field=moo" %s
+
+// expected-error@+1{{IntervalAnalysisPrinterPass error: unknown field "moo" specified}}
+module attributes {llzk.lang} { }
+
+// -----
+
+// COM: Now there will be no diagnostics, since "moo" is defined.
+module attributes {llzk.lang, llzk.fields = #felt.field<"moo", 7>} {}

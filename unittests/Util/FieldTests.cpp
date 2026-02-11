@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/Field.h"
+#include "llzk/Util/Field.h"
 
 #include <gtest/gtest.h>
 #include <string>

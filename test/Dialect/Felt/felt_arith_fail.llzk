@@ -11,10 +11,10 @@ function.def @f_neg(
 
 function.def @f_inv(
     %a: index
-) -> !felt.type attributes {function.allow_non_native_field_ops} {
+) -> index attributes {function.allow_non_native_field_ops} {
   // expected-error@+1 {{'felt.inv' op operand #0 must be finite field element or type variable, but got 'index'}}
   %c = felt.inv %a : index
-  function.return %c: !felt.type
+  function.return %c: index
 }
 // -----
 
@@ -35,4 +35,20 @@ function.def @f_add(
   // expected-error@+1 {{'felt.add' op operand #1 must be finite field element or type variable, but got '!array.type<5 x i1>'}}
   %c = felt.add %a, %b : !felt.type, !array.type<5 x i1>
   function.return %c: !felt.type
+}
+
+// -----
+
+function.def @f_const_bad_field()  {
+  // expected-error@+1 {{custom op 'felt.const' field 'moo' is not defined}}
+  %c = felt.const 42 <"moo">
+  function.return
+}
+
+// -----
+
+// expected-error@+1 {{field 'moo' is not defined}}
+function.def @f_add_bad_field(%a: !felt.type<"moo">, %b: !felt.type<"moo">)  {
+  %c = felt.add %a, %b : !felt.type<"moo">, !felt.type<"moo">
+  function.return
 }
