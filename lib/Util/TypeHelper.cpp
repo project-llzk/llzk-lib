@@ -609,7 +609,6 @@ struct UnifierImpl {
       const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
       bool unifyDynamicSize = false
   ) {
-
     auto pred = [this, unifyDynamicSize](auto lhsAttr, auto rhsAttr) {
       return paramAttrUnify(lhsAttr, rhsAttr, unifyDynamicSize);
     };
