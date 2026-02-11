@@ -110,7 +110,7 @@ public:
   /// Adds the symbol name from an IncludeOp or ModuleOp where the op is contained.
   void pushNamespace(llvm::StringRef symName);
 
-  /// Adds the given namespace to the beginning og this result's namespace.
+  /// Adds the given namespace to the beginning of this result's namespace.
   void prependNamespace(llvm::ArrayRef<llvm::StringRef> ns);
 
   bool operator==(const SymbolLookupResultUntyped &rhs) const { return op == rhs.op; }
@@ -150,7 +150,7 @@ public:
   /// this result.
   llvm::ArrayRef<llvm::StringRef> getNamespace() const { return inner.getNamespace(); }
 
-  /// Adds the given namespace to the beginning og this result's namespace.
+  /// Adds the given namespace to the beginning of this result's namespace.
   void prependNamespace(llvm::ArrayRef<llvm::StringRef> ns) { inner.prependNamespace(ns); }
 
   /// Return 'true' if at least one IncludeOp was traversed to load this result.
