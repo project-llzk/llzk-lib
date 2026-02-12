@@ -27,7 +27,7 @@
 // LLZK -> ZKLean conversion overview:
 // - `createConvertLLZKToZKLeanPass` constructs `ConvertLLZKToZKLeanPass`.
 // - `ConvertLLZKToZKLeanPass::runOnOperation` creates the `ZKLean` module,
-//   copies relevant attrs, and calls `convertModule`.
+//   copies relevant attrs, calls `convertModule`, and replaces the module body.
 // - `convertModule` builds `LLZKToZKLeanState`, emits structs via
 //   `emitZKLeanStructDefs`, then walks `llzk::function::FuncDefOp` and delegates
 //   each to `convertFunction`.
@@ -431,7 +431,7 @@ public:
                     mlir::zkleanlean::ZKLeanLeanDialect>();
   }
 
-  // Create and attach the ZKLean module for the current `ModuleOp`.
+  // Replace the current `ModuleOp` with the ZKLean module.
   // Propagates language attributes and signals pass failure on errors.
   void runOnOperation() override {
     ModuleOp original = getOperation();
@@ -446,7 +446,8 @@ public:
       signalPassFailure();
       return;
     }
-    original.getBody()->push_back(zkLeanModule.getOperation());
+    original->setAttrs(zkLeanModule->getAttrs());
+    original.getBodyRegion().takeBody(zkLeanModule.getBodyRegion());
   }
 };
 
