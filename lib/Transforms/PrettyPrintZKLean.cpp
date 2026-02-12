@@ -1,7 +1,5 @@
-#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h"
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
@@ -28,18 +26,15 @@
 #include <optional>
 
 // Pretty-printing overview:
-// - moduleHasZkOps chooses between the ZKLean and LLZK output paths.
 // - emitZKLeanModule collects structs via collectZKLeanStructDefs, prints them
 //   with emitLeanStructsFromZKLean, and formats bodies with formatLeanStatement.
-// - emitLLZKModule prints LLZK structs and functions using emitLeanFuncFromLLZK
-//   and formatLLZKStatement for per-op rendering.
 using namespace mlir;
 
 namespace llzk::zklean {
 namespace namespace_detail {
 
 // Identify ops that belong to any ZK* dialect family.
-// Used to choose the ZKLean pretty-printing path.
+// Used to filter non-ZK ops during pretty-printing.
 static bool isZkDialect(Operation *op) {
   StringRef dialectNs = op->getName().getDialectNamespace();
   return dialectNs.starts_with("ZK") || dialectNs.starts_with("zk");
@@ -54,7 +49,8 @@ static bool isBuilderOp(Operation *op) {
 
 // Build a Lean-friendly name for `llzk::function::FuncDefOp`.
 // Flattens nested symbol references into a single identifier using "__".
-static std::string buildLeanFunctionName(llzk::function::FuncDefOp func) {
+[[maybe_unused]] static std::string
+buildLeanFunctionName(llzk::function::FuncDefOp func) {
   std::string name;
   auto fq = func.getFullyQualifiedName(false);
   if (!fq)
@@ -68,12 +64,10 @@ static std::string buildLeanFunctionName(llzk::function::FuncDefOp func) {
   return name;
 }
 
-// Extract a struct name from either ZKLean or LLZK struct types.
-// Returns `std::nullopt` when the type is not a recognized struct.
+// Extract a struct name from ZKLean struct types.
+// Returns `std::nullopt` when the type is not a ZKLean struct.
 static std::optional<std::string> getStructTypeName(Type type) {
   if (auto structType = dyn_cast<mlir::zkleanlean::StructType>(type))
-    return structType.getNameRef().getLeafReference().str();
-  if (auto structType = dyn_cast<llzk::component::StructType>(type))
     return structType.getNameRef().getLeafReference().str();
   return std::nullopt;
 }
@@ -407,93 +401,6 @@ formatLeanStatement(Operation &op,
   return line;
 }
 
-// Format LLZK ops into Lean-like statements for the fallback path.
-// Covers felt ops, struct reads, and equality constraints for constrain bodies.
-static std::optional<std::string>
-formatLLZKStatement(Operation &op,
-                    llvm::DenseMap<Value, std::string> &valueNames,
-                    unsigned &nextValueId) {
-  if (auto constOp = dyn_cast<llzk::felt::FeltConstantOp>(op)) {
-    auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := ");
-    line.append(formatFeltConstant(constOp));
-    return line;
-  }
-
-  if (auto read = dyn_cast<llzk::component::FieldReadOp>(op)) {
-    auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := ");
-    line.append(lookupValueName(read.getComponent(), valueNames));
-    line.push_back('.');
-    line.append(read.getFieldName().str());
-    return line;
-  }
-
-  if (auto neg = dyn_cast<llzk::felt::NegFeltOp>(op)) {
-    auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := -");
-    line.append(lookupValueName(neg.getOperand(), valueNames));
-    return line;
-  }
-
-  if (auto add = dyn_cast<llzk::felt::AddFeltOp>(op)) {
-    auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := ");
-    line.append(lookupValueName(add.getLhs(), valueNames));
-    line.append(" + ");
-    line.append(lookupValueName(add.getRhs(), valueNames));
-    return line;
-  }
-
-  if (auto sub = dyn_cast<llzk::felt::SubFeltOp>(op)) {
-    auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := ");
-    line.append(lookupValueName(sub.getLhs(), valueNames));
-    line.append(" - ");
-    line.append(lookupValueName(sub.getRhs(), valueNames));
-    return line;
-  }
-
-  if (auto mul = dyn_cast<llzk::felt::MulFeltOp>(op)) {
-    auto resultNames = assignResultNames(op, valueNames, nextValueId);
-    std::string line = "  let ";
-    line.append(wrapResultNames(resultNames));
-    line.append(" := ");
-    line.append(lookupValueName(mul.getLhs(), valueNames));
-    line.append(" * ");
-    line.append(lookupValueName(mul.getRhs(), valueNames));
-    return line;
-  }
-
-  if (auto eq = dyn_cast<llzk::constrain::EmitEqualityOp>(op)) {
-    std::string line = "  constrainEq ";
-    line.append(lookupValueName(eq.getLhs(), valueNames));
-    line.push_back(' ');
-    line.append(lookupValueName(eq.getRhs(), valueNames));
-    return line;
-  }
-
-  if (op.getNumResults() == 0)
-    return std::nullopt;
-
-  auto resultNames = assignResultNames(op, valueNames, nextValueId);
-  std::string line = "  let ";
-  line.append(wrapResultNames(resultNames));
-  line.append(" := ");
-  line.append(formatOperationCall(op, valueNames));
-  return line;
-}
-
 // Emit Lean for ZKLean/ZKBuilder functions, with struct arg inference.
 // Assigns argument names, infers struct parameters, and formats statements.
 template <typename FuncOpTy>
@@ -567,83 +474,8 @@ static bool emitLeanFunc(FuncOpTy func, raw_ostream &os,
   return true;
 }
 
-// Emit Lean output directly from LLZK constrain functions.
-// Only prints functions marked with `function.allow_constraint`.
-static bool emitLeanFuncFromLLZK(llzk::function::FuncDefOp func,
-                                 raw_ostream &os) {
-  if (func.getBody().empty())
-    return false;
-  if (!func->hasAttr("function.allow_constraint"))
-    return false;
-
-  llvm::DenseMap<Value, std::string> valueNames;
-  Block &entry = func.front();
-  unsigned nonStructIndex = 0;
-  unsigned structIndex = 0;
-  for (auto arg : entry.getArguments()) {
-    if (auto structName = getStructTypeName(arg.getType())) {
-      std::string name = structIndex == 0
-                             ? "strct"
-                             : (llvm::Twine("strct") + llvm::Twine(structIndex))
-                                   .str();
-      valueNames[arg] = name;
-      ++structIndex;
-    } else {
-      valueNames[arg] = ("arg" + llvm::Twine(nonStructIndex++)).str();
-    }
-  }
-
-  unsigned nextValueId = 0;
-  llvm::SmallVector<std::string, 16> statements;
-
-  for (Operation &op : entry) {
-    if (isa<func::ReturnOp>(op))
-      continue;
-    if (auto stmt = formatLLZKStatement(op, valueNames, nextValueId))
-      statements.push_back(*stmt);
-  }
-
-  if (statements.empty())
-    return false;
-
-  os << "def " << buildLeanFunctionName(func) << " [Field f]";
-  for (auto arg : entry.getArguments()) {
-    auto argName = lookupValueName(arg, valueNames);
-    if (auto structName = getStructTypeName(arg.getType())) {
-      os << " (" << argName << " : " << *structName << " f)";
-    } else {
-      os << " (" << argName << " : " << formatLeanType(arg.getType()) << ")";
-    }
-  }
-  os << " : ZKBuilder f PUnit := do\n";
-  for (auto &stmt : statements)
-    os << stmt << '\n';
-
-  return true;
-}
-
-// Emit Lean structure declarations from LLZK structs.
-// Fields are formatted via `formatLeanType` and emitted in order.
-static bool emitLeanStructsFromLLZK(
-    ArrayRef<llzk::component::StructDefOp> structs,
-    raw_ostream &os) {
-  bool printed = false;
-  for (auto def : structs) {
-    // All ZKLean structs are implicitly parameterized over the field type `f`.
-    os << "structure " << def.getSymName() << " (f : Type) where\n";
-    for (auto field :
-         def.getBody()->getOps<llzk::component::FieldDefOp>()) {
-      os << "  " << field.getSymName() << " : "
-         << formatLeanType(field.getType()) << '\n';
-    }
-    os << '\n';
-    printed = true;
-  }
-  return printed;
-}
-
 // Emit Lean structure declarations from ZKLean structs.
-// Mirrors LLZK struct printing but reads ZKLean struct bodies.
+// Reads ZKLean struct bodies and formats fields in order.
 static bool emitLeanStructsFromZKLean(
     ArrayRef<mlir::zkleanlean::StructDefOp> structs,
     raw_ostream &os) {
@@ -662,20 +494,6 @@ static bool emitLeanStructsFromZKLean(
   return printed;
 }
 
-// Detect if the module contains any ZK dialect ops.
-// Uses early-interrupt walking to keep the check cheap.
-static bool moduleHasZkOps(ModuleOp module) {
-  bool hasZkOps = false;
-  module.walk([&](Operation *op) {
-    if (isZkDialect(op)) {
-      hasZkOps = true;
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  });
-  return hasZkOps;
-}
-
 // Collect unique ZKLean struct defs and record their names.
 // Preserves first-seen order for deterministic output.
 static llvm::SmallVector<mlir::zkleanlean::StructDefOp, 8>
@@ -691,18 +509,6 @@ collectZKLeanStructDefs(ModuleOp module,
   return structDefs;
 }
 
-// Collect LLZK struct defs for the fallback path.
-// Returns all struct definitions from the module.
-static llvm::SmallVector<llzk::component::StructDefOp, 8>
-collectLLZKStructDefs(ModuleOp module) {
-  llvm::SmallVector<llzk::component::StructDefOp, 8> structDefs;
-  module.walk([&](llzk::component::StructDefOp def) {
-    structDefs.push_back(def);
-    return WalkResult::advance();
-  });
-  return structDefs;
-}
-
 // Emit a ZKLean function definition if it produces any statements.
 // Adds a separating newline and updates `printedSomething` on success.
 template <typename FuncOpTy>
@@ -710,16 +516,6 @@ static void emitZKLeanFuncIfAny(FuncOpTy func, raw_ostream &os,
                                 const llvm::DenseSet<StringRef> &structNames,
                                 bool &printedSomething) {
   if (!emitLeanFunc(func, os, structNames))
-    return;
-  printedSomething = true;
-  os << '\n';
-}
-
-// Emit an LLZK constrain function definition if printable.
-// Adds a separating newline and updates `printedSomething` on success.
-static void emitLLZKFuncIfAny(llzk::function::FuncDefOp func, raw_ostream &os,
-                              bool &printedSomething) {
-  if (!emitLeanFuncFromLLZK(func, os))
     return;
   printedSomething = true;
   os << '\n';
@@ -739,27 +535,6 @@ static bool emitZKLeanModule(ModuleOp module, raw_ostream &os) {
     emitZKLeanFuncIfAny(func, os, structNames, printedSomething);
     return WalkResult::advance();
   });
-  module.walk([&](llzk::function::FuncDefOp func) {
-    emitZKLeanFuncIfAny(func, os, structNames, printedSomething);
-    return WalkResult::advance();
-  });
-
-  return printedSomething;
-}
-
-// Emit Lean output from LLZK-only modules (constrain functions).
-// Prints LLZK structs and then uses `emitLeanFuncFromLLZK` for bodies.
-static bool emitLLZKModule(ModuleOp module, raw_ostream &os) {
-  bool printedSomething = false;
-  auto structDefs = collectLLZKStructDefs(module);
-
-  if (emitLeanStructsFromLLZK(structDefs, os))
-    printedSomething = true;
-
-  module.walk([&](llzk::function::FuncDefOp func) {
-    emitLLZKFuncIfAny(func, os, printedSomething);
-    return WalkResult::advance();
-  });
 
   return printedSomething;
 }
@@ -768,7 +543,7 @@ static bool emitLLZKModule(ModuleOp module, raw_ostream &os) {
 namespace {
 
 // Pass that pretty-prints ZK dialect IR into Lean-like syntax.
-// Chooses ZKLean vs LLZK printing and manages output file handling.
+// Manages output file handling for pretty-printed Lean code.
 struct PrettyPrintZKLeanPass
     : public PassWrapper<PrettyPrintZKLeanPass, OperationPass<ModuleOp>> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(PrettyPrintZKLeanPass)
@@ -797,7 +572,7 @@ struct PrettyPrintZKLeanPass
       llvm::cl::init("-")};
 
   // Run the pass and emit Lean output to the selected stream.
-  // Uses ZKLean formatting when ZK ops are present, otherwise LLZK formatting.
+  // Uses ZKLean formatting when ZK ops are present.
   void runOnOperation() override {
     raw_ostream *stream = &llvm::outs();
     std::unique_ptr<llvm::ToolOutputFile> outputFile;
@@ -814,10 +589,7 @@ struct PrettyPrintZKLeanPass
     *stream << "import zkLean\n";
     *stream << "open ZKBuilder\n\n";
 
-    bool printedSomething =
-        namespace_detail::moduleHasZkOps(module)
-            ? namespace_detail::emitZKLeanModule(module, *stream)
-            : namespace_detail::emitLLZKModule(module, *stream);
+    bool printedSomething = namespace_detail::emitZKLeanModule(module, *stream);
 
     if (!printedSomething)
       *stream << "-- No zk dialect operations found.\n";
