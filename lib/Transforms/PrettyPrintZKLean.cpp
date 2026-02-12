@@ -809,7 +809,8 @@ struct PrettyPrintZKLeanPass
     }
 
     ModuleOp module = getOperation();
-    *stream << "import ZKLean\nopen ZKBuilder\n\n";
+    *stream << "import zkLean\n";
+    *stream << "open ZKBuilder\n\n";
 
     bool printedSomething =
         namespace_detail::moduleHasZkOps(module)
