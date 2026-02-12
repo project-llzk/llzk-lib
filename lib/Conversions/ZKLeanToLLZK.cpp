@@ -315,6 +315,11 @@ struct FunctionConverter {
     // ZKExpr literal maps to underlying felt value
     if (auto literal = dyn_cast<mlir::zkexpr::LiteralOp>(op)) {
       Value mapped = mapFelt(literal.getLiteral());
+      if (!mapped) {
+        literal.emitError("unsupported literal source in ZKLean conversion");
+        state.hadError = true;
+        return;
+      }
       zkToFeltMap[literal.getOutput()] = mapped;
       return;
     }
@@ -401,6 +406,11 @@ struct FunctionConverter {
     if (auto add = dyn_cast<mlir::zkexpr::AddOp>(op)) {
       Value lhs = mapZK(add.getLhs());
       Value rhs = mapZK(add.getRhs());
+      if (!lhs || !rhs) {
+        add.emitError("missing ZKExpr operands in ZKLean conversion");
+        state.hadError = true;
+        return;
+      }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto feltAdd =
@@ -409,10 +419,32 @@ struct FunctionConverter {
       return;
     }
 
+    // ZKExpr.Sub to felt.sub
+    if (auto sub = dyn_cast<mlir::zkexpr::SubOp>(op)) {
+      Value lhs = mapZK(sub.getLhs());
+      Value rhs = mapZK(sub.getRhs());
+      if (!lhs || !rhs) {
+        sub.emitError("missing ZKExpr operands in ZKLean conversion");
+        state.hadError = true;
+        return;
+      }
+      OpBuilder::InsertionGuard guard(state.builder);
+      state.builder.setInsertionPointToEnd(newBlock);
+      auto feltSub =
+          state.builder.create<llzk::felt::SubFeltOp>(sub.getLoc(), lhs, rhs);
+      zkToFeltMap[sub.getOutput()] = feltSub.getResult();
+      return;
+    }
+
     // ZKExpr.Mul to felt.mul
     if (auto mul = dyn_cast<mlir::zkexpr::MulOp>(op)) {
       Value lhs = mapZK(mul.getLhs());
       Value rhs = mapZK(mul.getRhs());
+      if (!lhs || !rhs) {
+        mul.emitError("missing ZKExpr operands in ZKLean conversion");
+        state.hadError = true;
+        return;
+      }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto feltMul =
@@ -424,6 +456,11 @@ struct FunctionConverter {
     // ZKExpr.Neg to felt.Neg
     if (auto neg = dyn_cast<mlir::zkexpr::NegOp>(op)) {
       Value operand = mapZK(neg.getValue());
+      if (!operand) {
+        neg.emitError("missing ZKExpr operand in ZKLean conversion");
+        state.hadError = true;
+        return;
+      }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto feltNeg =
@@ -436,11 +473,21 @@ struct FunctionConverter {
     if (auto constraint = dyn_cast<mlir::zkbuilder::ConstrainEqOp>(op)) {
       Value lhs = mapZK(constraint.getLhs());
       Value rhs = mapZK(constraint.getRhs());
+      if (!lhs || !rhs) {
+        constraint.emitError("missing ZKExpr operands in ZKLean conversion");
+        state.hadError = true;
+        return;
+      }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       state.builder.create<llzk::constrain::EmitEqualityOp>(
           constraint.getLoc(), lhs, rhs);
       return;
+    }
+
+    if (op->getNumResults() != 0) {
+      op->emitError("unsupported ZKLean operation in conversion");
+      state.hadError = true;
     }
   }
 
