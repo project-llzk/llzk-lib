@@ -629,7 +629,8 @@ static bool emitLeanStructsFromLLZK(
     raw_ostream &os) {
   bool printed = false;
   for (auto def : structs) {
-    os << "structure " << def.getSymName() << " where\n";
+    // All ZKLean structs are implicitly parameterized over the field type `f`.
+    os << "structure " << def.getSymName() << " (f : Type) where\n";
     for (auto field :
          def.getBody()->getOps<llzk::component::FieldDefOp>()) {
       os << "  " << field.getSymName() << " : "
@@ -648,7 +649,8 @@ static bool emitLeanStructsFromZKLean(
     raw_ostream &os) {
   bool printed = false;
   for (auto def : structs) {
-    os << "structure " << def.getSymName() << " where\n";
+    // All ZKLean structs are implicitly parameterized over the field type `f`.
+    os << "structure " << def.getSymName() << " (f : Type) where\n";
     for (auto field :
          def.getBodyRegion().getOps<mlir::zkleanlean::FieldDefOp>()) {
       os << "  " << field.getSymName() << " : "
