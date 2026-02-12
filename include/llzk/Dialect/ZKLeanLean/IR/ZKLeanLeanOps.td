@@ -20,7 +20,7 @@ class ZKLeanLeanOp<string mnemonic, list<Trait> traits = []>
 
 def ZKLeanLean_StructDefOp
     : ZKLeanLeanOp<
-          "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
+          "structure", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
                   IsolatedFromAbove,
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
   let summary = "ZKLean struct definition";
