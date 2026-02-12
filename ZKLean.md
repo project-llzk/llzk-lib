@@ -97,7 +97,7 @@ LLZK \<-\> ZKLean IR -\> ZKLean pipeline implemented and tested on LLZK circom i
 
 ## LLZK -\> ZKLean:
 
-* Creates new @ZKLean module
+* Replaces the input module with @ZKLean
 * Converts struct.\* to ZKLeanLean.\* (defs and field accessors)
 * Converts felt.\* and constrain.\* ops to ZKExpr.\* and ZKBuilder.\* ops, respectively
 * Converts bool.cmp and cast.tofelt to ZKLeanLean.call for Lean-side function resolution
