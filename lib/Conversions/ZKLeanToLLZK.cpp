@@ -98,7 +98,7 @@ static Type mapStructType(Type type) {
 // This pre-pass ensures struct symbols exist before function conversion.
 static void emitStructDefsFromZKLean(ModuleOp source,
                                      ZKLeanToLLZKState &state) {
-  // Pre-pass: materialize LLZK struct.defs from ZKLeanLean.defs first so
+  // Pre-pass: materialize LLZK struct.defs from ZKLeanLean.structure ops first so
   // struct.type<@Name> symbols exist before function conversion.
   llvm::StringSet<> seenStructs;
   for (auto def : source.getBody()->getOps<mlir::zkleanlean::StructDefOp>()) {

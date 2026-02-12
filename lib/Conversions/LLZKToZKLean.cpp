@@ -119,7 +119,7 @@ static SmallVector<Operation *, 16> collectBlockOps(Block &block) {
 // Emit `mlir::zkleanlean::StructDefOp` symbols for LLZK structs.
 // Only felt-typed fields are supported; others set `state.hadError`.
 static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
-  // Emit ZKLeanLean.def equivalents so downstream functions can reference
+  // Emit ZKLeanLean.structure equivalents so downstream functions can reference
   // ZKLean struct types by symbol.
   llvm::DenseSet<StringRef> seenStructs;
   for (auto def : source.getBody()->getOps<llzk::component::StructDefOp>()) {
