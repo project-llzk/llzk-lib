@@ -161,7 +161,7 @@ public:
 
   bool operator==(const SymbolLookupResult<T> &rhs) const { return inner == rhs.inner; }
 
-  /// Return 'true' if the inner resource is managed.
+  /// Return 'true' if the inner resource is managed (i.e., loaded via an IncludeOp).
   bool isManaged() const { return inner.isManaged(); }
 
 private:

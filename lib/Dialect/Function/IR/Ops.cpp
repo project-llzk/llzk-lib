@@ -823,6 +823,7 @@ Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {
   FailureOr<SymbolLookupResult<FuncDefOp>> res =
       llzk::resolveCallable<FuncDefOp>(*symbolTable, *this);
   if (LogicalResult(res).failed() || res->isManaged()) {
+    // Cannot return pointer to a managed Operation since it would cause memory errors.
     return nullptr;
   }
   return res->get();
