@@ -642,8 +642,9 @@ public:
     ModuleOp llzkModule = ModuleOp::create(source.getLoc());
     auto symName = StringAttr::get(&getContext(), "LLZK");
     llzkModule->setAttr(SymbolTable::getSymbolAttrName(), symName);
-    if (auto lang = source->getAttr("veridise.lang"))
-      llzkModule->setAttr("veridise.lang", lang);
+    if (auto lang = source->getAttr(llzk::LANG_ATTR_NAME)) {
+      llzkModule->setAttr(llzk::LANG_ATTR_NAME, lang);
+    }
 
     if (failed(convertLeanModule(source, llzkModule))) {
       source.emitError("failed to convert ZKLean module");

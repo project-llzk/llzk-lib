@@ -1,4 +1,4 @@
-module @ZKLean attributes {veridise.lang = "llzk"} {
+module @ZKLean attributes {llzk.lang = "llzk"} {
     ZKLeanLean.structure @IsZero {
         ZKLeanLean.field @out : !ZKExpr.zkexpr
         ZKLeanLean.field @inv : !ZKExpr.zkexpr
