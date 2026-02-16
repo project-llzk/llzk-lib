@@ -12,6 +12,8 @@ set(LLVM_TARGET_DEFINITIONS "ZKLeanLeanOps.td")
 mlir_tablegen(ZKLeanLeanOps.h.inc -gen-op-decls -dialect=ZKLeanLean)
 mlir_tablegen(ZKLeanLeanOps.cpp.inc -gen-op-defs -dialect=ZKLeanLean)
 
+llzk_add_mlir_doc(ZKLeanLeanDocGen dialect/ZKLeanLeanDialect.md -gen-dialect-doc -dialect=ZKLeanLean)
+
 add_public_tablegen_target(ZKLeanLeanDialectIncGen)
 add_dependencies(mlir-headers ZKLeanLeanDialectIncGen)
 add_dependencies(LLZKDialectHeaders ZKLeanLeanDialectIncGen)
