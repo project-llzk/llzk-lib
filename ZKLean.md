@@ -149,12 +149,15 @@ While standing in top level LLZK directory:
 1. To build llzk-opt (and other binaries), do:
 
    `cmake --build build/`
-2. To convert LLZK circom isZero circuit into ZKLean IR, do:
+2. To generate dialect docs, do the following and the generated markdown files are available in `build/doc/mlir/dialect/*.md`:
+
+   `cmake --build build/ --target doc`
+3. To convert LLZK circom isZero circuit into ZKLean IR, do:
 
    `./build/bin/llzk-opt --convert-llzk-to-zklean test/Conversions/circom_isZero.llzk`
-3. To convert ZKLean IR isZero circuit constraints into LLZK, do:
+4. To convert ZKLean IR isZero circuit constraints into LLZK, do:
 
    `./build/bin/llzk-opt --convert-zklean-to-llzk test/Conversions/zklean_isZero.llzk`
-4. To pretty print ZKLean IR into ZKLean, do:
+5. To pretty print ZKLean IR into ZKLean, do:
 
    `./build/bin/llzk-opt --zklean-pretty-print test/Conversions/zklean_isZero.llzk`
