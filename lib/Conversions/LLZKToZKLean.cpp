@@ -438,8 +438,9 @@ public:
     ModuleOp zkLeanModule = ModuleOp::create(original.getLoc());
     auto symName = StringAttr::get(&getContext(), "ZKLean");
     zkLeanModule->setAttr(SymbolTable::getSymbolAttrName(), symName);
-    if (auto lang = original->getAttr("veridise.lang"))
-      zkLeanModule->setAttr("veridise.lang", lang);
+    if (auto lang = original->getAttr(llzk::LANG_ATTR_NAME)) {
+      zkLeanModule->setAttr(llzk::LANG_ATTR_NAME, lang);
+    }
 
     if (failed(convertModule(original, zkLeanModule))) {
       original.emitError("failed to produce ZKLean module");
