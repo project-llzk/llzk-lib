@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the ` -llzk-print-predecessors` pass.
+/// This file implements the `-llzk-print-predecessors` pass.
 ///
 //===----------------------------------------------------------------------===//
 

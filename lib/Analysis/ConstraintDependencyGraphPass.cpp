@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the ` -llzk-print-constraint-dependency-graphs` pass.
+/// This file implements the `-llzk-print-constraint-dependency-graphs` pass.
 ///
 //===----------------------------------------------------------------------===//
 
