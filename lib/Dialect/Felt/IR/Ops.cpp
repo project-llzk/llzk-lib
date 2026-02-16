@@ -31,13 +31,25 @@ namespace llzk::felt {
 //===------------------------------------------------------------------===//
 
 void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  llvm::SmallString<32> buf;
+  SmallString<32> buf;
   llvm::raw_svector_ostream os(buf);
   os << "felt_const_";
-  getValue().toStringUnsigned(buf);
+  getValue().getValue().toStringUnsigned(buf);
   setNameFn(getResult(), buf);
 }
 
 OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValueAttr(); }
+
+LogicalResult FeltConstantOp::inferReturnTypes(
+    MLIRContext *context, std::optional<Location> loc, Adaptor adaptor,
+    SmallVectorImpl<Type> &inferred
+) {
+  inferred.resize(1);
+  auto value = adaptor.getValue(); // FeltConstAttr
+  inferred[0] = value ? value.getType() : FeltType::get(context, StringAttr());
+  return success();
+}
+
+bool FeltConstantOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) { return l == r; }
 
 } // namespace llzk::felt

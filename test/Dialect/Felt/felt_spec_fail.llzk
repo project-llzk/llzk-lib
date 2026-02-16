@@ -1,0 +1,9 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// expected-error@+1{{expected ','}}
+module attributes {llzk.lang, llzk.fields = [#felt.field<"moo">]} {}
+
+// -----
+
+// expected-error@+1{{Definition of "moo" conflicts with prior definition: prior=7, new=9}}
+module attributes {llzk.lang, llzk.fields = [#felt.field<"moo", 7>, #felt.field<"moo", 9>]} {}

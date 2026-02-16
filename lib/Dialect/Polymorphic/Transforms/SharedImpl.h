@@ -34,8 +34,11 @@
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Debug.h>
 
 #include <tuple>
+
+#define DEBUG_TYPE "poly-dialect-shared"
 
 namespace llzk::polymorphic::detail {
 
@@ -259,6 +262,19 @@ mlir::RewritePatternSet newGeneralRewritePatternSet(
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects.
 mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
 
+class LegalityCheckCallback {
+public:
+  virtual ~LegalityCheckCallback() = default;
+  virtual void checkStarted() = 0;
+  virtual void checkEnded(bool outcome) = 0;
+};
+
+class EmptyLegalityCheckCallback : public LegalityCheckCallback {
+public:
+  void checkStarted() override {}
+  void checkEnded(bool) override {}
+};
+
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
 /// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
 /// and in `AdditionalOpClasses`.
@@ -269,11 +285,40 @@ template <typename... AdditionalOpClasses, typename... AdditionalChecks>
 mlir::ConversionTarget newConverterDefinedTarget(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, AdditionalChecks &&...checks
 ) {
+  static EmptyLegalityCheckCallback empty;
+  return newConverterDefinedTargetWithCallback<AdditionalOpClasses...>(
+      tyConv, ctx, empty, (std::forward<AdditionalChecks>(checks))...
+  );
+}
+
+/// Return a new `ConversionTarget` allowing all LLZK-required dialects and defining Op legality
+/// based on the given `TypeConverter` for Ops listed in both members of `OpClassesWithStructTypes`
+/// and in `AdditionalOpClasses`.
+/// Additional legality checks can be included for certain ops that will run along with the default
+/// check. For an op to be considered legal all checks (default plus additional checks if any) must
+/// return true.
+template <typename... AdditionalOpClasses, typename... AdditionalChecks>
+mlir::ConversionTarget newConverterDefinedTargetWithCallback(
+    mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, LegalityCheckCallback &cb,
+    AdditionalChecks &&...checks
+) {
   mlir::ConversionTarget target = newBaseTarget(ctx);
   auto inserter = [&](auto... opClasses) {
-    target.addDynamicallyLegalOp<decltype(opClasses)...>([&tyConv,
+    target.addDynamicallyLegalOp<decltype(opClasses)...>([&cb, &tyConv,
                                                           &checks...](mlir::Operation *op) {
-      return defaultLegalityCheck(tyConv, op) && (runCheck<AdditionalChecks>(op, checks) && ...);
+      LLVM_DEBUG(if (op) {
+        llvm::dbgs() << "[newConverterDefinedTarget] checking legality of ";
+        op->dump();
+      });
+      cb.checkStarted();
+      auto legality =
+          defaultLegalityCheck(tyConv, op) && (runCheck<AdditionalChecks>(op, checks) && ...);
+
+      cb.checkEnded(legality);
+      LLVM_DEBUG(if (legality) { llvm::dbgs() << "[newConverterDefinedTarget] is legal\n"; } else {
+        llvm::dbgs() << "[newConverterDefinedTarget] is not legal\n";
+      });
+      return legality;
     });
   };
   std::apply(inserter, OpClassesWithStructTypes.NoGeneralBuilder);
@@ -283,3 +328,5 @@ mlir::ConversionTarget newConverterDefinedTarget(
 }
 
 } // namespace llzk::polymorphic::detail
+
+#undef DEBUG_TYPE

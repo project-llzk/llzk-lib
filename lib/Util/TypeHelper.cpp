@@ -23,9 +23,12 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/Debug.h>
 
 #include <cstdint>
 #include <numeric>
+
+#define DEBUG_TYPE "llzk-type-helpers"
 
 using namespace mlir;
 
@@ -625,14 +628,16 @@ struct UnifierImpl {
 
   /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
   /// are equivalent or could be equivalent after full instantiation of struct parameters.
+  ///
+  /// An empty parameter list is considered equivalent to a NULL array attribute.
   bool typeParamsUnify(
       const ArrayAttr &lhsParams, const ArrayAttr &rhsParams, bool unifyDynamicSize = false
   ) {
-    if (lhsParams && rhsParams) {
-      return typeParamsUnify(lhsParams.getValue(), rhsParams.getValue(), unifyDynamicSize);
-    }
-    // When one or the other is null, they're only equivalent if both are null
-    return !lhsParams && !rhsParams;
+    ArrayRef<Attribute> emptyParams;
+    return typeParamsUnify(
+        lhsParams ? lhsParams.getValue() : emptyParams,
+        rhsParams ? rhsParams.getValue() : emptyParams, unifyDynamicSize
+    );
   }
 
   bool arrayTypesUnify(ArrayType lhs, ArrayType rhs) {
@@ -647,12 +652,28 @@ struct UnifierImpl {
   }
 
   bool structTypesUnify(StructType lhs, StructType rhs) {
+    LLVM_DEBUG({
+      llvm::dbgs() << "[structTypesUnify] lhs = " << lhs << ", rhs = " << rhs << '\n';
+    });
     // Check if it references the same StructDefOp, considering the additional RHS path prefix.
     SmallVector<StringRef> rhsNames = getNames(rhs.getNameRef());
     rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
-    if (rhsNames != getNames(lhs.getNameRef())) {
+    auto lhsNames = getNames(lhs.getNameRef());
+    if (rhsNames != lhsNames) {
+      LLVM_DEBUG({
+        llvm::interleaveComma(
+            lhsNames, llvm::dbgs() << "[structTypesUnify]   names do not match\n"
+                                   << "                         lhsNames = ["
+        );
+        llvm::interleaveComma(
+            rhsNames, llvm::dbgs() << "]\n"
+                                   << "                         rhsNames = ["
+        );
+        llvm::dbgs() << "]\n";
+      });
       return false;
     }
+    LLVM_DEBUG({ llvm::dbgs() << "[structTypesUnify]   checking unification of parameters\n"; });
     // Check if the parameters unify between the LHS and RHS
     return typeParamsUnify(lhs.getParams(), rhs.getParams(), /*unifyDynamicSize=*/false);
   }
