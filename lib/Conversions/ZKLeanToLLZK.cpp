@@ -117,7 +117,7 @@ static void emitStructDefsFromZKLean(ModuleOp source,
     structDef.getBodyRegion().emplaceBlock();
     auto &body = structDef.getBodyRegion().front();
     OpBuilder fieldBuilder(&body, body.begin());
-    for (auto field : def.getBody()->getOps<mlir::zkleanlean::FieldDefOp>()) {
+    for (auto field : def.getBody()->getOps<mlir::zkleanlean::MemberDefOp>()) {
       fieldBuilder.create<llzk::component::MemberDefOp>(
           field.getLoc(), field.getSymName(), state.feltType);
     }

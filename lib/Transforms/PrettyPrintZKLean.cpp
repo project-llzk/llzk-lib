@@ -493,7 +493,7 @@ static bool emitLeanStructsFromZKLean(
     // All ZKLean structs are implicitly parameterized over the field type `f`.
     os << "structure " << def.getSymName() << " (f : Type) where\n";
     for (auto field :
-         def.getBodyRegion().getOps<mlir::zkleanlean::FieldDefOp>()) {
+         def.getBodyRegion().getOps<mlir::zkleanlean::MemberDefOp>()) {
       os << "  " << field.getSymName() << " : "
          << formatLeanType(field.getType()) << '\n';
     }

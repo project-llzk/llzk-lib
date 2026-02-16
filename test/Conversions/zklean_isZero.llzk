@@ -1,7 +1,7 @@
 module @ZKLean attributes {llzk.lang = "llzk"} {
     ZKLeanLean.structure @IsZero {
-        ZKLeanLean.field @out : !ZKExpr.zkexpr
-        ZKLeanLean.field @inv : !ZKExpr.zkexpr
+        ZKLeanLean.member @out : !ZKExpr.zkexpr
+        ZKLeanLean.member @inv : !ZKExpr.zkexpr
     }
     func.func @IsZero__constrain(%arg0: !ZKLeanLean.type<@IsZero>, %arg1: !felt.type) {
         %felt_const_0 = felt.const  0
