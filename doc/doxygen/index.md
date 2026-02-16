@@ -27,6 +27,8 @@ How to Contribute:
 - First, read our \ref code-of-conduct "Code of Conduct".
 - Then, read our \ref contribution-guide "Contribution Guide".
 
+**Are you a maintainer?** If so, read the \ref maintanence "Maintenance Guide".
+
 \subpage license "View the LLZK License."
 
 ## Versions

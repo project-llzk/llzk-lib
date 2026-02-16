@@ -21,7 +21,7 @@ Frontends are currently not contained within the LLZK repository, but are rather
 maintained in separate repositories, using LLZK-lib as a dependency.
 
 Veridise currently maintains the following frontends:
-- [Zirgen](https://github.com/Veridise/zirgen-to-llzk)
+- [haloumi](https://github.com/project-llzk/haloumi)
 <!-- TODO: Update this link to a doxygen site at some point. -->
 
 For information on how to create a new frontend, please refer to the \ref translation-guidelines.
@@ -47,9 +47,12 @@ Developer documentation can be found:
 
 ### Backends {#backends}
 
-Built-in backends will be added to the [llzk-opt tool](\ref llzk-opt) as they are developed.
-Currently, LLZK provides no built-in backends, but an R1CS backend is current in the works.
-Veridise also plans to release several analysis backends based on prior tooling (namely [Picus][picus-v2] and [ZK Vanguard][zk-vanguard]), which will allow Veridise to provide automated verification and analysis for any ZK language that has an LLZK frontend.
+The LLZK project currently maintains the following backends:
+- [R1CS](\ref lib/Dialect/R1CS)
+
+Veridise also maintains a [Picus Contraint Language backend](https://github.com/Veridise/pcl-mlir) that
+allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
+
 
 <div class="section_buttons">
 | Previous          |                              Next |
