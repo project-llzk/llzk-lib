@@ -16,11 +16,13 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKComputeConstrainToProductPass.h"
+#include "llzk/Transforms/LLZKInlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/Support/Debug.h>
@@ -103,6 +105,7 @@ public:
     if (failed(alignStartingAt(root, tables, equivalence))) {
       signalPassFailure();
     }
+    // mod->dumpPretty();
   }
 };
 
@@ -190,6 +193,9 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     if (computeStruct != constrainStruct) {
       return false;
     }
+    if (compute.getNumOperands() == 0) {
+      return true;
+    }
     for (unsigned i = 0, e = compute->getNumOperands() - 1; i < e; i++) {
       if (!equivalence.areSignalsEquivalent(compute->getOperand(i), constrain->getOperand(i + 1))) {
         return false;
@@ -212,11 +218,35 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     }
   }
 
+  llvm::SetVector<llzk::component::StructDefOp> calleesToInline;
+
   // TODO: If unaligned calls remain, fully inline their structs and continue instead of failing
   if (!computeCalls.empty() && constrainCalls.empty()) {
-    product->emitError() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
-                         << FUNC_NAME_CONSTRAIN;
-    return failure();
+    for (auto rem : computeCalls) {
+      if (auto func = rem.getCalleeTarget(tables); mlir::succeeded(func)) {
+        auto parentStruct = func->get()->getParentOfType<llzk::component::StructDefOp>();
+        if (parentStruct) {
+          calleesToInline.insert(parentStruct);
+        }
+      }
+    }
+    for (auto rem : constrainCalls) {
+      if (auto func = rem.getCalleeTarget(tables); mlir::succeeded(func)) {
+        auto parentStruct = func->get()->getParentOfType<llzk::component::StructDefOp>();
+        if (parentStruct) {
+          calleesToInline.insert(parentStruct);
+        }
+      }
+    }
+
+    InliningPlan plan;
+    plan.push_back(
+        {product->getParentOfType<llzk::component::StructDefOp>(), calleesToInline.takeVector()}
+    );
+
+    auto result = performInlining(tables, plan);
+
+    return result;
   }
 
   for (auto [compute, constrain] : alignedCalls) {
