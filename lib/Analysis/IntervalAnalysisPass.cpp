@@ -15,8 +15,10 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -41,14 +43,25 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    if (!llvm::isa<mlir::ModuleOp>(getOperation())) {
-      const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
+    auto modOp = llvm::dyn_cast<mlir::ModuleOp>(getOperation());
+    if (!modOp) {
+      constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg).report();
-      llvm::report_fatal_error(msg);
+      return;
+    }
+
+    auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
+
+    if (mlir::failed(fieldLookupRes)) {
+      std::string msg = (llvm::Twine("IntervalAnalysisPrinterPass error: unknown field \"") +
+                         fieldName.c_str() + "\" specified")
+                            .str();
+      modOp->emitError(msg).report();
+      return;
     }
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
-    mia.setField(Field::getField(fieldName.c_str()));
+    mia.setField(fieldLookupRes.value());
     mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);

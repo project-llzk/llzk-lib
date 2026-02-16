@@ -1,0 +1,13 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.fields = #felt.field<"moo", 7>} {}
+
+// CHECK-LABEL: module attributes {llzk.fields = #felt.field<"moo", 7>, llzk.lang} {
+// }
+
+// -----
+
+module attributes {llzk.lang, llzk.fields = [#felt.field<"foo", 7>, #felt.field<"bar", 11>] } {}
+
+// CHECK-LABEL: module attributes {llzk.fields = [#felt.field<"foo", 7>, #felt.field<"bar", 11>], llzk.lang} {
+// CHECK-NEXT: }
