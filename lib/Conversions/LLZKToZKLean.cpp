@@ -133,7 +133,7 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
     auto *body = new Block();
     zkStruct.getBodyRegion().push_back(body);
     OpBuilder fieldBuilder(body, body->begin());
-    for (auto field : def.getBody()->getOps<llzk::component::FieldDefOp>()) {
+    for (auto field : def.getBody()->getOps<llzk::component::MemberDefOp>()) {
       if (!mlir::isa<llzk::felt::FeltType>(field.getType())) {
         field.emitError("unsupported field type for ZKLean struct conversion");
         state.hadError = true;
@@ -331,7 +331,7 @@ struct FunctionConverter {
       return;
     }
     // Convert struct.readf to ZKLeanLean.accessor
-    if (auto read = dyn_cast<llzk::component::FieldReadOp>(op)) {
+    if (auto read = dyn_cast<llzk::component::MemberReadOp>(op)) {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       Value component = argMapping.lookup(read.getComponent());
@@ -341,7 +341,7 @@ struct FunctionConverter {
         return;
       }
       auto accessorOp = state.builder.create<mlir::zkleanlean::AccessorOp>(
-          read.getLoc(), state.zkType, component, read.getFieldNameAttr());
+          read.getLoc(), state.zkType, component, read.getMemberNameAttr());
       zkValues[read.getResult()] = accessorOp.getValue();
       return;
     }

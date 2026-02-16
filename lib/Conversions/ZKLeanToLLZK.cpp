@@ -113,7 +113,7 @@ static void emitStructDefsFromZKLean(ModuleOp source,
     auto &body = structDef.getBodyRegion().front();
     OpBuilder fieldBuilder(&body, body.begin());
     for (auto field : def.getBody()->getOps<mlir::zkleanlean::FieldDefOp>()) {
-      fieldBuilder.create<llzk::component::FieldDefOp>(
+      fieldBuilder.create<llzk::component::MemberDefOp>(
           field.getLoc(), field.getSymName(), state.feltType);
     }
     StructState structState;
@@ -396,7 +396,7 @@ struct FunctionConverter {
       state.builder.setInsertionPointToEnd(newBlock);
       auto fieldAttr =
           state.builder.getStringAttr(accessor.getFieldNameAttr().getValue());
-      auto newRead = state.builder.create<llzk::component::FieldReadOp>(
+      auto newRead = state.builder.create<llzk::component::MemberReadOp>(
           accessor.getLoc(), state.feltType, component, fieldAttr);
       zkToFeltMap[accessor.getValue()] = newRead.getVal();
       return;
