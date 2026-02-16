@@ -1,4 +1,4 @@
-//===-- PredecessorAnalysisPass.cpp -----------------------*- C++ -*-===//
+//===-- PredecessorPrinterPass.cpp ------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the ` -llzk-predecessor-pass` pass.
+/// This file implements the ` -llzk-print-predecessors` pass.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -31,8 +31,8 @@ namespace llzk {
 
 using namespace function;
 
-#define GEN_PASS_DECL_PREDECESSORANALYSISPASS
-#define GEN_PASS_DEF_PREDECESSORANALYSISPASS
+#define GEN_PASS_DECL_PREDECESSORPRINTERPASS
+#define GEN_PASS_DEF_PREDECESSORPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 
 /// Prints op without region.
@@ -104,7 +104,7 @@ public:
 
 class PredecessorAnalysis
     : public mlir::dataflow::DenseForwardDataFlowAnalysis<PredecessorLattice> {
-  /// Stream for debug printing. Currently unused, but propagated from `PredecessorAnalysisPass`
+  /// Stream for debug printing. Currently unused, but propagated from `PredecessorPrinterPass`
   /// in case it is needed in the future.
   [[maybe_unused]]
   raw_ostream &os;
@@ -196,10 +196,10 @@ protected:
   void setToEntryState(PredecessorLattice *lattice) override {}
 };
 
-class PredecessorAnalysisPass : public impl::PredecessorAnalysisPassBase<PredecessorAnalysisPass> {
+class PredecessorPrinterPass : public impl::PredecessorPrinterPassBase<PredecessorPrinterPass> {
 
 public:
-  PredecessorAnalysisPass() : impl::PredecessorAnalysisPassBase<PredecessorAnalysisPass>() {}
+  PredecessorPrinterPass() : impl::PredecessorPrinterPassBase<PredecessorPrinterPass>() {}
 
 protected:
   void runOnOperation() override {
@@ -235,8 +235,8 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass> createPredecessorAnalysisPass() {
-  return std::make_unique<PredecessorAnalysisPass>();
+std::unique_ptr<mlir::Pass> createPredecessorPrinterPass() {
+  return std::make_unique<PredecessorPrinterPass>();
 }
 
 } // namespace llzk

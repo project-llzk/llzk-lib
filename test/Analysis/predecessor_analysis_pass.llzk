@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-predecessor-pass{stream=outs})' %s -o /dev/null | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-print-predecessors{stream=outs})' %s -o /dev/null | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   function.def @free() {

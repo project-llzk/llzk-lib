@@ -26,7 +26,7 @@ std::unique_ptr<mlir::Pass> createSymbolDefTreePrinterPass();
 
 std::unique_ptr<mlir::Pass> createSymbolUseGraphPrinterPass();
 
-std::unique_ptr<mlir::Pass> createPredecessorAnalysisPass();
+std::unique_ptr<mlir::Pass> createPredecessorPrinterPass();
 
 #define GEN_PASS_REGISTRATION
 #include "llzk/Analysis/AnalysisPasses.h.inc"
