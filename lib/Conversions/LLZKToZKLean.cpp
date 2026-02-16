@@ -144,7 +144,7 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
         state.hadError = true;
         continue;
       }
-      fieldBuilder.create<mlir::zkleanlean::FieldDefOp>(
+      fieldBuilder.create<mlir::zkleanlean::MemberDefOp>(
           field.getLoc(), field.getSymNameAttr(),
           TypeAttr::get(state.zkType));
     }

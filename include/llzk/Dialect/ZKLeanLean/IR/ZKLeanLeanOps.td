@@ -34,7 +34,7 @@ def ZKLeanLean_StructDefOp
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
   let summary = "ZKLean struct definition";
   let description = [{
-    Defines a ZKLean struct with named fields. Only field definitions are
+    Defines a ZKLean struct with named members. Only member definitions are
     allowed in the body region.
   }];
 
@@ -43,10 +43,10 @@ def ZKLeanLean_StructDefOp
   let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 }
 
-def ZKLeanLean_FieldDefOp
-    : ZKLeanLeanOp<"field", [HasParent<"::mlir::zkleanlean::StructDefOp">,
+def ZKLeanLean_MemberDefOp
+    : ZKLeanLeanOp<"member", [HasParent<"::mlir::zkleanlean::StructDefOp">,
                                Symbol]> {
-  let summary = "ZKLean struct field definition";
+  let summary = "ZKLean struct member definition";
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<ZKExpr>:$type);
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 }
@@ -56,7 +56,7 @@ def ZKLeanLean_FieldDefOp
 //===------------------------------------------------------------------===//
 
 def ZKLeanLean_AccessorOp : ZKLeanLeanOp<"accessor", [Pure]> {
-  let summary = "access value of a struct field";
+  let summary = "access member of a struct";
   let arguments = (ins ZKLeanLean_StructType:$component,
                        FlatSymbolRefAttr:$field_name);
   let results = (outs ZKExpr:$value);
