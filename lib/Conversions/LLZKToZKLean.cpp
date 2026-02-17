@@ -138,15 +138,15 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
         def.getLoc(), def.getSymNameAttr());
     auto *body = new Block();
     zkStruct.getBodyRegion().push_back(body);
-    OpBuilder fieldBuilder(body, body->begin());
-    for (auto field : def.getBody()->getOps<llzk::component::MemberDefOp>()) {
-      if (!mlir::isa<llzk::felt::FeltType>(field.getType())) {
-        field.emitError("unsupported field type for ZKLean struct conversion");
+    OpBuilder memberBuilder(body, body->begin());
+    for (auto member : def.getBody()->getOps<llzk::component::MemberDefOp>()) {
+      if (!mlir::isa<llzk::felt::FeltType>(member.getType())) {
+        member.emitError("unsupported member type for ZKLean struct conversion");
         state.hadError = true;
         continue;
       }
-      fieldBuilder.create<mlir::zkleanlean::MemberDefOp>(
-          field.getLoc(), field.getSymNameAttr(),
+      memberBuilder.create<mlir::zkleanlean::MemberDefOp>(
+          member.getLoc(), member.getSymNameAttr(),
           TypeAttr::get(state.zkType));
     }
   }

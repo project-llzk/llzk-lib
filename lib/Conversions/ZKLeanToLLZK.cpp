@@ -117,10 +117,10 @@ static void emitStructDefsFromZKLean(ModuleOp source,
         def.getLoc(), def.getSymNameAttr(), ArrayAttr());
     structDef.getBodyRegion().emplaceBlock();
     auto &body = structDef.getBodyRegion().front();
-    OpBuilder fieldBuilder(&body, body.begin());
-    for (auto field : def.getBody()->getOps<mlir::zkleanlean::MemberDefOp>()) {
-      fieldBuilder.create<llzk::component::MemberDefOp>(
-          field.getLoc(), field.getSymName(), state.feltType);
+    OpBuilder memberBuilder(&body, body.begin());
+    for (auto member : def.getBody()->getOps<mlir::zkleanlean::MemberDefOp>()) {
+      memberBuilder.create<llzk::component::MemberDefOp>(
+          member.getLoc(), member.getSymName(), state.feltType);
     }
     StructState structState;
     structState.def = structDef;
@@ -400,10 +400,10 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto fieldAttr =
-          state.builder.getStringAttr(accessor.getFieldNameAttr().getValue());
+      auto memberAttr =
+          state.builder.getStringAttr(accessor.getMemberNameAttr().getValue());
       auto newRead = state.builder.create<llzk::component::MemberReadOp>(
-          accessor.getLoc(), state.feltType, component, fieldAttr);
+          accessor.getLoc(), state.feltType, component, memberAttr);
       zkToFeltMap[accessor.getValue()] = newRead.getVal();
       return;
     }
