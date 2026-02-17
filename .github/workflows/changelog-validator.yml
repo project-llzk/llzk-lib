@@ -2,6 +2,12 @@ name: Changelog validator
 on:
   # Require a changelog for any PR going to main.
   pull_request:
+    types: 
+      - opened
+      - reopened
+      - synchronize
+      - review_requested
+      - ready_for_review
     branches:
       - main
     paths-ignore:
@@ -13,3 +19,4 @@ jobs:
   call-workflow-changelog-validate:
     uses: project-llzk/open-source-release-helpers/.github/workflows/changelog-validator.yml@main
     secrets: inherit
+    if: github.event.pull_request.draft == false
