@@ -2,7 +2,7 @@ add_library(LLZKZKLeanLeanDialect)
 add_library(LLZK::LLZKZKLeanLeanDialect ALIAS LLZKZKLeanLeanDialect)
 target_link_libraries(LLZKAllDialects INTERFACE LLZKZKLeanLeanDialect)
 
-file(GLOB_RECURSE LLZKZKLeanLeanDialect_SOURCES "**/*.cpp")
+file(GLOB_RECURSE LLZKZKLeanLeanDialect_SOURCES CONFIGURE_DEPENDS "**/*.cpp")
 target_sources(LLZKZKLeanLeanDialect PRIVATE ${LLZKZKLeanLeanDialect_SOURCES})
 target_link_libraries(
   LLZKZKLeanLeanDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS}

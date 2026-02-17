@@ -2,7 +2,7 @@ add_library(LLZKZKBuilderDialect)
 add_library(LLZK::LLZKZKBuilderDialect ALIAS LLZKZKBuilderDialect)
 target_link_libraries(LLZKAllDialects INTERFACE LLZKZKBuilderDialect)
 
-file(GLOB_RECURSE LLZKZKBuilderDialect_SOURCES "**/*.cpp")
+file(GLOB_RECURSE LLZKZKBuilderDialect_SOURCES CONFIGURE_DEPENDS "**/*.cpp")
 target_sources(LLZKZKBuilderDialect PRIVATE ${LLZKZKBuilderDialect_SOURCES})
 target_link_libraries(
   LLZKZKBuilderDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
