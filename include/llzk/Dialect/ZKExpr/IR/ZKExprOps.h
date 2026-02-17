@@ -7,8 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LIB_DIALECT_ZKEXPR_ZKEXPROPS_H_
-#define LIB_DIALECT_ZKEXPR_ZKEXPROPS_H_
+#pragma once
 
 #include "llzk/Dialect/ZKExpr/IR/ZKExprDialect.h"
 #include "llzk/Dialect/ZKExpr/IR/ZKExprTypes.h"
@@ -21,5 +20,3 @@
 
 #define GET_OP_CLASSES
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h.inc"
-
-#endif // LIB_DIALECT_ZKEXPR_ZKEXPROPS_H_
