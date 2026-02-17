@@ -389,7 +389,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @b0 : !struct.type<@NondetReg<[]>> {column}
     struct.member @"$temp_0" : !struct.type<@NondetU8Reg<[]>>
     struct.member @"$temp" : !felt.type
-    function.def @compute(%arg0: !struct.type<@ValU32<[]>>, %arg1: !felt.type) -> !struct.type<@ExpandU32<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@ValU32<[]>>, %arg1: !felt.type) -> !struct.type<@ExpandU32<[]>> attributes {function.allow_witness, function.allow_non_native_field_ops} {
       %felt_const_2 = felt.const  2
       %felt_const_32768 = felt.const  32768
       %felt_const_128 = felt.const  128
@@ -715,7 +715,7 @@ module attributes {llzk.lang = "zirgen"} {
     struct.member @"$temp_0" : !struct.type<@Div<[]>>
     struct.member @"$temp" : !felt.type
     struct.member @inst : !struct.type<@ValU32<[]>>
-    function.def @compute(%arg0: !struct.type<@ValU32<[]>>) -> !struct.type<@Decoder<[]>> attributes {function.allow_witness} {
+    function.def @compute(%arg0: !struct.type<@ValU32<[]>>) -> !struct.type<@Decoder<[]>> attributes {function.allow_witness, function.allow_non_native_field_ops} {
       %felt_const_65520 = felt.const  65520
       %felt_const_65535 = felt.const  65535
       %felt_const_61440 = felt.const  61440
