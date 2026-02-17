@@ -23,4 +23,9 @@ void loadRequiredAnalyses(DataFlowSolver &solver) {
   solver.load<mlir::dataflow::DeadCodeAnalysis>();
 }
 
+LogicalResult loadAndRunRequiredAnalyses(DataFlowSolver &solver, Operation *op) {
+  loadRequiredAnalyses(solver);
+  return solver.initializeAndRun(op);
+}
+
 } // namespace llzk::dataflow

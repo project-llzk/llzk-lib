@@ -209,9 +209,14 @@ protected:
     raw_ostream &os = toStream(outputStream);
 
     DataFlowSolver solver;
-    // Alternatively, call `llzk::dataflow::loadRequiredAnalyses`.
-    solver.load<mlir::dataflow::SparseConstantPropagation>();
-    solver.load<mlir::dataflow::DeadCodeAnalysis>();
+    if (preRunRequiredAnalyses) {
+      ensure(
+          dataflow::loadAndRunRequiredAnalyses(solver, getOperation()).succeeded(),
+          "failed to pre-run!"
+      );
+    } else {
+      dataflow::loadRequiredAnalyses(solver);
+    }
     solver.load<PredecessorAnalysis>(os);
     LogicalResult res = solver.initializeAndRun(getOperation());
 

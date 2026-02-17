@@ -546,8 +546,8 @@ module attributes {llzk.lang} {
         %3 = felt.const 3
         scf.yield %3 : !felt.type
       }
-      // COM: Since it's unknown if the loop will execute, the value of member @a
-      // is not guaranteed to be 3 (so it should be 0 or 3)
+      // COM: This is currently unsound, as it doesn't account for whether
+      // or not the loop will run.
       struct.writem %self[@a] = %c : !struct.type<@YieldForConst>, !felt.type
       function.return %self : !struct.type<@YieldForConst>
     }
@@ -561,9 +561,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @YieldForConst StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// COM: The range is currently Entire as the iter_args init is currently not
-// accounted for, see https://github.com/project-llzk/llzk-lib/issues/316
-// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:    %self[@a] in Degenerate(3)
 // CHECK-NEXT:  }
 
 // -----
@@ -598,7 +596,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    %arg0 in Entire
 // CHECK-NEXT:    %self[@a] in Degenerate(3)
 // CHECK-NEXT:  }
-
 
 // -----
 

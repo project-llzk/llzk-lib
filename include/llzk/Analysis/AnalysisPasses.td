@@ -111,7 +111,11 @@ def SymbolUseGraphPrinterPass : LLZKPass<"llzk-print-symbol-use-graph"> {
 def PredecessorPrinterPass : LLZKPass<"llzk-print-predecessors"> {
   let summary = "Print the predecessors of all operations.";
   let constructor = "llzk::createPredecessorPrinterPass()";
-  let options = [OutputStreamOption];
+  let options = [OutputStreamOption,
+                 Option<"preRunRequiredAnalyses", "prerun", "bool",
+                        /* default */ "false",
+                        "Whether to pre-run the required dataflow analyses "
+                        "(e.g., liveness analysis).">];
 }
 
 #endif // LLZK_ANALYSIS_TD
