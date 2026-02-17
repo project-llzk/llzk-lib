@@ -323,7 +323,7 @@ formatLeanStatement(Operation &op,
     line.append(" := ");
     line.append(lookupValueName(accessor.getComponent(), valueNames));
     line.push_back('.');
-    line.append(accessor.getFieldNameAttr().getValue());
+    line.append(accessor.getMemberNameAttr().getValue());
     return line;
   }
 
@@ -496,10 +496,10 @@ static bool emitLeanStructsFromZKLean(
   for (auto def : structs) {
     // All ZKLean structs are implicitly parameterized over the field type `f`.
     os << "structure " << def.getSymName() << " (f : Type) where\n";
-    for (auto field :
+    for (auto member :
          def.getBodyRegion().getOps<mlir::zkleanlean::MemberDefOp>()) {
-      os << "  " << field.getSymName() << " : "
-         << formatLeanType(field.getType()) << '\n';
+      os << "  " << member.getSymName() << " : "
+         << formatLeanType(member.getType()) << '\n';
     }
     os << '\n';
     printed = true;

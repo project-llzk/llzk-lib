@@ -58,10 +58,10 @@ def ZKLeanLean_MemberDefOp
 def ZKLeanLean_AccessorOp : ZKLeanLeanOp<"accessor", [Pure]> {
   let summary = "access member of a struct";
   let arguments = (ins ZKLeanLean_StructType:$component,
-                       FlatSymbolRefAttr:$field_name);
+                       FlatSymbolRefAttr:$member_name);
   let results = (outs ZKExpr:$value);
   let assemblyFormat = [{
-    $component `[` $field_name `]` `:` type($component) `,` type($value) attr-dict
+    $component `[` $member_name `]` `:` type($component) `,` type($value) attr-dict
   }];
 }
 
