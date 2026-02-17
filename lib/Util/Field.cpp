@@ -65,44 +65,45 @@ const Field &Field::getField(StringRef fieldName, EmitErrorFn errFn) {
 }
 
 void Field::addField(Field &&f, EmitErrorFn errFn) {
-  auto it = knownFields.find(f.name());
-  if (it == knownFields.end()) {
-    // Field does not exist, add it.
-    knownFields.try_emplace(f.name(), f);
-  } else if (it->second != f) {
+  // Use `tryGetField()` to ensure knownFields is initialized before checking for conflicts.
+  auto existing = Field::tryGetField(f.name());
+  if (mlir::succeeded(existing)) {
     // Field exists and conflicts with existing definition.
     std::string msg;
     debug::Appender(msg) << "Definition of \"" << f.name()
-                         << "\" conflicts with prior definition: prior=" << it->second.prime()
-                         << ", new=" << f.prime();
+                         << "\" conflicts with prior definition: prior="
+                         << existing.value().get().prime() << ", new=" << f.prime();
     if (errFn) {
       errFn().append(msg).report();
     } else {
       report_fatal_error(msg.c_str());
     }
+    return;
   }
-  // Field exists and does not conflict, so do nothing.
+  // Field does not exist, add it.
+  knownFields.try_emplace(f.name(), f);
 }
 
 void Field::initKnownFields() {
   static constexpr const char BN128[] = "bn128", BN254[] = "bn254", BABYBEAR[] = "babybear",
                               GOLDILOCKS[] = "goldilocks", MERSENNE31[] = "mersenne31",
                               KOALABEAR[] = "koalabear";
+
+  auto insert = [](const char *name, const char *primeStr) {
+    knownFields.try_emplace(name, Field(primeStr, name));
+  };
+
   // bn128/254, default for circom
-  addField(
-      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN128)
-  );
-  addField(
-      Field("21888242871839275222246405745257275088696311157297823662689037894645226208583", BN254)
-  );
+  insert(BN128, "21888242871839275222246405745257275088696311157297823662689037894645226208583");
+  insert(BN254, "21888242871839275222246405745257275088696311157297823662689037894645226208583");
   // 15 * 2^27 + 1, default for zirgen
-  addField(Field("2013265921", BABYBEAR));
+  insert(BABYBEAR, "2013265921");
   // 2^64 - 2^32 + 1, used for plonky2
-  addField(Field("18446744069414584321", GOLDILOCKS));
+  insert(GOLDILOCKS, "18446744069414584321");
   // 2^31 - 1, used for Plonky3
-  addField(Field("2147483647", MERSENNE31));
+  insert(MERSENNE31, "2147483647");
   // 2^31 - 2^24 + 1, also for Plonky3
-  addField(Field("2130706433", KOALABEAR));
+  insert(KOALABEAR, "2130706433");
 }
 
 DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
