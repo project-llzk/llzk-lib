@@ -54,31 +54,23 @@ repo:
 │   │   ├── ZKBuilder
 │   │   │   └── IR
 │   │   │       ├── CMakeLists.txt
-│   │   │       ├── ZKBuilderDialect.cpp
-│   │   │       └── ZKBuilderOps.cpp
+│   │   │       └── ZKBuilderDialect.cpp
 │   │   ├── ZKExpr
 │   │   │    └── IR
 │   │   │       ├── CMakeLists.txt
-│   │   │       ├── ZKExprDialect.cpp
-│   │   │       └── ZKExprOps.cpp
+│   │   │       └── ZKExprDialect.cpp
 │   │   └── ZKLeanLean
 │   │       ├── CMakeLists.txt
 │   │       └── IR
-│   │           ├── ZKLeanLeanDialect.cpp
-│   │           └── ZKLeanLeanOps.cpp
+│   │           └── ZKLeanLeanDialect.cpp
 │   ├── InitDialects.cpp
 │   └── Transforms
 │       ├── CMakeLists.txt
 │       └── PrettyPrintZKLean.cpp
 ├── test
-│   ├── Conversations
-│   │   ├── circom_isZero.llzk
-│   │   └── zklean_isZero.llzk
-│   └── Dialect
-│       ├── ZKBuilder
-│       │   └── zkbuilder_syntax.mlir
-│       └── ZKExpr
-│           └── zkexpr_syntax.mlir
+│   └── Conversations
+│       ├── circom_isZero.llzk
+│       └── zklean_isZero.llzk
 └── tools
     └── llzk-opt
         ├── CMakeLists.txt
