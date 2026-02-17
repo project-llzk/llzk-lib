@@ -21,8 +21,7 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.cpp.inc"
 
-namespace mlir {
-namespace zkbuilder {
+namespace llzk::zkbuilder {
 
 void ZKBuilderDialect::initialize() {
   addTypes<
@@ -35,5 +34,4 @@ void ZKBuilderDialect::initialize() {
       >();
 }
 
-} // namespace zkbuilder
-} // namespace mlir
+} // namespace llzk::zkbuilder

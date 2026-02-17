@@ -20,7 +20,7 @@ def ZKExpr_Dialect : Dialect {
     ZK Expressions from the ZK Lean project.
   }];
 
-  let cppNamespace = "::mlir::zkexpr";
+  let cppNamespace = "::llzk::zkexpr";
 
   let useDefaultTypePrinterParser = 1;
 }

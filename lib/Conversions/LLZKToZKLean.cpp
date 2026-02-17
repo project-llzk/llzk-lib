@@ -97,11 +97,11 @@ struct LLZKToZKLeanState {
   bool &hadError;
 };
 
-// Convert `llzk::component::StructType` to `mlir::zkleanlean::StructType`.
+// Convert `llzk::component::StructType` to `llzk::zkleanlean::StructType`.
 // Leaves other types unchanged.
 static Type mapStructType(Type type, MLIRContext *context) {
   if (auto structType = dyn_cast<llzk::component::StructType>(type))
-    return mlir::zkleanlean::StructType::get(context, structType.getNameRef());
+    return llzk::zkleanlean::StructType::get(context, structType.getNameRef());
   return type;
 }
 
@@ -122,7 +122,7 @@ static SmallVector<Operation *, 16> collectBlockOps(Block &block) {
   return ops;
 }
 
-// Emit `mlir::zkleanlean::StructDefOp` symbols for LLZK structs.
+// Emit `llzk::zkleanlean::StructDefOp` symbols for LLZK structs.
 // Only felt-typed fields are supported; others set `state.hadError`.
 static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
   // Emit ZKLeanLean.structure equivalents so downstream functions can reference
@@ -134,7 +134,7 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
       continue;
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
-    auto zkStruct = state.builder.create<mlir::zkleanlean::StructDefOp>(
+    auto zkStruct = state.builder.create<llzk::zkleanlean::StructDefOp>(
         def.getLoc(), def.getSymNameAttr());
     auto *body = new Block();
     zkStruct.getBodyRegion().push_back(body);
@@ -145,7 +145,7 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
         state.hadError = true;
         continue;
       }
-      memberBuilder.create<mlir::zkleanlean::MemberDefOp>(
+      memberBuilder.create<llzk::zkleanlean::MemberDefOp>(
           member.getLoc(), member.getSymNameAttr(),
           TypeAttr::get(state.zkType));
     }
@@ -207,7 +207,7 @@ struct FunctionConverter {
       state.hadError = true;
       return Value();
     }
-    if (mlir::isa<mlir::zkleanlean::StructType>(newArg.getType())) {
+    if (mlir::isa<llzk::zkleanlean::StructType>(newArg.getType())) {
       userOp->emitError("struct values must be accessed via zkleanlean.accessor");
       state.hadError = true;
       return Value();
@@ -215,7 +215,7 @@ struct FunctionConverter {
     return newArg;
   }
 
-  // Map a felt-producing value into a `mlir::zkexpr::LiteralOp`.
+  // Map a felt-producing value into a `llzk::zkexpr::LiteralOp`.
   // Caches the result so multiple uses share the same literal.
   Value mapValue(Value v, Operation *userOp) {
     if (auto it = zkValues.find(v); it != zkValues.end())
@@ -225,7 +225,7 @@ struct FunctionConverter {
       return Value();
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(newBlock);
-    auto literal = state.builder.create<mlir::zkexpr::LiteralOp>(
+    auto literal = state.builder.create<llzk::zkexpr::LiteralOp>(
         v.getLoc(), state.zkType, newArg);
     zkValues[v] = literal.getOutput();
     return literal.getOutput();
@@ -249,7 +249,7 @@ struct FunctionConverter {
       auto newConst = state.builder.create<llzk::felt::FeltConstantOp>(
           constOp.getLoc(), constOp.getResult().getType(),
           constOp.getValueAttr());
-      auto literal = state.builder.create<mlir::zkexpr::LiteralOp>(
+      auto literal = state.builder.create<llzk::zkexpr::LiteralOp>(
           constOp.getLoc(), state.zkType, newConst.getResult());
       zkValues[constOp.getResult()] = literal.getOutput();
       return;
@@ -263,7 +263,7 @@ struct FunctionConverter {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto zkAdd =
-          state.builder.create<mlir::zkexpr::AddOp>(add.getLoc(), lhs, rhs);
+          state.builder.create<llzk::zkexpr::AddOp>(add.getLoc(), lhs, rhs);
       zkValues[add.getResult()] = zkAdd.getOutput();
       return;
     }
@@ -276,7 +276,7 @@ struct FunctionConverter {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto zkSub =
-          state.builder.create<mlir::zkexpr::SubOp>(sub.getLoc(), lhs, rhs);
+          state.builder.create<llzk::zkexpr::SubOp>(sub.getLoc(), lhs, rhs);
       zkValues[sub.getResult()] = zkSub.getOutput();
       return;
     }
@@ -289,7 +289,7 @@ struct FunctionConverter {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto zkMul =
-          state.builder.create<mlir::zkexpr::MulOp>(mul.getLoc(), lhs, rhs);
+          state.builder.create<llzk::zkexpr::MulOp>(mul.getLoc(), lhs, rhs);
       zkValues[mul.getResult()] = zkMul.getOutput();
       return;
     }
@@ -301,7 +301,7 @@ struct FunctionConverter {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto zkNeg =
-          state.builder.create<mlir::zkexpr::NegOp>(neg.getLoc(), operand);
+          state.builder.create<llzk::zkexpr::NegOp>(neg.getLoc(), operand);
       zkValues[neg.getResult()] = zkNeg.getOutput();
       return;
     }
@@ -315,7 +315,7 @@ struct FunctionConverter {
       callee.append(cmpPredicateSuffix(cmp.getPredicate()));
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto call = state.builder.create<mlir::zkleanlean::CallOp>(
+      auto call = state.builder.create<llzk::zkleanlean::CallOp>(
           cmp.getLoc(), state.builder.getI1Type(),
           SymbolRefAttr::get(state.dest.getContext(), callee),
           ValueRange{lhs, rhs});
@@ -329,7 +329,7 @@ struct FunctionConverter {
         return;
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto call = state.builder.create<mlir::zkleanlean::CallOp>(
+      auto call = state.builder.create<llzk::zkleanlean::CallOp>(
           cast.getLoc(), state.zkType,
           SymbolRefAttr::get(state.dest.getContext(), "cast.tofelt"),
           ValueRange{value});
@@ -346,7 +346,7 @@ struct FunctionConverter {
         state.hadError = true;
         return;
       }
-      auto accessorOp = state.builder.create<mlir::zkleanlean::AccessorOp>(
+      auto accessorOp = state.builder.create<llzk::zkleanlean::AccessorOp>(
           read.getLoc(), state.zkType, component, read.getMemberNameAttr());
       zkValues[read.getResult()] = accessorOp.getValue();
       return;
@@ -358,10 +358,10 @@ struct FunctionConverter {
       if (!lhs || !rhs)
         return;
       auto stateType =
-          mlir::zkbuilder::ZKBuilderStateType::get(state.dest.getContext());
+          llzk::zkbuilder::ZKBuilderStateType::get(state.dest.getContext());
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      state.builder.create<mlir::zkbuilder::ConstrainEqOp>(eq.getLoc(),
+      state.builder.create<llzk::zkbuilder::ConstrainEqOp>(eq.getLoc(),
                                                           stateType, lhs, rhs);
       return;
     }
@@ -403,7 +403,7 @@ static bool convertFunction(llzk::function::FuncDefOp func,
 // Emits struct defs first, then lowers each function via `convertFunction`.
 static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
   OpBuilder builder(dest.getContext());
-  auto zkType = mlir::zkexpr::ZKExprType::get(dest.getContext());
+  auto zkType = llzk::zkexpr::ZKExprType::get(dest.getContext());
   bool createdAny = false;
   bool hadError = false;
 
@@ -432,9 +432,9 @@ public:
     registry.insert<llzk::boolean::BoolDialect,
                     llzk::cast::CastDialect,
                     mlir::func::FuncDialect,
-                    mlir::zkbuilder::ZKBuilderDialect,
-                    mlir::zkexpr::ZKExprDialect,
-                    mlir::zkleanlean::ZKLeanLeanDialect>();
+                    llzk::zkbuilder::ZKBuilderDialect,
+                    llzk::zkexpr::ZKExprDialect,
+                    llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 
   // Replace the current `ModuleOp` with the ZKLean module.
