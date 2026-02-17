@@ -1,5 +1,10 @@
 //===-- Passes.h -------------------------------------------------*- C++ -*-===//
 //
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
 //===----------------------------------------------------------------------===//
 
 #pragma once
@@ -11,11 +16,8 @@ namespace llzk {
 std::unique_ptr<mlir::Pass> createConvertLLZKToZKLeanPass();
 std::unique_ptr<mlir::Pass> createConvertZKLeanToLLZKPass();
 
-/// Registers all conversion passes defined in this directory.
-void registerConversionPasses();
+#define GEN_PASS_REGISTRATION
+#include "llzk/Conversions/LLZKConversionPasses.h.inc"
 
 } // namespace llzk
 
-#define GEN_PASS_DECL_CONVERTLLZKTOZKLEANPASS
-#define GEN_PASS_DECL_CONVERTZKLEANTOLLZKPASS
-#include "llzk/Conversions/LLZKConversionPasses.h.inc"
