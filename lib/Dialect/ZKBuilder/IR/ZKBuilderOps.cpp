@@ -9,9 +9,7 @@
 
 #include "llzk/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 
-namespace mlir {
-namespace zkbuilder {
+namespace llzk::zkbuilder {
 
 
-}  // namespace zkbuilder
-}  // namespace mlir
+}  // namespace llzk::zkbuilder

@@ -49,9 +49,9 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::polymorphic::PolymorphicDialect,
       mlir::arith::ArithDialect,
       mlir::scf::SCFDialect,
-      mlir::zkbuilder::ZKBuilderDialect,
-      mlir::zkleanlean::ZKLeanLeanDialect,
-      mlir::zkexpr::ZKExprDialect
+      llzk::zkbuilder::ZKBuilderDialect,
+      llzk::zkleanlean::ZKLeanLeanDialect,
+      llzk::zkexpr::ZKExprDialect
       // clang-format on
       >();
 

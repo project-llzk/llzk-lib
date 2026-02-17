@@ -44,7 +44,7 @@ def ZKLeanLean_StructDefOp
 }
 
 def ZKLeanLean_MemberDefOp
-    : ZKLeanLeanOp<"member", [HasParent<"::mlir::zkleanlean::StructDefOp">,
+    : ZKLeanLeanOp<"member", [HasParent<"::llzk::zkleanlean::StructDefOp">,
                                Symbol]> {
   let summary = "ZKLean struct member definition";
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<ZKExpr>:$type);

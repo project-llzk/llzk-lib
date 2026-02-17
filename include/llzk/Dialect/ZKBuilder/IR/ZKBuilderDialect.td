@@ -20,7 +20,7 @@ def ZKBuilder_Dialect : Dialect {
     ZK Builders from the ZK Lean project.
   }];
 
-  let cppNamespace = "::mlir::zkbuilder";
+  let cppNamespace = "::llzk::zkbuilder";
 
   let useDefaultTypePrinterParser = 1;
 }

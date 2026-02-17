@@ -20,7 +20,7 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.cpp.inc"
 
-auto mlir::zkexpr::ZKExprDialect::initialize() -> void {
+auto llzk::zkexpr::ZKExprDialect::initialize() -> void {
   addTypes<
 #define GET_TYPEDEF_LIST
 #include "llzk/Dialect/ZKExpr/IR/ZKExprTypes.cpp.inc"

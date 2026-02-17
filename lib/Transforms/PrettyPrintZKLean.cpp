@@ -80,7 +80,7 @@ buildLeanFunctionName(llzk::function::FuncDefOp func) {
 // Extract a struct name from ZKLean struct types.
 // Returns `std::nullopt` when the type is not a ZKLean struct.
 static std::optional<std::string> getStructTypeName(Type type) {
-  if (auto structType = dyn_cast<mlir::zkleanlean::StructType>(type))
+  if (auto structType = dyn_cast<llzk::zkleanlean::StructType>(type))
     return structType.getNameRef().getLeafReference().str();
   return std::nullopt;
 }
@@ -248,7 +248,7 @@ static std::optional<std::string>
 findStructName(Block &entry, StringRef funcName,
                const llvm::DenseSet<StringRef> &structNames) {
   for (Operation &op : entry) {
-    if (isa<mlir::zkexpr::WitnessOp>(op)) {
+    if (isa<llzk::zkexpr::WitnessOp>(op)) {
       if (auto name = getWitnessStructName(op))
         return name;
     }
@@ -265,7 +265,7 @@ formatLeanStatement(Operation &op,
                     unsigned &nextValueId,
                     const llvm::StringMap<std::string> &structArgNames,
                     StringRef defaultStructVarName) {
-  if (auto literal = dyn_cast<mlir::zkexpr::LiteralOp>(op)) {
+  if (auto literal = dyn_cast<llzk::zkexpr::LiteralOp>(op)) {
     Value litValue = literal.getLiteral();
     if (auto arg = dyn_cast<BlockArgument>(litValue)) {
       std::string argName = lookupValueName(arg, valueNames);
@@ -290,7 +290,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto witness = dyn_cast<mlir::zkexpr::WitnessOp>(op)) {
+  if (auto witness = dyn_cast<llzk::zkexpr::WitnessOp>(op)) {
     auto fieldName = getWitnessFieldName(op);
     std::string structVarName = defaultStructVarName.str();
     if (auto structName = getWitnessStructName(op)) {
@@ -316,7 +316,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto accessor = dyn_cast<mlir::zkleanlean::AccessorOp>(op)) {
+  if (auto accessor = dyn_cast<llzk::zkleanlean::AccessorOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
@@ -327,7 +327,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto call = dyn_cast<mlir::zkleanlean::CallOp>(op)) {
+  if (auto call = dyn_cast<llzk::zkleanlean::CallOp>(op)) {
     std::string callee = formatLeanCallee(call.getCallee());
     std::string callLine = callee;
     for (Value operand : op.getOperands()) {
@@ -345,7 +345,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto neg = dyn_cast<mlir::zkexpr::NegOp>(op)) {
+  if (auto neg = dyn_cast<llzk::zkexpr::NegOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
@@ -354,7 +354,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto add = dyn_cast<mlir::zkexpr::AddOp>(op)) {
+  if (auto add = dyn_cast<llzk::zkexpr::AddOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
@@ -365,7 +365,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto sub = dyn_cast<mlir::zkexpr::SubOp>(op)) {
+  if (auto sub = dyn_cast<llzk::zkexpr::SubOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
@@ -376,7 +376,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto mul = dyn_cast<mlir::zkexpr::MulOp>(op)) {
+  if (auto mul = dyn_cast<llzk::zkexpr::MulOp>(op)) {
     auto resultNames = assignResultNames(op, valueNames, nextValueId);
     std::string line = "  let ";
     line.append(wrapResultNames(resultNames));
@@ -387,7 +387,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto eq = dyn_cast<mlir::zkbuilder::ConstrainEqOp>(op)) {
+  if (auto eq = dyn_cast<llzk::zkbuilder::ConstrainEqOp>(op)) {
     std::string call = "constrainEq ";
     call.append(lookupValueName(eq.getLhs(), valueNames));
     call.push_back(' ');
@@ -490,14 +490,14 @@ static bool emitLeanFunc(FuncOpTy func, raw_ostream &os,
 // Emit Lean structure declarations from ZKLean structs.
 // Reads ZKLean struct bodies and formats fields in order.
 static bool emitLeanStructsFromZKLean(
-    ArrayRef<mlir::zkleanlean::StructDefOp> structs,
+    ArrayRef<llzk::zkleanlean::StructDefOp> structs,
     raw_ostream &os) {
   bool printed = false;
   for (auto def : structs) {
     // All ZKLean structs are implicitly parameterized over the field type `f`.
     os << "structure " << def.getSymName() << " (f : Type) where\n";
     for (auto member :
-         def.getBodyRegion().getOps<mlir::zkleanlean::MemberDefOp>()) {
+         def.getBodyRegion().getOps<llzk::zkleanlean::MemberDefOp>()) {
       os << "  " << member.getSymName() << " : "
          << formatLeanType(member.getType()) << '\n';
     }
@@ -509,11 +509,11 @@ static bool emitLeanStructsFromZKLean(
 
 // Collect unique ZKLean struct defs and record their names.
 // Preserves first-seen order for deterministic output.
-static llvm::SmallVector<mlir::zkleanlean::StructDefOp, 8>
+static llvm::SmallVector<llzk::zkleanlean::StructDefOp, 8>
 collectZKLeanStructDefs(ModuleOp module,
                         llvm::DenseSet<StringRef> &structNames) {
-  llvm::SmallVector<mlir::zkleanlean::StructDefOp, 8> structDefs;
-  module.walk([&](mlir::zkleanlean::StructDefOp def) {
+  llvm::SmallVector<llzk::zkleanlean::StructDefOp, 8> structDefs;
+  module.walk([&](llzk::zkleanlean::StructDefOp def) {
     StringRef name = def.getSymName();
     if (structNames.insert(name).second)
       structDefs.push_back(def);

@@ -9,8 +9,6 @@
 
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 
-namespace mlir {
-namespace zkleanlean {
+namespace llzk::zkleanlean {
 
-} // namespace zkleanlean
-} // namespace mlir
+} // namespace llzk::zkleanlean

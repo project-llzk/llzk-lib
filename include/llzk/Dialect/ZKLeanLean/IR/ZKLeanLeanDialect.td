@@ -20,7 +20,7 @@ def ZKLeanLean_Dialect : Dialect {
     primitives, including struct definitions, field access, and function calls.
   }];
 
-  let cppNamespace = "::mlir::zkleanlean";
+  let cppNamespace = "::llzk::zkleanlean";
 
   let useDefaultTypePrinterParser = 1;
 }

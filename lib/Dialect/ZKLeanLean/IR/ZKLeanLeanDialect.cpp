@@ -20,7 +20,7 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.cpp.inc"
 
-auto mlir::zkleanlean::ZKLeanLeanDialect::initialize() -> void {
+auto llzk::zkleanlean::ZKLeanLeanDialect::initialize() -> void {
   addTypes<
 #define GET_TYPEDEF_LIST
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.cpp.inc"

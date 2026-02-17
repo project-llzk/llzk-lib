@@ -10,8 +10,6 @@
 
 #include "llzk/Dialect/ZKExpr/IR/ZKExprOps.h"
 
-namespace mlir {
-namespace zkexpr {
+namespace llzk::zkexpr {
 
-}  // namespace zkexpr
-}  // namespace mlir
+}  // namespace llzk::zkexpr

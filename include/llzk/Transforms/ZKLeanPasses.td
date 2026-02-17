@@ -22,9 +22,9 @@ def PrettyPrintZKLeanPass
   let dependentDialects = [
     "llzk::felt::FeltDialect",
     "mlir::func::FuncDialect",
-    "mlir::zkexpr::ZKExprDialect",
-    "mlir::zkbuilder::ZKBuilderDialect",
-    "mlir::zkleanlean::ZKLeanLeanDialect"
+    "llzk::zkexpr::ZKExprDialect",
+    "llzk::zkbuilder::ZKBuilderDialect",
+    "llzk::zkleanlean::ZKLeanLeanDialect"
   ];
   let options = [
     Option<"outputFilename", "output-file", "std::string",

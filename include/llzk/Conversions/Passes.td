@@ -26,8 +26,8 @@ def ConvertLLZKToZKLeanPass
   let dependentDialects = [
     "llzk::felt::FeltDialect",
     "llzk::constrain::ConstrainDialect",
-    "mlir::zkexpr::ZKExprDialect",
-    "mlir::zkbuilder::ZKBuilderDialect"
+    "llzk::zkexpr::ZKExprDialect",
+    "llzk::zkbuilder::ZKBuilderDialect"
   ];
   let constructor = "llzk::createConvertLLZKToZKLeanPass()";
 }
@@ -43,8 +43,8 @@ def ConvertZKLeanToLLZKPass
   let dependentDialects = [
     "llzk::felt::FeltDialect",
     "llzk::constrain::ConstrainDialect",
-    "mlir::zkexpr::ZKExprDialect",
-    "mlir::zkbuilder::ZKBuilderDialect"
+    "llzk::zkexpr::ZKExprDialect",
+    "llzk::zkbuilder::ZKBuilderDialect"
   ];
   let constructor = "llzk::createConvertZKLeanToLLZKPass()";
 }

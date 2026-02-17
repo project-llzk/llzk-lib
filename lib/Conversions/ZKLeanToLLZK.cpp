@@ -92,10 +92,10 @@ struct ZKLeanToLLZKState {
   llvm::StringMap<StructState> &structStates;
 };
 
-// Map `mlir::zkleanlean::StructType` into `llzk::component::StructType`.
+// Map `llzk::zkleanlean::StructType` into `llzk::component::StructType`.
 // Leaves non-struct types untouched for downstream lowering.
 static Type mapStructType(Type type) {
-  if (auto structType = dyn_cast<mlir::zkleanlean::StructType>(type))
+  if (auto structType = dyn_cast<llzk::zkleanlean::StructType>(type))
     return llzk::component::StructType::get(structType.getNameRef());
   return type;
 }
@@ -107,7 +107,7 @@ static void emitStructDefsFromZKLean(ModuleOp source,
   // Pre-pass: materialize LLZK struct.defs from ZKLeanLean.structure ops first so
   // struct.type<@Name> symbols exist before function conversion.
   llvm::StringSet<> seenStructs;
-  for (auto def : source.getBody()->getOps<mlir::zkleanlean::StructDefOp>()) {
+  for (auto def : source.getBody()->getOps<llzk::zkleanlean::StructDefOp>()) {
     StringRef name = def.getSymName();
     if (!seenStructs.insert(name).second)
       continue;
@@ -118,7 +118,7 @@ static void emitStructDefsFromZKLean(ModuleOp source,
     structDef.getBodyRegion().emplaceBlock();
     auto &body = structDef.getBodyRegion().front();
     OpBuilder memberBuilder(&body, body.begin());
-    for (auto member : def.getBody()->getOps<mlir::zkleanlean::MemberDefOp>()) {
+    for (auto member : def.getBody()->getOps<llzk::zkleanlean::MemberDefOp>()) {
       memberBuilder.create<llzk::component::MemberDefOp>(
           member.getLoc(), member.getSymName(), state.feltType);
     }
@@ -185,10 +185,10 @@ static void ensureConstrainStub(StructState &state, Location loc,
 // The captured list is used to avoid iterator invalidation during rewriting.
 static void collectOpsAndWitnesses(
     Block &block, SmallVector<Operation *, 16> &ops,
-    SmallVector<mlir::zkexpr::WitnessOp, 8> &witnesses) {
+    SmallVector<llzk::zkexpr::WitnessOp, 8> &witnesses) {
   for (Operation &op : block) {
     ops.push_back(&op);
-    if (auto witness = dyn_cast<mlir::zkexpr::WitnessOp>(&op))
+    if (auto witness = dyn_cast<llzk::zkexpr::WitnessOp>(&op))
       witnesses.push_back(witness);
   }
 }
@@ -265,9 +265,9 @@ struct FunctionConverter {
     }
   }
 
-  // Append extra arguments for each `mlir::zkexpr::WitnessOp`.
+  // Append extra arguments for each `llzk::zkexpr::WitnessOp`.
   // Each witness becomes a felt-typed argument on the target block.
-  void mapWitnessArgs(ArrayRef<mlir::zkexpr::WitnessOp> witnesses) {
+  void mapWitnessArgs(ArrayRef<llzk::zkexpr::WitnessOp> witnesses) {
     for (auto witness : witnesses) {
       auto newArg = newBlock->addArgument(state.feltType, witness.getLoc());
       witnessArgs[witness.getOperation()] = newArg;
@@ -319,7 +319,7 @@ struct FunctionConverter {
     }
 
     // ZKExpr literal maps to underlying felt value
-    if (auto literal = dyn_cast<mlir::zkexpr::LiteralOp>(op)) {
+    if (auto literal = dyn_cast<llzk::zkexpr::LiteralOp>(op)) {
       Value mapped = mapFelt(literal.getLiteral());
       if (!mapped) {
         literal.emitError("unsupported literal source in ZKLean conversion");
@@ -331,14 +331,14 @@ struct FunctionConverter {
     }
 
     // ZKExpr witness maps to dedicated witness argument
-    if (auto witness = dyn_cast<mlir::zkexpr::WitnessOp>(op)) {
+    if (auto witness = dyn_cast<llzk::zkexpr::WitnessOp>(op)) {
       Value arg = witnessArgs.lookup(witness.getOperation());
       zkToFeltMap[witness.getOutput()] = arg;
       return;
     }
 
     // ZKLeanLean.call to LLZK operations
-    if (auto call = dyn_cast<mlir::zkleanlean::CallOp>(op)) {
+    if (auto call = dyn_cast<llzk::zkleanlean::CallOp>(op)) {
       StringRef calleeName =
           call.getCallee().getRootReference().getValue();
       if (calleeName.consume_front("bool.cmp_")) {
@@ -391,7 +391,7 @@ struct FunctionConverter {
     }
 
     // ZKLeanLean.accessor to struct.readf
-    if (auto accessor = dyn_cast<mlir::zkleanlean::AccessorOp>(op)) {
+    if (auto accessor = dyn_cast<llzk::zkleanlean::AccessorOp>(op)) {
       Value component = argMap.lookup(accessor.getComponent());
       if (!component) {
         accessor.emitError("unsupported struct source in ZKLean conversion");
@@ -409,7 +409,7 @@ struct FunctionConverter {
     }
 
     // ZKExpr.Add to felt.add
-    if (auto add = dyn_cast<mlir::zkexpr::AddOp>(op)) {
+    if (auto add = dyn_cast<llzk::zkexpr::AddOp>(op)) {
       Value lhs = mapZK(add.getLhs());
       Value rhs = mapZK(add.getRhs());
       if (!lhs || !rhs) {
@@ -426,7 +426,7 @@ struct FunctionConverter {
     }
 
     // ZKExpr.Sub to felt.sub
-    if (auto sub = dyn_cast<mlir::zkexpr::SubOp>(op)) {
+    if (auto sub = dyn_cast<llzk::zkexpr::SubOp>(op)) {
       Value lhs = mapZK(sub.getLhs());
       Value rhs = mapZK(sub.getRhs());
       if (!lhs || !rhs) {
@@ -443,7 +443,7 @@ struct FunctionConverter {
     }
 
     // ZKExpr.Mul to felt.mul
-    if (auto mul = dyn_cast<mlir::zkexpr::MulOp>(op)) {
+    if (auto mul = dyn_cast<llzk::zkexpr::MulOp>(op)) {
       Value lhs = mapZK(mul.getLhs());
       Value rhs = mapZK(mul.getRhs());
       if (!lhs || !rhs) {
@@ -460,7 +460,7 @@ struct FunctionConverter {
     }
 
     // ZKExpr.Neg to felt.Neg
-    if (auto neg = dyn_cast<mlir::zkexpr::NegOp>(op)) {
+    if (auto neg = dyn_cast<llzk::zkexpr::NegOp>(op)) {
       Value operand = mapZK(neg.getValue());
       if (!operand) {
         neg.emitError("missing ZKExpr operand in ZKLean conversion");
@@ -476,7 +476,7 @@ struct FunctionConverter {
     }
 
     // ZKBuilder.ConstrainEq to constrain.eq
-    if (auto constraint = dyn_cast<mlir::zkbuilder::ConstrainEqOp>(op)) {
+    if (auto constraint = dyn_cast<llzk::zkbuilder::ConstrainEqOp>(op)) {
       Value lhs = mapZK(constraint.getLhs());
       Value rhs = mapZK(constraint.getRhs());
       if (!lhs || !rhs) {
@@ -551,7 +551,7 @@ static void convertFunction(FuncOpTy func, bool allowWitness,
 
   Block &oldBlock = func.getBody().front();
   SmallVector<Operation *, 16> ops;
-  SmallVector<mlir::zkexpr::WitnessOp, 8> witnesses;
+  SmallVector<llzk::zkexpr::WitnessOp, 8> witnesses;
   collectOpsAndWitnesses(oldBlock, ops, witnesses);
 
   // Collect input types of original ZKLean function.
@@ -637,8 +637,8 @@ public:
                     llzk::function::FunctionDialect,
                     llzk::component::StructDialect,
                     mlir::func::FuncDialect,
-                    mlir::zkexpr::ZKExprDialect,
-                    mlir::zkleanlean::ZKLeanLeanDialect>();
+                    llzk::zkexpr::ZKExprDialect,
+                    llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 
   // Create the LLZK module, run conversion, and attach it to the source.
