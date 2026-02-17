@@ -7,3 +7,8 @@ module attributes {llzk.lang, llzk.fields = [#felt.field<"moo">]} {}
 
 // expected-error@+1{{Definition of "moo" conflicts with prior definition: prior=7, new=9}}
 module attributes {llzk.lang, llzk.fields = [#felt.field<"moo", 7>, #felt.field<"moo", 9>]} {}
+
+// -----
+
+// expected-error@+1{{Definition of "babybear" conflicts with prior definition: prior=2013265921, new=3}}
+module attributes {llzk.lang, llzk.fields = [#felt.field<"babybear", 3>]} {}
