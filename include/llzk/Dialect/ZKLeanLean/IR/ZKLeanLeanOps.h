@@ -7,8 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANOPS_H_
-#define LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANOPS_H_
+#pragma once
 
 #include "llzk/Dialect/ZKExpr/IR/ZKExprTypes.h"
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
@@ -20,5 +19,3 @@
 
 #define GET_OP_CLASSES
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h.inc"
-
-#endif  // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANOPS_H_
