@@ -34,8 +34,8 @@ A new release starts via a manually triggered GitHub workflow.
 4. Select `Run workflow` on the top right corner of the workflow’s runs page
 5. Run the workflow from the `main` branch
 6. Provide the git ref used to create the release:
-    1. This is usually the `main` branch if thats a new release
-    2. a fix branch, if thats a patch on an existing release.
+    - If making a new release, this is the `main` branch
+    - If making a patch on an existing release, this is a fix branch
 7. Provide the version of the new release
 8. Click `Run workflow`. This workflow will:
     1. Create required temporary pre-release files
@@ -49,8 +49,7 @@ be performed by creating PRs against the aforementioned pre-release branch.
 ### Creating the Release Candidate
 
 Once the changelog is updated and the necessary changes have been cherry-picked into the pre-release branch,
-run the "Create Release Candidate" workflow.
-This creates and tags a new release candidate for the desired version.
+run the "Create Release Candidate" workflow. This creates and tags a new release candidate for the desired version.
 If there are any issues that need to be addressed at this state, PRs can be opened against
 this branch and new release candidates can be created by re-running the "Create Release Candidate" workflow.
 
