@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
-  llzk::registerConversionPasses();
+  llzk::registerLLZKConversionPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();

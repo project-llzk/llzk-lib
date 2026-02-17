@@ -45,6 +45,7 @@
 using namespace mlir;
 
 namespace llzk {
+#define GEN_PASS_DECL_CONVERTLLZKTOZKLEANPASS
 #define GEN_PASS_DEF_CONVERTLLZKTOZKLEANPASS
 #include "llzk/Conversions/LLZKConversionPasses.h.inc"
 } // namespace llzk
@@ -465,13 +466,6 @@ namespace llzk {
 // Used by pass registration and external callers.
 std::unique_ptr<Pass> createConvertLLZKToZKLeanPass() {
   return std::make_unique<ConvertLLZKToZKLeanPass>();
-}
-
-// Register conversion passes with MLIR's global pass registry.
-// Includes both `createConvertLLZKToZKLeanPass` and `createConvertZKLeanToLLZKPass`.
-void registerConversionPasses() {
-  ::mlir::registerPass([] { return createConvertLLZKToZKLeanPass(); });
-  ::mlir::registerPass([] { return createConvertZKLeanToLLZKPass(); });
 }
 
 } // namespace llzk

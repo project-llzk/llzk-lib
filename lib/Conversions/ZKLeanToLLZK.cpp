@@ -48,6 +48,7 @@
 using namespace mlir;
 
 namespace llzk {
+#define GEN_PASS_DECL_CONVERTZKLEANTOLLZKPASS
 #define GEN_PASS_DEF_CONVERTZKLEANTOLLZKPASS
 #include "llzk/Conversions/LLZKConversionPasses.h.inc"
 } // namespace llzk
