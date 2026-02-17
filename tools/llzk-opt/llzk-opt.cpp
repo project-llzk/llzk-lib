@@ -80,9 +80,7 @@ int main(int argc, char **argv) {
   llzk::polymorphic::registerTransformationPasses();
   llzk::registerTransformationPassPipelines();
   llzk::registerValidationPasses();
-
-  // register zklean pretty print pass
-  mlir::registerPass([] { return llzk::zklean::createPrettyPrintZKLeanPass(); });
+  llzk::zklean::registerZKLeanPasses();
 
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
