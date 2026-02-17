@@ -13,13 +13,25 @@
 
 namespace llzk::dataflow {
 
-/// LLZK: Added this utility to ensure analysis is performed for all structs
-/// in a given module.
-///
-/// @brief Mark all operations from the top and included in the top operation
-/// as live so the solver will perform dataflow analyses.
+/// @brief Loads analyses required to initialize the Executable and PredecessorState
+/// analysis states, which are required for the MLIR Dataflow analyses to properly
+/// traverse the LLZK IR.
 /// @param solver The solver.
-/// @param top The top-level operation.
-void markAllOpsAsLive(mlir::DataFlowSolver &solver, mlir::Operation *top);
+void loadRequiredAnalyses(mlir::DataFlowSolver &solver);
+
+/// @brief Loads and runs analyses required to initialize the Executable and PredecessorState
+/// analysis states, which are required for the MLIR Dataflow analyses to properly
+/// traverse the LLZK IR.
+/// This function pre-runs the analyses, which is helpful in cases where early
+/// region-op-body traversal is desired.
+/// - the bodies of scf.for, scf.while, scf.if are usually not marked as live
+///   initially, so the dataflow analysis will traverse all ops in a function
+///   before traversing the insides of region ops.
+/// - by pre-running the analysis, the region bodies will be explored as encountered
+///   if they are marked as "live" by the dead code analysis.
+/// @param solver The solver.
+/// @param op The operation to pre-run the analyses on.
+/// @return Whether the pre-run analysis was successful.
+mlir::LogicalResult loadAndRunRequiredAnalyses(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
 } // namespace llzk::dataflow

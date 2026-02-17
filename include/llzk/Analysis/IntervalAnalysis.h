@@ -12,7 +12,6 @@
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
-#include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
@@ -26,6 +25,7 @@
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Field.h"
 
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>

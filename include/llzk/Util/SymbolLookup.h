@@ -101,6 +101,9 @@ public:
     }
   }
 
+  /// True iff the symbol is managed (i.e., loaded via an IncludeOp).
+  bool isManaged() const { return managedResources != nullptr; }
+
   /// Adds a pointer to the set of resources the result has to manage the lifetime of.
   void manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr, mlir::SymbolTableCollection &&tables);
 
@@ -157,6 +160,9 @@ public:
   bool viaInclude() const { return inner.viaInclude(); }
 
   bool operator==(const SymbolLookupResult<T> &rhs) const { return inner == rhs.inner; }
+
+  /// Return 'true' if the inner resource is managed (i.e., loaded via an IncludeOp).
+  bool isManaged() const { return inner.isManaged(); }
 
 private:
   SymbolLookupResultUntyped inner;

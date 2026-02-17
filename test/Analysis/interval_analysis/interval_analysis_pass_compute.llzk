@@ -546,7 +546,42 @@ module attributes {llzk.lang} {
         %3 = felt.const 3
         scf.yield %3 : !felt.type
       }
+      // COM: This is currently unsound, as it doesn't account for whether
+      // or not the loop will run.
       struct.writem %self[@a] = %c : !struct.type<@YieldForConst>, !felt.type
+      function.return %self : !struct.type<@YieldForConst>
+    }
+
+    function.def @constrain(%self: !struct.type<@YieldForConst>, %x: index) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @YieldForConst StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in Entire
+// CHECK-NEXT:    %self[@a] in Degenerate(3)
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @YieldForConst {
+    struct.member @a: !felt.type
+
+    function.def @compute(%x: index) -> !struct.type<@YieldForConst> {
+      %self = struct.new : !struct.type<@YieldForConst>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      %f0 = felt.const 0
+      scf.for %i = %0 to %x step %1 {
+        %3 = felt.const 3
+        // COM: This is currently unsound, as it doesn't account for whether
+        // or not the loop will run.
+        struct.writem %self[@a] = %3 : !struct.type<@YieldForConst>, !felt.type
+        scf.yield
+      }
       function.return %self : !struct.type<@YieldForConst>
     }
 
