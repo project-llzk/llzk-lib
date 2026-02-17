@@ -161,3 +161,12 @@ While standing in top level LLZK directory:
 5. To pretty print ZKLean IR into ZKLean, do:
 
    `./build/bin/llzk-opt --zklean-pretty-print test/Conversions/zklean_isZero.llzk`
+
+
+# Test
+
+To test the conversions between llzk to zklean on the simple test files:
+```bash
+llzk-opt --convert-llzk-to-zklean test/Conversions/circom_isZero.llzk 2>&1 | FileCheck --enable-var-scope test/Conversions/circom_isZero.llzk
+llzk-opt --convert-zklean-to-llzk test/Conversions/zklean_isZero.llzk 2>&1 | FileCheck --enable-var-scope test/Conversions/zklean_isZero.llzk
+```
