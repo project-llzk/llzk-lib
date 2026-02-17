@@ -437,8 +437,8 @@ public:
                     llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 
-  // Replace the current `ModuleOp` with the ZKLean module.
-  // Propagates language attributes and signals pass failure on errors.
+  // Replace the current `ModuleOp` with a ZKLean module.
+  // Emits a new ModuleOp when possible; otherwise rewrites in-place.
   void runOnOperation() override {
     ModuleOp original = getOperation();
     ModuleOp zkLeanModule = ModuleOp::create(original.getLoc());
@@ -453,6 +453,14 @@ public:
       signalPassFailure();
       return;
     }
+
+    if (Block *parent = original->getBlock()) {
+      parent->getOperations().insert(original->getIterator(),
+                                     zkLeanModule.getOperation());
+      original.erase();
+      return;
+    }
+
     original->setAttrs(zkLeanModule->getAttrs());
     original.getBodyRegion().takeBody(zkLeanModule.getBodyRegion());
   }

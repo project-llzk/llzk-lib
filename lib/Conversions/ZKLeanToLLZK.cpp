@@ -641,7 +641,7 @@ public:
                     llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 
-  // Create the LLZK module, run conversion, and attach it to the source.
+  // Create the LLZK module, run conversion, and replace the source module.
   // Emits a diagnostic and signals failure when conversion fails.
   void runOnOperation() override {
     ModuleOp source = getOperation();
@@ -658,7 +658,15 @@ public:
       return;
     }
 
-    source.getBody()->push_back(llzkModule.getOperation());
+    if (Block *parent = source->getBlock()) {
+      parent->getOperations().insert(source->getIterator(),
+                                     llzkModule.getOperation());
+      source.erase();
+      return;
+    }
+
+    source->setAttrs(llzkModule->getAttrs());
+    source.getBodyRegion().takeBody(llzkModule.getBodyRegion());
   }
 };
 
