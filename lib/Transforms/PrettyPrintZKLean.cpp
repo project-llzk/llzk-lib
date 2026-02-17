@@ -14,23 +14,24 @@
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 #include "llzk/Transforms/ZKLeanPasses.h"
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
-#include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/OperationSupport.h"
-#include "mlir/IR/SymbolTable.h"
-#include "mlir/Pass/Pass.h"
-#include "mlir/Support/FileUtilities.h"
-#include "llvm/ADT/DenseMap.h"
-#include "llvm/ADT/DenseSet.h"
-#include "llvm/ADT/SmallString.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/Twine.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/ToolOutputFile.h"
-#include "llvm/Support/raw_ostream.h"
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/IR/SymbolTable.h>
+#include <mlir/Pass/Pass.h>
+#include <mlir/Support/FileUtilities.h>
+
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/StringMap.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/Twine.h>
+#include <llvm/Support/CommandLine.h>
+#include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <optional>
 
