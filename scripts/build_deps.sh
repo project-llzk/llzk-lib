@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Start from llzk repo top level.
 
 # First, build LLVM + MLIR
