@@ -432,8 +432,8 @@ public:
     registry.insert<llzk::boolean::BoolDialect,
                     llzk::cast::CastDialect,
                     mlir::func::FuncDialect,
-                    llzk::zkbuilder::ZKBuilderDialect,
                     llzk::zkexpr::ZKExprDialect,
+                    llzk::zkbuilder::ZKBuilderDialect,
                     llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 

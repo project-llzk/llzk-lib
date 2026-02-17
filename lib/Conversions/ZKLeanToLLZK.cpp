@@ -638,6 +638,7 @@ public:
                     llzk::component::StructDialect,
                     mlir::func::FuncDialect,
                     llzk::zkexpr::ZKExprDialect,
+                    llzk::zkbuilder::ZKBuilderDialect,
                     llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 
