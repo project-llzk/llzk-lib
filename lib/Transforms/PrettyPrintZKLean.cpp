@@ -40,6 +40,10 @@
 using namespace mlir;
 
 namespace llzk::zklean {
+#define GEN_PASS_DECL_PRETTYPRINTZKLEANPASS
+#define GEN_PASS_DEF_PRETTYPRINTZKLEANPASS
+#include "llzk/Transforms/ZKLeanPasses.h.inc"
+
 namespace namespace_detail {
 
 // Identify ops that belong to any ZK* dialect family.
@@ -554,32 +558,7 @@ namespace {
 // Pass that pretty-prints ZK dialect IR into Lean-like syntax.
 // Manages output file handling for pretty-printed Lean code.
 struct PrettyPrintZKLeanPass
-    : public PassWrapper<PrettyPrintZKLeanPass, OperationPass<ModuleOp>> {
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(PrettyPrintZKLeanPass)
-
-  // Default constructor for pass creation.
-  PrettyPrintZKLeanPass() = default;
-  // Copy constructor to preserve pass options across clones.
-  PrettyPrintZKLeanPass(const PrettyPrintZKLeanPass &other)
-      : PassWrapper(other) {
-    outputFilename = other.outputFilename;
-  }
-
-  // Return the CLI argument name for this pass.
-  StringRef getArgument() const final { return "zklean-pretty-print"; }
-  // Return the short pass description for help output.
-  StringRef getDescription() const final {
-    return "Pretty-print zk dialect IR as Lean code";
-  }
-
-  // Output file option for pretty-printed Lean code.
-  Option<std::string> outputFilename{
-      *this, "output-file",
-      llvm::cl::desc(
-          "File to write the pretty-printed zk dialect operations to. "
-          "Use '-' to write to stdout."),
-      llvm::cl::init("-")};
-
+    : public impl::PrettyPrintZKLeanPassBase<PrettyPrintZKLeanPass> {
   // Run the pass and emit Lean output to the selected stream.
   // Uses ZKLean formatting when ZK ops are present.
   void runOnOperation() override {

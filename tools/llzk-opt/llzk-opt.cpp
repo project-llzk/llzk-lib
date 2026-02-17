@@ -85,9 +85,7 @@ int main(int argc, char **argv) {
 =======
   llzk::registerTransformationPassPipelines();
   llzk::registerValidationPasses();
-
-  // register zklean pretty print pass
-  mlir::registerPass([] { return llzk::zklean::createPrettyPrintZKLeanPass(); });
+  llzk::zklean::registerZKLeanPasses();
 
 >>>>>>> 02e21cd (Registering zklean pretty print pass with llzk-opt)
 #if LLZK_WITH_PCL

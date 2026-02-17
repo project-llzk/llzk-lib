@@ -10,4 +10,7 @@ namespace llzk::zklean {
 /// pipelines that mix zkLean, zkBuilder, and zkExpr IR.
 std::unique_ptr<mlir::Pass> createPrettyPrintZKLeanPass();
 
+#define GEN_PASS_REGISTRATION
+#include "llzk/Transforms/ZKLeanPasses.h.inc"
+
 } // namespace llzk::zklean
