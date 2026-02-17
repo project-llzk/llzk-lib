@@ -48,7 +48,8 @@ Developer documentation can be found:
 ### Backends {#backends}
 
 The LLZK project currently maintains the following backends:
-- [R1CS](\ref r1cs)
+- [R1CS](\ref r1cs-dialect)
+
 
 Veridise also maintains a [Picus Contraint Language backend](https://github.com/Veridise/pcl-mlir) that
 allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
