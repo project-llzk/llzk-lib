@@ -100,7 +100,7 @@ LLZK \<-\> ZKLean IR -\> ZKLean pipeline implemented and tested on LLZK circom i
 
 * Converts ZKExpr.\* and ZKBuilder.\* ops to felt.\* and constrain.\* ops, respectively
 * Converts ZKLeanLean.\* to struct.\*, with an empty @compute function to satisfy the LLZK condition that struct needs both @compute and @constrain functions.
-* ZKExpr.Witnessable.witness converted to new arguments of felt type to the LLZK function
+* ZKBuilder.AllocWitness converted to new arguments of felt type to the LLZK function
 * Converts ZKLeanLean.call back to bool.cmp and cast.tofelt when applicable
 
 ## Misc:
