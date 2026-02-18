@@ -24,6 +24,7 @@
 #include "llzk/Validators/LLZKValidationPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
+#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -70,17 +71,19 @@ int main(int argc, char **argv) {
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
 
+  llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
-  llzk::registerTransformationPassPipelines();
-  llzk::registerValidationPasses();
-
+  r1cs::registerTransformationPasses();
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
 #endif // LLZK_WITH_PCL
+
+  llzk::registerTransformationPassPipelines();
+  r1cs::registerTransformationPassPipelines();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
