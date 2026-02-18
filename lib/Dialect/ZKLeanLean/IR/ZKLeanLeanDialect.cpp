@@ -12,6 +12,7 @@
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
 
 #include <mlir/IR/Builders.h>
+#include <mlir/Support/LogicalResult.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.cpp.inc"
@@ -19,6 +20,23 @@
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.cpp.inc"
 #define GET_OP_CLASSES
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.cpp.inc"
+
+auto llzk::zkleanlean::StructDefOp::verifyRegions()
+    -> mlir::LogicalResult {
+  mlir::Region &body = getBodyRegion();
+  if (!body.hasOneBlock())
+    return emitOpError("expected body region with a single block");
+
+  for (mlir::Operation &op : body.front()) {
+    if (!mlir::isa<llzk::zkleanlean::MemberDefOp>(op)) {
+      op.emitOpError(
+          "only 'ZKLeanLean.member' ops are allowed in a 'ZKLeanLean.structure' body");
+      return mlir::failure();
+    }
+  }
+
+  return mlir::success();
+}
 
 auto llzk::zkleanlean::ZKLeanLeanDialect::initialize() -> void {
   addTypes<

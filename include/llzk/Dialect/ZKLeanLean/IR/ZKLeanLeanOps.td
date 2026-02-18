@@ -40,6 +40,7 @@ def ZKLeanLean_StructDefOp
 
   let arguments = (ins SymbolNameAttr:$sym_name);
   let regions = (region SizedRegion<1>:$bodyRegion);
+  let hasRegionVerifier = 1;
   let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 }
 
