@@ -249,7 +249,7 @@ static std::optional<std::string>
 findStructName(Block &entry, StringRef funcName,
                const llvm::DenseSet<StringRef> &structNames) {
   for (Operation &op : entry) {
-    if (isa<llzk::zkexpr::WitnessOp>(op)) {
+    if (isa<llzk::zkbuilder::AllocWitnessOp>(op)) {
       if (auto name = getWitnessStructName(op))
         return name;
     }
@@ -291,7 +291,7 @@ formatLeanStatement(Operation &op,
     return line;
   }
 
-  if (auto witness = dyn_cast<llzk::zkexpr::WitnessOp>(op)) {
+  if (auto witness = dyn_cast<llzk::zkbuilder::AllocWitnessOp>(op)) {
     auto fieldName = getWitnessFieldName(op);
     std::string structVarName = defaultStructVarName.str();
     if (auto structName = getWitnessStructName(op)) {

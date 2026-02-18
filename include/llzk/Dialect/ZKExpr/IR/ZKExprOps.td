@@ -52,19 +52,4 @@ def ZKExpr_LiteralOp : Op<ZKExpr_Dialect, "Literal", [Pure]> {
   let assemblyFormat = "$literal attr-dict";
 }
 
-def ZKExpr_WitnessVarOp : Op<ZKExpr_Dialect, "WitnessVar", [Pure]> {
-  let summary = "Introduce witness variable";
-  let arguments = (ins WitnessID:$id);
-  let results = (outs ZKExpr:$output);
-  let assemblyFormat = "$id attr-dict";
-}
-
-// TODO: Figure out the difference between Builder witness, zkexpr witness, and
-// witnessable.witness
-def ZKExpr_WitnessOp : Op<ZKExpr_Dialect, "Witnessable.witness", [ConstantLike]> {
-  let summary = "Witnessable.witness";
-  let results = (outs ZKExpr:$output);
-  let assemblyFormat = "attr-dict";
-}
-
 #endif  // LIB_DIALECT_ZKEXPR_ZKEXPROPS_TD_

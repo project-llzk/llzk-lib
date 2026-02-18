@@ -181,14 +181,14 @@ static void ensureConstrainStub(StructState &state, Location loc,
   state.hasConstrain = true;
 }
 
-// Collect operations and ZKExpr witnesses from a single block.
+// Collect operations and ZKBuilder witnesses from a single block.
 // The captured list is used to avoid iterator invalidation during rewriting.
 static void collectOpsAndWitnesses(
     Block &block, SmallVector<Operation *, 16> &ops,
-    SmallVector<llzk::zkexpr::WitnessOp, 8> &witnesses) {
+    SmallVector<llzk::zkbuilder::AllocWitnessOp, 8> &witnesses) {
   for (Operation &op : block) {
     ops.push_back(&op);
-    if (auto witness = dyn_cast<llzk::zkexpr::WitnessOp>(&op))
+    if (auto witness = dyn_cast<llzk::zkbuilder::AllocWitnessOp>(&op))
       witnesses.push_back(witness);
   }
 }
@@ -265,9 +265,9 @@ struct FunctionConverter {
     }
   }
 
-  // Append extra arguments for each `llzk::zkexpr::WitnessOp`.
+  // Append extra arguments for each `llzk::zkbuilder::AllocWitnessOp`.
   // Each witness becomes a felt-typed argument on the target block.
-  void mapWitnessArgs(ArrayRef<llzk::zkexpr::WitnessOp> witnesses) {
+  void mapWitnessArgs(ArrayRef<llzk::zkbuilder::AllocWitnessOp> witnesses) {
     for (auto witness : witnesses) {
       auto newArg = newBlock->addArgument(state.feltType, witness.getLoc());
       witnessArgs[witness.getOperation()] = newArg;
@@ -330,8 +330,8 @@ struct FunctionConverter {
       return;
     }
 
-    // ZKExpr witness maps to dedicated witness argument
-    if (auto witness = dyn_cast<llzk::zkexpr::WitnessOp>(op)) {
+    // ZKBuilder witness maps to dedicated witness argument
+    if (auto witness = dyn_cast<llzk::zkbuilder::AllocWitnessOp>(op)) {
       Value arg = witnessArgs.lookup(witness.getOperation());
       zkToFeltMap[witness.getOutput()] = arg;
       return;
@@ -551,7 +551,7 @@ static void convertFunction(FuncOpTy func, bool allowWitness,
 
   Block &oldBlock = func.getBody().front();
   SmallVector<Operation *, 16> ops;
-  SmallVector<llzk::zkexpr::WitnessOp, 8> witnesses;
+  SmallVector<llzk::zkbuilder::AllocWitnessOp, 8> witnesses;
   collectOpsAndWitnesses(oldBlock, ops, witnesses);
 
   // Collect input types of original ZKLean function.
@@ -560,7 +560,7 @@ static void convertFunction(FuncOpTy func, bool allowWitness,
   for (Type type : funcType.getInputs())
     baseInputTypes.push_back(mapStructType(type));
   SmallVector<Type> inputTypes = baseInputTypes;
-  // Add an input of felt type for each ZKExpr witness.
+  // Add an input of felt type for each ZKBuilder witness.
   inputTypes.append(witnesses.size(), state.feltType);
   auto newFuncType = FunctionType::get(state.dest.getContext(), inputTypes,
                                        funcType.getResults());

@@ -38,12 +38,12 @@ def ZKBuilder_ConstrainR1CSOp : Op<ZKBuilder_Dialect, "ConstrainR1CS", []> {
   let assemblyFormat = "$a $b $c attr-dict";
 }
 
-/*
-def ZKBuilder_WitnessVarOp : Op<ZKBuilder_Dialect, "WitnessVar", [Pure, ConstantLike] {
-  let summary = "Introduce ZK witness variable";
-  let arguments = (ins AnyIntElementsAttr:$lit);
-  let results = (outs ZKExpr:$output)
+def ZKBuilder_AllocWitnessOp
+    : Op<ZKBuilder_Dialect, "AllocWitness", [ConstantLike]> {
+  let summary = "Allocate a witness value";
+  let results = (outs ZKExpr:$output);
+  let assemblyFormat = "attr-dict";
 }
-*/
+
 
 #endif  // LIB_DIALECT_ZKBUILDER_ZKBUILDEROPS_TD_
