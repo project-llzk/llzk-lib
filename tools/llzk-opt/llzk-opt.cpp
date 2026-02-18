@@ -23,7 +23,7 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
-#include "r1cs/InitAllDialects.h"
+#include "r1cs/DialectRegistration.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
