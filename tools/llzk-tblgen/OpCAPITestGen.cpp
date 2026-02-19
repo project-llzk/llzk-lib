@@ -91,7 +91,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Build) {{
 }
 
 struct {2}BuildFuncHelper : public TestAnyBuildFuncHelper<CAPITest> {
-  virtual bool callIsA(MlirOperation op) override { return {0}OperationIsA{1}{2}(op); }
+  virtual bool callIsA(MlirOperation op) override { return {0}OperationIsA_{1}_{2}(op); }
   /// This method must be implemented to return a subclass of `{2}BuildFuncHelper` that
   /// at least implements `callBuild()` to build the operation via `{0}{1}{2}Build()`.
   /// It can override other methods of `TestAnyBuildFuncHelper` if needed.
