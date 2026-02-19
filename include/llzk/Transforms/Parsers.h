@@ -9,6 +9,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#pragma once
+
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/CommandLine.h>
