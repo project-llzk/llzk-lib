@@ -11,6 +11,9 @@
 
 #include "../CAPITestBase.h"
 
+// Include necessary generated CAPI
+#include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"
+
 // Include the auto-generated tests
 #include "llzk/Dialect/Bool/IR/Attrs.capi.test.cpp.inc"
 #include "llzk/Dialect/Bool/IR/Dialect.capi.test.cpp.inc"

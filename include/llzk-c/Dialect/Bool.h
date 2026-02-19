@@ -18,8 +18,6 @@
 #ifndef LLZK_C_DIALECT_BOOL_H
 #define LLZK_C_DIALECT_BOOL_H
 
-#include "llzk/Dialect/Bool/IR/Enums.h"
-
 #include <mlir-c/IR.h>
 
 // Include the generated CAPI

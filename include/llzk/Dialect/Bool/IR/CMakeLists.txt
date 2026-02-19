@@ -16,6 +16,7 @@ set(LLVM_TARGET_DEFINITIONS "Enums.td")
 mlir_tablegen(Enums.h.inc -gen-enum-decls)
 mlir_tablegen(Enums.cpp.inc -gen-enum-defs)
 llzk_tablegen(Enums.capi.h.inc -gen-enum-capi-header -prefix=llzk -dialect=bool)
+llzk_tablegen(Enums.capi.cpp.inc -gen-enum-capi-impl -prefix=llzk -dialect=bool)
 llzk_tablegen(Enums.capi.test.cpp.inc -gen-enum-capi-tests -prefix=llzk -dialect=bool)
 
 set(LLVM_TARGET_DEFINITIONS "Ops.td")

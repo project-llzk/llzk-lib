@@ -19,6 +19,8 @@
 using namespace llzk::boolean;
 
 // Include the generated CAPI
+#include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"
+// Enums must come before Attrs and Ops
 #include "llzk/Dialect/Bool/IR/Attrs.capi.cpp.inc"
 #include "llzk/Dialect/Bool/IR/Ops.capi.cpp.inc"
 
