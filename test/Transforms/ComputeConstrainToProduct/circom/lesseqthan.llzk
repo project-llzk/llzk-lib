@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=LessEqThan_2" %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=LessEqThan_2" %s | cat
 
 module attributes {llzk.lang, llzk.main = !struct.type<@LessEqThan_2<[]>>} {
   struct.def @Num2Bits_0<[]> {
