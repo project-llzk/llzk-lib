@@ -72,11 +72,6 @@ LogicalResult alignStartingAt(
     return failure();
   }
 
-  // for (auto s : aligner.alignedStructs) {
-  //   s.getComputeFuncOp()->erase();
-  //   s.getConstrainFuncOp()->erase();
-  // }
-
   return success();
 }
 
