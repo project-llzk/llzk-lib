@@ -102,9 +102,9 @@ InFlightDiagnostic genCompareErr(StructDefOp expected, Operation *origin, const 
 
 static inline InFlightDiagnostic structFuncDefError(Operation *origin) {
   return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
-                             << "must define either only a \"@" << FUNC_NAME_PRODUCT
-                             << "\" function, or both \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
-                             << FUNC_NAME_CONSTRAIN << "\" functions; ";
+                             << "must define either only a non-derived \"@" << FUNC_NAME_PRODUCT
+                             << "\" function, or both non-derived \"@" << FUNC_NAME_COMPUTE
+                             << "\" and \"@" << FUNC_NAME_CONSTRAIN << "\" functions; ";
 }
 
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
@@ -327,38 +327,18 @@ LogicalResult StructDefOp::verifyRegions() {
         if (!llvm::isa<MemberDefOp>(op)) {
           if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
             if (funcDef.nameIsCompute()) {
-              if (foundProduct) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
-                       << "\" functions";
-              }
               if (foundCompute) {
                 return structFuncDefError(funcDef.getOperation())
                        << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
               }
               foundCompute = std::make_optional(funcDef);
             } else if (funcDef.nameIsConstrain()) {
-              if (foundProduct) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@"
-                       << FUNC_NAME_PRODUCT << "\" functions";
-              }
               if (foundConstrain) {
                 return structFuncDefError(funcDef.getOperation())
                        << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
               }
               foundConstrain = std::make_optional(funcDef);
             } else if (funcDef.nameIsProduct()) {
-              if (foundCompute) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
-                       << "\" functions";
-              }
-              if (foundConstrain) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@"
-                       << FUNC_NAME_PRODUCT << "\" functions";
-              }
               if (foundProduct) {
                 return structFuncDefError(funcDef.getOperation())
                        << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
@@ -396,9 +376,54 @@ LogicalResult StructDefOp::verifyRegions() {
            << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\"";
   }
 
-  if (foundCompute && foundConstrain) {
+  // Check which funcs are present and not marked with {llzk.derived}
+  auto nonderived = [](std::optional<FuncDefOp> op) -> bool {
+    return op && !(*op)->hasAttr(DERIVED_ATTR_NAME);
+  };
+
+  auto attachDerivedNotes = [&foundCompute, &foundConstrain,
+                             &foundProduct](InFlightDiagnostic &&error) {
+    if (foundProduct && (*foundProduct)->hasAttr(DERIVED_ATTR_NAME)) {
+      error.attachNote(foundProduct->getLoc()) << "derived \"@" << FUNC_NAME_PRODUCT << "\" here";
+    }
+    if (foundCompute && (*foundCompute)->hasAttr(DERIVED_ATTR_NAME)) {
+      error.attachNote(foundCompute->getLoc()) << "derived \"@" << FUNC_NAME_COMPUTE << "\" here";
+    }
+    if (foundConstrain && (*foundConstrain)->hasAttr(DERIVED_ATTR_NAME)) {
+      error.attachNote(foundConstrain->getLoc())
+          << "derived \"@" << FUNC_NAME_CONSTRAIN << "\" here";
+    }
+    return error;
+  };
+
+  // We know that (@compute+@constrain) is present or @product is present, or both
+
+  // Error cases:
+  // Everything is derived
+  if (!nonderived(foundCompute) && !nonderived(foundConstrain) && !nonderived(foundProduct)) {
+    return attachDerivedNotes(
+        structFuncDefError(getOperation())
+        << "could not find non-derived \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
+        << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\""
+    );
+  }
+
+  // Only one of @compute/@constrain is non-derived
+  if (nonderived(foundCompute) ^ nonderived(foundConstrain)) {
+    return attachDerivedNotes(
+        structFuncDefError(getOperation())
+        << "\"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
+        << "\" must both be either derived or non-derived"
+    );
+  }
+
+  // Here, at least one thing is non-derived, and @compute/@constrain are derived or non-derived
+  // together so everything is fine
+  if (nonderived(foundCompute) && nonderived(foundConstrain) && !nonderived(foundProduct)) {
     return verifyStructComputeConstrain(*this, *foundCompute, *foundConstrain);
   }
+
+  assert(!nonderived(foundCompute) && !nonderived(foundConstrain) && nonderived(foundProduct));
   return verifyStructProduct(*this, *foundProduct);
 }
 
