@@ -143,8 +143,8 @@ static auto unwrapDims(MlirAttribute attr) { return llvm::cast<DenseI32ArrayAttr
 static auto unwrapName(MlirAttribute attr) { return llvm::cast<SymbolRefAttr>(unwrap(attr)); }
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands,
-    MlirValue const *operands
+    Function, CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name,
+    intptr_t numOperands, MlirValue const *operands
 ) {
   SmallVector<Type> resultsSto;
   SmallVector<Value> operandsSto;
@@ -157,7 +157,8 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands
+    Function, CallOp, ToCallee, MlirOperation callee, intptr_t numOperands,
+    MlirValue const *operands
 ) {
   SmallVector<Value> operandsSto;
   return wrap(
@@ -168,8 +169,9 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name,
-    LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
+    Function, CallOp, WithMapOperands, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands,
+    MlirValue const *argOperands
 ) {
   SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
@@ -186,8 +188,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCalleeWithMapOperands, MlirOperation callee, LlzkAffineMapOperandsBuilder mapOperands,
-    intptr_t numArgOperands, MlirValue const *argOperands
+    Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee,
+    LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
 ) {
   SmallVector<Value> argOperandsSto;
   MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);

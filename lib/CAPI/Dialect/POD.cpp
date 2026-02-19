@@ -144,21 +144,21 @@ llzkPodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOp
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
+    Pod, NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
 ) {
   auto recordValues = fromRawRecordValues(nValues, values);
   return wrap(create<NewPodOp>(builder, location, recordValues));
 }
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
+    Pod, NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
 ) {
   auto recordValues = fromRawRecordValues(nValues, values);
   return wrap(create<NewPodOp>(builder, location, unwrap_cast<PodType>(type), recordValues));
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    NewPodOp, WithMapOperands, MlirType type, intptr_t nValues, LlzkRecordValue const *values,
+    Pod, NewPodOp, WithMapOperands, MlirType type, intptr_t nValues, LlzkRecordValue const *values,
     LlzkAffineMapOperandsBuilder mapOperands
 ) {
   auto recordValues = fromRawRecordValues(nValues, values);

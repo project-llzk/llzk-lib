@@ -57,16 +57,18 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkTypeVarTypeGetName(MlirType type);
 //===----------------------------------------------------------------------===//
 
 /// Creates an ApplyMapOp with the given attribute that has to be of type AffineMapAttr.
-LLZK_DECLARE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute affineMapAttr, MlirValueRange operands);
+LLZK_DECLARE_OP_BUILD_METHOD(
+    Poly, ApplyMapOp, MlirAttribute affineMapAttr, MlirValueRange operands
+);
 
 /// Creates an ApplyMapOp with the given affine map.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineMap, MlirAffineMap affineMap, MlirValueRange operands
+    Poly, ApplyMapOp, WithAffineMap, MlirAffineMap affineMap, MlirValueRange operands
 );
 
 /// Creates an ApplyMapOp with the given affine expression.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineExpr, MlirAffineExpr affineExpr, MlirValueRange operands
+    Poly, ApplyMapOp, WithAffineExpr, MlirAffineExpr affineExpr, MlirValueRange operands
 );
 
 /// Returns true if the op is an ApplyMapOp.

@@ -62,12 +62,13 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkArrayTypeGetDim(MlirType type, intptr_t dim
 
 /// Creates a CreateArrayOp from a list of Values.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithValues, MlirType arrType, intptr_t nValues, MlirValue const *values
+    Array, CreateArrayOp, WithValues, MlirType arrType, intptr_t nValues, MlirValue const *values
 );
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperands, MlirType arrType, LlzkAffineMapOperandsBuilder mapOperands
+    Array, CreateArrayOp, WithMapOperands, MlirType arrType,
+    LlzkAffineMapOperandsBuilder mapOperands
 );
 
 #ifdef __cplusplus

@@ -158,28 +158,28 @@ MLIR_CAPI_EXPORTED void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool valu
 
 /// Creates a MemberReadOp.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    MemberReadOp, MlirType type, MlirValue component, MlirStringRef memberName
+    Struct, MemberReadOp, MlirType type, MlirValue component, MlirStringRef memberName
 );
 
 /// Creates a MemberReadOp to a column offset by the given distance affine map. The values in the
 /// ValueRange are operands representing the arguments to the affine map. The integer value is the
 /// number of arguments in the map that are dimensions.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithAffineMapDistance, MlirType type, MlirValue component,
+    Struct, MemberReadOp, WithAffineMapDistance, MlirType type, MlirValue component,
     MlirStringRef memberName, MlirAffineMap affineMap, MlirValueRange mapOperands
 );
 
 /// Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    Struct, MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component,
     MlirStringRef memberName, MlirStringRef paramName
 );
 
 /// Creates a MemberReadOp to a column offset by the given distance defined by an integer value.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithLiteralDistance, MlirType type, MlirValue component, MlirStringRef memberName,
-    int64_t distance
+    Struct, MemberReadOp, WithLiteralDistance, MlirType type, MlirValue component,
+    MlirStringRef memberName, int64_t distance
 );
 
 #ifdef __cplusplus

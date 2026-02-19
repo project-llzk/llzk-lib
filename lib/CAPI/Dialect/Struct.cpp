@@ -187,7 +187,7 @@ void llzkMemberDefOpSetPublicAttr(MlirOperation op, bool value) {
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    MemberReadOp, MlirType memberType, MlirValue component, MlirStringRef name
+    Struct, MemberReadOp, MlirType memberType, MlirValue component, MlirStringRef name
 ) {
   return wrap(
       create<MemberReadOp>(
@@ -198,7 +198,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithAffineMapDistance, MlirType memberType, MlirValue component,
+    Struct, MemberReadOp, WithAffineMapDistance, MlirType memberType, MlirValue component,
     MlirStringRef name, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
@@ -214,7 +214,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithConstParamDistance, MlirType memberType, MlirValue component,
+    Struct, MemberReadOp, WithConstParamDistance, MlirType memberType, MlirValue component,
     MlirStringRef name, MlirStringRef symbol
 ) {
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
@@ -227,8 +227,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    MemberReadOp, WithLiteralDistance, MlirType memberType, MlirValue component, MlirStringRef name,
-    int64_t distance
+    Struct, MemberReadOp, WithLiteralDistance, MlirType memberType, MlirValue component,
+    MlirStringRef name, int64_t distance
 ) {
   auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(

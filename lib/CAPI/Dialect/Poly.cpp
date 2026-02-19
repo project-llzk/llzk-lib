@@ -67,7 +67,7 @@ MlirAttribute llzkTypeVarTypeGetName(MlirType type) {
 // ApplyMapOp
 //===----------------------------------------------------------------------===//
 
-LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
+LLZK_DEFINE_OP_BUILD_METHOD(Poly, ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
   SmallVector<Value> mapOperandsSto;
   return wrap(
       create<ApplyMapOp>(
@@ -78,7 +78,7 @@ LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute map, MlirValueRange mapOpe
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
+    Poly, ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
   return wrap(
@@ -90,7 +90,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
+    Poly, ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
   return wrap(

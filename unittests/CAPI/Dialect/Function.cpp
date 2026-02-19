@@ -206,7 +206,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build) {
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
   auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
-  auto call = llzkCallOpBuild(
+  auto call = llzkFunction_CallOpBuild(
       builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
       (const MlirValue *)NULL
   );
@@ -220,7 +220,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
   auto ctx = mlirOperationGetContext(f.op);
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
-  auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+  auto call = llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
   EXPECT_TRUE(mlirOperationVerify(call));
   mlirOperationDestroy(call);
   mlirOpBuilderDestroy(builder);
@@ -233,7 +233,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
   auto location = mlirLocationUnknownGet(ctx);
   auto callee_name = mlirFlatSymbolRefAttrGet(ctx, f.nameRef());
   auto mapOperands = llzkAffineMapOperandsBuilderCreate();
-  auto call = llzkCallOpBuildWithMapOperands(
+  auto call = llzkFunction_CallOpBuildWithMapOperands(
       builder, location, f.out_types.size(), f.out_types.data(), callee_name, mapOperands, 0,
       (const MlirValue *)NULL
   );
@@ -249,7 +249,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
   auto mapOperands = llzkAffineMapOperandsBuilderCreate();
-  auto call = llzkCallOpBuildToCalleeWithMapOperands(
+  auto call = llzkFunction_CallOpBuildToCalleeWithMapOperands(
       builder, location, f.op, mapOperands, 0, (const MlirValue *)NULL
   );
   EXPECT_TRUE(mlirOperationVerify(call));
@@ -263,7 +263,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
     auto f = test_function0();                                                                     \
     auto builder = mlirOpBuilderCreate(context);                                                   \
     auto location = mlirLocationUnknownGet(context);                                               \
-    auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
+    auto call =                                                                                    \
+        llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);     \
     EXPECT_EQ(func(call), expected);                                                               \
     mlirOperationDestroy(call);                                                                    \
     mlirOpBuilderDestroy(builder);                                                                 \
@@ -276,7 +277,7 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   auto ctx = mlirOperationGetContext(f.op);
   auto builder = mlirOpBuilderCreate(ctx);
   auto location = mlirLocationUnknownGet(ctx);
-  auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+  auto call = llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
 
   auto func_type = create_func_type(ctx, f.in_types, f.out_types);
   auto out_type = llzkCallOpGetCalleeType(call);
@@ -302,7 +303,8 @@ call_pred_test(
     auto f = test_function0();                                                                     \
     auto builder = mlirOpBuilderCreate(context);                                                   \
     auto location = mlirLocationUnknownGet(context);                                               \
-    auto call = llzkCallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);      \
+    auto call =                                                                                    \
+        llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);     \
     if (llzkCallOpGetCalleeIsStructCompute(call)) {                                                \
       func(call);                                                                                  \
     }                                                                                              \

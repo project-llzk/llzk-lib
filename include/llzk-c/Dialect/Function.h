@@ -128,25 +128,27 @@ MLIR_CAPI_EXPORTED MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperat
 
 /// Creates a CallOp.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands,
-    MlirValue const *operands
+    Function, CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name,
+    intptr_t numOperands, MlirValue const *operands
 );
 
 /// Creates a CallOp that calls the given FuncDefOp.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands
+    Function, CallOp, ToCallee, MlirOperation callee, intptr_t numOperands,
+    MlirValue const *operands
 );
 
 /// Creates a CallOp with affine map operands.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name,
-    LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
+    Function, CallOp, WithMapOperands, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands,
+    MlirValue const *argOperands
 );
 
 /// Creates a CallOp with affine map operands to the given FuncDefOp.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCalleeWithMapOperands, MlirOperation callee, LlzkAffineMapOperandsBuilder mapOperands,
-    intptr_t numArgOperands, MlirValue const *argOperands
+    Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee,
+    LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
 );
 
 /// Returns true if the operation is a CallOp.

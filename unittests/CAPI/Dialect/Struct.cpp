@@ -290,7 +290,7 @@ TEST_F(StructDefTest, llzk_member_read_op_build) {
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
-  auto op = llzkMemberReadOpBuild(
+  auto op = llzkStruct_MemberReadOpBuild(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f")
   );
 
@@ -308,7 +308,7 @@ TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
 
   llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
   auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkMemberReadOpBuildWithAffineMapDistance(
+  auto op = llzkStruct_MemberReadOpBuildWithAffineMapDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), affine_map,
       MlirValueRange {
           .values = (const MlirValue *)NULL,
@@ -328,7 +328,7 @@ TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
-  auto op = llzkMemberReadOpBuildWithConstParamDistance(
+  auto op = llzkStruct_MemberReadOpBuildWithConstParamDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
       mlirStringRefCreateFromCString("N")
   );
@@ -345,7 +345,7 @@ TEST_F(StructDefTest, llzk_member_read_op_build_with_literal_distance) {
   auto struct_new_op = make_struct_new_op();
   auto struct_value = mlirOperationGetResult(struct_new_op, 0);
 
-  auto op = llzkMemberReadOpBuildWithLiteralDistance(
+  auto op = llzkStruct_MemberReadOpBuildWithLiteralDistance(
       builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), 1
   );
 

@@ -116,21 +116,21 @@ llzkPodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOp
 ///
 /// The type of the struct gets inferred from the initial values.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
+    Pod, NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
 );
 
 /// Creates a NewPodOp from a list of initialization values and a PodType.
 ///
 /// The initial values can partially initialize the struct.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
+    Pod, NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
 );
 
 /// Creates a NewPodOp with a list of initialization values, a PodType, and map operands.
 ///
 /// The initial values can partially initialize the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    NewPodOp, WithMapOperands, MlirType type, intptr_t nValues, LlzkRecordValue const *values,
+    Pod, NewPodOp, WithMapOperands, MlirType type, intptr_t nValues, LlzkRecordValue const *values,
     LlzkAffineMapOperandsBuilder mapOperands
 );
 

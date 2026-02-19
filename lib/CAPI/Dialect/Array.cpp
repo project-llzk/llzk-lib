@@ -68,7 +68,7 @@ MlirAttribute llzkArrayTypeGetDim(MlirType type, intptr_t idx) {
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
+    Array, CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
 ) {
   SmallVector<Value> valueSto;
   return wrap(
@@ -80,7 +80,8 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CreateArrayOp, WithMapOperands, MlirType arrayType, LlzkAffineMapOperandsBuilder mapOperands
+    Array, CreateArrayOp, WithMapOperands, MlirType arrayType,
+    LlzkAffineMapOperandsBuilder mapOperands
 ) {
   MapOperandsHelper<> mapOps(mapOperands.nMapOperands, mapOperands.mapOperands);
   auto numDimsPerMap =
