@@ -46,9 +46,9 @@ protected:
   MlirType testPod(llvm::ArrayRef<std::pair<MlirStringRef, MlirType>> records) {
     auto recordAttrs = llvm::map_to_vector(records, [](auto record) {
       auto [name, type] = record;
-      return llzkRecordAttrGet(name, type);
+      return llzkPod_RecordAttrGet(name, type);
     });
-    return llzkPodTypeGet(context, static_cast<intptr_t>(records.size()), recordAttrs.data());
+    return llzkPod_PodTypeGet(context, static_cast<intptr_t>(records.size()), recordAttrs.data());
   }
 
   llvm::SmallVector<MlirOperation> createNOps(int64_t n_ops, MlirType elt_type) {
@@ -71,46 +71,47 @@ protected:
   }
 };
 
-TEST_F(PODDialectTests, llzkRecordAttrGet) {
+TEST_F(PODDialectTests, llzkPod_RecordAttrGet) {
   auto name = mlirStringRefCreateFromCString("a record name");
   auto type = createIndexType();
-  auto attr = llzkRecordAttrGet(name, type);
+  auto attr = llzkPod_RecordAttrGet(name, type);
 
   auto unwrapped = mlir::unwrap_cast<llzk::pod::RecordAttr>(attr);
   ASSERT_EQ(unwrapped.getName(), "a record name");
   ASSERT_EQ(unwrapped.getType(), unwrappedIndexType());
 }
 
-TEST_F(PODDialectTests, llzkRecordAttrGetName) {
+TEST_F(PODDialectTests, llzkPod_RecordAttrGetName) {
   auto attr = recordAttr("a record name", unwrappedIndexType());
-  auto name = llzkRecordAttrGetName(wrap(attr));
+  auto name = llzkPod_RecordAttrGetName(wrap(attr));
   ASSERT_EQ(unwrap(name), "a record name");
 }
 
-TEST_F(PODDialectTests, llzkRecordAttrGetNameSym) {
+TEST_F(PODDialectTests, llzkPod_RecordAttrGetNameSym) {
   auto attr = recordAttr("a record name", unwrappedIndexType());
-  auto name = llzkRecordAttrGetNameSym(wrap(attr));
+  auto name = llzkPod_RecordAttrGetNameSym(wrap(attr));
   ASSERT_EQ(
       unwrap(name),
       mlir::FlatSymbolRefAttr::get(mlir::StringAttr::get(unwrap(context), "a record name"))
   );
 }
 
-TEST_F(PODDialectTests, llzkRecordAttrGetType) {
+TEST_F(PODDialectTests, llzkPod_RecordAttrGetType) {
   auto attr = recordAttr("a record name", unwrappedIndexType());
-  auto type = llzkRecordAttrGetType(wrap(attr));
+  auto type = llzkPod_RecordAttrGetType(wrap(attr));
   ASSERT_EQ(unwrap(type), unwrappedIndexType());
 }
 
-TEST_F(PODDialectTests, llzkPodTypeGet) {
-  auto record = llzkRecordAttrGet(mlirStringRefCreateFromCString("record name"), createIndexType());
-  auto type = llzkPodTypeGet(context, 1, &record);
+TEST_F(PODDialectTests, llzkPod_PodTypeGet) {
+  auto record =
+      llzkPod_RecordAttrGet(mlirStringRefCreateFromCString("record name"), createIndexType());
+  auto type = llzkPod_PodTypeGet(context, 1, &record);
   mlir::Type expected =
       llzk::pod::PodType::get(unwrap(context), {recordAttr("record name", unwrappedIndexType())});
   ASSERT_EQ(unwrap(type), expected);
 }
 
-TEST_F(PODDialectTests, llzkPodTypeGetFromInitialValues) {
+TEST_F(PODDialectTests, llzkPod_PodTypeGetFromInitialValues) {
   auto ops = createNOps(2, createIndexType());
 
   LlzkRecordValue initialValues[] = {
@@ -121,7 +122,7 @@ TEST_F(PODDialectTests, llzkPodTypeGetFromInitialValues) {
           .name = mlirStringRefCreateFromCString("y"), .value = mlirOperationGetResult(ops[1], 0)
       },
   };
-  auto type = llzkPodTypeGetFromInitialValues(context, 2, initialValues);
+  auto type = llzkPod_PodTypeGetFromInitialValues(context, 2, initialValues);
   mlir::Type expected = llzk::pod::PodType::get(
       unwrap(context),
       {recordAttr("x", unwrappedIndexType()), recordAttr("y", unwrappedIndexType())}
@@ -133,11 +134,12 @@ TEST_F(PODDialectTests, llzkPodTypeGetFromInitialValues) {
   }
 }
 
-TEST_F(PODDialectTests, llzkPodTypeGetRecords) {
-  auto record = llzkRecordAttrGet(mlirStringRefCreateFromCString("record_name"), createIndexType());
-  auto type = llzkPodTypeGet(context, 1, &record);
+TEST_F(PODDialectTests, llzkPod_PodTypeGetRecords) {
+  auto record =
+      llzkPod_RecordAttrGet(mlirStringRefCreateFromCString("record_name"), createIndexType());
+  auto type = llzkPod_PodTypeGet(context, 1, &record);
   MlirAttribute output[1];
-  llzkPodTypeGetRecords(type, output);
+  llzkPod_PodTypeGetRecords(type, output);
   ASSERT_NE(output[0].ptr, nullptr);
   ASSERT_EQ(output[0].ptr, record.ptr);
 }

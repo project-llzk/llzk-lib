@@ -39,10 +39,10 @@ enum LlzkCmp {
 typedef enum LlzkCmp LlzkCmp;
 
 /// Returns a llzk::boolean::FeltCmpPredicateAttr attribute.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFeltCmpPredicateAttrGet(MlirContext context, LlzkCmp cmp);
+MLIR_CAPI_EXPORTED MlirAttribute llzkBool_FeltCmpPredicateAttrGet(MlirContext context, LlzkCmp cmp);
 
 /// Returns true if the attribute is a FeltCmpPredicateAttr.
-LLZK_DECLARE_ATTR_ISA(FeltCmpPredicateAttr);
+LLZK_DECLARE_ATTR_ISA(Bool, FeltCmpPredicateAttr);
 
 #ifdef __cplusplus
 }

@@ -22,9 +22,12 @@
 
 #include <mlir-c/IR.h>
 
-#define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, suffix, ...)                                        \
-  MlirOperation llzk##op##Build##suffix(MlirOpBuilder builder, MlirLocation location, __VA_ARGS__)
-#define LLZK_DEFINE_OP_BUILD_METHOD(op, ...) LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, , __VA_ARGS__)
+#define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix, ...)                               \
+  MlirOperation llzk##dialect##_##op##Build##suffix(                                               \
+      MlirOpBuilder builder, MlirLocation location, __VA_ARGS__                                    \
+  )
+#define LLZK_DEFINE_OP_BUILD_METHOD(dialect, op, ...)                                              \
+  LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, , __VA_ARGS__)
 
 namespace mlir {
 template <typename To> auto unwrap_cast(auto &from) { return cast<To>(unwrap(from)); }

@@ -384,7 +384,7 @@ extern "C" {
   virtual void genIsADecl() const {
     static constexpr char fmt[] = R"(
 /* Returns true if the {1} is a {4}::{3}. */
-MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
+MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
 )";
     assert(dialect && "Dialect must be set");
     os << llvm::formatv(
@@ -428,7 +428,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
 
     os << llvm::formatv("\n/* {0} */\n", docComment);
     os << llvm::formatv(
-        "MLIR_CAPI_EXPORTED {0} {1}{2}{3}{4}({5});\n",
+        "MLIR_CAPI_EXPORTED {0} {1}{2}_{3}{4}({5});\n",
         capiReturnType,                  // {0}
         FunctionPrefix,                  // {1}
         dialectNameCapitalized,          // {2}
@@ -446,7 +446,7 @@ struct ImplementationGenerator : public Generator {
 
   virtual void genIsAImpl() const {
     static constexpr char fmt[] = R"(
-bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
+bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
   return llvm::isa<{3}>(unwrap(inp));
 }
 )";
@@ -536,7 +536,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     // Generate implementation
     os << '\n';
     os << llvm::formatv(
-        "{0} {1}{2}{3}{4}({5}) {{\n",
+        "{0} {1}{2}_{3}{4}({5}) {{\n",
         capiReturnType,                  // {0}
         FunctionPrefix,                  // {1}
         dialectNameCapitalized,          // {2}
@@ -570,13 +570,13 @@ struct TestGenerator : public Generator {
   /// @brief Generate IsA test for a class
   virtual void genIsATest() const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{1}IsA{2}{3} links properly.
-TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
+// This test ensures {0}{1}IsA_{2}_{3} links properly.
+TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
   auto test{1} = createIndex{1}();
-  
+
   // This will always return false since `createIndex*` returns an MLIR builtin
-  EXPECT_FALSE({0}{1}IsA{2}{3}(test{1}));
-  
+  EXPECT_FALSE({0}{1}IsA_{2}_{3}(test{1}));
+
   {4}(test{1});
 }
 )";
@@ -638,15 +638,15 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
     }
 
     static constexpr char fmt[] = R"(
-// This test ensures {0}{2}{3}{4} links properly.
+// This test ensures {0}{2}_{3}{4} links properly.
 TEST_F({2}{1}LinkTests, {0}_{3}_{4}) {{
   auto test{1} = createIndex{1}();
-  
-  if ({0}{1}IsA{2}{3}(test{1})) {{
+
+  if ({0}{1}IsA_{2}_{3}(test{1})) {{
 {5}
-    (void){0}{2}{3}{4}(test{1}{6});
+    (void){0}{2}_{3}{4}(test{1}{6});
   }
-  
+
   {7}(test{1});
 }
 )";

@@ -18,16 +18,16 @@ TEST_F(CAPITest, mlir_get_dialect_handle_llzk_string) {
 }
 
 TEST_F(CAPITest, llzk_string_type_get) {
-  auto type = llzkStringTypeGet(context);
+  auto type = llzkString_StringTypeGet(context);
   EXPECT_NE(type.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
-  auto type = llzkStringTypeGet(context);
-  EXPECT_TRUE(llzkTypeIsAStringType(type));
+  auto type = llzkString_StringTypeGet(context);
+  EXPECT_TRUE(llzkTypeIsA_String_StringType(type));
 }
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_fail) {
   auto type = mlirIndexTypeGet(context);
-  EXPECT_TRUE(!llzkTypeIsAStringType(type));
+  EXPECT_TRUE(!llzkTypeIsA_String_StringType(type));
 }

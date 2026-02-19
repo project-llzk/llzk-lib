@@ -16,21 +16,21 @@
 TEST_F(CAPITest, mlir_get_dialect_handle_llzk) { (void)mlirGetDialectHandle__llzk__(); }
 
 TEST_F(CAPITest, llzk_public_attr_get) {
-  auto attr = llzkPublicAttrGet(context);
+  auto attr = llzkLlzk_PublicAttrGet(context);
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
-  auto attr = llzkPublicAttrGet(context);
-  EXPECT_TRUE(llzkAttributeIsAPublicAttr(attr));
+  auto attr = llzkLlzk_PublicAttrGet(context);
+  EXPECT_TRUE(llzkAttributeIsA_Llzk_PublicAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
   auto op_name = mlirStringRefCreateFromCString("llzk.nondet");
   auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(context));
-  auto t = llzkFeltTypeGet(context);
+  auto t = llzkFelt_FeltTypeGet(context);
   mlirOperationStateAddResults(&state, 1, &t);
 
   auto op = mlirOperationCreate(&state);
-  EXPECT_TRUE(llzkOperationIsANonDetOp(op));
+  EXPECT_TRUE(llzkOperationIsA_Llzk_NonDetOp(op));
 }

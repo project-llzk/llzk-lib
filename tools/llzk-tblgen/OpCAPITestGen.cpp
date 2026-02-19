@@ -72,21 +72,21 @@ struct OpTestGenerator : public TestGenerator {
   /// @param op The operation definition
   void genBuildOpTest(const Operator &op) const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{1}{2}Build links properly.
-TEST_F({1}OperationLinkTests, {0}{2}_Build) {{
+// This test ensures {0}{1}_{2}Build links properly.
+TEST_F({1}OperationLinkTests, {0}_{2}_Build) {{
   // Returns an `arith.constant` op, which will never match the {2} dialect check.
   auto testOp = createIndexOperation();
-  
+
   // This condition is always false, so the function is never actually called.
   // We only verify it compiles and links correctly.
-  if ({0}OperationIsA{1}{2}(testOp)) {{
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
     MlirOpBuilder builder = mlirOpBuilderCreate(context);
     MlirLocation location = mlirLocationUnknownGet(context);
 {3}
-    (void){0}{1}{2}Build(builder, location{4});
+    (void){0}{1}_{2}Build(builder, location{4});
     // No need to destroy builder or op since this code never runs.
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -108,11 +108,11 @@ TEST_F({1}OperationLinkTests, {0}{2}_Build) {{
     static constexpr char OperandGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -120,12 +120,12 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
     static constexpr char OperandSetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
-    {0}{1}{2}Set{3}(testOp, dummyValue);
+    {0}{1}_{2}Set{3}(testOp, dummyValue);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -133,21 +133,21 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}) {{
     static constexpr char VariadicOperandGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}Count(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}Count(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}At(testOp, 0);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}At(testOp, 0);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -155,13 +155,13 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
     static constexpr char VariadicOperandSetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
     MlirValue values[] = {{dummyValue};
-    {0}{1}{2}Set{3}(testOp, 1, values);
+    {0}{1}_{2}Set{3}(testOp, 1, values);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -218,11 +218,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
     static constexpr char AttributeGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Attr) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -230,11 +230,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Attr) {{
     static constexpr char AttributeSetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}Attr) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    {0}{1}{2}Set{3}(testOp, createIndexAttribute());
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    {0}{1}_{2}Set{3}(testOp, createIndexAttribute());
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -269,11 +269,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}Attr) {{
     static constexpr char ResultGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -281,21 +281,21 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
     static constexpr char VariadicResultGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}Count(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}Count(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}At(testOp, 0);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}At(testOp, 0);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -332,11 +332,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
     static constexpr char RegionGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Region) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -344,21 +344,21 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Region) {{
     static constexpr char VariadicRegionGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}Count(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}Count(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}At(testOp, 0);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}At(testOp, 0);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";

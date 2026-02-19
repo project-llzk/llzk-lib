@@ -29,20 +29,20 @@ extern "C" {
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
 
 /// Creates a llzk::PublicAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext context);
+MLIR_CAPI_EXPORTED MlirAttribute llzkLlzk_PublicAttrGet(MlirContext context);
 
 /// Returns true if the attribute is a PublicAttr.
-LLZK_DECLARE_ATTR_ISA(PublicAttr);
+LLZK_DECLARE_ATTR_ISA(Llzk, PublicAttr);
 
 /// Creates a llzk::LoopBoundsAttr.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkLoopBoundsAttrGet(MlirContext context, int64_t lower, int64_t upper, int64_t step);
+llzkLlzk_LoopBoundsAttrGet(MlirContext context, int64_t lower, int64_t upper, int64_t step);
 
 /// Returns true if the attribute is a LoopBoundsAttr.
-LLZK_DECLARE_ATTR_ISA(LoopBoundsAttr);
+LLZK_DECLARE_ATTR_ISA(Llzk, LoopBoundsAttr);
 
 /// Returns true if the op is a NonDetOp.
-LLZK_DECLARE_OP_ISA(NonDetOp);
+LLZK_DECLARE_OP_ISA(Llzk, NonDetOp);
 
 #ifdef __cplusplus
 }
