@@ -11,4 +11,5 @@
 
 #include <mlir/IR/DialectImplementation.h>
 
+// Include TableGen'd declarations
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h.inc"
