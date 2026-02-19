@@ -21,9 +21,6 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
-#include "r1cs/Dialect/IR/Attrs.h"
-#include "r1cs/Dialect/IR/Ops.h"
-#include "r1cs/Dialect/IR/Types.h"
 #include "r1cs/Transforms/TransformationPasses.h"
 
 #include <pcl/Dialect/IR/Dialect.h>
