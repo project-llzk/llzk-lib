@@ -25,7 +25,7 @@
 #include <mlir-c/IR.h>
 
 #define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix, ...)                               \
-  MlirOperation llzk##dialect##op##Build##suffix(                                                  \
+  MlirOperation llzk##dialect##_##op##Build##suffix(                                               \
       MlirOpBuilder builder, MlirLocation location, __VA_ARGS__                                    \
   )
 #define LLZK_DEFINE_OP_BUILD_METHOD(dialect, op, ...)                                              \

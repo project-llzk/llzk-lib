@@ -41,11 +41,11 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, llzk__array);
 
 /// Creates an llzk::array::ArrayType using a list of attributes as dimensions.
 MLIR_CAPI_EXPORTED MlirType
-llzkArrayArrayTypeGetWithDims(MlirType type, intptr_t nDims, MlirAttribute const *dims);
+llzkArray_ArrayTypeGetWithDims(MlirType type, intptr_t nDims, MlirAttribute const *dims);
 
 /// Creates an llzk::array::ArrayType using a list of numbers as dimensions.
 MLIR_CAPI_EXPORTED MlirType
-llzkArrayArrayTypeGetWithShape(MlirType type, intptr_t nDims, int64_t const *dims);
+llzkArray_ArrayTypeGetWithShape(MlirType type, intptr_t nDims, int64_t const *dims);
 
 //===----------------------------------------------------------------------===//
 // CreateArrayOp

@@ -40,12 +40,13 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Array, llzk__array, ArrayDialect)
 //===----------------------------------------------------------------------===//
 
 MlirType
-llzkArrayArrayTypeGetWithDims(MlirType elementType, intptr_t nDims, MlirAttribute const *dims) {
+llzkArray_ArrayTypeGetWithDims(MlirType elementType, intptr_t nDims, MlirAttribute const *dims) {
   SmallVector<Attribute> dimsSto;
   return wrap(ArrayType::get(unwrap(elementType), unwrapList(nDims, dims, dimsSto)));
 }
 
-MlirType llzkArrayArrayTypeGetWithShape(MlirType elementType, intptr_t nDims, int64_t const *dims) {
+MlirType
+llzkArray_ArrayTypeGetWithShape(MlirType elementType, intptr_t nDims, int64_t const *dims) {
   return wrap(ArrayType::get(unwrap(elementType), ArrayRef(dims, nDims)));
 }
 

@@ -17,7 +17,7 @@
 
 TEST_F(CAPITest, llzk_include_op_create) {
   auto location = mlirLocationUnknownGet(context);
-  auto op = llzkIncludeIncludeOpCreateInferredContext(
+  auto op = llzkInclude_IncludeOpCreateInferredContext(
       location, mlirStringRefCreateFromCString("test"), mlirStringRefCreateFromCString("test.mlir")
   );
 
@@ -37,7 +37,7 @@ std::unique_ptr<IncludeOpBuildFuncHelper> IncludeOpBuildFuncHelper::get() {
       mlirOpBuilderSetInsertionPointToStart(builder, mlirModuleGetBody(this->parentModule));
       MlirIdentifier strVal =
           mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("test"));
-      return llzkIncludeIncludeOpBuild(builder, location, strVal, strVal);
+      return llzkInclude_IncludeOpBuild(builder, location, strVal, strVal);
     }
   };
   return std::make_unique<Impl>();

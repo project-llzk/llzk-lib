@@ -30,7 +30,7 @@ std::unique_ptr<EmitEqualityOpBuildFuncHelper> EmitEqualityOpBuildFuncHelper::ge
           builder, location, llzk::function::FunctionKind::StructConstrain
       );
       mlir::Value val = testClass.cppGenFeltConstant(builder, location);
-      return llzkConstrainEmitEqualityOpBuild(builder, location, wrap(val), wrap(val));
+      return llzkConstrain_EmitEqualityOpBuild(builder, location, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -58,7 +58,7 @@ std::unique_ptr<EmitContainmentOpBuildFuncHelper> EmitContainmentOpBuildFuncHelp
         );
         array = bldr->create<llzk::array::CreateArrayOp>(unwrap(location), arrType);
       }
-      return llzkConstrainEmitContainmentOpBuild(
+      return llzkConstrain_EmitContainmentOpBuild(
           builder, location, wrap(array),
           mlirOperationGetResult(testClass.createIndexOperation(), 0)
       );

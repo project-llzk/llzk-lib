@@ -42,16 +42,16 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component);
 
 /// Creates a llzk::component::StructType.
 /// The name attribute must be a SymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirType llzkStructStructTypeGet(MlirAttribute name);
+MLIR_CAPI_EXPORTED MlirType llzkStruct_StructTypeGet(MlirAttribute name);
 
 /// Creates a llzk::component::StructType with an ArrayAttr as parameters. The name attribute must
 /// be a SymbolRefAttr.
 MLIR_CAPI_EXPORTED
-MlirType llzkStructStructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute params);
+MlirType llzkStruct_StructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute params);
 
 /// Creates a llzk::component::StructType with an array of parameters.
 /// The name attribute must be a SymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirType llzkStructStructTypeGetWithAttrs(
+MLIR_CAPI_EXPORTED MlirType llzkStruct_StructTypeGetWithAttrs(
     MlirAttribute name, intptr_t numParams, MlirAttribute const *params
 );
 
@@ -60,28 +60,28 @@ MLIR_CAPI_EXPORTED MlirType llzkStructStructTypeGetWithAttrs(
 //===----------------------------------------------------------------------===//
 
 /// Returns the single body Block within the StructDefOp's Region.
-MLIR_CAPI_EXPORTED MlirBlock llzkStructStructDefOpGetBody(MlirOperation op);
+MLIR_CAPI_EXPORTED MlirBlock llzkStruct_StructDefOpGetBody(MlirOperation op);
 
 /// Returns the associated StructType to this op using the const params defined by the op.
-MLIR_CAPI_EXPORTED MlirType llzkStructStructDefOpGetType(MlirOperation op);
+MLIR_CAPI_EXPORTED MlirType llzkStruct_StructDefOpGetType(MlirOperation op);
 
 /// Returns the associated StructType to this op using the given const params instead of the
 /// parameters defined by the op. The const params are defined in the given attribute which has to
 /// be of type ArrayAttr.
 MLIR_CAPI_EXPORTED MlirType
-llzkStructStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute params);
+llzkStruct_StructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute params);
 
 /// Fills the given array with the FieldDefOp operations inside this struct. The pointer to the
-/// operations must have been preallocated. See `llzkStructStructDefOpGetNumFieldDefs` for obtaining
-/// the required size of the array.
-MLIR_CAPI_EXPORTED void llzkStructStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst);
+/// operations must have been preallocated. See `llzkStruct_StructDefOpGetNumFieldDefs` for
+/// obtaining the required size of the array.
+MLIR_CAPI_EXPORTED void llzkStruct_StructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst);
 
 /// Returns the number of FieldDefOp operations defined in this struct.
-MLIR_CAPI_EXPORTED intptr_t llzkStructStructDefOpGetNumFieldDefs(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumFieldDefs(MlirOperation op);
 
 /// Returns the header string of the struct. The size of the string is written into the given size
 /// pointer. The caller is responsible of freeing the string and of providing an allocator.
-MLIR_CAPI_EXPORTED const char *llzkStructStructDefOpGetHeaderString(
+MLIR_CAPI_EXPORTED const char *llzkStruct_StructDefOpGetHeaderString(
     MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t)
 );
 

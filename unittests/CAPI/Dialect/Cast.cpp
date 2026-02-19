@@ -23,7 +23,7 @@ std::unique_ptr<IntToFeltOpBuildFuncHelper> IntToFeltOpBuildFuncHelper::get() {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       MlirOperation op = testClass.createIndexOperation();
       this->forceCleanup = unwrap(op);
-      return llzkCastIntToFeltOpBuild(
+      return llzkCast_IntToFeltOpBuild(
           builder, location, wrap(testClass.cppGetFeltType(builder)), mlirOperationGetResult(op, 0)
       );
     }
@@ -39,7 +39,7 @@ std::unique_ptr<FeltToIndexOpBuildFuncHelper> FeltToIndexOpBuildFuncHelper::get(
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       mlir::Value val = testClass.cppGenFeltConstant(builder, location);
       this->forceCleanup = val.getDefiningOp();
-      return llzkCastFeltToIndexOpBuild(builder, location, testClass.createIndexType(), wrap(val));
+      return llzkCast_FeltToIndexOpBuild(builder, location, testClass.createIndexType(), wrap(val));
     }
   };
   return std::make_unique<Impl>();

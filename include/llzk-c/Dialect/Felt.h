@@ -37,14 +37,14 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 
 /// Creates a llzk::felt::FeltConstAttr with a set bit length.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFeltFeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value);
+llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value);
 
 /// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFeltFeltConstAttrGetFromString(MlirContext context, unsigned numBits, MlirStringRef str);
+llzkFelt_FeltConstAttrGetFromString(MlirContext context, unsigned numBits, MlirStringRef str);
 
 /// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFeltFeltConstAttrGetFromParts(
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
     MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts
 );
 

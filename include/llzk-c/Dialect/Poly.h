@@ -42,11 +42,11 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 
 /// Creates a llzk::polymorphic::TypeVarType.
 MLIR_CAPI_EXPORTED MlirType
-llzkPolyTypeVarTypeGetFromStringRef(MlirContext context, MlirStringRef value);
+llzkPoly_TypeVarTypeGetFromStringRef(MlirContext context, MlirStringRef value);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
 MLIR_CAPI_EXPORTED MlirType
-llzkPolyTypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
+llzkPoly_TypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
 
 //===----------------------------------------------------------------------===//
 // ApplyMapOp
@@ -68,20 +68,20 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 );
 
 /// Returns the number of operands that correspond to dimensions in the affine map.
-MLIR_CAPI_EXPORTED intptr_t llzkPolyApplyMapOpGetNumDimOperands(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op);
 
 /// Writes into the destination buffer the operands that correspond to dimensions in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkPolyApplyMapOpGetNumDimOperands`.
-MLIR_CAPI_EXPORTED void llzkPolyApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst);
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumDimOperands`.
+MLIR_CAPI_EXPORTED void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst);
 
 /// Returns the number of operands that correspond to symbols in the affine map.
-MLIR_CAPI_EXPORTED intptr_t llzkPolyApplyMapOpGetNumSymbolOperands(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op);
 
 /// Writes into the destination buffer the operands that correspond to symbols in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkPolyApplyMapOpGetNumSymbolOperands`.
-MLIR_CAPI_EXPORTED void llzkPolyApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst);
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumSymbolOperands`.
+MLIR_CAPI_EXPORTED void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst);
 
 #ifdef __cplusplus
 }

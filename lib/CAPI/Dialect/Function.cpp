@@ -42,7 +42,7 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
 
 /// Creates a FuncDefOp with the given attributes and argument attributes. Each argument attribute
 /// has to be a DictionaryAttr.
-MlirOperation llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs(
+MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
     MlirLocation location, MlirStringRef name, MlirType funcType, intptr_t numAttrs,
     MlirNamedAttribute const *attrs, intptr_t numArgAttrs, MlirAttribute const *argAttrs
 ) {

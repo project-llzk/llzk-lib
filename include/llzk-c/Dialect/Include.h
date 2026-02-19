@@ -36,8 +36,9 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Include, llzk__include);
 //===----------------------------------------------------------------------===//
 
 /// Creates an IncludeOp pointing to another MLIR file.
-MLIR_CAPI_EXPORTED MlirOperation
-llzkIncludeIncludeOpCreateInferredContext(MlirLocation loc, MlirStringRef name, MlirStringRef path);
+MLIR_CAPI_EXPORTED MlirOperation llzkInclude_IncludeOpCreateInferredContext(
+    MlirLocation loc, MlirStringRef name, MlirStringRef path
+);
 
 #ifdef __cplusplus
 }

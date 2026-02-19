@@ -19,13 +19,13 @@
 #include "llzk/Dialect/String/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_string_type_get) {
-  auto type = llzkStringStringTypeGet(context);
+  auto type = llzkString_StringTypeGet(context);
   EXPECT_NE(type.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
-  auto type = llzkStringStringTypeGet(context);
-  EXPECT_TRUE(llzkTypeIsAStringStringType(type));
+  auto type = llzkString_StringTypeGet(context);
+  EXPECT_TRUE(llzkTypeIsA_String_StringType(type));
 }
 
 // Implementation for `LitStringOp_build_pass` test
@@ -35,8 +35,8 @@ std::unique_ptr<LitStringOpBuildFuncHelper> LitStringOpBuildFuncHelper::get() {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       MlirIdentifier strVal =
           mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("test"));
-      return llzkStringLitStringOpBuild(
-          builder, location, llzkStringStringTypeGet(testClass.context), strVal
+      return llzkString_LitStringOpBuild(
+          builder, location, llzkString_StringTypeGet(testClass.context), strVal
       );
     }
   };

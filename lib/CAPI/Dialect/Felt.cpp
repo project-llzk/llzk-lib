@@ -31,16 +31,16 @@ using namespace llzk::felt;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, FeltDialect)
 
-MlirAttribute llzkFeltFeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value) {
+MlirAttribute llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value) {
   return wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value)));
 }
 
 MlirAttribute
-llzkFeltFeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str) {
+llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str) {
   return wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str)));
 }
 
-MlirAttribute llzkFeltFeltConstAttrGetFromParts(
+MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
     MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts
 ) {
   return wrap(FeltConstAttr::get(unwrap(context), numBits, ArrayRef(parts, nParts)));

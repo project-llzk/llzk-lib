@@ -41,36 +41,36 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Function, llzk__function);
 
 /// Creates a FuncDefOp with the given attributes and argument attributes. Each argument attribute
 /// has to be a DictionaryAttr.
-MLIR_CAPI_EXPORTED MlirOperation llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs(
+MLIR_CAPI_EXPORTED MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
     MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nAttrs,
     MlirNamedAttribute const *attrs, intptr_t nArgAttrs, MlirAttribute const *argAttrs
 );
 
 /// Creates a FuncDefOp with the given attributes.
-static inline MlirOperation llzkFunctionFuncDefOpCreateWithAttrs(
+static inline MlirOperation llzkFunction_FuncDefOpCreateWithAttrs(
     MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nAttrs,
     MlirNamedAttribute const *attrs
 ) {
-  return llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs(
+  return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
       loc, name, type, nAttrs, attrs, /*nArgAttrs=*/0, /*argAttrs=*/NULL
   );
 }
 
 /// Creates a FuncDefOp with the given argument attributes. Each argument attribute has to be a
 /// DictionaryAttr.
-static inline MlirOperation llzkFunctionFuncDefOpCreateWithArgAttrs(
+static inline MlirOperation llzkFunction_FuncDefOpCreateWithArgAttrs(
     MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nArgAttrs,
     MlirAttribute const *argAttrs
 ) {
-  return llzkFunctionFuncDefOpCreateWithAttrsAndArgAttrs(
+  return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
       loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL, nArgAttrs, argAttrs
   );
 }
 
 /// Creates a FuncDefOp.
 static inline MlirOperation
-llzkFunctionFuncDefOpCreateWithoutAttrs(MlirLocation loc, MlirStringRef name, MlirType type) {
-  return llzkFunctionFuncDefOpCreateWithAttrs(loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL);
+llzkFunction_FuncDefOpCreateWithoutAttrs(MlirLocation loc, MlirStringRef name, MlirType type) {
+  return llzkFunction_FuncDefOpCreateWithAttrs(loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL);
 }
 
 //===----------------------------------------------------------------------===//

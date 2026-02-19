@@ -41,11 +41,11 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)
 // StructType
 //===----------------------------------------------------------------------===//
 
-MlirType llzkStructStructTypeGet(MlirAttribute name) {
+MlirType llzkStruct_StructTypeGet(MlirAttribute name) {
   return wrap(StructType::get(llvm::cast<SymbolRefAttr>(unwrap(name))));
 }
 
-MlirType llzkStructStructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute params) {
+MlirType llzkStruct_StructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute params) {
   return wrap(
       StructType::get(
           llvm::cast<SymbolRefAttr>(unwrap(name)), llvm::cast<ArrayAttr>(unwrap(params))
@@ -53,7 +53,7 @@ MlirType llzkStructStructTypeGetWithArrayAttr(MlirAttribute name, MlirAttribute 
   );
 }
 
-MlirType llzkStructStructTypeGetWithAttrs(
+MlirType llzkStruct_StructTypeGetWithAttrs(
     MlirAttribute name, intptr_t numParams, MlirAttribute const *params
 ) {
   SmallVector<Attribute> paramsSto;
@@ -68,29 +68,29 @@ MlirType llzkStructStructTypeGetWithAttrs(
 // StructDefOp
 //===----------------------------------------------------------------------===//
 
-MlirBlock llzkStructStructDefOpGetBody(MlirOperation op) {
+MlirBlock llzkStruct_StructDefOpGetBody(MlirOperation op) {
   return wrap(llvm::cast<StructDefOp>(unwrap(op)).getBody());
 }
 
-MlirType llzkStructStructDefOpGetType(MlirOperation op) {
+MlirType llzkStruct_StructDefOpGetType(MlirOperation op) {
   return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType());
 }
 
-MlirType llzkStructStructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) {
+MlirType llzkStruct_StructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute attr) {
   return wrap(llvm::cast<StructDefOp>(unwrap(op)).getType(llvm::cast<ArrayAttr>(unwrap(attr))));
 }
 
-void llzkStructStructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst) {
+void llzkStruct_StructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst) {
   for (auto [offset, field] : llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getFieldDefs())) {
     dst[offset] = wrap(field);
   }
 }
 
-intptr_t llzkStructStructDefOpGetNumFieldDefs(MlirOperation op) {
+intptr_t llzkStruct_StructDefOpGetNumFieldDefs(MlirOperation op) {
   return static_cast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getFieldDefs().size());
 }
 
-const char *llzkStructStructDefOpGetHeaderString(
+const char *llzkStruct_StructDefOpGetHeaderString(
     MlirOperation op, intptr_t *strSize, char *(*alloc_string)(size_t)
 ) {
   auto header = llvm::cast<StructDefOp>(unwrap(op)).getHeaderString();
@@ -101,7 +101,7 @@ const char *llzkStructStructDefOpGetHeaderString(
   return dst;
 }
 
-bool llzkStructStructDefOpGetHasParamName(MlirOperation op, MlirStringRef name) {
+bool llzkStruct_StructDefOpGetHasParamName(MlirOperation op, MlirStringRef name) {
   Builder builder(unwrap(op)->getContext());
   return llvm::cast<StructDefOp>(unwrap(op)).hasParamNamed(builder.getStringAttr(unwrap(name)));
 }

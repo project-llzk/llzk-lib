@@ -19,38 +19,38 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_type_var_type_get) {
-  auto t = llzkPolyTypeVarTypeGetFromStringRef(context, mlirStringRefCreateFromCString("T"));
+  auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, mlirStringRefCreateFromCString("T"));
   EXPECT_NE(t.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_type_var_type_pass) {
-  auto t = llzkPolyTypeVarTypeGetFromStringRef(context, mlirStringRefCreateFromCString("T"));
-  EXPECT_TRUE(llzkTypeIsAPolyTypeVarType(t));
+  auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, mlirStringRefCreateFromCString("T"));
+  EXPECT_TRUE(llzkTypeIsA_Poly_TypeVarType(t));
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
   auto s = mlirStringAttrGet(context, mlirStringRefCreateFromCString("T"));
-  auto t = llzkPolyTypeVarTypeGetFromAttr(context, s);
+  auto t = llzkPoly_TypeVarTypeGetFromAttr(context, s);
   EXPECT_NE(t.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_name_ref) {
   auto s = mlirStringRefCreateFromCString("T");
-  auto t = llzkPolyTypeVarTypeGetFromStringRef(context, s);
+  auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, s);
   EXPECT_NE(t.ptr, (void *)NULL);
-  EXPECT_TRUE(mlirStringRefEqual(s, llzkPolyTypeVarTypeGetRefName(t)));
+  EXPECT_TRUE(mlirStringRefEqual(s, llzkPoly_TypeVarTypeGetRefName(t)));
 }
 
 TEST_F(CAPITest, llzk_type_var_type_get_name) {
   auto s = mlirStringRefCreateFromCString("T");
-  auto t = llzkPolyTypeVarTypeGetFromStringRef(context, s);
+  auto t = llzkPoly_TypeVarTypeGetFromStringRef(context, s);
   auto sym = mlirFlatSymbolRefAttrGet(context, s);
   EXPECT_NE(t.ptr, (void *)NULL);
-  EXPECT_TRUE(mlirAttributeEqual(sym, llzkPolyTypeVarTypeGetNameRef(t)));
+  EXPECT_TRUE(mlirAttributeEqual(sym, llzkPoly_TypeVarTypeGetNameRef(t)));
 }
 
 struct ApplyMapOpBuildFuncHelper : public TestAnyBuildFuncHelper<CAPITest> {
-  bool callIsA(MlirOperation op) override { return llzkOperationIsAPolyApplyMapOp(op); }
+  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Poly_ApplyMapOp(op); }
 };
 
 TEST_F(CAPITest, llzk_apply_map_op_build) {
@@ -60,7 +60,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build) {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
       auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
       auto affine_map_attr = mlirAffineMapAttrGet(affine_map);
-      return llzkPolyApplyMapOpBuild(
+      return llzkPoly_ApplyMapOpBuild(
           builder, location, affine_map_attr,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -78,7 +78,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
       auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
-      return llzkPolyApplyMapOpBuildWithAffineMap(
+      return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -95,7 +95,7 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_expr) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto expr = mlirAffineConstantExprGet(testClass.context, 1);
-      return llzkPolyApplyMapOpBuildWithAffineExpr(
+      return llzkPoly_ApplyMapOpBuildWithAffineExpr(
           builder, location, expr,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -112,7 +112,7 @@ TEST_F(CAPITest, llzk_op_is_a_apply_map_op_pass) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto expr = mlirAffineConstantExprGet(testClass.context, 1);
-      return llzkPolyApplyMapOpBuildWithAffineExpr(
+      return llzkPoly_ApplyMapOpBuildWithAffineExpr(
           builder, location, expr,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -132,7 +132,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
       this->affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
-      return llzkPolyApplyMapOpBuildWithAffineMap(
+      return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, this->affine_map,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -141,7 +141,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
       );
     }
     void doOtherChecks(MlirOperation op) override {
-      auto out_affine_map = llzkPolyApplyMapOpGetAffineMap(op);
+      auto out_affine_map = llzkPoly_ApplyMapOpGetAffineMap(op);
       EXPECT_TRUE(mlirAffineMapEqual(this->affine_map, out_affine_map));
     }
   } helper;
@@ -154,7 +154,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
       auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
-      return llzkPolyApplyMapOpBuildWithAffineMap(
+      return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -163,9 +163,9 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
       );
     }
     void doOtherChecks(MlirOperation op) override {
-      auto n_dims = llzkPolyApplyMapOpGetNumDimOperands(op);
+      auto n_dims = llzkPoly_ApplyMapOpGetNumDimOperands(op);
       llvm::SmallVector<MlirValue> dims(n_dims, MlirValue {.ptr = (void *)NULL});
-      llzkPolyApplyMapOpGetDimOperands(op, dims.data());
+      llzkPoly_ApplyMapOpGetDimOperands(op, dims.data());
       EXPECT_EQ(dims.size(), 0);
     }
   } helper;
@@ -178,7 +178,7 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs = {mlirAffineConstantExprGet(testClass.context, 1)};
       auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
-      return llzkPolyApplyMapOpBuildWithAffineMap(
+      return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
@@ -187,9 +187,9 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
       );
     }
     void doOtherChecks(MlirOperation op) override {
-      auto n_syms = llzkPolyApplyMapOpGetNumSymbolOperands(op);
+      auto n_syms = llzkPoly_ApplyMapOpGetNumSymbolOperands(op);
       llvm::SmallVector<MlirValue> syms(n_syms, {.ptr = (void *)NULL});
-      llzkPolyApplyMapOpGetSymbolOperands(op, syms.data());
+      llzkPoly_ApplyMapOpGetSymbolOperands(op, syms.data());
       EXPECT_EQ(syms.size(), 0);
     }
   } helper;
@@ -203,7 +203,7 @@ std::unique_ptr<ConstReadOpBuildFuncHelper> ConstReadOpBuildFuncHelper::get() {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       MlirAttribute attr =
           mlirFlatSymbolRefAttrGet(testClass.context, mlirStringRefCreateFromCString("const_name"));
-      return llzkPolyConstReadOpBuild(builder, location, testClass.createIndexType(), attr);
+      return llzkPoly_ConstReadOpBuild(builder, location, testClass.createIndexType(), attr);
     }
   };
   return std::make_unique<Impl>();
@@ -217,7 +217,7 @@ std::unique_ptr<UnifiableCastOpBuildFuncHelper> UnifiableCastOpBuildFuncHelper::
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       MlirOperation op = testClass.createIndexOperation();
       this->forceCleanup = unwrap(op);
-      return llzkPolyUnifiableCastOpBuild(
+      return llzkPoly_UnifiableCastOpBuild(
           builder, location, testClass.createIndexType(), mlirOperationGetResult(op, 0)
       );
     }

@@ -27,7 +27,7 @@
 
 struct ArrayDialectTests : public CAPITest {
   MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) const {
-    return llzkArrayArrayTypeGetWithShape(elt, dims.size(), dims.data());
+    return llzkArray_ArrayTypeGetWithShape(elt, dims.size(), dims.data());
   }
 
   llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) const {
@@ -52,51 +52,51 @@ struct ArrayDialectTests : public CAPITest {
 TEST_F(ArrayDialectTests, array_type_get) {
   auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayArrayTypeGetWithDims(createIndexType(), 1, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithDims(createIndexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
   auto size = createIndexAttribute(1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayArrayTypeGetWithDims(createIndexType(), 1, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithDims(createIndexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  EXPECT_TRUE(llzkTypeIsAArrayArrayType(arr_type));
+  EXPECT_TRUE(llzkTypeIsA_Array_ArrayType(arr_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_with_numeric_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_element_type) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto elt_type = llzkArrayArrayTypeGetElementType(arr_type);
+  auto elt_type = llzkArray_ArrayTypeGetElementType(arr_type);
   EXPECT_TRUE(mlirTypeEqual(createIndexType(), elt_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_num_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto n_dims = llzkArrayArrayTypeGetDimensionSizesCount(arr_type);
+  auto n_dims = llzkArray_ArrayTypeGetDimensionSizesCount(arr_type);
   EXPECT_EQ(n_dims, 2);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_dim) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayArrayTypeGetWithShape(createIndexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithShape(createIndexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto out_dim = llzkArrayArrayTypeGetDimensionSizesAt(arr_type, 0);
+  auto out_dim = llzkArray_ArrayTypeGetDimensionSizesAt(arr_type, 0);
   auto dim_as_attr = createIndexAttribute(dims[0]);
   EXPECT_TRUE(mlirAttributeEqual(out_dim, dim_as_attr));
 }
 
 struct CreateArrayOpBuildFuncHelper : public TestAnyBuildFuncHelper<ArrayDialectTests> {
-  bool callIsA(MlirOperation op) override { return llzkOperationIsAArrayCreateArrayOp(op); }
+  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Array_CreateArrayOp(op); }
 };
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
@@ -114,7 +114,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
       for (auto op : this->otherOps) {
         values.push_back(mlirOperationGetResult(op, 0));
       }
-      return llzkArrayCreateArrayOpBuildWithValues(
+      return llzkArray_CreateArrayOpBuildWithValues(
           builder, location, test_type, values.size(), values.data()
       );
     }
@@ -141,7 +141,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
       auto elt_type = testClass.createIndexType();
       auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
       auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
-      return llzkArrayCreateArrayOpBuildWithMapOperands(
+      return llzkArray_CreateArrayOpBuildWithMapOperands(
           builder, location, test_type, 0, NULL, dims_per_map
       );
     }
@@ -157,7 +157,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
       int64_t dims[1] = {1};
       auto elt_type = testClass.createIndexType();
       auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
-      return llzkArrayCreateArrayOpBuildWithMapOperandsAndDims(
+      return llzkArray_CreateArrayOpBuildWithMapOperandsAndDims(
           builder, location, test_type, 0, NULL, 0, NULL
       );
     }
@@ -183,7 +183,7 @@ std::unique_ptr<ArrayLengthOpBuildFuncHelper> ArrayLengthOpBuildFuncHelper::get(
         );
         dim = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr1);
       }
-      return llzkArrayArrayLengthOpBuild(builder, location, wrap(array), wrap(dim));
+      return llzkArray_ArrayLengthOpBuild(builder, location, wrap(array), wrap(dim));
     }
   };
   return std::make_unique<Impl>();
@@ -210,7 +210,7 @@ std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
         mlir::Value idx = bldr->create<mlir::arith::ConstantOp>(cppLoc, idxType, intAttr0);
         indices.push_back(wrap(idx));
       }
-      return llzkArrayReadArrayOpBuild(
+      return llzkArray_ReadArrayOpBuild(
           builder, location, wrap(elemType), wrap(array), indices.size(), indices.data()
       );
     }
@@ -239,7 +239,7 @@ std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() 
         indices.push_back(wrap(idx));
         value = idx;
       }
-      return llzkArrayWriteArrayOpBuild(
+      return llzkArray_WriteArrayOpBuild(
           builder, location, wrap(array), indices.size(), indices.data(), wrap(value)
       );
     }
@@ -273,7 +273,7 @@ std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get(
             cppLoc, llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1})
         );
       }
-      return llzkArrayInsertArrayOpBuild(
+      return llzkArray_InsertArrayOpBuild(
           builder, location, wrap(array_big), indices.size(), indices.data(), wrap(array_small)
       );
     }
@@ -306,7 +306,7 @@ std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::ge
         small_type =
             llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1});
       }
-      return llzkArrayExtractArrayOpBuild(
+      return llzkArray_ExtractArrayOpBuild(
           builder, location, wrap(small_type), wrap(array_big), indices.size(), indices.data()
       );
     }

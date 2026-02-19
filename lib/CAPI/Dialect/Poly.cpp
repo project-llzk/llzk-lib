@@ -43,11 +43,11 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, Polymorphi
 // TypeVarType
 //===----------------------------------------------------------------------===//
 
-MlirType llzkPolyTypeVarTypeGetFromStringRef(MlirContext ctx, MlirStringRef name) {
+MlirType llzkPoly_TypeVarTypeGetFromStringRef(MlirContext ctx, MlirStringRef name) {
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(StringAttr::get(unwrap(ctx), unwrap(name)))));
 }
 
-MlirType llzkPolyTypeVarTypeGetFromAttr(MlirContext, MlirAttribute attrWrapper) {
+MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirContext, MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
   if (auto sym = llvm::dyn_cast<FlatSymbolRefAttr>(attr)) {
     return wrap(TypeVarType::get(sym));
@@ -108,25 +108,25 @@ static inline void copyValues(ValueRange in, MlirValue *out) {
 }
 
 /// Returns the number of operands that correspond to dimensions in the affine map.
-intptr_t llzkPolyApplyMapOpGetNumDimOperands(MlirOperation op) {
+intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op) {
   return static_cast<intptr_t>(dimOperands(op).size());
 }
 
 /// Writes into the destination buffer the operands that correspond to dimensions in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkPolyApplyMapOpGetNumDimOperands`.
-void llzkPolyApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst) {
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumDimOperands`.
+void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst) {
   copyValues(dimOperands(op), dst);
 }
 
 /// Returns the number of operands that correspond to symbols in the affine map.
-intptr_t llzkPolyApplyMapOpGetNumSymbolOperands(MlirOperation op) {
+intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op) {
   return static_cast<intptr_t>(symbolOperands(op).size());
 }
 
 /// Writes into the destination buffer the operands that correspond to symbols in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkPolyApplyMapOpGetNumSymbolOperands`.
-void llzkPolyApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst) {
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumSymbolOperands`.
+void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst) {
   copyValues(symbolOperands(op), dst);
 }

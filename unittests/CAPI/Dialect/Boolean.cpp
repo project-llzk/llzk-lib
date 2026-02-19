@@ -21,7 +21,7 @@ class CmpAttrTest : public CAPITest,
                     public testing::WithParamInterface<LlzkBoolFeltCmpPredicate> {};
 
 TEST_P(CmpAttrTest, llzk_felt_cmp_predicate_attr_get) {
-  auto attr = llzkBoolFeltCmpPredicateAttrGet(context, GetParam());
+  auto attr = llzkBool_FeltCmpPredicateAttrGet(context, GetParam());
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
@@ -34,8 +34,8 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_pass) {
-  auto attr = llzkBoolFeltCmpPredicateAttrGet(context, LlzkBoolFeltCmpPredicate_EQ);
-  EXPECT_TRUE(llzkAttributeIsABoolFeltCmpPredicateAttr(attr));
+  auto attr = llzkBool_FeltCmpPredicateAttrGet(context, LlzkBoolFeltCmpPredicate_EQ);
+  EXPECT_TRUE(llzkAttributeIsA_Bool_FeltCmpPredicateAttr(attr));
 }
 
 // Implementation for `CmpOp_build_pass` test
@@ -48,7 +48,7 @@ std::unique_ptr<CmpOpBuildFuncHelper> CmpOpBuildFuncHelper::get() {
           llzk::boolean::FeltCmpPredicate::EQ
       );
       mlir::Value cppValue = CAPITest::cppGenFeltConstant(builder, location);
-      return llzkBoolCmpOpBuild(builder, location, wrap(cppValue), wrap(cppValue), wrap(cppAttr));
+      return llzkBool_CmpOpBuild(builder, location, wrap(cppValue), wrap(cppValue), wrap(cppAttr));
     }
   };
   return std::make_unique<Impl>();
@@ -60,7 +60,9 @@ std::unique_ptr<AssertOpBuildFuncHelper> AssertOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
-      return llzkBoolAssertOpBuild(builder, location, wrap(cppValue), MlirIdentifier {.ptr = NULL});
+      return llzkBool_AssertOpBuild(
+          builder, location, wrap(cppValue), MlirIdentifier {.ptr = NULL}
+      );
     }
   };
   return std::make_unique<Impl>();
@@ -78,7 +80,7 @@ std::unique_ptr<OrBoolOpBuildFuncHelper> OrBoolOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
-      return llzkBoolOrBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
+      return llzkBool_OrBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
     }
   };
   return std::make_unique<Impl>();
@@ -96,7 +98,7 @@ std::unique_ptr<AndBoolOpBuildFuncHelper> AndBoolOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
-      return llzkBoolAndBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
+      return llzkBool_AndBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
     }
   };
   return std::make_unique<Impl>();
@@ -114,7 +116,7 @@ std::unique_ptr<NotBoolOpBuildFuncHelper> NotBoolOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
-      return llzkBoolNotBoolOpBuild(builder, location, wrap(cppValue));
+      return llzkBool_NotBoolOpBuild(builder, location, wrap(cppValue));
     }
   };
   return std::make_unique<Impl>();
@@ -132,7 +134,7 @@ std::unique_ptr<XorBoolOpBuildFuncHelper> XorBoolOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
-      return llzkBoolXorBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
+      return llzkBool_XorBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
     }
   };
   return std::make_unique<Impl>();

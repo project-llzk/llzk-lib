@@ -28,7 +28,7 @@ extern "C" {
 // Utility macros for function declarations.
 //===----------------------------------------------------------------------===//
 
-#define LLZK_BUILD_METHOD_NAME(dialect, op, suffix) llzk##dialect##op##Build##suffix
+#define LLZK_BUILD_METHOD_NAME(dialect, op, suffix) llzk##dialect##_##op##Build##suffix
 #define LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix, ...)                              \
   MLIR_CAPI_EXPORTED MlirOperation LLZK_BUILD_METHOD_NAME(dialect, op, suffix)(                    \
       MlirOpBuilder builder, MlirLocation location, __VA_ARGS__                                    \
@@ -38,9 +38,9 @@ extern "C" {
   LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(dialect, op, , __VA_ARGS__)
 
 #define LLZK_DECLARE_OP_PREDICATE(dialect, op, name)                                               \
-  MLIR_CAPI_EXPORTED bool llzk##dialect##op##Get##name(MlirOperation op)
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##Get##name(MlirOperation op)
 #define LLZK_DECLARE_NARY_OP_PREDICATE(dialect, op, name, ...)                                     \
-  MLIR_CAPI_EXPORTED bool llzk##dialect##op##Get##name(MlirOperation op, __VA_ARGS__)
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##Get##name(MlirOperation op, __VA_ARGS__)
 
 //===----------------------------------------------------------------------===//
 // Representation of a mlir::ValueRange.
