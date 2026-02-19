@@ -18,7 +18,7 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL:   struct.def @S1 {
 // CHECK-NEXT:      struct.member @[[V0:[0-9a-zA-Z_\.]+]] : !felt.type
-// CHECK-NEXT:      function.def @product(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@S1> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:      function.def @product(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@S1> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@S1>
 // CHECK-NEXT:        struct.writem %[[V1]][@[[V0]]] = %[[A0]] : <@S1>, !felt.type
 // CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@[[V0]]] : <@S1>, !felt.type
