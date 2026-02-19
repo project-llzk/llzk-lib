@@ -95,7 +95,6 @@ void registerInliningExtensions(DialectRegistry &registry) {
   registry.addExtension(FuncInlinerInterface::registrationHook);
   registry.addExtension(FullyLegalForInlining<component::StructDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<constrain::ConstrainDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<undef::UndefDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<string::StringDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<polymorphic::PolymorphicDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<felt::FeltDialect>::registrationHook);
