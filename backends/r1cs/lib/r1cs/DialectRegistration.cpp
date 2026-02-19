@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "r1cs/Dialect/IR/Dialect.h"
-#include "r1cs/InitAllDialects.h"
+#include "r1cs/DialectRegistration.h"
 
 #include <mlir/IR/DialectRegistry.h>
 

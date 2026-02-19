@@ -1,4 +1,4 @@
-//===-- LLZKR1CSLoweringPass.cpp --------------------------------*- C++ -*-===//
+//===-- R1CSLoweringPass.cpp ------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -17,11 +17,11 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "r1cs/Dialect/IR/Attrs.h"
 #include "r1cs/Dialect/IR/Ops.h"
 #include "r1cs/Dialect/IR/Types.h"
+#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -34,10 +34,10 @@
 #include <memory>
 
 // Include the generated base pass class definitions.
-namespace llzk {
+namespace r1cs {
 #define GEN_PASS_DEF_R1CSLOWERINGPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "r1cs/Transforms/TransformationPasses.h.inc"
+} // namespace r1cs
 
 using namespace mlir;
 using namespace llzk;
@@ -215,7 +215,7 @@ struct R1CSConstraint {
   }
 };
 
-class R1CSLoweringPass : public llzk::impl::R1CSLoweringPassBase<R1CSLoweringPass> {
+class R1CSLoweringPass : public r1cs::impl::R1CSLoweringPassBase<R1CSLoweringPass> {
 private:
   unsigned auxCounter = 0;
 
@@ -689,6 +689,6 @@ private:
 };
 } // namespace
 
-std::unique_ptr<mlir::Pass> llzk::createR1CSLoweringPass() {
+std::unique_ptr<mlir::Pass> r1cs::createR1CSLoweringPass() {
   return std::make_unique<R1CSLoweringPass>();
 }
