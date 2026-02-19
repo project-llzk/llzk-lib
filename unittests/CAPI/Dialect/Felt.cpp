@@ -106,12 +106,12 @@ TEST_F(CAPITest, llzkFeltConstAttrGetFromPartsWithField) {
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {
   auto attr = llzkFeltConstAttrGet(context, 0);
-  EXPECT_TRUE(llzkAttributeIsAFeltConstAttr(attr));
+  EXPECT_TRUE(llzkAttributeIsA_Felt_FeltConstAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_fail) {
   auto attr = mlirIntegerAttrGet(mlirIndexTypeGet(context), 0);
-  EXPECT_TRUE(!llzkAttributeIsAFeltConstAttr(attr));
+  EXPECT_TRUE(!llzkAttributeIsA_Felt_FeltConstAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_felt_type_get) {
@@ -127,10 +127,10 @@ TEST_F(CAPITest, llzk_felt_type_get_with_field) {
 
 TEST_F(CAPITest, llzk_type_is_a_felt_type_pass) {
   auto type = llzkFeltTypeGet(context);
-  EXPECT_TRUE(llzkTypeIsAFeltType(type));
+  EXPECT_TRUE(llzkTypeIsA_Felt_FeltType(type));
 }
 
 TEST_F(CAPITest, llzk_type_is_a_felt_type_fail) {
   auto type = mlirIndexTypeGet(context);
-  EXPECT_TRUE(!llzkTypeIsAFeltType(type));
+  EXPECT_TRUE(!llzkTypeIsA_Felt_FeltType(type));
 }

@@ -55,7 +55,7 @@ TEST_F(CAPITest, llzk_type_is_a_struct_type_pass) {
   auto sym = mlirFlatSymbolRefAttrGet(context, s);
   auto t = llzkStructTypeGet(sym);
   EXPECT_NE(t.ptr, (void *)NULL);
-  EXPECT_TRUE(llzkTypeIsAStructType(t));
+  EXPECT_TRUE(llzkTypeIsA_Struct_StructType(t));
 }
 
 TEST_F(CAPITest, llzk_struct_type_get_name) {
@@ -146,38 +146,38 @@ protected:
 
 TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op_pass) {
   auto op = make_struct_def_op();
-  EXPECT_TRUE(llzkOperationIsAStructDefOp(op));
+  EXPECT_TRUE(llzkOperationIsA_Struct_StructDefOp(op));
 }
 
 TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op_fail) {
   auto op = test_op();
-  EXPECT_TRUE(!llzkOperationIsAStructDefOp(op.op));
+  EXPECT_TRUE(!llzkOperationIsA_Struct_StructDefOp(op.op));
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_body) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetBody(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_body_region) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetBodyRegion(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_type) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetType(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_type_with_params) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     auto attrs = mlirArrayAttrGet(mlirOperationGetContext(op.op), 0, (const MlirAttribute *)NULL);
     llzkStructDefOpGetTypeWithParams(op.op, attrs);
   }
@@ -185,7 +185,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_type_with_params) {
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_member_def) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     auto name = mlirStringRefCreateFromCString("p");
     llzkStructDefOpGetMemberDef(op.op, name);
   }
@@ -193,35 +193,35 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_member_def) {
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_member_defs) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetMemberDefs(op.op, (MlirOperation *)NULL);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_num_member_defs) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetNumMemberDefs(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_has_columns) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetHasColumns(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_compute_func_op) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetComputeFuncOp(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_constrain_func_op) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetConstrainFuncOp(op.op);
   }
 }
@@ -230,7 +230,7 @@ static char *cmalloc(size_t s) { return (char *)malloc(s); }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_header_string) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     intptr_t size = 0;
     auto str = llzkStructDefOpGetHeaderString(op.op, &size, cmalloc);
     free(static_cast<void *>(const_cast<char *>(str)));
@@ -239,7 +239,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_header_string) {
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     auto name = mlirStringRefCreateFromCString("p");
     llzkStructDefOpGetHasParamName(op.op, name);
   }
@@ -247,38 +247,38 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetFullyQualifiedName(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
   auto op = test_op();
-  if (llzkOperationIsAStructDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStructDefOpGetIsMainComponent(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_pass) {
   auto op = make_member_def_op();
-  EXPECT_TRUE(llzkOperationIsAMemberDefOp(op));
+  EXPECT_TRUE(llzkOperationIsA_Struct_MemberDefOp(op));
 }
 
 TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_fail) {
   auto op = test_op();
-  EXPECT_TRUE(!llzkOperationIsAMemberDefOp(op.op));
+  EXPECT_TRUE(!llzkOperationIsA_Struct_MemberDefOp(op.op));
 }
 
 TEST_F(StructDefTest, llzk_member_def_op_get_has_public_attr) {
   auto op = test_op();
-  if (llzkOperationIsAMemberDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_MemberDefOp(op.op)) {
     llzkMemberDefOpGetHasPublicAttr(op.op);
   }
 }
 
 TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
   auto op = test_op();
-  if (llzkOperationIsAMemberDefOp(op.op)) {
+  if (llzkOperationIsA_Struct_MemberDefOp(op.op)) {
     llzkMemberDefOpSetPublicAttr(op.op, true);
   }
 }

@@ -45,7 +45,7 @@ MlirType llzkTypeVarTypeGet(MlirContext ctx, MlirStringRef name) {
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(StringAttr::get(unwrap(ctx), unwrap(name)))));
 }
 
-bool llzkTypeIsATypeVarType(MlirType type) { return llvm::isa<TypeVarType>(unwrap(type)); }
+bool llzkTypeIsA_Poly_TypeVarType(MlirType type) { return llvm::isa<TypeVarType>(unwrap(type)); }
 
 MlirType llzkTypeVarTypeGetFromAttr(MlirContext /*ctx*/, MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
@@ -101,7 +101,9 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   );
 }
 
-bool llzkOperationIsAApplyMapOp(MlirOperation op) { return llvm::isa<ApplyMapOp>(unwrap(op)); }
+bool llzkOperationIsA_Poly_ApplyMapOp(MlirOperation op) {
+  return llvm::isa<ApplyMapOp>(unwrap(op));
+}
 
 /// Returns the affine map associated with the op.
 MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op) {

@@ -24,10 +24,10 @@ TEST_F(CAPITest, llzk_string_type_get) {
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
   auto type = llzkStringTypeGet(context);
-  EXPECT_TRUE(llzkTypeIsAStringType(type));
+  EXPECT_TRUE(llzkTypeIsA_String_StringType(type));
 }
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_fail) {
   auto type = mlirIndexTypeGet(context);
-  EXPECT_TRUE(!llzkTypeIsAStringType(type));
+  EXPECT_TRUE(!llzkTypeIsA_String_StringType(type));
 }

@@ -22,7 +22,7 @@ TEST_F(CAPITest, llzk_public_attr_get) {
 
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
   auto attr = llzkPublicAttrGet(context);
-  EXPECT_TRUE(llzkAttributeIsAPublicAttr(attr));
+  EXPECT_TRUE(llzkAttributeIsA_Llzk_PublicAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
@@ -32,5 +32,5 @@ TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
   mlirOperationStateAddResults(&state, 1, &t);
 
   auto op = mlirOperationCreate(&state);
-  EXPECT_TRUE(llzkOperationIsANonDetOp(op));
+  EXPECT_TRUE(llzkOperationIsA_Llzk_NonDetOp(op));
 }

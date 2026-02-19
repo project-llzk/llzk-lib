@@ -61,7 +61,7 @@ llzkStructTypeGetWithAttrs(MlirAttribute name, intptr_t numParams, MlirAttribute
   );
 }
 
-bool llzkTypeIsAStructType(MlirType type) { return llvm::isa<StructType>(unwrap(type)); }
+bool llzkTypeIsA_Struct_StructType(MlirType type) { return llvm::isa<StructType>(unwrap(type)); }
 
 MlirAttribute llzkStructTypeGetName(MlirType type) {
   return wrap(llvm::cast<StructType>(unwrap(type)).getNameRef());
@@ -97,7 +97,9 @@ MlirLogicalResult llzkStructStructTypeGetDefinitionFromModule(
 // StructDefOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAStructDefOp(MlirOperation op) { return llvm::isa<StructDefOp>(unwrap(op)); }
+bool llzkOperationIsA_Struct_StructDefOp(MlirOperation op) {
+  return llvm::isa<StructDefOp>(unwrap(op));
+}
 
 MlirRegion llzkStructDefOpGetBodyRegion(MlirOperation op) {
   return wrap(&llvm::cast<StructDefOp>(unwrap(op)).getBodyRegion());
@@ -172,7 +174,9 @@ bool llzkStructDefOpGetIsMainComponent(MlirOperation op) {
 // MemberDefOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAMemberDefOp(MlirOperation op) { return llvm::isa<MemberDefOp>(unwrap(op)); }
+bool llzkOperationIsA_Struct_MemberDefOp(MlirOperation op) {
+  return llvm::isa<MemberDefOp>(unwrap(op));
+}
 
 bool llzkMemberDefOpGetHasPublicAttr(MlirOperation op) {
   return llvm::cast<MemberDefOp>(unwrap(op)).hasPublicAttr();

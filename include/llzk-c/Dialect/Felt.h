@@ -73,7 +73,7 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGetFromPartsWithField(
 );
 
 /// Returns true if the attribute is a FeltConstAttr.
-LLZK_DECLARE_ATTR_ISA(FeltConstAttr);
+LLZK_DECLARE_ATTR_ISA(Felt, FeltConstAttr);
 
 /// Get the underlying felt type of the FeltConstAttr.
 MLIR_CAPI_EXPORTED MlirType llzkFeltConstAttrGetType(MlirAttribute attr);
@@ -105,7 +105,7 @@ MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGet(MlirContext context);
 MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGetWithField(MlirContext context, MlirStringRef fieldName);
 
 /// Returns true if the type is a FeltType.
-LLZK_DECLARE_TYPE_ISA(FeltType);
+LLZK_DECLARE_TYPE_ISA(Felt, FeltType);
 
 #ifdef __cplusplus
 }

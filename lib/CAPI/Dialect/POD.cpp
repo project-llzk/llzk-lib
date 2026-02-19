@@ -56,7 +56,9 @@ MlirAttribute llzkRecordAttrGet(MlirStringRef name, MlirType type) {
   return wrap(RecordAttr::get(t.getContext(), StringAttr::get(t.getContext(), unwrap(name)), t));
 }
 
-bool llzkAttributeIsARecordAttr(MlirAttribute attr) { return mlir::isa<RecordAttr>(unwrap(attr)); }
+bool llzkAttributeIsA_Pod_RecordAttr(MlirAttribute attr) {
+  return mlir::isa<RecordAttr>(unwrap(attr));
+}
 
 MlirStringRef llzkRecordAttrGetName(MlirAttribute attr) {
   return wrap(unwrap_cast<RecordAttr>(attr).getName().getValue());
@@ -89,7 +91,7 @@ MlirType llzkPodTypeGetFromInitialValues(
   return wrap(PodType::fromInitialValues(unwrap(context), initialValues));
 }
 
-bool llzkTypeIsAPodType(MlirType type) { return mlir::isa<PodType>(unwrap(type)); }
+bool llzkTypeIsA_Pod_PodType(MlirType type) { return mlir::isa<PodType>(unwrap(type)); }
 
 intptr_t llzkPodTypeGetNumRecords(MlirType type) {
   return static_cast<intptr_t>(unwrap_cast<PodType>(type).getRecords().size());
@@ -173,16 +175,16 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   );
 }
 
-bool llzkOperationIsANewPodOp(MlirOperation op) { return mlir::isa<NewPodOp>(unwrap(op)); }
+bool llzkOperationIsA_Pod_NewPodOp(MlirOperation op) { return mlir::isa<NewPodOp>(unwrap(op)); }
 
 //===----------------------------------------------------------------------===//
 // ReadPodOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAReadPodOp(MlirOperation op) { return mlir::isa<ReadPodOp>(unwrap(op)); }
+bool llzkOperationIsA_Pod_ReadPodOp(MlirOperation op) { return mlir::isa<ReadPodOp>(unwrap(op)); }
 
 //===----------------------------------------------------------------------===//
 // WritePodOp
 //===----------------------------------------------------------------------===//
 
-bool llzkOperationIsAWritePodOp(MlirOperation op) { return mlir::isa<WritePodOp>(unwrap(op)); }
+bool llzkOperationIsA_Pod_WritePodOp(MlirOperation op) { return mlir::isa<WritePodOp>(unwrap(op)); }

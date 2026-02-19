@@ -32,7 +32,7 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(String, llzk__string);
 MLIR_CAPI_EXPORTED MlirType llzkStringTypeGet(MlirContext);
 
 /// Returns true if the type is a StringType.
-LLZK_DECLARE_TYPE_ISA(StringType);
+LLZK_DECLARE_TYPE_ISA(String, StringType);
 
 #ifdef __cplusplus
 }

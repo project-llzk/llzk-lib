@@ -41,7 +41,7 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGet(MlirContext context, MlirStringRef value);
 
 /// Returns true if the type is a TypeVarType.
-LLZK_DECLARE_TYPE_ISA(TypeVarType);
+LLZK_DECLARE_TYPE_ISA(Poly, TypeVarType);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
 MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
@@ -72,7 +72,7 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 );
 
 /// Returns true if the op is an ApplyMapOp.
-LLZK_DECLARE_OP_ISA(ApplyMapOp);
+LLZK_DECLARE_OP_ISA(Poly, ApplyMapOp);
 
 /// Returns the affine map associated with the op.
 MLIR_CAPI_EXPORTED MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op);

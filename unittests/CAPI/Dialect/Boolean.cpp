@@ -31,10 +31,10 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_pass) {
   auto attr = llzkFeltCmpPredicateAttrGet(context, LlzkCmp_EQ);
-  EXPECT_TRUE(llzkAttributeIsAFeltCmpPredicateAttr(attr));
+  EXPECT_TRUE(llzkAttributeIsA_Bool_FeltCmpPredicateAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_fail) {
   auto attr = mlirUnitAttrGet(context);
-  EXPECT_TRUE(!llzkAttributeIsAFeltCmpPredicateAttr(attr));
+  EXPECT_TRUE(!llzkAttributeIsA_Bool_FeltCmpPredicateAttr(attr));
 }

@@ -61,7 +61,9 @@ MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
   );
 }
 
-bool llzkOperationIsAFuncDefOp(MlirOperation op) { return llvm::isa<FuncDefOp>(unwrap(op)); }
+bool llzkOperationIsA_Function_FuncDefOp(MlirOperation op) {
+  return llvm::isa<FuncDefOp>(unwrap(op));
+}
 
 bool llzkFuncDefOpGetHasAllowConstraintAttr(MlirOperation op) {
   return unwrap_cast<FuncDefOp>(op).hasAllowConstraintAttr();
@@ -203,7 +205,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   );
 }
 
-bool llzkOperationIsACallOp(MlirOperation op) { return llvm::isa<CallOp>(unwrap(op)); }
+bool llzkOperationIsA_Function_CallOp(MlirOperation op) { return llvm::isa<CallOp>(unwrap(op)); }
 
 MlirType llzkCallOpGetCalleeType(MlirOperation op) {
   return wrap(unwrap_cast<CallOp>(op).getCalleeType());

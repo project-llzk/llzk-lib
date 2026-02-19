@@ -67,7 +67,7 @@ MlirAttribute llzkFeltConstAttrGetFromPartsWithField(
   );
 }
 
-bool llzkAttributeIsAFeltConstAttr(MlirAttribute attr) {
+bool llzkAttributeIsA_Felt_FeltConstAttr(MlirAttribute attr) {
   return llvm::isa<FeltConstAttr>(unwrap(attr));
 }
 
@@ -109,4 +109,4 @@ MlirType llzkFeltTypeGetWithField(MlirContext context, MlirStringRef fieldName) 
   return wrap(FeltType::get(ctx, StringAttr::get(ctx, unwrap(fieldName))));
 }
 
-bool llzkTypeIsAFeltType(MlirType type) { return llvm::isa<FeltType>(unwrap(type)); }
+bool llzkTypeIsA_Felt_FeltType(MlirType type) { return llvm::isa<FeltType>(unwrap(type)); }

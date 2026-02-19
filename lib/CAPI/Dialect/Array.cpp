@@ -49,7 +49,7 @@ llzkArrayTypeGetWithNumericDims(MlirType elementType, intptr_t nDims, int64_t co
   return wrap(ArrayType::get(unwrap(elementType), ArrayRef(dims, nDims)));
 }
 
-bool llzkTypeIsAArrayType(MlirType type) { return llvm::isa<ArrayType>(unwrap(type)); }
+bool llzkTypeIsA_Array_ArrayType(MlirType type) { return llvm::isa<ArrayType>(unwrap(type)); }
 
 MlirType llzkArrayTypeGetElementType(MlirType type) {
   return wrap(unwrap_cast<ArrayType>(type).getElementType());

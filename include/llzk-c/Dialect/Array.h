@@ -41,7 +41,7 @@ MLIR_CAPI_EXPORTED MlirType
 llzkArrayTypeGet(MlirType type, intptr_t nDims, MlirAttribute const *dims);
 
 /// Returns true if the type is an llzk::array::ArrayType.
-LLZK_DECLARE_TYPE_ISA(ArrayType);
+LLZK_DECLARE_TYPE_ISA(Array, ArrayType);
 
 /// Creates an llzk::array::ArrayType using a list of numbers as dimensions.
 MLIR_CAPI_EXPORTED MlirType

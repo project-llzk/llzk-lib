@@ -51,7 +51,7 @@ MLIR_CAPI_EXPORTED MlirType
 llzkStructTypeGetWithAttrs(MlirAttribute name, intptr_t numParams, MlirAttribute const *params);
 
 /// Returns true if the type is a StructType.
-LLZK_DECLARE_TYPE_ISA(StructType);
+LLZK_DECLARE_TYPE_ISA(Struct, StructType);
 
 /// Returns the fully qualified name of a llzk::component::StructType.
 MLIR_CAPI_EXPORTED MlirAttribute llzkStructTypeGetName(MlirType type);
@@ -88,7 +88,7 @@ MLIR_CAPI_EXPORTED MlirLogicalResult llzkStructStructTypeGetDefinitionFromModule
 //===----------------------------------------------------------------------===//
 
 /// Returns true if the op is a StructDefOp
-LLZK_DECLARE_OP_ISA(StructDefOp);
+LLZK_DECLARE_OP_ISA(Struct, StructDefOp);
 
 /// Returns the single body Region of the StructDefOp.
 MLIR_CAPI_EXPORTED MlirRegion llzkStructDefOpGetBodyRegion(MlirOperation op);
@@ -144,7 +144,7 @@ LLZK_DECLARE_OP_PREDICATE(StructDefOp, IsMainComponent);
 //===----------------------------------------------------------------------===//
 
 /// Returns true if the op is a MemberDefOp
-LLZK_DECLARE_OP_ISA(MemberDefOp);
+LLZK_DECLARE_OP_ISA(Struct, MemberDefOp);
 
 /// Returns true if the member has been marked public with a PublicAttr
 LLZK_DECLARE_OP_PREDICATE(MemberDefOp, HasPublicAttr);

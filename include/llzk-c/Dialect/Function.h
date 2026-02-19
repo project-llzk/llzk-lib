@@ -70,7 +70,7 @@ static inline MlirOperation llzkFuncDefOpCreateWithArgAttrs(
 }
 
 /// Returns true if the operation is a FuncDefOp.
-LLZK_DECLARE_OP_ISA(FuncDefOp);
+LLZK_DECLARE_OP_ISA(Function, FuncDefOp);
 
 /// Returns true if the FuncDefOp has the allow_constraint attribute.
 LLZK_DECLARE_OP_PREDICATE(FuncDefOp, HasAllowConstraintAttr);
@@ -152,7 +152,7 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 );
 
 /// Returns true if the operation is a CallOp.
-LLZK_DECLARE_OP_ISA(CallOp);
+LLZK_DECLARE_OP_ISA(Function, CallOp);
 
 /// Returns the FunctionType of the callee.
 MLIR_CAPI_EXPORTED MlirType llzkCallOpGetCalleeType(MlirOperation op);

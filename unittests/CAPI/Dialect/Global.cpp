@@ -53,7 +53,7 @@ static MlirOperation create_global_def_op(
 TEST_F(CAPITest, llzk_operation_is_a_global_def_op_pass) {
   auto op = create_global_def_op(context, "G", false, mlirIndexTypeGet(context), std::nullopt);
   EXPECT_NE(op.ptr, (void *)NULL);
-  EXPECT_TRUE(llzkOperationIsAGlobalDefOp(op));
+  EXPECT_TRUE(llzkOperationIsA_Global_GlobalDefOp(op));
   mlirOperationDestroy(op);
 }
 

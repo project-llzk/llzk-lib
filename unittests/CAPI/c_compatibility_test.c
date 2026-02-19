@@ -71,7 +71,7 @@ int test_basic_api(void) {
   }
 
   /* Test "isa" check */
-  int isPublic = llzkAttributeIsAPublicAttr(publicAttr);
+  int isPublic = llzkAttributeIsA_Llzk_PublicAttr(publicAttr);
   if (!isPublic) {
     fprintf(stderr, "PublicAttr type check failed\n");
     mlirContextDestroy(context);

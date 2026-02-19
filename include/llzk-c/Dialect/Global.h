@@ -33,7 +33,7 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Global, llzk__global);
 //===----------------------------------------------------------------------===//
 
 /// Returns true if the op is a GlobalDefOp.
-LLZK_DECLARE_OP_ISA(GlobalDefOp);
+LLZK_DECLARE_OP_ISA(Global, GlobalDefOp);
 
 /// Returns true if the op defines a constant value.
 LLZK_DECLARE_OP_PREDICATE(GlobalDefOp, IsConstant);

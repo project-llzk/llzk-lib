@@ -49,7 +49,7 @@ typedef struct LlzkRecordValue {
 MLIR_CAPI_EXPORTED MlirAttribute llzkRecordAttrGet(MlirStringRef name, MlirType type);
 
 /// Returns true if the attribute is an llzk::pod::RecordAttr.
-LLZK_DECLARE_ATTR_ISA(RecordAttr);
+LLZK_DECLARE_ATTR_ISA(Pod, RecordAttr);
 
 /// Returns the name of the record.
 MLIR_CAPI_EXPORTED MlirStringRef llzkRecordAttrGetName(MlirAttribute attr);
@@ -74,7 +74,7 @@ MLIR_CAPI_EXPORTED MlirType llzkPodTypeGetFromInitialValues(
 );
 
 /// Returns true if the type is an llzk::pod::PodType.
-LLZK_DECLARE_TYPE_ISA(PodType);
+LLZK_DECLARE_TYPE_ISA(Pod, PodType);
 
 /// Returns the number of records in the struct.
 MLIR_CAPI_EXPORTED intptr_t llzkPodTypeGetNumRecords(MlirType type);
@@ -135,21 +135,21 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 );
 
 /// Returns true if the op is a llzk::pod::NewPodOp.
-LLZK_DECLARE_OP_ISA(NewPodOp);
+LLZK_DECLARE_OP_ISA(Pod, NewPodOp);
 
 //===----------------------------------------------------------------------===//
 // ReadPodOp
 //===----------------------------------------------------------------------===//
 
 /// Returns true if the op is a llzk::pod::ReadPodOp.
-LLZK_DECLARE_OP_ISA(ReadPodOp);
+LLZK_DECLARE_OP_ISA(Pod, ReadPodOp);
 
 //===----------------------------------------------------------------------===//
 // WritePodOp
 //===----------------------------------------------------------------------===//
 
 /// Returns true if the op is a llzk::pod::WritePodOp.
-LLZK_DECLARE_OP_ISA(WritePodOp);
+LLZK_DECLARE_OP_ISA(Pod, WritePodOp);
 
 #ifdef __cplusplus
 }
