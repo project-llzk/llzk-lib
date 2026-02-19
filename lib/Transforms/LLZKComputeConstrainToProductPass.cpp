@@ -105,6 +105,11 @@ public:
 };
 
 FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDefOp constrain) {
+
+  if (auto prod = root.getProductFuncOp()) {
+    return prod;
+  }
+
   OpBuilder funcBuilder(compute);
 
   // Add compute/constrain attributes
