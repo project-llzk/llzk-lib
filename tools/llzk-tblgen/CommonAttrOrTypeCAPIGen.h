@@ -36,7 +36,7 @@ struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
   virtual void genParameterGetterDecl(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
 /* Get '{5}' parameter from a {6}::{3} {1}. */
-MLIR_CAPI_EXPORTED {7} {0}{2}{3}Get{4}(Mlir{1});
+MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
 )";
     assert(dialect && "Dialect must be set");
     assert(!paramName.empty() && "paramName must be set");
@@ -57,10 +57,10 @@ MLIR_CAPI_EXPORTED {7} {0}{2}{3}Get{4}(Mlir{1});
   virtual void genArrayRefParameterGetterDecls(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
 /* Get count of '{5}' parameter from a {6}::{3} {1}. */
-MLIR_CAPI_EXPORTED intptr_t {0}{2}{3}Get{4}Count(Mlir{1});
+MLIR_CAPI_EXPORTED intptr_t {0}{2}_{3}Get{4}Count(Mlir{1});
 
 /* Get element at index from '{5}' parameter from a {6}::{3} {1}. */
-MLIR_CAPI_EXPORTED {7} {0}{2}{3}Get{4}At(Mlir{1}, intptr_t pos);
+MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
 )";
     assert(dialect && "Dialect must be set");
     assert(!paramName.empty() && "paramName must be set");
@@ -82,7 +82,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}{3}Get{4}At(Mlir{1}, intptr_t pos);
   virtual void genDefaultGetBuilderDecl(const mlir::tblgen::AttrOrTypeDef &def) const {
     static constexpr char fmt[] = R"(
 /* Create a {5}::{3} {1} with the given parameters. */
-MLIR_CAPI_EXPORTED Mlir{1} {0}{2}{3}Get(MlirContext ctx{4});
+MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
 )";
     assert(dialect && "Dialect must be set");
 
@@ -187,11 +187,11 @@ using namespace llvm;
 
   virtual void genArrayRefParameterImpls(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
-intptr_t {0}{2}{3}Get{4}Count(Mlir{1} inp) {{
+intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
   return static_cast<intptr_t>(llvm::cast<{3}>(unwrap(inp)).get{4}().size());
 }
 
-{5} {0}{2}{3}Get{4}At(Mlir{1} inp, intptr_t pos) {{
+{5} {0}{2}_{3}Get{4}At(Mlir{1} inp, intptr_t pos) {{
   return {6}(llvm::cast<{3}>(unwrap(inp)).get{4}()[pos]);
 }
  )";
@@ -212,7 +212,7 @@ intptr_t {0}{2}{3}Get{4}Count(Mlir{1} inp) {{
 
   virtual void genParameterGetterImpl(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
-{5} {0}{2}{3}Get{4}(Mlir{1} inp) {{
+{5} {0}{2}_{3}Get{4}(Mlir{1} inp) {{
   return {6}(llvm::cast<{3}>(unwrap(inp)).get{4}());
 }
  )";
@@ -233,7 +233,7 @@ intptr_t {0}{2}{3}Get{4}Count(Mlir{1} inp) {{
   /// @brief Generate default Get builder implementation
   virtual void genDefaultGetBuilderImpl(const mlir::tblgen::AttrOrTypeDef &def) const {
     static constexpr char fmt[] = R"(
-Mlir{1} {0}{2}{3}Get(MlirContext ctx{4}) {{
+Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
   return wrap({3}::get(unwrap(ctx){5}));
 }
  )";
