@@ -72,10 +72,10 @@ LogicalResult alignStartingAt(
     return failure();
   }
 
-  for (auto s : aligner.alignedStructs) {
-    s.getComputeFuncOp()->erase();
-    s.getConstrainFuncOp()->erase();
-  }
+  // for (auto s : aligner.alignedStructs) {
+  //   s.getComputeFuncOp()->erase();
+  //   s.getConstrainFuncOp()->erase();
+  // }
 
   return success();
 }
@@ -123,6 +123,7 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
       funcBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), FUNC_NAME_PRODUCT,
       compute.getFunctionType()
   );
+  productFunc->setAttr(DERIVED_ATTR_NAME, UnitAttr::get(funcBuilder.getContext()));
   Block *entryBlock = productFunc.addEntryBlock();
   funcBuilder.setInsertionPointToStart(entryBlock);
 
@@ -208,11 +209,9 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     }
   }
 
-  // TODO: If unaligned calls remain, fully inline their structs and continue instead of failing
   if (!computeCalls.empty() && constrainCalls.empty()) {
-    product->emitError() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
-                         << FUNC_NAME_CONSTRAIN;
-    return failure();
+    product.emitWarning() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
+                          << FUNC_NAME_CONSTRAIN;
   }
 
   for (auto [compute, constrain] : alignedCalls) {
@@ -232,8 +231,6 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
         compute.getOperands()
     );
     compute->replaceAllUsesWith(newCall.getResults());
-    compute->erase();
-    constrain->erase();
   }
 
   return success();
