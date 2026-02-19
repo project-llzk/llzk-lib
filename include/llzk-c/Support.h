@@ -38,12 +38,10 @@ extern "C" {
 #define LLZK_DECLARE_OP_BUILD_METHOD(dialect, op, ...)                                             \
   LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(dialect, op, , __VA_ARGS__)
 
-#define LLZK_DECLARE_PREDICATE(name, ...) MLIR_CAPI_EXPORTED bool llzk##name(__VA_ARGS__)
-
-#define LLZK_DECLARE_OP_PREDICATE(op, name)                                                        \
-  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation op)
-#define LLZK_DECLARE_NARY_OP_PREDICATE(op, name, ...)                                              \
-  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation op, __VA_ARGS__)
+#define LLZK_DECLARE_OP_PREDICATE(dialect, op, name)                                               \
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##Get##name(MlirOperation op)
+#define LLZK_DECLARE_NARY_OP_PREDICATE(dialect, op, name, ...)                                     \
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##Get##name(MlirOperation op, __VA_ARGS__)
 
 #define LLZK_DECLARE_ISA(dialect, what, root)                                                      \
   MLIR_CAPI_EXPORTED bool llzk##root##IsA##_##dialect##_##what(Mlir##root what)

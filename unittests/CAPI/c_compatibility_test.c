@@ -63,7 +63,7 @@ int test_basic_api(void) {
   mlirDialectRegistryDestroy(registry);
 
   /* Test creating a simple attribute */
-  MlirAttribute publicAttr = llzkPublicAttrGet(context);
+  MlirAttribute publicAttr = llzkLlzk_PublicAttrGet(context);
   if (mlirAttributeIsNull(publicAttr)) {
     fprintf(stderr, "Failed to create PublicAttr\n");
     mlirContextDestroy(context);

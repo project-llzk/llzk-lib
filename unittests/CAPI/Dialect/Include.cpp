@@ -17,7 +17,7 @@ TEST_F(CAPITest, mlir_get_dialect_handle_llzk_include) {
 
 TEST_F(CAPITest, llzk_include_op_create) {
   auto location = mlirLocationUnknownGet(context);
-  auto op = llzkIncludeOpCreate(
+  auto op = llzkInclude_IncludeOpCreate(
       location, mlirStringRefCreateFromCString("test"), mlirStringRefCreateFromCString("test.mlir")
   );
 

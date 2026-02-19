@@ -20,13 +20,14 @@ using namespace llzk;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, LLZKDialect)
 
-MlirAttribute llzkPublicAttrGet(MlirContext ctx) { return wrap(PublicAttr::get(unwrap(ctx))); }
+MlirAttribute llzkLlzk_PublicAttrGet(MlirContext ctx) { return wrap(PublicAttr::get(unwrap(ctx))); }
 
 bool llzkAttributeIsA_Llzk_PublicAttr(MlirAttribute attr) {
   return llvm::isa<PublicAttr>(unwrap(attr));
 }
 
-MlirAttribute llzkLoopBoundsAttrGet(MlirContext ctx, int64_t lower, int64_t upper, int64_t step) {
+MlirAttribute
+llzkLlzk_LoopBoundsAttrGet(MlirContext ctx, int64_t lower, int64_t upper, int64_t step) {
   return wrap(LoopBoundsAttr::get(unwrap(ctx), toAPInt(lower), toAPInt(upper), toAPInt(step)));
 }
 

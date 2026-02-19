@@ -29,7 +29,7 @@ extern "C" {
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(String, llzk__string);
 
 /// Creates a llzk::string::StringType.
-MLIR_CAPI_EXPORTED MlirType llzkStringTypeGet(MlirContext);
+MLIR_CAPI_EXPORTED MlirType llzkString_StringTypeGet(MlirContext);
 
 /// Returns true if the type is a StringType.
 LLZK_DECLARE_TYPE_ISA(String, StringType);

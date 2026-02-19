@@ -46,19 +46,19 @@ typedef struct LlzkRecordValue {
 //===----------------------------------------------------------------------===//
 
 /// Creates a new llzk::pod::RecordAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkRecordAttrGet(MlirStringRef name, MlirType type);
+MLIR_CAPI_EXPORTED MlirAttribute llzkPod_RecordAttrGet(MlirStringRef name, MlirType type);
 
 /// Returns true if the attribute is an llzk::pod::RecordAttr.
 LLZK_DECLARE_ATTR_ISA(Pod, RecordAttr);
 
 /// Returns the name of the record.
-MLIR_CAPI_EXPORTED MlirStringRef llzkRecordAttrGetName(MlirAttribute attr);
+MLIR_CAPI_EXPORTED MlirStringRef llzkPod_RecordAttrGetName(MlirAttribute attr);
 
 /// Returns the name of the record as a flat symbol attribute.
-MLIR_CAPI_EXPORTED MlirAttribute llzkRecordAttrGetNameSym(MlirAttribute attr);
+MLIR_CAPI_EXPORTED MlirAttribute llzkPod_RecordAttrGetNameSym(MlirAttribute attr);
 
 /// Returns the type of the record.
-MLIR_CAPI_EXPORTED MlirType llzkRecordAttrGetType(MlirAttribute attr);
+MLIR_CAPI_EXPORTED MlirType llzkPod_RecordAttrGetType(MlirAttribute attr);
 
 //===----------------------------------------------------------------------===//
 // PodType
@@ -66,10 +66,10 @@ MLIR_CAPI_EXPORTED MlirType llzkRecordAttrGetType(MlirAttribute attr);
 
 /// Creates an llzk::pod::PodType using a list of attributes as records.
 MLIR_CAPI_EXPORTED MlirType
-llzkPodTypeGet(MlirContext context, intptr_t nRecords, MlirAttribute const *records);
+llzkPod_PodTypeGet(MlirContext context, intptr_t nRecords, MlirAttribute const *records);
 
 /// Creates an llzk::pod::PodType using a list of values for inferring the records.
-MLIR_CAPI_EXPORTED MlirType llzkPodTypeGetFromInitialValues(
+MLIR_CAPI_EXPORTED MlirType llzkPod_PodTypeGetFromInitialValues(
     MlirContext context, intptr_t nRecords, LlzkRecordValue const *records
 );
 
@@ -77,36 +77,36 @@ MLIR_CAPI_EXPORTED MlirType llzkPodTypeGetFromInitialValues(
 LLZK_DECLARE_TYPE_ISA(Pod, PodType);
 
 /// Returns the number of records in the struct.
-MLIR_CAPI_EXPORTED intptr_t llzkPodTypeGetNumRecords(MlirType type);
+MLIR_CAPI_EXPORTED intptr_t llzkPod_PodTypeGetNumRecords(MlirType type);
 
 /// Writes the records into the given array that must have been previously allocated with enough
 /// space.
 ///
-/// See `llzkPodTypeGetNumRecords`
-MLIR_CAPI_EXPORTED void llzkPodTypeGetRecords(MlirType type, MlirAttribute *dst);
+/// See `llzkPod_PodTypeGetNumRecords`
+MLIR_CAPI_EXPORTED void llzkPod_PodTypeGetRecords(MlirType type, MlirAttribute *dst);
 
 /// Returns the n-th record in the struct.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPodTypeGetNthRecord(MlirType type, intptr_t n);
+MLIR_CAPI_EXPORTED MlirAttribute llzkPod_PodTypeGetNthRecord(MlirType type, intptr_t n);
 
 /// Lookups a record type by name.
 ///
 /// If the record is not found reports an error without any location information and
 /// the returned type is NULL.
-MLIR_CAPI_EXPORTED MlirType llzkPodTypeLookupRecord(MlirType type, MlirStringRef name);
+MLIR_CAPI_EXPORTED MlirType llzkPod_PodTypeLookupRecord(MlirType type, MlirStringRef name);
 
 /// Lookups a record type by name.
 ///
 /// If the record is not found reports an error at the given location information and
 /// the returned type is NULL.
 MLIR_CAPI_EXPORTED MlirType
-llzkPodTypeLookupRecordWithinLocation(MlirType type, MlirStringRef name, MlirLocation loc);
+llzkPod_PodTypeLookupRecordWithinLocation(MlirType type, MlirStringRef name, MlirLocation loc);
 
 /// Lookups a record type by name.
 ///
 /// If the record is not found reports an error using the given operation for location information
 /// and the returned type is NULL.
 MLIR_CAPI_EXPORTED MlirType
-llzkPodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOperation op);
+llzkPod_PodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOperation op);
 
 //===----------------------------------------------------------------------===//
 // NewPodOp

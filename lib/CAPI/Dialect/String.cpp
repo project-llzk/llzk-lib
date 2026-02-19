@@ -20,6 +20,6 @@ using namespace llzk::string;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(String, llzk__string, StringDialect)
 
-MlirType llzkStringTypeGet(MlirContext ctx) { return wrap(StringType::get(unwrap(ctx))); }
+MlirType llzkString_StringTypeGet(MlirContext ctx) { return wrap(StringType::get(unwrap(ctx))); }
 
 bool llzkTypeIsA_String_StringType(MlirType type) { return llvm::isa<StringType>(unwrap(type)); }

@@ -28,6 +28,6 @@ bool llzkOperationIsA_Global_GlobalDefOp(MlirOperation op) {
   return llvm::isa<GlobalDefOp>(unwrap(op));
 }
 
-bool llzkGlobalDefOpGetIsConstant(MlirOperation op) {
+bool llzkGlobal_GlobalDefOpGetIsConstant(MlirOperation op) {
   return unwrap_cast<GlobalDefOp>(op).isConstant();
 }

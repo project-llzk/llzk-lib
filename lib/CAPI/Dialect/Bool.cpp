@@ -18,7 +18,7 @@ using namespace llzk::boolean;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean, llzk::boolean::BoolDialect)
 
-MlirAttribute llzkFeltCmpPredicateAttrGet(MlirContext ctx, LlzkCmp cmp) {
+MlirAttribute llzkBool_FeltCmpPredicateAttrGet(MlirContext ctx, LlzkCmp cmp) {
   return wrap(FeltCmpPredicateAttr::get(unwrap(ctx), FeltCmpPredicate(cmp)));
 }
 
