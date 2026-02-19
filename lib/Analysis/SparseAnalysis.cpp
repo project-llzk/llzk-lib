@@ -136,47 +136,37 @@ LogicalResult AbstractSparseForwardDataFlowAnalysis::visitOperation(Operation *o
     operandLattices.push_back(operandLattice);
   }
 
-  // LLZK TODO: Enable for interprocedural analysis.
-  /*
   if (auto call = dyn_cast<CallOpInterface>(op)) {
-    /// LLZK: Use LLZK resolveCallable interface.
     // If the call operation is to an external function, attempt to infer the
     // results from the call arguments.
-    auto callable = resolveCallable<FuncDefOp>(tables, call);
-    if (!getSolverConfig().isInterprocedural() ||
-        (succeeded(callable) && !callable->get().getCallableRegion())) {
+    auto callable = dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
+    if (!getSolverConfig().isInterprocedural() || (callable && !callable.getCallableRegion())) {
       visitExternalCallImpl(call, operandLattices, resultLattices);
       return success();
     }
 
     // Otherwise, the results of a call operation are determined by the
     // callgraph.
-    /// LLZK: The PredecessorState Analysis state does not work for LLZK's custom calls.
-    /// We therefore accumulate predecessor operations (return ops) manually.
-    SmallVector<Operation *> predecessors;
-    callable->get().walk([&predecessors](ReturnOp ret) mutable { predecessors.push_back(ret); });
-
+    const auto *predecessors =
+        getOrCreateFor<PredecessorState>(getProgramPointAfter(op), getProgramPointAfter(call));
     // If not all return sites are known, then conservatively assume we can't
     // reason about the data-flow.
-    if (predecessors.empty()) {
+    if (!predecessors->allPredecessorsKnown()) {
       setAllToEntryStates(resultLattices);
       return success();
     }
-    for (Operation *predecessor : predecessors) {
+    for (Operation *predecessor : predecessors->getKnownPredecessors()) {
       for (auto &&[operand, resLattice] : llvm::zip(predecessor->getOperands(), resultLattices)) {
         join(resLattice, *getLatticeElementFor(getProgramPointAfter(op), operand));
       }
     }
     return success();
   }
-  */
 
   // Invoke the operation transfer function.
   return visitOperationImpl(op, operandLattices, resultLattices);
 }
 
-/// LLZK: Removing use of PredecessorState because it does not work with LLZK's
-/// CallOp and FuncDefOp definitions.
 void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
   // Exit early on blocks with no arguments.
   if (block->getNumArguments() == 0) {
@@ -200,27 +190,17 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
   // callgraph.
   if (block->isEntryBlock()) {
     // Check if this block is the entry block of a callable region.
-    // LLZK TODO: Enable for interprocedural analysis.
-    /*
     auto callable = dyn_cast<CallableOpInterface>(block->getParentOp());
     if (callable && callable.getCallableRegion() == block->getParent()) {
-      /// LLZK: Get callsites of the callable as the predecessors.
-      auto moduleOpRes = getTopRootModule(callable.getOperation());
-      ensure(succeeded(moduleOpRes), "could not get root module from callable");
-      SmallVector<Operation *> callsites;
-      moduleOpRes->walk([this, &callable, &callsites](CallOp call) mutable {
-        auto calledFnRes = resolveCallable<FuncDefOp>(tables, call);
-        if (succeeded(calledFnRes) &&
-            calledFnRes->get().getCallableRegion() == callable.getCallableRegion()) {
-          callsites.push_back(call);
-        }
-      });
+      const auto *callsites = getOrCreateFor<PredecessorState>(
+          getProgramPointBefore(block), getProgramPointAfter(callable)
+      );
       // If not all callsites are known, conservatively mark all lattices as
       // having reached their pessimistic fixpoints.
-      if (callsites.empty() || !getSolverConfig().isInterprocedural()) {
+      if (!callsites->allPredecessorsKnown() || !getSolverConfig().isInterprocedural()) {
         return setAllToEntryStates(argLattices);
       }
-      for (Operation *callsite : callsites) {
+      for (Operation *callsite : callsites->getKnownPredecessors()) {
         auto call = cast<CallOpInterface>(callsite);
         for (auto it : llvm::zip(call.getArgOperands(), argLattices)) {
           join(
@@ -230,7 +210,6 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
       }
       return;
     }
-    */
 
     // Check if the lattices can be determined from region control flow.
     if (auto branch = dyn_cast<RegionBranchOpInterface>(block->getParentOp())) {
@@ -275,14 +254,14 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
   }
 }
 
-/// LLZK: Removing use of PredecessorState because it does not work with LLZK's lookup logic.
 void AbstractSparseForwardDataFlowAnalysis::visitRegionSuccessors(
     ProgramPoint *point, RegionBranchOpInterface branch, RegionBranchPoint successor,
     ArrayRef<AbstractSparseLattice *> lattices
 ) {
-  Operation *op = point->isBlockStart() ? point->getBlock()->getParentOp() : point->getPrevOp();
+  const auto *predecessors = getOrCreateFor<PredecessorState>(point, point);
+  assert(predecessors->allPredecessorsKnown() && "unexpected unresolved region successors");
 
-  if (op) {
+  for (Operation *op : predecessors->getKnownPredecessors()) {
     // Get the incoming successor operands.
     std::optional<OperandRange> operands;
 
@@ -299,19 +278,11 @@ void AbstractSparseForwardDataFlowAnalysis::visitRegionSuccessors(
       return setAllToEntryStates(lattices);
     }
 
-    ValueRange inputs;
-
-    /// LLZK: We only handle these kinds of region ops with inputs for now.
-    if (auto forOp = dyn_cast<scf::ForOp>(op)) {
-      inputs = forOp.getRegionIterArgs();
-    } else if (auto whileOp = dyn_cast<scf::WhileOp>(op)) {
-      inputs = whileOp.getRegionIterArgs();
-    }
-
-    if (inputs.size() != operands->size()) {
-      // We can't reason about the data-flow.
-      return setAllToEntryStates(lattices);
-    }
+    ValueRange inputs = predecessors->getSuccessorInputs(op);
+    assert(
+        inputs.size() == operands->size() &&
+        "expected the same number of successor inputs as operands"
+    );
 
     unsigned firstIndex = 0;
     if (inputs.size() != lattices.size()) {

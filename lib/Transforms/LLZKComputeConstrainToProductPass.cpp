@@ -74,11 +74,6 @@ LogicalResult alignStartingAt(
     return failure();
   }
 
-  for (auto s : aligner.alignedStructs) {
-    s.getComputeFuncOp()->erase();
-    s.getConstrainFuncOp()->erase();
-  }
-
   return success();
 }
 
@@ -126,6 +121,7 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
       funcBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), FUNC_NAME_PRODUCT,
       compute.getFunctionType()
   );
+  productFunc->setAttr(DERIVED_ATTR_NAME, UnitAttr::get(funcBuilder.getContext()));
   Block *entryBlock = productFunc.addEntryBlock();
   funcBuilder.setInsertionPointToStart(entryBlock);
 
@@ -218,35 +214,9 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     }
   }
 
-  llvm::SetVector<llzk::component::StructDefOp> calleesToInline;
-
-  // TODO: If unaligned calls remain, fully inline their structs and continue instead of failing
   if (!computeCalls.empty() && constrainCalls.empty()) {
-    for (auto rem : computeCalls) {
-      if (auto func = rem.getCalleeTarget(tables); mlir::succeeded(func)) {
-        auto parentStruct = func->get()->getParentOfType<llzk::component::StructDefOp>();
-        if (parentStruct) {
-          calleesToInline.insert(parentStruct);
-        }
-      }
-    }
-    for (auto rem : constrainCalls) {
-      if (auto func = rem.getCalleeTarget(tables); mlir::succeeded(func)) {
-        auto parentStruct = func->get()->getParentOfType<llzk::component::StructDefOp>();
-        if (parentStruct) {
-          calleesToInline.insert(parentStruct);
-        }
-      }
-    }
-
-    InliningPlan plan;
-    plan.push_back(
-        {product->getParentOfType<llzk::component::StructDefOp>(), calleesToInline.takeVector()}
-    );
-
-    auto result = performInlining(tables, plan);
-
-    return result;
+    product.emitWarning() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
+                          << FUNC_NAME_CONSTRAIN;
   }
 
   for (auto [compute, constrain] : alignedCalls) {
@@ -266,8 +236,6 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
         compute.getOperands()
     );
     compute->replaceAllUsesWith(newCall.getResults());
-    compute->erase();
-    constrain->erase();
   }
 
   return success();

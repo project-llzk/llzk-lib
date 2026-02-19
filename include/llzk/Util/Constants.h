@@ -22,6 +22,15 @@ constexpr char FUNC_NAME_PRODUCT[] = "product";
 /// available.
 constexpr char LANG_ATTR_NAME[] = "llzk.lang";
 
+/// Name of the attribute on a @product func that has been automatically aligned from @compute +
+/// @constrain funcs, or on @compute and @constrain funcs that have been automatically projected
+/// from a @product func
+constexpr char DERIVED_ATTR_NAME[] = "llzk.derived";
+
+/// Name of the attribute on the top-level ModuleOp that defines prime fields
+/// used in the circuit.
+constexpr char FIELD_ATTR_NAME[] = "llzk.fields";
+
 /// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.
 /// This attribute can appear zero or one times on the top-level ModuleOp and is associated with
 /// a `TypeAttr` specifying the `StructType` of the main struct.

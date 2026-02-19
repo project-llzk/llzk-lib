@@ -115,7 +115,9 @@ def LLZK_AssertOp
 }
 
 // Match format of Index comparisons (for now)
-def LLZK_CmpOp : BoolDialectOp<"cmp", [Pure]> {
+def LLZK_CmpOp
+    : NaryOpBase<BoolDialect, "cmp",
+                 LLZK_FeltType.builderCall, [Pure, TypesUnify<"lhs", "rhs">]> {
   let summary = "compare field element values";
   let description = [{
     This operation takes two field element values and compares them according to the
@@ -145,13 +147,17 @@ def LLZK_CmpOp : BoolDialectOp<"cmp", [Pure]> {
 
     // Not equal comparison.
     %2 = bool.cmp ne(%a, %b)
+
+    // Not equal comparison for felts in a specified field
+    %3 = bool.cmp ne(%c, %d) : !felt.type<"babybear">, !felt.type<"babybear">
     ```
   }];
 
   let arguments = (ins LLZK_CmpPredicateAttr:$predicate, LLZK_FeltType:$lhs,
       LLZK_FeltType:$rhs);
   let results = (outs I1:$result);
-  let assemblyFormat = [{ `` $predicate `(` $lhs `,` $rhs `)` attr-dict }];
+  let assemblyFormat =
+      [{ `` $predicate `(` $lhs `,` $rhs `)` `` custom<InferredOrParsedType>(type($lhs), "true") `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict }];
 }
 
 #endif // LLZK_BOOLEAN_OPS

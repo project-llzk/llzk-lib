@@ -17,7 +17,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   struct.def @ComponentB<[@B, @D, @C]> {
-    // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; found "@invalidname"}}
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@invalidname"}}
     function.def @invalidname(%a: !felt.type, %b: !felt.type) {
       function.return
     }
@@ -40,7 +40,7 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; found "@constrain", missing "@compute"}}
+  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@constrain", missing "@compute"}}
   struct.def @ComponentF0<[@B, @D, @C]> {
     function.def @constrain(%self: !struct.type<@ComponentF0<[@B, @D, @C]>>, %a: !felt.type, %b: !felt.type) {
       function.return
@@ -49,7 +49,7 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
+  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
   struct.def @ComponentF1<[@B, @D, @C]> {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF1<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentF1<[@B, @D, @C]>>
@@ -59,12 +59,12 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
+  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
   struct.def @ComponentF2<[@B, @D, @C]> {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF2<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentF2<[@B, @D, @C]>>
       function.return %self : !struct.type<@ComponentF2<[@B, @D, @C]>>
     }
-    // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; found both "@compute" and "@product" functions}}
     function.def @product(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF2<[@B, @D, @C]>> {
       %self = struct.new : !struct.type<@ComponentF2<[@B, @D, @C]>>
       function.return %self : !struct.type<@ComponentF2<[@B, @D, @C]>>
@@ -73,9 +73,38 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
+  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
   struct.def @ComponentF3<[@B, @D, @C]> {
 
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; could not find non-derived "@product", "@compute", or "@constrain"}}
+  struct.def @ComponentF4 {
+    // expected-note@+1 {{derived "@compute" here}}
+    function.def @compute() -> !struct.type<@ComponentF4> attributes {llzk.derived} {
+      %self = struct.new : <@ComponentF4>
+      function.return %self : !struct.type<@ComponentF4>
+    }
+    // expected-note@+1 {{derived "@constrain" here}}
+    function.def @constrain(%self: !struct.type<@ComponentF4>) attributes {llzk.derived} {
+      function.return
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; "@compute" and "@constrain" must both be either derived or non-derived}}
+  struct.def @ComponentF5 {
+    // expected-note@+1 {{derived "@compute" here}}
+    function.def @compute() -> !struct.type<@ComponentF5> attributes {llzk.derived} {
+      %self = struct.new : <@ComponentF5>
+      function.return %self : !struct.type<@ComponentF5>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentF5>) {
+      function.return
+    }
   }
 }
 // -----
@@ -307,7 +336,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ComponentZ>)  {
       function.return
     }
-    // expected-error@+1 {{'struct.def' op must define either only a "@product" function, or both "@compute" and "@constrain" functions; found "@extra"}}
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@extra"}}
     function.def @extra() { function.return }
   }
 }

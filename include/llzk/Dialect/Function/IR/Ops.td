@@ -365,15 +365,27 @@ def CallOp : FunctionDialectOp<
                   }]>];
 
   let extraClassDeclaration = [{
+    //===------------------------------------------------------------------===//
+    // CallOpInterface Methods
+    //===------------------------------------------------------------------===//
+
+    ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
+
+    ::mlir::Operation *resolveCallable();
+
+    //===------------------------------------------------------------------===//
+    // Utility Methods
+    //===------------------------------------------------------------------===//
+
     ::mlir::FunctionType getCalleeType();
 
-    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this 
+    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
     /// does not check if the callee function is located within a StructDefOp).
     inline bool calleeIsCompute() {
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
     }
 
-    /// Return `true` iff the callee function can contain witness generation code 
+    /// Return `true` iff the callee function can contain witness generation code
     /// (this does not check if the callee function is located within a StructDefOp)
     inline bool calleeContainsWitnessGen() {
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||

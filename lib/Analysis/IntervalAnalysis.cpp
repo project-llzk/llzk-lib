@@ -303,37 +303,15 @@ void ExpressionValue::print(mlir::raw_ostream &os) const {
 /* IntervalAnalysisLattice */
 
 ChangeResult IntervalAnalysisLattice::join(const AbstractSparseLattice &other) {
-  const auto *rhs = dynamic_cast<const IntervalAnalysisLattice *>(&other);
-  if (!rhs) {
-    llvm::report_fatal_error("invalid join lattice type");
-  }
-  ChangeResult res = val.update(rhs->getValue());
-  for (auto &v : rhs->constraints) {
-    if (!constraints.contains(v)) {
-      constraints.insert(v);
-      res |= ChangeResult::Change;
-    }
-  }
-  return res;
+  // The update logic is handled in visitOperation; we don't support a generic
+  // join operation, as it may override valid intervals.
+  return ChangeResult::NoChange;
 }
 
 ChangeResult IntervalAnalysisLattice::meet(const AbstractSparseLattice &other) {
-  const auto *rhs = dynamic_cast<const IntervalAnalysisLattice *>(&other);
-  if (!rhs) {
-    llvm::report_fatal_error("invalid join lattice type");
-  }
-  // Intersect the intervals
-  ExpressionValue lhsExpr = val.getScalarValue();
-  ExpressionValue rhsExpr = rhs->getValue().getScalarValue();
-  Interval newInterval = lhsExpr.getInterval().intersect(rhsExpr.getInterval());
-  ChangeResult res = setValue(lhsExpr.withInterval(newInterval));
-  for (auto &v : rhs->constraints) {
-    if (!constraints.contains(v)) {
-      constraints.insert(v);
-      res |= ChangeResult::Change;
-    }
-  }
-  return res;
+  // The update logic is handled in visitOperation; we don't support a generic
+  // meet operation, as it may override valid intervals.
+  return ChangeResult::NoChange;
 }
 
 void IntervalAnalysisLattice::print(mlir::raw_ostream &os) const {

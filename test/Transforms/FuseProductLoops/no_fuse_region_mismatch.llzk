@@ -1,4 +1,5 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+// REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
     struct.def @A<[@N, @M]> {

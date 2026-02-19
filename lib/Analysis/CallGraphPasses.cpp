@@ -13,8 +13,8 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the ` -llzk-print-call-graph` and
-/// ` -llzk-print-call-graph-sccs` passes.
+/// This file implements the `-llzk-print-call-graph` and
+/// `-llzk-print-call-graph-sccs` passes.
 ///
 //===----------------------------------------------------------------------===//
 

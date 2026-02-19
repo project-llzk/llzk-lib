@@ -11,8 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TRANSFORMS_CONVERSION_UTILS_H
-#define LLZK_TRANSFORMS_CONVERSION_UTILS_H
+#pragma once
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
@@ -81,5 +80,3 @@ public:
 };
 
 } // namespace llzk
-
-#endif // LLZK_TRANSFORMS_CONVERSION_UTILS_H
