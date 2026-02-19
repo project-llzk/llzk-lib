@@ -14,6 +14,7 @@
 #include <mlir/IR/Builders.h>
 #include <llvm/ADT/TypeSwitch.h>
 
+// Include TableGen'd declarations
 #include "llzk/Dialect/ZKExpr/IR/ZKExprDialect.cpp.inc"
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/ZKExpr/IR/ZKExprTypes.cpp.inc"

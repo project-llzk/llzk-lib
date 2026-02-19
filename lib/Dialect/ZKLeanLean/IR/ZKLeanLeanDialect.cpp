@@ -15,6 +15,7 @@
 #include <mlir/Support/LogicalResult.h>
 #include <llvm/ADT/TypeSwitch.h>
 
+// Include TableGen'd declarations
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.cpp.inc"
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.cpp.inc"
