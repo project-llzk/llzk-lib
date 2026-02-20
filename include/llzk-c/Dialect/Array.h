@@ -50,12 +50,6 @@ llzkArray_ArrayTypeGetWithShape(MlirType type, intptr_t nDims, int64_t const *di
 /// Returns the element type of an llzk::array::ArrayType.
 MLIR_CAPI_EXPORTED MlirType llzkArray_ArrayTypeGetElementType(MlirType type);
 
-/// Returns the number of dimensions of an llzk::array::ArrayType.
-MLIR_CAPI_EXPORTED intptr_t llzkArray_ArrayTypeGetNumDims(MlirType type);
-
-/// Returns the n-th dimention of an llzk::array::ArrayType.
-MLIR_CAPI_EXPORTED MlirAttribute llzkArray_ArrayTypeGetDim(MlirType type, intptr_t dim);
-
 //===----------------------------------------------------------------------===//
 // CreateArrayOp
 //===----------------------------------------------------------------------===//
