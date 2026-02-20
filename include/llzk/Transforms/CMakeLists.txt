@@ -6,9 +6,6 @@ mlir_tablegen(LLZKTransformationPasses.capi.h.inc -gen-pass-capi-header --prefix
 mlir_tablegen(LLZKTransformationPasses.capi.cpp.inc -gen-pass-capi-impl --prefix LLZKTransformation)
 llzk_add_mlir_doc(LLZKTransformationPassesDocGen passes/LLZKTransformationPasses.md -gen-pass-doc)
 
-set(LLVM_TARGET_DEFINITIONS "ZKLeanPasses.td")
-mlir_tablegen(ZKLeanPasses.h.inc -gen-pass-decls -name=ZKLean)
-
-add_public_tablegen_target(LLZKTransformationIncGen)
-add_dependencies(mlir-headers LLZKTransformationIncGen)
-add_dependencies(LLZKDialectHeaders LLZKTransformationIncGen)
+ add_public_tablegen_target(LLZKTransformationIncGen)
+ add_dependencies(mlir-headers LLZKTransformationIncGen)
+ add_dependencies(LLZKDialectHeaders LLZKTransformationIncGen)

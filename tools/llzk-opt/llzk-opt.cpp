@@ -19,14 +19,15 @@
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/InitDialects.h"
+#include "zklean/Conversions/Passes.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
-#include "llzk/Conversions/Passes.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Transforms/ZKLeanPasses.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
 #include "r1cs/Transforms/TransformationPasses.h"
+#include "zklean/DialectRegistration.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -69,6 +70,7 @@ int main(int argc, char **argv) {
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
+  zklean::registerAllDialects(registry);
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
@@ -80,14 +82,8 @@ int main(int argc, char **argv) {
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
-<<<<<<< HEAD
   r1cs::registerTransformationPasses();
-=======
-  llzk::registerTransformationPassPipelines();
-  llzk::registerValidationPasses();
   llzk::zklean::registerZKLeanPasses();
-
->>>>>>> 02e21cd (Registering zklean pretty print pass with llzk-opt)
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
 #endif // LLZK_WITH_PCL
