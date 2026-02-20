@@ -10,6 +10,7 @@
 #include "llzk-c/Dialect/POD.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 
 #include "llzk-c/Support.h"
@@ -17,6 +18,7 @@
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/IR/Attributes.h>
+#include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinAttributes.h>
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -39,22 +41,24 @@
 #include "llzk/Dialect/Pod/IR/Ops.capi.test.cpp.inc"
 #include "llzk/Dialect/Pod/IR/Types.capi.test.cpp.inc"
 
+namespace {
+
+llzk::pod::RecordAttr createRecordAttrCpp(mlir::StringAttr name, mlir::Type type) {
+  return llzk::pod::RecordAttr::get(type.getContext(), name, type);
+}
+
+llzk::pod::RecordAttr createRecordAttrCpp(mlir::StringRef name, mlir::Type type) {
+  return createRecordAttrCpp(mlir::StringAttr::get(type.getContext(), name), type);
+}
+
+} // namespace
+
 class PODDialectTests : public CAPITest {
 protected:
-  mlir::Type unwrappedIndexType() { return mlir::IndexType::get(unwrap(context)); }
+  mlir::Type unwrappedIndexType() { return unwrap(createIndexType()); }
 
-  llzk::pod::RecordAttr recordAttr(llvm::StringRef name, mlir::Type type) {
-    return llzk::pod::RecordAttr::get(
-        type.getContext(), mlir::StringAttr::get(type.getContext(), name), type
-    );
-  }
-
-  MlirType testPod(llvm::ArrayRef<std::pair<MlirStringRef, MlirType>> records) {
-    auto recordAttrs = llvm::map_to_vector(records, [this](auto record) {
-      auto [name, type] = record;
-      return llzkPod_RecordAttrGetInferredContext(mlirIdentifierGet(context, name), type);
-    });
-    return llzkPod_PodTypeGet(context, static_cast<intptr_t>(records.size()), recordAttrs.data());
+  llzk::pod::RecordAttr testRecord(mlir::StringRef name) {
+    return createRecordAttrCpp(name, unwrappedIndexType());
   }
 
   llvm::SmallVector<MlirOperation> createNOps(int64_t n_ops, MlirType elt_type) {
@@ -88,13 +92,13 @@ TEST_F(PODDialectTests, llzkPod_RecordAttrGet) {
 }
 
 TEST_F(PODDialectTests, llzkPod_RecordAttrGetName) {
-  auto attr = recordAttr("a record name", unwrappedIndexType());
+  auto attr = testRecord("a record name");
   auto name = llzkPod_RecordAttrGetName(wrap(attr));
   ASSERT_EQ(unwrap(name), "a record name");
 }
 
 TEST_F(PODDialectTests, llzkPod_RecordAttrGetNameSym) {
-  auto attr = recordAttr("a record name", unwrappedIndexType());
+  auto attr = testRecord("a record name");
   auto name = llzkPod_RecordAttrGetNameSym(wrap(attr));
   ASSERT_EQ(
       unwrap(name),
@@ -103,24 +107,21 @@ TEST_F(PODDialectTests, llzkPod_RecordAttrGetNameSym) {
 }
 
 TEST_F(PODDialectTests, llzkPod_RecordAttrGetType) {
-  auto attr = recordAttr("a record name", unwrappedIndexType());
+  auto attr = testRecord("a record name");
   auto type = llzkPod_RecordAttrGetType(wrap(attr));
   ASSERT_EQ(unwrap(type), unwrappedIndexType());
 }
 
 TEST_F(PODDialectTests, llzkPod_PodTypeGet) {
-  auto record = llzkPod_RecordAttrGetInferredContext(
-      mlirIdentifierGet(context, mlirStringRefCreateFromCString("record name")), createIndexType()
-  );
-  auto type = llzkPod_PodTypeGet(context, 1, &record);
-  mlir::Type expected =
-      llzk::pod::PodType::get(unwrap(context), {recordAttr("record name", unwrappedIndexType())});
+  auto record = testRecord("a record name");
+  auto recordWrapped = wrap(record);
+  auto type = llzkPod_PodTypeGet(context, 1, &recordWrapped);
+  mlir::Type expected = llzk::pod::PodType::get(unwrap(context), {record});
   ASSERT_EQ(unwrap(type), expected);
 }
 
 TEST_F(PODDialectTests, llzkPod_PodTypeGetFromInitialValues) {
   auto ops = createNOps(2, createIndexType());
-
   LlzkRecordValue initialValues[] = {
       LlzkRecordValue {
           .name = mlirStringRefCreateFromCString("x"), .value = mlirOperationGetResult(ops[0], 0)
@@ -130,10 +131,8 @@ TEST_F(PODDialectTests, llzkPod_PodTypeGetFromInitialValues) {
       },
   };
   auto type = llzkPod_PodTypeGetFromInitialValues(context, 2, initialValues);
-  mlir::Type expected = llzk::pod::PodType::get(
-      unwrap(context),
-      {recordAttr("x", unwrappedIndexType()), recordAttr("y", unwrappedIndexType())}
-  );
+  mlir::Type expected =
+      llzk::pod::PodType::get(unwrap(context), {testRecord("x"), testRecord("y")});
   ASSERT_EQ(unwrap(type), expected);
 
   for (auto op : ops) {
@@ -142,9 +141,7 @@ TEST_F(PODDialectTests, llzkPod_PodTypeGetFromInitialValues) {
 }
 
 TEST_F(PODDialectTests, llzkPod_PodTypeGetRecords) {
-  auto record = llzkPod_RecordAttrGetInferredContext(
-      mlirIdentifierGet(context, mlirStringRefCreateFromCString("record_name")), createIndexType()
-  );
+  auto record = wrap(testRecord("a record name"));
   auto type = llzkPod_PodTypeGet(context, 1, &record);
   MlirAttribute output[1];
   llzkPod_PodTypeGetRecords(type, output);
@@ -155,12 +152,21 @@ TEST_F(PODDialectTests, llzkPod_PodTypeGetRecords) {
 // Implementation for `ReadPodOp_build_pass` test
 std::unique_ptr<ReadPodOpBuildFuncHelper> ReadPodOpBuildFuncHelper::get() {
   struct Impl : public ReadPodOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      MlirValue podRef;
-      auto recordName = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "RecordName");
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      mlir::StringRef name = "RecordName";
+      MlirType indexTy = testClass.createIndexType();
+      auto podTy = llzk::pod::PodType::get(
+          unwrap(testClass.context), {createRecordAttrCpp(name, unwrap(indexTy))}
+      );
+      auto newPodOp = unwrap(builder)->create<llzk::pod::NewPodOp>(unwrap(location), podTy);
+      auto recordName = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), name);
       return llzkPod_ReadPodOpBuild(
-          builder, location, testClass.createIndexType(), podRef, wrap(recordName)
+          builder, location, indexTy, wrap(newPodOp.getResult()), wrap(recordName)
       );
     }
   };
@@ -170,13 +176,22 @@ std::unique_ptr<ReadPodOpBuildFuncHelper> ReadPodOpBuildFuncHelper::get() {
 // Implementation for `WritePodOp_build_pass` test
 std::unique_ptr<WritePodOpBuildFuncHelper> WritePodOpBuildFuncHelper::get() {
   struct Impl : public WritePodOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      MlirValue podRef;
-      auto recordName = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "RecordName");
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      mlir::StringRef name = "RecordName";
+      MlirType indexTy = testClass.createIndexType();
+      auto podTy = llzk::pod::PodType::get(
+          unwrap(testClass.context), {createRecordAttrCpp(name, unwrap(indexTy))}
+      );
+      auto newPodOp = unwrap(builder)->create<llzk::pod::NewPodOp>(unwrap(location), podTy);
+      auto recordName = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), name);
       return llzkPod_WritePodOpBuild(
-          builder, location, podRef, mlirOperationGetResult(testClass.createIndexOperation(), 0),
-          wrap(recordName)
+          builder, location, wrap(newPodOp.getResult()),
+          mlirOperationGetResult(testClass.createIndexOperation(), 0), wrap(recordName)
       );
     }
   };
