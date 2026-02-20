@@ -104,7 +104,7 @@ public:
     mlir::MLIRContext *cppCtx = unwrap(context);
     mlir::Location cppLoc = unwrap(location);
     mlir::OwningOpRef<mlir::ModuleOp> newModule = llzk::createLLZKModule(cppCtx, cppLoc);
-    mlirOpBuilderSetInsertionPointToStart(builder, wrap(newModule->getBody()));
+    unwrap(builder)->setInsertionPointToStart(newModule->getBody());
     return newModule;
   }
 
@@ -124,7 +124,7 @@ public:
       cppBldr.insertFullStruct(name);
     }
     llzk::function::FuncDefOp fDef = cppBldr.getFunc(kind, name).value();
-    mlirOpBuilderSetInsertionPointToStart(builder, wrap(&fDef.getBody().emplaceBlock()));
+    unwrap(builder)->setInsertionPointToStart(&fDef.getBody().emplaceBlock());
     return newModule;
   }
 };
