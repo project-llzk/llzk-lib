@@ -234,6 +234,7 @@ intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
   virtual void genDefaultGetBuilderImpl(const mlir::tblgen::AttrOrTypeDef &def) const {
     static constexpr char fmt[] = R"(
 Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
+  {6}
   return wrap({3}::get(unwrap(ctx){5}));
 }
  )";
@@ -242,8 +243,10 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
     // Use raw_string_ostream for efficient string building
     std::string paramListBuffer;
     std::string argListBuffer;
+    std::string prefixBuffer;
     llvm::raw_string_ostream paramListStream(paramListBuffer);
     llvm::raw_string_ostream argListStream(argListBuffer);
+    llvm::raw_string_ostream prefixStream(prefixBuffer);
 
     for (const auto &param : def.getParameters()) {
       mlir::StringRef pName = param.getName();
@@ -256,11 +259,12 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
 
         // In the call, we need to convert back to ArrayRef. Check if elements need unwrapping.
         if (isPrimitiveType(cppElemType)) {
-          argListStream << ", ::llvm::ArrayRef<" << capiElemType << ">(" << pName << ", " << pName
+          argListStream << ", ::llvm::ArrayRef<" << cppElemType << ">(" << pName << ", " << pName
                         << "Count)";
         } else {
-          argListStream << ", ::llvm::ArrayRef<" << capiElemType << ">(unwrapList(" << pName << ", "
-                        << pName << "Count))";
+          prefixStream << "SmallVector<Attribute> storage;";
+          argListStream << ", llvm::map_to_vector(unwrapList(" << pName << "Count, " << pName
+                        << ", storage), [](auto a) {return llvm::cast<RecordAttr>(a);})";
         }
       } else {
         std::string capiType = mapCppTypeToCapiType(cppType);
@@ -287,7 +291,8 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
         dialectNameCapitalized, // {2}
         className,              // {3}
         paramListBuffer,        // {4}
-        argListBuffer           // {5}
+        argListBuffer,          // {5}
+        prefixBuffer            // {6}
     );
   }
 
