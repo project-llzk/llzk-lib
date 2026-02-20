@@ -77,11 +77,10 @@ std::unique_ptr<OrBoolOpBuildFuncHelper> OrBoolOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'bool.or' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
       return llzkBool_OrBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
     }
@@ -95,11 +94,10 @@ std::unique_ptr<AndBoolOpBuildFuncHelper> AndBoolOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'bool.and' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
       return llzkBool_AndBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
     }
@@ -113,11 +111,10 @@ std::unique_ptr<NotBoolOpBuildFuncHelper> NotBoolOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'bool.not' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
       return llzkBool_NotBoolOpBuild(builder, location, wrap(cppValue));
     }
@@ -131,11 +128,10 @@ std::unique_ptr<XorBoolOpBuildFuncHelper> XorBoolOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'bool.xor' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
       return llzkBool_XorBoolOpBuild(builder, location, wrap(cppValue), wrap(cppValue));
     }

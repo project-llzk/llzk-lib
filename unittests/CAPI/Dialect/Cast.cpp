@@ -34,11 +34,14 @@ std::unique_ptr<IntToFeltOpBuildFuncHelper> IntToFeltOpBuildFuncHelper::get() {
 // Implementation for `FeltToIndexOp_build_pass` test
 std::unique_ptr<FeltToIndexOpBuildFuncHelper> FeltToIndexOpBuildFuncHelper::get() {
   struct Impl : public FeltToIndexOpBuildFuncHelper {
-    mlir::OwningOpRef<mlir::Operation *> forceCleanup;
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value val = testClass.cppGenFeltConstant(builder, location);
-      this->forceCleanup = val.getDefiningOp();
       return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val));
     }
   };

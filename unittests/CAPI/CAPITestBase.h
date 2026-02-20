@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 
 #include "llzk-c/Builder.h"
 #include "llzk-c/InitDialects.h"
@@ -126,6 +127,20 @@ public:
     llzk::function::FuncDefOp fDef = cppBldr.getFunc(kind, name).value();
     unwrap(builder)->setInsertionPointToStart(&fDef.getBody().emplaceBlock());
     return newModule;
+  }
+
+  /// If the insertion point of the builder is within a `FuncDefOp`, set the
+  /// 'allow_non_native_field_ops' attribute to avoid the following type of errors:
+  ///
+  /// error: op only valid within a 'function.def' with 'function.allow_non_native_field_ops'
+  ///
+  /// Assertion failure if the insertion point of the builder is NOT within a `FuncDefOp`.
+  void setAllowNonNativeFieldOpsAttrOnFuncDef(MlirOpBuilder builder) const {
+    auto parent = llzk::getSelfOrParentOfType<llzk::function::FuncDefOp>(
+        unwrap(builder)->getInsertionBlock()->getParentOp()
+    );
+    assert(parent);
+    parent.setAllowNonNativeFieldOpsAttr();
   }
 };
 

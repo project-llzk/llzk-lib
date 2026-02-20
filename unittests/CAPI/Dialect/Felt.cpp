@@ -154,11 +154,10 @@ std::unique_ptr<OrFeltOpBuildFuncHelper> OrFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.bit_or' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_OrFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -173,11 +172,10 @@ std::unique_ptr<AndFeltOpBuildFuncHelper> AndFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.bit_and' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_AndFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -192,11 +190,10 @@ std::unique_ptr<XorFeltOpBuildFuncHelper> XorFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.bit_xor' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_XorFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -211,11 +208,10 @@ std::unique_ptr<NotFeltOpBuildFuncHelper> NotFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.bit_not' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_NotFeltOpBuild(builder, location, resultType, wrap(val));
@@ -230,11 +226,10 @@ std::unique_ptr<ShlFeltOpBuildFuncHelper> ShlFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.shl' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_ShlFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -249,11 +244,10 @@ std::unique_ptr<ShrFeltOpBuildFuncHelper> ShrFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.shr' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_ShrFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -304,8 +298,13 @@ std::unique_ptr<MulFeltOpBuildFuncHelper> MulFeltOpBuildFuncHelper::get() {
 // Implementation for `PowFeltOp_build_pass` test
 std::unique_ptr<PowFeltOpBuildFuncHelper> PowFeltOpBuildFuncHelper::get() {
   struct Impl : public PowFeltOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_PowFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -330,8 +329,13 @@ std::unique_ptr<DivFeltOpBuildFuncHelper> DivFeltOpBuildFuncHelper::get() {
 // Implementation for `UnsignedIntDivFeltOp_build_pass` test
 std::unique_ptr<UnsignedIntDivFeltOpBuildFuncHelper> UnsignedIntDivFeltOpBuildFuncHelper::get() {
   struct Impl : public UnsignedIntDivFeltOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_UnsignedIntDivFeltOpBuild(
@@ -345,8 +349,13 @@ std::unique_ptr<UnsignedIntDivFeltOpBuildFuncHelper> UnsignedIntDivFeltOpBuildFu
 // Implementation for `SignedIntDivFeltOp_build_pass` test
 std::unique_ptr<SignedIntDivFeltOpBuildFuncHelper> SignedIntDivFeltOpBuildFuncHelper::get() {
   struct Impl : public SignedIntDivFeltOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_SignedIntDivFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -358,8 +367,13 @@ std::unique_ptr<SignedIntDivFeltOpBuildFuncHelper> SignedIntDivFeltOpBuildFuncHe
 // Implementation for `UnsignedModFeltOp_build_pass` test
 std::unique_ptr<UnsignedModFeltOpBuildFuncHelper> UnsignedModFeltOpBuildFuncHelper::get() {
   struct Impl : public UnsignedModFeltOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_UnsignedModFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -371,8 +385,13 @@ std::unique_ptr<UnsignedModFeltOpBuildFuncHelper> UnsignedModFeltOpBuildFuncHelp
 // Implementation for `SignedModFeltOp_build_pass` test
 std::unique_ptr<SignedModFeltOpBuildFuncHelper> SignedModFeltOpBuildFuncHelper::get() {
   struct Impl : public SignedModFeltOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+          builder, location, llzk::function::FunctionKind::StructCompute
+      );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_SignedModFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
@@ -400,11 +419,10 @@ std::unique_ptr<InvFeltOpBuildFuncHelper> InvFeltOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use "@compute" function as parent to avoid the following:
-      // error: 'felt.inv' op only valid within a 'function.def' with 'function.allow_witness'
       this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
           builder, location, llzk::function::FunctionKind::StructCompute
       );
+      testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       auto val = testClass.cppGenFeltConstant(builder, location);
       auto resultType = wrap(testClass.cppGetFeltType(builder));
       return llzkFelt_InvFeltOpBuild(builder, location, resultType, wrap(val));
