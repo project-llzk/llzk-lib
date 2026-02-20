@@ -44,4 +44,4 @@ MLIR_CAPI_EXPORTED MlirOperation llzkInclude_IncludeOpCreateInferredContext(
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_INCLUDE_H

@@ -86,4 +86,4 @@ MLIR_CAPI_EXPORTED void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, M
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_POLYMORPHIC_H

@@ -33,4 +33,4 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, llzk__constrain);
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_CONSTRAIN_H

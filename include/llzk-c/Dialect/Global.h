@@ -33,4 +33,4 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Global, llzk__global);
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_GLOBAL_H

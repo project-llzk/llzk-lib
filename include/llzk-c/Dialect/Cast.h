@@ -40,4 +40,4 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_CAST_H

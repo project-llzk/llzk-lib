@@ -11,8 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_C_IR_H
-#define LLZK_C_IR_H
+#ifndef LLZK_C_SUPPORT_H
+#define LLZK_C_SUPPORT_H
 
 #include "llzk-c/Builder.h" // IWYU pragma: keep
 
@@ -172,4 +172,4 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkAffineMapOperandsBuilderGetDimsPerMapAttr(
 }
 #endif
 
-#endif
+#endif // LLZK_C_SUPPORT_H

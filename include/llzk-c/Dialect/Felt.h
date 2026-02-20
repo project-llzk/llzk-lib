@@ -100,4 +100,4 @@ MLIR_CAPI_EXPORTED MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext context)
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_FELT_H

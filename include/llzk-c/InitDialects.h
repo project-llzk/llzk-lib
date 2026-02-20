@@ -27,4 +27,4 @@ MLIR_CAPI_EXPORTED void llzkRegisterAllDialects(MlirDialectRegistry registry);
 }
 #endif
 
-#endif
+#endif // LLZK_C_INITDIALECTS_H
