@@ -35,9 +35,9 @@ using namespace llzk;
 using namespace llzk::pod;
 
 // Include the generated CAPI
-#include "llzk/Dialect/Pod/IR/Attrs.capi.cpp.inc"
-#include "llzk/Dialect/Pod/IR/Ops.capi.cpp.inc"
-#include "llzk/Dialect/Pod/IR/Types.capi.cpp.inc"
+#include "llzk/Dialect/POD/IR/Attrs.capi.cpp.inc"
+#include "llzk/Dialect/POD/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/POD/IR/Types.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(POD, llzk__pod, PODDialect)
 

@@ -36,10 +36,10 @@
 #include "../CAPITestBase.h"
 
 // Include the auto-generated tests
-#include "llzk/Dialect/Pod/IR/Attrs.capi.test.cpp.inc"
-#include "llzk/Dialect/Pod/IR/Dialect.capi.test.cpp.inc"
-#include "llzk/Dialect/Pod/IR/Ops.capi.test.cpp.inc"
-#include "llzk/Dialect/Pod/IR/Types.capi.test.cpp.inc"
+#include "llzk/Dialect/POD/IR/Attrs.capi.test.cpp.inc"
+#include "llzk/Dialect/POD/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/POD/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/POD/IR/Types.capi.test.cpp.inc"
 
 namespace {
 

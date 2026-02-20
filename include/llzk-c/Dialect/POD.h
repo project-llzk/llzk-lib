@@ -27,9 +27,9 @@
 #include <stdint.h>
 
 // Include the generated CAPI
-#include "llzk/Dialect/Pod/IR/Attrs.capi.h.inc"
-#include "llzk/Dialect/Pod/IR/Ops.capi.h.inc"
-#include "llzk/Dialect/Pod/IR/Types.capi.h.inc"
+#include "llzk/Dialect/POD/IR/Attrs.capi.h.inc"
+#include "llzk/Dialect/POD/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/POD/IR/Types.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
