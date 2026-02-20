@@ -16,11 +16,13 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKComputeConstrainToProductPass.h"
+#include "llzk/Transforms/LLZKInlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/Support/Debug.h>
@@ -98,10 +100,16 @@ public:
     if (failed(alignStartingAt(root, tables, equivalence))) {
       signalPassFailure();
     }
+    // mod->dumpPretty();
   }
 };
 
 FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDefOp constrain) {
+
+  if (auto prod = root.getProductFuncOp()) {
+    return prod;
+  }
+
   OpBuilder funcBuilder(compute);
 
   // Add compute/constrain attributes
@@ -121,6 +129,10 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
   productFunc->setAttr(DERIVED_ATTR_NAME, UnitAttr::get(funcBuilder.getContext()));
   Block *entryBlock = productFunc.addEntryBlock();
   funcBuilder.setInsertionPointToStart(entryBlock);
+
+  productFunc.setAllowNonNativeFieldOpsAttr(
+      compute.hasAllowNonNativeFieldOpsAttr() || constrain.hasAllowNonNativeFieldOpsAttr()
+  );
 
   // ...with the right arguments
   llvm::SmallVector<Value> args {productFunc.getArguments()};
@@ -181,6 +193,9 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
     auto constrainStruct = getPrefixAsSymbolRefAttr(constrain.getCallee());
     if (computeStruct != constrainStruct) {
       return false;
+    }
+    if (compute.getNumOperands() == 0) {
+      return true;
     }
     for (unsigned i = 0, e = compute->getNumOperands() - 1; i < e; i++) {
       if (!equivalence.areSignalsEquivalent(compute->getOperand(i), constrain->getOperand(i + 1))) {
