@@ -175,11 +175,11 @@ std::string StructDefOp::getHeaderString() {
   });
 }
 
-bool StructDefOp::hasParamNamed(StringAttr find) {
+bool StructDefOp::hasParamNamed(StringRef find) {
   if (ArrayAttr params = this->getConstParamsAttr()) {
     for (Attribute attr : params) {
       assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
-      if (llvm::cast<FlatSymbolRefAttr>(attr).getRootReference() == find) {
+      if (llvm::cast<FlatSymbolRefAttr>(attr).getRootReference().strref() == find) {
         return true;
       }
     }

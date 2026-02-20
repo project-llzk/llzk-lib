@@ -42,4 +42,4 @@ extern const char *LLZK_MAIN_ATTR_NAME;
 }
 #endif
 
-#endif
+#endif // LLZK_C_CONSTANTS_H

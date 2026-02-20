@@ -13,9 +13,10 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_string) {
-  (void)mlirGetDialectHandle__llzk__string__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/String/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/String/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/String/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_string_type_get) {
   auto type = llzkString_StringTypeGet(context);
@@ -27,7 +28,17 @@ TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {
   EXPECT_TRUE(llzkTypeIsA_String_StringType(type));
 }
 
-TEST_F(CAPITest, llzk_type_is_a_string_type_fail) {
-  auto type = mlirIndexTypeGet(context);
-  EXPECT_TRUE(!llzkTypeIsA_String_StringType(type));
+// Implementation for `LitStringOp_build_pass` test
+std::unique_ptr<LitStringOpBuildFuncHelper> LitStringOpBuildFuncHelper::get() {
+  struct Impl : public LitStringOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirIdentifier strVal =
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("test"));
+      return llzkString_LitStringOpBuild(
+          builder, location, llzkString_StringTypeGet(testClass.context), strVal
+      );
+    }
+  };
+  return std::make_unique<Impl>();
 }

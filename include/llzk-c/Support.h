@@ -11,8 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_C_IR_H
-#define LLZK_C_IR_H
+#ifndef LLZK_C_SUPPORT_H
+#define LLZK_C_SUPPORT_H
 
 #include "llzk-c/Builder.h" // IWYU pragma: keep
 
@@ -39,15 +39,9 @@ extern "C" {
   LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(dialect, op, , __VA_ARGS__)
 
 #define LLZK_DECLARE_OP_PREDICATE(dialect, op, name)                                               \
-  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##Get##name(MlirOperation op)
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##name(MlirOperation op)
 #define LLZK_DECLARE_NARY_OP_PREDICATE(dialect, op, name, ...)                                     \
-  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##Get##name(MlirOperation op, __VA_ARGS__)
-
-#define LLZK_DECLARE_ISA(dialect, what, root)                                                      \
-  MLIR_CAPI_EXPORTED bool llzk##root##IsA##_##dialect##_##what(Mlir##root what)
-#define LLZK_DECLARE_TYPE_ISA(dialect, what) LLZK_DECLARE_ISA(dialect, what, Type)
-#define LLZK_DECLARE_OP_ISA(dialect, what) LLZK_DECLARE_ISA(dialect, what, Operation)
-#define LLZK_DECLARE_ATTR_ISA(dialect, what) LLZK_DECLARE_ISA(dialect, what, Attribute)
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##name(MlirOperation op, __VA_ARGS__)
 
 //===----------------------------------------------------------------------===//
 // Representation of a mlir::ValueRange.
@@ -178,4 +172,4 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkAffineMapOperandsBuilderGetDimsPerMapAttr(
 }
 #endif
 
-#endif
+#endif // LLZK_C_SUPPORT_H

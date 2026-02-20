@@ -68,9 +68,9 @@ struct OpTestGenerator : public TestGenerator {
   /// so this override returns the function name rather than a comment.
   virtual std::string genCleanup() const override { return "mlirOperationDestroy"; };
 
-  /// @brief Generate "Build" function test for an operation
+  /// @brief Generate "Build" function tests for an operation
   /// @param op The operation definition
-  void genBuildOpTest(const Operator &op) const {
+  void genBuildOpTests(const Operator &op) const {
     static constexpr char fmt[] = R"(
 // This test ensures {0}{1}_{2}Build links properly.
 TEST_F({1}OperationLinkTests, {0}_{2}_Build) {{
@@ -89,6 +89,21 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Build) {{
 
   mlirOperationDestroy(testOp);
 }
+
+struct {2}BuildFuncHelper : public TestAnyBuildFuncHelper<CAPITest> {
+  virtual bool callIsA(MlirOperation op) override { return {0}OperationIsA_{1}_{2}(op); }
+  /// This method must be implemented to return a subclass of `{2}BuildFuncHelper` that
+  /// at least implements `callBuild()` to build the operation via `{0}{1}{2}Build()`.
+  /// It can override other methods of `TestAnyBuildFuncHelper` if needed.
+  static std::unique_ptr<{2}BuildFuncHelper> get();
+
+protected:
+  {2}BuildFuncHelper() = default;
+};
+// This test ensures `{0}{1}{2}Build()` successfully builds an `Operation`
+// of the correct type that passes verification. It relies on a manual implemenation
+// of `{2}BuildFuncHelper::callBuild()` that calls `{0}{1}{2}Build()`.
+TEST_F(CAPITest, {2}_build_pass) { {2}BuildFuncHelper::get()->run(*this); }
 )";
 
     assert(!className.empty() && "className must be set");
@@ -405,7 +420,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
       this->genIsATest();
     }
     if (GenOpBuild && !op.skipDefaultBuilders()) {
-      this->genBuildOpTest(op);
+      this->genBuildOpTests(op);
     }
     if (GenOpOperandGetters || GenOpOperandSetters) {
       this->genOperandTests(op);

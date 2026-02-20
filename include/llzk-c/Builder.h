@@ -96,4 +96,4 @@ MLIR_CAPI_EXPORTED void mlirOpBuilderListenerDestroy(MlirOpBuilderListener liste
 }
 #endif
 
-#endif
+#endif // LLZK_C_BUILDER_H

@@ -30,7 +30,9 @@ using namespace llzk::array;
 
 static void registerLLZKArrayTransformationPasses() { registerTransformationPasses(); }
 
-// Include impl for transformation passes
+// Include the generated CAPI
+#include "llzk/Dialect/Array/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Array/IR/Types.capi.cpp.inc"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Array, llzk__array, ArrayDialect)
@@ -39,28 +41,15 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Array, llzk__array, ArrayDialect)
 // ArrayType
 //===----------------------------------------------------------------------===//
 
-MlirType llzkArray_ArrayTypeGet(MlirType elementType, intptr_t nDims, MlirAttribute const *dims) {
+MlirType
+llzkArray_ArrayTypeGetWithDims(MlirType elementType, intptr_t nDims, MlirAttribute const *dims) {
   SmallVector<Attribute> dimsSto;
   return wrap(ArrayType::get(unwrap(elementType), unwrapList(nDims, dims, dimsSto)));
 }
 
 MlirType
-llzkArray_ArrayTypeGetWithNumericDims(MlirType elementType, intptr_t nDims, int64_t const *dims) {
+llzkArray_ArrayTypeGetWithShape(MlirType elementType, intptr_t nDims, int64_t const *dims) {
   return wrap(ArrayType::get(unwrap(elementType), ArrayRef(dims, nDims)));
-}
-
-bool llzkTypeIsA_Array_ArrayType(MlirType type) { return llvm::isa<ArrayType>(unwrap(type)); }
-
-MlirType llzkArray_ArrayTypeGetElementType(MlirType type) {
-  return wrap(unwrap_cast<ArrayType>(type).getElementType());
-}
-
-intptr_t llzkArray_ArrayTypeGetNumDims(MlirType type) {
-  return static_cast<intptr_t>(unwrap_cast<ArrayType>(type).getDimensionSizes().size());
-}
-
-MlirAttribute llzkArray_ArrayTypeGetDim(MlirType type, intptr_t idx) {
-  return wrap(unwrap_cast<ArrayType>(type).getDimensionSizes()[idx]);
 }
 
 //===----------------------------------------------------------------------===//

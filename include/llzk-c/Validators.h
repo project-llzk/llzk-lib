@@ -17,4 +17,4 @@
 
 #include "llzk/Validators/LLZKValidationPasses.capi.h.inc"
 
-#endif
+#endif // LLZK_C_VALIDATORS_H

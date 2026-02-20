@@ -20,6 +20,9 @@
 
 #include <mlir-c/IR.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/Constrain/IR/Ops.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,4 +33,4 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, llzk__constrain);
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_CONSTRAIN_H

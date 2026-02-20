@@ -7,7 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 
 #include "llzk-c/Dialect/String.h"
@@ -18,8 +20,8 @@
 using namespace mlir;
 using namespace llzk::string;
 
+// Include the generated CAPI
+#include "llzk/Dialect/String/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/String/IR/Types.capi.cpp.inc"
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(String, llzk__string, StringDialect)
-
-MlirType llzkString_StringTypeGet(MlirContext ctx) { return wrap(StringType::get(unwrap(ctx))); }
-
-bool llzkTypeIsA_String_StringType(MlirType type) { return llvm::isa<StringType>(unwrap(type)); }

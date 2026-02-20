@@ -7,8 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
 
 #include "llzk-c/Dialect/Bool.h"
 
@@ -16,12 +18,10 @@
 
 using namespace llzk::boolean;
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean, llzk::boolean::BoolDialect)
+// Include the generated CAPI
+#include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"
+// Enums must come before Attrs and Ops
+#include "llzk/Dialect/Bool/IR/Attrs.capi.cpp.inc"
+#include "llzk/Dialect/Bool/IR/Ops.capi.cpp.inc"
 
-MlirAttribute llzkBool_FeltCmpPredicateAttrGet(MlirContext ctx, LlzkCmp cmp) {
-  return wrap(FeltCmpPredicateAttr::get(unwrap(ctx), FeltCmpPredicate(cmp)));
-}
-
-bool llzkAttributeIsA_Bool_FeltCmpPredicateAttr(MlirAttribute attr) {
-  return llvm::isa<FeltCmpPredicateAttr>(unwrap(attr));
-}
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean, BoolDialect)

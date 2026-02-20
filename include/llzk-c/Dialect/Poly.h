@@ -18,14 +18,17 @@
 #ifndef LLZK_C_DIALECT_POLYMORPHIC_H
 #define LLZK_C_DIALECT_POLYMORPHIC_H
 
-#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
-
 #include "llzk-c/Support.h"
 
 #include <mlir-c/AffineExpr.h>
 #include <mlir-c/AffineMap.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.h.inc"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,20 +41,11 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 //===----------------------------------------------------------------------===//
 
 /// Creates a llzk::polymorphic::TypeVarType.
-MLIR_CAPI_EXPORTED MlirType llzkPoly_TypeVarTypeGet(MlirContext context, MlirStringRef value);
-
-/// Returns true if the type is a TypeVarType.
-LLZK_DECLARE_TYPE_ISA(Poly, TypeVarType);
+MLIR_CAPI_EXPORTED MlirType
+llzkPoly_TypeVarTypeGetFromStringRef(MlirContext context, MlirStringRef value);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirType
-llzkPoly_TypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
-
-/// Returns the var name of the TypeVarType as a StringRef.
-MLIR_CAPI_EXPORTED MlirStringRef llzkPoly_TypeVarTypeGetNameRef(MlirType type);
-
-/// Returns the var name of the TypeVarType as a FlatSymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPoly_TypeVarTypeGetName(MlirType type);
+MLIR_CAPI_EXPORTED MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute value);
 
 //===----------------------------------------------------------------------===//
 // ApplyMapOp
@@ -71,12 +65,6 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     Poly, ApplyMapOp, WithAffineExpr, MlirAffineExpr affineExpr, MlirValueRange operands
 );
-
-/// Returns true if the op is an ApplyMapOp.
-LLZK_DECLARE_OP_ISA(Poly, ApplyMapOp);
-
-/// Returns the affine map associated with the op.
-MLIR_CAPI_EXPORTED MlirAffineMap llzkPoly_ApplyMapOpGetAffineMap(MlirOperation op);
 
 /// Returns the number of operands that correspond to dimensions in the affine map.
 MLIR_CAPI_EXPORTED intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op);
@@ -98,4 +86,4 @@ MLIR_CAPI_EXPORTED void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, M
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_POLYMORPHIC_H

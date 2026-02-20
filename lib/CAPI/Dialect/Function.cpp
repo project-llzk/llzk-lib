@@ -31,11 +31,11 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::function;
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
+// Include the generated CAPI
+#include "llzk/Dialect/Function/IR/Attrs.capi.cpp.inc"
+#include "llzk/Dialect/Function/IR/Ops.capi.cpp.inc"
 
-static NamedAttribute unwrap(MlirNamedAttribute attr) {
-  return NamedAttribute(unwrap(attr.name), unwrap(attr.attribute));
-}
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
 
 //===----------------------------------------------------------------------===//
 // FuncDefOp
@@ -59,79 +59,6 @@ MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
           unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
       )
   );
-}
-
-bool llzkOperationIsA_Function_FuncDefOp(MlirOperation op) {
-  return llvm::isa<FuncDefOp>(unwrap(op));
-}
-
-bool llzkFunction_FuncDefOpGetHasAllowConstraintAttr(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).hasAllowConstraintAttr();
-}
-
-void llzkFunction_FuncDefOpSetAllowConstraintAttr(MlirOperation op, bool value) {
-  unwrap_cast<FuncDefOp>(op).setAllowConstraintAttr(value);
-}
-
-bool llzkFunction_FuncDefOpGetHasAllowWitnessAttr(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).hasAllowWitnessAttr();
-}
-
-void llzkFunction_FuncDefOpSetAllowWitnessAttr(MlirOperation op, bool value) {
-  unwrap_cast<FuncDefOp>(op).setAllowWitnessAttr(value);
-}
-
-bool llzkFunction_FuncDefOpGetHasAllowNonNativeFieldOpsAttr(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).hasAllowNonNativeFieldOpsAttr();
-}
-
-void llzkFunction_FuncDefOpSetAllowNonNativeFieldOpsAttr(MlirOperation op, bool value) {
-  unwrap_cast<FuncDefOp>(op).setAllowNonNativeFieldOpsAttr(value);
-}
-
-bool llzkFunction_FuncDefOpGetHasArgIsPub(MlirOperation op, unsigned argNo) {
-  return unwrap_cast<FuncDefOp>(op).hasArgPublicAttr(argNo);
-}
-
-MlirAttribute llzkFunction_FuncDefOpGetFullyQualifiedName(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getFullyQualifiedName());
-}
-
-bool llzkFunction_FuncDefOpGetNameIsCompute(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).nameIsCompute();
-}
-
-bool llzkFunction_FuncDefOpGetNameIsConstrain(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).nameIsConstrain();
-}
-
-bool llzkFunction_FuncDefOpGetIsInStruct(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).isInStruct();
-}
-
-bool llzkFunction_FuncDefOpGetIsStructCompute(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).isStructCompute();
-}
-
-bool llzkFunction_FuncDefOpGetIsStructConstrain(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).isStructConstrain();
-}
-
-/// Return the "self" value (i.e. the return value) from the function (which must be
-/// named `FUNC_NAME_COMPUTE`).
-MlirValue llzkFunction_FuncDefOpGetSelfValueFromCompute(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getSelfValueFromCompute());
-}
-
-/// Return the "self" value (i.e. the first parameter) from the function (which must be
-/// named `FUNC_NAME_CONSTRAIN`).
-MlirValue llzkFunction_FuncDefOpGetSelfValueFromConstrain(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getSelfValueFromConstrain());
-}
-
-/// Assuming the function is the compute function returns its StructType result.
-MlirType llzkFunction_FuncDefOpGetSingleResultTypeOfCompute(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getSingleResultTypeOfCompute());
 }
 
 //===----------------------------------------------------------------------===//
@@ -203,42 +130,4 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
           unwrapList(numArgOperands, argOperands, argOperandsSto)
       )
   );
-}
-
-bool llzkOperationIsA_Function_CallOp(MlirOperation op) { return llvm::isa<CallOp>(unwrap(op)); }
-
-MlirType llzkFunction_CallOpGetCalleeType(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getCalleeType());
-}
-
-bool llzkFunction_CallOpGetCalleeIsCompute(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsCompute();
-}
-
-bool llzkFunction_CallOpGetCalleeIsConstrain(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsConstrain();
-}
-
-bool llzkFunction_CallOpGetCalleeIsStructCompute(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsStructCompute();
-}
-
-bool llzkFunction_CallOpGetCalleeIsStructConstrain(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsStructConstrain();
-}
-
-/// Return the "self" value (i.e. the return value) from the callee function (which must be
-/// named `FUNC_NAME_COMPUTE`).
-MlirValue llzkFunction_CallOpGetSelfValueFromCompute(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getSelfValueFromCompute());
-}
-
-/// Return the "self" value (i.e. the first parameter) from the callee function (which must be
-/// named `FUNC_NAME_CONSTRAIN`).
-MlirValue llzkFunction_CallOpGetSelfValueFromConstrain(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getSelfValueFromConstrain());
-}
-
-MlirType llzkFunction_CallOpGetSingleResultTypeOfCompute(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getSingleResultTypeOfCompute());
 }

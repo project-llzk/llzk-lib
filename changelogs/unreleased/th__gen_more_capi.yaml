@@ -1,0 +1,63 @@
+changed:
+  - CAPI Renames:
+    - All Dialects:
+      - llzk[KIND]IsA[NAME] to llzk[KIND]IsA_[DIALECT]_[NAME]
+      - llzk[KIND][NAME] to llzk[DIALECT]_[KIND][NAME]
+    - Array Dialect:
+      - llzkArrayTypeGet to llzkArray_ArrayTypeGetWithDims
+      - llzkArrayTypeGetWithNumericDims to llzkArray_ArrayTypeGetWithShape
+      - llzkArrayTypeGetElementType to llzkArray_ArrayTypeGetElementType
+      - llzkArrayTypeGetNumDims to llzkArray_ArrayTypeGetDimensionSizesCount
+      - llzkArrayTypeGetDim to llzkArray_ArrayTypeGetDimensionSizesAt
+    - Bool Dialect:
+      - LlzkCmp to LlzkBoolFeltCmpPredicate
+    - Felt Dialect:
+      - llzkFeltConstAttrGetWithField to llzkFelt_FeltConstAttrGet
+      - llzkFeltConstAttrGet to llzkFelt_FeltConstAttrGetUnspecified
+      - llzkFeltConstAttrGetWithBitsWithField to llzkFelt_FeltConstAttrGetWithBits
+      - llzkFeltConstAttrGetWithBits to llzkFelt_FeltConstAttrGetWithBitsUnspecified
+      - llzkFeltConstAttrGetFromStringWithField to llzkFelt_FeltConstAttrGetFromString
+      - llzkFeltConstAttrGetFromString to llzkFelt_FeltConstAttrGetFromStringUnspecified
+      - llzkFeltConstAttrGetFromPartsWithField to llzkFelt_FeltConstAttrGetFromParts
+      - llzkFeltConstAttrGetFromParts to llzkFelt_FeltConstAttrGetFromPartsUnspecified
+      - llzkFeltTypeGetWithField to llzkFelt_FeltTypeGet
+      - llzkFeltTypeGet to llzkFelt_FeltTypeGetUnspecified
+      - Additionally, "MlirStringRef fieldName" parameters are replaced with "MlirIdentifier fieldName"
+    - Function Dialect:
+      - llzkFuncDefOpCreate to llzkFunction_FuncDefOpCreateWithoutAttrs
+      - llzkFuncDefOpGetHasAllowConstraintAttr to llzkFunction_FuncDefOpHasAllowConstraintAttr
+      - llzkFuncDefOpGetHasAllowWitnessAttr to llzkFunction_FuncDefOpHasAllowWitnessAttr
+      - llzkFuncDefOpGetNameIsCompute to llzkFunction_FuncDefOpNameIsCompute
+      - llzkFuncDefOpGetNameIsConstrain to llzkFunction_FuncDefOpNameIsConstrain
+      - llzkFuncDefOpGetIsInStruct to llzkFunction_FuncDefOpIsInStruct
+      - llzkFuncDefOpGetIsStructCompute to llzkFunction_FuncDefOpIsStructCompute
+      - llzkFuncDefOpGetIsStructConstrain to llzkFunction_FuncDefOpIsStructConstrain
+      - llzkFuncDefOpGetHasArgIsPub to llzkFunction_FuncDefOpHasArgPublicAttr
+      - llzkCallOpGetCalleeIsCompute to llzkFunction_CallOpCalleeIsCompute
+      - llzkCallOpGetCalleeIsConstrain to llzkFunction_CallOpCalleeIsConstrain
+      - llzkCallOpGetCalleeIsStructCompute to llzkFunction_CallOpCalleeIsStructCompute
+      - llzkCallOpGetCalleeIsStructConstrain to llzkFunction_CallOpCalleeIsStructConstrain
+    - Global Dialect:
+      - llzkGlobalDefOpGetIsConstant to llzkGlobal_GlobalDefOpIsConstant
+    - Include Dialect:
+      - llzkIncludeOpCreate to llzkInclude_IncludeOpCreateInferredContext
+    - POD Dialect:
+      - llzkRecordAttrGet to llzkPod_RecordAttrGetInferredContext
+      - llzkPodTypeGetNumRecords to llzkPod_PodTypeGetRecordsCount
+      - llzkPodTypeGetNthRecord to llzkPod_PodTypeGetRecordsAt
+      - Additionally, "MlirStringRef name" parameter/return are replaced with "MlirIdentifier"
+    - Poly Dialect:
+      - llzkTypeVarTypeGet to llzkPoly_TypeVarTypeGetFromStringRef
+      - llzkTypeVarTypeGetFromAttr to llzkPoly_TypeVarTypeGetFromAttr (and removed unused Context parameter)
+      - llzkTypeVarTypeGetNameRef to llzkPoly_TypeVarTypeGetRefName
+      - llzkTypeVarTypeGetName to llzkPoly_TypeVarTypeGetNameRef
+    - Struct Dialect:
+      - llzkStructTypeGetName to llzkStruct_StructTypeGetNameRef
+      - llzkStructDefOpGetHasParamName to llzkStruct_StructDefOpHasParamName
+      - llzkStructDefOpGetIsMainComponent to llzkStruct_StructDefOpIsMainComponent
+      - llzkMemberDefOpGetHasPublicAttr to llzkStruct_MemberDefOpHasPublicAttr
+      - llzkStructDefOpGetHasColumns to llzkStruct_StructDefOpHasColumns
+      - Additionally, "MlirStringRef memberName" parameters are replaced with "MlirIdentifier memberName"
+
+added:
+  - new CAPI functions and tests

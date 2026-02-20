@@ -18,7 +18,12 @@
 #ifndef LLZK_C_DIALECT_CAST_H
 #define LLZK_C_DIALECT_CAST_H
 
+#include "llzk-c/Support.h"
+
 #include <mlir-c/IR.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/Cast/IR/Ops.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,8 +31,13 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast);
 
+/// Creates a IntToFeltOp from an input value with the specified result FeltType.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Cast, IntToFeltOp, WithType, MlirType feltType, MlirValue value
+);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_CAST_H

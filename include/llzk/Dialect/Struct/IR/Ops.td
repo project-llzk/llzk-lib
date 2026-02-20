@@ -159,7 +159,10 @@ def LLZK_StructDefOp
     bool hasConstParamsAttr() { return getProperties().const_params != nullptr; };
 
     /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::StringAttr find);
+    bool hasParamNamed(::mlir::StringRef find);
+    inline bool hasParamNamed(::mlir::StringAttr find) {
+      return hasParamNamed(find.strref());
+    }
     inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
       return hasParamNamed(find.getRootReference());
     }

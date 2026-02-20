@@ -18,10 +18,12 @@
 #ifndef LLZK_C_DIALECT_INCLUDE_H
 #define LLZK_C_DIALECT_INCLUDE_H
 
-#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc"
-
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/Include/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,11 +36,12 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Include, llzk__include);
 //===----------------------------------------------------------------------===//
 
 /// Creates an IncludeOp pointing to another MLIR file.
-MLIR_CAPI_EXPORTED MlirOperation
-llzkInclude_IncludeOpCreate(MlirLocation loc, MlirStringRef name, MlirStringRef path);
+MLIR_CAPI_EXPORTED MlirOperation llzkInclude_IncludeOpCreateInferredContext(
+    MlirLocation loc, MlirStringRef name, MlirStringRef path
+);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_INCLUDE_H

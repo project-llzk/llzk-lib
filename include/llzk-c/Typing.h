@@ -97,4 +97,4 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkForceIntAttrType(MlirAttribute attr, MlirLo
 }
 #endif
 
-#endif
+#endif // LLZK_C_TYPING_H

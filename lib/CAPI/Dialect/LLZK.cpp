@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -18,21 +18,8 @@
 
 using namespace llzk;
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, LLZKDialect)
+// Include the generated CAPI
+#include "llzk/Dialect/LLZK/IR/Attrs.capi.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.capi.cpp.inc"
 
-MlirAttribute llzkLlzk_PublicAttrGet(MlirContext ctx) { return wrap(PublicAttr::get(unwrap(ctx))); }
-
-bool llzkAttributeIsA_Llzk_PublicAttr(MlirAttribute attr) {
-  return llvm::isa<PublicAttr>(unwrap(attr));
-}
-
-MlirAttribute
-llzkLlzk_LoopBoundsAttrGet(MlirContext ctx, int64_t lower, int64_t upper, int64_t step) {
-  return wrap(LoopBoundsAttr::get(unwrap(ctx), toAPInt(lower), toAPInt(upper), toAPInt(step)));
-}
-
-bool llzkAttributeIsA_Llzk_LoopBoundsAttr(MlirAttribute attr) {
-  return llvm::isa<LoopBoundsAttr>(unwrap(attr));
-}
-
-bool llzkOperationIsA_Llzk_NonDetOp(MlirOperation op) { return llvm::isa<NonDetOp>(unwrap(op)); }
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, llzk::LLZKDialect)

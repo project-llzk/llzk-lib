@@ -18,9 +18,10 @@
 
 #include "../CAPITestBase.h"
 
-TEST_F(CAPITest, mlir_get_dialect_handle_llzk_component) {
-  (void)mlirGetDialectHandle__llzk__component__();
-}
+// Include the auto-generated tests
+#include "llzk/Dialect/Struct/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Struct/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/Struct/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_struct_type_get) {
   auto s = mlirStringRefCreateFromCString("T");
@@ -63,7 +64,7 @@ TEST_F(CAPITest, llzk_struct_type_get_name) {
   auto sym = mlirFlatSymbolRefAttrGet(context, s);
   auto t = llzkStruct_StructTypeGet(sym);
   EXPECT_NE(t.ptr, (void *)NULL);
-  EXPECT_TRUE(mlirAttributeEqual(sym, llzkStruct_StructTypeGetName(t)));
+  EXPECT_TRUE(mlirAttributeEqual(sym, llzkStruct_StructTypeGetNameRef(t)));
 }
 
 TEST_F(CAPITest, llzk_struct_type_get_params) {
@@ -84,9 +85,7 @@ struct TestOp {
   ~TestOp() { mlirOperationDestroy(op); }
 };
 
-class StructDefTest : public CAPITest {
-
-protected:
+struct StructDefTest : public CAPITest {
   MlirOperation make_struct_def_op() const {
     auto name = mlirStringRefCreateFromCString("struct.def");
     auto location = mlirLocationUnknownGet(context);
@@ -119,7 +118,7 @@ protected:
          ),
          mlirNamedAttributeGet(
              mlirIdentifierGet(context, mlirStringRefCreateFromCString("type")),
-             mlirTypeAttrGet(mlirIndexTypeGet(context))
+             mlirTypeAttrGet(createIndexType())
          )}
     );
     auto op_state = mlirOperationStateGet(name, location);
@@ -128,7 +127,7 @@ protected:
   }
 
   TestOp test_op() const {
-    auto elt_type = mlirIndexTypeGet(context);
+    auto elt_type = createIndexType();
     auto name = mlirStringRefCreateFromCString("arith.constant");
     auto attr_name = mlirIdentifierGet(context, mlirStringRefCreateFromCString("value"));
     auto location = mlirLocationUnknownGet(context);
@@ -147,11 +146,6 @@ protected:
 TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op_pass) {
   auto op = make_struct_def_op();
   EXPECT_TRUE(llzkOperationIsA_Struct_StructDefOp(op));
-}
-
-TEST_F(StructDefTest, llzk_operation_is_a_struct_def_op_fail) {
-  auto op = test_op();
-  EXPECT_TRUE(!llzkOperationIsA_Struct_StructDefOp(op.op));
 }
 
 TEST_F(StructDefTest, llzk_struct_def_op_get_body) {
@@ -186,7 +180,8 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_type_with_params) {
 TEST_F(StructDefTest, llzk_struct_def_op_get_member_def) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    auto name = mlirStringRefCreateFromCString("p");
+    MlirIdentifier name =
+        mlirIdentifierGet(mlirOperationGetContext(op.op), mlirStringRefCreateFromCString("p"));
     llzkStruct_StructDefOpGetMemberDef(op.op, name);
   }
 }
@@ -205,10 +200,10 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_num_member_defs) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_has_columns) {
+TEST_F(StructDefTest, llzk_struct_def_op_has_columns) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    llzkStruct_StructDefOpGetHasColumns(op.op);
+    llzkStruct_StructDefOpHasColumns(op.op);
   }
 }
 
@@ -241,7 +236,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     auto name = mlirStringRefCreateFromCString("p");
-    llzkStruct_StructDefOpGetHasParamName(op.op, name);
+    llzkStruct_StructDefOpHasParamName(op.op, name);
   }
 }
 
@@ -252,10 +247,10 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_is_main_component) {
+TEST_F(StructDefTest, llzk_struct_def_op_is_main_component) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    llzkStruct_StructDefOpGetIsMainComponent(op.op);
+    llzkStruct_StructDefOpIsMainComponent(op.op);
   }
 }
 
@@ -264,15 +259,10 @@ TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_pass) {
   EXPECT_TRUE(llzkOperationIsA_Struct_MemberDefOp(op));
 }
 
-TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_fail) {
-  auto op = test_op();
-  EXPECT_TRUE(!llzkOperationIsA_Struct_MemberDefOp(op.op));
-}
-
-TEST_F(StructDefTest, llzk_member_def_op_get_has_public_attr) {
+TEST_F(StructDefTest, llzk_member_def_op_has_public_attr) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_MemberDefOp(op.op)) {
-    llzkStruct_MemberDefOpGetHasPublicAttr(op.op);
+    llzkStruct_MemberDefOpHasPublicAttr(op.op);
   }
 }
 
@@ -283,73 +273,175 @@ TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
   }
 }
 
+struct MemberReadOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
+  MlirOperation struct_new_op;
+  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Struct_MemberReadOp(op); }
+  ~MemberReadOpBuildFuncHelper() override { mlirOperationDestroy(this->struct_new_op); }
+};
+
 TEST_F(StructDefTest, llzk_member_read_op_build) {
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
-  auto struct_new_op = make_struct_new_op();
-  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-
-  auto op = llzkStruct_MemberReadOpBuild(
-      builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f")
-  );
-
-  mlirOperationDestroy(op);
-  mlirOperationDestroy(struct_new_op);
-  mlirOpBuilderDestroy(builder);
+  struct : MemberReadOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      this->struct_new_op = testClass.make_struct_new_op();
+      auto index_type = testClass.createIndexType();
+      auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
+      return llzkStruct_MemberReadOpBuild(builder, location, index_type, struct_value, member_name);
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
-  auto struct_new_op = make_struct_new_op();
-  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-
-  llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(context, 1)});
-  auto affine_map = mlirAffineMapGet(context, 0, 0, exprs.size(), exprs.data());
-  auto op = llzkStruct_MemberReadOpBuildWithAffineMapDistance(
-      builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), affine_map,
-      MlirValueRange {
-          .values = (const MlirValue *)NULL,
-          .size = 0,
-      }
-  );
-
-  mlirOperationDestroy(op);
-  mlirOperationDestroy(struct_new_op);
-  mlirOpBuilderDestroy(builder);
+  struct : MemberReadOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      this->struct_new_op = testClass.make_struct_new_op();
+      auto index_type = testClass.createIndexType();
+      auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+      llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
+      auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
+      return llzkStruct_MemberReadOpBuildWithAffineMapDistance(
+          builder, location, index_type, struct_value, member_name, affine_map,
+          MlirValueRange {
+              .values = (const MlirValue *)NULL,
+              .size = 0,
+          }
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
-  auto struct_new_op = make_struct_new_op();
-  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-
-  auto op = llzkStruct_MemberReadOpBuildWithConstParamDistance(
-      builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
-      mlirStringRefCreateFromCString("N")
-  );
-
-  mlirOperationDestroy(op);
-  mlirOperationDestroy(struct_new_op);
-  mlirOpBuilderDestroy(builder);
+  struct : MemberReadOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      this->struct_new_op = testClass.make_struct_new_op();
+      auto index_type = testClass.createIndexType();
+      auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
+      return llzkStruct_MemberReadOpBuildWithConstParamDistance(
+          builder, location, index_type, struct_value, member_name,
+          mlirStringRefCreateFromCString("N")
+      );
+    }
+  } helper;
+  helper.run(*this);
 }
 
 TEST_F(StructDefTest, llzk_member_read_op_build_with_literal_distance) {
-  auto builder = mlirOpBuilderCreate(context);
-  auto location = mlirLocationUnknownGet(context);
-  auto index_type = mlirIndexTypeGet(context);
-  auto struct_new_op = make_struct_new_op();
-  auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+  struct : MemberReadOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      this->struct_new_op = testClass.make_struct_new_op();
+      auto index_type = testClass.createIndexType();
+      auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
+      return llzkStruct_MemberReadOpBuildWithLiteralDistance(
+          builder, location, index_type, struct_value, member_name, 1
+      );
+    }
+  } helper;
+  helper.run(*this);
+}
 
-  auto op = llzkStruct_MemberReadOpBuildWithLiteralDistance(
-      builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), 1
-  );
+// Implementation for `CreateStructOp_build_pass` test
+std::unique_ptr<CreateStructOpBuildFuncHelper> CreateStructOpBuildFuncHelper::get() {
+  struct Impl : public CreateStructOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Type structType;
+      {
+        // Use "@compute" function as parent to avoid the following:
+        // error: 'struct.new' op only valid within a 'function.def' with 'function.allow_witness'
+        this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+            builder, location, llzk::function::FunctionKind::StructCompute
+        );
+        structType = llzk::component::StructType::get(
+            mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "StructName")
+        );
+      }
+      return llzkStruct_CreateStructOpBuild(builder, location, wrap(structType));
+    }
+  };
+  return std::make_unique<Impl>();
+}
 
-  mlirOperationDestroy(op);
-  mlirOperationDestroy(struct_new_op);
-  mlirOpBuilderDestroy(builder);
+// Implementation for `StructDefOp_build_pass` test
+std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
+  struct Impl : public StructDefOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use ModuleOp as parent to avoid the following:
+      // error: 'struct.def' op expects parent op 'builtin.module'
+      auto name = "TestStruct";
+      this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+      auto result = llzkStruct_StructDefOpBuild(
+          builder, location,
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name)),
+          MlirAttribute {}
+      );
+      // Populate the struct to avoid the errors mentioned below.
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        mlir::Location cppLoc = unwrap(location);
+        auto structDefOp = mlir::unwrap_cast<llzk::component::StructDefOp>(result);
+        // error: 'struct.def' op region #0 ('bodyRegion') failed to verify constraint:
+        //        region with 1 blocks
+        (void)structDefOp.getBodyRegion().emplaceBlock();
+        // error: 'struct.def' op must define either only a "@product" function, or both "@compute"
+        //        and "@constrain" functions; could not find "@product", "@compute", or "@constrain"
+        auto fn = llzk::ModuleBuilder::buildProductFn(structDefOp, cppLoc);
+        // error: empty block: expect at least a terminator
+        mlir::OpBuilder bldr(fn.getBody());
+        auto v = bldr.create<llzk::component::CreateStructOp>(cppLoc, structDefOp.getType());
+        bldr.create<llzk::function::ReturnOp>(cppLoc, mlir::ValueRange {v});
+      }
+      return result;
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `MemberWriteOp_build_pass` test
+std::unique_ptr<MemberWriteOpBuildFuncHelper> MemberWriteOpBuildFuncHelper::get() {
+  struct Impl : public MemberWriteOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      mlir::Value component;
+      mlir::Attribute memberNameAttr;
+      {
+        // Use "@compute" function as parent to avoid the following:
+        // error: 'struct.new' op only valid within a 'function.def' with 'function.allow_witness'
+        this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+            builder, location, llzk::function::FunctionKind::StructCompute
+        );
+        mlir::Location cppLoc = unwrap(location);
+        mlir::OpBuilder *bldr = unwrap(builder);
+        component = bldr->create<llzk::component::CreateStructOp>(
+            cppLoc, bldr->getInsertionBlock()
+                        ->getParentOp()
+                        ->getParentOfType<llzk::component::StructDefOp>()
+                        .getType()
+        );
+        memberNameAttr = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "MemberName");
+      }
+      return llzkStruct_MemberWriteOpBuild(
+          builder, location, wrap(component), wrap(component), wrap(memberNameAttr)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
 }

@@ -32,7 +32,9 @@ using namespace llzk::polymorphic;
 
 static void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
 
-// Include impl for transformation passes
+// Include the generated CAPI
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.cpp.inc"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, PolymorphicDialect)
@@ -41,26 +43,16 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, Polymorphi
 // TypeVarType
 //===----------------------------------------------------------------------===//
 
-MlirType llzkPoly_TypeVarTypeGet(MlirContext ctx, MlirStringRef name) {
+MlirType llzkPoly_TypeVarTypeGetFromStringRef(MlirContext ctx, MlirStringRef name) {
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(StringAttr::get(unwrap(ctx), unwrap(name)))));
 }
 
-bool llzkTypeIsA_Poly_TypeVarType(MlirType type) { return llvm::isa<TypeVarType>(unwrap(type)); }
-
-MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirContext /*ctx*/, MlirAttribute attrWrapper) {
+MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
   if (auto sym = llvm::dyn_cast<FlatSymbolRefAttr>(attr)) {
     return wrap(TypeVarType::get(sym));
   }
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(llvm::cast<StringAttr>(attr))));
-}
-
-MlirStringRef llzkPoly_TypeVarTypeGetNameRef(MlirType type) {
-  return wrap(llvm::cast<TypeVarType>(unwrap(type)).getRefName());
-}
-
-MlirAttribute llzkPoly_TypeVarTypeGetName(MlirType type) {
-  return wrap(llvm::cast<TypeVarType>(unwrap(type)).getNameRef());
 }
 
 //===----------------------------------------------------------------------===//
@@ -101,24 +93,15 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   );
 }
 
-bool llzkOperationIsA_Poly_ApplyMapOp(MlirOperation op) {
-  return llvm::isa<ApplyMapOp>(unwrap(op));
-}
-
-/// Returns the affine map associated with the op.
-MlirAffineMap llzkPoly_ApplyMapOpGetAffineMap(MlirOperation op) {
-  return wrap(unwrap_cast<ApplyMapOp>(op).getAffineMap());
-}
-
-static ValueRange dimOperands(MlirOperation op) {
+static inline ValueRange dimOperands(MlirOperation op) {
   return unwrap_cast<ApplyMapOp>(op).getDimOperands();
 }
 
-static ValueRange symbolOperands(MlirOperation op) {
+static inline ValueRange symbolOperands(MlirOperation op) {
   return unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
 }
 
-static void copyValues(ValueRange in, MlirValue *out) {
+static inline void copyValues(ValueRange in, MlirValue *out) {
   for (auto [n, value] : llvm::enumerate(in)) {
     out[n] = wrap(value);
   }
