@@ -287,9 +287,8 @@ TEST_F(StructDefTest, llzk_member_read_op_build) {
       this->struct_new_op = testClass.make_struct_new_op();
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-      return llzkStruct_MemberReadOpBuild(
-          builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f")
-      );
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
+      return llzkStruct_MemberReadOpBuild(builder, location, index_type, struct_value, member_name);
     }
   } helper;
   helper.run(*this);
@@ -305,9 +304,9 @@ TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
       auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
       return llzkStruct_MemberReadOpBuildWithAffineMapDistance(
-          builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
-          affine_map,
+          builder, location, index_type, struct_value, member_name, affine_map,
           MlirValueRange {
               .values = (const MlirValue *)NULL,
               .size = 0,
@@ -326,8 +325,9 @@ TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
       this->struct_new_op = testClass.make_struct_new_op();
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
       return llzkStruct_MemberReadOpBuildWithConstParamDistance(
-          builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
+          builder, location, index_type, struct_value, member_name,
           mlirStringRefCreateFromCString("N")
       );
     }
@@ -343,8 +343,9 @@ TEST_F(StructDefTest, llzk_member_read_op_build_with_literal_distance) {
       this->struct_new_op = testClass.make_struct_new_op();
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
+      auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
       return llzkStruct_MemberReadOpBuildWithLiteralDistance(
-          builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), 1
+          builder, location, index_type, struct_value, member_name, 1
       );
     }
   } helper;

@@ -134,26 +134,24 @@ bool llzkStruct_StructDefOpHasParamName(MlirOperation op, MlirStringRef name) {
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    Struct, MemberReadOp, MlirType memberType, MlirValue component, MlirStringRef name
+    Struct, MemberReadOp, MlirType memberType, MlirValue component, MlirIdentifier memberName
 ) {
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(memberType), unwrap(component),
-          unwrap(builder)->getStringAttr(unwrap(name))
+          builder, location, unwrap(memberType), unwrap(component), unwrap(memberName)
       )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Struct, MemberReadOp, WithAffineMapDistance, MlirType memberType, MlirValue component,
-    MlirStringRef name, MlirAffineMap map, MlirValueRange mapOperands
+    MlirIdentifier memberName, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   auto mapAttr = AffineMapAttr::get(unwrap(map));
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(memberType), unwrap(component), nameAttr, mapAttr,
+          builder, location, unwrap(memberType), unwrap(component), unwrap(memberName), mapAttr,
           unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto),
           mapAttr.getAffineMap().getNumDims()
       )
@@ -162,12 +160,11 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Struct, MemberReadOp, WithConstParamDistance, MlirType memberType, MlirValue component,
-    MlirStringRef name, MlirStringRef symbol
+    MlirIdentifier memberName, MlirStringRef symbol
 ) {
-  auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(memberType), unwrap(component), nameAttr,
+          builder, location, unwrap(memberType), unwrap(component), unwrap(memberName),
           FlatSymbolRefAttr::get(unwrap(builder)->getStringAttr(unwrap(symbol)))
       )
   );
@@ -175,12 +172,11 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Struct, MemberReadOp, WithLiteralDistance, MlirType memberType, MlirValue component,
-    MlirStringRef name, int64_t distance
+    MlirIdentifier memberName, int64_t distance
 ) {
-  auto nameAttr = unwrap(builder)->getStringAttr(unwrap(name));
   return wrap(
       create<MemberReadOp>(
-          builder, location, unwrap(memberType), unwrap(component), nameAttr,
+          builder, location, unwrap(memberType), unwrap(component), unwrap(memberName),
           unwrap(builder)->getIndexAttr(distance)
       )
   );
