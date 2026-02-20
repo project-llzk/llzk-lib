@@ -1,0 +1,4 @@
+changed:
+  - Rename `struct.field` -> `struct.member` to avoid confusion with finite field terminology
+  - Rename `struct.readf` and `struct.writef` to `struct.readm` and `struct.writem` respectively
+  - Update related code, tests, and documentation to reflect these changes

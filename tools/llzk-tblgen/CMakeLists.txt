@@ -21,6 +21,8 @@ target_link_libraries(llzk-tblgen PRIVATE
   LLVMSupport
   clangBasic
   clangLex
+  LLVMHeaders
+  MLIRHeaders
 )
 
 mlir_check_all_link_libraries(llzk-tblgen)

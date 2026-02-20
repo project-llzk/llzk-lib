@@ -4,11 +4,21 @@
 
 function.def @f_constant() -> !felt.type {
   %c = felt.const 42
-  function.return %c: !felt.type
+  function.return %c : !felt.type
 }
 //CHECK-LABEL:  function.def @f_constant() -> !felt.type {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 42
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_constant_specified() -> !felt.type<"babybear"> {
+  %c = felt.const 42 <"babybear">
+  function.return %c : !felt.type<"babybear">
+}
+//CHECK-LABEL:  function.def @f_constant_specified() -> !felt.type<"babybear"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 42 <"babybear">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"babybear">
 //CHECK-NEXT:   }
 // -----
 
@@ -23,6 +33,17 @@ function.def @f_add(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
+function.def @f_add_specified(%a: !felt.type<"bn254">, %b: !felt.type<"bn254">) -> !felt.type<"bn254"> {
+  %c = felt.add %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+  function.return %c: !felt.type<"bn254">
+}
+//CHECK-LABEL:  function.def @f_add_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) -> !felt.type<"bn254"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.add %[[A0]], %[[A1]] : !felt.type<"bn254">, !felt.type<"bn254">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn254">
+//CHECK-NEXT:   }
+// -----
+
 function.def @f_sub(%a: !felt.type, %b: !felt.type) -> !felt.type {
   %c = felt.sub %a, %b
   function.return %c: !felt.type
@@ -31,6 +52,17 @@ function.def @f_sub(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sub %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_sub_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+  %c = felt.sub %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_sub_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sub %[[A0]], %[[A1]] : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
 //CHECK-NEXT:   }
 // -----
 
@@ -45,6 +77,39 @@ function.def @f_mul(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
+function.def @f_mul_specified(%a: !felt.type<"goldilocks">, %b: !felt.type<"goldilocks">) -> !felt.type<"goldilocks"> {
+  %c = felt.mul %a, %b : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+  function.return %c: !felt.type<"goldilocks">
+}
+//CHECK-LABEL:  function.def @f_mul_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"goldilocks">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"goldilocks">) -> !felt.type<"goldilocks"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.mul %[[A0]], %[[A1]] : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"goldilocks">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_pow(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+  %c = felt.pow %a, %b
+  function.return %c: !felt.type
+}
+//CHECK-LABEL:  function.def @f_pow
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.pow %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_pow_specified(%a: !felt.type<"bn254">, %b: !felt.type<"bn254">) -> !felt.type<"bn254"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.pow %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+  function.return %c: !felt.type<"bn254">
+}
+//CHECK-LABEL:  function.def @f_pow_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) -> !felt.type<"bn254"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.pow %[[A0]], %[[A1]] : !felt.type<"bn254">, !felt.type<"bn254">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn254">
+//CHECK-NEXT:   }
+// -----
+
 function.def @f_div(%a: !felt.type, %b: !felt.type) -> !felt.type {
   %c = felt.div %a, %b
   function.return %c: !felt.type
@@ -56,14 +121,104 @@ function.def @f_div(%a: !felt.type, %b: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_mod(%a: !felt.type, %b: !felt.type) -> !felt.type {
-  %c = felt.mod %a, %b
+function.def @f_div_specified(%a: !felt.type<"koalabear">, %b: !felt.type<"koalabear">) -> !felt.type<"koalabear"> {
+  %c = felt.div %a, %b : !felt.type<"koalabear">, !felt.type<"koalabear">
+  function.return %c: !felt.type<"koalabear">
+}
+//CHECK-LABEL:  function.def @f_div_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"koalabear">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"koalabear">) -> !felt.type<"koalabear"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.div %[[A0]], %[[A1]] : !felt.type<"koalabear">, !felt.type<"koalabear">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"koalabear">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_uintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+  %c = felt.uintdiv %a, %b
   function.return %c: !felt.type
 }
-//CHECK-LABEL:  function.def @f_mod
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.mod %[[A0]], %[[A1]]
+//CHECK-LABEL:  function.def @f_uintdiv
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_uintdiv_specified(%a: !felt.type<"mersenne31">, %b: !felt.type<"mersenne31">) -> !felt.type<"mersenne31"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.uintdiv %a, %b : !felt.type<"mersenne31">, !felt.type<"mersenne31">
+  function.return %c: !felt.type<"mersenne31">
+}
+//CHECK-LABEL:  function.def @f_uintdiv_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"mersenne31">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"mersenne31">) -> !felt.type<"mersenne31"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[A0]], %[[A1]] : !felt.type<"mersenne31">, !felt.type<"mersenne31">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"mersenne31">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_sintdiv(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+  %c = felt.sintdiv %a, %b
+  function.return %c: !felt.type
+}
+//CHECK-LABEL:  function.def @f_sintdiv
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sintdiv %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+module attributes {llzk.fields = #felt.field<"moo", 7> } {
+function.def @f_sintdiv_specified(%a: !felt.type<"moo">, %b: !felt.type<"moo">) -> !felt.type<"moo"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.sintdiv %a, %b : !felt.type<"moo">, !felt.type<"moo">
+  function.return %c: !felt.type<"moo">
+}
+}
+//CHECK-LABEL:  function.def @f_sintdiv_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"moo">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"moo">) -> !felt.type<"moo"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.sintdiv %[[A0]], %[[A1]] : !felt.type<"moo">, !felt.type<"moo">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"moo">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_umod(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+  %c = felt.umod %a, %b
+  function.return %c: !felt.type
+}
+//CHECK-LABEL:  function.def @f_umod
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.umod %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_umod_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.umod %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_umod_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.umod %[[A0]], %[[A1]] : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_smod(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+  %c = felt.smod %a, %b
+  function.return %c: !felt.type
+}
+//CHECK-LABEL:  function.def @f_smod
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.smod %[[A0]], %[[A1]]
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_smod_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.smod %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_smod_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.smod %[[A0]], %[[A1]] : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
 //CHECK-NEXT:   }
 // -----
 
@@ -78,80 +233,168 @@ function.def @f_neg(%a: !felt.type) -> !felt.type {
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_inv(%a: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_neg_specified(%a: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+  %c = felt.neg %a : !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_neg_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.neg %[[A0]] : !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_inv(%a: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.inv %a
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_inv
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.inv %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_and(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_inv_specified(%a: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.inv %a : !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_inv_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.inv %[[A0]] : !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_bit_and(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.bit_and %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_bit_and
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_or(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_bit_and_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128">attributes {function.allow_non_native_field_ops} {
+  %c = felt.bit_and %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_bit_and_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[A0]], %[[A1]] : !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_bit_or(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.bit_or %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_bit_or
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_or %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_xor(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_bit_or_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128">attributes {function.allow_non_native_field_ops} {
+  %c = felt.bit_or %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_bit_or_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_or %[[A0]], %[[A1]] : !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_bit_xor(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.bit_xor %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_bit_xor
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_xor %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_bit_not(%a: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_bit_xor_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128">attributes {function.allow_non_native_field_ops} {
+  %c = felt.bit_xor %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_bit_xor_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_xor %[[A0]], %[[A1]] : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_bit_not(%a: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.bit_not %a
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_bit_not
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_not %[[A0]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_shl(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_bit_not_specified(%a: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+  %c = felt.bit_not %a : !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_bit_not_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.bit_not %[[A0]] : !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_shl(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.shl %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_shl
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shl %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
 //CHECK-NEXT:   }
 // -----
 
-function.def @f_shr(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_witness} {
+function.def @f_shl_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128">attributes {function.allow_non_native_field_ops} {
+  %c = felt.shl %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_shl_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shl %[[A0]], %[[A1]] : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_shr(%a: !felt.type, %b: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
   %c = felt.shr %a, %b
   function.return %c: !felt.type
 }
 //CHECK-LABEL:  function.def @f_shr
-//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shr %[[A0]], %[[A1]]
 //CHECK-NEXT:     function.return %[[T1]] : !felt.type
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_shr_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> !felt.type<"bn128">attributes {function.allow_non_native_field_ops} {
+  %c = felt.shr %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: !felt.type<"bn128">
+}
+//CHECK-LABEL:  function.def @f_shr_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.shr %[[A0]], %[[A1]] : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : !felt.type<"bn128">
 //CHECK-NEXT:   }
 // -----
 
@@ -162,6 +405,17 @@ function.def @f_eq(%a: !felt.type, %b: !felt.type) -> i1 {
 //CHECK-LABEL:  function.def @f_eq
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[A0]], %[[A1]])
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_eq_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> i1 {
+  %c = bool.cmp eq(%a, %b) : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_eq_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[A0]], %[[A1]]) : !felt.type<"bn128">, !felt.type<"bn128">
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -177,6 +431,17 @@ function.def @f_ne(%a: !felt.type, %b: !felt.type) -> i1 {
 //CHECK-NEXT:   }
 // -----
 
+function.def @f_ne_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> i1 {
+  %c = bool.cmp ne(%a, %b) : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_ne_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp ne(%[[A0]], %[[A1]]) : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
 function.def @f_lt(%a: !felt.type, %b: !felt.type) -> i1 {
   %c = bool.cmp lt(%a, %b)
   function.return %c: i1
@@ -184,6 +449,17 @@ function.def @f_lt(%a: !felt.type, %b: !felt.type) -> i1 {
 //CHECK-LABEL:  function.def @f_lt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[A0]], %[[A1]])
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_lt_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> i1 {
+  %c = bool.cmp lt(%a, %b) : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_lt_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[A0]], %[[A1]]) : !felt.type<"bn128">, !felt.type<"bn128">
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -199,6 +475,17 @@ function.def @f_le(%a: !felt.type, %b: !felt.type) -> i1 {
 //CHECK-NEXT:   }
 // -----
 
+function.def @f_le_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> i1 {
+  %c = bool.cmp le(%a, %b) : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_le_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp le(%[[A0]], %[[A1]]) : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
 function.def @f_gt(%a: !felt.type, %b: !felt.type) -> i1 {
   %c = bool.cmp gt(%a, %b)
   function.return %c: i1
@@ -206,6 +493,17 @@ function.def @f_gt(%a: !felt.type, %b: !felt.type) -> i1 {
 //CHECK-LABEL:  function.def @f_gt
 //CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> i1 {
 //CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A0]], %[[A1]])
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_gt_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> i1 {
+  %c = bool.cmp gt(%a, %b) : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_gt_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A0]], %[[A1]]) : !felt.type<"bn128">, !felt.type<"bn128">
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
@@ -220,3 +518,13 @@ function.def @f_ge(%a: !felt.type, %b: !felt.type) -> i1 {
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
 // -----
+
+function.def @f_ge_specified(%a: !felt.type<"bn128">, %b: !felt.type<"bn128">) -> i1 {
+  %c = bool.cmp ge(%a, %b) : !felt.type<"bn128">, !felt.type<"bn128">
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_ge_specified
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> i1 {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp ge(%[[A0]], %[[A1]]) : !felt.type<"bn128">, !felt.type<"bn128">
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }

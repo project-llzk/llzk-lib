@@ -1,6 +1,6 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=3" -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // lowers constraints to be at most degree 3 polynomials
   struct.def @CmpConstraint {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
@@ -23,33 +23,33 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-LABEL:   struct.def @CmpConstraint {
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@CmpConstraint>
-// CHECK:             %[[VAL_3:.*]] = struct.readf %[[VAL_2]][@__llzk_poly_lowering_pass_aux_field_1] : <@CmpConstraint>, !felt.type
+// CHECK:             %[[VAL_3:.*]] = struct.readm %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] : <@CmpConstraint>, !felt.type
 // CHECK:             %[[VAL_4:.*]] = felt.mul %[[VAL_3]], %[[VAL_0]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@__llzk_poly_lowering_pass_aux_field_0] = %[[VAL_4]] : <@CmpConstraint>, !felt.type
+// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_4]] : <@CmpConstraint>, !felt.type
 // CHECK:             %[[VAL_5:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writef %[[VAL_2]][@__llzk_poly_lowering_pass_aux_field_1] = %[[VAL_5]] : <@CmpConstraint>, !felt.type
+// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_5]] : <@CmpConstraint>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@CmpConstraint>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_6:.*]]: !struct.type<@CmpConstraint>, %[[VAL_7:.*]]: !felt.type, %[[VAL_8:.*]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK:             %[[VAL_9:.*]] = felt.mul %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_10:.*]] = struct.readf %[[VAL_6]][@__llzk_poly_lowering_pass_aux_field_1] : <@CmpConstraint>, !felt.type
+// CHECK:             %[[VAL_10:.*]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_1] : <@CmpConstraint>, !felt.type
 // CHECK:             constrain.eq %[[VAL_10]], %[[VAL_9]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_11:.*]] = felt.mul %[[VAL_10]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_12:.*]] = felt.mul %[[VAL_10]], %[[VAL_7]] : !felt.type, !felt.type
-// CHECK:             %[[VAL_13:.*]] = struct.readf %[[VAL_6]][@__llzk_poly_lowering_pass_aux_field_0] : <@CmpConstraint>, !felt.type
+// CHECK:             %[[VAL_13:.*]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_0] : <@CmpConstraint>, !felt.type
 // CHECK:             constrain.eq %[[VAL_13]], %[[VAL_12]] : !felt.type, !felt.type
 // CHECK:             %[[VAL_14:.*]] = felt.mul %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[VAL_14]], %[[VAL_10]] : !felt.type, !felt.type
 // CHECK:             constrain.eq %[[VAL_11]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK:             function.return
 // CHECK:           }
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_0 : !felt.type
-// CHECK:           struct.field @__llzk_poly_lowering_pass_aux_field_1 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK:           struct.member @__llzk_poly_lowering_pass_aux_member_1 : !felt.type
 // CHECK:         }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
-  // in this test, no new fields should be introduced.
+module attributes {llzk.lang} {
+  // in this test, no new members should be introduced.
   struct.def @CmpConstraint {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CmpConstraint> {
       %self = struct.new : !struct.type<@CmpConstraint>

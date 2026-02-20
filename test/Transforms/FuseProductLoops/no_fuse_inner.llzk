@@ -1,0 +1,75 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+// REQUIRES: raghav-cf-fusion
+
+module attributes {llzk.lang = "llzk"} {
+    struct.def @A<[@N]> {
+        struct.member @arr : !array.type<@N, @N x !felt.type>
+
+        function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@A<[@N]>> {
+            %self = struct.new : <@A<[@N]>>
+
+            %c0 = arith.constant 0 : index
+            %c1 = arith.constant 1 : index
+            %N = poly.read_const @N : index
+
+            %arr = array.new : !array.type<@N, @N x !felt.type>
+
+            scf.for %i = %c0 to %N step %c1 {
+                scf.for %j = %c0 to %N step %c1 {
+                    %k = arith.addi %i, %j : index
+                    %elem = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
+                    array.write %arr[%i, %j] = %elem : !array.type<@N, @N x !felt.type>, !felt.type
+                }
+            }
+
+            struct.writem %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
+            function.return %self : !struct.type<@A<[@N]>>
+        }
+
+        function.def @constrain(%self: !struct.type<@A<[@N]>>, %inp: !array.type<@N x !felt.type>) {
+            %c0 = arith.constant 0 : index
+            %c1 = arith.constant 1 : index
+            %c2 = arith.constant 2 : index
+            %N = poly.read_const @N : index
+
+            %arr = struct.readm %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
+
+            scf.for %i = %c0 to %N step %c2 {
+                scf.for %j = %c0 to %N step %c1 {
+                    %k = arith.addi %i, %j : index
+                    %elem1 = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
+                    %elem2 = array.read %arr[%i, %j] : !array.type<@N, @N x !felt.type>, !felt.type
+                    constrain.eq %elem1, %elem2 : !felt.type
+                }
+            }
+
+            function.return
+        }
+
+    }
+}
+
+// CHECK:  scf.for
+// CHECK-SAME: [[VAL_0:[0-9a-zA-Z_\.]+]] = 
+// CHECK-SAME: %[[VAL_1:[0-9a-zA-Z_\.]+]] to 
+// CHECK-SAME: %[[VAL_2:[0-9a-zA-Z_\.]+]] step 
+// CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_\.]+]] {
+// CHECK-NEXT:    scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_1]] to %[[VAL_2]] step %[[VAL_3]] {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_4]] {product_source = "compute"} : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_5]]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:      array.write %[[VAL_8:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]], %[[VAL_4]]] = %[[VAL_6]] : <@N,@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:    } {product_source = "compute"}
+// CHECK-NEXT:  } {product_source = "compute"}
+// CHECK:  scf.for 
+// CHECK-SAME: %[[VAL_9:[0-9a-zA-Z_\.]+]] = 
+// CHECK-SAME: %[[VAL_10:[0-9a-zA-Z_\.]+]] to 
+// CHECK-SAME: %[[VAL_11:[0-9a-zA-Z_\.]+]] step 
+// CHECK-SAME: %[[VAL_12:[0-9a-zA-Z_\.]+]] {
+// CHECK-NEXT:    scf.for %[[VAL_13:[0-9a-zA-Z_\.]+]] = %[[VAL_10]] to %[[VAL_11]] step %[[VAL_14:[0-9a-zA-Z_\.]+]] {
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_9]], %[[VAL_13]] {product_source = "constrain"} : index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_17:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_15]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_9]], %[[VAL_13]]] : <@N,@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:      constrain.eq %[[VAL_16]], %[[VAL_18]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:    } {product_source = "constrain"}
+// CHECK-NEXT:  } {product_source = "constrain"}
+// CHECK-NOT: scf.for

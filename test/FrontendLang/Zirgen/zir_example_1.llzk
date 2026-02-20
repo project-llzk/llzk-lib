@@ -2,22 +2,22 @@
 // _RUN_: llzk-opt -I %input_dir -llzk-print-call-graph %s 2>&1 | FileCheck --enable-var-scope %s --check-prefix CG
 // _RUN_: llzk-opt -I %input_dir -llzk-print-call-graph-sccs %s 2>&1 | FileCheck --enable-var-scope %s --check-prefix SCC
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   include.from "FrontendLang/Zirgen/zir_example_0.llzk" as @std
 
   struct.def @C1 {
-    struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+    struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 
     function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@C1> {
       %self = struct.new : !struct.type<@C1>
       %add_0 = felt.add %x, %y
       %reg_0 = function.call @std::@risc0::@Reg::@compute(%add_0) : (!felt.type) -> (!struct.type<@std::@risc0::@Reg>)
-      struct.writef %self[@z] = %reg_0 : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
+      struct.writem %self[@z] = %reg_0 : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
       function.return %self: !struct.type<@C1>
     }
 
     function.def @constrain(%self: !struct.type<@C1>, %x: !felt.type, %y: !felt.type) {
-      %reg_0 = struct.readf %self[@z] : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
+      %reg_0 = struct.readm %self[@z] : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
       %add_0 = felt.add %x, %y
       function.call @std::@risc0::@Reg::@constrain(%reg_0, %add_0) : (!struct.type<@std::@risc0::@Reg>, !felt.type) -> ()
       function.return
@@ -25,27 +25,27 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @C2 {
-    struct.field @fc1 : !struct.type<@C1>
+    struct.member @fc1 : !struct.type<@C1> {llzk.pub}
 
     function.def @compute(%x: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> {
       %self = struct.new : !struct.type<@C2>
-      %t1 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.type
-      %t2 = struct.readf %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.type
+      %t1 = struct.readm %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.type
+      %t2 = struct.readm %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.type
       %t0 = function.call @C1::@compute(%t1, %t2) : (!felt.type, !felt.type) -> (!struct.type<@C1>)
-      struct.writef %self[@fc1] = %t0 : !struct.type<@C2>, !struct.type<@C1>
+      struct.writem %self[@fc1] = %t0 : !struct.type<@C2>, !struct.type<@C1>
       //
       function.return %self: !struct.type<@C2>
     }
 
     function.def @constrain(%self: !struct.type<@C2>, %x: !struct.type<@std::@risc0::@ValU32>) {
       // c1.constrain(x.low, x.high)
-      %t0 = struct.readf %self[@fc1] : !struct.type<@C2>, !struct.type<@C1>
-      %t1 = struct.readf %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.type
-      %t2 = struct.readf %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.type
+      %t0 = struct.readm %self[@fc1] : !struct.type<@C2>, !struct.type<@C1>
+      %t1 = struct.readm %x[@low] : !struct.type<@std::@risc0::@ValU32>, !felt.type
+      %t2 = struct.readm %x[@high] : !struct.type<@std::@risc0::@ValU32>, !felt.type
       function.call @C1::@constrain(%t0, %t1, %t2) : (!struct.type<@C1>, !felt.type, !felt.type) -> ()
       // emit c1.z.reg = 0
-      %t3 = struct.readf %t0[@z] : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
-      %t4 = struct.readf %t3[@reg] : !struct.type<@std::@risc0::@Reg>, !felt.type
+      %t3 = struct.readm %t0[@z] : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
+      %t4 = struct.readm %t3[@reg] : !struct.type<@std::@risc0::@Reg>, !felt.type
       %zero = felt.const 0
       constrain.eq %t4, %zero : !felt.type
       //
@@ -55,38 +55,38 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 //CHECK-LABEL:   struct.def @C1 {
-//CHECK-NEXT:      struct.field @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+//CHECK-NEXT:      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C1>
 //CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = felt.add %arg0, %arg1
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @std::@risc0::@Reg::@compute(%[[T0]]) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
-//CHECK-NEXT:        struct.writef %[[SELF]][@z] = %[[T1]] : <@C1>, !struct.type<@std::@risc0::@Reg>
+//CHECK-NEXT:        struct.writem %[[SELF]][@z] = %[[T1]] : <@C1>, !struct.type<@std::@risc0::@Reg>
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@C1>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@C1>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
 //CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = felt.add %arg1, %arg2
 //CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!struct.type<@std::@risc0::@Reg>, !felt.type) -> ()
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
 //CHECK-NEXT:    }
 //CHECK-LABEL:   struct.def @C2 {
-//CHECK-NEXT:      struct.field @fc1 : !struct.type<@C1>
+//CHECK-NEXT:      struct.member @fc1 : !struct.type<@C1>
 //CHECK-NEXT:      function.def @compute(%arg0: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> attributes {function.allow_witness} {
 //CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C2>
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@low] : <@std::@risc0::@ValU32>, !felt.type
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg0[@high] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %arg0[@low] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readm %arg0[@high] : <@std::@risc0::@ValU32>, !felt.type
 //CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = function.call @C1::@compute(%[[T0]], %[[T1]]) : (!felt.type, !felt.type) -> !struct.type<@C1>
-//CHECK-NEXT:        struct.writef %[[SELF]][@fc1] = %[[T2]] : <@C2>, !struct.type<@C1>
+//CHECK-NEXT:        struct.writem %[[SELF]][@fc1] = %[[T2]] : <@C2>, !struct.type<@C1>
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@C2>
 //CHECK-NEXT:      }
 //CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@C2>, %arg1: !struct.type<@std::@risc0::@ValU32>) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readf %[[SELF]][@fc1] : <@C2>, !struct.type<@C1>
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readf %arg1[@low] : <@std::@risc0::@ValU32>, !felt.type
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = struct.readf %arg1[@high] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@fc1] : <@C2>, !struct.type<@C1>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readm %arg1[@low] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = struct.readm %arg1[@high] : <@std::@risc0::@ValU32>, !felt.type
 //CHECK-NEXT:        function.call @C1::@constrain(%[[T0]], %[[T1]], %[[T2]]) : (!struct.type<@C1>, !felt.type, !felt.type) -> ()
-//CHECK-NEXT:        %[[T3:[0-9a-zA-Z_\.]+]] = struct.readf %[[T0]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
-//CHECK-NEXT:        %[[T4:[0-9a-zA-Z_\.]+]] = struct.readf %[[T3]][@reg] : <@std::@risc0::@Reg>, !felt.type
+//CHECK-NEXT:        %[[T3:[0-9a-zA-Z_\.]+]] = struct.readm %[[T0]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[T4:[0-9a-zA-Z_\.]+]] = struct.readm %[[T3]][@reg] : <@std::@risc0::@Reg>, !felt.type
 //CHECK-NEXT:        %felt_const_0 = felt.const 0
 //CHECK-NEXT:        constrain.eq %[[T4]], %felt_const_0 : !felt.type, !felt.type
 //CHECK-NEXT:        function.return

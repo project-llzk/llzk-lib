@@ -61,6 +61,7 @@ TEST_F(ArrayTypeHelperTests, test_linearize_too_big) {
   ASSERT_FALSE(r.has_value());
 }
 
+#ifndef NDEBUG
 TEST_F(ArrayTypeHelperTests, test_linearize_too_few_dims) {
   ArrayType ty = ArrayType::get(IndexType::get(&ctx), {2, 4});
   ArrayIndexGen idxGen = ArrayIndexGen::from(ty);
@@ -86,3 +87,4 @@ TEST_F(ArrayTypeHelperTests, test_linearize_too_many_dims) {
       "" // Expect assert failure within IndexingUtils.cpp but there's no message
   );
 }
+#endif

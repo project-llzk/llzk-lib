@@ -31,17 +31,67 @@ using namespace llzk::felt;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, FeltDialect)
 
-MlirAttribute llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value) {
-  return wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value)));
+MlirAttribute llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value) {
+  return wrap(FeltConstAttr::get(unwrap(ctx), toAPInt(value)));
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetWithBits(
+    MlirContext ctx, unsigned numBits, int64_t value, MlirIdentifier fieldName
+) {
+  return wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value), unwrap(fieldName)));
 }
 
 MlirAttribute
-llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str) {
+llzkFelt_FeltConstAttrGetWithBitsUnspecified(MlirContext ctx, unsigned numBits, int64_t value) {
+  return wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value)));
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromString(
+    MlirContext ctx, unsigned numBits, MlirStringRef str, MlirIdentifier fieldName
+) {
+  return wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str), unwrap(fieldName)));
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(
+    MlirContext ctx, unsigned numBits, MlirStringRef str
+) {
   return wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str)));
 }
 
 MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
+    MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts,
+    MlirIdentifier fieldName
+) {
+  return wrap(
+      FeltConstAttr::get(unwrap(context), numBits, ArrayRef(parts, nParts), unwrap(fieldName))
+  );
+}
+
+MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
     MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts
 ) {
   return wrap(FeltConstAttr::get(unwrap(context), numBits, ArrayRef(parts, nParts)));
+}
+
+MlirAttribute llzkFelt_FieldSpecAttrGetFromString(
+    MlirContext context, MlirIdentifier fieldName, unsigned numBits, MlirStringRef primeStr
+) {
+  return wrap(
+      FieldSpecAttr::get(unwrap(context), unwrap(fieldName), APInt(numBits, unwrap(primeStr), 10))
+  );
+}
+
+MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
+    MlirContext context, MlirIdentifier fieldName, unsigned numBits, const uint64_t *parts,
+    intptr_t nParts
+) {
+  return wrap(
+      FieldSpecAttr::get(
+          unwrap(context), unwrap(fieldName), APInt(numBits, ArrayRef(parts, nParts))
+      )
+  );
+}
+
+MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx) {
+  return wrap(FeltType::get(unwrap(ctx)));
 }

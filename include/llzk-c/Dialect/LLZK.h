@@ -22,6 +22,7 @@
 
 // Include the generated CAPI
 #include "llzk/Dialect/LLZK/IR/Attrs.capi.h.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {

@@ -20,6 +20,7 @@
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
@@ -209,6 +210,14 @@ void FuncDefOp::setAllowWitnessAttr(bool newValue) {
     getOperation()->setAttr(AllowWitnessAttr::name, UnitAttr::get(getContext()));
   } else {
     getOperation()->removeAttr(AllowWitnessAttr::name);
+  }
+}
+
+void FuncDefOp::setAllowNonNativeFieldOpsAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(AllowNonNativeFieldOpsAttr::name, UnitAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(AllowNonNativeFieldOpsAttr::name);
   }
 }
 
@@ -475,6 +484,9 @@ protected:
       if (target.hasAllowWitnessAttr() && !caller.hasAllowWitnessAttr()) {
         emitAttrErr(AllowWitnessAttr::name);
       }
+      if (target.hasAllowNonNativeFieldOpsAttr() && !caller.hasAllowNonNativeFieldOpsAttr()) {
+        emitAttrErr(AllowNonNativeFieldOpsAttr::name);
+      }
     }
     return aggregateRes;
   }
@@ -497,7 +509,7 @@ protected:
 struct KnownTargetVerifier : public CallOpVerifier {
   KnownTargetVerifier(CallOp *c, SymbolLookupResult<FuncDefOp> &&tgtRes)
       : CallOpVerifier(c, tgtRes.get().getSymName()), tgt(*tgtRes), tgtType(tgt.getFunctionType()),
-        includeSymNames(tgtRes.getIncludeSymNames()) {}
+        includeSymNames(tgtRes.getNamespace()) {}
 
   LogicalResult verifyTargetAttributes() override {
     return CallOpVerifier::verifyTargetAttributesMatch(tgt);
@@ -518,7 +530,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
       // producing an error. The combination of this KnownTargetVerifier resolving the callee to a
       // specific FuncDefOp and verifyFuncTypeCompute() ensuring all FUNC_NAME_COMPUTE FuncOps have
       // a single StructType return value will produce a more relevant error message in that case.
-      if (StructType retTy = callOp->getSingleResultTypeOfCompute()) {
+      if (StructType retTy = callOp->getSingleResultTypeOfWitnessGen()) {
         if (ArrayAttr params = retTy.getParams()) {
           // Collect the struct parameters that are defined via AffineMapAttr
           SmallVector<AffineMapAttr> mapAttrs;
@@ -785,6 +797,11 @@ StructType CallOp::getSingleResultTypeOfCompute() {
   return getIfSingleton<StructType>(getResultTypes());
 }
 
+StructType CallOp::getSingleResultTypeOfWitnessGen() {
+  assert(calleeContainsWitnessGen() && "violated implementation pre-condition");
+  return getIfSingleton<StructType>(getResultTypes());
+}
+
 /// Return the callee of this operation.
 CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 
@@ -800,6 +817,21 @@ SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
     output.push_back(r);
   }
   return output;
+}
+
+Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {
+  FailureOr<SymbolLookupResult<FuncDefOp>> res =
+      llzk::resolveCallable<FuncDefOp>(*symbolTable, *this);
+  if (LogicalResult(res).failed() || res->isManaged()) {
+    // Cannot return pointer to a managed Operation since it would cause memory errors.
+    return nullptr;
+  }
+  return res->get();
+}
+
+Operation *CallOp::resolveCallable() {
+  SymbolTableCollection tables;
+  return resolveCallableInTable(&tables);
 }
 
 } // namespace llzk::function

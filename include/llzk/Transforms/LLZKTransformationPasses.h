@@ -11,12 +11,14 @@
 
 #include "llzk/Config/Config.h"
 #include "llzk/Pass/PassBase.h"
-#include "llzk/Transforms/Parsers.h"
-
-#include <llvm/ADT/APInt.h>
-#include <llvm/Support/CommandLine.h>
 
 namespace llzk {
+
+void addRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm);
+
+std::unique_ptr<mlir::Pass> createFuseProductLoopsPass();
+
+std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass();
 
 std::unique_ptr<mlir::Pass> createFlatteningPass();
 
@@ -33,12 +35,6 @@ std::unique_ptr<mlir::Pass> createPolyLoweringPass();
 std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);
 
 std::unique_ptr<mlir::Pass> createInlineStructsPass();
-
-std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
-
-#if LLZK_WITH_PCL
-std::unique_ptr<mlir::Pass> createPCLLoweringPass();
-#endif // LLZK_WITH_PCL
 
 void registerTransformationPassPipelines();
 

@@ -212,7 +212,8 @@ protected:
   /// in the `ModuleOp` that is being subjected to this analysis.
   /// @param am The module's analysis manager.
   void constructChildAnalyses(mlir::AnalysisManager &am) {
-    dataflow::markAllOpsAsLive(solver, modOp);
+    auto init = dataflow::loadAndRunRequiredAnalyses(solver, modOp);
+    ensure(init.succeeded(), "solver failed to run on module!");
 
     // The analysis is run at the module level so that lattices are computed
     // for global functions as well.
@@ -221,6 +222,10 @@ protected:
     ensure(res.succeeded(), "solver failed to run on module!");
 
     const Context &ctx = getContext();
+    // Force construction of empty results here so `getCurrentResults()` on
+    // a module with no inner structs returns no results rather than an assertion
+    // failure.
+    results[ctx] = {};
     modOp.walk([this, &am, &ctx](component::StructDefOp s) mutable {
       auto &childAnalysis = am.getChildAnalysis<StructAnalysisTy>(s);
       // Don't re-run the analysis if we already have the results.

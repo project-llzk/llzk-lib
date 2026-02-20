@@ -108,8 +108,8 @@ struct StructDefTest : public CAPITest {
     return mlirOperationCreate(&op_state);
   }
 
-  MlirOperation make_field_def_op() const {
-    auto name = mlirStringRefCreateFromCString("struct.field");
+  MlirOperation make_member_def_op() const {
+    auto name = mlirStringRefCreateFromCString("struct.member");
     auto location = mlirLocationUnknownGet(context);
     llvm::SmallVector<MlirNamedAttribute> attrs(
         {mlirNamedAttributeGet(
@@ -177,26 +177,26 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_type_with_params) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_field_def) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_member_def) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     MlirIdentifier name =
         mlirIdentifierGet(mlirOperationGetContext(op.op), mlirStringRefCreateFromCString("p"));
-    llzkStruct_StructDefOpGetFieldDef(op.op, name);
+    llzkStruct_StructDefOpGetMemberDef(op.op, name);
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_field_defs) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_member_defs) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    llzkStruct_StructDefOpGetFieldDefs(op.op, (MlirOperation *)NULL);
+    llzkStruct_StructDefOpGetMemberDefs(op.op, (MlirOperation *)NULL);
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_num_field_defs) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_num_member_defs) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    llzkStruct_StructDefOpGetNumFieldDefs(op.op);
+    llzkStruct_StructDefOpGetNumMemberDefs(op.op);
   }
 }
 
@@ -217,7 +217,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_compute_func_op) {
 TEST_F(StructDefTest, llzk_struct_def_op_get_constrain_func_op) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    llzkStruct_StructDefOpGetComputeFuncOp(op.op);
+    llzkStruct_StructDefOpGetConstrainFuncOp(op.op);
   }
 }
 
@@ -254,40 +254,40 @@ TEST_F(StructDefTest, llzk_struct_def_op_is_main_component) {
   }
 }
 
-TEST_F(StructDefTest, llzk_operation_is_a_field_def_op_pass) {
-  auto op = make_field_def_op();
-  EXPECT_TRUE(llzkOperationIsA_Struct_FieldDefOp(op));
+TEST_F(StructDefTest, llzk_operation_is_a_member_def_op_pass) {
+  auto op = make_member_def_op();
+  EXPECT_TRUE(llzkOperationIsA_Struct_MemberDefOp(op));
 }
 
-TEST_F(StructDefTest, llzk_field_def_op_has_public_attr) {
+TEST_F(StructDefTest, llzk_member_def_op_has_public_attr) {
   auto op = test_op();
-  if (llzkOperationIsA_Struct_FieldDefOp(op.op)) {
-    llzkStruct_FieldDefOpHasPublicAttr(op.op);
+  if (llzkOperationIsA_Struct_MemberDefOp(op.op)) {
+    llzkStruct_MemberDefOpHasPublicAttr(op.op);
   }
 }
 
-TEST_F(StructDefTest, llzk_field_def_op_set_public_attr) {
+TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
   auto op = test_op();
-  if (llzkOperationIsA_Struct_FieldDefOp(op.op)) {
-    llzkStruct_FieldDefOpSetPublicAttr(op.op, true);
+  if (llzkOperationIsA_Struct_MemberDefOp(op.op)) {
+    llzkStruct_MemberDefOpSetPublicAttr(op.op, true);
   }
 }
 
-struct FieldReadOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
+struct MemberReadOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
   MlirOperation struct_new_op;
-  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Struct_FieldReadOp(op); }
-  ~FieldReadOpBuildFuncHelper() override { mlirOperationDestroy(this->struct_new_op); }
+  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Struct_MemberReadOp(op); }
+  ~MemberReadOpBuildFuncHelper() override { mlirOperationDestroy(this->struct_new_op); }
 };
 
-TEST_F(StructDefTest, llzk_field_read_op_build) {
-  struct : FieldReadOpBuildFuncHelper {
+TEST_F(StructDefTest, llzk_member_read_op_build) {
+  struct : MemberReadOpBuildFuncHelper {
     MlirOperation callBuild(
         const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       this->struct_new_op = testClass.make_struct_new_op();
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-      return llzkStruct_FieldReadOpBuild(
+      return llzkStruct_MemberReadOpBuild(
           builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f")
       );
     }
@@ -295,8 +295,8 @@ TEST_F(StructDefTest, llzk_field_read_op_build) {
   helper.run(*this);
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
-  struct : FieldReadOpBuildFuncHelper {
+TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
+  struct : MemberReadOpBuildFuncHelper {
     MlirOperation callBuild(
         const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
@@ -305,7 +305,7 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
       auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
-      return llzkStruct_FieldReadOpBuildWithAffineMapDistance(
+      return llzkStruct_MemberReadOpBuildWithAffineMapDistance(
           builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
           affine_map,
           MlirValueRange {
@@ -319,15 +319,15 @@ TEST_F(StructDefTest, llzk_field_read_op_build_with_affine_map_distance) {
   helper.run(*this);
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
-  struct : FieldReadOpBuildFuncHelper {
+TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
+  struct : MemberReadOpBuildFuncHelper {
     MlirOperation callBuild(
         const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       this->struct_new_op = testClass.make_struct_new_op();
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-      return llzkStruct_FieldReadOpBuildWithConstParamDistance(
+      return llzkStruct_MemberReadOpBuildWithConstParamDistance(
           builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"),
           mlirStringRefCreateFromCString("N")
       );
@@ -336,15 +336,15 @@ TEST_F(StructDefTest, llzk_field_read_op_builder_with_const_param_distance) {
   helper.run(*this);
 }
 
-TEST_F(StructDefTest, llzk_field_read_op_build_with_literal_distance) {
-  struct : FieldReadOpBuildFuncHelper {
+TEST_F(StructDefTest, llzk_member_read_op_build_with_literal_distance) {
+  struct : MemberReadOpBuildFuncHelper {
     MlirOperation callBuild(
         const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       this->struct_new_op = testClass.make_struct_new_op();
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
-      return llzkStruct_FieldReadOpBuildWithLiteralDistance(
+      return llzkStruct_MemberReadOpBuildWithLiteralDistance(
           builder, location, index_type, struct_value, mlirStringRefCreateFromCString("f"), 1
       );
     }
@@ -413,15 +413,15 @@ std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
   return std::make_unique<Impl>();
 }
 
-// Implementation for `FieldWriteOp_build_pass` test
-std::unique_ptr<FieldWriteOpBuildFuncHelper> FieldWriteOpBuildFuncHelper::get() {
-  struct Impl : public FieldWriteOpBuildFuncHelper {
+// Implementation for `MemberWriteOp_build_pass` test
+std::unique_ptr<MemberWriteOpBuildFuncHelper> MemberWriteOpBuildFuncHelper::get() {
+  struct Impl : public MemberWriteOpBuildFuncHelper {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Value component;
-      mlir::Attribute fieldNameAttr;
+      mlir::Attribute memberNameAttr;
       {
         // Use "@compute" function as parent to avoid the following:
         // error: 'struct.new' op only valid within a 'function.def' with 'function.allow_witness'
@@ -436,10 +436,10 @@ std::unique_ptr<FieldWriteOpBuildFuncHelper> FieldWriteOpBuildFuncHelper::get() 
                         ->getParentOfType<llzk::component::StructDefOp>()
                         .getType()
         );
-        fieldNameAttr = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "FieldName");
+        memberNameAttr = mlir::FlatSymbolRefAttr::get(unwrap(testClass.context), "MemberName");
       }
-      return llzkStruct_FieldWriteOpBuild(
-          builder, location, wrap(component), wrap(component), wrap(fieldNameAttr)
+      return llzkStruct_MemberWriteOpBuild(
+          builder, location, wrap(component), wrap(component), wrap(memberNameAttr)
       );
     }
   };

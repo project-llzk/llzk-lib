@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -21,6 +22,7 @@
 
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
 
 #include <optional>
@@ -33,7 +35,9 @@
 #include "llzk/Dialect/Struct/IR/Ops.cpp.inc"
 
 using namespace mlir;
+using namespace llzk::felt;
 using namespace llzk::array;
+using namespace llzk::felt;
 using namespace llzk::function;
 
 namespace llzk::component {
@@ -98,9 +102,9 @@ InFlightDiagnostic genCompareErr(StructDefOp expected, Operation *origin, const 
 
 static inline InFlightDiagnostic structFuncDefError(Operation *origin) {
   return origin->emitError() << '\'' << StructDefOp::getOperationName() << "' op "
-                             << "must define either only a \"@" << FUNC_NAME_PRODUCT
-                             << "\" function, or both \"@" << FUNC_NAME_COMPUTE << "\" and \"@"
-                             << FUNC_NAME_CONSTRAIN << "\" functions; ";
+                             << "must define either only a non-derived \"@" << FUNC_NAME_PRODUCT
+                             << "\" function, or both non-derived \"@" << FUNC_NAME_COMPUTE
+                             << "\" and \"@" << FUNC_NAME_CONSTRAIN << "\" functions; ";
 }
 
 /// Verifies that the given `actualType` matches the `StructDefOp` given (i.e., for the "self" type
@@ -218,24 +222,24 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline LogicalResult checkMainFuncParamType(Type pType, FuncDefOp inFunc, bool appendSelf) {
-  if (isSignalType(pType)) {
+inline LogicalResult
+checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> appendSelfType) {
+  if (llvm::isa<FeltType>(pType)) {
     return success();
   } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    if (isSignalType(arrayParamTy.getElementType())) {
+    if (llvm::isa<FeltType>(arrayParamTy.getElementType())) {
       return success();
     }
   }
 
-  std::string message = buildStringViaCallback([&inFunc, appendSelf](llvm::raw_ostream &ss) {
-    ss << "\"@" << COMPONENT_NAME_MAIN << "\" component \"@" << inFunc.getSymName()
+  std::string message = buildStringViaCallback([&inFunc, appendSelfType](llvm::raw_ostream &ss) {
+    ss << "main entry component \"@" << inFunc.getSymName()
        << "\" function parameters must be one of: {";
-    if (appendSelf) {
-      ss << "!" << StructType::name << "<@" << COMPONENT_NAME_MAIN << ">, ";
+    if (appendSelfType.has_value()) {
+      ss << appendSelfType.value() << ", ";
     }
-    ss << "!" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL << ">, ";
-    ss << "!" << ArrayType::name << "<.. x !" << StructType::name << "<@" << COMPONENT_NAME_SIGNAL
-       << ">>}";
+    ss << '!' << FeltType::name << ", ";
+    ss << '!' << ArrayType::name << "<.. x !" << FeltType::name << ">}";
   });
   return inFunc.emitError(message);
 }
@@ -254,22 +258,17 @@ inline LogicalResult verifyStructComputeConstrain(
   ArrayRef<Type> computeParams = computeFunc.getFunctionType().getInputs();
   ArrayRef<Type> constrainParams = constrainFunc.getFunctionType().getInputs().drop_front();
   if (structDef.isMainComponent()) {
-    // Verify that the Struct has no parameters.
-    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
-      return structDef.emitError().append(
-          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
-      );
-    }
     // Verify the input parameter types are legal. The error message is explicit about what types
     // are allowed so there is no benefit to report multiple errors if more than one parameter in
     // the referenced function has an illegal type.
     for (Type t : computeParams) {
-      if (failed(checkMainFuncParamType(t, computeFunc, false))) {
+      if (failed(checkMainFuncParamType(t, computeFunc, std::nullopt))) {
         return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
+    auto appendSelf = std::make_optional(structDef.getType());
     for (Type t : constrainParams) {
-      if (failed(checkMainFuncParamType(t, constrainFunc, true))) {
+      if (failed(checkMainFuncParamType(t, constrainFunc, appendSelf))) {
         return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
@@ -295,16 +294,14 @@ inline LogicalResult verifyStructProduct(StructDefOp structDef, FuncDefOp produc
   assert(productFunc.hasAllowWitnessAttr());
 
   // Verify parameter types are valid
-  ArrayRef<Type> productParams = productFunc.getFunctionType().getInputs();
   if (structDef.isMainComponent()) {
-    if (!isNullOrEmpty(structDef.getConstParamsAttr())) {
-      return structDef.emitError().append(
-          "The \"@", COMPONENT_NAME_MAIN, "\" component must have no parameters"
-      );
-    }
+    ArrayRef<Type> productParams = productFunc.getFunctionType().getInputs();
+    // Verify the input parameter types are legal. The error message is explicit about what types
+    // are allowed so there is no benefit to report multiple errors if more than one parameter in
+    // the referenced function has an illegal type.
     for (Type t : productParams) {
-      if (failed(checkMainFuncParamType(t, productFunc, false))) {
-        return failure();
+      if (failed(checkMainFuncParamType(t, productFunc, std::nullopt))) {
+        return failure(); // checkMainFuncParamType() already emits a sufficient error message
       }
     }
   }
@@ -320,48 +317,28 @@ LogicalResult StructDefOp::verifyRegions() {
   std::optional<FuncDefOp> foundProduct = std::nullopt;
   {
     // Verify the following:
-    // 1. The only ops within the body are field and function definitions
+    // 1. The only ops within the body are member and function definitions
     // 2. The only functions defined in the struct are `@compute()` and `@constrain()`, or
     // `@product()`
     OwningEmitErrorFn emitError = getEmitOpErrFn(this);
     Region &bodyRegion = getBodyRegion();
     if (!bodyRegion.empty()) {
       for (Operation &op : bodyRegion.front()) {
-        if (!llvm::isa<FieldDefOp>(op)) {
+        if (!llvm::isa<MemberDefOp>(op)) {
           if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
             if (funcDef.nameIsCompute()) {
-              if (foundProduct) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
-                       << "\" functions";
-              }
               if (foundCompute) {
                 return structFuncDefError(funcDef.getOperation())
                        << "found multiple \"@" << FUNC_NAME_COMPUTE << "\" functions";
               }
               foundCompute = std::make_optional(funcDef);
             } else if (funcDef.nameIsConstrain()) {
-              if (foundProduct) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@"
-                       << FUNC_NAME_PRODUCT << "\" functions";
-              }
               if (foundConstrain) {
                 return structFuncDefError(funcDef.getOperation())
                        << "found multiple \"@" << FUNC_NAME_CONSTRAIN << "\" functions";
               }
               foundConstrain = std::make_optional(funcDef);
             } else if (funcDef.nameIsProduct()) {
-              if (foundCompute) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_PRODUCT
-                       << "\" functions";
-              }
-              if (foundConstrain) {
-                return structFuncDefError(funcDef.getOperation())
-                       << "found both \"@" << FUNC_NAME_CONSTRAIN << "\" and \"@"
-                       << FUNC_NAME_PRODUCT << "\" functions";
-              }
               if (foundProduct) {
                 return structFuncDefError(funcDef.getOperation())
                        << "found multiple \"@" << FUNC_NAME_PRODUCT << "\" functions";
@@ -376,7 +353,7 @@ LogicalResult StructDefOp::verifyRegions() {
           } else {
             return op.emitOpError()
                    << "invalid operation in '" << StructDefOp::getOperationName() << "'; only '"
-                   << FieldDefOp::getOperationName() << '\'' << " and '"
+                   << MemberDefOp::getOperationName() << '\'' << " and '"
                    << FuncDefOp::getOperationName() << "' operations are permitted";
           }
         }
@@ -399,28 +376,73 @@ LogicalResult StructDefOp::verifyRegions() {
            << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\"";
   }
 
-  if (foundCompute && foundConstrain) {
+  // Check which funcs are present and not marked with {llzk.derived}
+  auto nonderived = [](std::optional<FuncDefOp> op) -> bool {
+    return op && !(*op)->hasAttr(DERIVED_ATTR_NAME);
+  };
+
+  auto attachDerivedNotes = [&foundCompute, &foundConstrain,
+                             &foundProduct](InFlightDiagnostic &&error) {
+    if (foundProduct && (*foundProduct)->hasAttr(DERIVED_ATTR_NAME)) {
+      error.attachNote(foundProduct->getLoc()) << "derived \"@" << FUNC_NAME_PRODUCT << "\" here";
+    }
+    if (foundCompute && (*foundCompute)->hasAttr(DERIVED_ATTR_NAME)) {
+      error.attachNote(foundCompute->getLoc()) << "derived \"@" << FUNC_NAME_COMPUTE << "\" here";
+    }
+    if (foundConstrain && (*foundConstrain)->hasAttr(DERIVED_ATTR_NAME)) {
+      error.attachNote(foundConstrain->getLoc())
+          << "derived \"@" << FUNC_NAME_CONSTRAIN << "\" here";
+    }
+    return error;
+  };
+
+  // We know that (@compute+@constrain) is present or @product is present, or both
+
+  // Error cases:
+  // Everything is derived
+  if (!nonderived(foundCompute) && !nonderived(foundConstrain) && !nonderived(foundProduct)) {
+    return attachDerivedNotes(
+        structFuncDefError(getOperation())
+        << "could not find non-derived \"@" << FUNC_NAME_PRODUCT << "\", \"@" << FUNC_NAME_COMPUTE
+        << "\", or \"@" << FUNC_NAME_CONSTRAIN << "\""
+    );
+  }
+
+  // Only one of @compute/@constrain is non-derived
+  if (nonderived(foundCompute) ^ nonderived(foundConstrain)) {
+    return attachDerivedNotes(
+        structFuncDefError(getOperation())
+        << "\"@" << FUNC_NAME_COMPUTE << "\" and \"@" << FUNC_NAME_CONSTRAIN
+        << "\" must both be either derived or non-derived"
+    );
+  }
+
+  // Here, at least one thing is non-derived, and @compute/@constrain are derived or non-derived
+  // together so everything is fine
+  if (nonderived(foundCompute) && nonderived(foundConstrain) && !nonderived(foundProduct)) {
     return verifyStructComputeConstrain(*this, *foundCompute, *foundConstrain);
   }
+
+  assert(!nonderived(foundCompute) && !nonderived(foundConstrain) && nonderived(foundProduct));
   return verifyStructProduct(*this, *foundProduct);
 }
 
-FieldDefOp StructDefOp::getFieldDef(StringAttr fieldName) {
+MemberDefOp StructDefOp::getMemberDef(StringAttr memberName) {
   for (Operation &op : *getBody()) {
-    if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
-      if (fieldName.compare(fieldDef.getSymNameAttr()) == 0) {
-        return fieldDef;
+    if (MemberDefOp memberDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
+      if (memberName.compare(memberDef.getSymNameAttr()) == 0) {
+        return memberDef;
       }
     }
   }
   return nullptr;
 }
 
-std::vector<FieldDefOp> StructDefOp::getFieldDefs() {
-  std::vector<FieldDefOp> res;
+std::vector<MemberDefOp> StructDefOp::getMemberDefs() {
+  std::vector<MemberDefOp> res;
   for (Operation &op : *getBody()) {
-    if (FieldDefOp fieldDef = llvm::dyn_cast_if_present<FieldDefOp>(op)) {
-      res.push_back(fieldDef);
+    if (MemberDefOp memberDef = llvm::dyn_cast_if_present<MemberDefOp>(op)) {
+      res.push_back(memberDef);
     }
   }
   return res;
@@ -434,29 +456,27 @@ FuncDefOp StructDefOp::getConstrainFuncOp() {
   return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_CONSTRAIN));
 }
 
-FuncDefOp StructDefOp::getComputeOrProductFuncOp() {
-  if (auto *computeFunc = lookupSymbol(FUNC_NAME_COMPUTE)) {
-    return llvm::dyn_cast<FuncDefOp>(computeFunc);
-  }
+FuncDefOp StructDefOp::getProductFuncOp() {
   return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
 }
 
-FuncDefOp StructDefOp::getConstrainOrProductFuncOp() {
-  if (auto *constrainFunc = lookupSymbol(FUNC_NAME_CONSTRAIN)) {
-    return llvm::dyn_cast<FuncDefOp>(constrainFunc);
+bool StructDefOp::isMainComponent() {
+  FailureOr<StructType> mainTypeOpt = getMainInstanceType(this->getOperation());
+  if (succeeded(mainTypeOpt)) {
+    if (StructType mainType = mainTypeOpt.value()) {
+      return structTypesUnify(mainType, this->getType());
+    }
   }
-  return llvm::dyn_cast_if_present<FuncDefOp>(lookupSymbol(FUNC_NAME_PRODUCT));
+  return false;
 }
 
-bool StructDefOp::isMainComponent() { return COMPONENT_NAME_MAIN == this->getSymName(); }
-
 //===------------------------------------------------------------------===//
-// FieldDefOp
+// MemberDefOp
 //===------------------------------------------------------------------===//
 
-void FieldDefOp::build(
+void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type,
-    bool isColumn
+    bool isSignal, bool isColumn
 ) {
   Properties &props = odsState.getOrAddProperties<Properties>();
   props.setSymName(sym_name);
@@ -464,17 +484,24 @@ void FieldDefOp::build(
   if (isColumn) {
     props.column = odsBuilder.getUnitAttr();
   }
+  if (isSignal) {
+    props.signal = odsBuilder.getUnitAttr();
+  }
 }
 
-void FieldDefOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isColumn
+void MemberDefOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef sym_name, Type type, bool isSignal,
+    bool isColumn
 ) {
-  build(odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isColumn);
+  build(
+      odsBuilder, odsState, odsBuilder.getStringAttr(sym_name), TypeAttr::get(type), isSignal,
+      isColumn
+  );
 }
 
-void FieldDefOp::build(
+void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, ValueRange operands,
-    ArrayRef<NamedAttribute> attributes, bool isColumn
+    ArrayRef<NamedAttribute> attributes, bool isSignal, bool isColumn
 ) {
   assert(operands.size() == 0u && "mismatched number of parameters");
   odsState.addOperands(operands);
@@ -484,9 +511,12 @@ void FieldDefOp::build(
   if (isColumn) {
     odsState.getOrAddProperties<Properties>().column = odsBuilder.getUnitAttr();
   }
+  if (isSignal) {
+    odsState.getOrAddProperties<Properties>().signal = odsBuilder.getUnitAttr();
+  }
 }
 
-void FieldDefOp::setPublicAttr(bool newValue) {
+void MemberDefOp::setPublicAttr(bool newValue) {
   if (newValue) {
     getOperation()->setAttr(PublicAttr::name, UnitAttr::get(getContext()));
   } else {
@@ -495,17 +525,17 @@ void FieldDefOp::setPublicAttr(bool newValue) {
 }
 
 static LogicalResult
-verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation *origin) {
-  if (StructType fieldStructType = llvm::dyn_cast<StructType>(fieldType)) {
-    // Special case for StructType verifies that the field type can resolve and that it is NOT the
-    // parent struct (i.e., struct fields cannot create circular references).
-    auto fieldTypeRes = verifyStructTypeResolution(tables, fieldStructType, origin);
-    if (failed(fieldTypeRes)) {
+verifyMemberDefTypeImpl(Type memberType, SymbolTableCollection &tables, Operation *origin) {
+  if (StructType memberStructType = llvm::dyn_cast<StructType>(memberType)) {
+    // Special case for StructType verifies that the member type can resolve and that it is NOT the
+    // parent struct (i.e., struct members cannot create circular references).
+    auto memberTypeRes = verifyStructTypeResolution(tables, memberStructType, origin);
+    if (failed(memberTypeRes)) {
       return failure(); // above already emits a sufficient error message
     }
     FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(origin);
-    assert(succeeded(parentRes) && "FieldDefOp parent is always StructDefOp"); // per ODS def
-    if (fieldTypeRes.value() == parentRes.value()) {
+    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
+    if (memberTypeRes.value() == parentRes.value()) {
       return origin->emitOpError()
           .append("type is circular")
           .attachNote(parentRes.value().getLoc())
@@ -513,113 +543,137 @@ verifyFieldDefTypeImpl(Type fieldType, SymbolTableCollection &tables, Operation 
     }
     return success();
   } else {
-    return verifyTypeResolution(tables, origin, fieldType);
+    return verifyTypeResolution(tables, origin, memberType);
   }
 }
 
-LogicalResult FieldDefOp::verifySymbolUses(SymbolTableCollection &tables) {
-  Type fieldType = this->getType();
-  if (failed(verifyFieldDefTypeImpl(fieldType, tables, *this))) {
+LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
+  Type memberType = this->getType();
+  if (failed(verifyMemberDefTypeImpl(memberType, tables, *this))) {
     return failure();
   }
 
   if (!getColumn()) {
     return success();
   }
-  // If the field is marked as a column only a small subset of types are allowed.
+  // If the member is marked as a column only a small subset of types are allowed.
   if (!isValidColumnType(getType(), tables, *this)) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
-                            "structs with columns, but field has type "
+                            "structs with columns, but has type "
                          << getType();
   }
   return success();
 }
 
 //===------------------------------------------------------------------===//
-// FieldRefOp implementations
+// MemberRefOp implementations
 //===------------------------------------------------------------------===//
 namespace {
 
-FailureOr<SymbolLookupResult<FieldDefOp>>
-getFieldDefOpImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
+FailureOr<SymbolLookupResult<MemberDefOp>>
+getMemberDefOpImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables, StructType tyStruct) {
   Operation *op = refOp.getOperation();
   auto structDefRes = tyStruct.getDefinition(tables, op);
   if (failed(structDefRes)) {
     return failure(); // getDefinition() already emits a sufficient error message
   }
-  auto res = llzk::lookupSymbolIn<FieldDefOp>(
-      tables, SymbolRefAttr::get(refOp->getContext(), refOp.getFieldName()),
+  // Copy namespace because we will need it later.
+  llvm::SmallVector<llvm::StringRef> structDefOpNs(structDefRes->getNamespace());
+  auto res = llzk::lookupSymbolIn<MemberDefOp>(
+      tables, SymbolRefAttr::get(refOp->getContext(), refOp.getMemberName()),
       std::move(*structDefRes), op
   );
   if (failed(res)) {
-    return refOp->emitError() << "could not find '" << FieldDefOp::getOperationName()
-                              << "' named \"@" << refOp.getFieldName() << "\" in \""
+    return refOp->emitError() << "could not find '" << MemberDefOp::getOperationName()
+                              << "' named \"@" << refOp.getMemberName() << "\" in \""
                               << tyStruct.getNameRef() << '"';
   }
+  // Prepend the namespace of the struct lookup since the type of the member is meant to be resolved
+  // within that scope.
+  res->prependNamespace(structDefOpNs);
   return std::move(res.value());
 }
 
-static FailureOr<SymbolLookupResult<FieldDefOp>>
-findField(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
+static FailureOr<SymbolLookupResult<MemberDefOp>>
+findMember(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure the base component/struct type reference can be resolved.
   StructType tyStruct = refOp.getStructType();
   if (failed(tyStruct.verifySymbolRef(tables, refOp.getOperation()))) {
     return failure();
   }
-  // Ensure the field name can be resolved in that struct.
-  return getFieldDefOpImpl(refOp, tables, tyStruct);
+  // Ensure the member name can be resolved in that struct.
+  return getMemberDefOpImpl(refOp, tables, tyStruct);
 }
 
 static LogicalResult verifySymbolUsesImpl(
-    FieldRefOpInterface refOp, SymbolTableCollection &tables, SymbolLookupResult<FieldDefOp> &field
+    MemberRefOpInterface refOp, SymbolTableCollection &tables,
+    SymbolLookupResult<MemberDefOp> &member
 ) {
-  // Ensure the type of the referenced field declaration matches the type used in this op.
+  // Ensure the type of the referenced member declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
-  Type fieldType = field.get().getType();
-  if (!typesUnify(actualType, fieldType, field.getIncludeSymNames())) {
-    return refOp->emitOpError() << "has wrong type; expected " << fieldType << ", got "
+  Type memberType = member.get().getType();
+  if (!typesUnify(actualType, memberType, member.getNamespace())) {
+    return refOp->emitOpError() << "has wrong type; expected " << memberType << ", got "
                                 << actualType;
   }
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(tables, refOp.getOperation(), actualType);
 }
 
-LogicalResult verifySymbolUsesImpl(FieldRefOpInterface refOp, SymbolTableCollection &tables) {
-  // Ensure the field name can be resolved in that struct.
-  auto field = findField(refOp, tables);
-  if (failed(field)) {
-    return field; // getFieldDefOp() already emits a sufficient error message
+LogicalResult verifySymbolUsesImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
+  // Ensure the member name can be resolved in that struct.
+  auto member = findMember(refOp, tables);
+  if (failed(member)) {
+    return member; // getMemberDefOp() already emits a sufficient error message
   }
-  return verifySymbolUsesImpl(refOp, tables, *field);
+  return verifySymbolUsesImpl(refOp, tables, *member);
 }
 
 } // namespace
 
-FailureOr<SymbolLookupResult<FieldDefOp>>
-FieldRefOpInterface::getFieldDefOp(SymbolTableCollection &tables) {
-  return getFieldDefOpImpl(*this, tables, getStructType());
+FailureOr<SymbolLookupResult<MemberDefOp>>
+MemberRefOpInterface::getMemberDefOp(SymbolTableCollection &tables) {
+  return getMemberDefOpImpl(*this, tables, getStructType());
 }
 
-LogicalResult FieldReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  auto field = findField(*this, tables);
-  if (failed(field)) {
+LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
+  auto member = findMember(*this, tables);
+  if (failed(member)) {
     return failure();
   }
-  if (failed(verifySymbolUsesImpl(*this, tables, *field))) {
+  if (failed(verifySymbolUsesImpl(*this, tables, *member))) {
     return failure();
   }
-  // If the field is not a column and an offset was specified then fail to validate
-  if (!field->get().getColumn() && getTableOffset().has_value()) {
-    return emitOpError("cannot read with table offset from a field that is not a column")
-        .attachNote(field->get().getLoc())
-        .append("field defined here");
+  // If the member is not a column and an offset was specified then fail to validate
+  if (!member->get().getColumn() && getTableOffset().has_value()) {
+    return emitOpError("cannot read with table offset from a member that is not a column")
+        .attachNote(member->get().getLoc())
+        .append("member defined here");
   }
-
+  // If the member is private and this read is outside the struct, then fail to validate.
+  // The current op may be inside a struct or a free function, but the
+  // member op (the member definition) is always inside a struct.
+  FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
+  FailureOr<StructDefOp> memberParentRes = verifyInStruct(member->get());
+  if (failed(memberParentRes)) {
+    return failure(); // verifyInStruct() already emits a sufficient error message
+  }
+  StructDefOp memberParentStruct = memberParentRes.value();
+  if (!member->get().hasPublicAttr() &&
+      (failed(parentRes) || parentRes.value() != memberParentStruct)) {
+    return emitOpError()
+        .append(
+            "cannot read from private member of struct \"", memberParentStruct.getHeaderString(),
+            "\""
+        )
+        .attachNote(member->get().getLoc())
+        .append("member defined here");
+  }
   return success();
 }
 
-LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
-  // Ensure the write op only targets fields in the current struct.
+LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure the write op only targets members in the current struct.
   FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
@@ -627,26 +681,26 @@ LogicalResult FieldWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(checkSelfType(tables, *getParentRes, getComponent().getType(), *this, "base value"))) {
     return failure(); // checkSelfType() already emits a sufficient error message
   }
-  // Perform the standard field ref checks.
+  // Perform the standard member ref checks.
   return verifySymbolUsesImpl(*this, tables);
 }
 
 //===------------------------------------------------------------------===//
-// FieldReadOp
+// MemberReadOp
 //===------------------------------------------------------------------===//
 
-void FieldReadOp::build(
-    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field
+void MemberReadOp::build(
+    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr member
 ) {
   Properties &props = state.getOrAddProperties<Properties>();
-  props.setFieldName(FlatSymbolRefAttr::get(field));
+  props.setMemberName(FlatSymbolRefAttr::get(member));
   state.addTypes(resultType);
   state.addOperands(component);
-  affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<FieldReadOp>(builder, state);
+  affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<MemberReadOp>(builder, state);
 }
 
-void FieldReadOp::build(
-    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr field,
+void MemberReadOp::build(
+    OpBuilder &builder, OperationState &state, Type resultType, Value component, StringAttr member,
     Attribute dist, ValueRange mapOperands, std::optional<int32_t> numDims
 ) {
   // '!mapOperands.empty()' implies 'numDims.has_value()'
@@ -654,18 +708,18 @@ void FieldReadOp::build(
   state.addOperands(component);
   state.addTypes(resultType);
   if (numDims.has_value()) {
-    affineMapHelpers::buildInstantiationAttrsNoSegments<FieldReadOp>(
+    affineMapHelpers::buildInstantiationAttrsNoSegments<MemberReadOp>(
         builder, state, ArrayRef({mapOperands}), builder.getDenseI32ArrayAttr({*numDims})
     );
   } else {
-    affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<FieldReadOp>(builder, state);
+    affineMapHelpers::buildInstantiationAttrsEmptyNoSegments<MemberReadOp>(builder, state);
   }
   Properties &props = state.getOrAddProperties<Properties>();
-  props.setFieldName(FlatSymbolRefAttr::get(field));
+  props.setMemberName(FlatSymbolRefAttr::get(member));
   props.setTableOffset(dist);
 }
 
-void FieldReadOp::build(
+void MemberReadOp::build(
     OpBuilder & /*odsBuilder*/, OperationState &odsState, TypeRange resultTypes,
     ValueRange operands, ArrayRef<NamedAttribute> attrs
 ) {
@@ -674,7 +728,7 @@ void FieldReadOp::build(
   odsState.addAttributes(attrs);
 }
 
-LogicalResult FieldReadOp::verify() {
+LogicalResult MemberReadOp::verify() {
   SmallVector<AffineMapAttr, 1> mapAttrs;
   if (AffineMapAttr map =
           llvm::dyn_cast_if_present<AffineMapAttr>(getTableOffset().value_or(nullptr))) {

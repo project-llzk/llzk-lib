@@ -47,7 +47,9 @@ void assertProperBuild(SymbolOpInterface root, const SymbolDefTree *tree) {
     }
   }
   // Ensure every symbol reachable from the 'root' is represented in the graph
+#ifndef NDEBUG
   root.walk([&fromGraph](SymbolOpInterface s) { assert(fromGraph.contains(s)); });
+#endif
 }
 
 } // namespace

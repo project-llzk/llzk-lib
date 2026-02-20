@@ -2,14 +2,14 @@
 
 // This demonstrates one way that zirgen runtime checks for globals could be handled. Requires boilerplate
 // code to track if globals have been initialized and requires LLZK to have zero-initialization semantics.
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @NondetReg<[]> {
-    struct.field @"$super" : !felt.type
-    struct.field @reg : !felt.type
+    struct.member @"$super" : !felt.type
+    struct.member @reg : !felt.type {llzk.pub}
     function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> {
       %self = struct.new : <@NondetReg<[]>>
-      struct.writef %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
-      struct.writef %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
+      struct.writem %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.type
       function.return %self : !struct.type<@NondetReg<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !felt.type) {
@@ -19,14 +19,14 @@ module attributes {veridise.lang = "llzk"} {
 
   // BEGIN: BOILERPLATE
   struct.def @Global<[@Type]> {
-    struct.field @val : !poly.tvar<@Type>
-    struct.field @init : i1
+    struct.member @val : !poly.tvar<@Type> {llzk.pub}
+    struct.member @init : i1 {llzk.pub}
 
     function.def @compute(%v: !poly.tvar<@Type>) -> !struct.type<@Global<[@Type]>> {
       %self = struct.new : !struct.type<@Global<[@Type]>>
-      struct.writef %self[@val] = %v : !struct.type<@Global<[@Type]>>, !poly.tvar<@Type>
+      struct.writem %self[@val] = %v : !struct.type<@Global<[@Type]>>, !poly.tvar<@Type>
       %true = arith.constant true
-      struct.writef %self[@init] = %true : !struct.type<@Global<[@Type]>>, i1
+      struct.writem %self[@init] = %true : !struct.type<@Global<[@Type]>>, i1
       function.return %self : !struct.type<@Global<[@Type]>>
     }
 
@@ -46,8 +46,8 @@ module attributes {veridise.lang = "llzk"} {
       %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
       // BEGIN: BOILERPLATE - Ensure it was NOT previously written
       %g = global.read @globals::@A : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
-      %i = struct.readf %g[@init] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, i1
-      %f = arith.constant false // default, 0-initialized value of 'i1' field
+      %i = struct.readm %g[@init] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, i1
+      %f = arith.constant false // default, 0-initialized value of 'i1' member
       %x = arith.cmpi eq, %i, %f : i1
       bool.assert %x, "Invalid set of \"global\"" // mirror zirgen message
       %1 = function.call @Global::@compute(%0) : (!struct.type<@NondetReg<[]>>) -> !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
@@ -58,25 +58,25 @@ module attributes {veridise.lang = "llzk"} {
     function.def @constrain(%arg0: !struct.type<@Top>, %arg1: !felt.type) {
       %g = global.read @globals::@A : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
       // BEGIN: BOILERPLATE - Ensure it was previously written
-      %i = struct.readf %g[@init] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, i1
-      %f = arith.constant false // default, 0-initialized value of 'i1' field
+      %i = struct.readm %g[@init] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, i1
+      %f = arith.constant false // default, 0-initialized value of 'i1' member
       %x = arith.cmpi ne, %i, %f : i1
       bool.assert %x, "Read before write \"global\"" // mirror zirgen message
-      %0 = struct.readf %g[@val] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, !struct.type<@NondetReg<[]>>
+      %0 = struct.readm %g[@val] : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>, !struct.type<@NondetReg<[]>>
       // END: BOILERPLATE
-      %1 = struct.readf %0[@reg] : !struct.type<@NondetReg<[]>>, !felt.type
+      %1 = struct.readm %0[@reg] : !struct.type<@NondetReg<[]>>, !felt.type
       function.return
     }
   }
 }
 
 // CHECK-LABEL: struct.def @NondetReg<[]> {
-// CHECK-NEXT:    struct.field @"$super" : !felt.type
-// CHECK-NEXT:    struct.field @reg : !felt.type
+// CHECK-NEXT:    struct.member @"$super" : !felt.type
+// CHECK-NEXT:    struct.member @reg : !felt.type
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@NondetReg<[]>>
-// CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@NondetReg<[]>>, !felt.type
-// CHECK-NEXT:      struct.writef %[[V1]][@"$super"] = %[[V0]] : <@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V1]][@reg] = %[[V0]] : <@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V1]][@"$super"] = %[[V0]] : <@NondetReg<[]>>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@NondetReg<[]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@NondetReg<[]>>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
@@ -85,13 +85,13 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Global<[@Type]> {
-// CHECK-NEXT:    struct.field @val : !poly.tvar<@Type>
-// CHECK-NEXT:    struct.field @init : i1
+// CHECK-NEXT:    struct.member @val : !poly.tvar<@Type>
+// CHECK-NEXT:    struct.member @init : i1
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) -> !struct.type<@Global<[@Type]>> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Global<[@Type]>>
-// CHECK-NEXT:      struct.writef %[[V1]][@val] = %[[V0]] : <@Global<[@Type]>>, !poly.tvar<@Type>
+// CHECK-NEXT:      struct.writem %[[V1]][@val] = %[[V0]] : <@Global<[@Type]>>, !poly.tvar<@Type>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      struct.writef %[[V1]][@init] = %[[V2]] : <@Global<[@Type]>>, i1
+// CHECK-NEXT:      struct.writem %[[V1]][@init] = %[[V2]] : <@Global<[@Type]>>, i1
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Global<[@Type]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Global<[@Type]>>, %[[V4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) attributes {function.allow_constraint} {
@@ -108,7 +108,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @NondetReg::@compute(%[[V0]]) : (!felt.type) -> !struct.type<@NondetReg<[]>>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = global.read @globals::@A : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@init] : <@Global<[!struct.type<@NondetReg<[]>>]>>, i1
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@init] : <@Global<[!struct.type<@NondetReg<[]>>]>>, i1
 // CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[V4]], %[[V5]] : i1
 // CHECK-NEXT:      bool.assert %[[V6]], "Invalid set of \22global\22"
@@ -118,12 +118,12 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = global.read @globals::@A : !struct.type<@Global<[!struct.type<@NondetReg<[]>>]>>
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readf %[[V10]][@init] : <@Global<[!struct.type<@NondetReg<[]>>]>>, i1
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@init] : <@Global<[!struct.type<@NondetReg<[]>>]>>, i1
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[V11]], %[[V12]] : i1
 // CHECK-NEXT:      bool.assert %[[V13]], "Read before write \22global\22"
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V10]][@val] : <@Global<[!struct.type<@NondetReg<[]>>]>>, !struct.type<@NondetReg<[]>>
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = struct.readf %[[V14]][@reg] : <@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@val] : <@Global<[!struct.type<@NondetReg<[]>>]>>, !struct.type<@NondetReg<[]>>
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V14]][@reg] : <@NondetReg<[]>>, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -46,6 +46,10 @@ TEST_F(TypeTests, testArrayTypeCloneSuccessNewShape) {
   ASSERT_EQ(b.getShape(), newShape);
 }
 
+// The verification that throws the error is only active in debug builds.
+// See:
+// https://github.com/llvm/llvm-project/blob/87f0227cb60147a26a1eeb4fb06e3b505e9c7261/mlir/include/mlir/IR/StorageUniquerSupport.h#L179
+#ifndef NDEBUG
 TEST_F(TypeTests, testArrayTypeCloneWithEmptyShapeError) {
   EXPECT_DEATH(
       {
@@ -58,6 +62,7 @@ TEST_F(TypeTests, testArrayTypeCloneWithEmptyShapeError) {
       "error: array must have at least one dimension"
   );
 }
+#endif
 
 TEST_F(TypeTests, testArrayTypeGetWithAttributeEmptyShapeError) {
   EXPECT_DEATH(
@@ -65,7 +70,10 @@ TEST_F(TypeTests, testArrayTypeGetWithAttributeEmptyShapeError) {
         IndexType tyIndex = IndexType::get(&ctx);
         std::vector<Attribute> newDimsVec;
         ArrayRef<Attribute> dimensionSizes(newDimsVec);
-        ArrayType::get(tyIndex, dimensionSizes);
+        if (ArrayType() == ArrayType::get(tyIndex, dimensionSizes)) {
+          // Force the error to be reported even when compiled in release mode
+          std::abort();
+        }
       },
       "error: array must have at least one dimension"
   );
@@ -77,7 +85,10 @@ TEST_F(TypeTests, testArrayTypeGetWithAttributeWrongAttrKindError) {
         IndexType tyIndex = IndexType::get(&ctx);
         std::vector<Attribute> newDimsVec = {UnitAttr::get(&ctx)};
         ArrayRef<Attribute> dimensionSizes(newDimsVec);
-        ArrayType::get(tyIndex, dimensionSizes);
+        if (ArrayType() == ArrayType::get(tyIndex, dimensionSizes)) {
+          // Force the error to be reported even when compiled in release mode
+          std::abort();
+        }
       },
       "error: Array dimension must be one of .* but found 'builtin.unit'"
   );

@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 
 #include "llzk-c/Dialect/Array.h"
+#include "llzk-c/Support.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>

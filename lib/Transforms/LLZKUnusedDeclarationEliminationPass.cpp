@@ -38,16 +38,16 @@ using namespace llzk::component;
 
 namespace {
 
-/// @brief Get the fully-qualified field symbol.
-SymbolRefAttr getFullFieldSymbol(FieldRefOpInterface op) {
+/// @brief Get the fully-qualified member symbol.
+SymbolRefAttr getFullMemberSymbol(MemberRefOpInterface op) {
   SymbolRefAttr structSym = op.getStructType().getNameRef(); // this is fully qualified
-  return appendLeaf(structSym, op.getFieldNameAttr());
+  return appendLeaf(structSym, op.getMemberNameAttr());
 }
 
 class UnusedDeclarationEliminationPass
     : public llzk::impl::UnusedDeclarationEliminationPassBase<UnusedDeclarationEliminationPass> {
 
-  /// @brief Shared context between the operations in this pass (field removal, struct removal)
+  /// @brief Shared context between the operations in this pass (member removal, struct removal)
   /// that doesn't need to be persisted after the pass completes.
   struct PassContext {
     DenseMap<SymbolRefAttr, StructDefOp> symbolToStruct;
@@ -72,9 +72,9 @@ class UnusedDeclarationEliminationPass
 
   void runOnOperation() override {
     PassContext ctx = PassContext::populate(getOperation());
-    // First, remove unused fields. This may allow more structs to be removed,
-    // if their final remaining uses are as types for unused fields.
-    removeUnusedFields(ctx);
+    // First, remove unused members. This may allow more structs to be removed,
+    // if their final remaining uses are as types for unused members.
+    removeUnusedMembers(ctx);
 
     // Last, remove unused structs if configured
     if (removeStructs) {
@@ -82,56 +82,56 @@ class UnusedDeclarationEliminationPass
     }
   }
 
-  /// @brief Removes unused fields.
-  /// A field is unused if it is never read from (only written to).
+  /// @brief Removes unused members.
+  /// A member is unused if it is never read from (only written to).
   /// @param structDef
-  void removeUnusedFields(PassContext &ctx) {
+  void removeUnusedMembers(PassContext &ctx) {
     ModuleOp modOp = getOperation();
 
-    // Map fully-qualified field symbols -> field ops
-    DenseMap<SymbolRefAttr, FieldDefOp> fields;
+    // Map fully-qualified member symbols -> member ops
+    DenseMap<SymbolRefAttr, MemberDefOp> members;
     for (auto &[structDef, structSym] : ctx.structToSymbol) {
-      structDef.walk([&](FieldDefOp field) {
-        // We don't consider public fields in the Main component for removal,
+      structDef.walk([&](MemberDefOp member) {
+        // We don't consider public members in the Main component for removal,
         // as these are output values and removing them would result in modifying
         // the overall circuit interface.
-        if (!structDef.isMainComponent() || !field.hasPublicAttr()) {
-          SymbolRefAttr fieldSym =
-              appendLeaf(structSym, FlatSymbolRefAttr::get(field.getSymNameAttr()));
-          fields[fieldSym] = field;
+        if (!structDef.isMainComponent() || !member.hasPublicAttr()) {
+          SymbolRefAttr memberSym =
+              appendLeaf(structSym, FlatSymbolRefAttr::get(member.getSymNameAttr()));
+          members[memberSym] = member;
         }
       });
     }
 
-    // Remove all fields that are read.
-    modOp.walk([&](FieldReadOp readf) {
-      SymbolRefAttr readFieldSym = getFullFieldSymbol(readf);
-      fields.erase(readFieldSym);
+    // Remove all members that are read.
+    modOp.walk([&](MemberReadOp readm) {
+      SymbolRefAttr readMemberSym = getFullMemberSymbol(readm);
+      members.erase(readMemberSym);
     });
 
-    // Remove all writes that reference the remaining fields, as these writes
-    // are now known to only update write-only fields.
-    modOp.walk([&](FieldWriteOp writef) {
-      SymbolRefAttr writtenField = getFullFieldSymbol(writef);
-      if (fields.contains(writtenField)) {
-        // We need not check the users of a writef, since it produces no results.
+    // Remove all writes that reference the remaining members, as these writes
+    // are now known to only update write-only members.
+    modOp.walk([&](MemberWriteOp writem) {
+      SymbolRefAttr writtenMember = getFullMemberSymbol(writem);
+      if (members.contains(writtenMember)) {
+        // We need not check the users of a writem, since it produces no results.
         LLVM_DEBUG(
-            llvm::dbgs() << "Removing write " << writef << " to write-only field " << writtenField
+            llvm::dbgs() << "Removing write " << writem << " to write-only member " << writtenMember
                          << '\n'
         );
-        writef.erase();
+        writem.erase();
       }
     });
 
-    // Finally, erase the remaining fields.
-    for (auto &[_, fieldDef] : fields) {
-      LLVM_DEBUG(llvm::dbgs() << "Removing field " << fieldDef << '\n');
-      fieldDef->erase();
+    // Finally, erase the remaining members.
+    for (auto &[_, memberDef] : members) {
+      LLVM_DEBUG(llvm::dbgs() << "Removing member " << memberDef << '\n');
+      memberDef->erase();
     }
   }
 
   /// @brief Remove unused structs by looking for any uses of the struct's fully-qualified
-  /// symbol. This catches any uses, such as field declarations of the struct's type
+  /// symbol. This catches any uses, such as member declarations of the struct's type
   /// or calls to any of the struct's methods.
   /// @param ctx
   void removeUnusedStructs(PassContext &ctx) {

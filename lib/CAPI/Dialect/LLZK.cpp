@@ -10,6 +10,7 @@
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include "llzk-c/Dialect/LLZK.h"
 
@@ -19,5 +20,6 @@ using namespace llzk;
 
 // Include the generated CAPI
 #include "llzk/Dialect/LLZK/IR/Attrs.capi.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(LLZK, llzk, llzk::LLZKDialect)

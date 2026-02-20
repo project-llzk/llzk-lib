@@ -13,19 +13,15 @@ add_subdirectory(Felt)
 add_subdirectory(Function)
 add_subdirectory(Global)
 add_subdirectory(Include)
+add_subdirectory(POD)
 add_subdirectory(LLZK)
 add_subdirectory(Polymorphic)
 add_subdirectory(String)
 add_subdirectory(Struct)
-add_subdirectory(Undef)
 
 # Registration of dialects
 add_library(LLZKDialectRegistration)
 add_library(LLZK::DialectRegistration ALIAS LLZKDialectRegistration)
-# Ensures that the target can be imported as "LLZK::DialectRegistration" and not
-# "LLZK::LLZKDialectRegistration"
-set_target_properties(LLZKDialectRegistration PROPERTIES EXPORT_NAME
-                                                         "DialectRegistration")
 target_sources(LLZKDialectRegistration PRIVATE InitDialects.cpp)
 target_link_libraries(
   LLZKDialectRegistration PUBLIC LLZKAllDialects ${LLZK_DEP_DIALECT_LIBS}

@@ -143,9 +143,9 @@ public:
     return buildPathFromRootToStruct(to, std::move(path));
   }
 
-  FailureOr<SymbolRefAttr> getPathFromRootToField(FieldDefOp to) {
+  FailureOr<SymbolRefAttr> getPathFromRootToMember(MemberDefOp to) {
     std::vector<FlatSymbolRefAttr> path;
-    // Add the name of the field (its name is not optional)
+    // Add the name of the member (its name is not optional)
     path.push_back(FlatSymbolRefAttr::get(to.getSymNameAttr()));
     // Delegate to the parent handler (must be StructDefOp per ODS)
     return buildPathFromRootToStruct(to.getParentOp<StructDefOp>(), std::move(path));
@@ -174,7 +174,7 @@ public:
     return TypeSwitch<Operation *, FailureOr<SymbolRefAttr>>(to.getOperation())
         // This more general function must check for the specific cases first.
         .Case<FuncDefOp>([this](FuncDefOp toOp) { return getPathFromRootToFunc(toOp); })
-        .Case<FieldDefOp>([this](FieldDefOp toOp) { return getPathFromRootToField(toOp); })
+        .Case<MemberDefOp>([this](MemberDefOp toOp) { return getPathFromRootToMember(toOp); })
         .Case<StructDefOp>([this](StructDefOp toOp) { return getPathFromRootToStruct(toOp); })
 
         // If it's a module, immediately delegate to `buildPathFromRootToAnyOp()` since
@@ -276,8 +276,8 @@ FailureOr<SymbolRefAttr> getPathFromRoot(StructDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromRoot(FieldDefOp &to, ModuleOp *foundRoot) {
-  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToField(to);
+FailureOr<SymbolRefAttr> getPathFromRoot(MemberDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::CLOSEST, to, foundRoot).getPathFromRootToMember(to);
 }
 
 FailureOr<SymbolRefAttr> getPathFromRoot(FuncDefOp &to, ModuleOp *foundRoot) {
@@ -297,12 +297,49 @@ FailureOr<SymbolRefAttr> getPathFromTopRoot(StructDefOp &to, ModuleOp *foundRoot
   return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToStruct(to);
 }
 
-FailureOr<SymbolRefAttr> getPathFromTopRoot(FieldDefOp &to, ModuleOp *foundRoot) {
-  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToField(to);
+FailureOr<SymbolRefAttr> getPathFromTopRoot(MemberDefOp &to, ModuleOp *foundRoot) {
+  return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToMember(to);
 }
 
 FailureOr<SymbolRefAttr> getPathFromTopRoot(FuncDefOp &to, ModuleOp *foundRoot) {
   return RootPathBuilder(RootSelector::FURTHEST, to, foundRoot).getPathFromRootToFunc(to);
+}
+
+FailureOr<StructType> getMainInstanceType(Operation *lookupFrom) {
+  FailureOr<ModuleOp> rootOpt = getRootModule(lookupFrom);
+  if (failed(rootOpt)) {
+    return failure();
+  }
+  ModuleOp root = rootOpt.value();
+  if (Attribute a = root->getAttr(MAIN_ATTR_NAME)) {
+    // If the attribute is present, it must be a TypeAttr of concrete StructType.
+    if (TypeAttr ta = llvm::dyn_cast<TypeAttr>(a)) {
+      if (StructType st = llvm::dyn_cast<StructType>(ta.getValue())) {
+        if (isConcreteType(st)) {
+          return success(st);
+        }
+      }
+    }
+    return rootOpt->emitError().append(
+        '"', MAIN_ATTR_NAME, "\" on top-level module must be a concrete '", StructType::name,
+        "' attribute. Found: ", a
+    );
+  }
+  // The attribute is optional so it's okay if not present.
+  return success(nullptr);
+}
+
+FailureOr<SymbolLookupResult<StructDefOp>>
+getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
+  FailureOr<StructType> mainStructTypeOpt = getMainInstanceType(lookupFrom);
+  if (failed(mainStructTypeOpt)) {
+    return failure();
+  }
+  if (StructType st = mainStructTypeOpt.value()) {
+    return st.getDefinition(symbolTable, lookupFrom);
+  } else {
+    return success(nullptr);
+  }
 }
 
 LogicalResult verifyParamOfType(
@@ -340,17 +377,28 @@ LogicalResult verifyParamsOfType(
   // Rather than immediately returning on failure, we check all params and aggregate to provide as
   // many errors are possible in a single verifier run.
   LogicalResult paramCheckResult = success();
+  LLVM_DEBUG({
+    llvm::dbgs() << "[verifyParamOfType] parameterizedType = " << parameterizedType << '\n';
+  });
   for (Attribute attr : tyParams) {
+    LLVM_DEBUG({ llvm::dbgs() << "[verifyParamOfType]   checking attribute " << attr << '\n'; });
     assertValidAttrForParamOfType(attr);
     if (SymbolRefAttr symRefParam = llvm::dyn_cast<SymbolRefAttr>(attr)) {
       if (failed(verifyParamOfType(tables, symRefParam, parameterizedType, origin))) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[verifyParamOfType]     failed to verify symbol attribute\n";
+        });
         paramCheckResult = failure();
       }
     } else if (TypeAttr typeParam = llvm::dyn_cast<TypeAttr>(attr)) {
       if (failed(verifyTypeResolution(tables, origin, typeParam.getValue()))) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[verifyParamOfType]     failed to verify type attribute\n";
+        });
         paramCheckResult = failure();
       }
     }
+    LLVM_DEBUG({ llvm::dbgs() << "[verifyParamOfType]     verified attribute\n"; });
     // IntegerAttr and AffineMapAttr cannot contain symbol references
   }
   return paramCheckResult;
@@ -363,7 +411,7 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
     return failure();
   }
   StructDefOp defForType = res.value().get();
-  if (!structTypesUnify(ty, defForType.getType({}), res->getIncludeSymNames())) {
+  if (!structTypesUnify(ty, defForType.getType({}), res->getNamespace())) {
     return origin->emitError()
         .append(
             "Cannot unify parameters of type ", ty, " with parameters of '",

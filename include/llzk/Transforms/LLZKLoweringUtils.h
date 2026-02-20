@@ -4,8 +4,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TRANSFORMS_LOWERING_UTILS_H
-#define LLZK_TRANSFORMS_LOWERING_UTILS_H
+#pragma once
 
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -21,7 +20,7 @@
 namespace llzk {
 
 struct AuxAssignment {
-  std::string auxFieldName;
+  std::string auxMemberName;
   mlir::Value computedValue;
 };
 
@@ -31,9 +30,9 @@ mlir::Value rebuildExprInCompute(
 );
 
 mlir::LogicalResult
-checkForAuxFieldConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
+checkForAuxMemberConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
 
-component::FieldDefOp addAuxField(component::StructDefOp structDef, llvm::StringRef name);
+component::MemberDefOp addAuxMember(component::StructDefOp structDef, llvm::StringRef name);
 
 unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &memo);
 
@@ -54,5 +53,3 @@ unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &m
 void replaceSubsequentUsesWith(mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp);
 
 } // namespace llzk
-
-#endif // LLZK_TRANSFORMS_LOWERING_UTILS_H

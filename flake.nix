@@ -1,11 +1,11 @@
 {
   inputs = {
-    llzk-pkgs.url = "github:Veridise/llzk-nix-pkgs";
+    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs";
     nixpkgs.follows = "llzk-pkgs/nixpkgs";
     flake-utils.follows = "llzk-pkgs/flake-utils";
 
     release-helpers = {
-      url = "github:Veridise/open-source-release-helpers";
+      url = "github:project-llzk/open-source-release-helpers";
       inputs = {
         nixpkgs.follows = "llzk-pkgs/nixpkgs";
         flake-utils.follows = "llzk-pkgs/flake-utils";
@@ -70,7 +70,7 @@
           };
           llzk-debug =
             (final.callPackage ./nix/llzk.nix {
-              clang = final.llzk-llvmPackages.clang-unwrapped;
+              clang = final.llzk-llvmPackages-debug.clang-unwrapped;
               mlir_pkg = final.mlir-debug;
               pcl_pkg = final.pcl-mlir-debug;
               cmakeBuildType = "Debug";
@@ -244,6 +244,10 @@
           default = (pkgs.devShellBaseWithDefault pkgs).shell.overrideAttrs (_: {
             # Use Debug by default so assertions are enabled by default.
             cmakeBuildType = "Debug";
+          });
+          # Shell in release mode to test issues that may only appear in optimized builds
+          release = (pkgs.devShellBase pkgs pkgs.llzk).shell.overrideAttrs (_: {
+            cmakeBuildType = "Release";
           });
           debugClang = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansClang).shell;
           debugGCC = (pkgs.devShellBase pkgs pkgs.llzkDebWithSansGCC).shell;

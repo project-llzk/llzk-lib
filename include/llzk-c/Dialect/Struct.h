@@ -55,6 +55,30 @@ MLIR_CAPI_EXPORTED MlirType llzkStruct_StructTypeGetWithAttrs(
     MlirAttribute name, intptr_t numParams, MlirAttribute const *params
 );
 
+/// Lookups the definition Operation of the given StructType using the given
+/// Operation as root for the lookup. The definition Operation is wrapped
+/// in a LlzkSymbolLookupResult that the caller is responsible for cleaning up.
+///
+/// If the function returns 'success' the lookup result will be stored in the
+/// given pointer. Accessing the lookup result if the function returns 'failure'
+/// is undefined behavior.
+///
+/// Requires that the given Operation implements the SymbolTable op interface.
+MLIR_CAPI_EXPORTED MlirLogicalResult llzkStructStructTypeGetDefinition(
+    MlirType type, MlirOperation root, LlzkSymbolLookupResult *result
+);
+
+/// Lookups the definition Operation of the given StructType using the given
+/// Module as root for the lookup. The definition Operation is wrapped
+/// in a LlzkSymbolLookupResult that the caller is responsible for cleaning up.
+///
+/// If the function returns 'success' the lookup result will be stored in the
+/// given pointer. Accessing the lookup result if the function returns 'failure'
+/// is undefined behavior.
+MLIR_CAPI_EXPORTED MlirLogicalResult llzkStructStructTypeGetDefinitionFromModule(
+    MlirType type, MlirModule root, LlzkSymbolLookupResult *result
+);
+
 //===----------------------------------------------------------------------===//
 // StructDefOp
 //===----------------------------------------------------------------------===//
@@ -71,13 +95,13 @@ MLIR_CAPI_EXPORTED MlirType llzkStruct_StructDefOpGetType(MlirOperation op);
 MLIR_CAPI_EXPORTED MlirType
 llzkStruct_StructDefOpGetTypeWithParams(MlirOperation op, MlirAttribute params);
 
-/// Fills the given array with the FieldDefOp operations inside this struct. The pointer to the
-/// operations must have been preallocated. See `llzkStruct_StructDefOpGetNumFieldDefs` for
+/// Fills the given array with the MemberDefOp operations inside this struct. The pointer to the
+/// operations must have been preallocated. See `llzkStruct_StructDefOpGetNumMemberDefs` for
 /// obtaining the required size of the array.
-MLIR_CAPI_EXPORTED void llzkStruct_StructDefOpGetFieldDefs(MlirOperation op, MlirOperation *dst);
+MLIR_CAPI_EXPORTED void llzkStruct_StructDefOpGetMemberDefs(MlirOperation op, MlirOperation *dst);
 
-/// Returns the number of FieldDefOp operations defined in this struct.
-MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumFieldDefs(MlirOperation op);
+/// Returns the number of MemberDefOp operations defined in this struct.
+MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumMemberDefs(MlirOperation op);
 
 /// Returns the header string of the struct. The size of the string is written into the given size
 /// pointer. The caller is responsible of freeing the string and of providing an allocator.
@@ -89,34 +113,33 @@ MLIR_CAPI_EXPORTED const char *llzkStruct_StructDefOpGetHeaderString(
 LLZK_DECLARE_NARY_OP_PREDICATE(Struct, StructDefOp, HasParamName, MlirStringRef name);
 
 //===----------------------------------------------------------------------===//
-// FieldReadOp
+// MemberReadOp
 //===----------------------------------------------------------------------===//
 
-/// Creates a FieldReadOp.
+/// Creates a MemberReadOp.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    Struct, FieldReadOp, MlirType type, MlirValue component, MlirStringRef fieldName
+    Struct, MemberReadOp, MlirType type, MlirValue component, MlirStringRef memberName
 );
 
-/// Creates a FieldReadOp to a column offset by the given distance affine map. The values in the
+/// Creates a MemberReadOp to a column offset by the given distance affine map. The values in the
 /// ValueRange are operands representing the arguments to the affine map. The integer value is the
 /// number of arguments in the map that are dimensions.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Struct, FieldReadOp, WithAffineMapDistance, MlirType type, MlirValue component,
-    MlirStringRef fieldName, MlirAffineMap affineMap, MlirValueRange mapOperands,
-    int32_t nDimensions
+    Struct, MemberReadOp, WithAffineMapDistance, MlirType type, MlirValue component,
+    MlirStringRef memberName, MlirAffineMap affineMap, MlirValueRange mapOperands
 );
 
-/// Creates a FieldReadOp to a column offset by the given distance defined by a name to a constant
+/// Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Struct, FieldReadOp, WithConstParamDistance, MlirType type, MlirValue component,
-    MlirStringRef fieldName, MlirStringRef paramName
+    Struct, MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    MlirStringRef memberName, MlirStringRef paramName
 );
 
-/// Creates a FieldReadOp to a column offset by the given distance defined by an integer value.
+/// Creates a MemberReadOp to a column offset by the given distance defined by an integer value.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Struct, FieldReadOp, WithLiteralDistance, MlirType type, MlirValue component,
-    MlirStringRef fieldName, int64_t distance
+    Struct, MemberReadOp, WithLiteralDistance, MlirType type, MlirValue component,
+    MlirStringRef memberName, int64_t distance
 );
 
 #ifdef __cplusplus

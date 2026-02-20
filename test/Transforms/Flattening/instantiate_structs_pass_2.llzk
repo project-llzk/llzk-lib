@@ -8,7 +8,7 @@
 // RUN:   && FileCheck %s --check-prefix CHECK3 < %t \
 // RUN:   && FileCheck %s < %t
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component08A<[@A, @B]> {
     function.def @compute() -> !struct.type<@Component08A<[@A, @B]>> {
       %self = struct.new : !struct.type<@Component08A<[@A, @B]>>
@@ -18,57 +18,57 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Component08B<[@C]> {
-    struct.field @f2 : !struct.type<@Component08A<[5, @C]>>
+    struct.member @f2 : !struct.type<@Component08A<[5, @C]>>
 
     function.def @compute() -> !struct.type<@Component08B<[@C]>> {
       %self = struct.new : !struct.type<@Component08B<[@C]>>
       %x = function.call @Component08A::@compute() : () -> (!struct.type<@Component08A<[5, @C]>>)
-      struct.writef %self[@f2] = %x : !struct.type<@Component08B<[@C]>>, !struct.type<@Component08A<[5, @C]>>
+      struct.writem %self[@f2] = %x : !struct.type<@Component08B<[@C]>>, !struct.type<@Component08A<[5, @C]>>
       function.return %self : !struct.type<@Component08B<[@C]>>
     }
 
     function.def @constrain(%self: !struct.type<@Component08B<[@C]>>) {
-      %b = struct.readf %self[@f2] : !struct.type<@Component08B<[@C]>>, !struct.type<@Component08A<[5, @C]>>
+      %b = struct.readm %self[@f2] : !struct.type<@Component08B<[@C]>>, !struct.type<@Component08A<[5, @C]>>
       function.call @Component08A::@constrain(%b) : (!struct.type<@Component08A<[5, @C]>>) -> ()
       function.return
     }
   }
 
   struct.def @Component08C {
-    struct.field @f3 : !struct.type<@Component08B<[7]>>
-    struct.field @f4 : !struct.type<@Component08B<[!felt.type]>>
-    struct.field @f5 : !struct.type<@Component08B<[7]>>
-    struct.field @f6 : !struct.type<@Component08B<[5]>>
+    struct.member @f3 : !struct.type<@Component08B<[7]>>
+    struct.member @f4 : !struct.type<@Component08B<[!felt.type]>>
+    struct.member @f5 : !struct.type<@Component08B<[7]>>
+    struct.member @f6 : !struct.type<@Component08B<[5]>>
 
     function.def @compute() -> !struct.type<@Component08C> {
       %self = struct.new : !struct.type<@Component08C>
 
       %1 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[7]>>)
-      struct.writef %self[@f3] = %1 : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
+      struct.writem %self[@f3] = %1 : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
 
       %2 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[!felt.type]>>)
-      struct.writef %self[@f4] = %2 : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.type]>>
+      struct.writem %self[@f4] = %2 : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.type]>>
 
       %3 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[7]>>)
-      struct.writef %self[@f5] = %3 : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
+      struct.writem %self[@f5] = %3 : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
 
       %4 = function.call @Component08B::@compute() : () -> (!struct.type<@Component08B<[5]>>)
-      struct.writef %self[@f6] = %4 : !struct.type<@Component08C>, !struct.type<@Component08B<[5]>>
+      struct.writem %self[@f6] = %4 : !struct.type<@Component08C>, !struct.type<@Component08B<[5]>>
 
       function.return %self : !struct.type<@Component08C>
     }
 
     function.def @constrain(%self: !struct.type<@Component08C>) {
-      %1 = struct.readf %self[@f3] : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
+      %1 = struct.readm %self[@f3] : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
       function.call @Component08B::@constrain(%1) : (!struct.type<@Component08B<[7]>>) -> ()
 
-      %2 = struct.readf %self[@f4] : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.type]>>
+      %2 = struct.readm %self[@f4] : !struct.type<@Component08C>, !struct.type<@Component08B<[!felt.type]>>
       function.call @Component08B::@constrain(%2) : (!struct.type<@Component08B<[!felt.type]>>) -> ()
 
-      %3 = struct.readf %self[@f5] : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
+      %3 = struct.readm %self[@f5] : !struct.type<@Component08C>, !struct.type<@Component08B<[7]>>
       function.call @Component08B::@constrain(%3) : (!struct.type<@Component08B<[7]>>) -> ()
 
-      %4 = struct.readf %self[@f6] : !struct.type<@Component08C>, !struct.type<@Component08B<[5]>>
+      %4 = struct.readm %self[@f6] : !struct.type<@Component08C>, !struct.type<@Component08B<[5]>>
       function.call @Component08B::@constrain(%4) : (!struct.type<@Component08B<[5]>>) -> ()
 
       function.return
@@ -106,75 +106,75 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK3-NEXT:  }
 //
 // CHECK1-LABEL: struct.def @Component08B_5 {
-// CHECK1-NEXT:    struct.field @f2 : !struct.type<@Component08A_5_5>
+// CHECK1-NEXT:    struct.member @f2 : !struct.type<@Component08A_5_5>
 // CHECK1-NEXT:    function.def @compute() -> !struct.type<@Component08B_5> attributes {function.allow_witness} {
 // CHECK1-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08B_5>
 // CHECK1-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08A_5_5::@compute() : () -> !struct.type<@Component08A_5_5>
-// CHECK1-NEXT:      struct.writef %[[V0]][@f2] = %[[V1]] : <@Component08B_5>, !struct.type<@Component08A_5_5>
+// CHECK1-NEXT:      struct.writem %[[V0]][@f2] = %[[V1]] : <@Component08B_5>, !struct.type<@Component08A_5_5>
 // CHECK1-NEXT:      function.return %[[V0]] : !struct.type<@Component08B_5>
 // CHECK1-NEXT:    }
 // CHECK1-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component08B_5>) attributes {function.allow_constraint} {
-// CHECK1-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f2] : <@Component08B_5>, !struct.type<@Component08A_5_5>
+// CHECK1-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f2] : <@Component08B_5>, !struct.type<@Component08A_5_5>
 // CHECK1-NEXT:      function.call @Component08A_5_5::@constrain(%[[V3]]) : (!struct.type<@Component08A_5_5>) -> ()
 // CHECK1-NEXT:      function.return
 // CHECK1-NEXT:    }
 // CHECK1-NEXT:  }
 //
 // CHECK2-LABEL: struct.def @Component08B_7 {
-// CHECK2-NEXT:    struct.field @f2 : !struct.type<@Component08A_5_7>
+// CHECK2-NEXT:    struct.member @f2 : !struct.type<@Component08A_5_7>
 // CHECK2-NEXT:    function.def @compute() -> !struct.type<@Component08B_7> attributes {function.allow_witness} {
 // CHECK2-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08B_7>
 // CHECK2-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08A_5_7::@compute() : () -> !struct.type<@Component08A_5_7>
-// CHECK2-NEXT:      struct.writef %[[V0]][@f2] = %[[V1]] : <@Component08B_7>, !struct.type<@Component08A_5_7>
+// CHECK2-NEXT:      struct.writem %[[V0]][@f2] = %[[V1]] : <@Component08B_7>, !struct.type<@Component08A_5_7>
 // CHECK2-NEXT:      function.return %[[V0]] : !struct.type<@Component08B_7>
 // CHECK2-NEXT:    }
 // CHECK2-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component08B_7>) attributes {function.allow_constraint} {
-// CHECK2-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f2] : <@Component08B_7>, !struct.type<@Component08A_5_7>
+// CHECK2-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f2] : <@Component08B_7>, !struct.type<@Component08A_5_7>
 // CHECK2-NEXT:      function.call @Component08A_5_7::@constrain(%[[V3]]) : (!struct.type<@Component08A_5_7>) -> ()
 // CHECK2-NEXT:      function.return
 // CHECK2-NEXT:    }
 // CHECK2-NEXT:  }
 //
 // CHECK3-LABEL: struct.def @Component08B_f {
-// CHECK3-NEXT:    struct.field @f2 : !struct.type<@Component08A_5_f>
+// CHECK3-NEXT:    struct.member @f2 : !struct.type<@Component08A_5_f>
 // CHECK3-NEXT:    function.def @compute() -> !struct.type<@Component08B_f> attributes {function.allow_witness} {
 // CHECK3-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08B_f>
 // CHECK3-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08A_5_f::@compute() : () -> !struct.type<@Component08A_5_f>
-// CHECK3-NEXT:      struct.writef %[[V0]][@f2] = %[[V1]] : <@Component08B_f>, !struct.type<@Component08A_5_f>
+// CHECK3-NEXT:      struct.writem %[[V0]][@f2] = %[[V1]] : <@Component08B_f>, !struct.type<@Component08A_5_f>
 // CHECK3-NEXT:      function.return %[[V0]] : !struct.type<@Component08B_f>
 // CHECK3-NEXT:    }
 // CHECK3-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component08B_f>) attributes {function.allow_constraint} {
-// CHECK3-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@f2] : <@Component08B_f>, !struct.type<@Component08A_5_f>
+// CHECK3-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f2] : <@Component08B_f>, !struct.type<@Component08A_5_f>
 // CHECK3-NEXT:      function.call @Component08A_5_f::@constrain(%[[V3]]) : (!struct.type<@Component08A_5_f>) -> ()
 // CHECK3-NEXT:      function.return
 // CHECK3-NEXT:    }
 // CHECK3-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Component08C {
-// CHECK-NEXT:    struct.field @f3 : !struct.type<@Component08B_7>
-// CHECK-NEXT:    struct.field @f4 : !struct.type<@Component08B_f>
-// CHECK-NEXT:    struct.field @f5 : !struct.type<@Component08B_7>
-// CHECK-NEXT:    struct.field @f6 : !struct.type<@Component08B_5>
+// CHECK-NEXT:    struct.member @f3 : !struct.type<@Component08B_7>
+// CHECK-NEXT:    struct.member @f4 : !struct.type<@Component08B_f>
+// CHECK-NEXT:    struct.member @f5 : !struct.type<@Component08B_7>
+// CHECK-NEXT:    struct.member @f6 : !struct.type<@Component08B_5>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component08C> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component08C>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component08B_7::@compute() : () -> !struct.type<@Component08B_7>
-// CHECK-NEXT:      struct.writef %[[V0]][@f3] = %[[V1]] : <@Component08C>, !struct.type<@Component08B_7>
+// CHECK-NEXT:      struct.writem %[[V0]][@f3] = %[[V1]] : <@Component08C>, !struct.type<@Component08B_7>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Component08B_f::@compute() : () -> !struct.type<@Component08B_f>
-// CHECK-NEXT:      struct.writef %[[V0]][@f4] = %[[V2]] : <@Component08C>, !struct.type<@Component08B_f>
+// CHECK-NEXT:      struct.writem %[[V0]][@f4] = %[[V2]] : <@Component08C>, !struct.type<@Component08B_f>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @Component08B_7::@compute() : () -> !struct.type<@Component08B_7>
-// CHECK-NEXT:      struct.writef %[[V0]][@f5] = %[[V3]] : <@Component08C>, !struct.type<@Component08B_7>
+// CHECK-NEXT:      struct.writem %[[V0]][@f5] = %[[V3]] : <@Component08C>, !struct.type<@Component08B_7>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Component08B_5::@compute() : () -> !struct.type<@Component08B_5>
-// CHECK-NEXT:      struct.writef %[[V0]][@f6] = %[[V4]] : <@Component08C>, !struct.type<@Component08B_5>
+// CHECK-NEXT:      struct.writem %[[V0]][@f6] = %[[V4]] : <@Component08C>, !struct.type<@Component08B_5>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Component08C>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@Component08C>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@f3] : <@Component08C>, !struct.type<@Component08B_7>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@f3] : <@Component08C>, !struct.type<@Component08B_7>
 // CHECK-NEXT:      function.call @Component08B_7::@constrain(%[[V6]]) : (!struct.type<@Component08B_7>) -> ()
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@f4] : <@Component08C>, !struct.type<@Component08B_f>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@f4] : <@Component08C>, !struct.type<@Component08B_f>
 // CHECK-NEXT:      function.call @Component08B_f::@constrain(%[[V7]]) : (!struct.type<@Component08B_f>) -> ()
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@f5] : <@Component08C>, !struct.type<@Component08B_7>
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@f5] : <@Component08C>, !struct.type<@Component08B_7>
 // CHECK-NEXT:      function.call @Component08B_7::@constrain(%[[V8]]) : (!struct.type<@Component08B_7>) -> ()
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@f6] : <@Component08C>, !struct.type<@Component08B_5>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@f6] : <@Component08C>, !struct.type<@Component08B_5>
 // CHECK-NEXT:      function.call @Component08B_5::@constrain(%[[V9]]) : (!struct.type<@Component08B_5>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }

@@ -14,12 +14,14 @@
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 
 #include "llzk-c/Dialect/Array.h"
+#include "llzk-c/Support.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
+#include <mlir-c/IR.h>
 #include <mlir-c/Pass.h>
 
 using namespace mlir;
@@ -67,28 +69,16 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Array, CreateArrayOp, WithMapOperands, MlirType arrayType, intptr_t nMapOperands,
-    MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap
+    Array, CreateArrayOp, WithMapOperands, MlirType arrayType,
+    LlzkAffineMapOperandsBuilder mapOperands
 ) {
-  MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
+  MapOperandsHelper<> mapOps(mapOperands.nMapOperands, mapOperands.mapOperands);
+  auto numDimsPerMap =
+      llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
   return wrap(
       create<CreateArrayOp>(
           builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
           unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
-      )
-  );
-}
-
-/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Array, CreateArrayOp, WithMapOperandsAndDims, MlirType arrayType, intptr_t nMapOperands,
-    MlirValueRange const *mapOperands, intptr_t nNumsDimsPerMap, int32_t const *numDimsPerMap
-) {
-  MapOperandsHelper<> mapOps(nMapOperands, mapOperands);
-  return wrap(
-      create<CreateArrayOp>(
-          builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
-          ArrayRef(numDimsPerMap, nNumsDimsPerMap)
       )
   );
 }

@@ -9,13 +9,14 @@
 
 #include "llzk-c/Dialect/LLZK.h"
 
-#include <mlir-c/BuiltinTypes.h>
+#include "llzk-c/Dialect/Felt.h"
 
 #include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/LLZK/IR/Attrs.capi.test.cpp.inc"
 #include "llzk/Dialect/LLZK/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_public_attr_get) {
   auto attr = llzkLlzk_PublicAttrGet(context);
@@ -25,4 +26,17 @@ TEST_F(CAPITest, llzk_public_attr_get) {
 TEST_F(CAPITest, llzk_attribute_is_a_public_attr_pass) {
   auto attr = llzkLlzk_PublicAttrGet(context);
   EXPECT_TRUE(llzkAttributeIsA_Llzk_PublicAttr(attr));
+}
+
+TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+
+  MlirOperation op = llzkLlzk_NonDetOpBuild(builder, location, createIndexType());
+
+  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_TRUE(llzkOperationIsA_Llzk_NonDetOp(op));
+
+  mlirOperationDestroy(op);
+  mlirOpBuilderDestroy(builder);
 }

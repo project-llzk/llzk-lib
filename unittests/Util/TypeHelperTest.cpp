@@ -80,5 +80,12 @@ TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI256) {
   APInt bigValue = APInt::getMaxValue(256);
   IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 256), bigValue);
   // Force IndexType on it without changing the value
-  ASSERT_DEATH(auto _ = forceIntType(a, errFn), "error: value is too large for `index` type: -1");
+  ASSERT_DEATH(
+      {
+        if (failed(forceIntType(a, errFn))) {
+          std::abort();
+        }
+      },
+      "error: value is too large for `index` type: -1"
+  );
 }

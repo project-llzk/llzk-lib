@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 
 #include "llzk-c/Dialect/Function.h"
+#include "llzk-c/Support.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Pass.h>
@@ -98,12 +99,14 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Function, CallOp, WithMapOperands, intptr_t numResults, MlirType const *results,
-    MlirAttribute name, intptr_t numMapOperands, MlirValueRange const *mapOperands,
-    MlirAttribute numDimsPerMap, intptr_t numArgOperands, MlirValue const *argOperands
+    MlirAttribute name, LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands,
+    MlirValue const *argOperands
 ) {
   SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
-  MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
+  MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
+  auto numDimsPerMap =
+      llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
   return wrap(
       create<CallOp>(
           builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
@@ -114,49 +117,16 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Function, CallOp, WithMapOperandsAndDims, intptr_t numResults, MlirType const *results,
-    MlirAttribute name, intptr_t numMapOperands, MlirValueRange const *mapOperands,
-    intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap, intptr_t numArgOperands,
-    MlirValue const *argOperands
-) {
-  SmallVector<Type> resultsSto;
-  SmallVector<Value> argOperandsSto;
-  MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          *mapOperandsHelper, ArrayRef(numDimsPerMap, numDimsPermMapLength),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
-  );
-}
-
-LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee, intptr_t numMapOperands,
-    MlirValueRange const *mapOperands, MlirAttribute numDimsPerMap, intptr_t numArgOperands,
-    MlirValue const *argOperands
+    Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee,
+    LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
 ) {
   SmallVector<Value> argOperandsSto;
-  MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
+  MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
+  auto numDimsPerMap =
+      llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
   return wrap(
       create<CallOp>(
           builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
-  );
-}
-
-LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Function, CallOp, ToCalleeWithMapOperandsAndDims, MlirOperation callee, intptr_t numMapOperands,
-    MlirValueRange const *mapOperands, intptr_t numDimsPermMapLength, int32_t const *numDimsPerMap,
-    intptr_t numArgOperands, MlirValue const *argOperands
-) {
-  SmallVector<Value> argOperandsSto;
-  MapOperandsHelper<> mapOperandsHelper(numMapOperands, mapOperands);
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), *mapOperandsHelper,
-          ArrayRef(numDimsPerMap, numDimsPermMapLength),
           unwrapList(numArgOperands, argOperands, argOperandsSto)
       )
   );

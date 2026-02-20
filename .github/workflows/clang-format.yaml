@@ -18,8 +18,10 @@ jobs:
           echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
       - uses: actions/checkout@v4
         with:
-          # Checkout head commit and all commits in the PR, including the merge base
-          ref: ${{ github.event.pull_request.head.ref }}
+          # Checkout head commit and all commits in the PR, including the merge base.
+          # Use head.repo.full_name and head.sha so this works for PRs from upstream and forks.
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
       - name: Setup git-clang-format
         run: |

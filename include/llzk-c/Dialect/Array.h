@@ -47,6 +47,15 @@ llzkArray_ArrayTypeGetWithDims(MlirType type, intptr_t nDims, MlirAttribute cons
 MLIR_CAPI_EXPORTED MlirType
 llzkArray_ArrayTypeGetWithShape(MlirType type, intptr_t nDims, int64_t const *dims);
 
+/// Returns the element type of an llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED MlirType llzkArray_ArrayTypeGetElementType(MlirType type);
+
+/// Returns the number of dimensions of an llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED intptr_t llzkArray_ArrayTypeGetNumDims(MlirType type);
+
+/// Returns the n-th dimention of an llzk::array::ArrayType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkArray_ArrayTypeGetDim(MlirType type, intptr_t dim);
+
 //===----------------------------------------------------------------------===//
 // CreateArrayOp
 //===----------------------------------------------------------------------===//
@@ -57,16 +66,9 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 );
 
 /// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-/// The Attribute argument must be a DenseI32ArrayAttr.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Array, CreateArrayOp, WithMapOperands, MlirType arrType, intptr_t nMapOperands,
-    MlirValueRange const *mapOperands, MlirAttribute dimsPerMap
-);
-
-/// Creates a CreateArrayOp with its size information declared with AffineMaps and operands.
-LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Array, CreateArrayOp, WithMapOperandsAndDims, MlirType arrType, intptr_t nMapOperands,
-    MlirValueRange const *mapOperands, intptr_t nDimsPerMap, int32_t const *dimsPerMap
+    Array, CreateArrayOp, WithMapOperands, MlirType arrType,
+    LlzkAffineMapOperandsBuilder mapOperands
 );
 
 #ifdef __cplusplus

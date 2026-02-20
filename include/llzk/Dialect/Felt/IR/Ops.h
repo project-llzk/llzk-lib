@@ -17,5 +17,7 @@
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations
+#include "llzk/Dialect/Felt/IR/OpInterfaces.h.inc"
+
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Felt/IR/Ops.h.inc"

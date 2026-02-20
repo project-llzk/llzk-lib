@@ -1,7 +1,7 @@
 // RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
 
 #map = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang = "zirgen"} {
   struct.def @Component<[]> {
     function.def @compute() -> !struct.type<@Component<[]>> {
       %self = struct.new : !struct.type<@Component<[]>>
@@ -15,46 +15,46 @@ module attributes {veridise.lang = "llzk"} {
 
   struct.def @Reg {
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @reg : !felt.type {llzk.pub}
+    struct.member @reg : !felt.type {llzk.pub}
 
     function.def @compute(%v: !felt.type) -> !struct.type<@Reg> {
       %self = struct.new : !struct.type<@Reg>
-      struct.writef %self[@reg] = %v : !struct.type<@Reg>, !felt.type
+      struct.writem %self[@reg] = %v : !struct.type<@Reg>, !felt.type
       function.return %self : !struct.type<@Reg>
     }
 
     function.def @constrain(%self: !struct.type<@Reg>, %v: !felt.type) {
-      %0 = struct.readf %self[@reg] : !struct.type<@Reg>, !felt.type
+      %0 = struct.readm %self[@reg] : !struct.type<@Reg>, !felt.type
       constrain.eq %v, %0 : !felt.type
       function.return
     }
   }
 
   struct.def @Div<[]> {
-    struct.field @reciprocal : !felt.type
+    struct.member @reciprocal : !felt.type
     // ZIR frontend should mark function.return value with `pub`
-    struct.field @synthetic_return : !felt.type {llzk.pub}
+    struct.member @synthetic_return : !felt.type {llzk.pub}
 
-    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@Div<[]>> {
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@Div<[]>>
       // res_inv := inv(rhs);
       %res_inv = felt.inv %rhs
-      struct.writef %self[@reciprocal] = %res_inv : !struct.type<@Div<[]>>, !felt.type
+      struct.writem %self[@reciprocal] = %res_inv : !struct.type<@Div<[]>>, !felt.type
       // self.synthetic_return := res_inv * lhs;
       %res_mul = felt.mul %res_inv, %lhs
-      struct.writef %self[@synthetic_return] = %res_mul : !struct.type<@Div<[]>>, !felt.type
+      struct.writem %self[@synthetic_return] = %res_mul : !struct.type<@Div<[]>>, !felt.type
       //
       function.return %self : !struct.type<@Div<[]>>
     }
 
     function.def @constrain(%self: !struct.type<@Div<[]>>, %lhs: !felt.type, %rhs: !felt.type) {
       // emit self.reciprocal * rhs = 1;
-      %res_inv = struct.readf %self[@reciprocal] : !struct.type<@Div<[]>>, !felt.type
+      %res_inv = struct.readm %self[@reciprocal] : !struct.type<@Div<[]>>, !felt.type
       %res_mul_1 = felt.mul %res_inv, %rhs
       %const_1 = felt.const 1
       constrain.eq %res_mul_1, %const_1 : !felt.type
       // emit self.synthetic_return = self.reciprocal * lhs;
-      %res_self = struct.readf %self[@synthetic_return] : !struct.type<@Div<[]>>, !felt.type
+      %res_self = struct.readm %self[@synthetic_return] : !struct.type<@Div<[]>>, !felt.type
       %res_mul_2 = felt.mul %res_inv, %lhs
       constrain.eq %res_self, %res_mul_2 : !felt.type
       //
@@ -63,71 +63,71 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   struct.def @Foo<[@N, @P, @Aff$0]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp_0" : !struct.type<@Component<[]>>
-    struct.field @"$temp" : !struct.type<@Div<[]>>
-    function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, @Aff$0]>> {
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp_0" : !struct.type<@Component<[]>>
+    struct.member @"$temp" : !struct.type<@Div<[]>>
+    function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@Foo<[@N, @P, @Aff$0]>>
       %0 = poly.read_const @N : !felt.type
       %1 = poly.read_const @P : !felt.type
       %2 = function.call @Div::@compute(%0, %1) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writef %self[@"$temp"] = %2 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      %3 = struct.readf %self[@"$temp"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
+      struct.writem %self[@"$temp"] = %2 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
+      %3 = struct.readm %self[@"$temp"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
       %4 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$temp_0"] = %4 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      %5 = struct.readf %self[@"$temp_0"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %5 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$temp_0"] = %4 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      %5 = struct.readm %self[@"$temp_0"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %5 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Foo<[@N, @P, @Aff$0]>>
     }
     function.def @constrain(%arg0: !struct.type<@Foo<[@N, @P, @Aff$0]>>, %arg1: !array.type<@Aff$0 x !felt.type>) {
       %0 = poly.read_const @N : !felt.type
       %1 = poly.read_const @P : !felt.type
-      %2 = struct.readf %arg0[@"$temp"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
+      %2 = struct.readm %arg0[@"$temp"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
       function.call @Div::@constrain(%2, %0, %1) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %3 = struct.readf %arg0[@"$temp_0"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      %3 = struct.readm %arg0[@"$temp_0"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
       function.call @Component::@constrain(%3) : (!struct.type<@Component<[]>>) -> ()
       function.return
     }
   }
 
   struct.def @Bar<[@N, @P, @Aff$0]> {
-    struct.field @"$super" : !struct.type<@Component<[]>>
-    struct.field @"$temp_1" : !struct.type<@Component<[]>>
-    struct.field @"$temp_0" : !struct.type<@Foo<[@N, @P, #map]>>
-    struct.field @"$temp" : !struct.type<@Div<[]>>
-    function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Bar<[@N, @P, @Aff$0]>> {
+    struct.member @"$super" : !struct.type<@Component<[]>>
+    struct.member @"$temp_1" : !struct.type<@Component<[]>>
+    struct.member @"$temp_0" : !struct.type<@Foo<[@N, @P, #map]>>
+    struct.member @"$temp" : !struct.type<@Div<[]>>
+    function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@Bar<[@N, @P, @Aff$0]>>
       %0 = poly.read_const @N : !felt.type
       %1 = poly.read_const @P : !felt.type
       %2 = function.call @Div::@compute(%0, %1) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writef %self[@"$temp"] = %2 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      %3 = struct.readf %self[@"$temp"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
+      struct.writem %self[@"$temp"] = %2 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
+      %3 = struct.readm %self[@"$temp"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
       %5 = poly.read_const @N : index
       %7 = poly.read_const @P : index
       %8 = function.call @Foo::@compute(%arg0) {()[%5, %7]} : (!array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, #map]>>
-      struct.writef %self[@"$temp_0"] = %8 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
-      %9 = struct.readf %self[@"$temp_0"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
+      struct.writem %self[@"$temp_0"] = %8 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
+      %9 = struct.readm %self[@"$temp_0"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
       %10 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writef %self[@"$temp_1"] = %10 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      %11 = struct.readf %self[@"$temp_1"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      struct.writef %self[@"$super"] = %11 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$temp_1"] = %10 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      %11 = struct.readm %self[@"$temp_1"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      struct.writem %self[@"$super"] = %11 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
       function.return %self : !struct.type<@Bar<[@N, @P, @Aff$0]>>
     }
     function.def @constrain(%arg0: !struct.type<@Bar<[@N, @P, @Aff$0]>>, %arg1: !array.type<@Aff$0 x !felt.type>) {
       %0 = poly.read_const @N : !felt.type
       %1 = poly.read_const @P : !felt.type
-      %2 = struct.readf %arg0[@"$temp"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
+      %2 = struct.readm %arg0[@"$temp"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
       function.call @Div::@constrain(%2, %0, %1) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %3 = struct.readf %arg0[@"$temp_0"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
+      %3 = struct.readm %arg0[@"$temp_0"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
       function.call @Foo::@constrain(%3, %arg1) : (!struct.type<@Foo<[@N, @P, #map]>>, !array.type<@Aff$0 x !felt.type>) -> ()
-      %4 = struct.readf %arg0[@"$temp_1"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
+      %4 = struct.readm %arg0[@"$temp_1"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
       function.call @Component::@constrain(%4) : (!struct.type<@Component<[]>>) -> ()
       function.return
     }
   }
 
   struct.def @Main {
-    function.def @compute() -> !struct.type<@Main> {
+    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
       %self = struct.new : !struct.type<@Main>
       %5 = arith.constant 5 : index
       %2 = arith.constant 2 : index
@@ -151,36 +151,36 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Reg {
-// CHECK-NEXT:    struct.field @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:    struct.member @reg : !felt.type {llzk.pub}
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
-// CHECK-NEXT:      struct.writef %[[V1]][@reg] = %[[V0]] : <@Reg>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V1]][@reg] = %[[V0]] : <@Reg>, !felt.type
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Reg>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readf %[[V2]][@reg] : <@Reg>, !felt.type
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@reg] : <@Reg>, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V3]], %[[V4]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Div {
-// CHECK-NEXT:    struct.field @reciprocal : !felt.type
-// CHECK-NEXT:    struct.field @synthetic_return : !felt.type {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Div> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.member @reciprocal : !felt.type
+// CHECK-NEXT:    struct.member @synthetic_return : !felt.type {llzk.pub}
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Div> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Div>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.inv %[[V1]] : !felt.type
-// CHECK-NEXT:      struct.writef %[[V2]][@reciprocal] = %[[V3]] : <@Div>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V2]][@reciprocal] = %[[V3]] : <@Div>, !felt.type
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = felt.mul %[[V3]], %[[V0]] : !felt.type, !felt.type
-// CHECK-NEXT:      struct.writef %[[V2]][@synthetic_return] = %[[V4]] : <@Div>, !felt.type
+// CHECK-NEXT:      struct.writem %[[V2]][@synthetic_return] = %[[V4]] : <@Div>, !felt.type
 // CHECK-NEXT:      function.return %[[V2]] : !struct.type<@Div>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@Div>, %[[V6:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V7:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@reciprocal] : <@Div>, !felt.type
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@reciprocal] : <@Div>, !felt.type
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.mul %[[V9]], %[[V7]] : !felt.type, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V10]], %[[V8]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readf %[[V5]][@synthetic_return] : <@Div>, !felt.type
+// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@synthetic_return] : <@Div>, !felt.type
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = felt.mul %[[V9]], %[[V6]] : !felt.type, !felt.type
 // CHECK-NEXT:      constrain.eq %[[V11]], %[[V12]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
@@ -188,69 +188,69 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Foo_4_3_7 {
-// CHECK-NEXT:    struct.field @"$super" : !struct.type<@Component>
-// CHECK-NEXT:    struct.field @"$temp_0" : !struct.type<@Component>
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Div>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@Foo_4_3_7> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component>
+// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Component>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@Foo_4_3_7> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  3
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  4
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo_4_3_7>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V1]]) : (!felt.type, !felt.type) -> !struct.type<@Div>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$temp"] = %[[V4]] : <@Foo_4_3_7>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@"$temp"] : <@Foo_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@Foo_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@Foo_4_3_7>, !struct.type<@Div>
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$temp_0"] = %[[V6]] : <@Foo_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@"$temp_0"] : <@Foo_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$super"] = %[[V7]] : <@Foo_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@Foo_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@Foo_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$super"] = %[[V7]] : <@Foo_4_3_7>, !struct.type<@Component>
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Foo_4_3_7>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo_4_3_7>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.const  4
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = felt.const  3
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readf %[[V8]][@"$temp"] : <@Foo_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp"] : <@Foo_4_3_7>, !struct.type<@Div>
 // CHECK-NEXT:      function.call @Div::@constrain(%[[V12]], %[[V10]], %[[V11]]) : (!struct.type<@Div>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readf %[[V8]][@"$temp_0"] : <@Foo_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp_0"] : <@Foo_4_3_7>, !struct.type<@Component>
 // CHECK-NEXT:      function.call @Component::@constrain(%[[V13]]) : (!struct.type<@Component>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Bar_4_3_7 {
-// CHECK-NEXT:    struct.field @"$super" : !struct.type<@Component>
-// CHECK-NEXT:    struct.field @"$temp_1" : !struct.type<@Component>
-// CHECK-NEXT:    struct.field @"$temp_0" : !struct.type<@Foo_4_3_7>
-// CHECK-NEXT:    struct.field @"$temp" : !struct.type<@Div>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@Bar_4_3_7> attributes {function.allow_witness} {
+// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component>
+// CHECK-NEXT:    struct.member @"$temp_1" : !struct.type<@Component>
+// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@Bar_4_3_7> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  3
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  4
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar_4_3_7>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V1]]) : (!felt.type, !felt.type) -> !struct.type<@Div>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$temp"] = %[[V4]] : <@Bar_4_3_7>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@"$temp"] : <@Bar_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@Bar_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@Bar_4_3_7>, !struct.type<@Div>
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Foo_4_3_7::@compute(%[[V0]]) : (!array.type<7 x !felt.type>) -> !struct.type<@Foo_4_3_7>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$temp_0"] = %[[V6]] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@"$temp_0"] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$temp_1"] = %[[V8]] : <@Bar_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readf %[[V3]][@"$temp_1"] : <@Bar_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      struct.writef %[[V3]][@"$super"] = %[[V9]] : <@Bar_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_1"] = %[[V8]] : <@Bar_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_1"] : <@Bar_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$super"] = %[[V9]] : <@Bar_4_3_7>, !struct.type<@Component>
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Bar_4_3_7>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V10:[0-9a-zA-Z_\.]+]]: !struct.type<@Bar_4_3_7>, %[[V11:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = felt.const  4
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = felt.const  3
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readf %[[V10]][@"$temp"] : <@Bar_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp"] : <@Bar_4_3_7>, !struct.type<@Div>
 // CHECK-NEXT:      function.call @Div::@constrain(%[[V14]], %[[V12]], %[[V13]]) : (!struct.type<@Div>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = struct.readf %[[V10]][@"$temp_0"] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp_0"] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
 // CHECK-NEXT:      function.call @Foo_4_3_7::@constrain(%[[V15]], %[[V11]]) : (!struct.type<@Foo_4_3_7>, !array.type<7 x !felt.type>) -> ()
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = struct.readf %[[V10]][@"$temp_1"] : <@Bar_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp_1"] : <@Bar_4_3_7>, !struct.type<@Component>
 // CHECK-NEXT:      function.call @Component::@constrain(%[[V16]]) : (!struct.type<@Component>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <7 x !felt.type>
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Bar_4_3_7::@compute(%[[V1]]) : (!array.type<7 x !felt.type>) -> !struct.type<@Bar_4_3_7>

@@ -12,9 +12,9 @@ project(
   LLZK
   # Keeping this description short since it's also used by doxygen
   DESCRIPTION
-    "Veridise's ZK Language IR"
+    "An open-source IR for Zero Knowledge (ZK) circuits"
   VERSION "${LLZK_VERSION}"
-  HOMEPAGE_URL https://github.com/Veridise/llzk-lib)
+  HOMEPAGE_URL https://github.com/project-llzk/llzk-lib)
 
 option(LLZK_TEMPLATE_BACKTRACE_LIMIT
        "Add -ftemplate-backtrace-limit=0 to the compile flags")
@@ -99,7 +99,7 @@ add_compile_options(
   -Wextra
   -Wno-unused-parameter
   -Wshadow
-  -Wnon-virtual-dtor
+  $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
   -pedantic
   -fno-omit-frame-pointer)
 
@@ -159,7 +159,7 @@ if(LLZK_TEMPLATE_BACKTRACE_LIMIT)
 endif()
 
 # MAYBE FIXME: If we want to hide inline functions we need to setup macros See
-# https://github.com/Veridise/llzk-lib/pull/3#discussion_r1726140891
+# https://github.com/project-llzk/llzk-lib/pull/3#discussion_r1726140891
 
 # Python bindings
 
@@ -197,7 +197,7 @@ set(LLZK_MLIR_DOC_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIRECTORY}/mlir")
 set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # We need the r1cs include dir so we can pass it to mlir-tblgen
-set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/r1cs/include")
+set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/r1cs/include")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
@@ -217,7 +217,7 @@ install(TARGETS LLZKAllDialects EXPORT LLZKTargets)
 
 add_subdirectory(include)
 add_subdirectory(lib)
-add_subdirectory(r1cs)
+add_subdirectory(backends)
 add_subdirectory(tools)
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(python)

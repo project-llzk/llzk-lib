@@ -2,7 +2,7 @@
 
 #id = affine_map<(i)->(i)>
 !ToFelt = !struct.type<@ToFelt<[#id]>>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ToFelt<[@A]> {
     function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
       %self = struct.new : !struct.type<@ToFelt<[@A]>>
@@ -38,22 +38,22 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @Component02<[@A,@B]> {
-    // expected-error@+1 {{Cannot update type of 'struct.field' because there are multiple 'struct.writef' with different value types}}
-    struct.field @f : !array.type<@A x !felt.type> {llzk.pub}
+    // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writem' with different value types}}
+    struct.member @f : !array.type<@A x !felt.type> {llzk.pub}
 
     function.def @compute() -> !struct.type<@Component02<[@A,@B]>> {
       %self = struct.new : !struct.type<@Component02<[@A,@B]>>
       %0 = array.new : !array.type<@A x !felt.type>
       // expected-note@+2 {{type written here is '!array.type<@A x !felt.type>'}}
       // expected-note@+1 {{type written here is '!array.type<2 x !felt.type>'}}
-      struct.writef %self[@f] = %0 : !struct.type<@Component02<[@A,@B]>>, !array.type<@A x !felt.type>
+      struct.writem %self[@f] = %0 : !struct.type<@Component02<[@A,@B]>>, !array.type<@A x !felt.type>
       %n = arith.constant 5 : index
       %1 = array.new : !array.type<@B x !felt.type>
       // expected-note@+2 {{type written here is '!array.type<@B x !felt.type>'}}
       // expected-note@+1 {{type written here is '!array.type<3 x !felt.type>'}}
-      struct.writef %self[@f] = %1 : !struct.type<@Component02<[@A,@B]>>, !array.type<@B x !felt.type>
+      struct.writem %self[@f] = %1 : !struct.type<@Component02<[@A,@B]>>, !array.type<@B x !felt.type>
       function.return %self: !struct.type<@Component02<[@A,@B]>>
     }
 

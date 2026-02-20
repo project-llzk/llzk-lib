@@ -1,6 +1,6 @@
 // Imported via `include_fail.llzk`
 
-module @shouldNotBeNamed attributes {veridise.lang = "llzk"} { // expected-note {{this should be unnamed}}
+module @shouldNotBeNamed attributes {llzk.lang} { // expected-note {{this should be unnamed}}
   function.def private @my_func_0()
   module @pkg_one {
     function.def private @my_func_1()

@@ -36,7 +36,7 @@ function.def @i1_to_index(
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @C1 {
     function.def @compute() -> !struct.type<@C1> {
       %self = struct.new : !struct.type<@C1>
@@ -68,7 +68,7 @@ function.def @array_to_felt(%a: !array.type<7 x i1>) -> !felt.type {
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @C2 {
     function.def @compute() -> !struct.type<@C2> {
       %self = struct.new : !struct.type<@C2>
@@ -84,10 +84,27 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 
-function.def @check_type_restriction_on_pram(
+function.def @check_type_restriction_on_param(
     %a: i1 // expected-note {{prior use here}}
   ) -> !felt.type {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'index' vs 'i1'}}
   %b = cast.tofelt %a : index
   function.return %b: !felt.type
+}
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @C3 {
+    struct.member @f1 : !felt.type {signal}
+    function.def @compute() -> !struct.type<@C3> {
+      %self = struct.new : !struct.type<@C3>
+      function.return %self : !struct.type<@C3>
+    }
+    function.def @constrain(%self: !struct.type<@C3>) {
+      %f = struct.readm %self[@f1] : !struct.type<@C3>, !felt.type
+      // expected-error@+1 {{'cast.toindex' op only valid within a 'function.def' with 'function.allow_non_native_field_ops' attribute}}
+      %i = cast.toindex %f
+      function.return
+    }
+  }
 }

@@ -150,6 +150,14 @@ def FuncDefOp
     /// Add (resp. remove) the `allow_witness` attribute to (resp. from) the function def.
     void setAllowWitnessAttr(bool newValue = true);
 
+    /// Return `true` iff the function def has the `allow_non_native_field_ops` attribute.
+    inline bool hasAllowNonNativeFieldOpsAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowNonNativeFieldOpsAttr::name);
+    }
+
+    /// Add (resp. remove) the `allow_non_native_field_ops` attribute to (resp. from) the function def.
+    void setAllowNonNativeFieldOpsAttr(bool newValue = true);
+
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 
@@ -357,11 +365,32 @@ def CallOp : FunctionDialectOp<
                   }]>];
 
   let extraClassDeclaration = [{
+    //===------------------------------------------------------------------===//
+    // CallOpInterface Methods
+    //===------------------------------------------------------------------===//
+
+    ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
+
+    ::mlir::Operation *resolveCallable();
+
+    //===------------------------------------------------------------------===//
+    // Utility Methods
+    //===------------------------------------------------------------------===//
+
     ::mlir::FunctionType getCalleeType();
 
     /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
     /// does not check if the callee function is located within a StructDefOp).
-    inline bool calleeIsCompute() { return FUNC_NAME_COMPUTE == getCallee().getLeafReference(); }
+    inline bool calleeIsCompute() {
+      return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
+    }
+
+    /// Return `true` iff the callee function can contain witness generation code
+    /// (this does not check if the callee function is located within a StructDefOp)
+    inline bool calleeContainsWitnessGen() {
+      return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||
+             FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+    }
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` (this
     /// does not check if the callee function is located within a StructDefOp).
@@ -387,6 +416,9 @@ def CallOp : FunctionDialectOp<
 
     /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.
     ::llzk::component::StructType getSingleResultTypeOfCompute();
+
+    /// Assuming the callee contains witness generation code, return the single StructType result.
+    ::llzk::component::StructType getSingleResultTypeOfWitnessGen();
 
     /// Allocate consecutive storage of the ValueRange instances in the parameter
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.

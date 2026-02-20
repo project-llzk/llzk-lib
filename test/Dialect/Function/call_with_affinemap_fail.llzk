@@ -1,7 +1,7 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -verify-diagnostics %s
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @MissingInstantiations {
@@ -16,7 +16,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @EmptyInstantiations {
@@ -31,7 +31,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewInstantiations {
@@ -46,7 +46,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManyInstantiations {
@@ -61,7 +61,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewDimensions {
@@ -76,7 +76,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManyDimensions {
@@ -91,7 +91,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewSymbols {
@@ -106,7 +106,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManySymbols {
@@ -121,7 +121,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @CallUnknownConstrainWithMapInit<[@S]> {
     function.def @compute(%0: !poly.tvar<@S>) -> !struct.type<@CallUnknownConstrainWithMapInit<[@S]>> {
       %self = struct.new : !struct.type<@CallUnknownConstrainWithMapInit<[@S]>>
@@ -137,7 +137,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @CallKnownConstrainWithMapInit {
@@ -155,7 +155,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @global_id(%0: index) -> index {
     function.return %0 : index
   }
@@ -174,7 +174,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewResults {
@@ -190,7 +190,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManyResults {

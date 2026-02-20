@@ -12,6 +12,13 @@ llzk_tablegen(Attrs.capi.h.inc -gen-attr-capi-header -prefix=llzk -dialect=llzk)
 llzk_tablegen(Attrs.capi.cpp.inc -gen-attr-capi-impl -prefix=llzk -dialect=llzk)
 llzk_tablegen(Attrs.capi.test.cpp.inc -gen-attr-capi-tests -prefix=llzk -dialect=llzk)
 
+set(LLVM_TARGET_DEFINITIONS "Ops.td")
+mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=llzk)
+mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=llzk)
+llzk_tablegen(Ops.capi.h.inc -gen-op-capi-header -prefix=llzk -dialect=llzk)
+llzk_tablegen(Ops.capi.cpp.inc -gen-op-capi-impl -prefix=llzk -dialect=llzk)
+llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=llzk)
+
 llzk_add_mlir_doc(LLZKOpsDocGen dialect/LLZKDialect.md -gen-dialect-doc -dialect=llzk)
 
 add_public_tablegen_target(LLZKDialectIncGen)

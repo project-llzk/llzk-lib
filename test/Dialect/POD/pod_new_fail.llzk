@@ -1,0 +1,32 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+// expected-error@+1 {{found duplicated record name 'n'}}
+function.def @new_uninit_pod() -> !pod.type<[@n: index, @n: index]> {
+  %r = pod.new : <[@n: index, @n: index]>
+  function.return %r: !pod.type<[@n: index, @n: index]>
+}
+
+// -----
+
+function.def @new_init_pod(%0: index, %1: index) -> !pod.type<[@x: index, @y: !felt.type]> {
+  // expected-error@+1 {{found duplicated record name 'x'}}
+  %r = pod.new { @x = %0, @x = %1 } : <[@x: index, @y: !felt.type]>
+  function.return %r: !pod.type<[@x: index, @y: !felt.type]>
+}
+
+// -----
+
+function.def @new_init_pod(%0: index, %1: index) -> !pod.type<[@x: index, @y: !felt.type]> {
+  // expected-error@+1 {{custom op 'pod.new' record 'z' was not found in plain-old-data type}}
+  %r = pod.new { @x = %0, @z = %1 } : <[@x: index, @y: !felt.type]>
+  function.return %r: !pod.type<[@x: index, @y: !felt.type]>
+}
+
+// -----
+
+function.def @new_init_pod(%0: index, %1: index) -> !pod.type<[@x: index, @y: !felt.type]> {
+  // expected-note@-1 {{prior use here}}
+  // expected-error@+1 {{use of value '%1' expects different type than prior uses: '!felt.type' vs 'index'}}
+  %r = pod.new { @x = %0, @y = %1 } : <[@x: index, @y: !felt.type]>
+  function.return %r: !pod.type<[@x: index, @y: !felt.type]>
+}

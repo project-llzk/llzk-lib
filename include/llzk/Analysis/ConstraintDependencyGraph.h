@@ -32,12 +32,13 @@ using SourceRefRemappings = std::vector<std::pair<SourceRef, SourceRefLatticeVal
 /// LLZK operations use and produce. The analysis is simple: any operation will
 /// simply output a union of its input references, regardless of what type of
 /// operation it performs, as the analysis is operator-insensitive.
-class SourceRefAnalysis : public dataflow::DenseForwardDataFlowAnalysis<SourceRefLattice> {
+class SourceRefAnalysis : public mlir::dataflow::DenseForwardDataFlowAnalysis<SourceRefLattice> {
 public:
-  using dataflow::DenseForwardDataFlowAnalysis<SourceRefLattice>::DenseForwardDataFlowAnalysis;
+  using mlir::dataflow::DenseForwardDataFlowAnalysis<
+      SourceRefLattice>::DenseForwardDataFlowAnalysis;
 
   void visitCallControlFlowTransfer(
-      mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
+      mlir::CallOpInterface call, mlir::dataflow::CallControlFlowAction action,
       const SourceRefLattice &before, SourceRefLattice *after
   ) override;
 
@@ -105,7 +106,7 @@ namespace llzk {
 /// For example, a CDG of the form: {
 ///     {%arg1, %arg2, %arg3[@foo]}
 /// }
-/// Means that %arg1, %arg2, and field @foo of %arg3, are connected
+/// Means that %arg1, %arg2, and member @foo of %arg3, are connected
 /// via some constraints. These constraints could take the form of (in Circom notation):
 ///     %arg1 + %arg3[@foo] === %arg2
 /// Or

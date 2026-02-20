@@ -1,9 +1,9 @@
-// RUN: llzk-opt -split-input-file %s -llzk-flatten -verify-diagnostics 
+// RUN: llzk-opt -split-input-file %s -llzk-flatten -verify-diagnostics
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1<[@T]> {
-    // expected-error@+1 {{'struct.field' op marked as column can only contain felts, arrays of column types, or structs with columns, but field has type 'index'}}
-    struct.field @f1 : !poly.tvar<@T> {column}
+    // expected-error@+1 {{'struct.member' op marked as column can only contain felts, arrays of column types, or structs with columns, but has type 'index'}}
+    struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
 
     function.def @constrain(%self: !struct.type<@ComponentA1<[@T]>>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1<[@T]>> {
@@ -15,7 +15,7 @@ module attributes {veridise.lang = "llzk"} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1<[index]>>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readf %p[@f1] : !struct.type<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
+      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1<[index]>>, index {tableOffset = -1 : index}
       function.return %self : !struct.type<@ComponentA2>
     }
 
@@ -24,5 +24,3 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-
-

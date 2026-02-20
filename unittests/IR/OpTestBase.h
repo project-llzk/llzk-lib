@@ -87,3 +87,9 @@ template <typename TypeClass> bool verify(mlir::Operation *op, bool verifySymbol
 template <typename TypeClass> inline bool verify(TypeClass op, bool verifySymbolUses = false) {
   return verify<TypeClass>(op.getOperation(), verifySymbolUses);
 }
+
+template <typename TypeClass> inline void verifyOrDie(TypeClass op, bool verifySymbolUses = false) {
+  if (!verify<TypeClass>(op.getOperation(), verifySymbolUses)) {
+    std::abort();
+  }
+}

@@ -12,8 +12,6 @@
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
-#include "llzk/Analysis/DenseAnalysis.h"
-#include "llzk/Analysis/Field.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
@@ -25,7 +23,9 @@
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/Field.h"
 
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>
@@ -207,9 +207,9 @@ public:
   using LatticeValue = IntervalAnalysisLatticeValue;
   // Map mlir::Values to LatticeValues
   using ValueMap = mlir::DenseMap<mlir::Value, LatticeValue>;
-  // Map field references to LatticeValues. Used for field reads and writes.
-  // Structure is component value -> field attribute -> latticeValue
-  using FieldMap = mlir::DenseMap<mlir::Value, mlir::DenseMap<mlir::StringAttr, LatticeValue>>;
+  // Map member references to LatticeValues. Used for member reads and writes.
+  // Structure is component value -> member attribute -> latticeValue
+  using MemberMap = mlir::DenseMap<mlir::Value, mlir::DenseMap<mlir::StringAttr, LatticeValue>>;
   // Expression to interval map for convenience.
   using ExpressionIntervals = mlir::DenseMap<llvm::SMTExprRef, Interval>;
   // Tracks all constraints and assignments in insertion order
@@ -253,7 +253,7 @@ class IntervalDataFlowAnalysis
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
 
-  // Map fields to their symbols
+  // Map members to their symbols
   using SymbolMap = mlir::DenseMap<SourceRef, llvm::SMTExprRef>;
 
 public:
@@ -275,12 +275,12 @@ public:
   /// @return
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
 
-  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getFieldReadResults() const {
-    return fieldReadResults;
+  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getMemberReadResults() const {
+    return memberReadResults;
   }
 
-  const llvm::DenseMap<SourceRef, ExpressionValue> &getFieldWriteResults() const {
-    return fieldWriteResults;
+  const llvm::DenseMap<SourceRef, ExpressionValue> &getMemberWriteResults() const {
+    return memberWriteResults;
   }
 
 private:
@@ -291,10 +291,10 @@ private:
   bool propagateInputConstraints;
   mlir::SymbolTableCollection tables;
 
-  // Track field reads so that propagations to fields can be all updated efficiently.
-  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> fieldReadResults;
-  // Track field writes values. For now, we'll overapproximate this.
-  llvm::DenseMap<SourceRef, ExpressionValue> fieldWriteResults;
+  // Track member reads so that propagations to members can be all updated efficiently.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> memberReadResults;
+  // Track member writes values. For now, we'll overapproximate this.
+  llvm::DenseMap<SourceRef, ExpressionValue> memberWriteResults;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
@@ -307,9 +307,18 @@ private:
 
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
-  bool isConstOp(mlir::Operation *op) const {
+  inline bool isConstOp(mlir::Operation *op) const {
     return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
+  }
+
+  inline bool isBoolConstOp(mlir::Operation *op) const {
+    if (auto constIntOp = llvm::dyn_cast<mlir::arith::ConstantIntOp>(op)) {
+      auto valAttr = dyn_cast<mlir::IntegerAttr>(constIntOp.getValue());
+      ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
+      return valAttr.getValue().getBitWidth() == 1;
+    }
+    return false;
   }
 
   llvm::DynamicAPInt getConst(mlir::Operation *op) const;
@@ -322,13 +331,12 @@ private:
     return smtSolver->mkBitvector(v, field.get().bitWidth());
   }
 
-  llvm::SMTExprRef createConstBoolExpr(bool v) const {
-    return smtSolver->mkBitvector(mlir::APSInt((int)v), field.get().bitWidth());
-  }
+  llvm::SMTExprRef createConstBoolExpr(bool v) const { return smtSolver->mkBoolean(v); }
 
   bool isArithmeticOp(mlir::Operation *op) const {
     return llvm::isa<
-        felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
+        felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
+        felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
         felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
         felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
         boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
@@ -352,12 +360,12 @@ private:
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
   bool isReadOp(mlir::Operation *op) const {
-    return llvm::isa<component::FieldReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
+    return llvm::isa<component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
   }
 
   bool isDefinitionOp(mlir::Operation *op) const {
     return llvm::isa<
-        component::StructDefOp, function::FuncDefOp, component::FieldDefOp, global::GlobalDefOp,
+        component::StructDefOp, function::FuncDefOp, component::MemberDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 
@@ -432,7 +440,7 @@ public:
   void print(mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false) const;
 
   const llvm::MapVector<SourceRef, Interval> &getConstrainIntervals() const {
-    return constrainFieldRanges;
+    return constrainMemberRanges;
   }
 
   const llvm::SetVector<ExpressionValue> getConstrainSolverConstraints() const {
@@ -440,7 +448,7 @@ public:
   }
 
   const llvm::MapVector<SourceRef, Interval> &getComputeIntervals() const {
-    return computeFieldRanges;
+    return computeMemberRanges;
   }
 
   const llvm::SetVector<ExpressionValue> getComputeSolverConstraints() const {
@@ -457,7 +465,7 @@ private:
   component::StructDefOp structDef;
   llvm::SMTSolverRef smtSolver;
   // llvm::MapVector keeps insertion order for consistent iteration
-  llvm::MapVector<SourceRef, Interval> constrainFieldRanges, computeFieldRanges;
+  llvm::MapVector<SourceRef, Interval> constrainMemberRanges, computeMemberRanges;
   // llvm::SetVector for the same reasons as above
   llvm::SetVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
 

@@ -20,13 +20,42 @@ include "mlir/Interfaces/MemorySlotInterfaces.td"
 def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
   let mnemonic = "type";
   let summary = "finite field element";
-  let description = [{}];
+  let description = [{
+    An element of a finite field. The field can be specified (e.g.,
+    !felt.type<"bn254">) or left unspecified (!felt.type), to be filled in by the
+    backend consumer of LLZK IR.
+    Leaving the field unspecified may reduce the power of certain transformation passes.
+
+    Backends are responsible for performing conversions between felts of different
+    fields. If a circuit needs to encode translations between fields, the circuit
+    may define a function prototype, e.g.:
+
+       function.def @convert(%a : !felt.type<"bn254">) -> !felt.type<"goldilocks">;
+
+    and perform the lowering of calls to this conversion function in a
+    backend-specific manner.
+
+    The field name can be chosen from one of the built-in fields or specified using
+    `felt.field` specification attributes on the root module.
+  }];
+
+  let parameters = (ins OptionalParameter<"::mlir::StringAttr">:$fieldName);
+
+  let assemblyFormat = "(`<` $fieldName^ `>`)?";
+
+  // Default when omitted: felt.type with no fieldName
+  let builderCall = "::llzk::felt::FeltType::get($_builder.getContext(), "
+                    "::mlir::StringAttr())";
 
   let extraClassDeclaration = [{
     static ::llzk::felt::FeltType get(::mlir::MLIRContext *context) {
-      return Base::get(context);
+      return ::llzk::felt::FeltType::get(context, ::mlir::StringAttr());
     }
+
+    const ::llzk::Field &getField() const;
   }];
+
+  let genVerifyDecl = 1;
 }
 
 #endif // LLZK_FELT_TYPES

@@ -7,7 +7,9 @@ target_sources(LLZKCAPI PRIVATE
   InitDialects.cpp 
   Typing.cpp
   Builder.cpp 
+  Support.cpp
   Constants.cpp
+  Support.cpp
   Dialect/Array.cpp 
   Dialect/Bool.cpp 
   Dialect/Cast.cpp 
@@ -17,10 +19,10 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/Global.cpp 
   Dialect/Include.cpp 
   Dialect/LLZK.cpp 
+  Dialect/POD.cpp
   Dialect/Poly.cpp 
   Dialect/String.cpp 
-  Dialect/Struct.cpp 
-  Dialect/Undef.cpp)
+  Dialect/Struct.cpp)
 target_link_libraries(
   LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} 
   MLIRIR

@@ -43,8 +43,6 @@ bool llzkIsConcreteType(MlirType type, bool allowStructParams) {
   return isConcreteType(unwrap(type), allowStructParams);
 }
 
-bool llzkIsSignalType(MlirType type) { return isSignalType(unwrap(type)); }
-
 bool llzkHasAffineMapAttr(MlirType type) { return hasAffineMapAttr(unwrap(type)); }
 
 bool llzkTypeParamsUnify(

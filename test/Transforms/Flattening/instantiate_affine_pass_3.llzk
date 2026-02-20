@@ -2,7 +2,7 @@
 
 #id = affine_map<(i)->(i)>
 !ToFelt = !struct.type<@ToFelt<[#id]>>
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ToFelt<[@A]> {
     function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
       %self = struct.new : !struct.type<@ToFelt<[@A]>>

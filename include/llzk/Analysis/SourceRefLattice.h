@@ -10,9 +10,10 @@
 #pragma once
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
-#include "llzk/Analysis/DenseAnalysis.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Util/ErrorHelper.h"
+
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 
 #include <llvm/ADT/PointerUnion.h>
 
@@ -60,14 +61,14 @@ public:
   std::pair<SourceRefLatticeValue, mlir::ChangeResult>
   translate(const TranslationMap &translation) const;
 
-  /// @brief Add the given `fieldRef` to the `SourceRef`s contained within this value.
-  /// For example, if `fieldRef` is a field reference `@foo` and this value represents `%self`,
+  /// @brief Add the given `memberRef` to the `SourceRef`s contained within this value.
+  /// For example, if `memberRef` is a member reference `@foo` and this value represents `%self`,
   /// the new value will represent `%self[@foo]`.
-  /// @param fieldRef The field reference into the current value.
+  /// @param memberRef The member reference into the current value.
   /// @return The new value and a change result indicating if the value is different than the
   /// original value.
   std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-  referenceField(SymbolLookupResult<component::FieldDefOp> fieldRef) const;
+  referenceMember(SymbolLookupResult<component::MemberDefOp> memberRef) const;
 
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
@@ -86,7 +87,7 @@ protected:
 };
 
 /// A lattice for use in dense analysis.
-class SourceRefLattice : public dataflow::AbstractDenseLattice {
+class SourceRefLattice : public mlir::dataflow::AbstractDenseLattice {
 public:
   // mlir::Value is used for read-like operations that create references in their results,
   // mlir::Operation* is used for write-like operations that reference values as their destinations

@@ -19,24 +19,24 @@
 extern "C" {
 #endif
 
-/// Symbol name for the struct/component representing a signal. A "signal" has direct correspondence
-/// to a circom signal or AIR/PLONK column, opposed to intermediate values or other expressions.
-extern const char *LLZK_COMPONENT_NAME_SIGNAL;
-
-/// Symbol name for the main entry point struct/component (if any). There are additional
-/// restrictions on the struct with this name:
-/// 1. It cannot have struct parameters.
-/// 2. The parameter types of its functions (besides the required "self" parameter) can
-///     only be `struct<Signal>` or `array<.. x struct<Signal>>`.
-extern const char *LLZK_COMPONENT_NAME_MAIN;
-
 /// Symbol name for the witness generation (and resp. constraint generation) functions within a
 /// component.
 extern const char *LLZK_FUNC_NAME_COMPUTE;
 extern const char *LLZK_FUNC_NAME_CONSTRAIN;
 
-/// Name of the attribute on the top-level ModuleOp that specifies the IR language name.
+/// Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the
+/// root module and specifies the frontend language name that the IR was compiled from, if
+/// available.
 extern const char *LLZK_LANG_ATTR_NAME;
+
+/// Name of the attribute on the top-level ModuleOp that defines prime fields
+/// used in the circuit.
+extern const char *LLZK_FIELD_ATTR_NAME;
+
+/// Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.
+/// This attribute can appear zero or one times on the top-level ModuleOp and is associated with
+/// a `TypeAttr` specifying the `StructType` of the main struct.
+extern const char *LLZK_MAIN_ATTR_NAME;
 
 #ifdef __cplusplus
 }

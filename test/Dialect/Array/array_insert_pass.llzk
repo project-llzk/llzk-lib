@@ -156,7 +156,7 @@ function.def @more_dimensions(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @UnificationInDims<[@A, @B]> {
     function.def @compute(%a: !array.type<@A x i1>, %b: !array.type<@B x i1>) -> !struct.type<@UnificationInDims<[@A, @B]>> {
       %self = struct.new : !struct.type<@UnificationInDims<[@A, @B]>>
@@ -192,7 +192,7 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NEXT:  }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @UnificationInTypes<[@A, @B]> {
     function.def @compute(%a: !array.type<3 x !poly.tvar<@A>>, %b: !array.type<3 x !poly.tvar<@B>>) -> !struct.type<@UnificationInTypes<[@A, @B]>> {
       %self = struct.new : !struct.type<@UnificationInTypes<[@A, @B]>>
@@ -232,7 +232,6 @@ module attributes {veridise.lang = "llzk"} {
 function.def @dimensions_unify_affine_with_int_A(%z: !array.type<#map x !felt.type>) {
   %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
-  // expected-error@+1 {{'array.insert' op cannot unify array dimensions [2] with [affine_map<(d0) -> (d0)>]}}
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<#map x !felt.type>
   function.return
 }
@@ -250,7 +249,6 @@ function.def @dimensions_unify_affine_with_int_A(%z: !array.type<#map x !felt.ty
 function.def @dimensions_unify_affine_with_int_B(%z: !array.type<#map x !felt.type>) {
   %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
-  // expected-error@+1 {{'array.insert' op cannot unify array dimensions [2] with [affine_map<()[s0] -> (s0)>]}}
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<#map x !felt.type>
   function.return
 }

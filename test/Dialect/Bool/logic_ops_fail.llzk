@@ -3,14 +3,14 @@
 function.def @f_and(
     %a: !felt.type, // expected-note {{prior use here}}
     %b: !felt.type
-) -> i1 {
+) -> i1 attributes {function.allow_non_native_field_ops} {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!felt.type'}}
   %c = bool.and %a, %b
   function.return %c: i1
 }
 // -----
 
-function.def @f_or(%a: !felt.type, %b: !felt.type) -> i1 attributes {function.allow_witness} {
+function.def @f_or(%a: !felt.type, %b: !felt.type) -> i1 attributes {function.allow_non_native_field_ops} {
   // expected-error@+1 {{'bool.or' op operand #0 must be 1-bit signless integer or type variable, but got '!felt.type'}}
   %c = bool.or %a, %b : !felt.type, !felt.type
   function.return %c: i1
@@ -19,14 +19,14 @@ function.def @f_or(%a: !felt.type, %b: !felt.type) -> i1 attributes {function.al
 
 function.def @f_not1(
     %a: !array.type<4 x !felt.type> // expected-note {{prior use here}}
-) -> i1 {
+) -> i1 attributes {function.allow_non_native_field_ops} {
   // expected-error@+1 {{use of value '%a' expects different type than prior uses: 'i1' vs '!array.type<4 x !felt.type>'}}
   %c = bool.not %a
   function.return %c: i1
 }
 // -----
 
-function.def @f_not2(%a: !array.type<4 x !felt.type>) -> i1 attributes {function.allow_witness} {
+function.def @f_not2(%a: !array.type<4 x !felt.type>) -> i1 attributes {function.allow_non_native_field_ops} {
   // expected-error@+1 {{'bool.not' op operand #0 must be 1-bit signless integer or type variable, but got '!array.type<4 x !felt.type>'}}
   %c = bool.not %a : !array.type<4 x !felt.type>
   function.return %c: i1

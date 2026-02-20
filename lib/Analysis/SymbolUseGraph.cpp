@@ -116,11 +116,11 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
         Operation *user = u.getUser();
         SymbolRefAttr symRef = u.getSymbolRef();
         // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
-        // where the user is a FieldRefOpInterface or the user is located within a StructDefOp and
+        // where the user is a MemberRefOpInterface or the user is located within a StructDefOp and
         // append the StructDefOp path with the FlatSymbolRefAttr.
         if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
-          if (auto fref = llvm::dyn_cast<component::FieldRefOpInterface>(user);
-              fref && fref.getFieldNameAttr() == flatSymRef) {
+          if (auto fref = llvm::dyn_cast<component::MemberRefOpInterface>(user);
+              fref && fref.getMemberNameAttr() == flatSymRef) {
             symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
           } else if (auto userStruct = getSelfOrParentOfType<component::StructDefOp>(user)) {
             StringAttr localName = flatSymRef.getAttr();

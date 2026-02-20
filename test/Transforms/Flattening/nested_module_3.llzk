@@ -1,0 +1,30 @@
+// RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.main = !struct.type<@Main<[]>>, llzk.lang} {
+  module @Bar attributes {llzk.lang} {
+    struct.def @Foo<[@N]> {
+      struct.member @x : !array.type<@N x !felt.type>
+      function.def @compute() -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
+        %self = struct.new : <@Foo<[@N]>>
+        function.return %self : !struct.type<@Foo<[@N]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>) attributes {function.allow_constraint} {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main<[]> {
+    struct.member @foo : !struct.type<@Bar::@Foo<[1]>>
+    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
+      %self = struct.new : <@Main<[]>>
+      function.return %self : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Foo_1 {
+// CHECK-LABEL: struct.def @Main {

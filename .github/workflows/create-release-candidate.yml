@@ -5,6 +5,6 @@ on:
 
 jobs:
   call-workflow-create-release-candidate:
-    uses: Veridise/open-source-release-helpers/.github/workflows/create-release-candidate.yml@main
+    uses: project-llzk/open-source-release-helpers/.github/workflows/create-release-candidate.yml@main
     secrets: inherit
 
