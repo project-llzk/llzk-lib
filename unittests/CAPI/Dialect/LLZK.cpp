@@ -40,3 +40,14 @@ TEST_F(CAPITest, llzk_operation_is_a_nondet_op_pass) {
   mlirOperationDestroy(op);
   mlirOpBuilderDestroy(builder);
 }
+
+// Implementation for `NonDetOp_build_pass` test
+std::unique_ptr<NonDetOpBuildFuncHelper> NonDetOpBuildFuncHelper::get() {
+  struct Impl : public NonDetOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      return llzkLlzk_NonDetOpBuild(builder, location, testClass.createIndexType());
+    }
+  };
+  return std::make_unique<Impl>();
+}

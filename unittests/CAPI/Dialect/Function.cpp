@@ -204,16 +204,21 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
-  struct : CallOpBuildFuncHelper {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    LlzkAffineMapOperandsBuilder affineOperandsBuilder;
+    LocalHelper() { affineOperandsBuilder = llzkAffineMapOperandsBuilderCreate(); }
+    ~LocalHelper() override { llzkAffineMapOperandsBuilderDestroy(&affineOperandsBuilder); }
+
     MlirOperation callBuild(
         const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       auto f = testClass.test_function0();
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
-      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, (const int *)NULL);
+      affineOperandsBuilder.nDimsPerMap = -1;
+      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
       return llzkFunction_CallOpBuildWithMapOperands(
-          builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-          (const MlirValueRange *)NULL, dims_per_map, 0, (const MlirValue *)NULL
+          builder, location, f.out_types.size(), f.out_types.data(), callee_name,
+          affineOperandsBuilder, 0, (const MlirValue *)NULL
       );
     }
   } helper;
@@ -221,15 +226,19 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
-  struct : CallOpBuildFuncHelper {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    LlzkAffineMapOperandsBuilder affineOperandsBuilder;
+    LocalHelper() { affineOperandsBuilder = llzkAffineMapOperandsBuilderCreate(); }
+    ~LocalHelper() override { llzkAffineMapOperandsBuilderDestroy(&affineOperandsBuilder); }
+
     MlirOperation callBuild(
         const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       auto f = testClass.test_function0();
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
-      return llzkFunction_CallOpBuildWithMapOperandsAndDims(
-          builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-          (const MlirValueRange *)NULL, 0, (const int *)NULL, 0, (const MlirValue *)NULL
+      return llzkFunction_CallOpBuildWithMapOperands(
+          builder, location, f.out_types.size(), f.out_types.data(), callee_name,
+          affineOperandsBuilder, 0, (const MlirValue *)NULL
       );
     }
   } helper;
@@ -237,15 +246,19 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
-  struct : CallOpBuildFuncHelper {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    LlzkAffineMapOperandsBuilder affineOperandsBuilder;
+    LocalHelper() { affineOperandsBuilder = llzkAffineMapOperandsBuilderCreate(); }
+    ~LocalHelper() override { llzkAffineMapOperandsBuilderDestroy(&affineOperandsBuilder); }
+
     MlirOperation callBuild(
         const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       auto f = testClass.test_function0();
-      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, (const int *)NULL);
+      affineOperandsBuilder.nDimsPerMap = -1;
+      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
       return llzkFunction_CallOpBuildToCalleeWithMapOperands(
-          builder, location, f.op, 0, (const MlirValueRange *)NULL, dims_per_map, 0,
-          (const MlirValue *)NULL
+          builder, location, f.op, affineOperandsBuilder, 0, (const MlirValue *)NULL
       );
     }
   } helper;
@@ -253,14 +266,17 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
 }
 
 TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims) {
-  struct : CallOpBuildFuncHelper {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    LlzkAffineMapOperandsBuilder affineOperandsBuilder;
+    LocalHelper() { affineOperandsBuilder = llzkAffineMapOperandsBuilderCreate(); }
+    ~LocalHelper() override { llzkAffineMapOperandsBuilderDestroy(&affineOperandsBuilder); }
+
     MlirOperation callBuild(
         const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       auto f = testClass.test_function0();
-      return llzkFunction_CallOpBuildToCalleeWithMapOperandsAndDims(
-          builder, location, f.op, 0, (const MlirValueRange *)NULL, 0, (const int *)NULL, 0,
-          (const MlirValue *)NULL
+      return llzkFunction_CallOpBuildToCalleeWithMapOperands(
+          builder, location, f.op, affineOperandsBuilder, 0, (const MlirValue *)NULL
       );
     }
   } helper;

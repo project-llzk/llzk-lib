@@ -134,16 +134,21 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
-  struct : CreateArrayOpBuildFuncHelper {
+  struct LocalHelper : CreateArrayOpBuildFuncHelper {
+    LlzkAffineMapOperandsBuilder affineOperandsBuilder;
+    LocalHelper() { affineOperandsBuilder = llzkAffineMapOperandsBuilderCreate(); }
+    ~LocalHelper() override { llzkAffineMapOperandsBuilderDestroy(&affineOperandsBuilder); }
+
     MlirOperation callBuild(
         const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       int64_t dims[1] = {1};
       auto elt_type = testClass.createIndexType();
       auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
-      auto dims_per_map = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
+      affineOperandsBuilder.nDimsPerMap = -1;
+      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
       return llzkArray_CreateArrayOpBuildWithMapOperands(
-          builder, location, test_type, 0, NULL, dims_per_map
+          builder, location, test_type, affineOperandsBuilder
       );
     }
   } helper;
@@ -151,15 +156,19 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
 }
 
 TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
-  struct : CreateArrayOpBuildFuncHelper {
+  struct LocalHelper : CreateArrayOpBuildFuncHelper {
+    LlzkAffineMapOperandsBuilder affineOperandsBuilder;
+    LocalHelper() { affineOperandsBuilder = llzkAffineMapOperandsBuilderCreate(); }
+    ~LocalHelper() override { llzkAffineMapOperandsBuilderDestroy(&affineOperandsBuilder); }
+
     MlirOperation callBuild(
         const ArrayDialectTests &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       int64_t dims[1] = {1};
       auto elt_type = testClass.createIndexType();
       auto test_type = testClass.test_array(elt_type, llvm::ArrayRef(dims, 1));
-      return llzkArray_CreateArrayOpBuildWithMapOperandsAndDims(
-          builder, location, test_type, 0, NULL, 0, NULL
+      return llzkArray_CreateArrayOpBuildWithMapOperands(
+          builder, location, test_type, affineOperandsBuilder
       );
     }
   } helper;

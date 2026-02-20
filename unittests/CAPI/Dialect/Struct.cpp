@@ -311,8 +311,7 @@ TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
           MlirValueRange {
               .values = (const MlirValue *)NULL,
               .size = 0,
-          },
-          0
+          }
       );
     }
   } helper;

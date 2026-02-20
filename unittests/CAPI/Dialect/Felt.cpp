@@ -26,19 +26,19 @@
 #include "llzk/Dialect/Felt/IR/Types.capi.test.cpp.inc"
 
 TEST_F(CAPITest, llzk_felt_const_attr_get) {
-  auto attr = llzkFelt_FeltConstAttrGet(context, 0);
+  auto attr = llzkFelt_FeltConstAttrGetUnspecified(context, 0);
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_felt_const_attr_get_with_field) {
-  auto str = MlirStringRef {.data = "goldilocks", .length = 10};
-  auto attr = llzkFelt_FeltConstAttrGetWithField(context, 0, str);
+  auto fieldName = MlirStringRef {.data = "goldilocks", .length = 10};
+  auto attr = llzkFelt_FeltConstAttrGet(context, 0, mlirIdentifierGet(context, fieldName));
   EXPECT_NE(attr.ptr, (void *)NULL);
 }
 
-TEST_F(CAPITest, llzkFelt_FeltConstAttrGetWithBits) {
+TEST_F(CAPITest, llzk_felt_const_attr_get_with_bits_unspecified) {
   constexpr auto BITS = 128;
-  auto attr = llzkFelt_FeltConstAttrGetWithBits(context, BITS, 0);
+  auto attr = llzkFelt_FeltConstAttrGetWithBitsUnspecified(context, BITS, 0);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   EXPECT_TRUE(cxx_attr);
@@ -48,23 +48,24 @@ TEST_F(CAPITest, llzkFelt_FeltConstAttrGetWithBits) {
   EXPECT_EQ(value.getZExtValue(), 0);
 }
 
-TEST_F(CAPITest, llzkFelt_FeltConstAttrGetWithBitsWithField) {
-  auto str = MlirStringRef {.data = "babybear", .length = 8};
+TEST_F(CAPITest, llzk_felt_const_attr_get_with_bits) {
   constexpr auto BITS = 128;
-  auto attr = llzkFelt_FeltConstAttrGetWithBitsWithField(context, BITS, 0, str);
+  auto fieldName = MlirStringRef {.data = "babybear", .length = 8};
+  auto attr =
+      llzkFelt_FeltConstAttrGetWithBits(context, BITS, 0, mlirIdentifierGet(context, fieldName));
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   EXPECT_TRUE(cxx_attr);
-  EXPECT_EQ(cxx_attr.getFieldName().getValue(), str.data);
+  EXPECT_EQ(cxx_attr.getFieldName().getValue(), fieldName.data);
   auto value = cxx_attr.getValue();
   EXPECT_EQ(value.getBitWidth(), BITS);
   EXPECT_EQ(value.getZExtValue(), 0);
 }
 
-TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromString) {
+TEST_F(CAPITest, llzk_felt_const_attr_get_from_string_unspecified) {
   constexpr auto BITS = 64;
   auto str = MlirStringRef {.data = "123", .length = 3};
-  auto attr = llzkFelt_FeltConstAttrGetFromString(context, BITS, str);
+  auto attr = llzkFelt_FeltConstAttrGetFromStringUnspecified(context, BITS, str);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected = llzk::felt::FeltConstAttr::get(
       unwrap(context), llvm::APInt(BITS, llvm::StringRef("123", 3), 10)
@@ -72,11 +73,13 @@ TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromString) {
   EXPECT_EQ(unwrap(attr), expected);
 }
 
-TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromStringWithField) {
-  auto fieldName = MlirStringRef {.data = "bn254", .length = 5};
+TEST_F(CAPITest, llzk_felt_const_attr_get_from_string) {
   constexpr auto BITS = 64;
+  auto fieldName = MlirStringRef {.data = "bn254", .length = 5};
   auto str = MlirStringRef {.data = "123", .length = 3};
-  auto attr = llzkFelt_FeltConstAttrGetFromStringWithField(context, BITS, str, fieldName);
+  auto attr = llzkFelt_FeltConstAttrGetFromString(
+      context, BITS, str, mlirIdentifierGet(context, fieldName)
+  );
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected = llzk::felt::FeltConstAttr::get(
       unwrap(context), llvm::APInt(BITS, llvm::StringRef("123", 3), 10),
@@ -85,21 +88,23 @@ TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromStringWithField) {
   EXPECT_EQ(unwrap(attr), expected);
 }
 
-TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromParts) {
+TEST_F(CAPITest, llzk_felt_const_attr_get_from_parts_unspecified) {
   constexpr auto BITS = 254;
   const uint64_t parts[] = {10, 20, 30, 40};
-  auto attr = llzkFelt_FeltConstAttrGetFromParts(context, BITS, parts, 4);
+  auto attr = llzkFelt_FeltConstAttrGetFromPartsUnspecified(context, BITS, parts, 4);
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected =
       llzk::felt::FeltConstAttr::get(unwrap(context), llvm::APInt(BITS, llvm::ArrayRef(parts, 4)));
   EXPECT_EQ(unwrap(attr), expected);
 }
 
-TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromPartsWithField) {
-  auto fieldName = MlirStringRef {.data = "bn254", .length = 5};
+TEST_F(CAPITest, llzk_felt_const_attr_get_from_parts) {
   constexpr auto BITS = 254;
+  auto fieldName = MlirStringRef {.data = "bn254", .length = 5};
   const uint64_t parts[] = {10, 20, 30, 40};
-  auto attr = llzkFelt_FeltConstAttrGetFromPartsWithField(context, BITS, parts, 4, fieldName);
+  auto attr = llzkFelt_FeltConstAttrGetFromParts(
+      context, BITS, parts, 4, mlirIdentifierGet(context, fieldName)
+  );
   EXPECT_NE(attr.ptr, (void *)NULL);
   auto expected = llzk::felt::FeltConstAttr::get(
       unwrap(context), llvm::APInt(BITS, llvm::ArrayRef(parts, 4)),
@@ -109,35 +114,24 @@ TEST_F(CAPITest, llzkFelt_FeltConstAttrGetFromPartsWithField) {
 }
 
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {
-  auto attr = llzkFelt_FeltConstAttrGet(context, 0);
+  auto attr = llzkFelt_FeltConstAttrGetUnspecified(context, 0);
   EXPECT_TRUE(llzkAttributeIsA_Felt_FeltConstAttr(attr));
 }
 
 TEST_F(CAPITest, llzk_felt_type_get) {
-  auto type = llzkFelt_FeltTypeGet(context);
+  auto type = llzkFelt_FeltTypeGetUnspecified(context);
   EXPECT_NE(type.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_felt_type_get_with_field) {
-  auto str = MlirStringRef {.data = "bn128", .length = 5};
-  auto type = llzkFelt_FeltTypeGetWithField(context, str);
+  auto fieldName = MlirStringRef {.data = "bn128", .length = 5};
+  auto type = llzkFelt_FeltTypeGet(context, mlirIdentifierGet(context, fieldName));
   EXPECT_NE(type.ptr, (void *)NULL);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_felt_type_pass) {
-  auto type = llzkFelt_FeltTypeGet(context);
+  auto type = llzkFelt_FeltTypeGetUnspecified(context);
   EXPECT_TRUE(llzkTypeIsA_Felt_FeltType(type));
-}
-
-// Implementation for `FeltNonDetOp_build_pass` test
-std::unique_ptr<FeltNonDetOpBuildFuncHelper> FeltNonDetOpBuildFuncHelper::get() {
-  struct Impl : public FeltNonDetOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      return llzkFelt_FeltNonDetOpBuild(builder, location);
-    }
-  };
-  return std::make_unique<Impl>();
 }
 
 // Implementation for `FeltConstantOp_build_pass` test
@@ -147,7 +141,8 @@ std::unique_ptr<FeltConstantOpBuildFuncHelper> FeltConstantOpBuildFuncHelper::ge
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       auto attr = llzk::felt::FeltConstAttr::get(unwrap(testClass.context), llvm::APInt());
-      return llzkFelt_FeltConstantOpBuild(builder, location, wrap(attr));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_FeltConstantOpBuild(builder, location, resultType, wrap(attr));
     }
   };
   return std::make_unique<Impl>();
@@ -165,7 +160,8 @@ std::unique_ptr<OrFeltOpBuildFuncHelper> OrFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_OrFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_OrFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -183,7 +179,8 @@ std::unique_ptr<AndFeltOpBuildFuncHelper> AndFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_AndFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_AndFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -201,7 +198,8 @@ std::unique_ptr<XorFeltOpBuildFuncHelper> XorFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_XorFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_XorFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -219,7 +217,8 @@ std::unique_ptr<NotFeltOpBuildFuncHelper> NotFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_NotFeltOpBuild(builder, location, wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_NotFeltOpBuild(builder, location, resultType, wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -237,7 +236,8 @@ std::unique_ptr<ShlFeltOpBuildFuncHelper> ShlFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_ShlFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_ShlFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -255,7 +255,8 @@ std::unique_ptr<ShrFeltOpBuildFuncHelper> ShrFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_ShrFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_ShrFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -267,7 +268,8 @@ std::unique_ptr<AddFeltOpBuildFuncHelper> AddFeltOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_AddFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_AddFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -279,7 +281,34 @@ std::unique_ptr<SubFeltOpBuildFuncHelper> SubFeltOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_SubFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_SubFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `MulFeltOp_build_pass` test
+std::unique_ptr<MulFeltOpBuildFuncHelper> MulFeltOpBuildFuncHelper::get() {
+  struct Impl : public MulFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_MulFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `PowFeltOp_build_pass` test
+std::unique_ptr<PowFeltOpBuildFuncHelper> PowFeltOpBuildFuncHelper::get() {
+  struct Impl : public PowFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_PowFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -291,7 +320,75 @@ std::unique_ptr<DivFeltOpBuildFuncHelper> DivFeltOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_DivFeltOpBuild(builder, location, wrap(val), wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_DivFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `UnsignedIntDivFeltOp_build_pass` test
+std::unique_ptr<UnsignedIntDivFeltOpBuildFuncHelper> UnsignedIntDivFeltOpBuildFuncHelper::get() {
+  struct Impl : public UnsignedIntDivFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_UnsignedIntDivFeltOpBuild(
+          builder, location, resultType, wrap(val), wrap(val)
+      );
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `SignedIntDivFeltOp_build_pass` test
+std::unique_ptr<SignedIntDivFeltOpBuildFuncHelper> SignedIntDivFeltOpBuildFuncHelper::get() {
+  struct Impl : public SignedIntDivFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_SignedIntDivFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `UnsignedModFeltOp_build_pass` test
+std::unique_ptr<UnsignedModFeltOpBuildFuncHelper> UnsignedModFeltOpBuildFuncHelper::get() {
+  struct Impl : public UnsignedModFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_UnsignedModFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `SignedModFeltOp_build_pass` test
+std::unique_ptr<SignedModFeltOpBuildFuncHelper> SignedModFeltOpBuildFuncHelper::get() {
+  struct Impl : public SignedModFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_SignedModFeltOpBuild(builder, location, resultType, wrap(val), wrap(val));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+// Implementation for `NegFeltOp_build_pass` test
+std::unique_ptr<NegFeltOpBuildFuncHelper> NegFeltOpBuildFuncHelper::get() {
+  struct Impl : public NegFeltOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto val = testClass.cppGenFeltConstant(builder, location);
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_NegFeltOpBuild(builder, location, resultType, wrap(val));
     }
   };
   return std::make_unique<Impl>();
@@ -309,43 +406,8 @@ std::unique_ptr<InvFeltOpBuildFuncHelper> InvFeltOpBuildFuncHelper::get() {
           builder, location, llzk::function::FunctionKind::StructCompute
       );
       auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_InvFeltOpBuild(builder, location, wrap(val));
-    }
-  };
-  return std::make_unique<Impl>();
-}
-
-// Implementation for `ModFeltOp_build_pass` test
-std::unique_ptr<ModFeltOpBuildFuncHelper> ModFeltOpBuildFuncHelper::get() {
-  struct Impl : public ModFeltOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_ModFeltOpBuild(builder, location, wrap(val), wrap(val));
-    }
-  };
-  return std::make_unique<Impl>();
-}
-
-// Implementation for `MulFeltOp_build_pass` test
-std::unique_ptr<MulFeltOpBuildFuncHelper> MulFeltOpBuildFuncHelper::get() {
-  struct Impl : public MulFeltOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_MulFeltOpBuild(builder, location, wrap(val), wrap(val));
-    }
-  };
-  return std::make_unique<Impl>();
-}
-
-// Implementation for `NegFeltOp_build_pass` test
-std::unique_ptr<NegFeltOpBuildFuncHelper> NegFeltOpBuildFuncHelper::get() {
-  struct Impl : public NegFeltOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      auto val = testClass.cppGenFeltConstant(builder, location);
-      return llzkFelt_NegFeltOpBuild(builder, location, wrap(val));
+      auto resultType = wrap(testClass.cppGetFeltType(builder));
+      return llzkFelt_InvFeltOpBuild(builder, location, resultType, wrap(val));
     }
   };
   return std::make_unique<Impl>();
