@@ -30,7 +30,7 @@ TEST_F(CAPITest, llzk_type_is_a_type_var_type_pass) {
 
 TEST_F(CAPITest, llzk_type_var_type_get_from_attr) {
   auto s = mlirStringAttrGet(context, mlirStringRefCreateFromCString("T"));
-  auto t = llzkPoly_TypeVarTypeGetFromAttr(context, s);
+  auto t = llzkPoly_TypeVarTypeGetFromAttr(s);
   EXPECT_NE(t.ptr, (void *)NULL);
 }
 

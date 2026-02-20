@@ -125,7 +125,7 @@ const char *llzkStruct_StructDefOpGetHeaderString(
   return dst;
 }
 
-bool llzkStruct_StructDefOpGetHasParamName(MlirOperation op, MlirStringRef name) {
+bool llzkStruct_StructDefOpHasParamName(MlirOperation op, MlirStringRef name) {
   Builder builder(unwrap(op)->getContext());
   return llvm::cast<StructDefOp>(unwrap(op)).hasParamNamed(builder.getStringAttr(unwrap(name)));
 }

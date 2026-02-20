@@ -45,8 +45,7 @@ MLIR_CAPI_EXPORTED MlirType
 llzkPoly_TypeVarTypeGetFromStringRef(MlirContext context, MlirStringRef value);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirType
-llzkPoly_TypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
+MLIR_CAPI_EXPORTED MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute value);
 
 //===----------------------------------------------------------------------===//
 // ApplyMapOp
