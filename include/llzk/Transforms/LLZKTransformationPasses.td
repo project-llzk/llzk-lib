@@ -97,17 +97,6 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   ];
 }
 
-def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
-  let summary = "Rewrites constraints to be compatible with R1CS constraints "
-                "i.e a*b - c = 0";
-  let description = [{
-    Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
-    This pass is best used as part of the `-llzk-full-r1cs-lowering` pipeline which includes
-    a degree lowering pass and clean up passes to ensure correctness and performance.
-  }];
-  let constructor = "llzk::createR1CSLoweringPass()";
-}
-
 def ComputeConstrainToProductPass
     : LLZKPass<"llzk-compute-constrain-to-product"> {
   let summary = "Replaces separate @compute and @constrain functions in a "
@@ -127,22 +116,5 @@ def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
   let constructor = "llzk::createFuseProductLoopsPass()";
   let options = [];
 }
-
-#ifdef WITH_PCL
-def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
-  let summary = "Rewrites constraints to be compatible with PCL constraints "
-                "used by Picus";
-  let description = [{
-      Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
-      This pass currently expects the flattening and inlining passes to be run prior to its use.
-    }];
-  let constructor = "llzk::createPCLLoweringPass()";
-  let options = [Option<
-      "prime", "prime", "::llvm::APInt",
-      "llvm::APInt(31, 2130706433)", // KoalaBear in decimal
-      "The prime field that the constraints operate over. This "
-      "is required by PCL, and the prime must be passed in digits.">];
-}
-#endif // WITH_PCL
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

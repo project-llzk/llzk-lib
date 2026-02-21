@@ -144,9 +144,9 @@ you can run the following commands:
 * Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
 * Run clang-format on C++ and tablegen files:
-  ``clang-format -i $(find include lib tools r1cs unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)``
+  ``clang-format -i $(find include lib tools backends unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)``
 * Run clang-tidy on C++ files:
-  ``clang-tidy -p build/compile_commands.json $(find include/llzk lib tools r1cs unittests -name '*.h' -o -name '*.cpp' -type f)``
+  ``clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)``
   * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 
 The build configuration will automatically export `compile_commands.json`, so

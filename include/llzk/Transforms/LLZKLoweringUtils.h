@@ -4,8 +4,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TRANSFORMS_LOWERING_UTILS_H
-#define LLZK_TRANSFORMS_LOWERING_UTILS_H
+#pragma once
 
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -54,5 +53,3 @@ unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &m
 void replaceSubsequentUsesWith(mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp);
 
 } // namespace llzk
-
-#endif // LLZK_TRANSFORMS_LOWERING_UTILS_H

@@ -25,10 +25,6 @@ add_subdirectory(ZKExpr)
 # Registration of dialects
 add_library(LLZKDialectRegistration)
 add_library(LLZK::DialectRegistration ALIAS LLZKDialectRegistration)
-# Ensures that the target can be imported as "LLZK::DialectRegistration" and not
-# "LLZK::LLZKDialectRegistration"
-set_target_properties(LLZKDialectRegistration PROPERTIES EXPORT_NAME
-                                                         "DialectRegistration")
 target_sources(LLZKDialectRegistration PRIVATE InitDialects.cpp)
 target_link_libraries(
   LLZKDialectRegistration PUBLIC LLZKAllDialects ${LLZK_DEP_DIALECT_LIBS}

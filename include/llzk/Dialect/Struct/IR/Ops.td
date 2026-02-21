@@ -146,11 +146,8 @@ def LLZK_StructDefOp
     /// Gets the FuncDefOp that defines the constrain function in this structure, if present, or `nullptr` otherwise.
     ::llzk::function::FuncDefOp getConstrainFuncOp();
 
-    /// Gets the FuncDefOp that defines the compute function in this structure, if present, or the product function otherwise.
-    ::llzk::function::FuncDefOp getComputeOrProductFuncOp();
-
-    /// Gets the FuncDefOp that defines the constrain function in this structure, if present, or the product function otherwise.
-    ::llzk::function::FuncDefOp getConstrainOrProductFuncOp();
+    /// Gets the FuncDefOp that defines the product function in this structure, if present, or `nullptr` otherwise
+    ::llzk::function::FuncDefOp getProductFuncOp();
 
     /// Returns `true` iff this structure defines compute and constrain functions.
     bool hasComputeConstrain() { return lookupSymbol(FUNC_NAME_COMPUTE) != nullptr && lookupSymbol(FUNC_NAME_CONSTRAIN) != nullptr; }

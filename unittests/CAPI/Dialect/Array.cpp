@@ -25,7 +25,7 @@ protected:
   MlirType indexType() { return mlirIndexTypeGet(context); }
 
   MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) {
-    return llzkArrayTypeGetWithNumericDims(elt, dims.size(), dims.data());
+    return llzkArray_ArrayTypeGetWithNumericDims(elt, dims.size(), dims.data());
   }
 
   llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) {
@@ -55,49 +55,49 @@ TEST_F(ArrayDialectTests, get_dialect_handle_llzk_array) {
 TEST_F(ArrayDialectTests, array_type_get) {
   auto size = mlirIntegerAttrGet(indexType(), 1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayTypeGet(indexType(), 1, dims);
+  auto arr_type = llzkArray_ArrayTypeGet(indexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, type_is_a_array_type_pass) {
   auto size = mlirIntegerAttrGet(indexType(), 1);
   MlirAttribute dims[1] = {size};
-  auto arr_type = llzkArrayTypeGet(indexType(), 1, dims);
+  auto arr_type = llzkArray_ArrayTypeGet(indexType(), 1, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  EXPECT_TRUE(llzkTypeIsAArrayType(arr_type));
+  EXPECT_TRUE(llzkTypeIsA_Array_ArrayType(arr_type));
 }
 
 TEST_F(ArrayDialectTests, type_is_a_array_type_fail) {
-  EXPECT_TRUE(!llzkTypeIsAArrayType(indexType()));
+  EXPECT_TRUE(!llzkTypeIsA_Array_ArrayType(indexType()));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_with_numeric_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithNumericDims(indexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_element_type) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithNumericDims(indexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto elt_type = llzkArrayTypeGetElementType(arr_type);
+  auto elt_type = llzkArray_ArrayTypeGetElementType(arr_type);
   EXPECT_TRUE(mlirTypeEqual(indexType(), elt_type));
 }
 
 TEST_F(ArrayDialectTests, array_type_get_num_dims) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithNumericDims(indexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto n_dims = llzkArrayTypeGetNumDims(arr_type);
+  auto n_dims = llzkArray_ArrayTypeGetNumDims(arr_type);
   EXPECT_EQ(n_dims, 2);
 }
 
 TEST_F(ArrayDialectTests, array_type_get_dim) {
   int64_t dims[2] = {1, 2};
-  auto arr_type = llzkArrayTypeGetWithNumericDims(indexType(), 2, dims);
+  auto arr_type = llzkArray_ArrayTypeGetWithNumericDims(indexType(), 2, dims);
   EXPECT_NE(arr_type.ptr, (const void *)NULL);
-  auto out_dim = llzkArrayTypeGetDim(arr_type, 0);
+  auto out_dim = llzkArray_ArrayTypeGetDim(arr_type, 0);
   auto dim_as_attr = mlirIntegerAttrGet(indexType(), dims[0]);
   EXPECT_TRUE(mlirAttributeEqual(out_dim, dim_as_attr));
 }
@@ -114,8 +114,9 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
   }
   auto builder = mlirOpBuilderCreate(context);
   auto location = mlirLocationUnknownGet(context);
-  auto create_array_op =
-      llzkCreateArrayOpBuildWithValues(builder, location, test_type, values.size(), values.data());
+  auto create_array_op = llzkArray_CreateArrayOpBuildWithValues(
+      builder, location, test_type, values.size(), values.data()
+  );
   for (auto op : ops) {
     EXPECT_TRUE(mlirOperationVerify(op));
   }
@@ -138,7 +139,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands) {
   auto location = mlirLocationUnknownGet(context);
   auto mapOperands = llzkAffineMapOperandsBuilderCreate();
 
-  auto op = llzkCreateArrayOpBuildWithMapOperands(builder, location, test_type, mapOperands);
+  auto op = llzkArray_CreateArrayOpBuildWithMapOperands(builder, location, test_type, mapOperands);
 
   EXPECT_TRUE(mlirOperationVerify(op));
   mlirOperationDestroy(op);

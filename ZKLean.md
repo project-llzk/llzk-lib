@@ -1,80 +1,37 @@
-
-
-The development of zkLean dialects added to LLZK is done in the following files around the LLZK
-repo:
+The zkLean backend now lives under `backends/zklean/` and mirrors the layout of other
+backends (such as `r1cs`). The key files are:
 
 ```
-.
-├── CMakeLists.txt
-├── build_deps.sh
-├── include
-│   ├── CMakeLists.txt
-│   └── llzk
-│       ├── Conversations
-│       │   ├── CMakeLists.txt
-│       │   ├── Passes.h
-│       │   └── Passes.td
-│       ├── Dialect
-│       │   ├── ZKBuilder
-│       │   │   └── IR
-│       │   │       ├── CMakeLists.txt
-│       │   │       ├── ZKBuilderDialect.h
-│       │   │       ├── ZKBuilderDialect.td
-│       │   │       ├── ZKBuilderOps.h
-│       │   │       ├── ZKBuilderOps.td
-│       │   │       ├── ZKBuilderTypes.h
-│       │   │       └── ZKBuilderTypes.td
-│       │   ├── ZKExpr
-│       │   │    └── IR
-│       │   │        ├── CMakeLists.txt
-│       │   │        ├── ZKExprDialect.h
-│       │   │        ├── ZKExprDialect.td
-│       │   │        ├── ZKExprOps.h
-│       │   │        ├── ZKExprOps.td
-│       │   │        ├── ZKExprTypes.h
-│       │   │        └── ZKExprTypes.td
-│       │   └── ZKLeanLean
-│       │       └── IR
-│       │           ├── CMakeLists.txt
-│       │           ├── ZKLeanLeanDialect.h
-│       │           ├── ZKLeanLeanDialect.td
-│       │           ├── ZKLeanLeanOps.h
-│       │           ├── ZKLeanLeanOps.td
-│       │           ├── ZKLeanLeanTypes.h
-│       │           └── ZKLeanLeanTypes.td
-│       └── Transforms
-│           └── ZKLeanPasses.h
-├── lib
-│   ├── CMakeLists.txt
-│   ├── Conversations
-│   │   ├── CMakeLists.txt
-│   │   ├── LLZKToZKLean.cpp
-│   │   └── ZKLeanToLLZK.cpp
-│   ├── Dialect
-│   │   ├── ZKBuilder
-│   │   │   └── IR
-│   │   │       ├── CMakeLists.txt
-│   │   │       └── ZKBuilderDialect.cpp
-│   │   ├── ZKExpr
-│   │   │    └── IR
-│   │   │       ├── CMakeLists.txt
-│   │   │       └── ZKExprDialect.cpp
-│   │   └── ZKLeanLean
-│   │       ├── CMakeLists.txt
-│   │       └── IR
-│   │           └── ZKLeanLeanDialect.cpp
-│   ├── InitDialects.cpp
-│   └── Transforms
-│       ├── CMakeLists.txt
-│       └── PrettyPrintZKLean.cpp
-├── test
-│   └── Conversations
-│       ├── circom_isZero.llzk
-│       └── zklean_isZero.llzk
-└── tools
-    └── llzk-opt
-        ├── CMakeLists.txt
-        └── llzk-opt.cpp
+backends
+└── zklean
+    ├── include
+    │   └── zklean
+    │       ├── Conversions
+    │       │   ├── CMakeLists.txt
+    │       │   ├── Passes.h
+    │       │   └── Passes.td
+    │       ├── Dialect
+    │       │   ├── ZKBuilder/IR/{CMakeLists.txt, *.td, *.h}
+    │       │   ├── ZKExpr/IR/{CMakeLists.txt, *.td, *.h}
+    │       │   └── ZKLeanLean/IR/{CMakeLists.txt, *.td, *.h}
+    │       ├── Transforms
+    │       │   ├── CMakeLists.txt
+    │       │   └── ZKLeanPasses.{h,td}
+    │       └── DialectRegistration.h
+    └── lib
+        ├── Conversions
+        │   ├── CMakeLists.txt
+        │   ├── LLZKToZKLean.cpp
+        │   └── ZKLeanToLLZK.cpp
+        ├── Dialect
+        │   ├── CMakeLists.txt
+        │   ├── ZKBuilder/IR/ZKBuilderDialect.cpp
+        │   ├── ZKExpr/IR/ZKExprDialect.cpp
+        │   └── ZKLeanLean/IR/ZKLeanLeanDialect.cpp
+        ├── Transforms
+        │   ├── CMakeLists.txt
+        │   └── PrettyPrintZKLean.cpp
+        └── DialectRegistration.cpp
 ```
 
 

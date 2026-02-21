@@ -1,4 +1,5 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+// REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
     struct.def @A<[@N]> {
@@ -50,6 +51,7 @@ module attributes {llzk.lang = "llzk"} {
     }
 }
 
+// CHECK-LABEL: function.def @product
 // CHECK-LABEL: scf.for
 // CHECK-SAME:          %[[VAL_0:[0-9a-zA-Z_\.]+]] =
 // CHECK-SAME:          %[[VAL_1:[0-9a-zA-Z_\.]+]] to
