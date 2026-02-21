@@ -198,6 +198,8 @@ set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # We need the r1cs include dir so we can pass it to mlir-tblgen
 set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/r1cs/include")
+# We need the zklean include dir so we can pass it to mlir-tblgen
+set(ZKLEAN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/zklean/include")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
