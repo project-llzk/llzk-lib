@@ -21,9 +21,6 @@
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
-#include "llzk/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
-#include "llzk/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
-#include "llzk/Dialect/ZKExpr/IR/ZKExprDialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
