@@ -19,15 +19,12 @@
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/InitDialects.h"
-#include "zklean/Conversions/Passes.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
 #include "r1cs/Transforms/TransformationPasses.h"
-#include "zklean/DialectRegistration.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -40,6 +37,9 @@
 #include <llvm/Support/Signals.h>
 
 #include "tools/config.h"
+#include "zklean/Conversions/Passes.h"
+#include "zklean/DialectRegistration.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
 
 #if LLZK_WITH_PCL
 #include <pcl/Dialect/IR/Dialect.h>
@@ -57,11 +57,9 @@ static llvm::cl::opt<bool>
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
-  llvm::setBugReportMsg(
-      "PLEASE submit a bug report to " BUG_REPORT_URL
-      " and include the crash backtrace, relevant LLZK files,"
-      " and associated run script(s).\n"
-  );
+  llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
+                        " and include the crash backtrace, relevant LLZK files,"
+                        " and associated run script(s).\n");
   llvm::cl::AddExtraVersionPrinter([](llvm::raw_ostream &os) {
     os << "\nLLZK (" LLZK_URL "):\n  LLZK version " LLZK_VERSION_STRING "\n";
   });
