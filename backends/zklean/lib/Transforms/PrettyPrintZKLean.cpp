@@ -9,10 +9,6 @@
 
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -24,16 +20,21 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
-#include <llvm/ADT/SmallString.h>
-#include <llvm/ADT/StringMap.h>
-#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <optional>
+
+#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
 
 // Pretty-printing overview:
 // - emitZKLeanModule collects structs via collectZKLeanStructDefs, prints them
@@ -63,12 +64,12 @@ static bool isBuilderOp(Operation *op) {
 
 // Build a Lean-friendly name for `llzk::function::FuncDefOp`.
 // Flattens nested symbol references into a single identifier using "__".
-[[maybe_unused]] static std::string
-buildLeanFunctionName(llzk::function::FuncDefOp func) {
+[[maybe_unused]] static std::string buildLeanFunctionName(llzk::function::FuncDefOp func) {
   std::string name;
   auto fq = func.getFullyQualifiedName(false);
-  if (!fq)
+  if (!fq) {
     return func.getSymName().str();
+  }
 
   name = fq.getRootReference().str();
   for (SymbolRefAttr nested : fq.getNestedReferences()) {
@@ -81,8 +82,9 @@ buildLeanFunctionName(llzk::function::FuncDefOp func) {
 // Extract a struct name from ZKLean struct types.
 // Returns `std::nullopt` when the type is not a ZKLean struct.
 static std::optional<std::string> getStructTypeName(Type type) {
-  if (auto structType = dyn_cast<llzk::zkleanlean::StructType>(type))
+  if (auto structType = dyn_cast<llzk::zkleanlean::StructType>(type)) {
     return structType.getNameRef().getLeafReference().str();
+  }
   return std::nullopt;
 }
 
@@ -95,26 +97,30 @@ static std::string formatLeanType(Type type) {
   os.flush();
 
   StringRef typeStr(buffer);
-  if (typeStr.starts_with("!ZKExpr"))
+  if (typeStr.starts_with("!ZKExpr")) {
     return "ZKExpr f";
-  if (typeStr.starts_with("!ZKBuilder"))
+  }
+  if (typeStr.starts_with("!ZKBuilder")) {
     return "ZKBuilder f PUnit";
+  }
   // Figure out how to handle ZKLean namespace, if necessary
-  if (typeStr.starts_with("!ZKLean"))
+  if (typeStr.starts_with("!ZKLean")) {
     return "ZKLean f";
-  if (typeStr.starts_with("!felt"))
+  }
+  if (typeStr.starts_with("!felt")) {
     // ZKLean functions operate on ZKExpr values, not raw felts.
     return "ZKExpr f";
+  }
 
   return buffer;
 }
 
 // Lookup or assign a printable name for an SSA `Value`.
 // Uses local-scope printing for unknown values and memoizes the result.
-static std::string
-lookupValueName(Value value, llvm::DenseMap<Value, std::string> &valueNames) {
-  if (auto it = valueNames.find(value); it != valueNames.end())
+static std::string lookupValueName(Value value, llvm::DenseMap<Value, std::string> &valueNames) {
+  if (auto it = valueNames.find(value); it != valueNames.end()) {
     return it->second;
+  }
 
   std::string buffer;
   llvm::raw_string_ostream os(buffer);
@@ -122,8 +128,9 @@ lookupValueName(Value value, llvm::DenseMap<Value, std::string> &valueNames) {
   flags.useLocalScope();
   value.printAsOperand(os, flags);
   os.flush();
-  if (!buffer.empty() && buffer.front() == '%')
+  if (!buffer.empty() && buffer.front() == '%') {
     buffer.erase(buffer.begin());
+  }
   valueNames[value] = buffer;
   return buffer;
 }
@@ -131,15 +138,18 @@ lookupValueName(Value value, llvm::DenseMap<Value, std::string> &valueNames) {
 // Wrap result names for Lean tuple syntax.
 // Returns "_" for empty results and "(a, b)" for multiple names.
 static std::string wrapResultNames(ArrayRef<std::string> names) {
-  if (names.empty())
+  if (names.empty()) {
     return "_";
-  if (names.size() == 1)
+  }
+  if (names.size() == 1) {
     return names.front();
+  }
 
   std::string joined = "(";
   for (auto it = names.begin(), e = names.end(); it != e; ++it) {
-    if (it != names.begin())
+    if (it != names.begin()) {
       joined.append(", ");
+    }
     joined.append(*it);
   }
   joined.push_back(')');
@@ -150,14 +160,18 @@ static std::string wrapResultNames(ArrayRef<std::string> names) {
 // This keeps output closer to the Lean API surface than raw MLIR names.
 static std::string formatOperationName(Operation &op) {
   StringRef name = op.getName().getStringRef();
-  if (name.consume_front("ZKExpr."))
+  if (name.consume_front("ZKExpr.")) {
     return name.str();
-  if (name.consume_front("ZKBuilder."))
+  }
+  if (name.consume_front("ZKBuilder.")) {
     return name.str();
-  if (name.consume_front("zkexpr."))
+  }
+  if (name.consume_front("zkexpr.")) {
     return name.str();
-  if (name.consume_front("zkbuilder."))
+  }
+  if (name.consume_front("zkbuilder.")) {
     return name.str();
+  }
   return name.str();
 }
 
@@ -174,8 +188,7 @@ static std::string formatLeanCallee(SymbolRefAttr callee) {
 
 // Format an op as a Lean-style function call.
 // Uses `formatOperationName` and `lookupValueName` for operands.
-static std::string formatOperationCall(Operation &op,
-                                       llvm::DenseMap<Value, std::string> &names) {
+static std::string formatOperationCall(Operation &op, llvm::DenseMap<Value, std::string> &names) {
   std::string call = formatOperationName(op);
   for (Value operand : op.getOperands()) {
     call.push_back(' ');
@@ -195,10 +208,9 @@ static std::string formatFeltConstant(llzk::felt::FeltConstantOp constOp) {
 
 // Assign vN names to SSA results for readable Lean output.
 // Updates `valueNames` and advances `nextValueId` for later allocations.
-static llvm::SmallVector<std::string, 4>
-assignResultNames(Operation &op,
-                  llvm::DenseMap<Value, std::string> &valueNames,
-                  unsigned &nextValueId) {
+static llvm::SmallVector<std::string, 4> assignResultNames(
+    Operation &op, llvm::DenseMap<Value, std::string> &valueNames, unsigned &nextValueId
+) {
   llvm::SmallVector<std::string, 4> resultNames;
   resultNames.reserve(op.getNumResults());
   for (Value result : op.getResults()) {
@@ -212,46 +224,51 @@ assignResultNames(Operation &op,
 // Extract witness metadata used for struct field projection.
 // Supports both `StringAttr` and `FlatSymbolRefAttr` forms.
 static std::optional<std::string> getWitnessFieldName(Operation &op) {
-  if (auto fieldAttr = op.getAttrOfType<StringAttr>("llzk.field"))
+  if (auto fieldAttr = op.getAttrOfType<StringAttr>("llzk.field")) {
     return fieldAttr.getValue().str();
-  if (auto fieldAttr = op.getAttrOfType<FlatSymbolRefAttr>("llzk.field"))
+  }
+  if (auto fieldAttr = op.getAttrOfType<FlatSymbolRefAttr>("llzk.field")) {
     return fieldAttr.getValue().str();
+  }
   return std::nullopt;
 }
 
 // Extract struct metadata used to select the right struct parameter.
 // Accepts `SymbolRefAttr` or `StringAttr` under `llzk.struct`.
 static std::optional<std::string> getWitnessStructName(Operation &op) {
-  if (auto structAttr = op.getAttrOfType<SymbolRefAttr>("llzk.struct"))
+  if (auto structAttr = op.getAttrOfType<SymbolRefAttr>("llzk.struct")) {
     return structAttr.getLeafReference().str();
-  if (auto structAttr = op.getAttrOfType<StringAttr>("llzk.struct"))
+  }
+  if (auto structAttr = op.getAttrOfType<StringAttr>("llzk.struct")) {
     return structAttr.getValue().str();
+  }
   return std::nullopt;
 }
 
 // Infer struct name from a common Struct__constrain naming convention.
 // Only returns a name that appears in `structNames`.
 static std::optional<std::string>
-inferStructNameFromFuncName(StringRef funcName,
-                            const llvm::DenseSet<StringRef> &structNames) {
+inferStructNameFromFuncName(StringRef funcName, const llvm::DenseSet<StringRef> &structNames) {
   auto splitPos = funcName.find("__");
-  if (splitPos == StringRef::npos)
+  if (splitPos == StringRef::npos) {
     return std::nullopt;
+  }
   StringRef candidate = funcName.take_front(splitPos);
-  if (structNames.contains(candidate))
+  if (structNames.contains(candidate)) {
     return candidate.str();
+  }
   return std::nullopt;
 }
 
 // Discover a struct name via witness metadata or the function name.
 // Prefers explicit `llzk.struct` metadata from witnesses when available.
 static std::optional<std::string>
-findStructName(Block &entry, StringRef funcName,
-               const llvm::DenseSet<StringRef> &structNames) {
+findStructName(Block &entry, StringRef funcName, const llvm::DenseSet<StringRef> &structNames) {
   for (Operation &op : entry) {
     if (isa<llzk::zkbuilder::AllocWitnessOp>(op)) {
-      if (auto name = getWitnessStructName(op))
+      if (auto name = getWitnessStructName(op)) {
         return name;
+      }
     }
   }
   return inferStructNameFromFuncName(funcName, structNames);
@@ -260,18 +277,17 @@ findStructName(Block &entry, StringRef funcName,
 // Format ZKLean/ZKBuilder ops into Lean statements with special cases.
 // Handles literals, witnesses, accessors, calls, arithmetic, and constrain ops
 // before falling back to a generic op printing path.
-static std::optional<std::string>
-formatLeanStatement(Operation &op,
-                    llvm::DenseMap<Value, std::string> &valueNames,
-                    unsigned &nextValueId,
-                    const llvm::StringMap<std::string> &structArgNames,
-                    StringRef defaultStructVarName) {
+static std::optional<std::string> formatLeanStatement(
+    Operation &op, llvm::DenseMap<Value, std::string> &valueNames, unsigned &nextValueId,
+    const llvm::StringMap<std::string> &structArgNames, StringRef defaultStructVarName
+) {
   if (auto literal = dyn_cast<llzk::zkexpr::LiteralOp>(op)) {
     Value litValue = literal.getLiteral();
     if (auto arg = dyn_cast<BlockArgument>(litValue)) {
       std::string argName = lookupValueName(arg, valueNames);
-      for (Value result : op.getResults())
+      for (Value result : op.getResults()) {
         valueNames[result] = argName;
+      }
       nextValueId += op.getNumResults();
       return std::nullopt;
     }
@@ -295,8 +311,7 @@ formatLeanStatement(Operation &op,
     auto fieldName = getWitnessFieldName(op);
     std::string structVarName = defaultStructVarName.str();
     if (auto structName = getWitnessStructName(op)) {
-      if (auto it = structArgNames.find(*structName);
-          it != structArgNames.end()) {
+      if (auto it = structArgNames.find(*structName); it != structArgNames.end()) {
         structVarName = it->second;
       }
     }
@@ -418,10 +433,11 @@ formatLeanStatement(Operation &op,
 // Emit Lean for ZKLean/ZKBuilder functions, with struct arg inference.
 // Assigns argument names, infers struct parameters, and formats statements.
 template <typename FuncOpTy>
-static bool emitLeanFunc(FuncOpTy func, raw_ostream &os,
-                         const llvm::DenseSet<StringRef> &structNames) {
-  if (func.getBody().empty())
+static bool
+emitLeanFunc(FuncOpTy func, raw_ostream &os, const llvm::DenseSet<StringRef> &structNames) {
+  if (func.getBody().empty()) {
     return false;
+  }
 
   llvm::DenseMap<Value, std::string> valueNames;
   llvm::StringMap<std::string> structArgNames;
@@ -431,15 +447,15 @@ static bool emitLeanFunc(FuncOpTy func, raw_ostream &os,
   unsigned nonStructIndex = 0;
   for (auto arg : entry.getArguments()) {
     if (auto structTypeName = getStructTypeName(arg.getType())) {
-      std::string name = structIndex == 0
-                             ? "strct"
-                             : (llvm::Twine("strct") + llvm::Twine(structIndex))
-                                   .str();
+      std::string name =
+          structIndex == 0 ? "strct" : (llvm::Twine("strct") + llvm::Twine(structIndex)).str();
       valueNames[arg] = name;
-      if (structArgNames.find(*structTypeName) == structArgNames.end())
+      if (structArgNames.find(*structTypeName) == structArgNames.end()) {
         structArgNames[*structTypeName] = name;
-      if (structIndex == 0)
+      }
+      if (structIndex == 0) {
         defaultStructVarName = name;
+      }
       ++structIndex;
       continue;
     }
@@ -447,32 +463,38 @@ static bool emitLeanFunc(FuncOpTy func, raw_ostream &os,
   }
 
   bool hasStructArgs = structIndex != 0;
-  auto structName =
-      hasStructArgs ? std::optional<std::string>()
-                    : findStructName(entry, func.getSymName(), structNames);
-  if (!hasStructArgs && structName)
+  auto structName = hasStructArgs ? std::optional<std::string>()
+                                  : findStructName(entry, func.getSymName(), structNames);
+  if (!hasStructArgs && structName) {
     defaultStructVarName = "strct";
+  }
 
   unsigned nextValueId = 0;
   llvm::SmallVector<std::string, 16> statements;
 
   for (Operation &op : entry) {
-    if (isa<func::ReturnOp>(op))
+    if (isa<func::ReturnOp>(op)) {
       continue;
-    if (!isZkDialect(&op))
+    }
+    if (!isZkDialect(&op)) {
       continue;
-    if (auto stmt = formatLeanStatement(op, valueNames, nextValueId,
-                                        structArgNames, defaultStructVarName))
+    }
+    if (auto stmt = formatLeanStatement(
+            op, valueNames, nextValueId, structArgNames, defaultStructVarName
+        )) {
       statements.push_back(*stmt);
+    }
   }
 
-  if (statements.empty())
+  if (statements.empty()) {
     return false;
+  }
 
   os << "def " << func.getSymName() << " [Field f]";
   // Add a synthetic struct parameter if only witness metadata references it.
-  if (!hasStructArgs && structName)
+  if (!hasStructArgs && structName) {
     os << " (" << defaultStructVarName << " : " << *structName << " f)";
+  }
   for (auto arg : entry.getArguments()) {
     auto argName = lookupValueName(arg, valueNames);
     if (auto structTypeName = getStructTypeName(arg.getType())) {
@@ -482,25 +504,23 @@ static bool emitLeanFunc(FuncOpTy func, raw_ostream &os,
     os << " (" << argName << " : " << formatLeanType(arg.getType()) << ")";
   }
   os << " : ZKBuilder f PUnit := do\n";
-  for (auto &stmt : statements)
+  for (auto &stmt : statements) {
     os << stmt << '\n';
+  }
 
   return true;
 }
 
 // Emit Lean structure declarations from ZKLean structs.
 // Reads ZKLean struct bodies and formats fields in order.
-static bool emitLeanStructsFromZKLean(
-    ArrayRef<llzk::zkleanlean::StructDefOp> structs,
-    raw_ostream &os) {
+static bool
+emitLeanStructsFromZKLean(ArrayRef<llzk::zkleanlean::StructDefOp> structs, raw_ostream &os) {
   bool printed = false;
   for (auto def : structs) {
     // All ZKLean structs are implicitly parameterized over the field type `f`.
     os << "structure " << def.getSymName() << " (f : Type) where\n";
-    for (auto member :
-         def.getBodyRegion().getOps<llzk::zkleanlean::MemberDefOp>()) {
-      os << "  " << member.getSymName() << " : "
-         << formatLeanType(member.getType()) << '\n';
+    for (auto member : def.getBodyRegion().getOps<llzk::zkleanlean::MemberDefOp>()) {
+      os << "  " << member.getSymName() << " : " << formatLeanType(member.getType()) << '\n';
     }
     os << '\n';
     printed = true;
@@ -511,13 +531,13 @@ static bool emitLeanStructsFromZKLean(
 // Collect unique ZKLean struct defs and record their names.
 // Preserves first-seen order for deterministic output.
 static llvm::SmallVector<llzk::zkleanlean::StructDefOp, 8>
-collectZKLeanStructDefs(ModuleOp module,
-                        llvm::DenseSet<StringRef> &structNames) {
+collectZKLeanStructDefs(ModuleOp module, llvm::DenseSet<StringRef> &structNames) {
   llvm::SmallVector<llzk::zkleanlean::StructDefOp, 8> structDefs;
   module.walk([&](llzk::zkleanlean::StructDefOp def) {
     StringRef name = def.getSymName();
-    if (structNames.insert(name).second)
+    if (structNames.insert(name).second) {
       structDefs.push_back(def);
+    }
     return WalkResult::advance();
   });
   return structDefs;
@@ -526,11 +546,13 @@ collectZKLeanStructDefs(ModuleOp module,
 // Emit a ZKLean function definition if it produces any statements.
 // Adds a separating newline and updates `printedSomething` on success.
 template <typename FuncOpTy>
-static void emitZKLeanFuncIfAny(FuncOpTy func, raw_ostream &os,
-                                const llvm::DenseSet<StringRef> &structNames,
-                                bool &printedSomething) {
-  if (!emitLeanFunc(func, os, structNames))
+static void emitZKLeanFuncIfAny(
+    FuncOpTy func, raw_ostream &os, const llvm::DenseSet<StringRef> &structNames,
+    bool &printedSomething
+) {
+  if (!emitLeanFunc(func, os, structNames)) {
     return;
+  }
   printedSomething = true;
   os << '\n';
 }
@@ -542,8 +564,9 @@ static bool emitZKLeanModule(ModuleOp module, raw_ostream &os) {
   llvm::DenseSet<StringRef> structNames;
   auto structDefs = collectZKLeanStructDefs(module, structNames);
 
-  if (emitLeanStructsFromZKLean(structDefs, os))
+  if (emitLeanStructsFromZKLean(structDefs, os)) {
     printedSomething = true;
+  }
 
   module.walk([&](func::FuncOp func) {
     emitZKLeanFuncIfAny(func, os, structNames, printedSomething);
@@ -558,8 +581,7 @@ namespace {
 
 // Pass that pretty-prints ZK dialect IR into Lean-like syntax.
 // Manages output file handling for pretty-printed Lean code.
-struct PrettyPrintZKLeanPass
-    : public impl::PrettyPrintZKLeanPassBase<PrettyPrintZKLeanPass> {
+struct PrettyPrintZKLeanPass : public impl::PrettyPrintZKLeanPassBase<PrettyPrintZKLeanPass> {
   // Run the pass and emit Lean output to the selected stream.
   // Uses ZKLean formatting when ZK ops are present.
   void runOnOperation() override {
@@ -580,11 +602,13 @@ struct PrettyPrintZKLeanPass
 
     bool printedSomething = namespace_detail::emitZKLeanModule(module, *stream);
 
-    if (!printedSomething)
+    if (!printedSomething) {
       *stream << "-- No zk dialect operations found.\n";
+    }
 
-    if (outputFile)
+    if (outputFile) {
       outputFile->keep();
+    }
   }
 };
 

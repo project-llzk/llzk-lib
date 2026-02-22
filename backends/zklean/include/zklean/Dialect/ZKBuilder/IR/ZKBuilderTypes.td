@@ -18,4 +18,4 @@ def ZKBuilderState : TypeDef<ZKBuilder_Dialect, "ZKBuilderState"> {
   let mnemonic = "zkbuilderstate";
 }
 
-#endif  // LIB_DIALECT_ZKBUILDER_ZKBUILDERTYPES_TD_
+#endif // LIB_DIALECT_ZKBUILDER_ZKBUILDERTYPES_TD_

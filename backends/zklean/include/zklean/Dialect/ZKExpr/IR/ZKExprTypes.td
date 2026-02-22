@@ -14,7 +14,7 @@ include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.td"
 include "mlir/IR/AttrTypeBase.td"
 
 // In zkExpr this is just an abbr for nat
-def WitnessID: TypeDef<ZKExpr_Dialect, "WitnessID"> {
+def WitnessID : TypeDef<ZKExpr_Dialect, "WitnessID"> {
   let summary = "WitnessID";
   let mnemonic = "Witnessid";
 }
@@ -33,4 +33,4 @@ def ComposedLookupTable : TypeDef<ZKExpr_Dialect, "ComposedLookupTable"> {
   let assemblyFormat = "`<` $cols $rows `>`";
 }
 
-#endif  // LIB_DIALECT_ZKEXPR_ZKEXPRTYPES_TD_
+#endif // LIB_DIALECT_ZKEXPR_ZKEXPRTYPES_TD_

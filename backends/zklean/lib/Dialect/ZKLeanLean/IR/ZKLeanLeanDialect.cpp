@@ -8,12 +8,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/Support/LogicalResult.h>
+
 #include <llvm/ADT/TypeSwitch.h>
+
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
 
 // Include TableGen'd declarations
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.cpp.inc"
@@ -22,16 +24,15 @@
 #define GET_OP_CLASSES
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.cpp.inc"
 
-auto llzk::zkleanlean::StructDefOp::verifyRegions()
-    -> mlir::LogicalResult {
+auto llzk::zkleanlean::StructDefOp::verifyRegions() -> mlir::LogicalResult {
   mlir::Region &body = getBodyRegion();
-  if (!body.hasOneBlock())
+  if (!body.hasOneBlock()) {
     return emitOpError("expected body region with a single block");
+  }
 
   for (mlir::Operation &op : body.front()) {
     if (!mlir::isa<llzk::zkleanlean::MemberDefOp>(op)) {
-      op.emitOpError(
-          "only 'ZKLeanLean.member' ops are allowed in a 'ZKLeanLean.structure' body");
+      op.emitOpError("only 'ZKLeanLean.member' ops are allowed in a 'ZKLeanLean.structure' body");
       return mlir::failure();
     }
   }

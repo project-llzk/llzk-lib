@@ -8,11 +8,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.h"
 
 #include <mlir/IR/Builders.h>
+
 #include <llvm/ADT/TypeSwitch.h>
+
+#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.h"
 
 // Include TableGen'd declarations
 #include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.cpp.inc"

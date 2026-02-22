@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
-
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Dialect.h>
+
+#include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
 
 #define GET_OP_CLASSES
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h.inc"

@@ -7,16 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
 #include "zklean/DialectRegistration.h"
 
 #include <mlir/IR/DialectRegistry.h>
 
+#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
+
 namespace zklean {
 void registerAllDialects(mlir::DialectRegistry &registry) {
-  registry.insert<llzk::zkbuilder::ZKBuilderDialect, llzk::zkexpr::ZKExprDialect,
-                  llzk::zkleanlean::ZKLeanLeanDialect>();
+  registry.insert<
+      llzk::zkbuilder::ZKBuilderDialect, llzk::zkexpr::ZKExprDialect,
+      llzk::zkleanlean::ZKLeanLeanDialect>();
 }
 } // namespace zklean

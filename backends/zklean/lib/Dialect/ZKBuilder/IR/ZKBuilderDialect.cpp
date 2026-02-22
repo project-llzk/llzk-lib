@@ -8,12 +8,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
+
+#include <mlir/IR/Builders.h>
+
+#include <llvm/ADT/TypeSwitch.h>
+
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderTypes.h"
 #include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.h"
-
-#include <mlir/IR/Builders.h>
-#include <llvm/ADT/TypeSwitch.h>
 
 // Include TableGen'd declarations
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderDialect.cpp.inc"

@@ -24,11 +24,10 @@ def ZKLeanLean_StructType : TypeDef<ZKLeanLean_Dialect, "Struct"> {
     identified by a symbol reference.
   }];
 
-  let parameters =
-      (ins TypeParameter<
-           "::mlir::SymbolRefAttr",
-           "Fully-qualified name of the struct definition.">:$nameRef);
+  let parameters = (ins TypeParameter<
+      "::mlir::SymbolRefAttr",
+      "Fully-qualified name of the struct definition.">:$nameRef);
   let assemblyFormat = "`<` $nameRef `>`";
 }
 
-#endif  // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANTYPES_TD_
+#endif // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANTYPES_TD_

@@ -45,5 +45,4 @@ def ZKBuilder_AllocWitnessOp
   let assemblyFormat = "attr-dict";
 }
 
-
-#endif  // LIB_DIALECT_ZKBUILDER_ZKBUILDEROPS_TD_
+#endif // LIB_DIALECT_ZKBUILDER_ZKBUILDEROPS_TD_

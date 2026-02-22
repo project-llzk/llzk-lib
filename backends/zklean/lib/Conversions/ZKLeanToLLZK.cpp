@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "zklean/Conversions/Passes.h"
-
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -17,9 +15,6 @@
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 #include "llzk/Util/Constants.h"
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -33,6 +28,11 @@
 #include <llvm/ADT/StringSet.h>
 
 #include <optional>
+
+#include "zklean/Conversions/Passes.h"
+#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 
 // ZKLean -> LLZK conversion overview:
 // - `createConvertZKLeanToLLZKPass` constructs `ConvertZKLeanToLLZKPass`.
@@ -57,20 +57,25 @@ namespace {
 
 // Parse a `bool.cmp_*` function suffix into a predicate enum.
 // Returns `std::nullopt` for unknown names so the caller can emit diagnostics.
-static std::optional<llzk::boolean::FeltCmpPredicate>
-parseCmpPredicate(StringRef name) {
-  if (name == "eq")
+static std::optional<llzk::boolean::FeltCmpPredicate> parseCmpPredicate(StringRef name) {
+  if (name == "eq") {
     return llzk::boolean::FeltCmpPredicate::EQ;
-  if (name == "ne")
+  }
+  if (name == "ne") {
     return llzk::boolean::FeltCmpPredicate::NE;
-  if (name == "lt")
+  }
+  if (name == "lt") {
     return llzk::boolean::FeltCmpPredicate::LT;
-  if (name == "le")
+  }
+  if (name == "le") {
     return llzk::boolean::FeltCmpPredicate::LE;
-  if (name == "gt")
+  }
+  if (name == "gt") {
     return llzk::boolean::FeltCmpPredicate::GT;
-  if (name == "ge")
+  }
+  if (name == "ge") {
     return llzk::boolean::FeltCmpPredicate::GE;
+  }
   return std::nullopt;
 }
 
@@ -95,32 +100,35 @@ struct ZKLeanToLLZKState {
 // Map `llzk::zkleanlean::StructType` into `llzk::component::StructType`.
 // Leaves non-struct types untouched for downstream lowering.
 static Type mapStructType(Type type) {
-  if (auto structType = dyn_cast<llzk::zkleanlean::StructType>(type))
+  if (auto structType = dyn_cast<llzk::zkleanlean::StructType>(type)) {
     return llzk::component::StructType::get(structType.getNameRef());
+  }
   return type;
 }
 
 // Materialize LLZK `struct.def` ops from ZKLeanLean struct definitions.
 // This pre-pass ensures struct symbols exist before function conversion.
-static void emitStructDefsFromZKLean(ModuleOp source,
-                                     ZKLeanToLLZKState &state) {
+static void emitStructDefsFromZKLean(ModuleOp source, ZKLeanToLLZKState &state) {
   // Pre-pass: materialize LLZK struct.defs from ZKLeanLean.structure ops first so
   // struct.type<@Name> symbols exist before function conversion.
   llvm::StringSet<> seenStructs;
   for (auto def : source.getBody()->getOps<llzk::zkleanlean::StructDefOp>()) {
     StringRef name = def.getSymName();
-    if (!seenStructs.insert(name).second)
+    if (!seenStructs.insert(name).second) {
       continue;
+    }
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
     auto structDef = state.builder.create<llzk::component::StructDefOp>(
-        def.getLoc(), def.getSymNameAttr(), ArrayAttr());
+        def.getLoc(), def.getSymNameAttr(), ArrayAttr()
+    );
     structDef.getBodyRegion().emplaceBlock();
     auto &body = structDef.getBodyRegion().front();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::zkleanlean::MemberDefOp>()) {
       memberBuilder.create<llzk::component::MemberDefOp>(
-          member.getLoc(), member.getSymName(), state.feltType);
+          member.getLoc(), member.getSymName(), state.feltType
+      );
     }
     StructState structState;
     structState.def = structDef;
@@ -132,48 +140,48 @@ static void emitStructDefsFromZKLean(ModuleOp source,
 
 // Ensure a struct has a minimal `@compute` function body.
 // The stub returns an empty struct instance when ZKLean provides no compute.
-static void ensureComputeStub(StructState &state,
-                              ArrayRef<Type> baseInputTypes, Location loc,
-                              ZKLeanToLLZKState &ctx) {
-  if (state.hasCompute)
+static void ensureComputeStub(
+    StructState &state, ArrayRef<Type> baseInputTypes, Location loc, ZKLeanToLLZKState &ctx
+) {
+  if (state.hasCompute) {
     return;
+  }
   SmallVector<Type> computeInputs;
-  if (!baseInputTypes.empty() &&
-      mlir::isa<llzk::component::StructType>(baseInputTypes.front())) {
+  if (!baseInputTypes.empty() && mlir::isa<llzk::component::StructType>(baseInputTypes.front())) {
     computeInputs.append(baseInputTypes.begin() + 1, baseInputTypes.end());
   } else {
     computeInputs.append(baseInputTypes.begin(), baseInputTypes.end());
   }
   auto structType = state.def.getType();
-  auto computeType = FunctionType::get(ctx.dest.getContext(), computeInputs,
-                                       ArrayRef<Type>{structType});
+  auto computeType =
+      FunctionType::get(ctx.dest.getContext(), computeInputs, ArrayRef<Type> {structType});
   OpBuilder::InsertionGuard guard(ctx.builder);
   ctx.builder.setInsertionPointToEnd(&state.def.getBodyRegion().front());
   // Stub compute: return an empty struct instance when ZKLean has no compute.
   auto computeFunc = ctx.builder.create<llzk::function::FuncDefOp>(
-      loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_COMPUTE), computeType);
+      loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_COMPUTE), computeType
+  );
   computeFunc.setAllowWitnessAttr(true);
   Block *computeBlock = computeFunc.addEntryBlock();
   OpBuilder bodyBuilder = OpBuilder::atBlockEnd(computeBlock);
-  auto selfVal =
-      bodyBuilder.create<llzk::component::CreateStructOp>(loc, structType);
+  auto selfVal = bodyBuilder.create<llzk::component::CreateStructOp>(loc, structType);
   bodyBuilder.create<llzk::function::ReturnOp>(loc, selfVal.getResult());
   state.hasCompute = true;
 }
 
 // Ensure a struct has a minimal `@constrain` function body.
 // The stub is a no-op constrain function to satisfy LLZK invariants.
-static void ensureConstrainStub(StructState &state, Location loc,
-                                ZKLeanToLLZKState &ctx) {
-  if (state.hasConstrain)
+static void ensureConstrainStub(StructState &state, Location loc, ZKLeanToLLZKState &ctx) {
+  if (state.hasConstrain) {
     return;
+  }
   auto structType = state.def.getType();
-  auto constrainType =
-      FunctionType::get(ctx.dest.getContext(), ArrayRef<Type>{structType}, {});
+  auto constrainType = FunctionType::get(ctx.dest.getContext(), ArrayRef<Type> {structType}, {});
   OpBuilder::InsertionGuard guard(ctx.builder);
   ctx.builder.setInsertionPointToEnd(&state.def.getBodyRegion().front());
   auto constrainFunc = ctx.builder.create<llzk::function::FuncDefOp>(
-      loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN), constrainType);
+      loc, ctx.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN), constrainType
+  );
   constrainFunc.setAllowConstraintAttr(true);
   Block *constrainBlock = constrainFunc.addEntryBlock();
   OpBuilder bodyBuilder = OpBuilder::atBlockEnd(constrainBlock);
@@ -185,11 +193,13 @@ static void ensureConstrainStub(StructState &state, Location loc,
 // The captured list is used to avoid iterator invalidation during rewriting.
 static void collectOpsAndWitnesses(
     Block &block, SmallVector<Operation *, 16> &ops,
-    SmallVector<llzk::zkbuilder::AllocWitnessOp, 8> &witnesses) {
+    SmallVector<llzk::zkbuilder::AllocWitnessOp, 8> &witnesses
+) {
   for (Operation &op : block) {
     ops.push_back(&op);
-    if (auto witness = dyn_cast<llzk::zkbuilder::AllocWitnessOp>(&op))
+    if (auto witness = dyn_cast<llzk::zkbuilder::AllocWitnessOp>(&op)) {
       witnesses.push_back(witness);
+    }
   }
 }
 
@@ -197,8 +207,9 @@ static void collectOpsAndWitnesses(
 // Validates name/type consistency and records errors through `hadError`.
 template <typename FuncOpTy>
 static StructState *resolveStructState(
-    FuncOpTy func, ArrayRef<Type> baseInputTypes,
-    llvm::StringMap<StructState> &structStates, bool &hadError) {
+    FuncOpTy func, ArrayRef<Type> baseInputTypes, llvm::StringMap<StructState> &structStates,
+    bool &hadError
+) {
   StringRef funcName = func.getSymName();
   std::optional<StringRef> nameStruct;
   std::optional<StringRef> typeStruct;
@@ -206,12 +217,12 @@ static StructState *resolveStructState(
 
   if (funcName.ends_with("__constrain")) {
     auto splitPos = funcName.rfind("__");
-    if (splitPos != StringRef::npos)
+    if (splitPos != StringRef::npos) {
       nameStruct = funcName.take_front(splitPos);
+    }
   }
   if (!baseInputTypes.empty()) {
-    if (auto structType =
-            dyn_cast<llzk::component::StructType>(baseInputTypes.front())) {
+    if (auto structType = dyn_cast<llzk::component::StructType>(baseInputTypes.front())) {
       typeStruct = structType.getNameRef().getRootReference().getValue();
       auto it = structStates.find(*typeStruct);
       if (it != structStates.end()) {
@@ -250,8 +261,7 @@ struct FunctionConverter {
 
   // Initialize conversion state for a single function body.
   // The new block is populated by subsequent mapping calls.
-  FunctionConverter(ZKLeanToLLZKState &stateRef, Block &srcBlock,
-                    Block *destBlock)
+  FunctionConverter(ZKLeanToLLZKState &stateRef, Block &srcBlock, Block *destBlock)
       : state(stateRef), oldBlock(srcBlock), newBlock(destBlock) {}
 
   // Add block arguments for the new function signature.
@@ -260,8 +270,9 @@ struct FunctionConverter {
     for (auto [idx, oldArg] : llvm::enumerate(oldBlock.getArguments())) {
       auto newArg = newBlock->addArgument(inputTypes[idx], oldArg.getLoc());
       argMap[oldArg] = newArg;
-      if (mlir::isa<llzk::felt::FeltType>(oldArg.getType()))
+      if (mlir::isa<llzk::felt::FeltType>(oldArg.getType())) {
         feltValueMap[oldArg] = newArg;
+      }
     }
   }
 
@@ -277,28 +288,33 @@ struct FunctionConverter {
   // Resolve a felt value mapped into the new function.
   // Falls back to argument mapping when possible.
   Value mapFelt(Value v) {
-    if (auto it = feltValueMap.find(v); it != feltValueMap.end())
+    if (auto it = feltValueMap.find(v); it != feltValueMap.end()) {
       return it->second;
-    if (auto blockArg = mlir::dyn_cast<BlockArgument>(v))
+    }
+    if (auto blockArg = mlir::dyn_cast<BlockArgument>(v)) {
       return argMap.lookup(blockArg);
+    }
     return Value();
   }
 
   // Resolve a ZKExpr value that was lowered into a felt value.
   // Returns an empty `Value` if the mapping is missing.
   Value mapZK(Value v) {
-    if (auto it = zkToFeltMap.find(v); it != zkToFeltMap.end())
+    if (auto it = zkToFeltMap.find(v); it != zkToFeltMap.end()) {
       return it->second;
+    }
     return Value();
   }
 
   // Map a non-ZK value (e.g., `zkleanlean.call` operand) into LLZK.
   // Emits diagnostics when the value cannot be resolved.
   Value mapLeanValue(Value v, Operation *userOp) {
-    if (auto it = leanValueMap.find(v); it != leanValueMap.end())
+    if (auto it = leanValueMap.find(v); it != leanValueMap.end()) {
       return it->second;
-    if (auto blockArg = mlir::dyn_cast<BlockArgument>(v))
+    }
+    if (auto blockArg = mlir::dyn_cast<BlockArgument>(v)) {
       return argMap.lookup(blockArg);
+    }
     userOp->emitError("unsupported value producer in ZKLean conversion");
     state.hadError = true;
     return Value();
@@ -312,8 +328,8 @@ struct FunctionConverter {
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
       auto cloned = state.builder.create<llzk::felt::FeltConstantOp>(
-          constOp.getLoc(), constOp.getResult().getType(),
-          constOp.getValueAttr());
+          constOp.getLoc(), constOp.getResult().getType(), constOp.getValueAttr()
+      );
       feltValueMap[constOp.getResult()] = cloned.getResult();
       return;
     }
@@ -339,8 +355,7 @@ struct FunctionConverter {
 
     // ZKLeanLean.call to LLZK operations
     if (auto call = dyn_cast<llzk::zkleanlean::CallOp>(op)) {
-      StringRef calleeName =
-          call.getCallee().getRootReference().getValue();
+      StringRef calleeName = call.getCallee().getRootReference().getValue();
       if (calleeName.consume_front("bool.cmp_")) {
         auto predicate = parseCmpPredicate(calleeName);
         if (!predicate) {
@@ -362,10 +377,9 @@ struct FunctionConverter {
         }
         OpBuilder::InsertionGuard guard(state.builder);
         state.builder.setInsertionPointToEnd(newBlock);
-        auto predAttr = llzk::boolean::FeltCmpPredicateAttr::get(
-            state.dest.getContext(), *predicate);
-        auto cmpOp = state.builder.create<llzk::boolean::CmpOp>(
-            call.getLoc(), predAttr, lhs, rhs);
+        auto predAttr =
+            llzk::boolean::FeltCmpPredicateAttr::get(state.dest.getContext(), *predicate);
+        auto cmpOp = state.builder.create<llzk::boolean::CmpOp>(call.getLoc(), predAttr, lhs, rhs);
         leanValueMap[call.getResult(0)] = cmpOp.getResult();
         return;
       }
@@ -376,12 +390,13 @@ struct FunctionConverter {
           return;
         }
         Value value = mapLeanValue(call.getOperand(0), call.getOperation());
-        if (!value)
+        if (!value) {
           return;
+        }
         OpBuilder::InsertionGuard guard(state.builder);
         state.builder.setInsertionPointToEnd(newBlock);
-        auto castOp = state.builder.create<llzk::cast::IntToFeltOp>(
-            call.getLoc(), state.feltType, value);
+        auto castOp =
+            state.builder.create<llzk::cast::IntToFeltOp>(call.getLoc(), state.feltType, value);
         zkToFeltMap[call.getResult(0)] = castOp.getResult();
         return;
       }
@@ -400,10 +415,10 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto memberAttr =
-          state.builder.getStringAttr(accessor.getMemberNameAttr().getValue());
+      auto memberAttr = state.builder.getStringAttr(accessor.getMemberNameAttr().getValue());
       auto newRead = state.builder.create<llzk::component::MemberReadOp>(
-          accessor.getLoc(), state.feltType, component, memberAttr);
+          accessor.getLoc(), state.feltType, component, memberAttr
+      );
       zkToFeltMap[accessor.getValue()] = newRead.getVal();
       return;
     }
@@ -419,8 +434,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltAdd =
-          state.builder.create<llzk::felt::AddFeltOp>(add.getLoc(), lhs, rhs);
+      auto feltAdd = state.builder.create<llzk::felt::AddFeltOp>(add.getLoc(), lhs, rhs);
       zkToFeltMap[add.getOutput()] = feltAdd.getResult();
       return;
     }
@@ -436,8 +450,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltSub =
-          state.builder.create<llzk::felt::SubFeltOp>(sub.getLoc(), lhs, rhs);
+      auto feltSub = state.builder.create<llzk::felt::SubFeltOp>(sub.getLoc(), lhs, rhs);
       zkToFeltMap[sub.getOutput()] = feltSub.getResult();
       return;
     }
@@ -453,8 +466,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltMul =
-          state.builder.create<llzk::felt::MulFeltOp>(mul.getLoc(), lhs, rhs);
+      auto feltMul = state.builder.create<llzk::felt::MulFeltOp>(mul.getLoc(), lhs, rhs);
       zkToFeltMap[mul.getOutput()] = feltMul.getResult();
       return;
     }
@@ -469,8 +481,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      auto feltNeg =
-          state.builder.create<llzk::felt::NegFeltOp>(neg.getLoc(), operand);
+      auto feltNeg = state.builder.create<llzk::felt::NegFeltOp>(neg.getLoc(), operand);
       zkToFeltMap[neg.getOutput()] = feltNeg.getResult();
       return;
     }
@@ -486,8 +497,7 @@ struct FunctionConverter {
       }
       OpBuilder::InsertionGuard guard(state.builder);
       state.builder.setInsertionPointToEnd(newBlock);
-      state.builder.create<llzk::constrain::EmitEqualityOp>(
-          constraint.getLoc(), lhs, rhs);
+      state.builder.create<llzk::constrain::EmitEqualityOp>(constraint.getLoc(), lhs, rhs);
       return;
     }
 
@@ -511,8 +521,8 @@ struct FunctionConverter {
 template <typename FuncOpTy>
 static llzk::function::FuncDefOp createTargetFunction(
     FuncOpTy func, FunctionType newFuncType, StructState *structState,
-    ArrayRef<Type> baseInputTypes, bool allowWitness,
-    ZKLeanToLLZKState &state) {
+    ArrayRef<Type> baseInputTypes, bool allowWitness, ZKLeanToLLZKState &state
+) {
   llzk::function::FuncDefOp newFunc;
   if (structState) {
     if (structState->hasConstrain) {
@@ -525,29 +535,32 @@ static llzk::function::FuncDefOp createTargetFunction(
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(&structState->def.getBodyRegion().front());
     newFunc = state.builder.create<llzk::function::FuncDefOp>(
-        func.getLoc(), state.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN),
-        newFuncType);
+        func.getLoc(), state.builder.getStringAttr(llzk::FUNC_NAME_CONSTRAIN), newFuncType
+    );
     structState->hasConstrain = true;
   } else {
     state.builder.setInsertionPointToEnd(state.dest.getBody());
     newFunc = state.builder.create<llzk::function::FuncDefOp>(
-        func.getLoc(), func.getSymName(), newFuncType);
+        func.getLoc(), func.getSymName(), newFuncType
+    );
   }
   newFunc.setAllowConstraintAttr(true);
-  if (allowWitness)
+  if (allowWitness) {
     newFunc.setAllowWitnessAttr(true);
+  }
   return newFunc;
 }
 
 // Convert a ZKLean function into an LLZK function body.
 // Adds witness arguments, resolves struct context, and rewrites each op.
 template <typename FuncOpTy>
-static void convertFunction(FuncOpTy func, bool allowWitness,
-                            ZKLeanToLLZKState &state) {
-  if (func.getBody().empty())
+static void convertFunction(FuncOpTy func, bool allowWitness, ZKLeanToLLZKState &state) {
+  if (func.getBody().empty()) {
     return;
-  if (state.hadError)
+  }
+  if (state.hadError) {
     return;
+  }
 
   Block &oldBlock = func.getBody().front();
   SmallVector<Operation *, 16> ops;
@@ -557,24 +570,25 @@ static void convertFunction(FuncOpTy func, bool allowWitness,
   // Collect input types of original ZKLean function.
   SmallVector<Type> baseInputTypes;
   auto funcType = func.getFunctionType();
-  for (Type type : funcType.getInputs())
+  for (Type type : funcType.getInputs()) {
     baseInputTypes.push_back(mapStructType(type));
+  }
   SmallVector<Type> inputTypes = baseInputTypes;
   // Add an input of felt type for each ZKBuilder witness.
   inputTypes.append(witnesses.size(), state.feltType);
-  auto newFuncType = FunctionType::get(state.dest.getContext(), inputTypes,
-                                       funcType.getResults());
+  auto newFuncType = FunctionType::get(state.dest.getContext(), inputTypes, funcType.getResults());
 
   StructState *structState =
       resolveStructState(func, baseInputTypes, state.structStates, state.hadError);
-  if (state.hadError)
+  if (state.hadError) {
     return;
+  }
 
   auto newFunc =
-      createTargetFunction(func, newFuncType, structState, baseInputTypes,
-                           allowWitness, state);
-  if (!newFunc || state.hadError)
+      createTargetFunction(func, newFuncType, structState, baseInputTypes, allowWitness, state);
+  if (!newFunc || state.hadError) {
     return;
+  }
 
   auto *newBlock = new Block();
   newFunc.getBody().push_front(newBlock);
@@ -582,10 +596,12 @@ static void convertFunction(FuncOpTy func, bool allowWitness,
   FunctionConverter converter(state, oldBlock, newBlock);
   converter.mapBlockArguments(inputTypes);
   converter.mapWitnessArgs(witnesses);
-  for (Operation *op : ops)
+  for (Operation *op : ops) {
     converter.convertOperation(op);
-  if (state.hadError)
+  }
+  if (state.hadError) {
     return;
+  }
   converter.finalize(func.getLoc());
 }
 
@@ -597,7 +613,7 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
   llvm::StringMap<StructState> structStates;
   auto feltType = llzk::felt::FeltType::get(dest.getContext());
 
-  ZKLeanToLLZKState state{dest, builder, feltType, hadError, structStates};
+  ZKLeanToLLZKState state {dest, builder, feltType, hadError, structStates};
   emitStructDefsFromZKLean(source, state);
 
   source.walk([&](mlir::func::FuncOp func) {
@@ -616,30 +632,25 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
     }
   }
 
-  if (hadError)
+  if (hadError) {
     return failure();
+  }
   return success();
 }
 
 // Pass wrapper that appends a converted LLZK module to the source.
 // Delegates conversion details to `convertLeanModule`.
 class ConvertZKLeanToLLZKPass
-    : public llzk::impl::ConvertZKLeanToLLZKPassBase<
-          ConvertZKLeanToLLZKPass> {
+    : public llzk::impl::ConvertZKLeanToLLZKPassBase<ConvertZKLeanToLLZKPass> {
 public:
   // Register dialects required for the lowered LLZK module.
   // Keeps the pass self-contained for `mlir::PassManager`.
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
-    registry.insert<llzk::constrain::ConstrainDialect,
-                    llzk::boolean::BoolDialect,
-                    llzk::cast::CastDialect,
-                    llzk::felt::FeltDialect,
-                    llzk::function::FunctionDialect,
-                    llzk::component::StructDialect,
-                    mlir::func::FuncDialect,
-                    llzk::zkexpr::ZKExprDialect,
-                    llzk::zkbuilder::ZKBuilderDialect,
-                    llzk::zkleanlean::ZKLeanLeanDialect>();
+    registry.insert<
+        llzk::constrain::ConstrainDialect, llzk::boolean::BoolDialect, llzk::cast::CastDialect,
+        llzk::felt::FeltDialect, llzk::function::FunctionDialect, llzk::component::StructDialect,
+        mlir::func::FuncDialect, llzk::zkexpr::ZKExprDialect, llzk::zkbuilder::ZKBuilderDialect,
+        llzk::zkleanlean::ZKLeanLeanDialect>();
   }
 
   // Create the LLZK module, run conversion, and replace the source module.
@@ -660,8 +671,7 @@ public:
     }
 
     if (Block *parent = source->getBlock()) {
-      parent->getOperations().insert(source->getIterator(),
-                                     llzkModule.getOperation());
+      parent->getOperations().insert(source->getIterator(), llzkModule.getOperation());
       source.erase();
       return;
     }

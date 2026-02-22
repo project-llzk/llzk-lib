@@ -23,13 +23,11 @@ def ConvertLLZKToZKLeanPass
     constraints to ZKBuilder.ConstrainEq, struct member reads to ZKLeanLean.accessor, and
     maps bool.cmp/cast.tofelt into ZKLeanLean.call to stub functions.
   }];
-  let dependentDialects = [
-    "llzk::felt::FeltDialect",
-    "llzk::constrain::ConstrainDialect",
-    "llzk::zkexpr::ZKExprDialect",
-    "llzk::zkbuilder::ZKBuilderDialect",
-    "llzk::zkleanlean::ZKLeanLeanDialect"
-  ];
+  let dependentDialects = ["llzk::felt::FeltDialect",
+                           "llzk::constrain::ConstrainDialect",
+                           "llzk::zkexpr::ZKExprDialect",
+                           "llzk::zkbuilder::ZKBuilderDialect",
+                           "llzk::zkleanlean::ZKLeanLeanDialect"];
   let constructor = "llzk::createConvertLLZKToZKLeanPass()";
 }
 
@@ -44,13 +42,11 @@ def ConvertZKLeanToLLZKPass
     bool.cmp/cast.tofelt where applicable. It also emits minimal @compute stub
     or @constrain stubs when missing to satisfy LLZK invariants.
   }];
-  let dependentDialects = [
-    "llzk::felt::FeltDialect",
-    "llzk::constrain::ConstrainDialect",
-    "llzk::zkexpr::ZKExprDialect",
-    "llzk::zkbuilder::ZKBuilderDialect",
-    "llzk::zkleanlean::ZKLeanLeanDialect"
-  ];
+  let dependentDialects = ["llzk::felt::FeltDialect",
+                           "llzk::constrain::ConstrainDialect",
+                           "llzk::zkexpr::ZKExprDialect",
+                           "llzk::zkbuilder::ZKBuilderDialect",
+                           "llzk::zkleanlean::ZKLeanLeanDialect"];
   let constructor = "llzk::createConvertZKLeanToLLZKPass()";
 }
 

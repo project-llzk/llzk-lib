@@ -12,25 +12,21 @@
 
 include "llzk/Pass/PassBase.td"
 
-def PrettyPrintZKLeanPass
-    : Pass<"zklean-pretty-print", "::mlir::ModuleOp"> {
+def PrettyPrintZKLeanPass : Pass<"zklean-pretty-print", "::mlir::ModuleOp"> {
   let summary = "Pretty-print zkLean dialect IR as Lean code";
   let description = [{
     Emits a textual Lean-like rendering of ZKLean-related operations.
     The output is expected to be compilable by Lean4 with zkLean
   }];
-  let dependentDialects = [
-    "llzk::felt::FeltDialect",
-    "mlir::func::FuncDialect",
-    "llzk::zkexpr::ZKExprDialect",
-    "llzk::zkbuilder::ZKBuilderDialect",
-    "llzk::zkleanlean::ZKLeanLeanDialect"
-  ];
-  let options = [
-    Option<"outputFilename", "output-file", "std::string",
-           /* default */ "\"-\"",
-           "File to write the pretty-printed zkLean dialect operations to. "
-           "Use '-' to write to stdout.">,
+  let dependentDialects = ["llzk::felt::FeltDialect", "mlir::func::FuncDialect",
+                           "llzk::zkexpr::ZKExprDialect",
+                           "llzk::zkbuilder::ZKBuilderDialect",
+                           "llzk::zkleanlean::ZKLeanLeanDialect"];
+  let options =
+      [Option<"outputFilename", "output-file", "std::string",
+              /* default */ "\"-\"",
+              "File to write the pretty-printed zkLean dialect operations to. "
+              "Use '-' to write to stdout.">,
   ];
   let constructor = "llzk::zklean::createPrettyPrintZKLeanPass()";
 }

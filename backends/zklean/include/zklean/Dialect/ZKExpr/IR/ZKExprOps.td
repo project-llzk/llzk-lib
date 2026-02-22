@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #ifndef LIB_DIALECT_ZKEXPR_ZKEXPROPS_TD_
 #define LIB_DIALECT_ZKEXPR_ZKEXPROPS_TD_
 
@@ -19,7 +18,9 @@ include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-class ZKExpr_BinOp<string mnemonic> : Op<ZKExpr_Dialect, mnemonic, [Pure, ElementwiseMappable, SameOperandsAndResultType]> {
+class ZKExpr_BinOp<string mnemonic>
+    : Op<ZKExpr_Dialect,
+         mnemonic, [Pure, ElementwiseMappable, SameOperandsAndResultType]> {
   let arguments = (ins ZKExpr:$lhs, ZKExpr:$rhs);
   let results = (outs ZKExpr:$output);
   let assemblyFormat = "$lhs $rhs attr-dict";
@@ -52,4 +53,4 @@ def ZKExpr_LiteralOp : Op<ZKExpr_Dialect, "Literal", [Pure]> {
   let assemblyFormat = "$literal attr-dict";
 }
 
-#endif  // LIB_DIALECT_ZKEXPR_ZKEXPROPS_TD_
+#endif // LIB_DIALECT_ZKEXPR_ZKEXPROPS_TD_

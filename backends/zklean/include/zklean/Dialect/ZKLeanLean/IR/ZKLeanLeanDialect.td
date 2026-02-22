@@ -25,4 +25,4 @@ def ZKLeanLean_Dialect : Dialect {
   let useDefaultTypePrinterParser = 1;
 }
 
-#endif  // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANDIALECT_TD_
+#endif // LIB_DIALECT_ZKLEANLEAN_ZKLEANLEANDIALECT_TD_
