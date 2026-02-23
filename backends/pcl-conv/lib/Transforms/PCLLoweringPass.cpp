@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
@@ -27,12 +28,18 @@
 #include <pcl/Dialect/IR/Types.h>
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/LogicalResult.h>
 
 #include <deque>
 #include <memory>
@@ -361,12 +368,46 @@ private:
   }
 
   // PCL programs require a module-level attribute specifying the prime.
-  void setPrime(ModuleOp &newMod) {
+  LogicalResult setPrime(ModuleOp &newMod, ModuleOp &oldMod) {
+    auto emitErr = [&oldMod](Attribute attr) {
+      return oldMod->emitOpError() << "expected 'llzk.fields' attribute to be either field spec or "
+                                      "array of field specs. Got "
+                                   << attr;
+    };
+
+    auto fields = oldMod->getAttr("llzk.fields");
+    if (!fields) {
+      return oldMod->emitOpError("is missing 'llzk.fields' attribute");
+    }
+    FailureOr<llvm::APInt> prime =
+        llvm::TypeSwitch<Attribute, FailureOr<llvm::APInt>>(fields)
+            .Case([](FieldSpecAttr fieldAttr) { return fieldAttr.getPrime(); })
+            .Case([&oldMod, &emitErr](ArrayAttr arrayAttr) -> FailureOr<llvm::APInt> {
+      if (arrayAttr.empty()) {
+        return oldMod->emitOpError() << "'llzk.fields' attribute cannot be an empty array";
+      }
+      auto fst = arrayAttr[0];
+      if (arrayAttr.size() > 1) {
+        oldMod->emitWarning()
+            << "'llzk.fields' attribute has more than one field. Selected first entry: " << fst;
+      }
+      auto fstField = mlir::dyn_cast<FieldSpecAttr>(fst);
+      if (!fstField) {
+        return emitErr(fst);
+      }
+      return fstField.getPrime();
+    }).Default(emitErr);
+    if (failed(prime)) {
+      return failure();
+    }
+
     // Add an extra bit to avoid the prime being represented as a negative number
-    auto newBitWidth = prime.getBitWidth() + 1;
+    auto newBitWidth = prime->getBitWidth() + 1;
     auto ty = IntegerType::get(newMod.getContext(), newBitWidth);
-    auto intAttr = IntegerAttr::get(ty, prime.zext(newBitWidth));
+    auto intAttr = IntegerAttr::get(ty, prime->zext(newBitWidth));
     newMod->setAttr("pcl.prime", pcl::PrimeAttr::get(newMod.getContext(), intAttr));
+
+    return success();
   }
 
   void runOnOperation() override {
@@ -376,7 +417,10 @@ private:
     // Create the PCL module
     auto newMod = ModuleOp::create(moduleOp.getLoc());
     // Set the prime attribute
-    setPrime(newMod);
+    if (failed(setPrime(newMod, /*oldMod=*/moduleOp))) {
+      signalPassFailure();
+      return;
+    }
     // Convert each struct to a PCL function
     auto walkResult = moduleOp.walk([this, &newMod](StructDefOp structDef) -> WalkResult {
       // 1) verify the struct can be converted to PCL
