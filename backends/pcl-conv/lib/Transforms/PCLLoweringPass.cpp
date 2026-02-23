@@ -20,7 +20,6 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <pcl/Dialect/IR/Dialect.h>
@@ -38,12 +37,14 @@
 #include <deque>
 #include <memory>
 
+#include "pcl-conv/Transforms/TransformationPasses.h"
+
 // Include the generated base pass class definitions.
-namespace llzk {
+namespace pcl::conversion {
 #define GEN_PASS_DECL_PCLLOWERINGPASS
 #define GEN_PASS_DEF_PCLLOWERINGPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "pcl-conv/Transforms/TransformationPasses.h.inc"
+} // namespace pcl::conversion
 
 using namespace mlir;
 using namespace llzk;
@@ -95,7 +96,7 @@ lowerConst(OpBuilder &b, FeltConstantOp cst, llvm::DenseMap<Value, Value> &mappi
   return success();
 }
 
-class PCLLoweringPass : public llzk::impl::PCLLoweringPassBase<PCLLoweringPass> {
+class PCLLoweringPass : public pcl::conversion::impl::PCLLoweringPassBase<PCLLoweringPass> {
 
 private:
   void getDependentDialects(DialectRegistry &registry) const override {
@@ -408,4 +409,6 @@ private:
 };
 } // namespace
 
-std::unique_ptr<Pass> llzk::createPCLLoweringPass() { return std::make_unique<PCLLoweringPass>(); }
+std::unique_ptr<Pass> pcl::conversion::createPCLLoweringPass() {
+  return std::make_unique<PCLLoweringPass>();
+}
