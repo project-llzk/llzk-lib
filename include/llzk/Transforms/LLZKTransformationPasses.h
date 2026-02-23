@@ -36,6 +36,10 @@ std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);
 
 std::unique_ptr<mlir::Pass> createInlineStructsPass();
 
+#if LLZK_WITH_PCL
+std::unique_ptr<mlir::Pass> createPCLLoweringPass();
+#endif // LLZK_WITH_PCL
+
 void registerTransformationPassPipelines();
 
 void registerInliningExtensions(mlir::DialectRegistry &registry);

@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the `-llzk-pcl-lowering` pass.
+/// This file implements the `-llzk-to-pcl` pass.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -20,8 +20,8 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
-#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/Dialect/IR/Ops.h>
@@ -39,11 +39,11 @@
 #include <memory>
 
 // Include the generated base pass class definitions.
-namespace r1cs {
+namespace llzk {
 #define GEN_PASS_DECL_PCLLOWERINGPASS
 #define GEN_PASS_DEF_PCLLOWERINGPASS
-#include "r1cs/Transforms/TransformationPasses.h.inc"
-} // namespace r1cs
+#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
+} // namespace llzk
 
 using namespace mlir;
 using namespace llzk;
@@ -95,7 +95,7 @@ lowerConst(OpBuilder &b, FeltConstantOp cst, llvm::DenseMap<Value, Value> &mappi
   return success();
 }
 
-class PCLLoweringPass : public r1cs::impl::PCLLoweringPassBase<PCLLoweringPass> {
+class PCLLoweringPass : public llzk::impl::PCLLoweringPassBase<PCLLoweringPass> {
 
 private:
   void getDependentDialects(DialectRegistry &registry) const override {
@@ -408,4 +408,4 @@ private:
 };
 } // namespace
 
-std::unique_ptr<Pass> r1cs::createPCLLoweringPass() { return std::make_unique<PCLLoweringPass>(); }
+std::unique_ptr<Pass> llzk::createPCLLoweringPass() { return std::make_unique<PCLLoweringPass>(); }

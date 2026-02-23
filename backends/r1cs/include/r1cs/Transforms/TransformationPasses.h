@@ -17,10 +17,6 @@ namespace r1cs {
 
 std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
 
-#if LLZK_WITH_PCL
-std::unique_ptr<mlir::Pass> createPCLLoweringPass();
-#endif // LLZK_WITH_PCL
-
 void registerTransformationPassPipelines();
 
 #define GEN_PASS_REGISTRATION
