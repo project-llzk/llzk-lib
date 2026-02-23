@@ -1,4 +1,3 @@
-
 add_library(PCLConvDialectHeaders INTERFACE)
 target_include_directories(PCLConvDialectHeaders
   INTERFACE # headers in this folder's subdirectories
