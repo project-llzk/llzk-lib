@@ -379,9 +379,9 @@ private:
     if (!fields) {
       return oldMod->emitOpError("is missing 'llzk.fields' attribute");
     }
+    llvm::TypeSwitch<Attribute, FailureOr<llvm::APInt>> ts(fields);
     FailureOr<llvm::APInt> prime =
-        llvm::TypeSwitch<Attribute, FailureOr<llvm::APInt>>(fields)
-            .Case([](FieldSpecAttr fieldAttr) { return fieldAttr.getPrime(); })
+        ts.Case([](FieldSpecAttr fieldAttr) { return fieldAttr.getPrime(); })
             .Case([&oldMod, &emitErr](ArrayAttr arrayAttr) -> FailureOr<llvm::APInt> {
       if (arrayAttr.empty()) {
         return oldMod->emitOpError() << "'llzk.fields' attribute cannot be an empty array";
