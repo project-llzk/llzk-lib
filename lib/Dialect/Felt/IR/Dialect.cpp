@@ -40,8 +40,8 @@ namespace llzk::felt {
 mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   mlir::Builder odsBuilder(odsParser.getContext());
   llvm::SMLoc odsLoc = odsParser.getCurrentLocation();
-  mlir::FailureOr<::mlir::StringAttr> fieldNameAttrRes;
-  mlir::FailureOr<::llvm::APInt> primeRes;
+  mlir::FailureOr<mlir::StringAttr> fieldNameAttrRes;
+  mlir::FailureOr<llvm::APInt> primeRes;
 
   // Parse literal '<'
   if (odsParser.parseLess()) {
@@ -49,11 +49,11 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   }
 
   // Parse variable 'fieldName'
-  fieldNameAttrRes = mlir::FieldParser<::mlir::StringAttr>::parse(odsParser);
-  if (::mlir::failed(fieldNameAttrRes)) {
+  fieldNameAttrRes = mlir::FieldParser<mlir::StringAttr>::parse(odsParser);
+  if (mlir::failed(fieldNameAttrRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(), "failed to parse LLZK_FieldSpecAttr parameter 'fieldName' "
-                                        "which is to be a `::mlir::StringAttr`"
+                                        "which is to be a `mlir::StringAttr`"
     );
     return {};
   }
@@ -63,11 +63,11 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   }
 
   // Parse variable 'prime'
-  primeRes = mlir::FieldParser<::llvm::APInt>::parse(odsParser);
-  if (::mlir::failed(primeRes)) {
+  primeRes = mlir::FieldParser<llvm::APInt>::parse(odsParser);
+  if (mlir::failed(primeRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be a `::llvm::APInt`"
+        "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be a `llvm::APInt`"
     );
     return {};
   }
