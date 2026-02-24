@@ -389,11 +389,19 @@ private:
     // If the collection reports that at least one FeltType did not declare the field and
     // the fields set is empty, then we raise an error.
     if (failed(collectFields(module, fields)) && fields.empty()) {
-      return module->emitOpError() << "Could not deduce the prime field";
+      return module->emitOpError() << "could not deduce the prime field";
+    }
+    // If the fields is empty and we reached this point it means that the IR we are about to lower
+    // does not have a single felt type (because felts without a field will make `collectFields`
+    // return failure). We return an error here since we don't have a prime to emit. In practice
+    // this is going to be unlikely to happen.
+    if (fields.empty()) {
+      return module->emitOpError()
+             << "does not contain felt types and prime field couldn't be deduced";
     }
     // The pass only supports having one field for the whole circuit.
     if (fields.size() > 1) {
-      return module->emitOpError() << "Multiple fields is not supported";
+      return module->emitOpError() << "multiple fields is not supported";
     }
     const auto &selectedField = *(fields.begin());
     return toAPSInt(selectedField.prime());
