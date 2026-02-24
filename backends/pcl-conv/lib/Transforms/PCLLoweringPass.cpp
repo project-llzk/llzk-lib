@@ -393,8 +393,8 @@ private:
     }
     // If the fields is empty and we reached this point it means that the IR we are about to lower
     // does not have a single felt type (because felts without a field will make `collectFields`
-    // return failure). We return an error here since we don't have a prime to emit. In practice
-    // this is going to be unlikely to happen.
+    // return failure). We return an error here since we don't have a prime to emit. In practice,
+    // this situation it's going to be unlikely.
     if (fields.empty()) {
       return module->emitOpError()
              << "does not contain felt types and prime field couldn't be deduced";
