@@ -95,7 +95,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
         // For ArrayRef parameters, use intptr_t for count and pointer to element type
         mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
         paramListStream << ", intptr_t " << param.getName() << "Count, "
-                        << mapCppTypeToCapiType(cppElemType) << " *" << param.getName();
+                        << mapCppTypeToCapiType(cppElemType) << " const *" << param.getName();
       } else {
         paramListStream << ", " << mapCppTypeToCapiType(cppType) << ' ' << param.getName();
       }
@@ -255,7 +255,8 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
         // For ArrayRef parameters, convert from pointer + count to ArrayRef
         mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
         std::string capiElemType = mapCppTypeToCapiType(cppElemType);
-        paramListStream << ", intptr_t " << pName << "Count, " << capiElemType << " *" << pName;
+        paramListStream << ", intptr_t " << pName << "Count, " << capiElemType << " const *"
+                        << pName;
 
         // In the call, we need to convert back to ArrayRef. Check if elements need unwrapping.
         if (isPrimitiveType(cppElemType)) {
