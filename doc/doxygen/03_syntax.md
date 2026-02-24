@@ -33,11 +33,15 @@ module attributes {llzk.lang = "circom"} {
 - `i1`: (MLIR builtin) Boolean value [0,1].
 - `index`: (MLIR builtin) Machine integer.
 - `felt.type`: Finite field element.
-- `array.type<N x E>`: Aggregate type with indexed pseudo-homogeneous elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes.
-- `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated struct.
+- `array.type<N x E>`: Aggregate type with indexed [pseudo-homogeneous](\ref pseudo-homogeneous) elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes. Each dimension size can be specified as an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when creating arrays within a loop where the dimension size depends on the loop interation variable).
+- `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated `struct.def` where each parameter can be an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), a type used to instantiate a `poly.tvar<@N>` (see below), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when the a parameter of a templated `struct.type` depends on a loop iteration variable).
 - `pod.type<..>`: Plain Old Data aggregate type with named heterogeneous elements. Unlike `struct.type`, there is no associated named declaration, the type itself specifies all constituent element types. It can be used more freely than `struct.type` since it has fewer restrictions on modifications.
-- `poly.tvar<@N>`: Placeholder type variable for templated `struct.def` that may be instantiated with different types.
+- `poly.tvar<@N>`: Placeholder type variable within a templated `struct.def` that may be instantiated with different types.
 - `string.type`: Sequence of characters.
+
+### Pseudo-homogeneous arrays {#pseudo-homogeneous}
+
+LLZK supports arrays where the element type is not truely homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantied with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](\ref test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantied struct type of each element is different.
 
 ## Semantic Rules
 
