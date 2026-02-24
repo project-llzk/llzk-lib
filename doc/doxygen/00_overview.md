@@ -44,7 +44,7 @@ Several builtin MLIR dialects are also supported in LLZK IR:
 
 ### Frontends {#frontends}
 
-Frontends are not contained within the LLZK repository, but are rather
+Frontends are not contained within the LLZK repository, but are instead
 maintained in separate repositories, using LLZK-lib as a dependency.
 
 The LLZK project currently maintains the following frontends:
@@ -70,7 +70,7 @@ Developer documentation can be found:
     - General, multi-dialect transforms: \ref include/llzk/Transforms, \ref lib/Transforms
     - `array` transforms: \ref include/llzk/Dialect/Array/Transforms, \ref lib/Dialect/Array/Transforms
     - `polymorphic` transforms: \ref include/llzk/Dialect/Polymorphic/Transforms, \ref lib/Dialect/Polymorphic/Transforms
-- In the Validators directories
+- In the Validators directories:
     - General, multi-dialect validators: \ref include/llzk/Validators, \ref lib/Validators
 
 ### Backends {#backends}
@@ -79,7 +79,7 @@ The LLZK project currently maintains the following backends:
 - [R1CS](\ref r1cs-dialect)
 
 
-Veridise also maintains a [Picus Contraint Language backend](https://github.com/Veridise/pcl-mlir) that
+Veridise also maintains a [Picus Constraint Language backend](https://github.com/Veridise/pcl-mlir) that
 allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
 
 
