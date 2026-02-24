@@ -22,6 +22,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/Dialect/IR/Ops.h>
@@ -369,34 +370,7 @@ private:
 
   // PCL programs require a module-level attribute specifying the prime.
   LogicalResult setPrime(ModuleOp &newMod, ModuleOp &oldMod) {
-    auto emitErr = [&oldMod](Attribute attr) {
-      return oldMod->emitOpError() << "expected 'llzk.fields' attribute to be either field spec or "
-                                      "array of field specs. Got "
-                                   << attr;
-    };
-
-    auto fields = oldMod->getAttr("llzk.fields");
-    if (!fields) {
-      return oldMod->emitOpError("is missing 'llzk.fields' attribute");
-    }
-    llvm::TypeSwitch<Attribute, FailureOr<llvm::APInt>> ts(fields);
-    FailureOr<llvm::APInt> prime =
-        ts.Case([](FieldSpecAttr fieldAttr) { return fieldAttr.getPrime(); })
-            .Case([&oldMod, &emitErr](ArrayAttr arrayAttr) -> FailureOr<llvm::APInt> {
-      if (arrayAttr.empty()) {
-        return oldMod->emitOpError() << "'llzk.fields' attribute cannot be an empty array";
-      }
-      auto fst = arrayAttr[0];
-      if (arrayAttr.size() > 1) {
-        oldMod->emitWarning()
-            << "'llzk.fields' attribute has more than one field. Selected first entry: " << fst;
-      }
-      auto fstField = mlir::dyn_cast<FieldSpecAttr>(fst);
-      if (!fstField) {
-        return emitErr(fst);
-      }
-      return fstField.getPrime();
-    }).Default(emitErr);
+    auto prime = selectPrime(oldMod);
     if (failed(prime)) {
       return failure();
     }
@@ -408,6 +382,21 @@ private:
     newMod->setAttr("pcl.prime", pcl::PrimeAttr::get(newMod.getContext(), intAttr));
 
     return success();
+  }
+
+  FailureOr<llvm::APSInt> selectPrime(ModuleOp &module) {
+    FieldSet fields;
+    // If the collection reports that at least one FeltType did not declare the field and
+    // the fields set is empty, then we raise an error.
+    if (failed(collectFields(module, fields)) && fields.empty()) {
+      return module->emitOpError() << "Could not deduce the prime field";
+    }
+    // The pass only supports having one field for the whole circuit.
+    if (fields.size() > 1) {
+      return module->emitOpError() << "Multiple fields is not supported";
+    }
+    const auto &selectedField = *(fields.begin());
+    return toAPSInt(selectedField.prime());
   }
 
   void runOnOperation() override {

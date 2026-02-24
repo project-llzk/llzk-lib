@@ -20,11 +20,6 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
       This pass currently expects the flattening and inlining passes to be run prior to its use.
     }];
   let constructor = "pcl::conversion::createPCLLoweringPass()";
-  // let options = [Option<
-  //     "prime", "prime", "::llvm::APInt",
-  //     "llvm::APInt(31, 2130706433)", // KoalaBear in decimal
-  //     "The prime field that the constraints operate over. This "
-  //     "is required by PCL, and the prime must be passed in digits.">];
 }
 
 #endif // PCL_CONV_TRANSFORMATION_PASSES_TD
