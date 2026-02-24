@@ -34,6 +34,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `struct` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component);
 
 //===----------------------------------------------------------------------===//

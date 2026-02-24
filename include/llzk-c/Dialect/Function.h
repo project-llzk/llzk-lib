@@ -33,6 +33,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `function` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Function, llzk__function);
 
 //===----------------------------------------------------------------------===//

@@ -35,14 +35,19 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `pod` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(POD, llzk__pod);
 
 //===----------------------------------------------------------------------===//
 // Auxiliary types
 //===----------------------------------------------------------------------===//
 
+/// Information needed to define a pod RecordAttr given a name and a value that
+/// will be stored in the record.
 typedef struct LlzkRecordValue {
+  /// Record name.
   MlirStringRef name;
+  /// Initial value for the record.
   MlirValue value;
 } LlzkRecordValue;
 

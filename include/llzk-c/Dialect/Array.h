@@ -33,6 +33,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `array` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, llzk__array);
 
 //===----------------------------------------------------------------------===//

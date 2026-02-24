@@ -30,6 +30,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `bool` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean);
 
 #ifdef __cplusplus

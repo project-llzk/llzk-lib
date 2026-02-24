@@ -43,21 +43,18 @@ extern "C" {
 #define LLZK_DECLARE_NARY_OP_PREDICATE(dialect, op, name, ...)                                     \
   MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##name(MlirOperation op, __VA_ARGS__)
 
-//===----------------------------------------------------------------------===//
-// Representation of a mlir::ValueRange.
-//===----------------------------------------------------------------------===//
-
+/// Representation of an `mlir::ValueRange`
 struct MlirValueRange {
+  /// Pointer to the first value in the range.
   MlirValue const *values;
+  /// Number of values in the range.
   intptr_t size;
 };
 typedef struct MlirValueRange MlirValueRange;
 
-//===----------------------------------------------------------------------===//
-// Symbol lookup result.
-//===----------------------------------------------------------------------===//
-
+/// Owned result of an LLZK symbol lookup.
 typedef struct LlzkSymbolLookupResult {
+  /// raw pointer to the result
   void *ptr;
 } LlzkSymbolLookupResult;
 

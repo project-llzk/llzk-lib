@@ -19,9 +19,10 @@
 extern "C" {
 #endif
 
-/// Symbol name for the witness generation (and resp. constraint generation) functions within a
-/// component.
+/// Symbol name for the witness generation function within a struct/component.
 extern const char *LLZK_FUNC_NAME_COMPUTE;
+
+/// Symbol name for the constraint generation function within a struct/component.
 extern const char *LLZK_FUNC_NAME_CONSTRAIN;
 
 /// Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the

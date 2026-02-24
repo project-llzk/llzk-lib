@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `string` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(String, llzk__string);
 
 #ifdef __cplusplus

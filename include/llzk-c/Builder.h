@@ -24,22 +24,31 @@ extern "C" {
 
 #define DEFINE_C_API_STRUCT(name, storage)                                                         \
   struct name {                                                                                    \
+    /* raw pointer to C++ object */                                                                \
     storage *ptr;                                                                                  \
   };                                                                                               \
   typedef struct name name
 
+/// Wrapper around an `mlir::OpBuilder` instance.
 DEFINE_C_API_STRUCT(MlirOpBuilder, void);
+/// Wrapper around an `mlir::OpBuilder::Listener` instance.
 DEFINE_C_API_STRUCT(MlirOpBuilderListener, void);
 
 #undef DEFINE_C_API_STRUCT
 
+/// Current insertion point of an `mlir::OpBuilder` instance represented as a
+/// block and an operation within that block.
 struct MlirOpBuilderInsertPoint {
+  /// The block that the builder is inserting into.
   MlirBlock block;
+  /// The operation that the builder is inserting before.
   MlirOperation point;
 };
 typedef struct MlirOpBuilderInsertPoint MlirOpBuilderInsertPoint;
 
+/// Callback type for listening to operation insertions in an `mlir::OpBuilder`.
 typedef void (*MlirNotifyOperationInserted)(MlirOperation, MlirOpBuilderInsertPoint, void *);
+/// Callback type for listening to block insertions in an `mlir::OpBuilder`.
 typedef void (*MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *);
 
 //===----------------------------------------------------------------------===//
@@ -50,7 +59,9 @@ typedef void (*MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *
 // to op build methods that we expose. More methods can be added as the need for them arises.
 
 #define DECLARE_SUFFIX_OP_BUILDER_CREATE_FN(suffix, ...)                                           \
+  /* Create a new builder with the given context */                                                \
   MLIR_CAPI_EXPORTED MlirOpBuilder mlirOpBuilderCreate##suffix(__VA_ARGS__);                       \
+  /* Create a new builder with the given context and listener */                                   \
   MLIR_CAPI_EXPORTED MlirOpBuilder mlirOpBuilderCreate##suffix##WithListener(                      \
       __VA_ARGS__, MlirOpBuilderListener                                                           \
   );

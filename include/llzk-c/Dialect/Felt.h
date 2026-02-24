@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `felt` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 
 //===----------------------------------------------------------------------===//

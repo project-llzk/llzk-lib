@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `cast` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast);
 
 /// Creates a IntToFeltOp from an input value with the specified result FeltType.

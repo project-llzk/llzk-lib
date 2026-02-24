@@ -34,6 +34,7 @@
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `poly` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 
 //===----------------------------------------------------------------------===//
