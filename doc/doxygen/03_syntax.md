@@ -8,7 +8,7 @@ The root `module` in LLZK IR must have the `llzk.lang` attribute with an optiona
 
 Here is a simple example of LLZK IR translated from the circomlib [and gate](\ref circomlib-and-gate):
 
-```LLZK IR
+```mlir
 module attributes {llzk.lang = "circom"} {
   struct.def @AND {
     struct.member @out : !felt.type {llzk.pub}
