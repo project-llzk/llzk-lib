@@ -33,7 +33,7 @@ module attributes {llzk.lang = "circom"} {
 - `i1`: (MLIR builtin) Boolean value [0,1].
 - `index`: (MLIR builtin) Machine integer.
 - `felt.type`: Finite field element.
-- `array.type<N x E>`: Aggregate type with indexed peudo-homogeneous elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes.
+- `array.type<N x E>`: Aggregate type with indexed pseudo-homogeneous elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes.
 - `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated struct.
 - `pod.type<..>`: Plain Old Data aggregate type with named heterogeneous elements. Unlike `struct.type`, there is no associated named declaration, the type itself specifies all constituent element types. It can be used more freely than `struct.type` since it has fewer restrictions on modifications.
 - `poly.tvar<@N>`: Placeholder type variable for templated `struct.def` that may be instantiated with different types.
