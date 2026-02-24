@@ -28,29 +28,22 @@ module attributes {llzk.lang = "circom"} {
 }
 ```
 
-<!--
 ## Types
 
-- `i1`: subtype of Felt in [0,1]
-- `index`: machine integer
-- `felt.type`: finite field element
-- `struct.type` (component): Aggregate type with named heterogeneous elements. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions.
-- `array<E>`: elements can be any type, including other array type for multi-dimensional arrays. We may need this type to have a built-in field named `len` that returns the length of the array.
-- `const<T>`: **modifier** on types to denote it’s a compile-time constant. Semantic analysis can infer `const` based on usage of literal values, etc. but it can also be specified in the IR in which case the semantic analysis must ensure it’s correct or give an error. The semantics of several syntax nodes require a `const` value, such as the `i` in `GetWeight<i>.compute()`. Global function return type can be `const` and that would allow such a function to be used in these locations.
-
-## Special Constructs
-
-- `nondetFelt()`: can be used as the parameter of a `constrain()` function when the expression from the source language can be elided because it cannot be used as part of a constraint. For example, expressions containing bitwise operators cannot be part of a constraint.
-- A special element can be added to a `struct` to store the return value of a component (i.e., `synthetic_return` in the examples above).
+- `i1`: (MLIR builtin) Boolean value [0,1].
+- `index`: (MLIR builtin) Machine integer.
+- `felt.type`: Finite field element.
+- `array.type<N x E>`: Aggregate type with indexed peudo-homogeneous elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes.
+- `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated struct.
+- `pod.type<..>`: Plain Old Data aggregate type with named heterogeneous elements. Unlike `struct.type`, there is no associated named declaration, the type itself specifies all constituent element types. It can be used more freely than `struct.type` since it has fewer restrictions on modifications.
+- `poly.tvar<@N>`: Placeholder type variable for templated `struct.def` that may be instantiated with different types.
+- `string.type`: Sequence of characters.
 
 ## Semantic Rules
 
-- `emit` must only appear in `constrain()` functions and `return` only in global functions.
-- `constrain()` only calls `constrain()` and `compute()` only calls `compute()`. Either can call arbitrary functions but not each other.
-- Function parameters are pass-by-value.
-- For references like `a.b`, a field named `b` must be present in the component `a`. For references like `c`, if a field named `c` is present in the current component the reference refers to that field instance, otherwise it refers to a local named `c` within that function, with type inferred from the RHS of the expression where `c` is defined.
-- Global constants cannot be modified/assigned.
--->
+- Ops marked with the `WitnessGen` trait can only be used in functions with the `allow_witness` attribute (`compute()` within `struct.def` has this by default). Similarly, ops marked with the `ConstraintGen` trait can only be used in functions with the `allow_constraint` attribute (`constrain()` within `struct.def` has this by default).
+- Functions with the `allow_witness` attribute can only call other functions marked with `allow_witness`. Likewise for `allow_constraint`.
+- Ops marked with the `NotFieldNative` trait can only be used in functions with the `allow_non_native_field_ops` attribute. Some of these ops have known transformations to field-native operations but others do not. It is up to backend users to determine how to handle such ops appearing in `constrain()` functions (one possibility being replacing these ops with `llzk.nondet`)
 
 ## Translation Guidelines {#translation-guidelines}
 
