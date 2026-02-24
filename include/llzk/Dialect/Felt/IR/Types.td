@@ -30,7 +30,9 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
     fields. If a circuit needs to encode translations between fields, the circuit
     may define a function prototype, e.g.:
 
-       function.def @convert(%a : !felt.type<"bn254">) -> !felt.type<"goldilocks">;
+    ```llzk
+    function.def @convert(%a : !felt.type<"bn254">) -> !felt.type<"goldilocks">;
+    ```
 
     and perform the lowering of calls to this conversion function in a
     backend-specific manner.
