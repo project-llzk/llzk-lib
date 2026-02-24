@@ -262,7 +262,7 @@ struct ExtraMethod {
   std::string returnType;
   /// The name of the method
   std::string methodName;
-  /// Properly escapted documentation comment (if any)
+  /// Properly escaped documentation comment (if any)
   std::string documentation;
   /// Whether the method is const-qualified
   bool isConst = false;
