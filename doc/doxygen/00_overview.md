@@ -39,8 +39,8 @@ The dialects can be further grouped into a few categories:
 For the complete specification of all dialects, see \ref dialects.
 
 Several builtin MLIR dialects are also supported in LLZK IR:
-- [arith](\ref mlir-arith)
-- [scf](\ref mlir-scf)
+- [arith](https://mlir.llvm.org/docs/Dialects/ArithOps)
+- [scf](https://mlir.llvm.org/docs/Dialects/SCFDialect)
 
 ### Frontends {#frontends}
 
@@ -92,5 +92,3 @@ allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
 [picus-v2]: https://docs.veridise.com/picus-v2/
 [zk-vanguard]: https://docs.veridise.com/zkvanguard/
 [mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
-[mlir-arith]: https://mlir.llvm.org/docs/Dialects/ArithOps/
-[mlir-scf]: https://mlir.llvm.org/docs/Dialects/SCFDialect/
