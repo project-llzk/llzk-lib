@@ -23,14 +23,18 @@ class LLZKDialectAttr<string name, string attrMnemonic, list<Trait> traits = []>
 }
 
 def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
-  let summary = "A unit attribute to mark a type as public";
+  let summary = "A unit attribute to mark an input/output as public";
   let description = [{
+    This attribute is used on parameters of `compute()` and `constrain()` functions
+    within a `struct.def` to denote the public inputs of the circuit and on
+    `struct.member` ops to denote public output of the circuit.
+
     Examples:
 
     ```llzk
     struct.member @member_name : !felt.type {llzk.pub}
 
-    function.def @func_name(%0: !felt.type {llzk.pub})
+    function.def @compute(%0: !felt.type {llzk.pub})
     ```
   }];
 }
