@@ -11,6 +11,7 @@
 #define LLZK_OPS
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
+include "llzk/Dialect/LLZK/IR/Attrs.td" // must be included to generate docs
 include "llzk/Dialect/Shared/Types.td"
 
 include "mlir/IR/OpAsmInterface.td"
@@ -31,7 +32,7 @@ def LLZK_NonDetOp
   let summary = "uninitialized variable";
   let description = [{
     This operation produces an SSA variable of the specified type but with
-    nondeterministic value. 
+    nondeterministic value.
 
     This op can be used in `@constrain()` functions in place of expressions that
     cannot be included in constraints. It may also be generated for a frontend
