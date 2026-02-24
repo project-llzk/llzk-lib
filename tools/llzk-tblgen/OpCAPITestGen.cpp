@@ -72,7 +72,7 @@ struct OpTestGenerator : public TestGenerator {
   /// @param op The operation definition
   void genBuildOpTests(const Operator &op) const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{1}_{2}Build links properly.
+/// This test ensures {0}{1}_{2}Build links properly.
 TEST_F({1}OperationLinkTests, {0}_{2}_Build) {{
   // Returns an `arith.constant` op, which will never match the {2} dialect check.
   auto testOp = createIndexOperation();
@@ -100,9 +100,9 @@ struct {2}BuildFuncHelper : public TestAnyBuildFuncHelper<CAPITest> {
 protected:
   {2}BuildFuncHelper() = default;
 };
-// This test ensures `{0}{1}{2}Build()` successfully builds an `Operation`
-// of the correct type that passes verification. It relies on a manual implemenation
-// of `{2}BuildFuncHelper::callBuild()` that calls `{0}{1}{2}Build()`.
+/// This test ensures `{0}{1}{2}Build()` successfully builds an `Operation`
+/// of the correct type that passes verification. It relies on a manual implemenation
+/// of `{2}BuildFuncHelper::callBuild()` that calls `{0}{1}{2}Build()`.
 TEST_F(CAPITest, {2}_build_pass) { {2}BuildFuncHelper::get()->run(*this); }
 )";
 

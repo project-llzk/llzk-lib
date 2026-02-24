@@ -214,9 +214,9 @@ static inline std::string getDocumentation(
       // Trim whitespace
       if (!comment.empty()) {
         if (!documentation.empty()) {
-          documentation = comment.str() + " " + documentation;
+          documentation = "/// " + comment.str() + "\n" + documentation;
         } else {
-          documentation = comment.str();
+          documentation = "/// " + comment.str();
         }
       }
     } else if (!curr.is(tok::unknown)) {

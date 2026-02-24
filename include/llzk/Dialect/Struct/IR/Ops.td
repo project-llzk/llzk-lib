@@ -139,7 +139,6 @@ def LLZK_StructDefOp
       }));
     }
 
-
     /// Gets the FuncDefOp that defines the compute function in this structure, if present, or `nullptr` otherwise.
     ::llzk::function::FuncDefOp getComputeFuncOp();
 
@@ -160,16 +159,16 @@ def LLZK_StructDefOp
 
     /// Return `true` iff this StructDefOp has a parameter with the given name
     bool hasParamNamed(::mlir::StringRef find);
+
+    /// Return `true` iff this StructDefOp has a parameter with the given name
     inline bool hasParamNamed(::mlir::StringAttr find) {
       return hasParamNamed(find.strref());
     }
+
+    /// Return `true` iff this StructDefOp has a parameter with the given name
     inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
       return hasParamNamed(find.getRootReference());
     }
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.

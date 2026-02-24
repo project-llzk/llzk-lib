@@ -93,7 +93,7 @@ struct AttrOrTypeTestGenerator : public TestGenerator {
   virtual void
   genGetBuilderTest(const std::string &dummyParams, const std::string &paramList) const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{2}_{3}Get links properly.
+/// This test ensures {0}{2}_{3}Get links properly.
 TEST_F({2}{1}LinkTests, Get_{3}) {{
   auto test{1} = createIndex{1}();
 
@@ -119,7 +119,7 @@ TEST_F({2}{1}LinkTests, Get_{3}) {{
   /// @brief Generate parameter getter test
   virtual void genParamGetterTest() const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{2}_{3}Get{5} links properly.
+/// This test ensures {0}{2}_{3}Get{5} links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
   auto test{1} = createIndex{1}();
 
@@ -139,7 +139,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}) {{
   /// @brief Generate ArrayRef parameter count getter test
   virtual void genArrayRefParamCountTest() const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{2}_{3}Get{5}Count links properly.
+/// This test ensures {0}{2}_{3}Get{5}Count links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}Count) {{
   auto test{1} = createIndex{1}();
 
@@ -159,7 +159,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}Count) {{
   /// @brief Generate ArrayRef parameter element getter test
   virtual void genArrayRefParamAtTest() const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{2}_{3}Get{5}At links properly.
+/// This test ensures {0}{2}_{3}Get{5}At links properly.
 TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
   auto test{1} = createIndex{1}();
 

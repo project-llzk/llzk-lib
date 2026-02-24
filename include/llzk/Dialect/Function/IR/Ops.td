@@ -161,30 +161,22 @@ def FuncDefOp
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 
-    //===------------------------------------------------------------------===//
-    // FunctionOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by FunctionOpInterface.
     /// Returns the region on the current operation that is callable. This may
     /// return null in the case of an external callable object, e.g. an external
     /// function.
     ::mlir::Region *getCallableRegion() { return isExternal() ? nullptr : &getBody(); }
 
+    /// Required by FunctionOpInterface.
     /// Returns the argument types of this function.
     ::llvm::ArrayRef<::mlir::Type> getArgumentTypes() { return getFunctionType().getInputs(); }
 
+    /// Required by FunctionOpInterface.
     /// Returns the result types of this function.
     ::llvm::ArrayRef<::mlir::Type> getResultTypes() { return getFunctionType().getResults(); }
 
-    //===------------------------------------------------------------------===//
-    // SymbolOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by SymbolOpInterface.
     bool isDeclaration() { return isExternal(); }
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     /// Return the full name for this function from the root module, including
     /// all surrounding symbol table names (i.e., modules and structs).
@@ -365,17 +357,11 @@ def CallOp : FunctionDialectOp<
                   }]>];
 
   let extraClassDeclaration = [{
-    //===------------------------------------------------------------------===//
-    // CallOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by CallOpInterface
     ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
 
+    /// Required by CallOpInterface
     ::mlir::Operation *resolveCallable();
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     ::mlir::FunctionType getCalleeType();
 

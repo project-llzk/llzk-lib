@@ -56,7 +56,7 @@ struct OpHeaderGenerator : public HeaderGenerator, OpGeneratorData {
 
   void genOpBuildDecl(const std::string &params) const {
     static constexpr char fmt[] = R"(
-/* Build a {4}::{2} Operation. */
+/// Build a {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirOperation {0}{1}_{2}Build(MlirOpBuilder builder, MlirLocation location{3});
 )";
     assert(!className.empty() && "className must be set");
@@ -72,7 +72,7 @@ MLIR_CAPI_EXPORTED MlirOperation {0}{1}_{2}Build(MlirOpBuilder builder, MlirLoca
 
   void genOperandGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {3} operand from {4}::{2} Operation. */
+/// Get {3} operand from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
@@ -89,7 +89,7 @@ MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}(MlirOperation op);
 
   void genOperandSetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Set {3} operand of {4}::{2} Operation. */
+/// Set {3} operand of {4}::{2} Operation.
 MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, MlirValue value);
 )";
     assert(!className.empty() && "className must be set");
@@ -106,10 +106,10 @@ MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, MlirValue value);
 
   void genVariadicOperandGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get number of {3} operands in {4}::{2} Operation. */
+/// Get number of {3} operands in {4}::{2} Operation.
 MLIR_CAPI_EXPORTED intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op);
 
-/* Get {3} operand at index from {4}::{2} Operation. */
+/// Get {3} operand at index from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
@@ -127,7 +127,7 @@ MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index
 
   void genVariadicOperandSetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Set {3} operands of {4}::{2} Operation. */
+/// Set {3} operands of {4}::{2} Operation.
 MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values);
 )";
     assert(!className.empty() && "className must be set");
@@ -145,7 +145,7 @@ MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirV
 
   void genAttributeGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {3} attribute from {4}::{2} Operation. */
+/// Get {3} attribute from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirAttribute {0}{1}_{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
@@ -162,7 +162,7 @@ MLIR_CAPI_EXPORTED MlirAttribute {0}{1}_{2}Get{3}(MlirOperation op);
 
   void genAttributeSetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Set {3} attribute of {4}::{2} Operation. */
+/// Set {3} attribute of {4}::{2} Operation.
 MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, MlirAttribute attr);
 )";
     assert(!className.empty() && "className must be set");
@@ -179,7 +179,7 @@ MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, MlirAttribute attr);
 
   void genResultGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {3} result from {4}::{2} Operation. */
+/// Get {3} result from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
@@ -196,10 +196,10 @@ MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}(MlirOperation op);
 
   void genVariadicResultGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get number of {3} results in {4}::{2} Operation. */
+/// Get number of {3} results in {4}::{2} Operation.
 MLIR_CAPI_EXPORTED intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op);
 
-/* Get {3} result at index from {4}::{2} Operation. */
+/// Get {3} result at index from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");
@@ -216,7 +216,7 @@ MLIR_CAPI_EXPORTED MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index
 
   void genRegionGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get {3} region from {4}::{2} Operation. */
+/// Get {3} region from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirRegion {0}{1}_{2}Get{3}(MlirOperation op);
 )";
     assert(!className.empty() && "className must be set");
@@ -233,10 +233,10 @@ MLIR_CAPI_EXPORTED MlirRegion {0}{1}_{2}Get{3}(MlirOperation op);
 
   void genVariadicRegionGetterDecl() const {
     static constexpr char fmt[] = R"(
-/* Get number of {3} regions in {4}::{2} Operation. */
+/// Get number of {3} regions in {4}::{2} Operation.
 MLIR_CAPI_EXPORTED intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op);
 
-/* Get {3} region at index from {4}::{2} Operation. */
+/// Get {3} region at index from {4}::{2} Operation.
 MLIR_CAPI_EXPORTED MlirRegion {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index);
 )";
     assert(!className.empty() && "className must be set");

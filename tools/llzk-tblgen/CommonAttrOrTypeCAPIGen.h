@@ -35,7 +35,7 @@ struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
   /// @brief Generate regular getter for non-ArrayRef type parameter
   virtual void genParameterGetterDecl(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
-/* Get '{5}' parameter from a {6}::{3} {1}. */
+/// Get '{5}' parameter from a {6}::{3} {1}.
 MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
 )";
     assert(dialect && "Dialect must be set");
@@ -56,10 +56,10 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
   /// @brief Generate accessor function for ArrayRef parameter elements
   virtual void genArrayRefParameterGetterDecls(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
-/* Get count of '{5}' parameter from a {6}::{3} {1}. */
+/// Get count of '{5}' parameter from a {6}::{3} {1}.
 MLIR_CAPI_EXPORTED intptr_t {0}{2}_{3}Get{4}Count(Mlir{1});
 
-/* Get element at index from '{5}' parameter from a {6}::{3} {1}. */
+/// Get element at index from '{5}' parameter from a {6}::{3} {1}.
 MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
 )";
     assert(dialect && "Dialect must be set");
@@ -81,7 +81,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
   /// @brief Generate default Get builder declaration
   virtual void genDefaultGetBuilderDecl(const mlir::tblgen::AttrOrTypeDef &def) const {
     static constexpr char fmt[] = R"(
-/* Create a {5}::{3} {1} with the given parameters. */
+/// Create a {5}::{3} {1} with the given parameters.
 MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
 )";
     assert(dialect && "Dialect must be set");
