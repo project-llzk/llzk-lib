@@ -34,7 +34,7 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
       // If we reached this point we know that the felts are not equal and that only the lhs is
       // allowed to not have a declared field. Thus, rhs must have a declared field. If lhs has a
       // declared field, then, since they are not structurally equal, it must be a different field
-      // than lhs. With all that, the types are compatible if lhs does not have a field, so we can
+      // than rhs. With all that, the types are compatible if lhs does not have a field, so we can
       // simply return that.
       return !lhsFeltType.hasField();
     }
