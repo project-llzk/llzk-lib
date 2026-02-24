@@ -212,11 +212,18 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
       ctx.scope->emitWarning()
           << "felt type does not declare its field. This may cause some passes to fail";
     }
-  }).Case([&ctx](llzk::array::ArrayType array) {
-    handleType(array.getElementType(), ctx);
-  }).Case([&ctx](llzk::pod::PodType pod) {
+  })
+      .Case([&ctx](llzk::array::ArrayType array) { handleType(array.getElementType(), ctx); })
+      .Case([&ctx](llzk::pod::PodType pod) {
     for (auto record : pod.getRecords()) {
       handleAttribute(record, ctx);
+    }
+  }).Case([&ctx](mlir::FunctionType funcType) {
+    for (auto i : funcType.getInputs()) {
+      handleType(i, ctx);
+    }
+    for (auto o : funcType.getResults()) {
+      handleType(o, ctx);
     }
   });
   // Accepted types that are no-ops.
