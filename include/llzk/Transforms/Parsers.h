@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "llzk/Util/Compare.h"
+
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/CommandLine.h>
@@ -32,8 +34,7 @@ public:
       return O.error("arg must be in base 10 (digits).");
     }
     // Decimal-only: allocate a safe width then shrink.
-    assert(std::cmp_less_equal(Arg.size(), std::numeric_limits<unsigned>::max()));
-    unsigned bits = std::max(1u, 4u * (unsigned)Arg.size());
+    unsigned bits = std::max(1u, 4u * llzk::checkedCast<unsigned>(Arg.size()));
     APInt tmp(bits, Arg, 10);
     unsigned active = tmp.getActiveBits();
     if (active == 0) {

@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/Compare.h"
+
 #include "llzk-c/Dialect/Global.h"
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -45,7 +47,7 @@ static MlirOperation create_global_def_op(
   }
   auto op_name = mlirStringRefCreateFromCString("global.def");
   auto state = mlirOperationStateGet(op_name, mlirLocationUnknownGet(ctx));
-  mlirOperationStateAddAttributes(&state, attrs.size(), attrs.data());
+  mlirOperationStateAddAttributes(&state, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data());
 
   return mlirOperationCreate(&state);
 }

@@ -60,6 +60,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -119,10 +120,7 @@ template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) 
 /// the scalar types that result from splitting the ArrayType. Otherwise, just push the `Type`.
 size_t splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
   if (ArrayType at = splittableArray(t)) {
-    int64_t n = at.getNumElements();
-    assert(n >= 0);
-    assert(std::cmp_less_equal(n, std::numeric_limits<size_t>::max()));
-    size_t size = n;
+    size_t size = llzk::checkedCast<size_t>(at.getNumElements());
     collect.append(size, at.getElementType());
     return size;
   } else {
@@ -360,9 +358,8 @@ public:
     ArrayIndexGen idxGen = ArrayIndexGen::from(op.getType());
     for (auto [i, init] : llvm::enumerate(adaptor.getElements())) {
       // Convert the linear index 'i' into a multi-dim index
-      assert(std::cmp_less_equal(i, std::numeric_limits<int64_t>::max()));
       std::optional<SmallVector<Value>> multiDimIdxVals =
-          idxGen.delinearize(static_cast<int64_t>(i), loc, rewriter);
+          idxGen.delinearize(llzk::checkedCast<int64_t>(i), loc, rewriter);
       // ASSERT: CreateArrayOp verifier ensures the number of elements provided matches the full
       // linear array size so delinearization of `i` will not fail.
       assert(multiDimIdxVals.has_value());
@@ -504,9 +501,8 @@ public:
     if (splittableArray(baseArrType)) {
       llvm::APInt idxAP;
       if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
-        uint64_t idx64 = idxAP.getZExtValue();
-        assert(std::cmp_less_equal(idx64, std::numeric_limits<size_t>::max()));
-        Attribute dimSizeAttr = baseArrType.getDimensionSizes()[static_cast<size_t>(idx64)];
+        size_t idx = llzk::checkedCast<size_t>(idxAP.getZExtValue());
+        Attribute dimSizeAttr = baseArrType.getDimensionSizes()[idx];
         if (mlir::matchPattern(dimSizeAttr, mlir::m_ConstantInt(&idxAP))) {
           return idxAP;
         }

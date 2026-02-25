@@ -11,6 +11,7 @@
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -49,7 +50,7 @@ void CreateArrayOp::build(
   // This builds CreateArrayOp from a list of elements. In that case, the dimensions of the array
   // type cannot be defined via an affine map which means there are no affine map operands.
   affineMapHelpers::buildInstantiationAttrsEmpty<CreateArrayOp>(
-      odsBuilder, odsState, static_cast<int32_t>(elements.size())
+      odsBuilder, odsState, llzk::checkedCast<int32_t>(elements.size())
   );
 }
 

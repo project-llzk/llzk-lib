@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/Compare.h"
+
 #include "llzk-c/Dialect/Struct.h"
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -36,7 +38,7 @@ TEST_F(CAPITest, llzk_struct_type_get_with_array_attr) {
   llvm::SmallVector<MlirAttribute> attrs(
       {mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("A"))}
   );
-  auto a = mlirArrayAttrGet(context, attrs.size(), attrs.data());
+  auto a = mlirArrayAttrGet(context, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data());
   auto t = llzkStruct_StructTypeGetWithArrayAttr(sym, a);
   EXPECT_NE(t.ptr, (void *)NULL);
 }
@@ -47,7 +49,9 @@ TEST_F(CAPITest, llzk_struct_type_get_with_attrs) {
   llvm::SmallVector<MlirAttribute> attrs(
       {mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("A"))}
   );
-  auto t = llzkStruct_StructTypeGetWithAttrs(sym, attrs.size(), attrs.data());
+  auto t = llzkStruct_StructTypeGetWithAttrs(
+      sym, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data()
+  );
   EXPECT_NE(t.ptr, (void *)NULL);
 }
 
@@ -73,7 +77,7 @@ TEST_F(CAPITest, llzk_struct_type_get_params) {
   llvm::SmallVector<MlirAttribute> attrs(
       {mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("A"))}
   );
-  auto a = mlirArrayAttrGet(context, attrs.size(), attrs.data());
+  auto a = mlirArrayAttrGet(context, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data());
   auto t = llzkStruct_StructTypeGetWithArrayAttr(sym, a);
   EXPECT_NE(t.ptr, (void *)NULL);
   EXPECT_TRUE(mlirAttributeEqual(a, llzkStruct_StructTypeGetParams(t)));
@@ -94,7 +98,9 @@ struct StructDefTest : public CAPITest {
         mlirStringAttrGet(context, mlirStringRefCreateFromCString("S"))
     )});
     auto op_state = mlirOperationStateGet(name, location);
-    mlirOperationStateAddAttributes(&op_state, attrs.size(), attrs.data());
+    mlirOperationStateAddAttributes(
+        &op_state, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data()
+    );
     return mlirOperationCreate(&op_state);
   }
 
@@ -122,7 +128,9 @@ struct StructDefTest : public CAPITest {
          )}
     );
     auto op_state = mlirOperationStateGet(name, location);
-    mlirOperationStateAddAttributes(&op_state, attrs.size(), attrs.data());
+    mlirOperationStateAddAttributes(
+        &op_state, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data()
+    );
     return mlirOperationCreate(&op_state);
   }
 
@@ -135,8 +143,12 @@ struct StructDefTest : public CAPITest {
     auto attr = mlirIntegerAttrGet(elt_type, 1);
     llvm::SmallVector<MlirNamedAttribute> attrs({mlirNamedAttributeGet(attr_name, attr)});
     auto op_state = mlirOperationStateGet(name, location);
-    mlirOperationStateAddResults(&op_state, results.size(), results.data());
-    mlirOperationStateAddAttributes(&op_state, attrs.size(), attrs.data());
+    mlirOperationStateAddResults(
+        &op_state, llzk::checkedCast<intptr_t>(results.size()), results.data()
+    );
+    mlirOperationStateAddAttributes(
+        &op_state, llzk::checkedCast<intptr_t>(attrs.size()), attrs.data()
+    );
     return {
         .op = mlirOperationCreate(&op_state),
     };
@@ -303,7 +315,9 @@ TEST_F(StructDefTest, llzk_member_read_op_build_with_affine_map_distance) {
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
-      auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto affine_map = mlirAffineMapGet(
+          testClass.context, 0, 0, llzk::checkedCast<intptr_t>(exprs.size()), exprs.data()
+      );
       auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
       return llzkStruct_MemberReadOpBuildWithAffineMapDistance(
           builder, location, index_type, struct_value, member_name, affine_map,

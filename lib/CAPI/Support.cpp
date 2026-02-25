@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/CAPI/Support.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include "llzk-c/Support.h"
@@ -172,7 +173,7 @@ void llzkAffineMapOperandsBuilderConvertDimsPerMapToArray(LlzkAffineMapOperandsB
   size_t realSize = attrData.size() * sizeof(decltype(attrData)::value_type);
   builder->dimsPerMap.array = static_cast<int32_t *>(std::malloc(realSize));
   std::memcpy(builder->dimsPerMap.array, attrData.data(), realSize);
-  builder->nDimsPerMap = static_cast<intptr_t>(attrData.size());
+  builder->nDimsPerMap = llzk::checkedCast<intptr_t>(attrData.size());
 }
 
 void llzkAffineMapOperandsBuilderConvertDimsPerMapToAttr(

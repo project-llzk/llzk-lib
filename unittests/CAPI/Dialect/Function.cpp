@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/Compare.h"
+
 #include "llzk-c/Dialect/Function.h"
 
 #include <llvm/ADT/ArrayRef.h>
@@ -22,7 +24,10 @@
 
 static MlirType
 create_func_type(MlirContext ctx, llvm::ArrayRef<MlirType> ins, llvm::ArrayRef<MlirType> outs) {
-  return mlirFunctionTypeGet(ctx, ins.size(), ins.data(), outs.size(), outs.data());
+  return mlirFunctionTypeGet(
+      ctx, llzk::checkedCast<intptr_t>(ins.size()), ins.data(),
+      llzk::checkedCast<intptr_t>(outs.size()), outs.data()
+  );
 }
 
 static MlirOperation create_func_def_op(
@@ -31,8 +36,9 @@ static MlirOperation create_func_def_op(
 ) {
   auto location = mlirLocationUnknownGet(ctx);
   return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-      location, mlirStringRefCreateFromCString(name), type, attrs.size(), attrs.data(),
-      arg_attrs.size(), arg_attrs.data()
+      location, mlirStringRefCreateFromCString(name), type,
+      llzk::checkedCast<intptr_t>(attrs.size()), attrs.data(),
+      llzk::checkedCast<intptr_t>(arg_attrs.size()), arg_attrs.data()
   );
 }
 
@@ -183,8 +189,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build) {
       auto f = testClass.test_function0();
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
       return llzkFunction_CallOpBuild(
-          builder, location, f.out_types.size(), f.out_types.data(), callee_name, 0,
-          (const MlirValue *)NULL
+          builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
+          callee_name, 0, (const MlirValue *)NULL
       );
     }
   } helper;
@@ -217,8 +223,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
       affineOperandsBuilder.nDimsPerMap = -1;
       affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
       return llzkFunction_CallOpBuildWithMapOperands(
-          builder, location, f.out_types.size(), f.out_types.data(), callee_name,
-          affineOperandsBuilder, 0, (const MlirValue *)NULL
+          builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
+          callee_name, affineOperandsBuilder, 0, (const MlirValue *)NULL
       );
     }
   } helper;
@@ -237,8 +243,8 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
       auto f = testClass.test_function0();
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
       return llzkFunction_CallOpBuildWithMapOperands(
-          builder, location, f.out_types.size(), f.out_types.data(), callee_name,
-          affineOperandsBuilder, 0, (const MlirValue *)NULL
+          builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
+          callee_name, affineOperandsBuilder, 0, (const MlirValue *)NULL
       );
     }
   } helper;
@@ -350,7 +356,9 @@ std::unique_ptr<ReturnOpBuildFuncHelper> ReturnOpBuildFuncHelper::get() {
         mlirOpBuilderSetInsertionPointToStart(builder, wrap(&func->getBody().emplaceBlock()));
       }
       llvm::SmallVector<MlirValue> vals {};
-      return llzkFunction_ReturnOpBuild(builder, location, vals.size(), vals.data());
+      return llzkFunction_ReturnOpBuild(
+          builder, location, llzk::checkedCast<intptr_t>(vals.size()), vals.data()
+      );
     }
   };
   return std::make_unique<Impl>();

@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -111,14 +112,14 @@ void llzkStruct_StructDefOpGetMemberDefs(MlirOperation op, MlirOperation *dst) {
 }
 
 intptr_t llzkStruct_StructDefOpGetNumMemberDefs(MlirOperation op) {
-  return static_cast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs().size());
+  return llzk::checkedCast<intptr_t>(llvm::cast<StructDefOp>(unwrap(op)).getMemberDefs().size());
 }
 
 const char *llzkStruct_StructDefOpGetHeaderString(
     MlirOperation op, intptr_t *strSize, char *(*alloc_string)(size_t)
 ) {
   auto header = llvm::cast<StructDefOp>(unwrap(op)).getHeaderString();
-  *strSize = static_cast<intptr_t>(header.size()) + 1; // Plus one because it's a C string.
+  *strSize = llzk::checkedCast<intptr_t>(header.size()) + 1; // Plus one because it's a C string.
   char *dst = alloc_string(*strSize);
   dst[header.size()] = 0;
   memcpy(dst, header.data(), header.size());

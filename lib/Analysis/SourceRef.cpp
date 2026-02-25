@@ -174,7 +174,7 @@ Type SourceRef::getType() const {
     return std::get<ConstReadOp>(*constantVal).getType();
   } else {
     int array_derefs = 0;
-    int idx = memberRefs.size() - 1;
+    int idx = llzk::checkedCast<int>(memberRefs.size()) - 1;
     while (idx >= 0 && memberRefs[idx].isIndex()) {
       array_derefs++;
       idx--;

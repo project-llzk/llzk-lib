@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Util/Compare.h"
 
 #include "llzk-c/Dialect/Poly.h"
 
@@ -109,7 +110,7 @@ static inline void copyValues(ValueRange in, MlirValue *out) {
 
 /// Returns the number of operands that correspond to dimensions in the affine map.
 intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op) {
-  return static_cast<intptr_t>(dimOperands(op).size());
+  return llzk::checkedCast<intptr_t>(dimOperands(op).size());
 }
 
 /// Writes into the destination buffer the operands that correspond to dimensions in the affine map.
@@ -121,7 +122,7 @@ void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst) {
 
 /// Returns the number of operands that correspond to symbols in the affine map.
 intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op) {
-  return static_cast<intptr_t>(symbolOperands(op).size());
+  return llzk::checkedCast<intptr_t>(symbolOperands(op).size());
 }
 
 /// Writes into the destination buffer the operands that correspond to symbols in the affine map.

@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -566,8 +567,7 @@ uint64_t computeEmitEqCardinality(Type type) {
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
       int64_t n = t.getNumElements();
-      assert(n >= 0);
-      return static_cast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
+      return llzk::checkedCast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
     }
     uint64_t caseStruct(StructType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t casePod(PodType t) {
