@@ -329,8 +329,8 @@ struct Generator {
   /// @param d Pointer to the dialect definition
   /// @param cppClassName The C++ class name of the entity being generated
   virtual void
-  setDialectAndClassName(const mlir::tblgen::Dialect *d, mlir::StringRef cppClassName) {
-    this->dialect = d;
+  setNamespaceAndClassName(const mlir::tblgen::Dialect &d, mlir::StringRef cppClassName) {
+    this->dialectNamespace = d.getCppNamespace();
     this->className = cppClassName;
   }
 
@@ -353,7 +353,7 @@ protected:
   std::string kind;
   llvm::raw_ostream &os;
   std::string dialectNameCapitalized;
-  const mlir::tblgen::Dialect *dialect;
+  mlir::StringRef dialectNamespace;
   mlir::StringRef className;
 };
 
@@ -386,14 +386,14 @@ extern "C" {
 /// Returns true if the {1} is a {4}::{3}.
 MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
 )";
-    assert(dialect && "Dialect must be set");
+    assert(!dialectNamespace.empty() && "Dialect must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,            // {0}
-        kind,                      // {1}
-        dialectNameCapitalized,    // {2}
-        className,                 // {3}
-        dialect->getCppNamespace() // {4}
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        dialectNamespace        // {4}
     );
   }
 
