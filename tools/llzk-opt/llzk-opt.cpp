@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
   r1cs::registerTransformationPasses();
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
-  pcl::conversion::registerTransformationPasses();
+  pcl::conversion::registerPCLTransformationPasses();
 #endif // LLZK_WITH_PCL
 
   llzk::registerTransformationPassPipelines();
