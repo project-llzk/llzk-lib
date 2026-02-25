@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_ZKLEAN_PASSES_TD
-#define LLZK_ZKLEAN_PASSES_TD
+#ifndef ZKLEAN_PASSES_TD
+#define ZKLEAN_PASSES_TD
 
 include "llzk/Pass/PassBase.td"
 
@@ -28,7 +28,7 @@ def PrettyPrintZKLeanPass : Pass<"zklean-pretty-print", "::mlir::ModuleOp"> {
               "File to write the pretty-printed zkLean dialect operations to. "
               "Use '-' to write to stdout.">,
   ];
-  let constructor = "llzk::zklean::createPrettyPrintZKLeanPass()";
+  let constructor = "zklean::createPrettyPrintZKLeanPass()";
 }
 
-#endif // LLZK_ZKLEAN_PASSES_TD
+#endif // ZKLEAN_PASSES_TD

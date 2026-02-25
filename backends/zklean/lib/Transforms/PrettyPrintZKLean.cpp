@@ -41,7 +41,7 @@
 //   with emitLeanStructsFromZKLean, and formats bodies with formatLeanStatement.
 using namespace mlir;
 
-namespace llzk::zklean {
+namespace zklean {
 #define GEN_PASS_DECL_PRETTYPRINTZKLEANPASS
 #define GEN_PASS_DEF_PRETTYPRINTZKLEANPASS
 #include "zklean/Transforms/ZKLeanPasses.h.inc"
@@ -617,4 +617,4 @@ std::unique_ptr<Pass> createPrettyPrintZKLeanPass() {
   return std::make_unique<PrettyPrintZKLeanPass>();
 }
 
-} // namespace llzk::zklean
+} // namespace zklean

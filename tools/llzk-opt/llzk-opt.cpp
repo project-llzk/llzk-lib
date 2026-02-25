@@ -78,12 +78,12 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
-  zklean::registerConversionPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
   r1cs::registerTransformationPasses();
-  llzk::zklean::registerZKLeanPasses();
+  zklean::registerConversionPasses();
+  zklean::registerZKLeanPasses();
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
 #endif // LLZK_WITH_PCL
