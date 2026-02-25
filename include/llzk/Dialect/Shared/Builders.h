@@ -113,9 +113,7 @@ public:
    */
   static function::FuncDefOp buildComputeFn(component::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertComputeFn(component::StructDefOp op, mlir::Location loc);
-  inline ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc) {
-    return insertComputeFn(*getStruct(structName), loc);
-  }
+  ModuleBuilder &insertComputeFn(std::string_view structName, mlir::Location loc);
   inline ModuleBuilder &insertComputeFn(std::string_view structName) {
     return insertComputeFn(structName, getUnknownLoc());
   }
@@ -125,9 +123,7 @@ public:
    */
   static function::FuncDefOp buildConstrainFn(component::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertConstrainFn(component::StructDefOp op, mlir::Location loc);
-  inline ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc) {
-    return insertConstrainFn(*getStruct(structName), getUnknownLoc());
-  }
+  ModuleBuilder &insertConstrainFn(std::string_view structName, mlir::Location loc);
   inline ModuleBuilder &insertConstrainFn(std::string_view structName) {
     return insertConstrainFn(structName, getUnknownLoc());
   }
@@ -138,9 +134,7 @@ public:
    */
   static function::FuncDefOp buildProductFn(component::StructDefOp op, mlir::Location loc);
   ModuleBuilder &insertProductFn(component::StructDefOp op, mlir::Location loc);
-  inline ModuleBuilder &insertProductFn(std::string_view structName, mlir::Location loc) {
-    return insertProductFn(*getStruct(structName), loc);
-  }
+  ModuleBuilder &insertProductFn(std::string_view structName, mlir::Location loc);
   inline ModuleBuilder &insertProductFn(std::string_view structName) {
     return insertProductFn(structName, getUnknownLoc());
   }
@@ -154,9 +148,7 @@ public:
       component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc
   );
   ModuleBuilder &
-  insertComputeCall(std::string_view caller, std::string_view callee, mlir::Location callLoc) {
-    return insertComputeCall(*getStruct(caller), *getStruct(callee), callLoc);
-  }
+  insertComputeCall(std::string_view caller, std::string_view callee, mlir::Location callLoc);
   ModuleBuilder &insertComputeCall(std::string_view caller, std::string_view callee) {
     return insertComputeCall(caller, callee, getUnknownLoc());
   }
@@ -174,9 +166,7 @@ public:
   ModuleBuilder &insertConstrainCall(
       std::string_view caller, std::string_view callee, mlir::Location callLoc,
       mlir::Location memberDefLoc
-  ) {
-    return insertConstrainCall(*getStruct(caller), *getStruct(callee), callLoc, memberDefLoc);
-  }
+  );
   ModuleBuilder &insertConstrainCall(std::string_view caller, std::string_view callee) {
     return insertConstrainCall(caller, callee, getUnknownLoc(), getUnknownLoc());
   }
@@ -262,22 +252,18 @@ public:
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
    */
-  bool computeReachable(component::StructDefOp caller, component::StructDefOp callee) {
+  inline bool computeReachable(component::StructDefOp caller, component::StructDefOp callee) {
     return isReachable(computeNodes, caller, callee);
   }
-  bool computeReachable(std::string_view caller, std::string_view callee) {
-    return computeReachable(*getStruct(caller), *getStruct(callee));
-  }
+  bool computeReachable(std::string_view caller, std::string_view callee);
 
   /**
    * Returns if the callee compute function is reachable by the caller by construction.
    */
-  bool constrainReachable(component::StructDefOp caller, component::StructDefOp callee) {
+  inline bool constrainReachable(component::StructDefOp caller, component::StructDefOp callee) {
     return isReachable(constrainNodes, caller, callee);
   }
-  bool constrainReachable(std::string_view caller, std::string_view callee) {
-    return constrainReachable(*getStruct(caller), *getStruct(callee));
-  }
+  bool constrainReachable(std::string_view caller, std::string_view callee);
 
 private:
   mlir::MLIRContext *context;
@@ -312,6 +298,11 @@ private:
   /// reporting a fatal error otherwise.
   /// @param structName
   void ensureNoSuchStruct(std::string_view structName);
+
+  /// @brief Ensure that a struct with the given structName exists,
+  /// reporting a fatal error otherwise.
+  /// @param structName
+  void ensureStructExists(std::string_view structName);
 
   /// @brief Ensure that the given struct does not have a compute function,
   /// reporting a fatal error otherwise.

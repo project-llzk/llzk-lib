@@ -78,7 +78,7 @@ std::string generateParamListForAttrOrTypeGet(const mlir::tblgen::AttrOrTypeDef 
 struct AttrOrTypeTestGenerator : public TestGenerator {
   using TestGenerator::TestGenerator;
 
-  virtual ~AttrOrTypeTestGenerator() = default;
+  ~AttrOrTypeTestGenerator() override = default;
 
   /// @brief Set the parameter name for code generation
   /// @param name The parameter name from the TableGen definition
@@ -176,7 +176,7 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
     );
   }
 
-  void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef def, bool isType) {
+  void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef &def, bool isType) {
     const mlir::tblgen::Dialect &defDialect = def.getDialect();
 
     // Generate for the selected dialect only

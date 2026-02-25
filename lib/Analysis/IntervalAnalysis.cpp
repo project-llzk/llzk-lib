@@ -42,22 +42,23 @@ bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
 }
 
 ExpressionValue
-boolToFelt(llvm::SMTSolverRef solver, const ExpressionValue &expr, unsigned bitwidth) {
+boolToFelt(const llvm::SMTSolverRef &solver, const ExpressionValue &expr, unsigned bitwidth) {
   llvm::SMTExprRef zero = solver->mkBitvector(mlir::APSInt::get(0), bitwidth);
   llvm::SMTExprRef one = solver->mkBitvector(mlir::APSInt::get(1), bitwidth);
   llvm::SMTExprRef boolToFeltConv = solver->mkIte(expr.getExpr(), one, zero);
   return expr.withExpression(boolToFeltConv);
 }
 
-ExpressionValue
-intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+ExpressionValue intersection(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
   Interval res = lhs.i.intersect(rhs.i);
-  auto exprEq = solver->mkEqual(lhs.expr, rhs.expr);
+  const auto *exprEq = solver->mkEqual(lhs.expr, rhs.expr);
   return ExpressionValue(exprEq, res);
 }
 
 ExpressionValue
-add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+add(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i + rhs.i;
   res.expr = solver->mkBVAdd(lhs.expr, rhs.expr);
@@ -65,7 +66,7 @@ add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+sub(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i - rhs.i;
   res.expr = solver->mkBVSub(lhs.expr, rhs.expr);
@@ -73,7 +74,7 @@ sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i * rhs.i;
   res.expr = solver->mkBVMul(lhs.expr, rhs.expr);
@@ -81,7 +82,7 @@ mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
+div(const llvm::SMTSolverRef &solver, DivFeltOp op, const ExpressionValue &lhs,
     const ExpressionValue &rhs) {
   ExpressionValue res;
   auto divRes = lhs.i / rhs.i;
@@ -100,7 +101,7 @@ div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
 }
 
 ExpressionValue
-mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i % rhs.i;
   res.expr = solver->mkBVURem(lhs.expr, rhs.expr);
@@ -108,23 +109,25 @@ mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-bitAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i & rhs.i;
   res.expr = solver->mkBVAnd(lhs.expr, rhs.expr);
   return res;
 }
 
-ExpressionValue
-shiftLeft(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+ExpressionValue shiftLeft(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
   ExpressionValue res;
   res.i = lhs.i << rhs.i;
   res.expr = solver->mkBVShl(lhs.expr, rhs.expr);
   return res;
 }
 
-ExpressionValue
-shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+ExpressionValue shiftRight(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
   ExpressionValue res;
   res.i = lhs.i >> rhs.i;
   res.expr = solver->mkBVLshr(lhs.expr, rhs.expr);
@@ -132,7 +135,8 @@ shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const Expressi
 }
 
 ExpressionValue
-cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+cmp(const llvm::SMTSolverRef &solver, CmpOp op, const ExpressionValue &lhs,
+    const ExpressionValue &rhs) {
   ExpressionValue res;
   const Field &f = lhs.getField();
   // Default result is any boolean output for when we are unsure about the comparison result.
@@ -195,7 +199,7 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
 }
 
 ExpressionValue
-boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+boolAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = boolAnd(lhs.i, rhs.i);
   res.expr = solver->mkAnd(lhs.expr, rhs.expr);
@@ -203,7 +207,7 @@ boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionV
 }
 
 ExpressionValue
-boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+boolOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = boolOr(lhs.i, rhs.i);
   res.expr = solver->mkOr(lhs.expr, rhs.expr);
@@ -211,7 +215,7 @@ boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionVa
 }
 
 ExpressionValue
-boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = boolXor(lhs.i, rhs.i);
   // There's no Xor, so we do (L || R) && !(L && R)
@@ -222,7 +226,8 @@ boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionV
 }
 
 ExpressionValue fallbackBinaryOp(
-    llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &lhs, const ExpressionValue &rhs
+    const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &lhs,
+    const ExpressionValue &rhs
 ) {
   ExpressionValue res;
   res.i = Interval::Entire(lhs.getField());
@@ -240,21 +245,21 @@ ExpressionValue fallbackBinaryOp(
   return res;
 }
 
-ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = -val.i;
   res.expr = solver->mkBVNeg(val.expr);
   return res;
 }
 
-ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+ExpressionValue notOp(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = ~val.i;
   res.expr = solver->mkBVNot(val.expr);
   return res;
 }
 
-ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = boolNot(val.i);
   res.expr = solver->mkNot(val.expr);
@@ -262,7 +267,7 @@ ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 }
 
 ExpressionValue
-fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &val) {
+fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val) {
   const Field &field = val.getField();
   ExpressionValue res;
   res.i = Interval::Entire(field);
@@ -302,13 +307,13 @@ void ExpressionValue::print(mlir::raw_ostream &os) const {
 
 /* IntervalAnalysisLattice */
 
-ChangeResult IntervalAnalysisLattice::join(const AbstractSparseLattice &other) {
+ChangeResult IntervalAnalysisLattice::join(const AbstractSparseLattice & /*other*/) {
   // The update logic is handled in visitOperation; we don't support a generic
   // join operation, as it may override valid intervals.
   return ChangeResult::NoChange;
 }
 
-ChangeResult IntervalAnalysisLattice::meet(const AbstractSparseLattice &other) {
+ChangeResult IntervalAnalysisLattice::meet(const AbstractSparseLattice & /*other*/) {
   // The update logic is handled in visitOperation; we don't support a generic
   // meet operation, as it may override valid intervals.
   return ChangeResult::NoChange;
@@ -326,12 +331,12 @@ ChangeResult IntervalAnalysisLattice::setValue(const LatticeValue &newVal) {
   return ChangeResult::Change;
 }
 
-ChangeResult IntervalAnalysisLattice::setValue(ExpressionValue e) {
+ChangeResult IntervalAnalysisLattice::setValue(const ExpressionValue &e) {
   LatticeValue newVal(e);
   return setValue(newVal);
 }
 
-ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
+ChangeResult IntervalAnalysisLattice::addSolverConstraint(const ExpressionValue &e) {
   if (!constraints.contains(e)) {
     constraints.insert(e);
     return ChangeResult::Change;
@@ -344,11 +349,11 @@ ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
 const SourceRefLattice *
 IntervalDataFlowAnalysis::getSourceRefLattice(Operation *baseOp, Value val) {
   ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(baseOp);
-  auto defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
+  const auto *defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
   ensure(defaultSourceRefLattice, "failed to get lattice");
   if (Operation *defOp = val.getDefiningOp()) {
     ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
-    auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
+    const auto *sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
     ensure(sourceRefLattice, "failed to get SourceRefLattice for value");
     return sourceRefLattice;
   }
@@ -631,18 +636,18 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
   ensure(rhs.getExpr(), "cannot perform arithmetic over null rhs smt expr");
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
-                 .Case<AddFeltOp>([&](auto _) { return add(smtSolver, lhs, rhs); })
-                 .Case<SubFeltOp>([&](auto _) { return sub(smtSolver, lhs, rhs); })
-                 .Case<MulFeltOp>([&](auto _) { return mul(smtSolver, lhs, rhs); })
+                 .Case<AddFeltOp>([&](auto) { return add(smtSolver, lhs, rhs); })
+                 .Case<SubFeltOp>([&](auto) { return sub(smtSolver, lhs, rhs); })
+                 .Case<MulFeltOp>([&](auto) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](auto divOp) { return div(smtSolver, divOp, lhs, rhs); })
-                 .Case<UnsignedModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
-                 .Case<AndFeltOp>([&](auto _) { return bitAnd(smtSolver, lhs, rhs); })
-                 .Case<ShlFeltOp>([&](auto _) { return shiftLeft(smtSolver, lhs, rhs); })
-                 .Case<ShrFeltOp>([&](auto _) { return shiftRight(smtSolver, lhs, rhs); })
+                 .Case<UnsignedModFeltOp>([&](auto) { return mod(smtSolver, lhs, rhs); })
+                 .Case<AndFeltOp>([&](auto) { return bitAnd(smtSolver, lhs, rhs); })
+                 .Case<ShlFeltOp>([&](auto) { return shiftLeft(smtSolver, lhs, rhs); })
+                 .Case<ShrFeltOp>([&](auto) { return shiftRight(smtSolver, lhs, rhs); })
                  .Case<CmpOp>([&](auto cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
-                 .Case<AndBoolOp>([&](auto _) { return boolAnd(smtSolver, lhs, rhs); })
-                 .Case<OrBoolOp>([&](auto _) { return boolOr(smtSolver, lhs, rhs); })
-                 .Case<XorBoolOp>([&](auto _) {
+                 .Case<AndBoolOp>([&](auto) { return boolAnd(smtSolver, lhs, rhs); })
+                 .Case<OrBoolOp>([&](auto) { return boolOr(smtSolver, lhs, rhs); })
+                 .Case<XorBoolOp>([&](auto) {
     return boolXor(smtSolver, lhs, rhs);
   }).Default([&](auto *unsupported) {
     unsupported
@@ -665,9 +670,9 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
   ensure(val.getExpr(), "cannot perform arithmetic over null smt expr");
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
-                 .Case<NegFeltOp>([&](auto _) { return neg(smtSolver, val); })
-                 .Case<NotFeltOp>([&](auto _) { return notOp(smtSolver, val); })
-                 .Case<NotBoolOp>([&](auto _) { return boolNot(smtSolver, val); })
+                 .Case<NegFeltOp>([&](auto) { return neg(smtSolver, val); })
+                 .Case<NotFeltOp>([&](auto) { return notOp(smtSolver, val); })
+                 .Case<NotBoolOp>([&](auto) { return boolNot(smtSolver, val); })
                  // The inverse op is currently overapproximated
                  .Case<InvFeltOp>([&](auto inv) {
     return fallbackUnaryOp(smtSolver, inv, val);
@@ -904,7 +909,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     applyInterval(subOp, rhs, finalRhsInt);
   };
 
-  auto readmCase = [&](MemberReadOp readmOp) {
+  auto readmCase = [&](MemberReadOp) {
     const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
     SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
 
@@ -921,7 +926,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
-  auto readArrCase = [&](ReadArrayOp _) {
+  auto readArrCase = [&](ReadArrayOp) {
     const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
     SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
 
@@ -1052,7 +1057,7 @@ LogicalResult StructIntervals::computeIntervals(
 
   auto computeIntervalsImpl = [&solver, &ctx, this](
                                   FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &memberRanges,
-                                  llvm::SetVector<ExpressionValue> &solverConstraints
+                                  llvm::SetVector<ExpressionValue> & /*solverConstraints*/
                               ) {
     // Since every lattice value does not contain every value, we will traverse
     // the function backwards (from most up-to-date to least-up-to-date lattices)
@@ -1135,7 +1140,7 @@ void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints, bool pr
       return;
     }
 
-    for (auto &[ref, interval] : memberRanges) {
+    for (const auto &[ref, interval] : memberRanges) {
       os << '\n';
       os.indent(indent) << ref << " in " << interval;
     }

@@ -38,8 +38,8 @@ class SourceRefLatticeValue
   using ArrayTy = std::vector<std::unique_ptr<SourceRefLatticeValue>>;
 
 public:
-  explicit SourceRefLatticeValue(ScalarTy s) : Base(s) {}
-  explicit SourceRefLatticeValue(SourceRef r) : Base(ScalarTy {r}) {}
+  explicit SourceRefLatticeValue(ScalarTy s) : Base(std::move(s)) {}
+  explicit SourceRefLatticeValue(SourceRef r) : Base(ScalarTy {std::move(r)}) {}
   SourceRefLatticeValue() : Base(ScalarTy {}) {}
   virtual ~SourceRefLatticeValue() = default;
 

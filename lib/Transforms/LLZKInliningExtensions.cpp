@@ -32,8 +32,10 @@ namespace {
 
 template <typename InlinerImpl, typename DialectImpl, typename... RequiredDialects>
 struct BaseInlinerInterface : public DialectInlinerInterface {
+protected:
   using DialectInlinerInterface::DialectInlinerInterface;
 
+public:
   static void registrationHook(MLIRContext *ctx, DialectImpl *dialect) {
     dialect->template addInterfaces<InlinerImpl>();
     if constexpr (sizeof...(RequiredDialects) != 0) {

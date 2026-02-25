@@ -52,7 +52,7 @@ protected:
 /// @brief Generator for operation C header files
 struct OpHeaderGenerator : public HeaderGenerator, OpGeneratorData {
   using HeaderGenerator::HeaderGenerator;
-  virtual ~OpHeaderGenerator() = default;
+  ~OpHeaderGenerator() override = default;
 
   void genOpBuildDecl(const std::string &params) const {
     static constexpr char fmt[] = R"(
@@ -387,7 +387,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
 /// @brief Generator for operation C implementation files
 struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorData {
   using ImplementationGenerator::ImplementationGenerator;
-  virtual ~OpImplementationGenerator() = default;
+  ~OpImplementationGenerator() override = default;
 
   /// @brief Generate operation "Build" function implementation
   /// @param operationName The full operation name (e.g., "dialect.opname")
@@ -702,7 +702,8 @@ static std::string generateCAPIAssignments(const Operator &op) {
          << "mlirStringRefCreateFromCString(\"" << attr.name << "\")), " << attrValue << "));\n";
       os << "  }\n";
     }
-    void genAttributesSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
+    void
+    genAttributesSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator & /*op*/) override {
       os << "  mlirOperationStateAddAttributes(&state, attributes.size(), attributes.data());\n";
     }
     void genRegionsPrefix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
@@ -714,7 +715,7 @@ static std::string generateCAPIAssignments(const Operator &op) {
       }
       os << "  regions.push_back(mlirRegionCreate());\n";
     }
-    void genRegionsSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator &op) override {
+    void genRegionsSuffix(llvm::raw_ostream &os, const mlir::tblgen::Operator & /*op*/) override {
       os << "  mlirOperationStateAddOwnedRegions(&state, regions.size(), regions.data());\n";
     }
   } paramStringGenerator;
@@ -726,9 +727,6 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
   emitSourceFileHeader("Op C API Definitions", os, records);
 
   OpImplementationGenerator generator("Operation", os);
-
-  // Capitalize dialect name for function names
-  std::string dialectNameCapitalized = toPascalCase(DialectName);
 
   for (const auto *def : records.getAllDerivedDefinitions("Op")) {
     const Operator op(def);

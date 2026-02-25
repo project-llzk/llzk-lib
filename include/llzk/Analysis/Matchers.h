@@ -66,9 +66,9 @@ struct RefValueCapture {
   }
 };
 
-auto m_RefValue() { return RefValueCapture(nullptr); }
+inline RefValueCapture m_RefValue() { return RefValueCapture(nullptr); }
 
-auto m_RefValue(mlir::Value *capture) { return RefValueCapture(capture); }
+inline RefValueCapture m_RefValue(mlir::Value *capture) { return RefValueCapture(capture); }
 
 /// @brief Matches and optionally captures a felt constant.
 struct ConstantCapture {
@@ -86,8 +86,10 @@ struct ConstantCapture {
   }
 };
 
-auto m_Constant() { return ConstantCapture(nullptr); }
+inline ConstantCapture m_Constant() { return ConstantCapture(nullptr); }
 
-auto m_Constant(felt::FeltConstantOp *capture) { return ConstantCapture(capture); }
+inline ConstantCapture m_Constant(felt::FeltConstantOp *capture) {
+  return ConstantCapture(capture);
+}
 
 } // namespace llzk

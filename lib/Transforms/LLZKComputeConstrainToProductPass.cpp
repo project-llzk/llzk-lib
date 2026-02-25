@@ -211,7 +211,11 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
 
   for (auto [compute, constrain] : alignedCalls) {
     // If @A::@compute matches @A::@constrain, recursively align the functions in @A...
-    auto newRoot = compute.getCalleeTarget(tables)->get()->getParentOfType<StructDefOp>();
+    auto calleeTgt = compute.getCalleeTarget(tables);
+    if (failed(calleeTgt)) {
+      return failure();
+    }
+    auto newRoot = calleeTgt->get()->getParentOfType<StructDefOp>();
     assert(newRoot);
     FuncDefOp newProduct =
         alignFuncs(newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp());

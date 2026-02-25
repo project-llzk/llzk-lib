@@ -615,6 +615,8 @@ protected:
   }
 
 public:
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
   SplitArrayInMemberRefOp(
       MLIRContext *ctx, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap
   )

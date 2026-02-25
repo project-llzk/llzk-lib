@@ -108,8 +108,7 @@ static void computeCallGraph(
 }
 
 CallGraph::CallGraph(mlir::Operation *op)
-    : externalCallerNode(/*callableRegion=*/nullptr),
-      unknownCalleeNode(/*callableRegion=*/nullptr) {
+    : externalCallerNode(/*callable=*/nullptr), unknownCalleeNode(/*callable=*/nullptr) {
   // Make two passes over the graph, one to compute the callables and one to
   // resolve the calls. We split these up as we may have nested callable objects
   // that need to be reserved before the calls.
@@ -221,7 +220,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     }
   };
 
-  for (auto &nodeIt : nodes) {
+  for (const auto &nodeIt : nodes) {
     const CallGraphNode *node = nodeIt.second.get();
 
     // Dump the header for this node.
@@ -230,7 +229,7 @@ void CallGraph::print(llvm::raw_ostream &os) const {
     os << '\n';
 
     // Emit each of the edges.
-    for (auto &edge : *node) {
+    for (const auto &edge : *node) {
       os << "// -- ";
       if (edge.isCall()) {
         os << "Call";
@@ -247,9 +246,9 @@ void CallGraph::print(llvm::raw_ostream &os) const {
 
   os << "// -- SCCs --\n";
 
-  for (auto &scc : make_range(llvm::scc_begin(this), llvm::scc_end(this))) {
+  for (const auto &scc : make_range(llvm::scc_begin(this), llvm::scc_end(this))) {
     os << "// - SCC : \n";
-    for (auto &node : scc) {
+    for (const auto &node : scc) {
       os << "// -- Node :";
       emitNodeName(node);
       os << '\n';

@@ -79,7 +79,7 @@ llvm::SmallVector<Type> CreateArrayOp::resultTypeToElementsTypes(Type resultType
 }
 
 ParseResult CreateArrayOp::parseInferredArrayType(
-    OpAsmParser &parser, llvm::SmallVector<Type, 1> &elementsTypes,
+    OpAsmParser & /*parser*/, llvm::SmallVector<Type, 1> &elementsTypes,
     ArrayRef<OpAsmParser::UnresolvedOperand> elements, Type resultType
 ) {
   assert(elementsTypes.size() == 0); // it was not yet initialized
@@ -296,7 +296,7 @@ LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult ReadArrayOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ReadArrayOpAdaptor adaptor,
+    MLIRContext * /*context*/, std::optional<Location> /*location*/, ReadArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.resize(1);
@@ -318,7 +318,7 @@ LogicalResult ReadArrayOp::verify() {
 /// Required by PromotableMemOpInterface / mem2reg pass
 bool ReadArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses, const DataLayout & /*datalayout*/
+    SmallVectorImpl<OpOperand *> & /*newBlockingUses*/, const DataLayout & /*datalayout*/
 ) {
   if (blockingUses.size() != 1) {
     return false;
@@ -330,7 +330,7 @@ bool ReadArrayOp::canUsesBeRemoved(
 
 /// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind ReadArrayOp::removeBlockingUses(
-    const MemorySlot & /*slot*/, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    const MemorySlot & /*slot*/, const SmallPtrSetImpl<OpOperand *> & /*blockingUses*/,
     OpBuilder & /*builder*/, Value reachingDefinition, const DataLayout & /*dataLayout*/
 ) {
   // `canUsesBeRemoved` checked this blocking use must be the loaded `slot.ptr`
@@ -357,7 +357,7 @@ LogicalResult WriteArrayOp::verify() {
 /// Required by PromotableMemOpInterface / mem2reg pass
 bool WriteArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses, const DataLayout & /*datalayout*/
+    SmallVectorImpl<OpOperand *> & /*newBlockingUses*/, const DataLayout & /*datalayout*/
 ) {
   if (blockingUses.size() != 1) {
     return false;
@@ -384,7 +384,7 @@ LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult ExtractArrayOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
+    MLIRContext * /*context*/, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   size_t numToSkip = adaptor.getIndices().size();

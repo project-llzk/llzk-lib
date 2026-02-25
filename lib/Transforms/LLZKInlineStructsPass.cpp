@@ -712,7 +712,7 @@ private:
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
         SmallVector<Type> newTypes(origTypes);
-        auto it = newTypes.erase(newTypes.begin() + inputIdx);
+        auto *it = newTypes.erase(newTypes.begin() + inputIdx);
         for (auto [_, newMember] : newMembers) {
           newTypes.insert(it, newMember.getType());
           ++it;

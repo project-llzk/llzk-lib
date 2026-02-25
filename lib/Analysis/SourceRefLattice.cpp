@@ -61,7 +61,7 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
 
 std::pair<SourceRefLatticeValue, mlir::ChangeResult>
 SourceRefLatticeValue::referenceMember(SymbolLookupResult<MemberDefOp> memberRef) const {
-  SourceRefIndex idx(memberRef);
+  SourceRefIndex idx(std::move(memberRef));
   auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
   return elementwiseTransform(transform);
 }
@@ -74,7 +74,7 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
     // First, compute what chunk(s) to index
     std::vector<size_t> currIdxs {0};
     for (unsigned i = 0; i < indices.size(); i++) {
-      auto &idx = indices[i];
+      const auto &idx = indices[i];
       auto currDim = getArrayDim(i);
 
       std::vector<size_t> newIdxs;
@@ -125,10 +125,10 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
   } else {
     auto currVal = *this;
     auto res = mlir::ChangeResult::NoChange;
-    for (auto &idx : indices) {
+    for (const auto &idx : indices) {
       auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
       auto [newVal, transformRes] = currVal.elementwiseTransform(transform);
-      currVal = std::move(newVal);
+      currVal = newVal;
       res |= transformRes;
     }
     return {currVal, res};
@@ -145,7 +145,7 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
   // If so, translate the current element with all replacement prefixes indicated
   // by the translation value.
   for (const SourceRef &currRef : currVal) {
-    for (auto &[prefix, replacementVal] : translation) {
+    for (const auto &[prefix, replacementVal] : translation) {
       if (currRef.isValidPrefix(prefix)) {
         for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
           auto translatedRefRes = currRef.translate(prefix, replacementPrefix);
@@ -166,7 +166,7 @@ std::pair<SourceRefLatticeValue, mlir::ChangeResult> SourceRefLatticeValue::elem
   auto res = mlir::ChangeResult::NoChange;
   if (newVal.isScalar()) {
     ScalarTy indexed;
-    for (auto &ref : newVal.getScalarValue()) {
+    for (const auto &ref : newVal.getScalarValue()) {
       auto [_, inserted] = indexed.insert(transform(ref));
       if (inserted) {
         res |= mlir::ChangeResult::Change;
@@ -193,7 +193,7 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRefLatticeValue
 mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
   if (auto blockArg = llvm::dyn_cast<mlir::BlockArgument>(val)) {
     return SourceRef(blockArg);
-  } else if (auto defOp = val.getDefiningOp()) {
+  } else if (auto *defOp = val.getDefiningOp()) {
     if (auto feltConst = llvm::dyn_cast<FeltConstantOp>(defOp)) {
       return SourceRef(feltConst);
     } else if (auto constIdx = llvm::dyn_cast<mlir::arith::ConstantIndexOp>(defOp)) {
@@ -210,11 +210,11 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
 void SourceRefLattice::print(mlir::raw_ostream &os) const {
   os << "SourceRefLattice { ";
   for (auto mit = valMap.begin(); mit != valMap.end();) {
-    auto &[val, latticeVal] = *mit;
+    const auto &[val, latticeVal] = *mit;
     os << "\n    (";
     if (auto asVal = llvm::dyn_cast<Value>(val)) {
       os << asVal;
-    } else if (auto asOp = llvm::dyn_cast<Operation *>(val)) {
+    } else if (auto *asOp = llvm::dyn_cast<Operation *>(val)) {
       os << *asOp;
     } else {
       llvm_unreachable("unhandled ValueTy print case");
@@ -232,7 +232,7 @@ void SourceRefLattice::print(mlir::raw_ostream &os) const {
 
 mlir::ChangeResult SourceRefLattice::setValues(const ValueMap &rhs) {
   auto res = mlir::ChangeResult::NoChange;
-  for (auto &[v, s] : rhs) {
+  for (const auto &[v, s] : rhs) {
     res |= setValue(v, s);
   }
   return res;
@@ -259,7 +259,7 @@ SourceRefLatticeValue SourceRefLattice::getOrDefault(SourceRefLattice::ValueTy v
   if (auto asVal = llvm::dyn_cast_if_present<Value>(v)) {
     auto sourceRef = getSourceRef(asVal);
     if (mlir::succeeded(sourceRef)) {
-      return SourceRefLatticeValue(sourceRef.value());
+      return SourceRefLatticeValue(*sourceRef);
     }
   }
   return SourceRefLatticeValue();
@@ -295,7 +295,7 @@ namespace llvm {
 raw_ostream &operator<<(raw_ostream &os, llvm::PointerUnion<mlir::Value, mlir::Operation *> ptr) {
   if (auto asVal = llvm::dyn_cast_if_present<Value>(ptr)) {
     os << asVal;
-  } else if (auto asOp = llvm::dyn_cast_if_present<Operation *>(ptr)) {
+  } else if (auto *asOp = llvm::dyn_cast_if_present<Operation *>(ptr)) {
     os << *asOp;
   } else {
     os << "<<null PointerUnion>>";

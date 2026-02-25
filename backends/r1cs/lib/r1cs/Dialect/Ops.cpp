@@ -110,8 +110,9 @@ mlir::Block *CircuitDefOp::addEntryBlock() {
 LogicalResult CircuitDefOp::verify() {
 
   // === Step 1: Check that each arg_attrs key is a valid argument index ===
-  if (getArgAttrs().has_value()) {
-    DictionaryAttr dict = *getArgAttrs();
+  auto argAttrsOpt = getArgAttrs();
+  if (argAttrsOpt.has_value()) {
+    DictionaryAttr dict = *argAttrsOpt;
     unsigned numArgs = getBody().front().getNumArguments();
 
     for (auto attr : dict) {

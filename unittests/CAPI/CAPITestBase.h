@@ -118,7 +118,7 @@ public:
     assert(kind != llzk::function::FunctionKind::Free && "supports only struct functions");
     auto newModule = this->cppNewModuleAndSetInsertionPoint(builder, location);
     llzk::ModuleBuilder cppBldr(newModule.get());
-    auto name = "TestStruct";
+    const auto *name = "TestStruct";
     if (kind == llzk::function::FunctionKind::StructProduct) {
       cppBldr.insertProductStruct(name);
     } else {

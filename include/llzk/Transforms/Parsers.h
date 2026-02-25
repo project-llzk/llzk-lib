@@ -47,7 +47,7 @@ public:
   // For example, if V = 17 and Default = 11 then it should print
   // [OptionName] 17 (default: 11)
   void printOptionDiff(
-      const Option &O, const APInt &V, OptionValue<APInt> Default, size_t GlobalWidth
+      const Option &O, const APInt &V, const OptionValue<APInt> &Default, size_t GlobalWidth
   ) const {
     std::string Cur = llvm::toString(V, 10, false);
 

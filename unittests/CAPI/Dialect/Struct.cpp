@@ -227,7 +227,7 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_header_string) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     intptr_t size = 0;
-    auto str = llzkStruct_StructDefOpGetHeaderString(op.op, &size, cmalloc);
+    const auto *str = llzkStruct_StructDefOpGetHeaderString(op.op, &size, cmalloc);
     free(static_cast<void *>(const_cast<char *>(str)));
   }
 }
@@ -384,7 +384,7 @@ std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use ModuleOp as parent to avoid the following:
       // error: 'struct.def' op expects parent op 'builtin.module'
-      auto name = "TestStruct";
+      const auto *name = "TestStruct";
       this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
       auto result = llzkStruct_StructDefOpBuild(
           builder, location,

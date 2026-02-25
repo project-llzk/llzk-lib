@@ -23,7 +23,7 @@
 /// header generation capabilities, including parameter getters and builders.
 struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
   using HeaderGenerator::HeaderGenerator;
-  virtual ~AttrOrTypeHeaderGenerator() = default;
+  ~AttrOrTypeHeaderGenerator() override = default;
 
   /// @brief Set the parameter name for code generation
   /// @param name The parameter name from the TableGen definition
@@ -112,7 +112,7 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
     );
   }
 
-  void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef def) {
+  void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef &def) {
     const mlir::tblgen::Dialect &defDialect = def.getDialect();
 
     // Generate for the selected dialect only
@@ -165,7 +165,7 @@ protected:
 /// implementation generation capabilities, including parameter getters and builders.
 struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
   using ImplementationGenerator::ImplementationGenerator;
-  virtual ~AttrOrTypeImplementationGenerator() = default;
+  ~AttrOrTypeImplementationGenerator() override = default;
 
   /// @brief Set the parameter name for code generation
   /// @param name The parameter name from the TableGen definition
@@ -297,7 +297,7 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
     );
   }
 
-  void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef def) {
+  void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef &def) {
     const mlir::tblgen::Dialect &defDialect = def.getDialect();
 
     // Generate for the selected dialect only

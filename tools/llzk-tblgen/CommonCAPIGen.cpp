@@ -240,7 +240,7 @@ static inline std::string getDocumentation(
 //===----------------------------------------------------------------------===//
 
 /// Access level tracking for C++ class declarations
-enum class AccessLevel { Public, Private, Protected };
+enum class AccessLevel : std::uint8_t { Public, Private, Protected };
 
 /// Track the current access level (public, private, protected) in a C++ class declaration.
 /// Updates the access level when encountering access specifiers like "public:", "private:", etc.

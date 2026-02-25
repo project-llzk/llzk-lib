@@ -337,7 +337,7 @@ std::unique_ptr<ReturnOpBuildFuncHelper> ReturnOpBuildFuncHelper::get() {
       {
         this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
         llzk::ModuleBuilder cppBldr(this->parentModule.get());
-        auto name = "func_name";
+        const auto *name = "func_name";
         cppBldr.insertFreeFunc(
             name,
             mlir::FunctionType::get(
@@ -345,8 +345,9 @@ std::unique_ptr<ReturnOpBuildFuncHelper> ReturnOpBuildFuncHelper::get() {
             ),
             unwrap(location)
         );
-        llzk::function::FuncDefOp fDef = cppBldr.getFreeFunc(name).value();
-        mlirOpBuilderSetInsertionPointToStart(builder, wrap(&fDef.getBody().emplaceBlock()));
+        auto func = cppBldr.getFreeFunc(name);
+        assert(succeeded(func) && "Failed to retrieve the function just inserted into the module");
+        mlirOpBuilderSetInsertionPointToStart(builder, wrap(&func->getBody().emplaceBlock()));
       }
       llvm::SmallVector<MlirValue> vals {};
       return llzkFunction_ReturnOpBuild(builder, location, vals.size(), vals.data());

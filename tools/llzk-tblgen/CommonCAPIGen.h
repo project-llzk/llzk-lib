@@ -360,7 +360,7 @@ protected:
 /// @brief Generator for common C header file elements
 struct HeaderGenerator : public Generator {
   using Generator::Generator;
-  virtual ~HeaderGenerator() = default;
+  ~HeaderGenerator() override = default;
 
   virtual void genPrologue() const {
     os << R"(
@@ -398,7 +398,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
   }
 
   /// @brief Generate declaration for an extra method from an `extraClassDeclaration`
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
@@ -418,7 +418,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
         warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
-      std::string capiParamType = capiParamTypeOpt.value();
+      const std::string &capiParamType = capiParamTypeOpt.value();
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
@@ -443,7 +443,7 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
 /// @brief Generator for common C implementation file elements
 struct ImplementationGenerator : public Generator {
   using Generator::Generator;
-  virtual ~ImplementationGenerator() = default;
+  ~ImplementationGenerator() override = default;
 
   virtual void genIsAImpl() const {
     static constexpr char fmt[] = R"(
@@ -456,7 +456,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
   }
 
   /// @brief Generate implementation for an extra method from an `extraClassDeclaration`
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
@@ -500,7 +500,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
         warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
-      std::string capiParamType = capiParamTypeOpt.value();
+      const std::string &capiParamType = capiParamTypeOpt.value();
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
@@ -560,7 +560,7 @@ bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
 /// @brief Generator for common test implementation file elements
 struct TestGenerator : public Generator {
   using Generator::Generator;
-  virtual ~TestGenerator() = default;
+  ~TestGenerator() override = default;
 
   /// @brief Generate the test class prologue
   virtual void genTestClassPrologue() const {
@@ -593,7 +593,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
   }
 
   /// @brief Generate test for an extra method from extraClassDeclaration
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
@@ -614,7 +614,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
         warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
-      std::string capiParamType = capiParamTypeOpt.value();
+      const std::string &capiParamType = capiParamTypeOpt.value();
       std::string name = param.name;
 
       // Generate dummy value creation for each parameter

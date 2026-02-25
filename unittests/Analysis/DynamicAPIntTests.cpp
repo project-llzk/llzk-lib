@@ -39,7 +39,7 @@ struct DynamicAPIntUnaryTest : public testing::TestWithParam<DynamicAPInt> {
 };
 
 TEST_P(DynamicAPIntUnaryTest, Conversions) {
-  DynamicAPInt p = GetParam();
+  const DynamicAPInt &p = GetParam();
   DynamicAPInt convert = toDynamicAPInt(toAPSInt(p));
   ASSERT_EQ(p, convert);
 }
