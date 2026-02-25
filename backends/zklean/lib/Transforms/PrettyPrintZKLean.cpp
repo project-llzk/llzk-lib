@@ -46,7 +46,7 @@ namespace llzk::zklean {
 #define GEN_PASS_DEF_PRETTYPRINTZKLEANPASS
 #include "zklean/Transforms/ZKLeanPasses.h.inc"
 
-namespace namespace_detail {
+namespace {
 
 // Identify ops that belong to any ZK* dialect family.
 // Used to filter non-ZK ops during pretty-printing.
@@ -576,9 +576,6 @@ static bool emitZKLeanModule(ModuleOp module, raw_ostream &os) {
   return printedSomething;
 }
 
-} // namespace namespace_detail
-namespace {
-
 // Pass that pretty-prints ZK dialect IR into Lean-like syntax.
 // Manages output file handling for pretty-printed Lean code.
 struct PrettyPrintZKLeanPass : public impl::PrettyPrintZKLeanPassBase<PrettyPrintZKLeanPass> {
@@ -600,7 +597,7 @@ struct PrettyPrintZKLeanPass : public impl::PrettyPrintZKLeanPassBase<PrettyPrin
     *stream << "import zkLean\n";
     *stream << "open ZKBuilder\n\n";
 
-    bool printedSomething = namespace_detail::emitZKLeanModule(module, *stream);
+    bool printedSomething = emitZKLeanModule(module, *stream);
 
     if (!printedSomething) {
       *stream << "-- No zk dialect operations found.\n";
