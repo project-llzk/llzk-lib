@@ -177,14 +177,14 @@ TEST_F({2}{1}LinkTests, Get_{3}_{4}At) {{
   }
 
   void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef &def, bool isType) {
-    const mlir::tblgen::Dialect &defDialect = def.getDialect();
+    mlir::tblgen::Dialect defDialect = def.getDialect();
 
     // Generate for the selected dialect only
     if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&defDialect, def.getCppClassName());
+    this->setNamespaceAndClassName(defDialect, def.getCppClassName());
 
     // Generate IsA test
     if (GenIsA) {

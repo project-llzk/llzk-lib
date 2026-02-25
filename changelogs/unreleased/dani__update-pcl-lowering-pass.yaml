@@ -1,0 +1,4 @@
+changed:
+  - PCL lowering pass now uses the `llzk.fields` module attribute for selecting the prime.
+fixed:
+  - Fixed an issue in `cast.tofelt` that caused validation errors when a felt with a field was used as return type of the op.

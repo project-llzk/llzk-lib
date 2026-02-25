@@ -38,7 +38,7 @@ struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
 /// Get '{5}' parameter from a {6}::{3} {1}.
 MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
 )";
-    assert(dialect && "Dialect must be set");
+    assert(!dialectNamespace.empty() && "Dialect must be set");
     assert(!paramName.empty() && "paramName must be set");
     os << llvm::formatv(
         fmt,
@@ -48,7 +48,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}(Mlir{1});
         className,                    // {3}
         paramNameCapitalized,         // {4}
         paramName,                    // {5}
-        dialect->getCppNamespace(),   // {6}
+        dialectNamespace,             // {6}
         mapCppTypeToCapiType(cppType) // {7}
     );
   }
@@ -62,7 +62,7 @@ MLIR_CAPI_EXPORTED intptr_t {0}{2}_{3}Get{4}Count(Mlir{1});
 /// Get element at index from '{5}' parameter from a {6}::{3} {1}.
 MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
 )";
-    assert(dialect && "Dialect must be set");
+    assert(!dialectNamespace.empty() && "Dialect must be set");
     assert(!paramName.empty() && "paramName must be set");
     mlir::StringRef cppElemType = extractArrayRefElementType(cppType);
     os << llvm::formatv(
@@ -73,7 +73,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
         className,                        // {3}
         paramNameCapitalized,             // {4}
         paramName,                        // {5}
-        dialect->getCppNamespace(),       // {6}
+        dialectNamespace,                 // {6}
         mapCppTypeToCapiType(cppElemType) // {7}
     );
   }
@@ -84,7 +84,7 @@ MLIR_CAPI_EXPORTED {7} {0}{2}_{3}Get{4}At(Mlir{1}, intptr_t pos);
 /// Create a {5}::{3} {1} with the given parameters.
 MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
 )";
-    assert(dialect && "Dialect must be set");
+    assert(!dialectNamespace.empty() && "Dialect must be set");
 
     // Use raw_string_ostream for efficient string building of parameter list
     std::string paramListBuffer;
@@ -103,24 +103,24 @@ MLIR_CAPI_EXPORTED Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4});
 
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,            // {0}
-        kind,                      // {1}
-        dialectNameCapitalized,    // {2}
-        className,                 // {3}
-        paramListBuffer,           // {4}
-        dialect->getCppNamespace() // {5}
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        paramListBuffer,        // {4}
+        dialectNamespace        // {5}
     );
   }
 
   void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef &def) {
-    const mlir::tblgen::Dialect &defDialect = def.getDialect();
+    mlir::tblgen::Dialect defDialect = def.getDialect();
 
     // Generate for the selected dialect only
     if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&defDialect, def.getCppClassName());
+    this->setNamespaceAndClassName(defDialect, def.getCppClassName());
 
     // Generate IsA check
     if (GenIsA) {
@@ -301,14 +301,14 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
   }
 
   void genCompleteRecord(const mlir::tblgen::AttrOrTypeDef &def) {
-    const mlir::tblgen::Dialect &defDialect = def.getDialect();
+    mlir::tblgen::Dialect defDialect = def.getDialect();
 
     // Generate for the selected dialect only
     if (defDialect.getName() != DialectName) {
       return;
     }
 
-    this->setDialectAndClassName(&defDialect, def.getCppClassName());
+    this->setNamespaceAndClassName(defDialect, def.getCppClassName());
 
     // Generate IsA check implementation
     if (GenIsA) {

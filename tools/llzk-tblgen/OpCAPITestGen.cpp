@@ -414,7 +414,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
       return;
     }
 
-    this->setDialectAndClassName(&defDialect, op.getCppClassName());
+    this->setNamespaceAndClassName(defDialect, op.getCppClassName());
 
     if (GenIsA) {
       this->genIsATest();

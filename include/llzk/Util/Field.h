@@ -13,9 +13,11 @@
 #include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DynamicAPInt.h>
+#include <llvm/ADT/SmallSet.h>
 #include <llvm/Support/LogicalResult.h>
 #include <llvm/Support/SMTAPI.h>
 
@@ -106,6 +108,11 @@ public:
     return lhs.primeMod == rhs.primeMod;
   }
 
+  friend bool operator<(const Field &lhs, const Field &rhs) {
+    return std::tie(lhs.primeMod, lhs.primeName, lhs.bitwidth, lhs.halfPrime) <
+           std::tie(rhs.primeMod, rhs.primeName, rhs.bitwidth, rhs.halfPrime);
+  }
+
 private:
   Field(std::string_view primeStr, llvm::StringRef name);
   Field(const llvm::APInt &primeInt, llvm::StringRef name);
@@ -132,5 +139,14 @@ private:
 /// which may include new prime specifications.
 /// @return Failure if the field attribute is malformed (i.e., is the wrong type of attribute).
 llvm::LogicalResult addSpecifiedFields(mlir::ModuleOp modOp);
+
+/// @brief Typealias for a set of Fields.
+using FieldSet = llvm::SmallSet<Field, 2>;
+
+/// @brief Collects all the fields used in a circuit.
+/// @param root Takes the operation as root and inspects any FeltType for its Field.
+/// @param fields Destination where fields are written into.
+/// @return Failure if any FeltType does not specify a field.
+mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &fields);
 
 } // namespace llzk
