@@ -24,7 +24,6 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
-#include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/DialectRegistry.h>
 
@@ -46,8 +45,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::pod::PODDialect,
       llzk::polymorphic::PolymorphicDialect,
       mlir::arith::ArithDialect,
-      mlir::scf::SCFDialect,
-      mlir::func::FuncDialect
+      mlir::scf::SCFDialect
       // clang-format on
       >();
 
