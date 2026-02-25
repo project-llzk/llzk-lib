@@ -17,8 +17,8 @@ def ConvertLLZKToZKLeanPass
   let summary = "Convert LLZK structs and constraints to ZKLean IR";
   let description = [{
     Converts an LLZK module into ZKLean dialects. The pass emits
-    ZKLeanLean.structures from LLZK struct.defs,
-    rewrite constraint functions into ZKLeanLean functions.
+    ZKLeanLean.structures from LLZK struct.defs, and
+    rewrites constraint functions into ZKLeanLean functions.
     It wraps felt values in ZKExpr.Literal, lowers arithmetic to ZKExpr,
     constraints to ZKBuilder.ConstrainEq, struct member reads to ZKLeanLean.accessor, and
     maps bool.cmp/cast.tofelt into ZKLeanLean.call to stub functions.

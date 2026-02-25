@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "mlir/Pass/Pass.h"
+#include <mlir/Pass/Pass.h>
 
 namespace zklean {
 
