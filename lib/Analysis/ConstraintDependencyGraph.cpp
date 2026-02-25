@@ -462,7 +462,12 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   ProgramPoint *pp = solver.getProgramPointAfter(emitOp);
   const SourceRefLattice *refLattice = solver.lookupState<SourceRefLattice>(pp);
-  ensure(refLattice, "missing lattice for constrain op");
+  // We may not have a lattice for this constrain op when the constant propagation
+  // + dead code analysis has determined that this constraint op is dead code
+  // and will not be executed.
+  if (!refLattice) {
+    return;
+  }
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = refLattice->getOrDefault(operand);
