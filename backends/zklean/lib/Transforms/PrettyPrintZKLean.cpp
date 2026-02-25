@@ -160,16 +160,10 @@ static std::string wrapResultNames(ArrayRef<std::string> names) {
 // This keeps output closer to the Lean API surface than raw MLIR names.
 static std::string formatOperationName(Operation &op) {
   StringRef name = op.getName().getStringRef();
-  if (name.consume_front("ZKExpr.")) {
+  if (name.consume_front_insensitive("zkexpr.")) {
     return name.str();
   }
-  if (name.consume_front("ZKBuilder.")) {
-    return name.str();
-  }
-  if (name.consume_front("zkexpr.")) {
-    return name.str();
-  }
-  if (name.consume_front("zkbuilder.")) {
+  if (name.consume_front_insensitive("zkbuilder.")) {
     return name.str();
   }
   return name.str();
