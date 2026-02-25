@@ -49,7 +49,9 @@ bool isValidRoot(StructDefOp root) {
   FuncDefOp constrainFunc = root.getConstrainFuncOp();
 
   if (!computeFunc || !constrainFunc) {
-    root->emitError() << "no " << FUNC_NAME_COMPUTE << "/" << FUNC_NAME_CONSTRAIN << " to align";
+    root->emitError()
+        .append("no ", FUNC_NAME_COMPUTE, "/", FUNC_NAME_CONSTRAIN, " to align")
+        .report();
     return false;
   }
 
@@ -134,11 +136,11 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
   // ..and inline them
   InlinerInterface inliner(productFunc.getContext());
   if (failed(inlineCall(inliner, computeCall, compute, &compute.getBody(), true))) {
-    root->emitError() << "failed to inline " << FUNC_NAME_COMPUTE;
+    root->emitError().append("failed to inline ", FUNC_NAME_COMPUTE).report();
     return nullptr;
   }
   if (failed(inlineCall(inliner, constrainCall, constrain, &constrain.getBody(), true))) {
-    root->emitError() << "failed to inline " << FUNC_NAME_CONSTRAIN;
+    root->emitError().append("failed to inline ", FUNC_NAME_CONSTRAIN).report();
     return nullptr;
   }
   computeCall->erase();
@@ -205,8 +207,9 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
   }
 
   if (!computeCalls.empty() && constrainCalls.empty()) {
-    product.emitWarning() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
-                          << FUNC_NAME_CONSTRAIN;
+    product.emitWarning()
+        .append("failed to align some @", FUNC_NAME_COMPUTE, " and @", FUNC_NAME_CONSTRAIN)
+        .report();
   }
 
   for (auto [compute, constrain] : alignedCalls) {
