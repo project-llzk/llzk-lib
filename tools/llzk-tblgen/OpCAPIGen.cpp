@@ -733,6 +733,12 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
   for (const auto *def : records.getAllDerivedDefinitions("Op")) {
     const Operator op(def);
     const Dialect &dialect = op.getDialect();
+
+    // Generate for the selected dialect only (specified via -dialect command-line option)
+    if (dialect.getName() != DialectName) {
+      continue;
+    }
+
     generator.setNamespaceAndClassName(dialect, op.getCppClassName());
 
     // Generate "Build" function
