@@ -7,15 +7,27 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/Operation.h>
+
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/SlowDynamicAPInt.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/LogicalResult.h>
 
 #include <algorithm>
 #include <mutex>
@@ -172,3 +184,105 @@ LogicalResult addSpecifiedFields(mlir::ModuleOp modOp) {
 }
 
 } // namespace llzk
+
+namespace {
+
+struct FieldsCtx {
+  llzk::FieldSet &fields;
+  LogicalResult &status;
+  mlir::Operation *scope;
+};
+
+} // namespace
+
+static void handleAttribute(mlir::Attribute, FieldsCtx &);
+
+/// Fills the type switch with empty handles for the given types.
+template <typename... Types> static void doNothing(TypeSwitch<mlir::Type> &ts) {
+  (ts.Case([](Types) {}), ...);
+}
+
+static void handleType(mlir::Type type, FieldsCtx &ctx) {
+  TypeSwitch<mlir::Type> ts(type);
+  ts.Case([&ctx](llzk::felt::FeltType felt) {
+    if (felt.hasField()) {
+      ctx.fields.insert(felt.getField());
+    } else {
+      ctx.status = failure();
+      ctx.scope->emitWarning()
+          << "felt type does not declare its field. This may cause some passes to fail";
+    }
+  })
+      .Case([&ctx](llzk::array::ArrayType array) { handleType(array.getElementType(), ctx); })
+      .Case([&ctx](llzk::pod::PodType pod) {
+    for (auto record : pod.getRecords()) {
+      handleAttribute(record, ctx);
+    }
+  }).Case([&ctx](mlir::FunctionType funcType) {
+    for (auto i : funcType.getInputs()) {
+      handleType(i, ctx);
+    }
+    for (auto o : funcType.getResults()) {
+      handleType(o, ctx);
+    }
+  });
+  // Accepted types that are no-ops.
+  doNothing<
+      // clang-format off
+      llzk::component::StructType, 
+      llzk::string::StringType,
+      mlir::IntegerType,
+      llzk::polymorphic::TypeVarType
+      // clang-format on
+      >(ts);
+  // Fail on any type we don't recognize.
+  ts.Default([&ctx](auto t) {
+    ctx.scope->emitOpError() << "unhandled type " << t
+                             << " while extracting fields from felt types";
+  });
+}
+
+static void handleAttribute(mlir::Attribute attr, FieldsCtx &ctx) {
+  TypeSwitch<mlir::Attribute> ts(attr);
+  ts.Case([&ctx](mlir::TypeAttr typeAttr) { handleType(typeAttr.getValue(), ctx); })
+      .Case([&ctx](mlir::ArrayAttr arrayAttr) {
+    for (auto a : arrayAttr) {
+      handleAttribute(a, ctx);
+    }
+  })
+      .Case([&ctx](mlir::DictionaryAttr dictAttr) {
+    for (auto a : dictAttr.getValue()) {
+      handleAttribute(a.getValue(), ctx);
+    }
+  }).Case([&ctx](llzk::pod::RecordAttr recordAttr) {
+    handleType(recordAttr.getType(), ctx);
+  }).Default([](auto) {});
+}
+
+LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields) {
+  if (!root) {
+    return success(); // Nothing to do
+  }
+  LogicalResult status = success();
+  root->walk([&fields, &status](mlir::Operation *op) {
+    FieldsCtx ctx = {.fields = fields, .status = status, .scope = op};
+    // Crawl for types in the results,
+    for (auto result : op->getOpResults()) {
+      handleType(result.getType(), ctx);
+    }
+    // the attributes,
+    for (auto attr : op->getAttrs()) {
+      handleAttribute(attr.getValue(), ctx);
+    }
+    // block arguments (if any)
+    for (auto &region : op->getRegions()) {
+      for (auto &block : region) {
+        for (auto &arg : block.getArguments()) {
+          handleType(arg.getType(), ctx);
+        }
+      }
+    }
+  });
+
+  return status;
+}

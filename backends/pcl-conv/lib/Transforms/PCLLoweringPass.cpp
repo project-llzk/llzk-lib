@@ -17,22 +17,30 @@
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/Dialect/IR/Ops.h>
 #include <pcl/Dialect/IR/Types.h>
 
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/LogicalResult.h>
 
 #include <deque>
 #include <memory>
@@ -361,12 +369,42 @@ private:
   }
 
   // PCL programs require a module-level attribute specifying the prime.
-  void setPrime(ModuleOp &newMod) {
+  LogicalResult setPrime(ModuleOp &newMod, ModuleOp &oldMod) {
+    auto prime = selectPrime(oldMod);
+    if (failed(prime)) {
+      return failure();
+    }
+
     // Add an extra bit to avoid the prime being represented as a negative number
-    auto newBitWidth = prime.getBitWidth() + 1;
+    auto newBitWidth = prime->getBitWidth() + 1;
     auto ty = IntegerType::get(newMod.getContext(), newBitWidth);
-    auto intAttr = IntegerAttr::get(ty, prime.zext(newBitWidth));
+    auto intAttr = IntegerAttr::get(ty, prime->zext(newBitWidth));
     newMod->setAttr("pcl.prime", pcl::PrimeAttr::get(newMod.getContext(), intAttr));
+
+    return success();
+  }
+
+  FailureOr<llvm::APSInt> selectPrime(ModuleOp &module) {
+    FieldSet fields;
+    // If the collection reports that at least one FeltType did not declare the field and
+    // the fields set is empty, then we raise an error.
+    if (failed(collectFields(module, fields)) && fields.empty()) {
+      return module->emitOpError() << "could not deduce the prime field";
+    }
+    // If the fields is empty and we reached this point it means that the IR we are about to lower
+    // does not have a single felt type (because felts without a field will make `collectFields`
+    // return failure). We return an error here since we don't have a prime to emit. In practice,
+    // this situation it's going to be unlikely.
+    if (fields.empty()) {
+      return module->emitOpError()
+             << "does not contain felt types and prime field couldn't be deduced";
+    }
+    // The pass only supports having one field for the whole circuit.
+    if (fields.size() > 1) {
+      return module->emitOpError() << "multiple fields is not supported";
+    }
+    const auto &selectedField = *(fields.begin());
+    return toAPSInt(selectedField.prime());
   }
 
   void runOnOperation() override {
@@ -376,7 +414,10 @@ private:
     // Create the PCL module
     auto newMod = ModuleOp::create(moduleOp.getLoc());
     // Set the prime attribute
-    setPrime(newMod);
+    if (failed(setPrime(newMod, /*oldMod=*/moduleOp))) {
+      signalPassFailure();
+      return;
+    }
     // Convert each struct to a PCL function
     auto walkResult = moduleOp.walk([this, &newMod](StructDefOp structDef) -> WalkResult {
       // 1) verify the struct can be converted to PCL
