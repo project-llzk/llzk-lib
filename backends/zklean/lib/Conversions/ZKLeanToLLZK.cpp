@@ -122,8 +122,7 @@ static void emitStructDefsFromZKLean(ModuleOp source, ZKLeanToLLZKState &state) 
     auto structDef = state.builder.create<llzk::component::StructDefOp>(
         def.getLoc(), def.getSymNameAttr(), ArrayAttr()
     );
-    structDef.getBodyRegion().emplaceBlock();
-    auto &body = structDef.getBodyRegion().front();
+    auto &body = structDef.getBodyRegion().emplaceBlock();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::zkleanlean::MemberDefOp>()) {
       memberBuilder.create<llzk::component::MemberDefOp>(
