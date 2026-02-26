@@ -1906,7 +1906,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
     // Perform cleanup according to the 'cleanupMode' option.
-    switch (cleanupMode) {
+    switch (cleanupMode) { // NOLINT(bugprone-switch-missing-default-case)
     case StructCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);

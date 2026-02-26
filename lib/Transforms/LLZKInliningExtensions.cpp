@@ -31,6 +31,8 @@ using namespace llzk;
 namespace {
 
 template <typename InlinerImpl, typename DialectImpl, typename... RequiredDialects>
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 struct BaseInlinerInterface : public DialectInlinerInterface {
 protected:
   using DialectInlinerInterface::DialectInlinerInterface;

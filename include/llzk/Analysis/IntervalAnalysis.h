@@ -196,6 +196,7 @@ private:
 
 /* IntervalAnalysisLatticeValue */
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class IntervalAnalysisLatticeValue
     : public dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue> {
 public:
@@ -521,7 +522,8 @@ protected:
     bool prop = ctx.propagateInputConstraints;
     ctx.intervalDFA =
         solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
-            std::move(smtSolverRef), ctx.getField(), std::move(prop)
+            std::move(smtSolverRef), ctx.getField(),
+            std::move(prop) // NOLINT(performance-move-const-arg)
         );
   }
 

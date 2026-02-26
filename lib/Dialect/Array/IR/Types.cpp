@@ -57,7 +57,8 @@ LogicalResult computeShapeFromDims(
 }
 
 ParseResult parseDerivedShape(
-    AsmParser &parser, SmallVector<int64_t> &shape, SmallVector<Attribute> dimensionSizes
+    AsmParser &parser, SmallVector<int64_t> &shape,
+    SmallVector<Attribute> dimensionSizes // NOLINT(performance-unnecessary-value-param)
 ) {
   // This is not actually parsing. It's computing the derived
   //  `shape` from the `dimensionSizes` attributes.
