@@ -27,7 +27,6 @@ def ConvertLLZKToZKLeanPass
                            "llzk::cast::CastDialect",
                            "mlir::func::FuncDialect",
                            "llzk::felt::FeltDialect",
-                           "llzk::constrain::ConstrainDialect",
                            "llzk::zkexpr::ZKExprDialect",
                            "llzk::zkbuilder::ZKBuilderDialect",
                            "llzk::zkleanlean::ZKLeanLeanDialect"];
@@ -45,7 +44,13 @@ def ConvertZKLeanToLLZKPass
     bool.cmp/cast.tofelt where applicable. It also emits minimal @compute stub
     or @constrain stubs when missing to satisfy LLZK invariants.
   }];
-  let dependentDialects = ["llzk::felt::FeltDialect",
+  let dependentDialects = ["llzk::boolean::BoolDialect",
+			   "llzk::felt::FeltDialect",
+                           "llzk::cast::CastDialect",
+                           "mlir::func::FuncDialect",
+                           "llzk::constrain::ConstrainDialect",
+                           "llzk::function::FunctionDialect",
+                           "llzk::component::StructDialect",
                            "llzk::constrain::ConstrainDialect",
                            "llzk::zkexpr::ZKExprDialect",
                            "llzk::zkbuilder::ZKBuilderDialect",

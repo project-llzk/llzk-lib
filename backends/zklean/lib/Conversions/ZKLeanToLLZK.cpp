@@ -643,16 +643,6 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
 class ConvertZKLeanToLLZKPass
     : public zklean::impl::ConvertZKLeanToLLZKPassBase<ConvertZKLeanToLLZKPass> {
 public:
-  // Register dialects required for the lowered LLZK module.
-  // Keeps the pass self-contained for `mlir::PassManager`.
-  void getDependentDialects(mlir::DialectRegistry &registry) const override {
-    registry.insert<
-        llzk::constrain::ConstrainDialect, llzk::boolean::BoolDialect, llzk::cast::CastDialect,
-        llzk::felt::FeltDialect, llzk::function::FunctionDialect, llzk::component::StructDialect,
-        mlir::func::FuncDialect, llzk::zkexpr::ZKExprDialect, llzk::zkbuilder::ZKBuilderDialect,
-        llzk::zkleanlean::ZKLeanLeanDialect>();
-  }
-
   // Create the LLZK module, run conversion, and replace the source module.
   // Emits a diagnostic and signals failure when conversion fails.
   void runOnOperation() override {
