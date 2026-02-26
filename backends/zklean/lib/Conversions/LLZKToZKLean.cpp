@@ -113,7 +113,7 @@ static bool shouldConvertFunc(llzk::function::FuncDefOp func) {
   if (func.getBody().empty()) {
     return false;
   }
-  return func->hasAttr("function.allow_constraint");
+  return func.hasAllowConstraintAttr(); 
 }
 
 // Snapshot the operations in a `Block` to allow safe rewrites.
@@ -393,10 +393,7 @@ struct FunctionConverter {
 // Convert a single `llzk::function::FuncDefOp` into ZKLean form.
 // Skips non-constrain functions and stops early on errors.
 static bool convertFunction(llzk::function::FuncDefOp func, LLZKToZKLeanState &state) {
-  if (state.hadError) {
-    return false;
-  }
-  if (!shouldConvertFunc(func)) {
+  if (state.hadError || !shouldConvertFunc(func)) {
     return false;
   }
 
@@ -429,10 +426,7 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
     }
   });
 
-  if (hadError) {
-    return failure();
-  }
-  return success(createdAny);
+  return success(!hadError && createdAny);
 }
 
 // Pass wrapper that appends a converted ZKLean module to the source.
