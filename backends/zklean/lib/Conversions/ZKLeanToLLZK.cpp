@@ -555,10 +555,7 @@ static llzk::function::FuncDefOp createTargetFunction(
 // Adds witness arguments, resolves struct context, and rewrites each op.
 template <typename FuncOpTy>
 static void convertFunction(FuncOpTy func, bool allowWitness, ZKLeanToLLZKState &state) {
-  if (func.getBody().empty()) {
-    return;
-  }
-  if (state.hadError) {
+  if (func.getBody().empty() || state.hadError) {
     return;
   }
 
@@ -631,11 +628,7 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
       ensureConstrainStub(structState, structState.def.getLoc(), state);
     }
   }
-
-  if (hadError) {
-    return failure();
-  }
-  return success();
+  return failure(hadError);
 }
 
 // Pass wrapper that appends a converted LLZK module to the source.
