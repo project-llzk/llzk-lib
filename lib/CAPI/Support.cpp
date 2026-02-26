@@ -84,8 +84,9 @@ namespace {
 template <typename T> void appendElems(T const *src, intptr_t srcSize, T *&dst, intptr_t &dstSize) {
   assert(srcSize >= 0 && "Negative source size");
   assert(dstSize >= 0 && "Negative destination size");
-  dst = static_cast<T *>(std::realloc(dst, (srcSize + dstSize) * sizeof(T)));
-  assert(dst && "Failed to increase the size of buffer");
+  T *newDst = static_cast<T *>(std::realloc(dst, (srcSize + dstSize) * sizeof(T)));
+  assert(newDst && "Failed to increase the size of buffer");
+  dst = newDst; // this temporary + assert prevents `clang-tidy` warnings
   std::memcpy(dst + dstSize, src, srcSize * sizeof(T));
   dstSize += srcSize;
 }

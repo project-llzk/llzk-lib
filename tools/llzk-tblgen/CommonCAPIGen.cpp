@@ -213,11 +213,13 @@ static inline std::string getDocumentation(
 
       // Trim whitespace
       if (!comment.empty()) {
+        std::string newDoc("/// ");
+        newDoc += comment;
         if (!documentation.empty()) {
-          documentation = "/// " + comment.str() + "\n" + documentation;
-        } else {
-          documentation = "/// " + comment.str();
+          newDoc += '\n';
+          newDoc += documentation;
         }
+        documentation = std::move(newDoc);
       }
     } else if (!curr.is(tok::unknown)) {
       // Stop looking backwards when we hit a non-comment, non-whitespace token
