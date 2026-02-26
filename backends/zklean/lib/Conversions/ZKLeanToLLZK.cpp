@@ -228,7 +228,10 @@ static StructState *resolveStructState(
       if (it != structStates.end()) {
         structState = &it->second;
       } else {
-        func.emitError("missing struct.def for function self parameter").report();
+        func.emitError("missing "
+                       + llzk::component::StructDefOp::getOperationName()
+                       + " for function self parameter")
+            .report();
         hadError = true;
         return nullptr;
       }
@@ -359,19 +362,27 @@ struct FunctionConverter {
       if (calleeName.consume_front("bool.cmp_")) {
         auto predicate = parseCmpPredicate(calleeName);
         if (!predicate) {
-          call.emitError("unsupported bool.cmp predicate in ZKLean conversion").report();
+          call.emitError("unsupported "
+			 + llzk::boolean::CmpOp::getOperationName()
+			 + " predicate in ZKLean conversion")
+	      .report();
           state.hadError = true;
           return;
         }
         if (call.getNumOperands() != 2 || call.getNumResults() != 1) {
-          call.emitError("bool.cmp expects two operands and one result").report();
+          call.emitError(llzk::boolean::CmpOp::getOperationName()
+			 + " expects two operands and one result")
+	      .report();
           state.hadError = true;
           return;
         }
         Value lhs = mapZK(call.getOperand(0));
         Value rhs = mapZK(call.getOperand(1));
         if (!lhs || !rhs) {
-          call.emitError("unsupported bool.cmp operands in ZKLean conversion").report();
+          call.emitError("unsupported "
+                         + llzk::boolean::CmpOp::getOperationName()
+                         + " operands in ZKLean conversion")
+              .report();
           state.hadError = true;
           return;
         }
@@ -385,7 +396,9 @@ struct FunctionConverter {
       }
       if (calleeName == "cast.tofelt") {
         if (call.getNumOperands() != 1 || call.getNumResults() != 1) {
-          call.emitError("cast.tofelt expects one operand and one result").report();
+          call.emitError(llzk::cast::IntToFeltOp::getOperationName()
+			 + "expects one operand and one result")
+	      .report();
           state.hadError = true;
           return;
         }
