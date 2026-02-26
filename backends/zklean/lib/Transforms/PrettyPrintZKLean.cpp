@@ -62,16 +62,6 @@ static bool isBuilderOp(Operation *op) {
   return dialectNs == "ZKBuilder" || dialectNs == "zkbuilder";
 }
 
-// Build a Lean-friendly name for `llzk::function::FuncDefOp`.
-// Flattens nested symbol references into a single identifier using "__".
-static std::string formatLeanCallee(SymbolRefAttr callee);
-
-[[maybe_unused]] static std::string buildLeanFunctionName(llzk::function::FuncDefOp func) {
-  if (auto fq = func.getFullyQualifiedName(false))
-    return formatLeanCallee(fq);
-  return func.getSymName().str();
-}
-
 // Extract a struct name from ZKLean struct types.
 // Returns `std::nullopt` when the type is not a ZKLean struct.
 static std::optional<std::string> getStructTypeName(Type type) {
