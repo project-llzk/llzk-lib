@@ -113,7 +113,7 @@ static bool shouldConvertFunc(llzk::function::FuncDefOp func) {
   if (func.getBody().empty()) {
     return false;
   }
-  return func.hasAllowConstraintAttr(); 
+  return func.hasAllowConstraintAttr();
 }
 
 // Snapshot the operations in a `Block` to allow safe rewrites.
@@ -433,7 +433,6 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
 class ConvertLLZKToZKLeanPass
     : public zklean::impl::ConvertLLZKToZKLeanPassBase<ConvertLLZKToZKLeanPass> {
 public:
-
   // Replace the current `ModuleOp` with a ZKLean module.
   // Emits a new ModuleOp when possible; otherwise rewrites in-place.
   void runOnOperation() override {

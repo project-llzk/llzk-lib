@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <memory>
-
 #include <mlir/Pass/Pass.h>
+
+#include <memory>
 
 namespace zklean {
 
