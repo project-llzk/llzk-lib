@@ -141,12 +141,11 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
     state.builder.setInsertionPointToEnd(state.dest.getBody());
     auto zkStruct =
         state.builder.create<llzk::zkleanlean::StructDefOp>(def.getLoc(), def.getSymNameAttr());
-    auto *body = new Block();
-    zkStruct.getBodyRegion().push_back(body);
-    OpBuilder memberBuilder(body, body->begin());
+    auto &body = zkStruct.getBodyRegion().emplaceBlock();
+    OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::component::MemberDefOp>()) {
       if (!mlir::isa<llzk::felt::FeltType>(member.getType())) {
-        member.emitError("unsupported member type for ZKLean struct conversion");
+        member.emitError("unsupported member type for ZKLean struct conversion").report();
         state.hadError = true;
         continue;
       }
