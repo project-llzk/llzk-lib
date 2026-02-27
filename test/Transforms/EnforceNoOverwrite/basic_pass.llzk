@@ -1,0 +1,14 @@
+// RUN: llzk-opt --llzk-enforce-no-overwrite -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !felt.type
+        function.def @product(%a: !felt.type) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            struct.writem %self[@foo] = %a : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+
+// CHECK-LABEL: struct.def

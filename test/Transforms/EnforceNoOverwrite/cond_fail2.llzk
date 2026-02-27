@@ -1,0 +1,21 @@
+// RUN: llzk-opt --llzk-enforce-no-overwrite -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !felt.type
+        function.def @product(%a: !felt.type, %b: i1) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            
+            scf.if %b {
+                // expected-note@+1 {{previously written to here}}
+                struct.writem %self[@foo] = %a : <@A>, !felt.type    
+            } else {
+                struct.writem %self[@foo] = %a : <@A>, !felt.type    
+            }
+            
+            // expected-warning@+1 {{overwriting struct member foo}}
+            struct.writem %self[@foo] = %a : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
