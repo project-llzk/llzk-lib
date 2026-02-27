@@ -37,6 +37,9 @@
 #include <llvm/Support/Signals.h>
 
 #include "tools/config.h"
+#include "zklean/Conversions/Passes.h"
+#include "zklean/DialectRegistration.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
 
 #if LLZK_WITH_PCL
 #include <pcl/Dialect/IR/Dialect.h>
@@ -69,6 +72,7 @@ int main(int argc, char **argv) {
   mlir::DialectRegistry registry;
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
+  zklean::registerAllDialects(registry);
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
@@ -80,6 +84,8 @@ int main(int argc, char **argv) {
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
   r1cs::registerTransformationPasses();
+  zklean::registerConversionPasses();
+  zklean::registerZKLeanPasses();
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
   pcl::conversion::registerPCLTransformationPasses();

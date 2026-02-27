@@ -198,6 +198,10 @@ set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # We need the r1cs include dir so we can pass it to mlir-tblgen
 set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/r1cs/include")
+
+# We need the zklean include dir so we can pass it to mlir-tblgen
+set(ZKLEAN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/zklean/include")
+
 if(LLZK_WITH_PCL_BOOL)
   set(PCL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/pcl-conv/include")
 endif()
