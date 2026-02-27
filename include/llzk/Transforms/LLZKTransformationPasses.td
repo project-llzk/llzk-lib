@@ -117,4 +117,11 @@ def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
   let options = [];
 }
 
+def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
+  let summary = "Enforces that a struct member is never overwritten";
+  let description = summary;
+  let constructor = "llzk::createNoOverwritesPass()";
+  let options = [];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
