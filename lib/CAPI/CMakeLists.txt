@@ -22,7 +22,8 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/POD.cpp
   Dialect/Poly.cpp 
   Dialect/String.cpp 
-  Dialect/Struct.cpp)
+  Dialect/Struct.cpp
+  Target/PCL.cpp)
 target_link_libraries(
   LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} 
   MLIRIR
@@ -35,6 +36,7 @@ target_link_libraries(
   LLZK::LLZKTransforms 
   LLZK::LLZKValidators
   LLZK::LLZKAnalysis 
+  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>
 )
 llzk_target_add_mlir_link_settings(LLZKCAPI)
 
