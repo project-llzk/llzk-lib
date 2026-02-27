@@ -28,6 +28,7 @@
 #include <pcl/Dialect/IR/Ops.h>
 #include <pcl/Dialect/IR/Types.h>
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -96,12 +97,42 @@ lowerBinaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mappin
   return success();
 }
 
+// Convert unary LLZK op to corresponding unary PCL op
+template <typename SrcBinOp, typename DstBinOp>
+static LogicalResult
+lowerUnaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mapping) {
+  auto loc = src.getLoc();
+  auto op = src.getOperation();
+  auto operand = lookup(src.getOperand(), mapping, op);
+  if (failed(operand)) {
+    return failure();
+  }
+
+  auto dst = b.create<DstBinOp>(loc, *operand);
+  rememberResult(src.getResult(), dst.getRes(), mapping);
+  return success();
+}
+
+static LogicalResult lowerConstImpl(
+    OpBuilder &b, Value result, Location location, llvm::APInt &value,
+    llvm::DenseMap<Value, Value> &mapping
+) {
+  auto attr = pcl::FeltAttr::get(b.getContext(), value);
+  auto dst = b.create<pcl::ConstOp>(location, attr);
+  rememberResult(result, dst.getRes(), mapping);
+  return success();
+}
+
 static LogicalResult
 lowerConst(OpBuilder &b, FeltConstantOp cst, llvm::DenseMap<Value, Value> &mapping) {
-  auto attr = pcl::FeltAttr::get(b.getContext(), cst.getValue());
-  auto dst = b.create<pcl::ConstOp>(cst.getLoc(), attr);
-  rememberResult(cst.getResult(), dst.getRes(), mapping);
-  return success();
+  auto value = cst.getValue().getValue();
+  return lowerConstImpl(b, cst.getResult(), cst->getLoc(), value, mapping);
+}
+
+static LogicalResult
+lowerConst(OpBuilder &b, mlir::arith::ConstantOp cst, llvm::DenseMap<Value, Value> &mapping) {
+  auto value = mlir::cast<mlir::IntegerAttr>(cst.getValue()).getValue();
+  return lowerConstImpl(b, cst.getResult(), cst.getLoc(), value, mapping);
 }
 
 class PCLLoweringPass : public pcl::conversion::impl::PCLLoweringPassBase<PCLLoweringPass> {
@@ -242,6 +273,9 @@ private:
           .Case<FeltConstantOp>([&b, &llzkToPcl, &res](auto c) {
         res = lowerConst(b, c, llzkToPcl);
       })
+          .Case<mlir::arith::ConstantOp>([&b, &llzkToPcl, &res](auto c) {
+        res = lowerConst(b, c, llzkToPcl);
+      })
           .Case<AddFeltOp>([&b, &llzkToPcl, &res](auto a) {
         res = lowerBinaryLike<AddFeltOp, pcl::AddOp>(b, a, llzkToPcl);
       })
@@ -250,6 +284,9 @@ private:
       })
           .Case<MulFeltOp>([&b, &llzkToPcl, &res](auto m) {
         res = lowerBinaryLike<MulFeltOp, pcl::MulOp>(b, m, llzkToPcl);
+      })
+          .Case<NegFeltOp>([&b, &llzkToPcl, &res](auto n) {
+        res = lowerUnaryLike<NegFeltOp, pcl::NegOp>(b, n, llzkToPcl);
       })
           .Case<IntToFeltOp>([&llzkToPcl, &res](auto m) {
         auto arg = lookup(m.getValue(), llzkToPcl, m.getOperation());

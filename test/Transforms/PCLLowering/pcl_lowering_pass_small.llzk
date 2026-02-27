@@ -1,0 +1,54 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -I %S -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @ArithConst {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@ArithConst> {
+      %self = struct.new : <@ArithConst>
+      function.return %self : !struct.type<@ArithConst>
+    }
+    function.def @constrain(%self: !struct.type<@ArithConst>) {
+      %true = arith.constant true
+      %0 = struct.readm %self[@out] : !struct.type<@ArithConst>, !felt.type<"koalabear">
+      %1 = cast.tofelt %true : i1, !felt.type<"koalabear">
+      constrain.eq %0, %1 : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @ArithConst() -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const  true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      pcl.return %[[VAL_0]] : !pcl.felt
+// CHECK-NEXT:    }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Neg {
+    struct.member @out : !felt.type<"koalabear"> {llzk.pub}
+    function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Neg> {
+      %self = struct.new : <@Neg>
+      function.return %self : !struct.type<@Neg>
+    }
+    function.def @constrain(%self: !struct.type<@Neg>, %in: !felt.type<"koalabear">) {
+      %0 = felt.neg %in : !felt.type<"koalabear">
+      %1 = struct.readm %self[@out]: !struct.type<@Neg>, !felt.type<"koalabear">
+      constrain.eq %0, %1 : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @Neg(
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.neg %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      pcl.return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:    }
