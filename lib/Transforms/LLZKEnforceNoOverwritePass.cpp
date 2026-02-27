@@ -12,7 +12,14 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/AnalysisUtil.h"
+#include "llzk/Analysis/MemberOverwriteAnalysis.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+
+#include <mlir/Analysis/DataFlowFramework.h>
+
+#include <llvm/Support/Debug.h>
 
 #include <memory>
 
@@ -24,13 +31,46 @@ namespace llzk {
 
 #define DEBUG_TYPE "llzk-enforce-no-overwrites-pass"
 
-class EnforceNoMemberOverwritePass
-    : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
-  void runOnOperation() override {}
-};
+using std::make_unique;
+
+using namespace mlir;
 
 namespace llzk {
-using std::make_unique;
+
+using namespace function;
+using namespace component;
+
+class EnforceNoMemberOverwritePass
+    : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
+
+  bool containsOverwrite(FuncDefOp funcDef) {
+    DataFlowSolver solver;
+    dataflow::loadRequiredAnalyses(solver);
+    solver.load<MemberOverwriteAnalysis>();
+    if (failed(solver.initializeAndRun(funcDef))) {
+      signalPassFailure();
+    }
+
+    auto *returnOp = funcDef.getBody().getBlocks().begin()->getTerminator();
+    const auto *lattice =
+        solver.lookupState<MemberOverwriteLattice>(solver.getProgramPointAfter(returnOp));
+    if (!lattice) {
+      signalPassFailure();
+    }
+
+    lattice->emitOverwriteErrors();
+    return lattice->hasOverwrites();
+  }
+
+  void runOnOperation() override {
+    getOperation()->walk([this](FuncDefOp funcDef) {
+      if (containsOverwrite(funcDef)) {
+        // TODO: we could instead do something to repair the overwrite
+        signalPassFailure();
+      }
+    });
+  }
+};
 
 std::unique_ptr<mlir::Pass> createNoOverwritesPass() {
   return make_unique<EnforceNoMemberOverwritePass>();
