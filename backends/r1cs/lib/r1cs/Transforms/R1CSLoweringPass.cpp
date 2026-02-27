@@ -466,7 +466,7 @@ private:
   }
 
   Value emitLinearCombination(
-      LinearCombination lc, IRMapping &valueMap, DenseMap<StringRef, Value> &memberMap,
+      const LinearCombination &lc, IRMapping &valueMap, DenseMap<StringRef, Value> &memberMap,
       OpBuilder &builder, Location loc
   ) {
     Value result = nullptr;
@@ -494,7 +494,7 @@ private:
       );
     }
 
-    for (auto &[val, coeff] : lc.terms) {
+    for (const auto &[val, coeff] : lc.terms) {
       Value mapped = getMapping(val);
       // %tmp = r1cs.to_linear %mapped
       // most of these will be removed with CSE passes

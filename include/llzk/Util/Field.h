@@ -34,7 +34,8 @@ class Field {
 public:
   /// @brief Add a new field to the set of available prime fields.
   /// Reports an error if the field is invalid or conflicts with an existing definition.
-  inline static void addField(llvm::StringRef fieldName, llvm::APInt prime, EmitErrorFn errFn) {
+  inline static void
+  addField(llvm::StringRef fieldName, const llvm::APInt &prime, EmitErrorFn errFn) {
     return addField(Field(prime, fieldName), errFn);
   }
   inline static void
@@ -99,7 +100,7 @@ public:
   inline llvm::StringRef name() const { return primeName; }
 
   /// @brief Create a SMT solver symbol with the current field's bitwidth.
-  llvm::SMTExprRef createSymbol(llvm::SMTSolverRef solver, const char *name) const {
+  llvm::SMTExprRef createSymbol(const llvm::SMTSolverRef &solver, const char *name) const {
     return solver->mkSymbol(name, solver->getBitvectorSort(bitWidth()));
   }
 
@@ -114,7 +115,7 @@ public:
 
 private:
   Field(std::string_view primeStr, llvm::StringRef name);
-  Field(llvm::APInt primeInt, llvm::StringRef name);
+  Field(const llvm::APInt &primeInt, llvm::StringRef name);
 
   /// Name of the prime for debugging purposes
   llvm::StringRef primeName;

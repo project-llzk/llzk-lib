@@ -19,15 +19,15 @@ using namespace mlir;
 using namespace component;
 using namespace function;
 
-OwningOpRef<ModuleOp> createLLZKModule(MLIRContext *context, Location loc) {
+OwningOpRef<ModuleOp> createLLZKModule(MLIRContext * /*context*/, Location loc) {
   auto mod = ModuleOp::create(loc);
   addLangAttrForLLZKDialect(mod);
   return mod;
 }
 
-void addLangAttrForLLZKDialect(mlir::ModuleOp mod) {
+void addLangAttrForLLZKDialect(ModuleOp mod) {
   MLIRContext *ctx = mod.getContext();
-  if (auto dialect = ctx->getOrLoadDialect<LLZKDialect>()) {
+  if (auto *dialect = ctx->getOrLoadDialect<LLZKDialect>()) {
     mod->setAttr(LANG_ATTR_NAME, StringAttr::get(ctx, dialect->getNamespace()));
   } else {
     llvm::report_fatal_error("Could not load LLZK dialect!");
@@ -38,64 +38,61 @@ void addLangAttrForLLZKDialect(mlir::ModuleOp mod) {
 
 void ModuleBuilder::ensureNoSuchFreeFunc(std::string_view funcName) {
   if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
-    auto error_message = "global function " + Twine(funcName) + " already exists!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("global function " + Twine(funcName) + " already exists!");
   }
 }
 
 void ModuleBuilder::ensureFreeFnExists(std::string_view funcName) {
   if (freeFuncMap.find(funcName) == freeFuncMap.end()) {
-    auto error_message = "global function " + Twine(funcName) + " does not exist!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("global function " + Twine(funcName) + " does not exist!");
   }
 }
 
 void ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {
   if (structMap.find(structName) != structMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " already exists!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " already exists!");
+  }
+}
+
+void ModuleBuilder::ensureStructExists(std::string_view structName) {
+  if (structMap.find(structName) == structMap.end()) {
+    llvm::report_fatal_error("struct " + Twine(structName) + " does not exist!");
   }
 }
 
 void ModuleBuilder::ensureNoSuchComputeFn(std::string_view structName) {
   if (computeFnMap.find(structName) != computeFnMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " already has a compute function!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " already has a compute function!");
   }
 }
 
 void ModuleBuilder::ensureComputeFnExists(std::string_view structName) {
   if (computeFnMap.find(structName) == computeFnMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " has no compute function!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " has no compute function!");
   }
 }
 
 void ModuleBuilder::ensureNoSuchConstrainFn(std::string_view structName) {
   if (constrainFnMap.find(structName) != constrainFnMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " already has a constrain function!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " already has a constrain function!");
   }
 }
 
 void ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {
   if (constrainFnMap.find(structName) == constrainFnMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " has no constrain function!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " has no constrain function!");
   }
 }
 
 void ModuleBuilder::ensureNoSuchProductFn(std::string_view structName) {
   if (productFnMap.find(structName) != productFnMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " already has a product function!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " already has a product function!");
   }
 }
 
 void ModuleBuilder::ensureProductFnExists(std::string_view structName) {
   if (productFnMap.find(structName) == productFnMap.end()) {
-    auto error_message = "struct " + Twine(structName) + " has no product function!";
-    llvm::report_fatal_error(error_message);
+    llvm::report_fatal_error("struct " + Twine(structName) + " has no product function!");
   }
 }
 
@@ -140,6 +137,11 @@ ModuleBuilder &ModuleBuilder::insertComputeFn(StructDefOp op, Location loc) {
   return *this;
 }
 
+ModuleBuilder &ModuleBuilder::insertComputeFn(std::string_view structName, Location loc) {
+  ensureStructExists(structName);
+  return insertComputeFn(structMap.at(structName), loc);
+}
+
 FuncDefOp ModuleBuilder::buildConstrainFn(StructDefOp op, Location loc) {
   MLIRContext *context = op.getContext();
   OpBuilder opBuilder(op.getBodyRegion());
@@ -156,6 +158,11 @@ ModuleBuilder &ModuleBuilder::insertConstrainFn(StructDefOp op, Location loc) {
   ensureNoSuchConstrainFn(op.getName());
   constrainFnMap[op.getName()] = buildConstrainFn(op, loc);
   return *this;
+}
+
+ModuleBuilder &ModuleBuilder::insertConstrainFn(std::string_view structName, Location loc) {
+  ensureStructExists(structName);
+  return insertConstrainFn(structMap.at(structName), loc);
 }
 
 FuncDefOp ModuleBuilder::buildProductFn(StructDefOp op, Location loc) {
@@ -177,6 +184,11 @@ ModuleBuilder &ModuleBuilder::insertProductFn(StructDefOp op, Location loc) {
   return *this;
 }
 
+ModuleBuilder &ModuleBuilder::insertProductFn(std::string_view structName, Location loc) {
+  ensureStructExists(structName);
+  return insertProductFn(structMap.at(structName), loc);
+}
+
 ModuleBuilder &
 ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Location callLoc) {
   ensureComputeFnExists(caller.getName());
@@ -189,6 +201,14 @@ ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Locatio
   builder.create<CallOp>(callLoc, calleeFn);
   updateComputeReachability(caller, callee);
   return *this;
+}
+
+ModuleBuilder &ModuleBuilder::insertComputeCall(
+    std::string_view caller, std::string_view callee, Location callLoc
+) {
+  ensureStructExists(caller);
+  ensureStructExists(callee);
+  return insertComputeCall(structMap.at(caller), structMap.at(callee), callLoc);
 }
 
 ModuleBuilder &ModuleBuilder::insertConstrainCall(
@@ -225,6 +245,14 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
   return *this;
 }
 
+ModuleBuilder &ModuleBuilder::insertConstrainCall(
+    std::string_view caller, std::string_view callee, Location callLoc, Location memberDefLoc
+) {
+  ensureStructExists(caller);
+  ensureStructExists(callee);
+  return insertConstrainCall(structMap.at(caller), structMap.at(callee), callLoc, memberDefLoc);
+}
+
 ModuleBuilder &
 ModuleBuilder::insertFreeFunc(std::string_view funcName, FunctionType type, Location loc) {
   ensureNoSuchFreeFunc(funcName);
@@ -245,6 +273,18 @@ ModuleBuilder::insertFreeCall(FuncDefOp caller, std::string_view callee, Locatio
   OpBuilder builder(caller.getBody());
   builder.create<CallOp>(callLoc, calleeFn);
   return *this;
+}
+
+bool ModuleBuilder::computeReachable(std::string_view caller, std::string_view callee) {
+  ensureStructExists(caller);
+  ensureStructExists(callee);
+  return computeReachable(structMap.at(caller), structMap.at(callee));
+}
+
+bool ModuleBuilder::constrainReachable(std::string_view caller, std::string_view callee) {
+  ensureStructExists(caller);
+  ensureStructExists(callee);
+  return constrainReachable(structMap.at(caller), structMap.at(callee));
 }
 
 } // namespace llzk

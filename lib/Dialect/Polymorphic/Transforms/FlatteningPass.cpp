@@ -745,7 +745,7 @@ public:
       : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/2) {}
 
   LogicalResult matchAndRewrite(
-      MemberDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+      MemberDefOp op, OpAdaptor /*adapter*/, ConversionPatternRewriter &rewriter
   ) const override {
     LLVM_DEBUG(llvm::dbgs() << "[MemberDefOpPattern] MemberDefOp: " << op << '\n');
 
@@ -1318,7 +1318,7 @@ public:
                       "' with different value types"
                   );
                   if (newTypeLoc) {
-                    diag.attachNote(*newTypeLoc).append("type written here is ", newType);
+                    diag.attachNote(newTypeLoc).append("type written here is ", newType);
                   }
                   diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
                 });
@@ -1741,7 +1741,7 @@ private:
     // Check if it's safe according to both the def tree and use graph.
     // Note: every symbol must have a def node but module symbols may not have a use node.
     if (collectSafeToErase(defTree.lookupNode(check))) {
-      auto useNode = useGraph.lookupNode(check);
+      const auto *useNode = useGraph.lookupNode(check);
       assert(useNode || llvm::isa<ModuleOp>(check.getOperation()));
       if (!useNode || collectSafeToErase(useNode)) {
         return true;
@@ -1906,7 +1906,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
     // Perform cleanup according to the 'cleanupMode' option.
-    switch (cleanupMode) {
+    switch (cleanupMode) { // NOLINT(bugprone-switch-missing-default-case)
     case StructCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);

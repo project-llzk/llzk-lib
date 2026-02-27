@@ -41,7 +41,7 @@ void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
 OpFoldResult FeltConstantOp::fold(FeltConstantOp::FoldAdaptor) { return getValueAttr(); }
 
 LogicalResult FeltConstantOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> loc, Adaptor adaptor,
+    MLIRContext *context, std::optional<Location> /*loc*/, Adaptor adaptor,
     SmallVectorImpl<Type> &inferred
 ) {
   inferred.resize(1);

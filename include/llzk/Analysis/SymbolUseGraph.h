@@ -113,7 +113,7 @@ public:
   /// Print the node in a human readable format.
   std::string toString(bool showLocations = false) const;
   void print(
-      llvm::raw_ostream &os, bool showLocations = false, std::string locationLinePrefix = ""
+      llvm::raw_ostream &os, bool showLocations = false, const std::string &locationLinePrefix = ""
   ) const;
 };
 

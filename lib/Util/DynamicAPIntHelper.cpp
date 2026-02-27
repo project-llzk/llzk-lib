@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <llvm/ADT/ArrayRef.h>
@@ -93,7 +94,7 @@ DynamicAPInt toDynamicAPInt(StringRef str) {
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
   if (i.getBitWidth() <= 64) {
     // Fast path for smaller values, just use the int64_t conversion
-    return DynamicAPInt(i.isNegative() ? i.getSExtValue() : i.getZExtValue());
+    return DynamicAPInt(i.isNegative() ? i.getSExtValue() : static_cast<int64_t>(i.getZExtValue()));
   }
 
   DynamicAPInt res(0), po2(1);

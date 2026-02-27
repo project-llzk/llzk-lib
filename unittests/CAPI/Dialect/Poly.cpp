@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/Compare.h"
+
 #include "llzk-c/Dialect/Poly.h"
 
 #include <llvm/ADT/SmallVector.h>
@@ -58,7 +60,9 @@ TEST_F(CAPITest, llzk_apply_map_op_build) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
-      auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto affine_map = mlirAffineMapGet(
+          testClass.context, 0, 0, llzk::checkedCast<intptr_t>(exprs.size()), exprs.data()
+      );
       auto affine_map_attr = mlirAffineMapAttrGet(affine_map);
       return llzkPoly_ApplyMapOpBuild(
           builder, location, affine_map_attr,
@@ -77,7 +81,9 @@ TEST_F(CAPITest, llzk_apply_map_op_build_with_affine_map) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
-      auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto affine_map = mlirAffineMapGet(
+          testClass.context, 0, 0, llzk::checkedCast<intptr_t>(exprs.size()), exprs.data()
+      );
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
@@ -131,7 +137,9 @@ TEST_F(CAPITest, llzk_apply_map_op_get_affine_map) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
-      this->affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      this->affine_map = mlirAffineMapGet(
+          testClass.context, 0, 0, llzk::checkedCast<intptr_t>(exprs.size()), exprs.data()
+      );
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, this->affine_map,
           MlirValueRange {
@@ -153,7 +161,9 @@ TEST_F(CAPITest, llzk_apply_map_op_get_dim_operands) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs({mlirAffineConstantExprGet(testClass.context, 1)});
-      auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto affine_map = mlirAffineMapGet(
+          testClass.context, 0, 0, llzk::checkedCast<intptr_t>(exprs.size()), exprs.data()
+      );
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {
@@ -177,7 +187,9 @@ TEST_F(CAPITest, llzk_apply_map_op_get_symbol_operands) {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       llvm::SmallVector<MlirAffineExpr> exprs = {mlirAffineConstantExprGet(testClass.context, 1)};
-      auto affine_map = mlirAffineMapGet(testClass.context, 0, 0, exprs.size(), exprs.data());
+      auto affine_map = mlirAffineMapGet(
+          testClass.context, 0, 0, llzk::checkedCast<intptr_t>(exprs.size()), exprs.data()
+      );
       return llzkPoly_ApplyMapOpBuildWithAffineMap(
           builder, location, affine_map,
           MlirValueRange {

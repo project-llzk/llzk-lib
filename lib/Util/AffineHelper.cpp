@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Util/AffineHelper.h"
+#include "llzk/Util/Compare.h"
 
 #include <numeric>
 
@@ -26,7 +27,7 @@ ParseResult parseDimAndSymbolListImpl(
     return failure();
   }
   // Store number of dimensions for validation by caller.
-  numDims = mapOperands.size();
+  numDims = llzk::checkedCast<int32_t>(mapOperands.size());
 
   // Parse the optional symbol operands.
   return parser.parseOperandList(mapOperands, OpAsmParser::Delimiter::OptionalSquare);
@@ -102,8 +103,8 @@ parseAttrDictWithWarnings(OpAsmParser &parser, NamedAttrList &extraAttrs, Operat
   // Ignore, with warnings, any attributes that are specified and shouldn't be
   for (StringAttr skipName : state.name.getAttributeNames()) {
     if (extraAttrs.erase(skipName)) {
-      auto msg =
-          "Ignoring attribute '" + Twine(skipName) + "' because it must be computed automatically.";
+      auto msg = "Ignoring attribute '" + skipName.getValue() +
+                 "' because it must be computed automatically.";
       mlir::emitWarning(parser.getEncodedSourceLoc(loc), msg).report();
     }
   }

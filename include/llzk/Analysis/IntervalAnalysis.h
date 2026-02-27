@@ -86,7 +86,7 @@ public:
 
   bool operator==(const ExpressionValue &rhs) const;
 
-  bool isBoolSort(llvm::SMTSolverRef solver) const {
+  bool isBoolSort(const llvm::SMTSolverRef &solver) const {
     return solver->getBoolSort() == solver->getSort(expr);
   }
 
@@ -96,8 +96,9 @@ public:
   /// @param lhs
   /// @param rhs
   /// @return
-  friend ExpressionValue
-  intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  friend ExpressionValue intersection(
+      const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+  );
 
   /// @brief Compute the union of the lhs and rhs intervals, and create a solver
   /// expression that constrains both sides to be equal.
@@ -106,47 +107,49 @@ public:
   /// @param rhs
   /// @return
   friend ExpressionValue
-  join(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  join(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   // arithmetic ops
 
   friend ExpressionValue
-  add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  add(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  sub(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  div(llvm::SMTSolverRef solver, felt::DivFeltOp op, const ExpressionValue &lhs,
+  div(const llvm::SMTSolverRef &solver, felt::DivFeltOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
   friend ExpressionValue
-  mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  bitAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue shiftLeft(
+      const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+  );
+
+  friend ExpressionValue shiftRight(
+      const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+  );
 
   friend ExpressionValue
-  shiftLeft(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
-
-  friend ExpressionValue
-  shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
-
-  friend ExpressionValue
-  cmp(llvm::SMTSolverRef solver, boolean::CmpOp op, const ExpressionValue &lhs,
+  cmp(const llvm::SMTSolverRef &solver, boolean::CmpOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
   friend ExpressionValue
-  boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  boolAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  boolOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   /// @brief Computes a solver expression based on the operation, but computes a fallback
   /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
@@ -157,18 +160,19 @@ public:
   /// @param rhs
   /// @return
   friend ExpressionValue fallbackBinaryOp(
-      llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &lhs,
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
       const ExpressionValue &rhs
   );
 
-  friend ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val);
+  friend ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
-  friend ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val);
+  friend ExpressionValue notOp(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
-  friend ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val);
+  friend ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
-  friend ExpressionValue
-  fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val);
+  friend ExpressionValue fallbackUnaryOp(
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &val
+  );
 
   /* Utility */
 
@@ -192,6 +196,7 @@ private:
 
 /* IntervalAnalysisLatticeValue */
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class IntervalAnalysisLatticeValue
     : public dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue> {
 public:
@@ -226,9 +231,9 @@ public:
   const LatticeValue &getValue() const { return val; }
 
   mlir::ChangeResult setValue(const LatticeValue &val);
-  mlir::ChangeResult setValue(ExpressionValue e);
+  mlir::ChangeResult setValue(const ExpressionValue &e);
 
-  mlir::ChangeResult addSolverConstraint(ExpressionValue e);
+  mlir::ChangeResult addSolverConstraint(const ExpressionValue &e);
 
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const IntervalAnalysisLattice &l) {
     l.print(os);
@@ -262,7 +267,7 @@ public:
       bool propInputConstraints
   )
       : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
-        smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}
+        smtSolver(std::move(smt)), field(f), propagateInputConstraints(propInputConstraints) {}
 
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
@@ -412,6 +417,8 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
 
 namespace llzk {
 
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class StructIntervals {
 public:
   /// @brief Compute the struct intervals.
@@ -479,7 +486,7 @@ class ModuleIntervalAnalysis;
 class StructIntervalAnalysis : public StructAnalysis<StructIntervals, IntervalAnalysisContext> {
 public:
   using StructAnalysis::StructAnalysis;
-  virtual ~StructIntervalAnalysis() = default;
+  ~StructIntervalAnalysis() override = default;
 
   mlir::LogicalResult runAnalysis(
       mlir::DataFlowSolver &solver, mlir::AnalysisManager &, const IntervalAnalysisContext &ctx
@@ -502,7 +509,7 @@ public:
   ModuleIntervalAnalysis(mlir::Operation *op) : ModuleAnalysis(op), ctx {} {
     ctx.smtSolver = llvm::CreateZ3Solver();
   }
-  virtual ~ModuleIntervalAnalysis() = default;
+  ~ModuleIntervalAnalysis() override = default;
 
   void setField(const Field &f) { ctx.field = f; }
   void setPropagateInputConstraints(bool prop) { ctx.propagateInputConstraints = prop; }
@@ -515,7 +522,8 @@ protected:
     bool prop = ctx.propagateInputConstraints;
     ctx.intervalDFA =
         solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
-            std::move(smtSolverRef), ctx.getField(), std::move(prop)
+            std::move(smtSolverRef), ctx.getField(),
+            std::move(prop) // NOLINT(performance-move-const-arg)
         );
   }
 
@@ -535,11 +543,11 @@ namespace llvm {
 template <> struct DenseMapInfo<llzk::ExpressionValue> {
 
   static SMTExprRef getEmptyExpr() {
-    static auto emptyPtr = reinterpret_cast<SMTExprRef>(1);
+    static const auto *emptyPtr = reinterpret_cast<SMTExprRef>(1);
     return emptyPtr;
   }
   static SMTExprRef getTombstoneExpr() {
-    static auto tombstonePtr = reinterpret_cast<SMTExprRef>(2);
+    static const auto *tombstonePtr = reinterpret_cast<SMTExprRef>(2);
     return tombstonePtr;
   }
 

@@ -95,6 +95,7 @@ class UnusedDeclarationEliminationPass
         // We don't consider public members in the Main component for removal,
         // as these are output values and removing them would result in modifying
         // the overall circuit interface.
+        // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
         if (!structDef.isMainComponent() || !member.hasPublicAttr()) {
           SymbolRefAttr memberSym =
               appendLeaf(structSym, FlatSymbolRefAttr::get(member.getSymNameAttr()));

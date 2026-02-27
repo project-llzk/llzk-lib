@@ -21,6 +21,8 @@ namespace component {
 /// Only valid/implemented for StructDefOp. Sets the proper `AllowConstraintAttr` and
 /// `AllowWitnessAttr` on the functions defined within the StructDefOp.
 template <typename TypeClass>
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 class SetFuncAllowAttrs : public mlir::OpTrait::TraitBase<TypeClass, SetFuncAllowAttrs> {
 public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op);

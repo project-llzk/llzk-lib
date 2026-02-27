@@ -23,7 +23,7 @@
 /// header generation capabilities, including parameter getters and builders.
 struct AttrOrTypeHeaderGenerator : public HeaderGenerator {
   using HeaderGenerator::HeaderGenerator;
-  virtual ~AttrOrTypeHeaderGenerator() = default;
+  ~AttrOrTypeHeaderGenerator() override = default;
 
   /// @brief Set the parameter name for code generation
   /// @param name The parameter name from the TableGen definition
@@ -165,7 +165,7 @@ protected:
 /// implementation generation capabilities, including parameter getters and builders.
 struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
   using ImplementationGenerator::ImplementationGenerator;
-  virtual ~AttrOrTypeImplementationGenerator() = default;
+  ~AttrOrTypeImplementationGenerator() override = default;
 
   /// @brief Set the parameter name for code generation
   /// @param name The parameter name from the TableGen definition
@@ -179,6 +179,7 @@ struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <utility>
 
 using namespace mlir;
 using namespace llvm;
@@ -188,7 +189,9 @@ using namespace llvm;
   virtual void genArrayRefParameterImpls(mlir::StringRef cppType) const {
     static constexpr char fmt[] = R"(
 intptr_t {0}{2}_{3}Get{4}Count(Mlir{1} inp) {{
-  return static_cast<intptr_t>(llvm::cast<{3}>(unwrap(inp)).get{4}().size());
+  auto size = llvm::cast<{3}>(unwrap(inp)).get{4}().size();
+  assert(std::in_range<intptr_t>(size) && "lossy conversion");
+  return static_cast<intptr_t>(size);
 }
 
 {5} {0}{2}_{3}Get{4}At(Mlir{1} inp, intptr_t pos) {{

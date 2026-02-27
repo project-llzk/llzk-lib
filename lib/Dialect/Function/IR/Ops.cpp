@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
@@ -416,7 +417,7 @@ void CallOp::build(
   odsState.addTypes(resultTypes);
   odsState.addOperands(argOperands);
   Properties &props = affineMapHelpers::buildInstantiationAttrsEmpty<CallOp>(
-      odsBuilder, odsState, static_cast<int32_t>(argOperands.size())
+      odsBuilder, odsState, llzk::checkedCast<int32_t>(argOperands.size())
   );
   props.setCallee(callee);
 }
@@ -428,7 +429,8 @@ void CallOp::build(
   odsState.addTypes(resultTypes);
   odsState.addOperands(argOperands);
   Properties &props = affineMapHelpers::buildInstantiationAttrs<CallOp>(
-      odsBuilder, odsState, mapOperands, numDimsPerMap, argOperands.size()
+      odsBuilder, odsState, mapOperands, numDimsPerMap,
+      llzk::checkedCast<int32_t>(argOperands.size())
   );
   props.setCallee(callee);
 }
@@ -822,7 +824,7 @@ SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
 Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {
   FailureOr<SymbolLookupResult<FuncDefOp>> res =
       llzk::resolveCallable<FuncDefOp>(*symbolTable, *this);
-  if (LogicalResult(res).failed() || res->isManaged()) {
+  if (failed(res) || res->isManaged()) {
     // Cannot return pointer to a managed Operation since it would cause memory errors.
     return nullptr;
   }

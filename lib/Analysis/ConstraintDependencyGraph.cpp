@@ -209,7 +209,7 @@ ChangeResult SourceRefAnalysis::fallbackOpUpdate(
   for (auto res : op->getResults()) {
     auto cur = before.getOrDefault(res);
 
-    for (auto &[_, opVal] : operandVals) {
+    for (const auto &[_, opVal] : operandVals) {
       (void)cur.update(opVal);
     }
     updated |= after->setValue(res, cur);
@@ -243,7 +243,7 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
     auto idxOperand = arrayAccessOp.getIndices()[i];
     auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-    auto &idxVals = idxIt->second;
+    const auto &idxVals = idxIt->second;
 
     // Note: we allow constant values regardless of if they are felt or index,
     // as if they were felt, there would need to be a cast to index, and if it
@@ -314,7 +314,7 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
     }
   }
   // Add the constants in separately.
-  for (auto &[ref, constSet] : constantSets) {
+  for (const auto &[ref, constSet] : constantSets) {
     if (constSet.empty()) {
       continue;
     }
@@ -370,7 +370,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     // aggregate the ref2Val map across operations, as some may have nested
     // regions and blocks that aren't propagated to the function terminator
     if (refLattice) {
-      for (auto &[ref, vals] : refLattice->getRef2Val()) {
+      for (const auto &[ref, vals] : refLattice->getRef2Val()) {
         ref2Val[ref].insert(vals.begin(), vals.end());
       }
     }
@@ -399,7 +399,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     SourceRefRemappings translations;
 
     ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
-    auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
+    const auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
     ensure(afterCallLattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
@@ -471,7 +471,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = refLattice->getOrDefault(operand);
-    for (auto &ref : latticeVal.foldToScalar()) {
+    for (const auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant()) {
         constUsages.push_back(ref);
       } else {
@@ -516,7 +516,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
         auto folded = resolvedVals.foldToScalar();
         refs.insert(refs.end(), folded.begin(), folded.end());
       } else {
-        for (auto &replacement : vals.getScalarValue()) {
+        for (const auto &replacement : vals.getScalarValue()) {
           auto translated = elem.translate(prefix, replacement);
           if (mlir::succeeded(translated)) {
             refs.push_back(translated.value());
@@ -541,7 +541,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
       if (mlir::failed(member)) {
         continue;
       }
-      for (auto &ref : *member) {
+      for (const auto &ref : *member) {
         if (ref.isConstant()) {
           translatedConsts.push_back(ref);
         } else {
@@ -550,7 +550,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
       }
       // Also add the constants from the original CDG
       if (auto it = constantSets.find(*mit); it != constantSets.end()) {
-        auto &origConstSet = it->second;
+        const auto &origConstSet = it->second;
         translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
       }
     }
@@ -575,7 +575,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   }
 
   // Translate ref2Val as well
-  for (auto &[ref, vals] : ref2Val) {
+  for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
     if (succeeded(translationRes)) {
       for (const auto &translatedRef : *translationRes) {

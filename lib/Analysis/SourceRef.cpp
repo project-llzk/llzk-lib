@@ -104,11 +104,11 @@ getStructDef(SymbolTableCollection &tables, ModuleOp mod, StructType ty) {
       "could not find '" + StructDefOp::getOperationName() + "' op from struct type"
   );
 
-  return std::move(sDef.value());
+  return std::move(*sDef);
 }
 
 std::vector<SourceRef>
-SourceRef::getAllSourceRefs(SymbolTableCollection &tables, ModuleOp mod, SourceRef root) {
+SourceRef::getAllSourceRefs(SymbolTableCollection &tables, ModuleOp mod, const SourceRef &root) {
   std::vector<SourceRef> res = {root};
   for (const SourceRef &child : root.getAllChildren(tables, mod)) {
     auto recursiveChildren = getAllSourceRefs(tables, mod, child);
@@ -174,7 +174,7 @@ Type SourceRef::getType() const {
     return std::get<ConstReadOp>(*constantVal).getType();
   } else {
     int array_derefs = 0;
-    int idx = memberRefs.size() - 1;
+    int idx = llzk::checkedCast<int>(memberRefs.size()) - 1;
     while (idx >= 0 && memberRefs[idx].isIndex()) {
       array_derefs++;
       idx--;
@@ -236,8 +236,9 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
   return newSignalUsage;
 }
 
-std::vector<SourceRef>
-getAllChildren(SymbolTableCollection &tables, ModuleOp /*mod*/, ArrayType arrayTy, SourceRef root) {
+std::vector<SourceRef> getAllChildren(
+    SymbolTableCollection & /*tables*/, ModuleOp /*mod*/, ArrayType arrayTy, const SourceRef &root
+) {
   std::vector<SourceRef> res;
   // Recurse into arrays by iterating over their elements
   for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {
@@ -250,7 +251,7 @@ getAllChildren(SymbolTableCollection &tables, ModuleOp /*mod*/, ArrayType arrayT
 
 std::vector<SourceRef> getAllChildren(
     SymbolTableCollection &tables, ModuleOp mod, SymbolLookupResult<StructDefOp> structDefRes,
-    SourceRef root
+    const SourceRef &root
 ) {
   std::vector<SourceRef> res;
   // Recurse into struct types by iterating over all their member definitions
@@ -304,7 +305,7 @@ void SourceRef::print(raw_ostream &os) const {
       os << "%arg" << getInputNum();
     }
 
-    for (auto f : memberRefs) {
+    for (const auto &f : memberRefs) {
       os << "[" << f << "]";
     }
   }
@@ -394,7 +395,7 @@ size_t SourceRef::Hash::operator()(const SourceRef &val) const {
 
     size_t hash = val.isBlockArgument() ? std::hash<unsigned> {}(val.getInputNum())
                                         : OpHash<CreateStructOp> {}(val.getCreateStructOp());
-    for (auto f : val.memberRefs) {
+    for (const auto &f : val.memberRefs) {
       hash ^= f.getHash();
     }
     return hash;

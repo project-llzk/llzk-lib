@@ -66,7 +66,7 @@ struct OpTestGenerator : public TestGenerator {
   ///
   /// Operations require explicit destruction via mlirOperationDestroy(),
   /// so this override returns the function name rather than a comment.
-  virtual std::string genCleanup() const override { return "mlirOperationDestroy"; };
+  std::string genCleanup() const override { return "mlirOperationDestroy"; };
 
   /// @brief Generate "Build" function tests for an operation
   /// @param op The operation definition
@@ -379,7 +379,7 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
 )";
     assert(!className.empty() && "className must be set");
 
-    for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
+    for (unsigned int i = 0, e = op.getNumRegions(); i < e; ++i) {
       const auto &region = op.getRegion(i);
       llvm::StringRef name = region.name;
       std::string capName = name.empty() ? llvm::formatv("Region{0}", i).str() : toPascalCase(name);

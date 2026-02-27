@@ -129,7 +129,7 @@ class SourceRef {
 public:
   /// Produce all possible SourceRefs that are present starting from the given root.
   static std::vector<SourceRef>
-  getAllSourceRefs(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, SourceRef root);
+  getAllSourceRefs(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod, const SourceRef &root);
 
   /// Produce all possible SourceRefs that are present from given struct function.
   static std::vector<SourceRef>
@@ -248,13 +248,13 @@ public:
   std::vector<SourceRef>
   getAllChildren(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod) const;
 
-  SourceRef createChild(SourceRefIndex r) const {
+  SourceRef createChild(const SourceRefIndex &r) const {
     auto copy = *this;
     copy.memberRefs.push_back(r);
     return copy;
   }
 
-  SourceRef createChild(SourceRef other) const {
+  SourceRef createChild(const SourceRef &other) const {
     assert(other.isConstantIndex());
     return createChild(SourceRefIndex(other.getConstantIndexValue()));
   }

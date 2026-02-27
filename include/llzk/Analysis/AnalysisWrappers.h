@@ -153,7 +153,7 @@ public:
   /// `AnalysisManager::getAnalysis<Analysis>()` method.
   ModuleAnalysis(mlir::Operation *op) {
     if (modOp = llvm::dyn_cast<mlir::ModuleOp>(op); !modOp) {
-      auto error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
+      const auto *error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
       op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }
@@ -234,7 +234,7 @@ protected:
         mlir::LogicalResult childAnalysisRes = childAnalysis.runAnalysis(solver, am, ctx);
 
         if (mlir::failed(childAnalysisRes)) {
-          auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
+          auto error_message = "StructAnalysis failed to run for " + s.getName();
           s->emitError(error_message).report();
           llvm::report_fatal_error(error_message);
         }

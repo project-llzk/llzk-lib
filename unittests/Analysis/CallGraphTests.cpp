@@ -67,24 +67,26 @@ TEST_F(CallGraphTests, reachabilityTest) {
       .insertConstrainCall(structBName, structAName)
       .insertConstrainCall(structCName, structAName);
 
-  auto aComp = *builder.getComputeFn(structAName), bComp = *builder.getComputeFn(structBName),
-       cComp = *builder.getComputeFn(structCName);
-  auto aCons = *builder.getConstrainFn(structAName), bCons = *builder.getConstrainFn(structBName),
-       cCons = *builder.getConstrainFn(structCName);
+  auto aComp = builder.getComputeFn(structAName), bComp = builder.getComputeFn(structBName),
+       cComp = builder.getComputeFn(structCName);
+  ASSERT_TRUE(mlir::succeeded(aComp) && mlir::succeeded(bComp) && mlir::succeeded(cComp));
+  auto aCons = builder.getConstrainFn(structAName), bCons = builder.getConstrainFn(structBName),
+       cCons = builder.getConstrainFn(structCName);
+  ASSERT_TRUE(mlir::succeeded(aCons) && mlir::succeeded(bCons) && mlir::succeeded(cCons));
 
   mlir::ModuleAnalysisManager mam(builder.getRootModule(), nullptr);
   mlir::AnalysisManager am = mam;
   llzk::CallGraphReachabilityAnalysis cgra(builder.getRootModule().getOperation(), am);
 
-  ASSERT_TRUE(cgra.isReachable(aComp, bComp));
-  ASSERT_TRUE(cgra.isReachable(bComp, cComp));
-  ASSERT_TRUE(cgra.isReachable(aComp, cComp));
-  ASSERT_TRUE(cgra.isReachable(bCons, aCons));
-  ASSERT_TRUE(cgra.isReachable(cCons, aCons));
+  ASSERT_TRUE(cgra.isReachable(*aComp, *bComp));
+  ASSERT_TRUE(cgra.isReachable(*bComp, *cComp));
+  ASSERT_TRUE(cgra.isReachable(*aComp, *cComp));
+  ASSERT_TRUE(cgra.isReachable(*bCons, *aCons));
+  ASSERT_TRUE(cgra.isReachable(*cCons, *aCons));
 
-  ASSERT_FALSE(cgra.isReachable(cComp, bComp));
-  ASSERT_FALSE(cgra.isReachable(cComp, aCons));
-  ASSERT_FALSE(cgra.isReachable(aCons, bCons));
+  ASSERT_FALSE(cgra.isReachable(*cComp, *bComp));
+  ASSERT_FALSE(cgra.isReachable(*cComp, *aCons));
+  ASSERT_FALSE(cgra.isReachable(*aCons, *bCons));
 }
 
 TEST_F(CallGraphTests, analysisConstructor) {
@@ -109,9 +111,11 @@ TEST_F(CallGraphTests, lookupInSymbolTest) {
   auto computeFn = builder.getComputeFn(structAName);
   ASSERT_TRUE(mlir::succeeded(computeFn));
 
+  auto structRes = builder.getStruct(structAName);
+  ASSERT_TRUE(mlir::succeeded(structRes));
+
   // not nested
-  auto computeOp =
-      mlir::SymbolTable::lookupSymbolIn(*builder.getStruct(structAName), computeFn->getName());
+  auto *computeOp = mlir::SymbolTable::lookupSymbolIn(*structRes, computeFn->getName());
   ASSERT_EQ(computeOp, *computeFn);
 
   // nested
@@ -127,7 +131,10 @@ TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
       .insertComputeCall(structAName, structBName);
 
   auto b = builder.getStruct(structBName);
+  ASSERT_TRUE(mlir::succeeded(b));
   auto computeFn = builder.getComputeFn(structBName);
+  ASSERT_TRUE(mlir::succeeded(computeFn));
+
   // You should be able to find @compute in B
   ASSERT_EQ(*computeFn, mlir::SymbolTable::lookupSymbolIn(*b, computeFn->getName()));
 
@@ -148,5 +155,6 @@ TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
   auto res = llzk::lookupTopLevelSymbol<llzk::function::FuncDefOp>(
       tables, computeFn->getFullyQualifiedName(), computeFn->getOperation()
   );
+  ASSERT_TRUE(mlir::succeeded(res));
   ASSERT_EQ(*computeFn, res.value().get());
 }

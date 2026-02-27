@@ -44,8 +44,9 @@ TEST_F(CAPITest, llzk_attribute_is_a_felt_cmp_predicate_attr_pass) {
 // Implementation for `CmpOp_build_pass` test
 std::unique_ptr<CmpOpBuildFuncHelper> CmpOpBuildFuncHelper::get() {
   struct Impl : public CmpOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Attribute cppAttr = unwrap(builder)->getAttr<llzk::boolean::FeltCmpPredicateAttr>(
           llzk::boolean::FeltCmpPredicate::EQ
@@ -60,8 +61,9 @@ std::unique_ptr<CmpOpBuildFuncHelper> CmpOpBuildFuncHelper::get() {
 // Implementation for `AssertOp_build_pass` test
 std::unique_ptr<AssertOpBuildFuncHelper> AssertOpBuildFuncHelper::get() {
   struct Impl : public AssertOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
       return llzkBool_AssertOpBuild(
           builder, location, wrap(cppValue), MlirIdentifier {.ptr = NULL}

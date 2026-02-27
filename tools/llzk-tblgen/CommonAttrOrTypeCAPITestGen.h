@@ -78,7 +78,7 @@ std::string generateParamListForAttrOrTypeGet(const mlir::tblgen::AttrOrTypeDef 
 struct AttrOrTypeTestGenerator : public TestGenerator {
   using TestGenerator::TestGenerator;
 
-  virtual ~AttrOrTypeTestGenerator() = default;
+  ~AttrOrTypeTestGenerator() override = default;
 
   /// @brief Set the parameter name for code generation
   /// @param name The parameter name from the TableGen definition
