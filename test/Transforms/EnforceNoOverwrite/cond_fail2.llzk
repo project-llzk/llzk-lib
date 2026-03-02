@@ -7,9 +7,9 @@ module attributes {llzk.lang} {
             %self = struct.new : <@A>
             
             scf.if %b {
-                // expected-note@+1 {{previously written to here}}
                 struct.writem %self[@foo] = %a : <@A>, !felt.type    
             } else {
+                // expected-note@+1 {{previously written to here}}
                 struct.writem %self[@foo] = %a : <@A>, !felt.type    
             }
             

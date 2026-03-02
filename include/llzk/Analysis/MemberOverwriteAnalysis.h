@@ -18,27 +18,29 @@
 namespace llzk {
 
 class MemberOverwriteLattice : public mlir::dataflow::AbstractDenseLattice {
-  llvm::DenseMap<llvm::StringRef, llvm::SetVector<component::MemberWriteOp>> memberWrites;
+  llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> firstWrites;
+  llvm::SetVector<std::pair<component::MemberWriteOp, component::MemberWriteOp>> overwrites;
 
 public:
   using AbstractDenseLattice::AbstractDenseLattice;
   mlir::ChangeResult join(const mlir::dataflow::AbstractDenseLattice &other) override;
 
   bool operator==(const MemberOverwriteLattice &other) const {
-    return memberWrites == other.memberWrites;
+    return std::tie(firstWrites, overwrites) == std::tie(other.firstWrites, other.overwrites);
   }
 
   void print(llvm::raw_ostream &os) const override;
 
   mlir::ChangeResult record(component::MemberWriteOp write) {
     auto name = write.getMemberName();
-    if (memberWrites.lookup(name).contains(write)) {
-      return mlir::ChangeResult::NoChange;
+
+    if (firstWrites.contains(name)) {
+      // .insert(...) returns true if an insertion was performed (i.e., it wasn't present before),
+      // meaning there was a change
+      return mlir::ChangeResult {overwrites.insert({firstWrites.at(name), write})};
     }
-    if (!memberWrites.contains(name)) {
-      memberWrites.insert({name, {}});
-    }
-    memberWrites[name].insert(write);
+
+    firstWrites.insert({name, write});
     return mlir::ChangeResult::Change;
   }
 
