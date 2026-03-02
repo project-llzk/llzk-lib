@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Release version to prepare"
+        description: "Release version to prepare (ex: v1.0.0)"
         required: true
         type: string
       checkout_from:
