@@ -1,0 +1,277 @@
+## v1.0.0 - 2026-03-02
+### Added
+- CAPI:
+  - Adds a builder to simplify working with affine map operands.
+- CAPI:
+  - C bindings for the new `pod` dialect.
+- Configuration:
+  - Add sub sections
+- Dialect: Signal structs may now be used directly in constraints, rather than constraining the inner @reg field
+- PCL Lowering pass:
+  - Added support for `arith.constant` and `felt.neg` operations.
+- Transformations:
+  - Implement array-to-scalar transformation for fixed-size arrays
+- Workflows: Add documentation-related workflows
+- '`pod` dialect':
+  - Dialect for working with **plain-old-data** structs.
+- A few helper functions for common scenarios of building a string
+- Add C API functions to get the body Region and Block of StructDefOp
+- Add CAPI isa check for UndefOp
+- Add `felt.pow` operation as witness generation operation.
+- Add `function.allow_non_native_field_ops` attribute
+- Add a pass to lower the degree of constraints to a configurable 'maxDegree'. This pass will be useful for different arithmetizations, especially R1CS where the max degree of any polynomial equation is 2.
+- Add an R1CS Dialect
+- Add an optional `llzk.fields` attribute on modules for defining supported prime fields
+- Add custom test checks generation script to standardize test formats
+- Add optional field specifier on `felt.type`
+- Add preliminary support for zklean dialects
+- Add unit tests for the new C API functions
+- Added "llzk-fuse-product-loops" transformation pass that matches and fuses pairs of scf.for loops from @compute and @constrain
+- Added PCL dialect as an optional dependency
+- Added a pass to convert llzk to pcl
+- Added a transformation pass to syntactically rewrite LLZK constraints into a form close to R1CS
+- Added bytecode versioning
+- Added convenience methods for dealing with `ConstrainRef` and `ConstrainRefIndex`
+- Added integer-semantic operations for felt types (signed/unsigned division/remainder and bitwise complement)
+- Added release workflows
+- Added workflows for updating Jira with GitHub issue info
+- Additional lit tests
+- C API to give other languages potential access to LLZK APIs (i.e., via FFI)
+- CAPI for LLZK LoopBoundsAttr
+- CAPI functions for obtaining the defining operation of a struct type.
+- CAPI to support the MLIR `walk` function with reverse iteration over ops at the same level.
+- CLI option to print all registered ops
+- ComputeConstrainToProduct pass that recursively merges @compute and @constrain struct functions to @product
+- Document GTest requirement for manual build+test
+- Documentation on `array.new` operation updated to clarify row-major ordering with initialization.
+- FlatteningPass 'cleanup' option to specify how aggressively structs should be removed
+- Inliner interfaces for `cast`, `include`, `llzk`, and `pod` dialects
+- Intra-procedural port of MLIR's sparse data-flow analysis
+- ModuleBuilder build* functions separate from insert* functions
+- ModuleBuilder support for product function
+- New OpInterface in Dialect/Felt/IR for binary arithmetic ops
+- New constructors for FeltConstAttr
+- NoRegionArguments to StructDefOp
+- PredecessorAnalysis (-llzk-predecessor-analysis) for testing
+- Record symbol user operations in the SymbolUseGraph
+- Reusable concepts for restricting template parameters
+- Support for `@product` function
+- SymbolDefTree analysis - node for each Symbol where the parent is the defining SymbolTable
+- SymbolUseGraph analysis - node for each Symbol/SymbolRefAttr where predecessors are Symbol Ops that *use* the Symbol within
+- Updated nix flakes to import and build
+- Wrote a conversion pass to convert LLZK code to R1CS
+- additional functions on FieldRefOpInterface
+- backport mlirOperationReplaceUsesOfWith CAPI from LLVM 21.1.8
+- common FunctionKind enum for function kinds
+- documentation
+- elaborate documentation for ArrayType and StructType parameters
+- getCalleeTarget() on llzk::function::CallOp
+- llzk-inline-structs pass
+- llzk-tblgen tool that generates C API for llzk library and linking unit tests for it
+- new CAPI functions and tests
+- port WalkPatternRewriteDriver from more recent version of LLVM
+- tests created from circomlib
+
+### Changed
+- Build process:
+  - Check that the C++ compiler supports required C++20 features
+- CAPI:
+  - Refactor constructors that accept affine map operands to use the new API.
+- CAPI Renames:
+  - All Dialects:
+    - llzk[KIND]IsA[NAME] to llzk[KIND]IsA_[DIALECT]_[NAME]
+    - llzk[KIND][NAME] to llzk[DIALECT]_[KIND][NAME]
+  - Array Dialect:
+    - llzkArrayTypeGet to llzkArray_ArrayTypeGetWithDims
+    - llzkArrayTypeGetWithNumericDims to llzkArray_ArrayTypeGetWithShape
+    - llzkArrayTypeGetElementType to llzkArray_ArrayTypeGetElementType
+    - llzkArrayTypeGetNumDims to llzkArray_ArrayTypeGetDimensionSizesCount
+    - llzkArrayTypeGetDim to llzkArray_ArrayTypeGetDimensionSizesAt
+  - Bool Dialect:
+    - LlzkCmp to LlzkBoolFeltCmpPredicate
+  - Felt Dialect:
+    - llzkFeltConstAttrGetWithField to llzkFelt_FeltConstAttrGet
+    - llzkFeltConstAttrGet to llzkFelt_FeltConstAttrGetUnspecified
+    - llzkFeltConstAttrGetWithBitsWithField to llzkFelt_FeltConstAttrGetWithBits
+    - llzkFeltConstAttrGetWithBits to llzkFelt_FeltConstAttrGetWithBitsUnspecified
+    - llzkFeltConstAttrGetFromStringWithField to llzkFelt_FeltConstAttrGetFromString
+    - llzkFeltConstAttrGetFromString to llzkFelt_FeltConstAttrGetFromStringUnspecified
+    - llzkFeltConstAttrGetFromPartsWithField to llzkFelt_FeltConstAttrGetFromParts
+    - llzkFeltConstAttrGetFromParts to llzkFelt_FeltConstAttrGetFromPartsUnspecified
+    - llzkFeltTypeGetWithField to llzkFelt_FeltTypeGet
+    - llzkFeltTypeGet to llzkFelt_FeltTypeGetUnspecified
+    - Additionally, "MlirStringRef fieldName" parameters are replaced with "MlirIdentifier fieldName"
+  - Function Dialect:
+    - llzkFuncDefOpCreate to llzkFunction_FuncDefOpCreateWithoutAttrs
+    - llzkFuncDefOpGetHasAllowConstraintAttr to llzkFunction_FuncDefOpHasAllowConstraintAttr
+    - llzkFuncDefOpGetHasAllowWitnessAttr to llzkFunction_FuncDefOpHasAllowWitnessAttr
+    - llzkFuncDefOpGetNameIsCompute to llzkFunction_FuncDefOpNameIsCompute
+    - llzkFuncDefOpGetNameIsConstrain to llzkFunction_FuncDefOpNameIsConstrain
+    - llzkFuncDefOpGetIsInStruct to llzkFunction_FuncDefOpIsInStruct
+    - llzkFuncDefOpGetIsStructCompute to llzkFunction_FuncDefOpIsStructCompute
+    - llzkFuncDefOpGetIsStructConstrain to llzkFunction_FuncDefOpIsStructConstrain
+    - llzkFuncDefOpGetHasArgIsPub to llzkFunction_FuncDefOpHasArgPublicAttr
+    - llzkCallOpGetCalleeIsCompute to llzkFunction_CallOpCalleeIsCompute
+    - llzkCallOpGetCalleeIsConstrain to llzkFunction_CallOpCalleeIsConstrain
+    - llzkCallOpGetCalleeIsStructCompute to llzkFunction_CallOpCalleeIsStructCompute
+    - llzkCallOpGetCalleeIsStructConstrain to llzkFunction_CallOpCalleeIsStructConstrain
+  - Global Dialect:
+    - llzkGlobalDefOpGetIsConstant to llzkGlobal_GlobalDefOpIsConstant
+  - Include Dialect:
+    - llzkIncludeOpCreate to llzkInclude_IncludeOpCreateInferredContext
+  - POD Dialect:
+    - llzkRecordAttrGet to llzkPod_RecordAttrGetInferredContext
+    - llzkPodTypeGetNumRecords to llzkPod_PodTypeGetRecordsCount
+    - llzkPodTypeGetNthRecord to llzkPod_PodTypeGetRecordsAt
+    - Additionally, "MlirStringRef name" parameter/return are replaced with "MlirIdentifier"
+  - Poly Dialect:
+    - llzkTypeVarTypeGet to llzkPoly_TypeVarTypeGetFromStringRef
+    - llzkTypeVarTypeGetFromAttr to llzkPoly_TypeVarTypeGetFromAttr (and removed unused Context parameter)
+    - llzkTypeVarTypeGetNameRef to llzkPoly_TypeVarTypeGetRefName
+    - llzkTypeVarTypeGetName to llzkPoly_TypeVarTypeGetNameRef
+  - Struct Dialect:
+    - llzkStructTypeGetName to llzkStruct_StructTypeGetNameRef
+    - llzkStructDefOpGetHasParamName to llzkStruct_StructDefOpHasParamName
+    - llzkStructDefOpGetIsMainComponent to llzkStruct_StructDefOpIsMainComponent
+    - llzkMemberDefOpGetHasPublicAttr to llzkStruct_MemberDefOpHasPublicAttr
+    - llzkStructDefOpGetHasColumns to llzkStruct_StructDefOpHasColumns
+    - Additionally, "MlirStringRef memberName" parameters are replaced with "MlirIdentifier memberName"
+- Dialect: StructDefOp @constrain and @compute functions may no longer contain parameters with AffineMapAttrs
+- Dialect: All affine maps are restricted to only producing a single result
+- Dialect: The llzk.toindex op's input may not be derived from a Signal within struct @constrain functions
+- Docs: changed link generation to be more intuitive
+- Documentation:
+  - Updated documentation with new dialects
+- Documentation: Updated documentation, relocated docs to a doxygen subdirectory for clarity
+- Function dialect: restrict nesting of modules and structs within functions
+- Add LLZKAnalysis as a dependency to LLZKTransforms and fix transitive link errors
+- Add dialect name to CAPI naming convention to avoid possibly ambiguity for same-named elements from different dialects.
+- Added "product_source" attribute to aligned ops from ComputeConstrainToProduct that specifies whether that op came from "compute" or "constrain"
+- Added support for compute functions in interval analysis
+- Allow a struct to contain both @product and @compute+@constrain functions as along as one set is marked with {llzk.derived}
+- Arrays now accept dynamic sizes
+- Change "veridise.lang" to "llzk.lang"
+- Cleanup unit test code and naming
+- Enable CAPI callbacks from LLVM 20 upgrade
+- Generalize semantics of `constrain.in` op
+- Implement `CallOpInterface` methods for `CallOp`
+- Improved the precision of the interval analysis
+- Interval analysis now uses sparse analysis
+- Made `ComputeConstrainToProduct` pass available on demand
+- Make location printing optional in SymbolUseGraph
+- Move PCL lowering pass back to core LLZK from R1CS.
+- Move PCL lowering pass to the backends directory.
+- PCL lowering pass now uses the `llzk.fields` module attribute for selecting the prime.
+- Refactor Debug.h to move most of the implementation to Debug.cpp
+- Refactor LLZK dialect into multiple sub-dialects
+- Refactor to use consistent template parameter names
+- Refactored LLZKInlineStructs pass to allow inlining on demand
+- Remove `WitnessGen` restriction from bool operations
+- Rename StructDefOp "$body" to "$bodyRegion"
+- Rename `ConstrainRef` to `SourceRef`
+- Rename `struct.field` -> `struct.member` to avoid confusion with finite field terminology
+- Rename `struct.readf` and `struct.writef` to `struct.readm` and `struct.writem` respectively
+- Rename the C API "Polymorphic" files to "Poly" so it matches the dialect name itself.
+- Require `function.allow_non_native_field_ops` attribute on functions that use non-native field operations, instead of requiring `function.allow_witness` attribute.
+- Require specific version of LLVM/MLIR in build configuration
+- Restrict `struct.readf` to disallow access to private fields of subcomponents.
+- Restrict `struct.readm` to disallow access to private members of subcomponents.
+- Simplify the implementation of FeltConstAttr::getValue() to directly return the stored APInt without additional calls
+- The main struct is now specified via the "llzk.main" attribute on the top-level module, rather than being hardcoded to a struct named "Main".
+- Update ConstrainRefLattice API and add source (default) ConstrainRef values to the lattices
+- Update loop unrolling test to use new functionality
+- Update related code, tests, and documentation to reflect these changes
+- Update repo to reflect move from Veridise to project-llzk GitHub Organization
+- Updated error messages and documentation
+- Updated testcases with new error messages
+- Upgrade LLVM dependencies to version 20.1.8
+- Use DynamicAPInt for in place of APIntHelpers
+- Use consistent American English "i.e.,"
+- Use unwrapped `clang` in nix flake so header files are available
+- add build type to package names
+- apply a few manual code style/clarity changes and some clang-tidy lint suggestions
+- felt.nondet is now llzk.nondet and includes a type argument
+- make custom parse/print functions private
+- move `r1cs` backend to `backends` directory
+- pull in latest llzk-nix-pkgs
+- refactor handling of null `emitError` in ArrayType to allow for reuse
+- remove unnecessary `llvm` dev shell
+- replace uses of undef op with llzk.nondet
+- revert "port WalkPatternRewriteDriver from more recent version of LLVM"
+- treat all build warnings as errors
+- use consistent naming for "free" functions in builder APIs
+- use modern hyphenation in package names
+
+### Deprecated
+- Removed built-in `Signal` component in favor of using `signal` attribute on fields
+- Update documentation to reflect removal of `Signal` component
+
+### Fixed
+- Analysis passes: improved performance of dataflow analyses
+- Dialect: Added dimension checks to `readarr` and `writearr` that ensure additional/insufficient indices cannot be specified.
+- Docs: Fixed interactive table of contents
+- Interval analysis: fix handling of cast operations
+- Account for dead code analysis results in CDG analysis
+- Avoid assertion failure from `SetFuncAllowAttrs` when struct is empty to allow `verify()` to pass on empty StructDefOp
+- Enable LeakSanitizer only if available
+- Enable doc generation for R1CS dialect
+- Ensure custom finite field definitions do not conflict with pre-defined fields
+- FieldWriteOp.isRead() return value was incorrect
+- Fix analysis result caching across multiple analysis accesses
+- Fix assertion failure when over-approximating intervals
+- Fix bug in array-to-scalar pass where attributes were not copied over to the scalar fields and parameters
+- Fix constrain ref analysis for array read case
+- Fix formatting issue in docs
+- Fix memory error caused by dangling reference
+- Fix non-convergence of interval analysis with yield operations
+- Fix possible bitwidth mismatch error by ensuring APInt within IntegerAttr has the correct bit width when converting to IndexType.
+- Fix typos in code documentation and comments
+- Fix unexpected error in `LLZKInlineStructsPass` when combining read chains.
+- Fix write permissions in github pages deployment
+- Fixed an issue in `cast.tofelt` that caused validation errors when a felt with a field was used as return type of the op.
+- Fixed backwards propagation of values in Interval Analysis
+- Fixed bug with analyses improperly sorting struct locations, causing map collisions
+- Fixed documentation for array dialect ops
+- Fixed equality comparison with ConstrainRefIndex
+- Fixed issue with interval analysis in creating SMT expressions for arith.constant operations
+- Fixed issues in the flattening pass related to nested modules and include ops.
+- Fixed out-of-bounds error in MapOperandsHelper
+- Improve cleanup step of FlatteningPass
+- Include CAPI function implementations for PCL lowering pass.
+- ModuleBuidler now adds 'allow_constraint' and 'allow_witness' attributes to generated functions
+- Remove duplicate unit tests
+- Renaming PCL packages to pcl-mlir to avoid pulling in other packages with the same name.
+- Restrict types accepted by `constrain.in` to match `constrain.eq` types
+- The CallOp builders that ues a FuncDefOp now use the fully-qualified path to the function
+- The `unifyDynamicSize` flag was added to guard some checks during type unification but it was not actually used to guard those checks
+- Update manual build instructions to build clang dependency (needed by `llzk-tblgen` tool)
+- Used the wrong PCL guard variable in CMakeLists.txt.
+- add headers for MLIR and LLVM to tblgen tool build that caused the manual build steps to fail
+- add missing condition in op CAPI generator
+- add support for some aspects that were not handled in the flattening pass
+- avoid dangling pointer to local variable in op CAPI generator
+- avoid errors in release builds due to variables used only by assertions or debug macros
+- build warnings
+- emitted messages dropped silently in ComputeConstrainToProductPass
+- ensure signed int is not negative before cast to unsigned int
+- fix C++ EnumAttr type used in C API
+- fix [-Werror=return-type] errors related to missing return statements in functions that are expected to return a value but terminate early due to llvm_unreachable.
+- incorrect CAPI implementation code for ArrayRef parameters of Attribute or Type definitions
+- llzkFieldReadOpBuildWithLiteralDistance() would always fail verify because of wrong type produced
+- missing CAPI documentation
+- move string test that was incorrectly in struct directory
+- outdated documentation
+- remove cycle in lib dependencies
+- restrict `cast.toindex` to functions with `allow_non_native_field_ops` attribute
+- typo in generated test code
+- use GraphRegionNoTerminator trait list correctly (per usage in LLVM upstream)
+
+### Removed
+- CAPI:
+  - Removed constructors that are now redundant due to the new builder type.
+- GitHub issue -> Jira ticket workflows have been removed
+- LLZK port of MLIR DenseAnalysis
+- Reverted support for arbitrary integers (from https://github.com/project-llzk/llzk-lib/pull/250)
+- The `felt.bitnot` op was removed because `felt.bit_not` already existed
+- undef op and dialect
+
