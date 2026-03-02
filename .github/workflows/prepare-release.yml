@@ -1,4 +1,4 @@
-name: Prepare release
+name: Prepare Release
 
 on:
   workflow_dispatch:
@@ -16,4 +16,7 @@ on:
 jobs:
   call-workflow-prepare-release:
     uses: project-llzk/open-source-release-helpers/.github/workflows/prepare-release.yml@main
+    with:
+      release_version: ${{ inputs.release_version }}
+      checkout_from: ${{ inputs.checkout_from }}
     secrets: inherit
