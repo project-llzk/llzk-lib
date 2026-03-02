@@ -48,9 +48,9 @@ be performed by creating PRs against the aforementioned pre-release branch.
 
 ### Creating the Release Candidate
 
-Once the changelog is updated and the necessary changes have been cherry-picked into the pre-release branch,
-run the `Create Release Candidate` workflow. This creates and tags a new release candidate for the desired version.
-If there are any issues that need to be addressed at this state, PRs can be opened against
+Once the changelog is updated and the necessary changes have been cherry-picked into the pre-release branch, run the
+`Create Release Candidate` workflow from the pre-release branch. This creates and tags a new release candidate for
+the desired version. If there are any issues that need to be addressed at this state, PRs can be opened against
 this branch and new release candidates can be created by re-running the `Create Release Candidate` workflow.
 
 ### Create the Release
