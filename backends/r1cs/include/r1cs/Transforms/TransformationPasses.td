@@ -13,7 +13,7 @@
 include "llzk/Pass/PassBase.td"
 
 def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
-  let summary = "Rewrites constraints to be compatible with R1CS constraints "
+  let summary = "Rewrite constraints to be compatible with R1CS constraints, "
                 "i.e a*b - c = 0";
   let description = [{
     Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
