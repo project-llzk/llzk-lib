@@ -30,7 +30,7 @@ A new release starts via a manually triggered GitHub workflow.
 
 1. Go to component's GitHub repository
 2. Go to `Actions` page
-3. Select the `Prepare release` workflow on the left sidebar.
+3. Select the `Prepare Release` workflow on the left sidebar.
 4. Select `Run workflow` on the top right corner of the workflow’s runs page
 5. Run the workflow from the `main` branch
 6. Provide the git ref used to create the release:
