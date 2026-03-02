@@ -84,7 +84,6 @@ TEST_F(CAPITest, exportPclModule) {
     }
   }
 
-  llvm::dbgs() << "Module: " << module << '\n';
 
   auto wrappedModule = wrap(module);
 
