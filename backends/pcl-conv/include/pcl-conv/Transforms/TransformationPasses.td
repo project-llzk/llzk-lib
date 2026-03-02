@@ -13,8 +13,8 @@
 include "llzk/Pass/PassBase.td"
 
 def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
-  let summary = "Rewrites constraints to be compatible with PCL constraints "
-                "used by Picus";
+  let summary =
+      "Rewrite constraints to be compatible with PCL constraints used by Picus";
   let description = [{
       Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
       This pass currently expects the flattening and inlining passes to be run prior to its use.
