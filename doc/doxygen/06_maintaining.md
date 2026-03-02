@@ -39,11 +39,11 @@ A new release starts via a manually triggered GitHub workflow.
 7. Provide the version of the new release
 8. Click `Run workflow`. This workflow will:
     1. Create required temporary pre-release files
-    2. Run scripts from `release-helpers` to update `CHANGELOG.md` from files in `/changelogs/unreleased/*.yaml`
+    2. Run scripts from `release-helpers` to update `changelogs/PENDING.md` from files in `changelogs/unreleased/*.yaml`
     3. Create a `vx.y.z-pre-release` branch
     4. Commit and push changes to the new branch
 
-From this point, any cleanup that needs to be performed (e.g., cleaning up the `CHANGELOG.md`) should
+From this point, any cleanup that needs to be performed (e.g., cleaning up the `changelogs/PENDING.md`) should
 be performed by creating PRs against the aforementioned pre-release branch.
 
 ### Creating the Release Candidate
