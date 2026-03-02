@@ -51,7 +51,7 @@ public:
 class MemberOverwriteAnalysis
     : public mlir::dataflow::DenseForwardDataFlowAnalysis<MemberOverwriteLattice> {
 public:
-  MemberOverwriteAnalysis(mlir::DataFlowSolver &solver) : DenseForwardDataFlowAnalysis {solver} {}
+  using DenseForwardDataFlowAnalysis::DenseForwardDataFlowAnalysis;
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, const MemberOverwriteLattice &before, MemberOverwriteLattice *after
   ) override;
