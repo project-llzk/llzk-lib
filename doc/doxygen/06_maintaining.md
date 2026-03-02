@@ -20,9 +20,9 @@ so the release version must match the format `v[0-9]+.[0-9]+.[0-9]+`.
 Once a release milestone is met, the release can be created.
 
 The general procedure is:
-- Run the "Prepare release" workflow and clean up the changelog in the new pre-release branch.
-- Run the "Create Release Candidate" workflow and ensure the RC is ready for release.
-- Run the "Create Release PR" workflow when the RC is ready.
+- Run the `Prepare Release` workflow and clean up the changelog in the new pre-release branch.
+- Run the `Create Release Candidate` workflow and ensure the RC is ready for release.
+- Run the `Create Release PR` workflow when the RC is ready.
 
 ### Preparing a new release
 
@@ -49,22 +49,21 @@ be performed by creating PRs against the aforementioned pre-release branch.
 ### Creating the Release Candidate
 
 Once the changelog is updated and the necessary changes have been cherry-picked into the pre-release branch,
-run the "Create Release Candidate" workflow. This creates and tags a new release candidate for the desired version.
+run the `Create Release Candidate` workflow. This creates and tags a new release candidate for the desired version.
 If there are any issues that need to be addressed at this state, PRs can be opened against
-this branch and new release candidates can be created by re-running the "Create Release Candidate" workflow.
+this branch and new release candidates can be created by re-running the `Create Release Candidate` workflow.
 
 ### Create the Release
 
 Once a release candidate has been tested and is ready to become a release, run the
-"Create Release PR" workflow.
+`Create Release PR` workflow.
 
 This workflow will create and auto-merge a PR to main that contains all the changes
 from the pre-release branch and has been tagged with the release version, assuming
 there are no issues.
 
-When this PR is merged, the "Release" workflow will be called, which then creates
+When this PR is merged, the `Release` workflow will be called, which then creates
 the GitHub release. All releases are viewable [on GitHub][llzk-releases].
-
 
 [about-milestones]: https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones
 [llzk-releases]: https://github.com/project-llzk/llzk-lib/releases
