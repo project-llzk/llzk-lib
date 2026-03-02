@@ -84,7 +84,6 @@ TEST_F(CAPITest, exportPclModule) {
     }
   }
 
-
   auto wrappedModule = wrap(module);
 
   auto result = unwrap(llzkTranslateModuleToPCL(
