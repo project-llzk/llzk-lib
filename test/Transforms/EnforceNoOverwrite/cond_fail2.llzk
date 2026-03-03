@@ -13,7 +13,7 @@ module attributes {llzk.lang} {
                 struct.writem %self[@foo] = %a : <@A>, !felt.type    
             }
             
-            // expected-warning@+1 {{overwriting struct member foo}}
+            // expected-warning@+1 {{overwriting struct member 'foo'}}
             struct.writem %self[@foo] = %a : <@A>, !felt.type
             function.return %self : !struct.type<@A>
         }

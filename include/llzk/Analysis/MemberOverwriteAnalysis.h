@@ -2,7 +2,7 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -18,7 +18,8 @@
 namespace llzk {
 
 class MemberOverwriteLattice : public mlir::dataflow::AbstractDenseLattice {
-  llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> firstWrites;
+  llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> mayWrites;
+  llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> mustWrites;
   llvm::SetVector<std::pair<component::MemberWriteOp, component::MemberWriteOp>> overwrites;
 
 public:
@@ -26,7 +27,7 @@ public:
   mlir::ChangeResult join(const mlir::dataflow::AbstractDenseLattice &other) override;
 
   bool operator==(const MemberOverwriteLattice &other) const {
-    return std::tie(firstWrites, overwrites) == std::tie(other.firstWrites, other.overwrites);
+    return std::tie(mayWrites, overwrites) == std::tie(other.mayWrites, other.overwrites);
   }
 
   void print(llvm::raw_ostream &os) const override;
@@ -34,13 +35,13 @@ public:
   mlir::ChangeResult record(component::MemberWriteOp write) {
     auto name = write.getMemberName();
 
-    if (firstWrites.contains(name)) {
+    if (mayWrites.contains(name)) {
       // .insert(...) returns true if an insertion was performed (i.e., it wasn't present before),
       // meaning there was a change
-      return mlir::ChangeResult {overwrites.insert({firstWrites.at(name), write})};
+      return mlir::ChangeResult {overwrites.insert({mayWrites.at(name), write})};
     }
 
-    firstWrites.insert({name, write});
+    mayWrites.insert({name, write});
     return mlir::ChangeResult::Change;
   }
 
