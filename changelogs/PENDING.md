@@ -2,4 +2,5 @@
 ### Added
 - CAPI:
   - Added function that generates the PCL lisp representation of a circuit.
-
+### Fixed
+- Release workflow
