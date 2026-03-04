@@ -53,6 +53,7 @@ A new release starts via a manually triggered GitHub workflow.
     2. Run scripts from `release-helpers` to update `changelogs/PENDING.md` from files in `changelogs/unreleased/*.yaml`
     3. Create a `vx.y.z-pre-release` branch
     4. Commit and push changes to the new branch
+9. Manually update the version number in `nix/llzk.nix` and commit to the pre-release branch
 
 From this point, any cleanup that needs to be performed (e.g., cleaning up the `changelogs/PENDING.md`) should
 be performed by creating PRs against the aforementioned pre-release branch.
@@ -63,6 +64,10 @@ Once the changelog is updated and the necessary changes have been cherry-picked 
 `Create Release Candidate` workflow from the pre-release branch. This creates and tags a new release candidate for
 the desired version. If there are any issues that need to be addressed at this state, PRs can be opened against
 this branch and new release candidates can be created by re-running the `Create Release Candidate` workflow.
+
+At this stage, it can also be helpful to open a draft PR using the pre-release branch and wait for the CI workflows
+to run and ensure they are successful. However, it's not strictly required as the release PR created below will
+require all CI workflows to pass before it's merged.
 
 ### Create the Release
 
