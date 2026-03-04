@@ -64,6 +64,10 @@ Once the changelog is updated and the necessary changes have been cherry-picked 
 the desired version. If there are any issues that need to be addressed at this state, PRs can be opened against
 this branch and new release candidates can be created by re-running the `Create Release Candidate` workflow.
 
+At this stage, it can also be helpful to open a draft PR using the pre-release branch and wait for the CI workflows
+to run and ensure they are successful. However, it's not strictly required as the release PR created below will
+require all CI workflows to pass before it's merged.
+
 ### Create the Release
 
 Once a release candidate has been tested and is ready to become a release, run the
