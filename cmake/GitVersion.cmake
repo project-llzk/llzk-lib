@@ -1,6 +1,5 @@
-# Fetch the git version from any version tags, or using the default if git
-# version tags are not available.
-function(get_git_version GIT_VERSION_VAR DEFAULT_VERSION)
+# Fetch the project version from a git version tag.
+function(get_git_version GIT_VERSION_VAR)
   execute_process(
     COMMAND git describe --tags
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -9,10 +8,13 @@ function(get_git_version GIT_VERSION_VAR DEFAULT_VERSION)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   if(NOT GIT_VERSION)
-    message(WARNING "Failed to get git version, setting to default ${DEFAULT_VERSION}")
-    set(${GIT_VERSION_VAR} "${DEFAULT_VERSION}" PARENT_SCOPE)
+    # The initial commit to the repository is tagged with `v0.0.0` so this will never fail.
+    message(FATAL_ERROR "Missing `v0.0.0` tag on initial commit.")
   else()
-    string(REGEX REPLACE "^v" "" VERSION_NUMBER ${GIT_VERSION})
+    # The output of `git describe --tags` is in the format `vX.Y.Z-N-gHASH` where `vX.Y.Z` is the last tag,
+    # `N` is the number of commits since the last tag, and `HASH` is the abbreviated commit hash. We need to
+    # convert this to `X.Y.Z.N` for the LLZK version number.
+    string(REGEX REPLACE "^v?([0-9]+\\.[0-9]+\\.[0-9]+)-([0-9]+)-g[0-9a-f]+" "\\1.\\2" VERSION_NUMBER "${GIT_VERSION}")
     set(${GIT_VERSION_VAR} "${VERSION_NUMBER}" PARENT_SCOPE)
   endif()
 endfunction()
