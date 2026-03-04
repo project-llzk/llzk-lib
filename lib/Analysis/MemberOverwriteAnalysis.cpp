@@ -48,11 +48,10 @@ ChangeResult MemberOverwriteLattice::join(const AbstractDenseLattice &other) {
   const auto *rhs = dynamic_cast<const MemberOverwriteLattice *>(&other);
   ensure(rhs, "cannot join incomparable lattices");
 
-  auto get = [](LatticeAnchor anchor) { return *dyn_cast<ProgramPoint *>(anchor); };
-
   LLVM_DEBUG(
-      llvm::dbgs() << "Joining " << get(getAnchor()) << "(" << *this << ") with "
-                   << get(rhs->getAnchor()) << "(" << *rhs << ")\n"
+      llvm::dbgs() << "Joining " << *dyn_cast<ProgramPoint *>(getAnchor()) << "(" << *this
+                   << ") with " << *dyn_cast<ProgramPoint *>(rhs->getAnchor()) << "(" << *rhs
+                   << ")\n"
   );
   bool changed = false;
 
