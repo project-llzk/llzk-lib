@@ -14,6 +14,11 @@ Before creating a new release milestone, decide on the release version.
 
 The release process uses [semantic versioning](https://semver.org/),
 so the release version must match the format `v[0-9]+.[0-9]+.[0-9]+`.
+> Given a version number MAJOR.MINOR.PATCH, increment the:
+>
+> - MAJOR version when you make incompatible API changes
+> - MINOR version when you add functionality in a backward compatible manner
+> - PATCH version when you make backward compatible bug fixes
 
 ## Releasing a New Version
 
