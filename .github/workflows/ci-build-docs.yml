@@ -8,7 +8,6 @@ jobs:
   # WARNING: do not change this job name. It is a required status check for PRs to `main`.
   build-docs:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4

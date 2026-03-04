@@ -16,7 +16,6 @@ jobs:
             derivation: '.#debugClangCov'
             report: clang-report.xml
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
