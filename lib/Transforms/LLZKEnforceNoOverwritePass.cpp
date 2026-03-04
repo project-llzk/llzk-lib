@@ -15,6 +15,7 @@
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/MemberOverwriteAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Analysis/DataFlowFramework.h>
@@ -44,7 +45,7 @@ class EnforceNoMemberOverwritePass
     : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
 
   bool containsOverwrite(FuncDefOp funcDef) {
-    DataFlowSolver solver;
+    DataFlowSolver solver {DataFlowConfig {}.setInterprocedural(false)};
     dataflow::loadRequiredAnalyses(solver);
     solver.load<MemberOverwriteAnalysis>();
     if (failed(solver.initializeAndRun(funcDef))) {
@@ -62,6 +63,11 @@ class EnforceNoMemberOverwritePass
         solver.lookupState<MemberOverwriteLattice>(solver.getProgramPointAfter(returnOp));
     if (!lattice) {
       signalPassFailure();
+    }
+
+    auto structDef = funcDef->getParentOfType<StructDefOp>();
+    for (auto member : structDef.getMemberDefs()) {
+      lattice->ensureWritten(member);
     }
 
     lattice->emitOverwriteErrors();
