@@ -1,5 +1,5 @@
 // RUN: llzk-opt -split-input-file %s -llzk-flatten 2>&1 | FileCheck --enable-var-scope %s
-
+// XFAIL: *
 // COM: Should fail until LLZK-203 is completed.
 
 module attributes {llzk.lang} {
