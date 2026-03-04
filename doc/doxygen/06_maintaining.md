@@ -20,6 +20,12 @@ so the release version must match the format `v[0-9]+.[0-9]+.[0-9]+`.
 > - MINOR version when you add functionality in a backward compatible manner
 > - PATCH version when you make backward compatible bug fixes
 
+### Patches
+
+To create a patch branch based on an existing release, you can use the following:
+
+`git checkout -b <new-patch-branch-name> <release-tag>`
+
 ## Releasing a New Version
 
 Once a release milestone is met, the release can be created.
