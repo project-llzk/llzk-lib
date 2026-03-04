@@ -10,8 +10,7 @@ on:
       - README.md
 
 jobs:
-  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
-  changelog-validate:
+  validate:
     uses: project-llzk/open-source-release-helpers/.github/workflows/changelog-validator.yml@main
     with:
       branch_name: ${{ github.head_ref }}

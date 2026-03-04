@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  run-tests:
+  run:
     strategy:
       matrix:
         compiler:
@@ -48,7 +48,7 @@ jobs:
 
   # WARNING: do not change this job name. It is a required status check for PRs to `main`.
   publish-tests:
-    needs: run-tests
+    needs: run
     runs-on: ubuntu-24.04
     if: ${{ !cancelled() }}
     steps:
