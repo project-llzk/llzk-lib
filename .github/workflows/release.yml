@@ -12,10 +12,3 @@ jobs:
     if: endsWith(github.head_ref, 'pre-release') && github.event.pull_request.merged == true
     uses: project-llzk/open-source-release-helpers/.github/workflows/release.yml@main
     secrets: inherit
-
-  deploy-pages:
-    needs: release
-    uses: ./.github/workflows/deploy-github-pages.yml
-    secrets: inherit
-    with:
-      version: ${{ needs.release.outputs.version }}
