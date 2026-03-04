@@ -4,7 +4,7 @@ if (NOT DEFINED LLZK_VERSION_OVERRIDE)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GitVersion.cmake)
   get_git_version(LLZK_VERSION)
 else()
-  message(STATUS "LLZK_VERSION_OVERRIDE specified, setting version to ${LLZK_VERSION_OVERRIDE}")
+  message(WARNING "LLZK_VERSION_OVERRIDE specified, setting version to ${LLZK_VERSION_OVERRIDE}")
   set(LLZK_VERSION "${LLZK_VERSION_OVERRIDE}")
 endif()
 
