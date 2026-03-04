@@ -50,7 +50,7 @@ jobs:
     name: Run Tests
     needs: build
     runs-on: ubuntu-24.04
-    if: needs.build.result == 'success'
+    if: ${{ !cancelled() }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -61,3 +61,5 @@ jobs:
         with:
           files: artifacts/**/*.xml
           comment_mode: always
+          action_fail: true
+          action_fail_on_inconclusive: true
