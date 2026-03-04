@@ -1,5 +1,5 @@
 var dir_5aba0f86741750b83fd02547c059473b =
 [
-    [ "InlineIncludesPass.h", "_inline_includes_pass_8h.html", "_inline_includes_pass_8h" ],
-    [ "InlineIncludesPass.td", "_inline_includes_pass_8td.html", null ]
+    [ "InlineIncludesPass.h", "InlineIncludesPass_8h.html", "InlineIncludesPass_8h" ],
+    [ "InlineIncludesPass.td", "InlineIncludesPass_8td.html", null ]
 ];

@@ -27,301 +27,459 @@ var NAVTREE =
   [ "LLZK", "index.html", [
     [ "Overview", "index.html", "index" ],
     [ "Architecture", "overview.html", [
-      [ "Project Overview", "overview.html#autotoc_md0", [
+      [ "Project Overview", "overview.html#project-overview", [
+        [ "LLZK IR Dialects", "overview.html#llzk-ir-dialects", null ],
         [ "Frontends", "overview.html#frontends", null ],
         [ "Passes", "overview.html#pass-overview", null ],
         [ "Backends", "overview.html#backends", null ]
       ] ]
     ] ],
     [ "Setup", "setup.html", [
-      [ "Nix Setup", "setup.html#autotoc_md1", null ],
-      [ "Manual Build Setup", "setup.html#autotoc_md2", null ],
+      [ "Nix Setup", "setup.html#nix-setup", null ],
+      [ "Manual Build Setup", "setup.html#manual-build-setup", null ],
       [ "Development Workflow", "setup.html#dev-workflow", null ]
     ] ],
     [ "Tool Guides", "tools.html", [
       [ "llzk-opt", "tools.html#llzk-opt", [
         [ "LLZK Pass Documentation", "tools.html#passes", [
-          [ "Analysis Passes", "tools.html#autotoc_md4", [
-            [ "-llzk-print-call-graph", "tools.html#autotoc_md5", null ],
-            [ "-llzk-print-call-graph-sccs", "tools.html#autotoc_md6", null ],
-            [ "-llzk-print-constraint-dependency-graphs", "tools.html#autotoc_md7", null ],
-            [ "-llzk-print-interval-analysis", "tools.html#autotoc_md8", [
-              [ "Options", "tools.html#autotoc_md9", null ]
+          [ "Analysis Passes", "tools.html#analysis-passes", [
+            [ "<span class=\"tt\">-llzk-print-call-graph</span>", "tools.html#autotoc_md-llzk-print-call-graph", null ],
+            [ "<span class=\"tt\">-llzk-print-call-graph-sccs</span>", "tools.html#autotoc_md-llzk-print-call-graph-sccs", null ],
+            [ "<span class=\"tt\">-llzk-print-constraint-dependency-graphs</span>", "tools.html#autotoc_md-llzk-print-constraint-dependency-graphs", [
+              [ "Options", "tools.html#options", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-print-interval-analysis</span>", "tools.html#autotoc_md-llzk-print-interval-analysis", [
+              [ "Options", "tools.html#options-1", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-print-predecessors</span>", "tools.html#autotoc_md-llzk-print-predecessors", [
+              [ "Options", "tools.html#options-2", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-print-symbol-def-tree</span>", "tools.html#autotoc_md-llzk-print-symbol-def-tree", [
+              [ "Options", "tools.html#options-3", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-print-symbol-use-graph</span>", "tools.html#autotoc_md-llzk-print-symbol-use-graph", [
+              [ "Options", "tools.html#options-4", null ]
             ] ]
           ] ],
-          [ "General Transformation Passes", "tools.html#autotoc_md10", [
-            [ "-llzk-duplicate-op-elim", "tools.html#autotoc_md11", null ],
-            [ "-llzk-duplicate-read-write-elim", "tools.html#autotoc_md12", null ],
-            [ "-llzk-unused-declaration-elim", "tools.html#autotoc_md13", [
-              [ "Options", "tools.html#autotoc_md14", null ]
+          [ "General Transformation Passes", "tools.html#general-transformation-passes", [
+            [ "<span class=\"tt\">-llzk-compute-constrain-to-product</span>", "tools.html#autotoc_md-llzk-compute-constrain-to-product", [
+              [ "Options", "tools.html#options-5", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-duplicate-op-elim</span>", "tools.html#autotoc_md-llzk-duplicate-op-elim", null ],
+            [ "<span class=\"tt\">-llzk-duplicate-read-write-elim</span>", "tools.html#autotoc_md-llzk-duplicate-read-write-elim", null ],
+            [ "<span class=\"tt\">-llzk-fuse-product-loops</span>", "tools.html#autotoc_md-llzk-fuse-product-loops", null ],
+            [ "<span class=\"tt\">-llzk-inline-structs</span>", "tools.html#autotoc_md-llzk-inline-structs", [
+              [ "Options", "tools.html#options-6", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-poly-lowering-pass</span>", "tools.html#autotoc_md-llzk-poly-lowering-pass", [
+              [ "Options", "tools.html#options-7", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-unused-declaration-elim</span>", "tools.html#autotoc_md-llzk-unused-declaration-elim", [
+              [ "Options", "tools.html#options-8", null ]
             ] ]
           ] ],
-          [ "'array' Dialect Transformation Passes", "tools.html#autotoc_md15", [
-            [ "-llzk-array-to-scalar", "tools.html#autotoc_md16", null ]
+          [ "'array' Dialect Transformation Passes", "tools.html#array-dialect-transformation-passes", [
+            [ "<span class=\"tt\">-llzk-array-to-scalar</span>", "tools.html#autotoc_md-llzk-array-to-scalar", null ]
           ] ],
-          [ "'polymorphic' Dialect Transformation Passes", "tools.html#autotoc_md17", [
-            [ "-llzk-flatten", "tools.html#autotoc_md18", null ]
+          [ "'polymorphic' Dialect Transformation Passes", "tools.html#polymorphic-dialect-transformation-passes", [
+            [ "<span class=\"tt\">-llzk-drop-empty-params</span>", "tools.html#autotoc_md-llzk-drop-empty-params", null ],
+            [ "<span class=\"tt\">-llzk-flatten</span>", "tools.html#autotoc_md-llzk-flatten", [
+              [ "Options", "tools.html#options-9", null ]
+            ] ]
           ] ],
-          [ "Validation Passes", "tools.html#autotoc_md19", [
-            [ "-llzk-validate-field-writes", "tools.html#autotoc_md20", null ]
+          [ "Validation Passes", "tools.html#validation-passes", [
+            [ "<span class=\"tt\">-llzk-validate-member-writes</span>", "tools.html#autotoc_md-llzk-validate-member-writes", null ]
           ] ]
         ] ]
       ] ],
-      [ "llzk-lsp-server", "tools.html#autotoc_md21", null ]
+      [ "llzk-lsp-server", "tools.html#llzk-lsp-server", null ]
     ] ],
     [ "LLZK Language Specification", "syntax.html", [
-      [ "Syntax", "syntax.html#autotoc_md22", null ],
-      [ "Types", "syntax.html#autotoc_md23", null ],
-      [ "Special Constructs", "syntax.html#autotoc_md24", null ],
-      [ "Semantic Rules", "syntax.html#autotoc_md25", null ],
+      [ "Syntax", "syntax.html#syntax-1", null ],
+      [ "Types", "syntax.html#types", [
+        [ "Pseudo-homogeneous arrays", "syntax.html#pseudo-homogeneous", null ]
+      ] ],
+      [ "Semantic Rules", "syntax.html#semantic-rules", null ],
       [ "Translation Guidelines", "syntax.html#translation-guidelines", null ]
     ] ],
     [ "Contribution Guide", "contribution-guide.html", "contribution-guide" ],
-    [ "LLZK Dialects", "dialects.html", [
-      [ "'array' Dialect", "dialects.html#autotoc_md45", [
-        [ "Types", "dialects.html#autotoc_md46", [
-          [ "ArrayType", "dialects.html#autotoc_md47", [
-            [ "Parameters:", "dialects.html#autotoc_md48", null ]
-          ] ]
-        ] ]
+    [ "Maintenance Guide", "maintanence.html", [
+      [ "Tracking a New Version", "maintanence.html#tracking-a-new-version", [
+        [ "Release version", "maintanence.html#release-version", null ],
+        [ "Patches", "maintanence.html#patches", null ]
       ] ],
-      [ "'bool' Dialect", "dialects.html#autotoc_md49", [
-        [ "Operations", "dialects.html#autotoc_md50", [
-          [ "bool.and (llzk::boolean::AndBoolOp)", "dialects.html#autotoc_md51", [
-            [ "Operands:", "dialects.html#autotoc_md52", null ],
-            [ "Results:", "dialects.html#autotoc_md53", null ]
+      [ "Releasing a New Version", "maintanence.html#releasing-a-new-version", [
+        [ "Preparing a new release", "maintanence.html#preparing-a-new-release", null ],
+        [ "Creating the Release Candidate", "maintanence.html#creating-the-release-candidate", null ],
+        [ "Create the Release", "maintanence.html#create-the-release", null ]
+      ] ]
+    ] ],
+    [ "LLZK IR Dialects", "dialects.html", [
+      [ "'array' Dialect", "dialects.html#array-dialect", [
+        [ "Operations", "dialects.html#operations", [
+          [ "<span class=\"tt\">array.extract</span> (llzk::array::ExtractArrayOp)", "dialects.html#arrayextract-llzkarrayextractarrayop", [
+            [ "Operands:", "dialects.html#operands", null ],
+            [ "Results:", "dialects.html#results", null ]
           ] ],
-          [ "bool.assert (llzk::boolean::AssertOp)", "dialects.html#autotoc_md54", [
-            [ "Attributes:", "dialects.html#autotoc_md55", null ],
-            [ "Operands:", "dialects.html#autotoc_md56", null ]
+          [ "<span class=\"tt\">array.insert</span> (llzk::array::InsertArrayOp)", "dialects.html#arrayinsert-llzkarrayinsertarrayop", [
+            [ "Operands:", "dialects.html#operands-1", null ]
           ] ],
-          [ "bool.cmp (llzk::boolean::CmpOp)", "dialects.html#autotoc_md57", [
-            [ "Attributes:", "dialects.html#autotoc_md58", null ],
-            [ "Operands:", "dialects.html#autotoc_md59", null ],
-            [ "Results:", "dialects.html#autotoc_md60", null ]
+          [ "<span class=\"tt\">array.len</span> (llzk::array::ArrayLengthOp)", "dialects.html#arraylen-llzkarrayarraylengthop", [
+            [ "Operands:", "dialects.html#operands-2", null ],
+            [ "Results:", "dialects.html#results-1", null ]
           ] ],
-          [ "bool.not (llzk::boolean::NotBoolOp)", "dialects.html#autotoc_md61", [
-            [ "Operands:", "dialects.html#autotoc_md62", null ],
-            [ "Results:", "dialects.html#autotoc_md63", null ]
+          [ "<span class=\"tt\">array.new</span> (llzk::array::CreateArrayOp)", "dialects.html#arraynew-llzkarraycreatearrayop", [
+            [ "Attributes:", "dialects.html#attributes", null ],
+            [ "Operands:", "dialects.html#operands-3", null ],
+            [ "Results:", "dialects.html#results-2", null ]
           ] ],
-          [ "bool.or (llzk::boolean::OrBoolOp)", "dialects.html#autotoc_md64", [
-            [ "Operands:", "dialects.html#autotoc_md65", null ],
-            [ "Results:", "dialects.html#autotoc_md66", null ]
+          [ "<span class=\"tt\">array.read</span> (llzk::array::ReadArrayOp)", "dialects.html#arrayread-llzkarrayreadarrayop", [
+            [ "Operands:", "dialects.html#operands-4", null ],
+            [ "Results:", "dialects.html#results-3", null ]
           ] ],
-          [ "bool.xor (llzk::boolean::XorBoolOp)", "dialects.html#autotoc_md67", [
-            [ "Operands:", "dialects.html#autotoc_md68", null ],
-            [ "Results:", "dialects.html#autotoc_md69", null ]
+          [ "<span class=\"tt\">array.write</span> (llzk::array::WriteArrayOp)", "dialects.html#arraywrite-llzkarraywritearrayop", [
+            [ "Operands:", "dialects.html#operands-5", null ]
           ] ]
         ] ],
-        [ "Attributes", "dialects.html#autotoc_md70", [
-          [ "FeltCmpPredicateAttr", "dialects.html#autotoc_md71", [
-            [ "Parameters:", "dialects.html#autotoc_md72", null ]
+        [ "Types", "dialects.html#types-1", [
+          [ "ArrayType", "dialects.html#arraytype", [
+            [ "Parameters:", "dialects.html#parameters", null ]
           ] ]
         ] ]
       ] ],
-      [ "'cast' Dialect", "dialects.html#autotoc_md73", [
-        [ "Operations", "dialects.html#autotoc_md74", [
-          [ "cast.tofelt (llzk::cast::IntToFeltOp)", "dialects.html#autotoc_md75", [
-            [ "Operands:", "dialects.html#autotoc_md76", null ],
-            [ "Results:", "dialects.html#autotoc_md77", null ]
+      [ "'bool' Dialect", "dialects.html#bool-dialect", [
+        [ "Operations", "dialects.html#operations-1", [
+          [ "<span class=\"tt\">bool.and</span> (llzk::boolean::AndBoolOp)", "dialects.html#booland-llzkbooleanandboolop", [
+            [ "Operands:", "dialects.html#operands-6", null ],
+            [ "Results:", "dialects.html#results-4", null ]
           ] ],
-          [ "cast.toindex (llzk::cast::FeltToIndexOp)", "dialects.html#autotoc_md78", [
-            [ "Operands:", "dialects.html#autotoc_md79", null ],
-            [ "Results:", "dialects.html#autotoc_md80", null ]
-          ] ]
-        ] ]
-      ] ],
-      [ "'constrain' Dialect", "dialects.html#autotoc_md81", [
-        [ "Operations", "dialects.html#autotoc_md82", [
-          [ "constrain.eq (llzk::constrain::EmitEqualityOp)", "dialects.html#autotoc_md83", [
-            [ "Operands:", "dialects.html#autotoc_md84", null ]
+          [ "<span class=\"tt\">bool.assert</span> (llzk::boolean::AssertOp)", "dialects.html#boolassert-llzkbooleanassertop", [
+            [ "Attributes:", "dialects.html#attributes-1", null ],
+            [ "Operands:", "dialects.html#operands-7", null ]
           ] ],
-          [ "constrain.in (llzk::constrain::EmitContainmentOp)", "dialects.html#autotoc_md85", [
-            [ "Operands:", "dialects.html#autotoc_md86", null ]
-          ] ]
-        ] ]
-      ] ],
-      [ "'felt' Dialect", "dialects.html#autotoc_md87", [
-        [ "Operations", "dialects.html#autotoc_md88", [
-          [ "felt.add (llzk::felt::AddFeltOp)", "dialects.html#autotoc_md89", [
-            [ "Operands:", "dialects.html#autotoc_md90", null ],
-            [ "Results:", "dialects.html#autotoc_md91", null ]
+          [ "<span class=\"tt\">bool.cmp</span> (llzk::boolean::CmpOp)", "dialects.html#boolcmp-llzkbooleancmpop", [
+            [ "Attributes:", "dialects.html#attributes-2", null ],
+            [ "Operands:", "dialects.html#operands-8", null ],
+            [ "Results:", "dialects.html#results-5", null ]
           ] ],
-          [ "felt.bit_and (llzk::felt::AndFeltOp)", "dialects.html#autotoc_md92", [
-            [ "Operands:", "dialects.html#autotoc_md93", null ],
-            [ "Results:", "dialects.html#autotoc_md94", null ]
+          [ "<span class=\"tt\">bool.not</span> (llzk::boolean::NotBoolOp)", "dialects.html#boolnot-llzkbooleannotboolop", [
+            [ "Operands:", "dialects.html#operands-9", null ],
+            [ "Results:", "dialects.html#results-6", null ]
           ] ],
-          [ "felt.bit_not (llzk::felt::NotFeltOp)", "dialects.html#autotoc_md95", [
-            [ "Operands:", "dialects.html#autotoc_md96", null ],
-            [ "Results:", "dialects.html#autotoc_md97", null ]
+          [ "<span class=\"tt\">bool.or</span> (llzk::boolean::OrBoolOp)", "dialects.html#boolor-llzkbooleanorboolop", [
+            [ "Operands:", "dialects.html#operands-10", null ],
+            [ "Results:", "dialects.html#results-7", null ]
           ] ],
-          [ "felt.bit_or (llzk::felt::OrFeltOp)", "dialects.html#autotoc_md98", [
-            [ "Operands:", "dialects.html#autotoc_md99", null ],
-            [ "Results:", "dialects.html#autotoc_md100", null ]
-          ] ],
-          [ "felt.bit_xor (llzk::felt::XorFeltOp)", "dialects.html#autotoc_md101", [
-            [ "Operands:", "dialects.html#autotoc_md102", null ],
-            [ "Results:", "dialects.html#autotoc_md103", null ]
-          ] ],
-          [ "felt.const (llzk::felt::FeltConstantOp)", "dialects.html#autotoc_md104", [
-            [ "Attributes:", "dialects.html#autotoc_md105", null ],
-            [ "Results:", "dialects.html#autotoc_md106", null ]
-          ] ],
-          [ "felt.div (llzk::felt::DivFeltOp)", "dialects.html#autotoc_md107", [
-            [ "Operands:", "dialects.html#autotoc_md108", null ],
-            [ "Results:", "dialects.html#autotoc_md109", null ]
-          ] ],
-          [ "felt.inv (llzk::felt::InvFeltOp)", "dialects.html#autotoc_md110", [
-            [ "Operands:", "dialects.html#autotoc_md111", null ],
-            [ "Results:", "dialects.html#autotoc_md112", null ]
-          ] ],
-          [ "felt.mod (llzk::felt::ModFeltOp)", "dialects.html#autotoc_md113", [
-            [ "Operands:", "dialects.html#autotoc_md114", null ],
-            [ "Results:", "dialects.html#autotoc_md115", null ]
-          ] ],
-          [ "felt.mul (llzk::felt::MulFeltOp)", "dialects.html#autotoc_md116", [
-            [ "Operands:", "dialects.html#autotoc_md117", null ],
-            [ "Results:", "dialects.html#autotoc_md118", null ]
-          ] ],
-          [ "felt.neg (llzk::felt::NegFeltOp)", "dialects.html#autotoc_md119", [
-            [ "Operands:", "dialects.html#autotoc_md120", null ],
-            [ "Results:", "dialects.html#autotoc_md121", null ]
-          ] ],
-          [ "felt.nondet (llzk::felt::FeltNonDetOp)", "dialects.html#autotoc_md122", [
-            [ "Results:", "dialects.html#autotoc_md123", null ]
-          ] ],
-          [ "felt.shl (llzk::felt::ShlFeltOp)", "dialects.html#autotoc_md124", [
-            [ "Operands:", "dialects.html#autotoc_md125", null ],
-            [ "Results:", "dialects.html#autotoc_md126", null ]
-          ] ],
-          [ "felt.shr (llzk::felt::ShrFeltOp)", "dialects.html#autotoc_md127", [
-            [ "Operands:", "dialects.html#autotoc_md128", null ],
-            [ "Results:", "dialects.html#autotoc_md129", null ]
-          ] ],
-          [ "felt.sub (llzk::felt::SubFeltOp)", "dialects.html#autotoc_md130", [
-            [ "Operands:", "dialects.html#autotoc_md131", null ],
-            [ "Results:", "dialects.html#autotoc_md132", null ]
+          [ "<span class=\"tt\">bool.xor</span> (llzk::boolean::XorBoolOp)", "dialects.html#boolxor-llzkbooleanxorboolop", [
+            [ "Operands:", "dialects.html#operands-11", null ],
+            [ "Results:", "dialects.html#results-8", null ]
           ] ]
         ] ],
-        [ "Attributes", "dialects.html#autotoc_md133", [
-          [ "FeltConstAttr", "dialects.html#autotoc_md134", [
-            [ "Parameters:", "dialects.html#autotoc_md135", null ]
+        [ "Attributes", "dialects.html#attributes-3", [
+          [ "FeltCmpPredicateAttr", "dialects.html#feltcmppredicateattr", [
+            [ "Parameters:", "dialects.html#parameters-1", null ]
           ] ]
         ] ],
-        [ "Types", "dialects.html#autotoc_md136", [
-          [ "FeltType", "dialects.html#autotoc_md137", null ]
-        ] ]
-      ] ],
-      [ "'function' Dialect", "dialects.html#autotoc_md138", [
-        [ "Operations", "dialects.html#autotoc_md139", [
-          [ "function.call (llzk::function::CallOp)", "dialects.html#autotoc_md140", [
-            [ "Attributes:", "dialects.html#autotoc_md141", null ],
-            [ "Operands:", "dialects.html#autotoc_md142", null ],
-            [ "Results:", "dialects.html#autotoc_md143", null ]
-          ] ],
-          [ "function.def (llzk::function::FuncDefOp)", "dialects.html#autotoc_md144", [
-            [ "Attributes:", "dialects.html#autotoc_md145", null ]
-          ] ],
-          [ "function.return (llzk::function::ReturnOp)", "dialects.html#autotoc_md146", [
-            [ "Operands:", "dialects.html#autotoc_md147", null ]
+        [ "Enums", "dialects.html#enums", [
+          [ "FeltCmpPredicate", "dialects.html#feltcmppredicate", [
+            [ "Cases:", "dialects.html#cases", null ]
           ] ]
         ] ]
       ] ],
-      [ "'global' Dialect", "dialects.html#autotoc_md148", [
-        [ "Operations", "dialects.html#autotoc_md149", [
-          [ "global.def (llzk::global::GlobalDefOp)", "dialects.html#autotoc_md150", [
-            [ "Attributes:", "dialects.html#autotoc_md151", null ]
+      [ "'cast' Dialect", "dialects.html#cast-dialect", [
+        [ "Operations", "dialects.html#operations-2", [
+          [ "<span class=\"tt\">cast.tofelt</span> (llzk::cast::IntToFeltOp)", "dialects.html#casttofelt-llzkcastinttofeltop", [
+            [ "Operands:", "dialects.html#operands-12", null ],
+            [ "Results:", "dialects.html#results-9", null ]
           ] ],
-          [ "global.read (llzk::global::GlobalReadOp)", "dialects.html#autotoc_md152", [
-            [ "Attributes:", "dialects.html#autotoc_md153", null ],
-            [ "Results:", "dialects.html#autotoc_md154", null ]
-          ] ],
-          [ "global.write (llzk::global::GlobalWriteOp)", "dialects.html#autotoc_md155", [
-            [ "Attributes:", "dialects.html#autotoc_md156", null ],
-            [ "Operands:", "dialects.html#autotoc_md157", null ]
+          [ "<span class=\"tt\">cast.toindex</span> (llzk::cast::FeltToIndexOp)", "dialects.html#casttoindex-llzkcastfelttoindexop", [
+            [ "Operands:", "dialects.html#operands-13", null ],
+            [ "Results:", "dialects.html#results-10", null ]
           ] ]
         ] ]
       ] ],
-      [ "'include' Dialect", "dialects.html#autotoc_md158", [
-        [ "Operations", "dialects.html#autotoc_md159", [
-          [ "include.from (llzk::include::IncludeOp)", "dialects.html#autotoc_md160", [
-            [ "Attributes:", "dialects.html#autotoc_md161", null ]
+      [ "'constrain' Dialect", "dialects.html#constrain-dialect", [
+        [ "Operations", "dialects.html#operations-3", [
+          [ "<span class=\"tt\">constrain.eq</span> (llzk::constrain::EmitEqualityOp)", "dialects.html#constraineq-llzkconstrainemitequalityop", [
+            [ "Operands:", "dialects.html#operands-14", null ]
+          ] ],
+          [ "<span class=\"tt\">constrain.in</span> (llzk::constrain::EmitContainmentOp)", "dialects.html#constrainin-llzkconstrainemitcontainmentop", [
+            [ "Operands:", "dialects.html#operands-15", null ]
           ] ]
         ] ]
       ] ],
-      [ "'llzk' Dialect", "dialects.html#autotoc_md162", [
-        [ "Attributes", "dialects.html#autotoc_md163", [
-          [ "LoopBoundsAttr", "dialects.html#autotoc_md164", [
-            [ "Parameters:", "dialects.html#autotoc_md165", null ]
+      [ "'felt' Dialect", "dialects.html#felt-dialect", [
+        [ "Operations", "dialects.html#operations-4", [
+          [ "<span class=\"tt\">felt.add</span> (llzk::felt::AddFeltOp)", "dialects.html#feltadd-llzkfeltaddfeltop", [
+            [ "Operands:", "dialects.html#operands-16", null ],
+            [ "Results:", "dialects.html#results-11", null ]
           ] ],
-          [ "PublicAttr", "dialects.html#autotoc_md166", null ]
-        ] ]
-      ] ],
-      [ "'poly' Dialect", "dialects.html#autotoc_md167", [
-        [ "Operations", "dialects.html#autotoc_md168", [
-          [ "poly.applymap (llzk::polymorphic::ApplyMapOp)", "dialects.html#autotoc_md169", [
-            [ "Attributes:", "dialects.html#autotoc_md170", null ],
-            [ "Operands:", "dialects.html#autotoc_md171", null ],
-            [ "Results:", "dialects.html#autotoc_md172", null ]
+          [ "<span class=\"tt\">felt.bit_and</span> (llzk::felt::AndFeltOp)", "dialects.html#feltbit_and-llzkfeltandfeltop", [
+            [ "Operands:", "dialects.html#operands-17", null ],
+            [ "Results:", "dialects.html#results-12", null ]
           ] ],
-          [ "poly.read_const (llzk::polymorphic::ConstReadOp)", "dialects.html#autotoc_md173", [
-            [ "Attributes:", "dialects.html#autotoc_md174", null ],
-            [ "Results:", "dialects.html#autotoc_md175", null ]
+          [ "<span class=\"tt\">felt.bit_not</span> (llzk::felt::NotFeltOp)", "dialects.html#feltbit_not-llzkfeltnotfeltop", [
+            [ "Operands:", "dialects.html#operands-18", null ],
+            [ "Results:", "dialects.html#results-13", null ]
           ] ],
-          [ "poly.unifiable_cast (llzk::polymorphic::UnifiableCastOp)", "dialects.html#autotoc_md176", [
-            [ "Operands:", "dialects.html#autotoc_md177", null ],
-            [ "Results:", "dialects.html#autotoc_md178", null ]
+          [ "<span class=\"tt\">felt.bit_or</span> (llzk::felt::OrFeltOp)", "dialects.html#feltbit_or-llzkfeltorfeltop", [
+            [ "Operands:", "dialects.html#operands-19", null ],
+            [ "Results:", "dialects.html#results-14", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.bit_xor</span> (llzk::felt::XorFeltOp)", "dialects.html#feltbit_xor-llzkfeltxorfeltop", [
+            [ "Operands:", "dialects.html#operands-20", null ],
+            [ "Results:", "dialects.html#results-15", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.const</span> (llzk::felt::FeltConstantOp)", "dialects.html#feltconst-llzkfeltfeltconstantop", [
+            [ "Attributes:", "dialects.html#attributes-4", null ],
+            [ "Results:", "dialects.html#results-16", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.div</span> (llzk::felt::DivFeltOp)", "dialects.html#feltdiv-llzkfeltdivfeltop", [
+            [ "Operands:", "dialects.html#operands-21", null ],
+            [ "Results:", "dialects.html#results-17", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.inv</span> (llzk::felt::InvFeltOp)", "dialects.html#feltinv-llzkfeltinvfeltop", [
+            [ "Operands:", "dialects.html#operands-22", null ],
+            [ "Results:", "dialects.html#results-18", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.mul</span> (llzk::felt::MulFeltOp)", "dialects.html#feltmul-llzkfeltmulfeltop", [
+            [ "Operands:", "dialects.html#operands-23", null ],
+            [ "Results:", "dialects.html#results-19", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.neg</span> (llzk::felt::NegFeltOp)", "dialects.html#feltneg-llzkfeltnegfeltop", [
+            [ "Operands:", "dialects.html#operands-24", null ],
+            [ "Results:", "dialects.html#results-20", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.pow</span> (llzk::felt::PowFeltOp)", "dialects.html#feltpow-llzkfeltpowfeltop", [
+            [ "Operands:", "dialects.html#operands-25", null ],
+            [ "Results:", "dialects.html#results-21", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.shl</span> (llzk::felt::ShlFeltOp)", "dialects.html#feltshl-llzkfeltshlfeltop", [
+            [ "Operands:", "dialects.html#operands-26", null ],
+            [ "Results:", "dialects.html#results-22", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.shr</span> (llzk::felt::ShrFeltOp)", "dialects.html#feltshr-llzkfeltshrfeltop", [
+            [ "Operands:", "dialects.html#operands-27", null ],
+            [ "Results:", "dialects.html#results-23", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.sintdiv</span> (llzk::felt::SignedIntDivFeltOp)", "dialects.html#feltsintdiv-llzkfeltsignedintdivfeltop", [
+            [ "Operands:", "dialects.html#operands-28", null ],
+            [ "Results:", "dialects.html#results-24", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.smod</span> (llzk::felt::SignedModFeltOp)", "dialects.html#feltsmod-llzkfeltsignedmodfeltop", [
+            [ "Operands:", "dialects.html#operands-29", null ],
+            [ "Results:", "dialects.html#results-25", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.sub</span> (llzk::felt::SubFeltOp)", "dialects.html#feltsub-llzkfeltsubfeltop", [
+            [ "Operands:", "dialects.html#operands-30", null ],
+            [ "Results:", "dialects.html#results-26", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.uintdiv</span> (llzk::felt::UnsignedIntDivFeltOp)", "dialects.html#feltuintdiv-llzkfeltunsignedintdivfeltop", [
+            [ "Operands:", "dialects.html#operands-31", null ],
+            [ "Results:", "dialects.html#results-27", null ]
+          ] ],
+          [ "<span class=\"tt\">felt.umod</span> (llzk::felt::UnsignedModFeltOp)", "dialects.html#feltumod-llzkfeltunsignedmodfeltop", [
+            [ "Operands:", "dialects.html#operands-32", null ],
+            [ "Results:", "dialects.html#results-28", null ]
           ] ]
         ] ],
-        [ "Types", "dialects.html#autotoc_md179", [
-          [ "TypeVarType", "dialects.html#autotoc_md180", [
-            [ "Parameters:", "dialects.html#autotoc_md181", null ]
-          ] ]
-        ] ]
-      ] ],
-      [ "'string' Dialect", "dialects.html#autotoc_md182", [
-        [ "Operations", "dialects.html#autotoc_md183", [
-          [ "string.new (llzk::string::LitStringOp)", "dialects.html#autotoc_md184", [
-            [ "Attributes:", "dialects.html#autotoc_md185", null ],
-            [ "Results:", "dialects.html#autotoc_md186", null ]
+        [ "Attributes", "dialects.html#attributes-5", [
+          [ "FeltConstAttr", "dialects.html#feltconstattr", [
+            [ "Parameters:", "dialects.html#parameters-2", null ]
+          ] ],
+          [ "FieldSpecAttr", "dialects.html#fieldspecattr", [
+            [ "Parameters:", "dialects.html#parameters-3", null ]
           ] ]
         ] ],
-        [ "Types", "dialects.html#autotoc_md187", [
-          [ "StringType", "dialects.html#autotoc_md188", null ]
+        [ "Types", "dialects.html#types-2", [
+          [ "FeltType", "dialects.html#felttype", [
+            [ "Parameters:", "dialects.html#parameters-4", null ]
+          ] ]
         ] ]
       ] ],
-      [ "'struct' Dialect", "dialects.html#autotoc_md189", [
-        [ "Operations", "dialects.html#autotoc_md190", [
-          [ "struct.def (llzk::component::StructDefOp)", "dialects.html#autotoc_md191", [
-            [ "Attributes:", "dialects.html#autotoc_md192", null ]
+      [ "'function' Dialect", "dialects.html#function-dialect", [
+        [ "Operations", "dialects.html#operations-5", [
+          [ "<span class=\"tt\">function.call</span> (llzk::function::CallOp)", "dialects.html#functioncall-llzkfunctioncallop", [
+            [ "Attributes:", "dialects.html#attributes-6", null ],
+            [ "Operands:", "dialects.html#operands-33", null ],
+            [ "Results:", "dialects.html#results-29", null ]
           ] ],
-          [ "struct.field (llzk::component::FieldDefOp)", "dialects.html#autotoc_md193", [
-            [ "Attributes:", "dialects.html#autotoc_md194", null ]
+          [ "<span class=\"tt\">function.def</span> (llzk::function::FuncDefOp)", "dialects.html#functiondef-llzkfunctionfuncdefop", [
+            [ "Attributes:", "dialects.html#attributes-7", null ]
           ] ],
-          [ "struct.new (llzk::component::CreateStructOp)", "dialects.html#autotoc_md195", [
-            [ "Results:", "dialects.html#autotoc_md196", null ]
+          [ "<span class=\"tt\">function.return</span> (llzk::function::ReturnOp)", "dialects.html#functionreturn-llzkfunctionreturnop", [
+            [ "Operands:", "dialects.html#operands-34", null ]
+          ] ]
+        ] ]
+      ] ],
+      [ "'global' Dialect", "dialects.html#global-dialect", [
+        [ "Operations", "dialects.html#operations-6", [
+          [ "<span class=\"tt\">global.def</span> (llzk::global::GlobalDefOp)", "dialects.html#globaldef-llzkglobalglobaldefop", [
+            [ "Attributes:", "dialects.html#attributes-8", null ]
           ] ],
-          [ "struct.readf (llzk::component::FieldReadOp)", "dialects.html#autotoc_md197", [
-            [ "Attributes:", "dialects.html#autotoc_md198", null ],
-            [ "Operands:", "dialects.html#autotoc_md199", null ],
-            [ "Results:", "dialects.html#autotoc_md200", null ]
+          [ "<span class=\"tt\">global.read</span> (llzk::global::GlobalReadOp)", "dialects.html#globalread-llzkglobalglobalreadop", [
+            [ "Attributes:", "dialects.html#attributes-9", null ],
+            [ "Results:", "dialects.html#results-30", null ]
           ] ],
-          [ "struct.writef (llzk::component::FieldWriteOp)", "dialects.html#autotoc_md201", [
-            [ "Attributes:", "dialects.html#autotoc_md202", null ],
-            [ "Operands:", "dialects.html#autotoc_md203", null ]
+          [ "<span class=\"tt\">global.write</span> (llzk::global::GlobalWriteOp)", "dialects.html#globalwrite-llzkglobalglobalwriteop", [
+            [ "Attributes:", "dialects.html#attributes-10", null ],
+            [ "Operands:", "dialects.html#operands-35", null ]
+          ] ]
+        ] ]
+      ] ],
+      [ "'include' Dialect", "dialects.html#include-dialect", [
+        [ "Operations", "dialects.html#operations-7", [
+          [ "<span class=\"tt\">include.from</span> (llzk::include::IncludeOp)", "dialects.html#includefrom-llzkincludeincludeop", [
+            [ "Attributes:", "dialects.html#attributes-11", null ]
+          ] ]
+        ] ]
+      ] ],
+      [ "'llzk' Dialect", "dialects.html#llzk-dialect", [
+        [ "Operations", "dialects.html#operations-8", [
+          [ "<span class=\"tt\">llzk.nondet</span> (llzk::NonDetOp)", "dialects.html#llzknondet-llzknondetop", [
+            [ "Results:", "dialects.html#results-31", null ]
           ] ]
         ] ],
-        [ "Types", "dialects.html#autotoc_md204", [
-          [ "StructType", "dialects.html#autotoc_md205", [
-            [ "Parameters:", "dialects.html#autotoc_md206", null ]
+        [ "Attributes", "dialects.html#attributes-12", [
+          [ "LoopBoundsAttr", "dialects.html#loopboundsattr", [
+            [ "Parameters:", "dialects.html#parameters-5", null ]
+          ] ],
+          [ "PublicAttr", "dialects.html#publicattr", null ]
+        ] ]
+      ] ],
+      [ "'pod' Dialect", "dialects.html#pod-dialect", [
+        [ "Operations", "dialects.html#operations-9", [
+          [ "<span class=\"tt\">pod.new</span> (llzk::pod::NewPodOp)", "dialects.html#podnew-llzkpodnewpodop", [
+            [ "Attributes:", "dialects.html#attributes-13", null ],
+            [ "Operands:", "dialects.html#operands-36", null ],
+            [ "Results:", "dialects.html#results-32", null ]
+          ] ],
+          [ "<span class=\"tt\">pod.read</span> (llzk::pod::ReadPodOp)", "dialects.html#podread-llzkpodreadpodop", [
+            [ "Attributes:", "dialects.html#attributes-14", null ],
+            [ "Operands:", "dialects.html#operands-37", null ],
+            [ "Results:", "dialects.html#results-33", null ]
+          ] ],
+          [ "<span class=\"tt\">pod.write</span> (llzk::pod::WritePodOp)", "dialects.html#podwrite-llzkpodwritepodop", [
+            [ "Attributes:", "dialects.html#attributes-15", null ],
+            [ "Operands:", "dialects.html#operands-38", null ]
+          ] ]
+        ] ],
+        [ "Attributes", "dialects.html#attributes-16", [
+          [ "RecordAttr", "dialects.html#recordattr", [
+            [ "Parameters:", "dialects.html#parameters-6", null ]
+          ] ]
+        ] ],
+        [ "Types", "dialects.html#types-3", [
+          [ "PodType", "dialects.html#podtype", [
+            [ "Parameters:", "dialects.html#parameters-7", null ]
           ] ]
         ] ]
       ] ],
-      [ "'undef' Dialect", "dialects.html#autotoc_md207", [
-        [ "Operations", "dialects.html#autotoc_md208", [
-          [ "undef.undef (llzk::undef::UndefOp)", "dialects.html#autotoc_md209", [
-            [ "Results:", "dialects.html#autotoc_md210", null ]
+      [ "'poly' Dialect", "dialects.html#poly-dialect", [
+        [ "Operations", "dialects.html#operations-10", [
+          [ "<span class=\"tt\">poly.applymap</span> (llzk::polymorphic::ApplyMapOp)", "dialects.html#polyapplymap-llzkpolymorphicapplymapop", [
+            [ "Attributes:", "dialects.html#attributes-17", null ],
+            [ "Operands:", "dialects.html#operands-39", null ],
+            [ "Results:", "dialects.html#results-34", null ]
+          ] ],
+          [ "<span class=\"tt\">poly.read_const</span> (llzk::polymorphic::ConstReadOp)", "dialects.html#polyread_const-llzkpolymorphicconstreadop", [
+            [ "Attributes:", "dialects.html#attributes-18", null ],
+            [ "Results:", "dialects.html#results-35", null ]
+          ] ],
+          [ "<span class=\"tt\">poly.unifiable_cast</span> (llzk::polymorphic::UnifiableCastOp)", "dialects.html#polyunifiable_cast-llzkpolymorphicunifiablecastop", [
+            [ "Operands:", "dialects.html#operands-40", null ],
+            [ "Results:", "dialects.html#results-36", null ]
           ] ]
+        ] ],
+        [ "Types", "dialects.html#types-4", [
+          [ "TypeVarType", "dialects.html#typevartype", [
+            [ "Parameters:", "dialects.html#parameters-8", null ]
+          ] ]
+        ] ]
+      ] ],
+      [ "'string' Dialect", "dialects.html#string-dialect", [
+        [ "Operations", "dialects.html#operations-11", [
+          [ "<span class=\"tt\">string.new</span> (llzk::string::LitStringOp)", "dialects.html#stringnew-llzkstringlitstringop", [
+            [ "Attributes:", "dialects.html#attributes-19", null ],
+            [ "Results:", "dialects.html#results-37", null ]
+          ] ]
+        ] ],
+        [ "Types", "dialects.html#types-5", [
+          [ "StringType", "dialects.html#stringtype", null ]
+        ] ]
+      ] ],
+      [ "'struct' Dialect", "dialects.html#struct-dialect", [
+        [ "Operations", "dialects.html#operations-12", [
+          [ "<span class=\"tt\">struct.def</span> (llzk::component::StructDefOp)", "dialects.html#structdef-llzkcomponentstructdefop", [
+            [ "Attributes:", "dialects.html#attributes-20", null ]
+          ] ],
+          [ "<span class=\"tt\">struct.member</span> (llzk::component::MemberDefOp)", "dialects.html#structmember-llzkcomponentmemberdefop", [
+            [ "Attributes:", "dialects.html#attributes-21", null ]
+          ] ],
+          [ "<span class=\"tt\">struct.new</span> (llzk::component::CreateStructOp)", "dialects.html#structnew-llzkcomponentcreatestructop", [
+            [ "Results:", "dialects.html#results-38", null ]
+          ] ],
+          [ "<span class=\"tt\">struct.readm</span> (llzk::component::MemberReadOp)", "dialects.html#structreadm-llzkcomponentmemberreadop", [
+            [ "Attributes:", "dialects.html#attributes-22", null ],
+            [ "Operands:", "dialects.html#operands-41", null ],
+            [ "Results:", "dialects.html#results-39", null ]
+          ] ],
+          [ "<span class=\"tt\">struct.writem</span> (llzk::component::MemberWriteOp)", "dialects.html#structwritem-llzkcomponentmemberwriteop", [
+            [ "Attributes:", "dialects.html#attributes-23", null ],
+            [ "Operands:", "dialects.html#operands-42", null ]
+          ] ]
+        ] ],
+        [ "Types", "dialects.html#types-6", [
+          [ "StructType", "dialects.html#structtype", [
+            [ "Parameters:", "dialects.html#parameters-9", null ]
+          ] ]
+        ] ]
+      ] ]
+    ] ],
+    [ "Backend Dialects", "backend-dialects.html", [
+      [ "'r1cs' Dialect", "backend-dialects.html#r1cs-dialect", [
+        [ "Operations", "backend-dialects.html#operations-13", [
+          [ "<span class=\"tt\">r1cs.add</span> (r1cs::AddOp)", "backend-dialects.html#r1csadd-r1csaddop", [
+            [ "Operands:", "backend-dialects.html#operands-43", null ],
+            [ "Results:", "backend-dialects.html#results-40", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.circuit</span> (r1cs::CircuitDefOp)", "backend-dialects.html#r1cscircuit-r1cscircuitdefop", [
+            [ "Attributes:", "backend-dialects.html#attributes-24", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.const</span> (r1cs::ConstOp)", "backend-dialects.html#r1csconst-r1csconstop", [
+            [ "Attributes:", "backend-dialects.html#attributes-25", null ],
+            [ "Results:", "backend-dialects.html#results-41", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.constrain</span> (r1cs::ConstrainOp)", "backend-dialects.html#r1csconstrain-r1csconstrainop", [
+            [ "Operands:", "backend-dialects.html#operands-44", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.def</span> (r1cs::SignalDefOp)", "backend-dialects.html#r1csdef-r1cssignaldefop", [
+            [ "Attributes:", "backend-dialects.html#attributes-26", null ],
+            [ "Results:", "backend-dialects.html#results-42", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.mul_const</span> (r1cs::MulConstOp)", "backend-dialects.html#r1csmul_const-r1csmulconstop", [
+            [ "Attributes:", "backend-dialects.html#attributes-27", null ],
+            [ "Operands:", "backend-dialects.html#operands-45", null ],
+            [ "Results:", "backend-dialects.html#results-43", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.neg</span> (r1cs::NegOp)", "backend-dialects.html#r1csneg-r1csnegop", [
+            [ "Operands:", "backend-dialects.html#operands-46", null ],
+            [ "Results:", "backend-dialects.html#results-44", null ]
+          ] ],
+          [ "<span class=\"tt\">r1cs.to_linear</span> (r1cs::ToLinearOp)", "backend-dialects.html#r1csto_linear-r1cstolinearop", [
+            [ "Operands:", "backend-dialects.html#operands-47", null ],
+            [ "Results:", "backend-dialects.html#results-45", null ]
+          ] ]
+        ] ],
+        [ "Attributes", "backend-dialects.html#attributes-28", [
+          [ "FeltAttr", "backend-dialects.html#feltattr", [
+            [ "Parameters:", "backend-dialects.html#parameters-10", null ]
+          ] ],
+          [ "PublicAttr", "backend-dialects.html#publicattr-1", null ]
+        ] ],
+        [ "Types", "backend-dialects.html#types-7", [
+          [ "LinearType", "backend-dialects.html#lineartype", null ],
+          [ "SignalType", "backend-dialects.html#signaltype", null ]
         ] ]
       ] ]
     ] ],
@@ -354,8 +512,11 @@ var NAVTREE =
       [ "File List", "files.html", "files_dup" ],
       [ "File Members", "globals.html", [
         [ "All", "globals.html", "globals_dup" ],
-        [ "Functions", "globals_func.html", null ],
+        [ "Functions", "globals_func.html", "globals_func" ],
         [ "Variables", "globals_vars.html", null ],
+        [ "Typedefs", "globals_type.html", null ],
+        [ "Enumerations", "globals_enum.html", null ],
+        [ "Enumerator", "globals_eval.html", null ],
         [ "Macros", "globals_defs.html", null ]
       ] ]
     ] ]
@@ -364,40 +525,62 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"_a_p_int_helper_8cpp.html",
-"_felt_2_i_r_2_dialect_8h_8inc.html",
-"_polymorphic_2_transforms_2_transformation_passes_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede",
-"classllzk_1_1_constrain_ref.html#a14c3650d390437a49268cc7b810f7c0b",
-"classllzk_1_1_expression_value.html#ad140e3732fab6c5e228379a9856c6dbc",
-"classllzk_1_1_module_builder.html#aa2a7258718c32845d2bcbafe43e03f79",
-"classllzk_1_1array_1_1_array_index_gen.html#a6b8e07a161e4089149fc9fba13f88978",
-"classllzk_1_1array_1_1_extract_array_op.html#a6989a6eb9ac668108ed6e438f7b05968",
-"classllzk_1_1array_1_1_write_array_op.html#a9a22ddc3a4286d0c16c196f3e80551e0",
-"classllzk_1_1boolean_1_1_and_bool_op_adaptor.html#a0e23192e825e37defebb0ae33b774641",
-"classllzk_1_1boolean_1_1_not_bool_op_generic_adaptor.html#ae3f6e6f1a076812d1dce362806e4082a",
-"classllzk_1_1cast_1_1_cast_dialect.html#a4f25a4f77bb6ce6214612acc1e0170ac",
-"classllzk_1_1component_1_1_field_def_op.html#a997d4dcbc0f08a20b4c299d9384f60d2",
-"classllzk_1_1component_1_1_field_write_op_generic_adaptor.html",
-"classllzk_1_1component_1_1detail_1_1_field_write_op_generic_adaptor_base.html",
-"classllzk_1_1dataflow_1_1_abstract_dense_forward_data_flow_analysis.html#a9c8420d402c7e59d9070020c0817c7ef",
-"classllzk_1_1felt_1_1_div_felt_op.html#aaa0799756f9144af230849a267c2109a",
-"classllzk_1_1felt_1_1_mod_felt_op.html#a2af1431be31c2e5f09c90aa847c616ab",
-"classllzk_1_1felt_1_1_or_felt_op.html#a1d7dae2c3e4e81c6f8fdd1b80db2aceb",
-"classllzk_1_1felt_1_1_sub_felt_op_generic_adaptor.html#a86edec80ed272d4fe980558515aecf08",
-"classllzk_1_1felt_1_1detail_1_1_or_felt_op_generic_adaptor_base.html#a5bbbf6ac1b6593d46f4ab8a3b31262f4",
-"classllzk_1_1function_1_1_func_def_op.html#a5e340f3ca8deb3c212244693b9c115be",
-"classllzk_1_1global_1_1_global_def_op.html#a0d5cc21e0ad2fe2a1126be3e8cb25603",
-"classllzk_1_1global_1_1detail_1_1_global_def_op_generic_adaptor_base.html#a047c4023a9b7861261fb040dcb4246f3",
-"classllzk_1_1impl_1_1_unused_declaration_elimination_pass_base.html#ac85f58efe907e43fe2ab155e750aa9b4",
-"classllzk_1_1polymorphic_1_1_const_read_op.html#aa120b8527bb41fed66aab9446869cb3c",
-"classllzk_1_1string_1_1_lit_string_op.html#afb9b2d00f3f7b872c1691396ec798691",
-"dialects.html#autotoc_md178",
-"functions_j.html",
-"namespacellzk.html#ab1ef6741a40f7e02fc0b94c979c8b3be",
-"structllvm_1_1_dense_map_info_3_1_1llzk_1_1boolean_1_1_felt_cmp_predicate_01_4.html",
-"structllzk_1_1component_1_1detail_1_1_field_read_op_generic_adaptor_base_1_1_properties.html#a445f79b2fb62b43a0352dfdd0af30c43",
-"structllzk_1_1global_1_1detail_1_1_global_ref_op_interface_interface_traits_1_1_concept.html#a47076015c45fd011dcfa81b435964ba4"
+"AbstractLatticeValue_8h.html",
+"Array_2IR_2Ops_8cpp_source.html",
+"Bool_2IR_2Ops_8capi_8test_8cpp_8inc.html#ac303e7270975b83723ad15990e2186f9",
+"Constrain_2IR_2Ops_8capi_8cpp_8inc.html#aa83eabd1cb524d8be7969f92c49a4870",
+"Felt_2IR_2Ops_8capi_8cpp_8inc.html#a9fbdd152585648fbbb02440f809b3c4f",
+"Felt_2IR_2Ops_8capi_8test_8cpp_8inc.html#a89b9d6ac06e21c6efa4f82310cb75783",
+"Function_2IR_2Ops_8capi_8h_8inc.html#a1ad9f2565fce3b901f82db791b796043",
+"Global_2IR_2Ops_8h.html",
+"LLZK_2IR_2Attrs_8capi_8test_8cpp_8inc.html#ac708584fd553534420387bd94dbd84a8",
+"POD_2IR_2Types_8capi_8cpp_8inc.html#a4d5e3445db42a90d5bcaddda537caae1",
+"String_2IR_2Dialect_8capi_8test_8cpp_8inc.html#a50c4905f337e8acbd65d8c002384da61",
+"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#aac7faa3c6e9791c29702226c111598ab",
+"classClangLexerContext.html#ad7038809aec1bde0c6b5b68e90ce14af",
+"classllzk_1_1ExpressionValue.html#ad108cf876df327969f4a1dabbaa69dc1",
+"classllzk_1_1IntervalAnalysisLatticeValue.html",
+"classllzk_1_1PredecessorLattice.html#a9771d7f2b5fcd40aaca46d8ff95e04fc",
+"classllzk_1_1StructIntervalAnalysis.html#a47af87854ed5d70b7472373f6b6d9c09",
+"classllzk_1_1UnreducedInterval.html#a01dd648cdc657e277fcac20dc801790f",
+"classllzk_1_1array_1_1CreateArrayOp.html#a268044f1c8b0492f943d267f5e7c39bd",
+"classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html#a83254339cbed7c33430ac44e70836ad4",
+"classllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase.html#a5bddc928c3a7dabfcb5da25d05a0f50a",
+"classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html#a62733a1de099b67d9859e7055defeacb",
+"classllzk_1_1boolean_1_1XorBoolOp.html#a171adcef3080a4bbce17d00c992b50f6",
+"classllzk_1_1cast_1_1IntToFeltOp.html#a0df5c0de6bceb744a4cde082ae9b3c16",
+"classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html",
+"classllzk_1_1component_1_1MemberWriteOpGenericAdaptor.html#acc17ac846d63cd632c2639c05f75b31c",
+"classllzk_1_1component_1_1detail_1_1MemberRefOpInterfaceInterfaceTraits_1_1FallbackModel.html#a5042b7c30da9fa4bd0585c9e844e1e7e",
+"classllzk_1_1constrain_1_1detail_1_1EmitEqualityOpGenericAdaptorBase.html#a79bf44102159d763813b3c8705ede56b",
+"classllzk_1_1felt_1_1AndFeltOpGenericAdaptor.html#a7d8104cbd24b9477ecd4fc848fa85d9b",
+"classllzk_1_1felt_1_1InvFeltOpGenericAdaptor.html#a538f7f29da976cc9c2ec6933b3d21999",
+"classllzk_1_1felt_1_1OrFeltOpAdaptor.html#a507990eefbe5303dd563640da32ddf13",
+"classllzk_1_1felt_1_1SignedIntDivFeltOp.html#a687d2c2bac94f1da1e41cde26ae169b0",
+"classllzk_1_1felt_1_1UnsignedIntDivFeltOpGenericAdaptor.html#a357c2d15e763a8644ee63b841c16387e",
+"classllzk_1_1felt_1_1detail_1_1InvFeltOpGenericAdaptorBase.html#a408192e5f9de2ff3f4bb460285ac89f6",
+"classllzk_1_1function_1_1CallOp.html#a413e1d4eb5a62953b86e59bfddf4de75",
+"classllzk_1_1function_1_1FuncDefOpAdaptor.html#ad284ee20f532b6cd5cb74ebf9db3a388",
+"classllzk_1_1global_1_1GlobalDefOp.html#ad8aee5a8dac36f2d3ffee294b773eff4",
+"classllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase.html#ae9448387ad9725e8fa57a21753b8ced9",
+"classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a80ed0e8707b4c22eabe3cf0617b0af01",
+"classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a674fa909c7c1266c1765000224340d01",
+"classllzk_1_1pod_1_1NewPodOpGenericAdaptor.html#a5384cda6112eaa1163252224d99ff5b1",
+"classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase.html#a77d085372ac45987c73c1aaa65c95062",
+"classllzk_1_1polymorphic_1_1UnifiableCastOp.html#a70d729c515f1df2d82a6483c390ee48b",
+"classllzk_1_1string_1_1LitStringOpAdaptor.html#a19fc6e24ef744682060ce3ca4bff4b01",
+"dialects.html#operations-9",
+"functions_k.html",
+"namespacellzk.html#a28b6fbe238c9f2d2f1874f246ecb4b06",
+"namespacellzk.html#ae652b6e04c6c655275407417dccd48f9",
+"namespacemembers_func_w.html",
+"structOpImplementationGenerator.html#a54559b2687f8ba2040b896ac0722f284",
+"structllzk_1_1IntervalAnalysisPrinterPassOptions.html",
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aa9a5d0f573b9aa7563acc41b1a8efb3e",
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0f50e5b423b077c07e674ecb81ef933c",
+"structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1OutputStream_01_4_00_01std_1_1optionaf28399610e384e0d4fd7a9ffaf1b5959.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';
 var SYNCOFFMSG = 'click to enable panel synchronization';
+var LISTOFALLMEMBERS = 'List of all members';

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['side_0',['Side',['../namespacellzk.html#a2a5039e04435e7c0f3883c08db97e95a',1,'llzk']]]
+  ['feltcmppredicate_0',['FeltCmpPredicate',['../namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37',1,'llzk::boolean']]],
+  ['functionkind_1',['FunctionKind',['../namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9',1,'llzk::function']]]
 ];

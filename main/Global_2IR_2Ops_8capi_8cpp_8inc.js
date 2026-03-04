@@ -1,0 +1,25 @@
+var Global_2IR_2Ops_8capi_8cpp_8inc =
+[
+    [ "llzkGlobal_GlobalDefOpBuild", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a1448f550bafbf6712ac5aca3cfc5a63e", null ],
+    [ "llzkGlobal_GlobalDefOpGetConstant", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a9da2ed1176e66d0b9aa4d1fcf6883601", null ],
+    [ "llzkGlobal_GlobalDefOpGetInitialValue", "Global_2IR_2Ops_8capi_8cpp_8inc.html#aa6b9bf2c74b520dc5548e62651da6b71", null ],
+    [ "llzkGlobal_GlobalDefOpGetSymName", "Global_2IR_2Ops_8capi_8cpp_8inc.html#afa4fecc0ab76e0a386d13b7611479888", null ],
+    [ "llzkGlobal_GlobalDefOpGetType", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a69d5e0cf7bb369b32e60fbcc40bfe565", null ],
+    [ "llzkGlobal_GlobalDefOpIsConstant", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a8c49ab2f1ce0111436d3aba39b9b176b", null ],
+    [ "llzkGlobal_GlobalDefOpSetConstant", "Global_2IR_2Ops_8capi_8cpp_8inc.html#ac665c0e29f414afa46cb10bb74d16d59", null ],
+    [ "llzkGlobal_GlobalDefOpSetInitialValue", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a20372ef7d94bc92972e2dc9c93619c3a", null ],
+    [ "llzkGlobal_GlobalDefOpSetSymName", "Global_2IR_2Ops_8capi_8cpp_8inc.html#adcfa8ee1a29db18e04e2b68124e016ef", null ],
+    [ "llzkGlobal_GlobalDefOpSetType", "Global_2IR_2Ops_8capi_8cpp_8inc.html#afac0593a80a3403b0e393810910591f7", null ],
+    [ "llzkGlobal_GlobalReadOpBuild", "Global_2IR_2Ops_8capi_8cpp_8inc.html#ad0ab822bed5cdc06bd5b625fe6a56f90", null ],
+    [ "llzkGlobal_GlobalReadOpGetNameRef", "Global_2IR_2Ops_8capi_8cpp_8inc.html#ac757e8d12a919a6cb14a1ac13a0a4966", null ],
+    [ "llzkGlobal_GlobalReadOpGetVal", "Global_2IR_2Ops_8capi_8cpp_8inc.html#ad5bd30c0fd47948baee1cfab9fcf1d5d", null ],
+    [ "llzkGlobal_GlobalReadOpSetNameRef", "Global_2IR_2Ops_8capi_8cpp_8inc.html#ab5c4e2baf9915f153493c6cbd21fe536", null ],
+    [ "llzkGlobal_GlobalWriteOpBuild", "Global_2IR_2Ops_8capi_8cpp_8inc.html#acff7922e2867ea30130a74c05492a5b3", null ],
+    [ "llzkGlobal_GlobalWriteOpGetNameRef", "Global_2IR_2Ops_8capi_8cpp_8inc.html#aeb76ad2552a012e7273116e5e6ccfc64", null ],
+    [ "llzkGlobal_GlobalWriteOpGetVal", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a750bd206989a8a0291058521a8b994e1", null ],
+    [ "llzkGlobal_GlobalWriteOpSetNameRef", "Global_2IR_2Ops_8capi_8cpp_8inc.html#afbd239ef230270b4667f8950946026ed", null ],
+    [ "llzkGlobal_GlobalWriteOpSetVal", "Global_2IR_2Ops_8capi_8cpp_8inc.html#aa857c48fed95a43fb5fcab75ce543f05", null ],
+    [ "llzkOperationIsA_Global_GlobalDefOp", "Global_2IR_2Ops_8capi_8cpp_8inc.html#aa8c168dc297d702d805eb927fcd0944d", null ],
+    [ "llzkOperationIsA_Global_GlobalReadOp", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a7a6c89532ffe339a3a52c377bfc443b7", null ],
+    [ "llzkOperationIsA_Global_GlobalWriteOp", "Global_2IR_2Ops_8capi_8cpp_8inc.html#a7c541ab0dcb62fbe39ab2ca53d77852b", null ]
+];

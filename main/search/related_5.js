@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['intersection_0',['intersection',['../classllzk_1_1_expression_value.html#aed6fe6bc6d5df3875a5c19b018d34736',1,'llzk::ExpressionValue']]]
+  ['fallbackbinaryop_0',['fallbackBinaryOp',['../classllzk_1_1ExpressionValue.html#a5e17452af3691b4ea3836f9b217f81a2',1,'llzk::ExpressionValue']]],
+  ['fallbackunaryop_1',['fallbackUnaryOp',['../classllzk_1_1ExpressionValue.html#a148699f5eabc138b3590ca716b746647',1,'llzk::ExpressionValue']]]
 ];

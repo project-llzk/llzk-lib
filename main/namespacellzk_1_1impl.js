@@ -1,11 +1,18 @@
 var namespacellzk_1_1impl =
 [
-    [ "CallGraphPrinterPassBase", "classllzk_1_1impl_1_1_call_graph_printer_pass_base.html", "classllzk_1_1impl_1_1_call_graph_printer_pass_base" ],
-    [ "CallGraphSCCsPrinterPassBase", "classllzk_1_1impl_1_1_call_graph_s_c_cs_printer_pass_base.html", "classllzk_1_1impl_1_1_call_graph_s_c_cs_printer_pass_base" ],
-    [ "ConstraintDependencyGraphPrinterPassBase", "classllzk_1_1impl_1_1_constraint_dependency_graph_printer_pass_base.html", "classllzk_1_1impl_1_1_constraint_dependency_graph_printer_pass_base" ],
-    [ "FieldWriteValidatorPassBase", "classllzk_1_1impl_1_1_field_write_validator_pass_base.html", "classllzk_1_1impl_1_1_field_write_validator_pass_base" ],
-    [ "IntervalAnalysisPrinterPassBase", "classllzk_1_1impl_1_1_interval_analysis_printer_pass_base.html", "classllzk_1_1impl_1_1_interval_analysis_printer_pass_base" ],
-    [ "RedundantOperationEliminationPassBase", "classllzk_1_1impl_1_1_redundant_operation_elimination_pass_base.html", "classllzk_1_1impl_1_1_redundant_operation_elimination_pass_base" ],
-    [ "RedundantReadAndWriteEliminationPassBase", "classllzk_1_1impl_1_1_redundant_read_and_write_elimination_pass_base.html", "classllzk_1_1impl_1_1_redundant_read_and_write_elimination_pass_base" ],
-    [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1_unused_declaration_elimination_pass_base.html", "classllzk_1_1impl_1_1_unused_declaration_elimination_pass_base" ]
+    [ "CallGraphPrinterPassBase", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphPrinterPassBase" ],
+    [ "CallGraphSCCsPrinterPassBase", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase" ],
+    [ "ComputeConstrainToProductPassBase", "classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html", "classllzk_1_1impl_1_1ComputeConstrainToProductPassBase" ],
+    [ "ConstraintDependencyGraphPrinterPassBase", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase" ],
+    [ "FuseProductLoopsPassBase", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", "classllzk_1_1impl_1_1FuseProductLoopsPassBase" ],
+    [ "InlineStructsPassBase", "classllzk_1_1impl_1_1InlineStructsPassBase.html", "classllzk_1_1impl_1_1InlineStructsPassBase" ],
+    [ "IntervalAnalysisPrinterPassBase", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase" ],
+    [ "MemberWriteValidatorPassBase", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase" ],
+    [ "PolyLoweringPassBase", "classllzk_1_1impl_1_1PolyLoweringPassBase.html", "classllzk_1_1impl_1_1PolyLoweringPassBase" ],
+    [ "PredecessorPrinterPassBase", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html", "classllzk_1_1impl_1_1PredecessorPrinterPassBase" ],
+    [ "RedundantOperationEliminationPassBase", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase" ],
+    [ "RedundantReadAndWriteEliminationPassBase", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase" ],
+    [ "SymbolDefTreePrinterPassBase", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase" ],
+    [ "SymbolUseGraphPrinterPassBase", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
+    [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ]
 ];

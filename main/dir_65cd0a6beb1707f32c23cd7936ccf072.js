@@ -1,14 +1,22 @@
 var dir_65cd0a6beb1707f32c23cd7936ccf072 =
 [
-    [ "AbstractLatticeValue.h", "_abstract_lattice_value_8h.html", "_abstract_lattice_value_8h" ],
-    [ "AnalysisPasses.h", "_analysis_passes_8h.html", "_analysis_passes_8h" ],
-    [ "AnalysisPasses.td", "_analysis_passes_8td.html", null ],
-    [ "AnalysisWrappers.h", "_analysis_wrappers_8h.html", "_analysis_wrappers_8h" ],
-    [ "CallGraph.h", "_call_graph_8h.html", "_call_graph_8h" ],
-    [ "CallGraphAnalyses.h", "_call_graph_analyses_8h.html", "_call_graph_analyses_8h" ],
-    [ "ConstrainRef.h", "_constrain_ref_8h.html", "_constrain_ref_8h" ],
-    [ "ConstrainRefLattice.h", "_constrain_ref_lattice_8h.html", "_constrain_ref_lattice_8h" ],
-    [ "ConstraintDependencyGraph.h", "_constraint_dependency_graph_8h.html", "_constraint_dependency_graph_8h" ],
-    [ "DenseAnalysis.h", "_dense_analysis_8h.html", "_dense_analysis_8h" ],
-    [ "IntervalAnalysis.h", "_interval_analysis_8h.html", "_interval_analysis_8h" ]
+    [ "AbstractLatticeValue.h", "AbstractLatticeValue_8h.html", "AbstractLatticeValue_8h" ],
+    [ "AnalysisPassEnums.h", "AnalysisPassEnums_8h.html", "AnalysisPassEnums_8h" ],
+    [ "AnalysisPasses.h", "AnalysisPasses_8h.html", "AnalysisPasses_8h" ],
+    [ "AnalysisPasses.td", "AnalysisPasses_8td.html", null ],
+    [ "AnalysisUtil.h", "AnalysisUtil_8h.html", "AnalysisUtil_8h" ],
+    [ "AnalysisWrappers.h", "AnalysisWrappers_8h.html", "AnalysisWrappers_8h" ],
+    [ "CallGraph.h", "CallGraph_8h.html", "CallGraph_8h" ],
+    [ "CallGraphAnalyses.h", "CallGraphAnalyses_8h.html", "CallGraphAnalyses_8h" ],
+    [ "ConstraintDependencyGraph.h", "ConstraintDependencyGraph_8h.html", "ConstraintDependencyGraph_8h" ],
+    [ "GraphUtil.h", "GraphUtil_8h.html", "GraphUtil_8h" ],
+    [ "IntervalAnalysis.h", "IntervalAnalysis_8h.html", "IntervalAnalysis_8h" ],
+    [ "Intervals.h", "Intervals_8h.html", "Intervals_8h" ],
+    [ "LightweightSignalEquivalenceAnalysis.h", "LightweightSignalEquivalenceAnalysis_8h.html", "LightweightSignalEquivalenceAnalysis_8h" ],
+    [ "Matchers.h", "Matchers_8h.html", "Matchers_8h" ],
+    [ "SourceRef.h", "SourceRef_8h.html", "SourceRef_8h" ],
+    [ "SourceRefLattice.h", "SourceRefLattice_8h.html", "SourceRefLattice_8h" ],
+    [ "SparseAnalysis.h", "SparseAnalysis_8h.html", "SparseAnalysis_8h" ],
+    [ "SymbolDefTree.h", "SymbolDefTree_8h.html", "SymbolDefTree_8h" ],
+    [ "SymbolUseGraph.h", "SymbolUseGraph_8h.html", "SymbolUseGraph_8h" ]
 ];

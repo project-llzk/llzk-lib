@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['verifysizesformultiaffineops_0',['VerifySizesForMultiAffineOps',['../structllzk_1_1_verify_sizes_for_multi_affine_ops.html',1,'llzk']]]
+  ['valueless_0',['ValueLess',['../structllzk_1_1ValueLess.html',1,'llzk']]],
+  ['verifysizesformultiaffineops_1',['VerifySizesForMultiAffineOps',['../structllzk_1_1VerifySizesForMultiAffineOps.html',1,'llzk']]]
 ];

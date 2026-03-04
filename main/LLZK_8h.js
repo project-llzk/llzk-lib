@@ -1,0 +1,4 @@
+var LLZK_8h =
+[
+    [ "MLIR_DECLARE_CAPI_DIALECT_REGISTRATION", "LLZK_8h.html#a6723216e5318e744ff5c1ec486f97d79", null ]
+];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['bug_5freport_5furl_0',['BUG_REPORT_URL',['../tools_2include_2tools_2config_8h.html#adf7c7c6700e3090f8c0024c209c3c519',1,'config.h']]]
+  ['auxiliary_5fmember_5fprefix_0',['AUXILIARY_MEMBER_PREFIX',['../LLZKPolyLoweringPass_8cpp.html#a11748dd8dce65989d47ac3534665c399',1,'LLZKPolyLoweringPass.cpp']]]
 ];

@@ -1,22 +1,6 @@
 var searchData=
 [
-  ['half_0',['half',['../classllzk_1_1_field.html#a6968a19437cde1df0fa02c2d579d1972',1,'llzk::Field']]],
-  ['handleblockargument_1',['handleBlockArgument',['../classllzk_1_1array_1_1_create_array_op.html#ab249fca80a79a772c0cd5c33c6365577',1,'llzk::array::CreateArrayOp']]],
-  ['handledestructuringcomplete_2',['handleDestructuringComplete',['../classllzk_1_1array_1_1_create_array_op.html#aa15c461b99ca20f28c31569ab105392e',1,'llzk::array::CreateArrayOp']]],
-  ['handlepromotioncomplete_3',['handlePromotionComplete',['../classllzk_1_1array_1_1_create_array_op.html#a376141cb2962e7fec3ba03b83f084afd',1,'llzk::array::CreateArrayOp']]],
-  ['hasaffinemapattr_4',['hasAffineMapAttr',['../namespacellzk.html#ae16625d8c85094fae24fb003012b2380',1,'llzk::hasAffineMapAttr(Type type)'],['../namespacellzk.html#a21a0759043e8fb39b7ccae07f0d788da',1,'llzk::hasAffineMapAttr(mlir::Type type)']]],
-  ['hasallowconstraintattr_5',['hasAllowConstraintAttr',['../classllzk_1_1function_1_1_func_def_op.html#af3b96fc5a089350fbd2466bbd9a483e9',1,'llzk::function::FuncDefOp']]],
-  ['hasallowwitnessattr_6',['hasAllowWitnessAttr',['../classllzk_1_1function_1_1_func_def_op.html#a5575b8909bda2ac1ad87ebd1931034d6',1,'llzk::function::FuncDefOp']]],
-  ['hasargpublicattr_7',['hasArgPublicAttr',['../classllzk_1_1function_1_1_func_def_op.html#adb9cd43a3801be5f705801ab26dcbdf0',1,'llzk::function::FuncDefOp']]],
-  ['haschildren_8',['hasChildren',['../classllzk_1_1_call_graph_node.html#a5f9b5a5d16ad24f483e53a7ccb0c2555',1,'llzk::CallGraphNode']]],
-  ['hascolumns_9',['hasColumns',['../classllzk_1_1component_1_1_struct_def_op.html#a26f0834eef8efdad44b20af8cc85cdb6',1,'llzk::component::StructDefOp::hasColumns()'],['../classllzk_1_1component_1_1_struct_type.html#a357fb5bc795301d5fd589fb4d536e810',1,'llzk::component::StructType::hasColumns()']]],
-  ['hash_10',['Hash',['../structllzk_1_1_constrain_ref_1_1_hash.html',1,'llzk::ConstrainRef::Hash'],['../structllzk_1_1_constrain_ref_index_1_1_hash.html',1,'llzk::ConstrainRefIndex::Hash'],['../structllzk_1_1_expression_value_1_1_hash.html',1,'llzk::ExpressionValue::Hash'],['../structllzk_1_1_interval_1_1_hash.html',1,'llzk::Interval::Hash']]],
-  ['hash_2eh_11',['Hash.h',['../_hash_8h.html',1,'']]],
-  ['hashkey_12',['hashKey',['../structllzk_1_1array_1_1detail_1_1_array_type_storage.html#aca5fa9acf22bcebcc22e5b1fc828968e',1,'llzk::array::detail::ArrayTypeStorage::hashKey()'],['../structllzk_1_1polymorphic_1_1detail_1_1_type_var_type_storage.html#a12c98ac9f3659fb8133a91b2d2199940',1,'llzk::polymorphic::detail::TypeVarTypeStorage::hashKey()'],['../structllzk_1_1component_1_1detail_1_1_struct_type_storage.html#a74a44967376204a5006cc4e772e3b1c8',1,'llzk::component::detail::StructTypeStorage::hashKey()']]],
-  ['hasparamnamed_13',['hasParamNamed',['../classllzk_1_1component_1_1_struct_def_op.html#acf6a0ecb9f4aa612de6e0a08834d25e6',1,'llzk::component::StructDefOp::hasParamNamed(::mlir::StringAttr find)'],['../classllzk_1_1component_1_1_struct_def_op.html#aa761029bcebf1e7d7731eb3f66193044',1,'llzk::component::StructDefOp::hasParamNamed(::mlir::FlatSymbolRefAttr find)']]],
-  ['haspublicattr_14',['hasPublicAttr',['../classllzk_1_1component_1_1_field_def_op.html#a164459d9dfde02a4a8a970c6cfc047b5',1,'llzk::component::FieldDefOp']]],
-  ['hasrank_15',['hasRank',['../classllzk_1_1array_1_1_array_type.html#a486d3814308138df484cb43cf29d45a3',1,'llzk::array::ArrayType']]],
-  ['hasresult_16',['hasResult',['../classllzk_1_1_module_analysis.html#ad4b94a3b20deff662d2f8ac6b5856c94',1,'llzk::ModuleAnalysis']]],
-  ['hasuseswithin_17',['hasUsesWithin',['../namespacellzk.html#a2cb8dbb7c515a29aa35b18fb74516a42',1,'llzk::hasUsesWithin(Operation *symbol, Operation *from)'],['../namespacellzk.html#a7ccd56fcf180637d0cdf015d5a1d3350',1,'llzk::hasUsesWithin(mlir::Operation *symbol, mlir::Operation *from)']]],
-  ['http_18',['http',['../_l_i_c_e_n_s_e_8txt.html#a94615be87ac36e4d954e52531ff7c50b',1,'LICENSE.txt']]]
+  ['keyty_0',['KeyTy',['../structllzk_1_1array_1_1detail_1_1ArrayTypeStorage.html#a1033bbd563642e9a700ecfc4d64d83c4',1,'llzk::array::detail::ArrayTypeStorage::KeyTy'],['../structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html#a5f2c886de45ac8bb432a200ab7187f8d',1,'llzk::felt::detail::FeltTypeStorage::KeyTy'],['../structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a1db1d006bfa35eb3130e53428d67fc72',1,'llzk::pod::detail::PodTypeStorage::KeyTy'],['../structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html#a7110f96f528c557dda38231a1e1a67db',1,'llzk::polymorphic::detail::TypeVarTypeStorage::KeyTy'],['../structllzk_1_1component_1_1detail_1_1StructTypeStorage.html#ad94888f03d80ac95c1067a214e4a407e',1,'llzk::component::detail::StructTypeStorage::KeyTy']]],
+  ['kind_1',['KIND',['../LICENSE_8txt.html#aa00504fa42933d47d305596973b56921',1,'LICENSE.txt']]],
+  ['kind_2',['kind',['../structGenerator.html#ae08ac0d490ed19be36ac349a90eae656',1,'Generator']]]
 ];

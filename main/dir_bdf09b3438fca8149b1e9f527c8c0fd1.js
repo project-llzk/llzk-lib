@@ -1,6 +1,7 @@
 var dir_bdf09b3438fca8149b1e9f527c8c0fd1 =
 [
-    [ "AttributeHelper.cpp", "_attribute_helper_8cpp.html", "_attribute_helper_8cpp" ],
-    [ "Dialect.cpp", "_l_l_z_k_2_i_r_2_dialect_8cpp.html", "_l_l_z_k_2_i_r_2_dialect_8cpp" ],
-    [ "Versioning.cpp", "_versioning_8cpp.html", null ]
+    [ "AttributeHelper.cpp", "AttributeHelper_8cpp.html", "AttributeHelper_8cpp" ],
+    [ "Dialect.cpp", "LLZK_2IR_2Dialect_8cpp.html", "LLZK_2IR_2Dialect_8cpp" ],
+    [ "Ops.cpp", "LLZK_2IR_2Ops_8cpp.html", "LLZK_2IR_2Ops_8cpp" ],
+    [ "Versioning.cpp", "Versioning_8cpp.html", null ]
 ];

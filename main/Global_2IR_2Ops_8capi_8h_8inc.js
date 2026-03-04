@@ -1,0 +1,25 @@
+var Global_2IR_2Ops_8capi_8h_8inc =
+[
+    [ "llzkGlobal_GlobalDefOpBuild", "Global_2IR_2Ops_8capi_8h_8inc.html#ad17054432ba621140a30047d05bb6caa", null ],
+    [ "llzkGlobal_GlobalDefOpGetConstant", "Global_2IR_2Ops_8capi_8h_8inc.html#ae6dbdefabf395e23a6fc01071fb0d6c0", null ],
+    [ "llzkGlobal_GlobalDefOpGetInitialValue", "Global_2IR_2Ops_8capi_8h_8inc.html#a75f855d6a34ff937106cbec7c91a442b", null ],
+    [ "llzkGlobal_GlobalDefOpGetSymName", "Global_2IR_2Ops_8capi_8h_8inc.html#a9df7280b57834dd7b2cbaf7a3c14dcbd", null ],
+    [ "llzkGlobal_GlobalDefOpGetType", "Global_2IR_2Ops_8capi_8h_8inc.html#aec3bd6587ec42e6d3f49071f7d7f1c93", null ],
+    [ "llzkGlobal_GlobalDefOpIsConstant", "Global_2IR_2Ops_8capi_8h_8inc.html#a0ec2ab8920043b6e445d09e93886077b", null ],
+    [ "llzkGlobal_GlobalDefOpSetConstant", "Global_2IR_2Ops_8capi_8h_8inc.html#aeeb98173ecc86f326ebe34ac823f7436", null ],
+    [ "llzkGlobal_GlobalDefOpSetInitialValue", "Global_2IR_2Ops_8capi_8h_8inc.html#a97e6ebafcee71faa9b21262950a2d98f", null ],
+    [ "llzkGlobal_GlobalDefOpSetSymName", "Global_2IR_2Ops_8capi_8h_8inc.html#a3d55a121e6af4f0bc674a101fa34ae06", null ],
+    [ "llzkGlobal_GlobalDefOpSetType", "Global_2IR_2Ops_8capi_8h_8inc.html#a3a62b806b7a97d097251cf4e785c95c8", null ],
+    [ "llzkGlobal_GlobalReadOpBuild", "Global_2IR_2Ops_8capi_8h_8inc.html#aff93894e5a8c0e6f059c40b760d4230f", null ],
+    [ "llzkGlobal_GlobalReadOpGetNameRef", "Global_2IR_2Ops_8capi_8h_8inc.html#a4b2f4f2933c08d0c88d43cd4cae492d7", null ],
+    [ "llzkGlobal_GlobalReadOpGetVal", "Global_2IR_2Ops_8capi_8h_8inc.html#a5f9c0af3ea9e809ed372d196e10bb3dd", null ],
+    [ "llzkGlobal_GlobalReadOpSetNameRef", "Global_2IR_2Ops_8capi_8h_8inc.html#ad2afa6d0e2d660f6f65b4b99d01dc539", null ],
+    [ "llzkGlobal_GlobalWriteOpBuild", "Global_2IR_2Ops_8capi_8h_8inc.html#a77126bae903000224e66ef47d7b8c5f8", null ],
+    [ "llzkGlobal_GlobalWriteOpGetNameRef", "Global_2IR_2Ops_8capi_8h_8inc.html#a2b47d9e6219c427ac4d0c5879e4ffeba", null ],
+    [ "llzkGlobal_GlobalWriteOpGetVal", "Global_2IR_2Ops_8capi_8h_8inc.html#a1140c52f87c15fb92080be0da3682d1a", null ],
+    [ "llzkGlobal_GlobalWriteOpSetNameRef", "Global_2IR_2Ops_8capi_8h_8inc.html#a1a1fc2074e67a23921ff8784e9c2aebb", null ],
+    [ "llzkGlobal_GlobalWriteOpSetVal", "Global_2IR_2Ops_8capi_8h_8inc.html#a3a1e2edd179ca4f2ac7b247ae7b4cb43", null ],
+    [ "llzkOperationIsA_Global_GlobalDefOp", "Global_2IR_2Ops_8capi_8h_8inc.html#abcb8db4e02161a77c894bacdce75e036", null ],
+    [ "llzkOperationIsA_Global_GlobalReadOp", "Global_2IR_2Ops_8capi_8h_8inc.html#a183e2f0f3563686517daedae165ce41a", null ],
+    [ "llzkOperationIsA_Global_GlobalWriteOp", "Global_2IR_2Ops_8capi_8h_8inc.html#a38ce7d0d5958d475541682a579a15649", null ]
+];

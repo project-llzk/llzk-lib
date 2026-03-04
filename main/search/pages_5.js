@@ -1,5 +1,29 @@
 var searchData=
 [
-  ['of_20conduct_0',['Contributor Covenant Code of Conduct',['../code-of-conduct.html',1,'contribution-guide']]],
-  ['overview_1',['Overview',['../index.html',1,'']]]
+  ['a_20new_20issue_0',['Create a new issue',['../contribution-guide.html#create-a-new-issue',1,'']]],
+  ['a_20new_20release_1',['Preparing a new release',['../maintanence.html#preparing-a-new-release',1,'']]],
+  ['a_20new_20version_2',['a New Version',['../maintanence.html#releasing-a-new-version',1,'Releasing a New Version'],['../maintanence.html#tracking-a-new-version',1,'Tracking a New Version']]],
+  ['add_20_3a_3allzk_3a_3afelt_3a_3aaddfeltop_3',['&lt;span class=&quot;tt&quot;&gt;felt.add&lt;/span&gt; (llzk::felt::AddFeltOp)',['../dialects.html#feltadd-llzkfeltaddfeltop',1,'']]],
+  ['add_20_3a_3ar1cs_3a_3aaddop_4',['&lt;span class=&quot;tt&quot;&gt;r1cs.add&lt;/span&gt; (r1cs::AddOp)',['../backend-dialects.html#r1csadd-r1csaddop',1,'']]],
+  ['an_20issue_5',['Solve an issue',['../contribution-guide.html#solve-an-issue',1,'']]],
+  ['analysis_6',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-interval-analysis&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-interval-analysis',1,'']]],
+  ['analysis_20passes_7',['Analysis Passes',['../tools.html#analysis-passes',1,'']]],
+  ['and_20_3a_3allzk_3a_3aboolean_3a_3aandboolop_8',['&lt;span class=&quot;tt&quot;&gt;bool.and&lt;/span&gt; (llzk::boolean::AndBoolOp)',['../dialects.html#booland-llzkbooleanandboolop',1,'']]],
+  ['applymap_20_3a_3allzk_3a_3apolymorphic_3a_3aapplymapop_9',['&lt;span class=&quot;tt&quot;&gt;poly.applymap&lt;/span&gt; (llzk::polymorphic::ApplyMapOp)',['../dialects.html#polyapplymap-llzkpolymorphicapplymapop',1,'']]],
+  ['architecture_10',['Architecture',['../overview.html',1,'']]],
+  ['array_20dialect_11',['&apos;array&apos; Dialect',['../dialects.html#array-dialect',1,'']]],
+  ['array_20dialect_20transformation_20passes_12',['&apos;array&apos; Dialect Transformation Passes',['../tools.html#array-dialect-transformation-passes',1,'']]],
+  ['array_20extract_20_3a_3allzk_3a_3aarray_3a_3aextractarrayop_13',['&lt;span class=&quot;tt&quot;&gt;array.extract&lt;/span&gt; (llzk::array::ExtractArrayOp)',['../dialects.html#arrayextract-llzkarrayextractarrayop',1,'']]],
+  ['array_20insert_20_3a_3allzk_3a_3aarray_3a_3ainsertarrayop_14',['&lt;span class=&quot;tt&quot;&gt;array.insert&lt;/span&gt; (llzk::array::InsertArrayOp)',['../dialects.html#arrayinsert-llzkarrayinsertarrayop',1,'']]],
+  ['array_20len_20_3a_3allzk_3a_3aarray_3a_3aarraylengthop_15',['&lt;span class=&quot;tt&quot;&gt;array.len&lt;/span&gt; (llzk::array::ArrayLengthOp)',['../dialects.html#arraylen-llzkarrayarraylengthop',1,'']]],
+  ['array_20new_20_3a_3allzk_3a_3aarray_3a_3acreatearrayop_16',['&lt;span class=&quot;tt&quot;&gt;array.new&lt;/span&gt; (llzk::array::CreateArrayOp)',['../dialects.html#arraynew-llzkarraycreatearrayop',1,'']]],
+  ['array_20read_20_3a_3allzk_3a_3aarray_3a_3areadarrayop_17',['&lt;span class=&quot;tt&quot;&gt;array.read&lt;/span&gt; (llzk::array::ReadArrayOp)',['../dialects.html#arrayread-llzkarrayreadarrayop',1,'']]],
+  ['array_20to_20scalar_18',['&lt;span class=&quot;tt&quot;&gt;-llzk-array-to-scalar&lt;/span&gt;',['../tools.html#autotoc_md-llzk-array-to-scalar',1,'']]],
+  ['array_20write_20_3a_3allzk_3a_3aarray_3a_3awritearrayop_19',['&lt;span class=&quot;tt&quot;&gt;array.write&lt;/span&gt; (llzk::array::WriteArrayOp)',['../dialects.html#arraywrite-llzkarraywritearrayop',1,'']]],
+  ['arrays_20',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
+  ['arraytype_21',['ArrayType',['../dialects.html#arraytype',1,'']]],
+  ['assert_20_3a_3allzk_3a_3aboolean_3a_3aassertop_22',['&lt;span class=&quot;tt&quot;&gt;bool.assert&lt;/span&gt; (llzk::boolean::AssertOp)',['../dialects.html#boolassert-llzkbooleanassertop',1,'']]],
+  ['attributes_23',['Attributes',['../dialects.html#attributes-3',1,'Attributes'],['../dialects.html#attributes-5',1,'Attributes'],['../dialects.html#attributes-12',1,'Attributes'],['../dialects.html#attributes-16',1,'Attributes'],['../backend-dialects.html#attributes-28',1,'Attributes']]],
+  ['attributes_3a_24',['Attributes:',['../dialects.html#attributes',1,'Attributes:'],['../dialects.html#attributes-1',1,'Attributes:'],['../dialects.html#attributes-2',1,'Attributes:'],['../dialects.html#attributes-4',1,'Attributes:'],['../dialects.html#attributes-6',1,'Attributes:'],['../dialects.html#attributes-7',1,'Attributes:'],['../dialects.html#attributes-8',1,'Attributes:'],['../dialects.html#attributes-9',1,'Attributes:'],['../dialects.html#attributes-10',1,'Attributes:'],['../dialects.html#attributes-11',1,'Attributes:'],['../dialects.html#attributes-13',1,'Attributes:'],['../dialects.html#attributes-14',1,'Attributes:'],['../dialects.html#attributes-15',1,'Attributes:'],['../dialects.html#attributes-17',1,'Attributes:'],['../dialects.html#attributes-18',1,'Attributes:'],['../dialects.html#attributes-19',1,'Attributes:'],['../dialects.html#attributes-20',1,'Attributes:'],['../dialects.html#attributes-21',1,'Attributes:'],['../dialects.html#attributes-22',1,'Attributes:'],['../dialects.html#attributes-23',1,'Attributes:'],['../backend-dialects.html#attributes-24',1,'Attributes:'],['../backend-dialects.html#attributes-25',1,'Attributes:'],['../backend-dialects.html#attributes-26',1,'Attributes:'],['../backend-dialects.html#attributes-27',1,'Attributes:']]],
+  ['attribution_25',['Attribution',['../code-of-conduct.html#attribution',1,'']]]
 ];
