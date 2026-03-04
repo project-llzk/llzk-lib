@@ -1,11 +1,11 @@
-name: Run Tests
+name: Tests
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  run-tests:
     strategy:
       matrix:
         compiler:
@@ -46,9 +46,9 @@ jobs:
           name: "Test results (${{ matrix.compiler.name }})"
           path: "result/artifacts/${{ matrix.compiler.report }}"
 
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
   publish-tests:
-    name: Run Tests
-    needs: build
+    needs: run-tests
     runs-on: ubuntu-24.04
     if: ${{ !cancelled() }}
     steps:

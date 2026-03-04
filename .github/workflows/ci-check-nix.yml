@@ -1,11 +1,12 @@
-name: Check nix
+name: Nix check
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
+  nix-check:
     strategy:
       matrix:
         cmakeBuildType: [debug, release]

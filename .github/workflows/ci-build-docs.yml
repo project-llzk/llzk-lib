@@ -1,11 +1,12 @@
-name: Build docs
+name: Docs
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
+  build-docs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
