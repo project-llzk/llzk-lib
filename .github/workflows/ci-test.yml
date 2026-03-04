@@ -47,10 +47,10 @@ jobs:
           path: "result/artifacts/${{ matrix.compiler.report }}"
 
   publish-tests:
-    name: "Publish test results"
+    name: Run Tests
     needs: build
     runs-on: ubuntu-24.04
-    if: always()
+    if: needs.build.result == 'success'
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -58,7 +58,6 @@ jobs:
           path: artifacts
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
         with:
           files: artifacts/**/*.xml
-          comment_mode: failures
+          comment_mode: always
