@@ -1,5 +1,12 @@
 name: Deploy GitHub Pages
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to prepare documentation for. Unset version will update 'main' version."
+        required: false
+        type: string
+        default: 'main'
   workflow_call:
     inputs:
       version:
@@ -66,7 +73,7 @@ jobs:
           git add .
           # Check for staged or unstaged changes before committing, to avoid empty commits.
           git diff --cached --quiet && git diff --quiet || git commit -m "docs: update ${{ inputs.version }} documentation"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:gh-pages
+          git push --dry-run --verbose "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:gh-pages
 
       - name: Upload new artifact
         id: upload
