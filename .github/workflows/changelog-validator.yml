@@ -12,4 +12,6 @@ on:
 jobs:
   call-workflow-changelog-validate:
     uses: project-llzk/open-source-release-helpers/.github/workflows/changelog-validator.yml@main
+    with:
+      branch_name: ${{ github.head_ref }}
     secrets: inherit
