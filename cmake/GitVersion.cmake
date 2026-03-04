@@ -1,4 +1,6 @@
 # Fetch the project version from a git version tag.
+# Note: if building in a sandbox where git is unavailable (e.g. Nix), pass
+# -DLLZK_VERSION_OVERRIDE=<version> to CMake to bypass the call to this function.
 function(get_git_version GIT_VERSION_VAR)
   execute_process(
     COMMAND git describe --tags
@@ -8,8 +10,9 @@ function(get_git_version GIT_VERSION_VAR)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   if(NOT GIT_VERSION)
-    # The initial commit to the repository is tagged with `v0.0.0` so this will never fail.
-    message(FATAL_ERROR "Missing `v0.0.0` tag on initial commit.")
+    # The initial commit to the repository is tagged with `v0.0.0` so this will never fail except
+    # in a nix sandbox environment where the version must be passed with `LLZK_VERSION_OVERRIDE`.
+    message(FATAL_ERROR "Could not find git version tag and `LLZK_VERSION_OVERRIDE` is not set.")
   else()
     # The output of `git describe --tags` is in the format `vX.Y.Z-N-gHASH` where `vX.Y.Z` is the last tag,
     # `N` is the number of commits since the last tag, and `HASH` is the abbreviated commit hash. We need to
