@@ -1,4 +1,4 @@
-name: Changelog validator
+name: Changelog
 on:
   # Require a changelog for any PR going to main.
   pull_request:
@@ -10,7 +10,7 @@ on:
       - README.md
 
 jobs:
-  call-workflow-changelog-validate:
+  validate:
     uses: project-llzk/open-source-release-helpers/.github/workflows/changelog-validator.yml@main
     with:
       branch_name: ${{ github.head_ref }}
