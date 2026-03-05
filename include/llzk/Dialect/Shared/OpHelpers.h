@@ -42,12 +42,13 @@ template <typename OpClass> inline OpClass getSelfOrParentOfType(mlir::Operation
 }
 
 /// Return the closest surrounding parent operation that is of type 'OpClass'.
-template <typename OpClass> inline mlir::FailureOr<OpClass> getParentOfType(mlir::Operation *op) {
-  if (OpClass p = op->getParentOfType<OpClass>()) {
-    return p;
-  } else {
-    return mlir::failure();
+template <typename OpClass> inline OpClass getParentOfType(mlir::Operation *op) {
+  if (op) {
+    if (OpClass p = op->getParentOfType<OpClass>()) {
+      return p;
+    }
   }
+  return {};
 }
 
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to
