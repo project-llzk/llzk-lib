@@ -327,15 +327,14 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 
 LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Additional checks for the compute/constrain/product functions within a struct
-  FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
-  if (succeeded(parentStructOpt)) {
+  if (StructDefOp parentStructOpt = getParentOfType<StructDefOp>(*this)) {
     // Verify return type restrictions for functions within a StructDefOp
     if (nameIsCompute()) {
-      return verifyFuncTypeCompute(*this, tables, parentStructOpt.value());
+      return verifyFuncTypeCompute(*this, tables, parentStructOpt);
     } else if (nameIsConstrain()) {
-      return verifyFuncTypeConstrain(*this, tables, parentStructOpt.value());
+      return verifyFuncTypeConstrain(*this, tables, parentStructOpt);
     } else if (nameIsProduct()) {
-      return verifyFuncTypeProduct(*this, tables, parentStructOpt.value());
+      return verifyFuncTypeProduct(*this, tables, parentStructOpt);
     }
   }
   // In the general case, verify symbol resolution in all input and output types.
@@ -726,9 +725,10 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   // If the callee references a parameter of the struct where this call appears, perform the subset
   // of checks that can be done even though the target is unknown.
   if (calleeAttr.getNestedReferences().size() == 1) {
-    FailureOr<StructDefOp> parent = getParentOfType<StructDefOp>(*this);
-    if (succeeded(parent) && parent->hasParamNamed(calleeAttr.getRootReference())) {
-      return UnknownTargetVerifier(this, calleeAttr).verify();
+    if (StructDefOp parent = getParentOfType<StructDefOp>(*this)) {
+      if (parent.hasParamNamed(calleeAttr.getRootReference())) {
+        return UnknownTargetVerifier(this, calleeAttr).verify();
+      }
     }
   }
 

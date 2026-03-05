@@ -1280,13 +1280,13 @@ public:
 
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the member symbol name within its parent struct.
-    FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(op);
-    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
+    StructDefOp parentRes = getParentOfType<StructDefOp>(op);
+    assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def
 
     // If the symbol is used by a MemberWriteOp with a different result type then change
     // the type of the MemberDefOp to match the MemberWriteOp result type.
     Type newType = nullptr;
-    if (auto memberUsers = llzk::getSymbolUses(op, parentRes.value())) {
+    if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
       std::optional<Location> newTypeLoc = std::nullopt;
       for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
         if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
