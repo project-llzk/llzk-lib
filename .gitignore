@@ -1,0 +1,80 @@
+/build/
+cmake-build-*/
+
+# Nix
+/result
+/outputs
+/out
+*.profraw
+
+# Manual build setup
+/third-party/llvm-project
+/third-party/llvm-install-root
+
+# Visual Studio Code
+.vscode
+
+# Vim
+*.swp
+
+# CLion
+.idea/
+
+#venv
+.venv/
+
+# The user specific presets MUST not be checked in
+CMakeUserPresets.json
+
+# CMake Variants are ignored. If you want to use them,
+# create one using one of the following file names
+cmake-variants.yaml
+cmake-variants.json
+CMakeVariants.yaml
+CMakeVariants.json
+
+# Some LSPs and similar tools require this files
+# at the root of the repository.
+# So a common solution is to `ln` there from
+# the build directory. We should not check them in.
+compile_commands.json
+tablegen_compile_commands.yml
+
+.DS_Store
+__pycache__
+.cache/
+
+# Common C++ results
+# From https://github.com/github/gitignore/blob/main/C%2B%2B.gitignore
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
