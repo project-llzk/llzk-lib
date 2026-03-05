@@ -3,7 +3,7 @@ var OpHelpers_8h =
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", "structllzk_1_1VerifySizesForMultiAffineOps" ],
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >::Impl< TypeClass >", "classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html", null ],
     [ "llzk::getOperationName", "namespacellzk.html#ace40014709812c1c57cb0aa39b87558b", null ],
-    [ "llzk::getParentOfType", "namespacellzk.html#ab1f2b464265a6b9da227871d9394bd9e", null ],
+    [ "llzk::getParentOfType", "namespacellzk.html#a5b768daf3c60f0a261a34d171f706304", null ],
     [ "llzk::getSelfOrParentOfType", "namespacellzk.html#ad55d77a77dc0f2d6c27bc7b6bedbc952", null ],
     [ "llzk::parseAttrDictWithWarnings", "namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a", null ],
     [ "llzk::parseDimAndSymbolList", "namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b", null ],

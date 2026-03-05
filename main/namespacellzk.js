@@ -243,7 +243,7 @@ var namespacellzk =
     [ "getNames", "namespacellzk.html#a8a4057e4e77ea614edbcee1fba37b30a", null ],
     [ "getNames", "namespacellzk.html#a3395beb30b5d17bc8a968b14eb3638d6", null ],
     [ "getOperationName", "namespacellzk.html#ace40014709812c1c57cb0aa39b87558b", null ],
-    [ "getParentOfType", "namespacellzk.html#ab1f2b464265a6b9da227871d9394bd9e", null ],
+    [ "getParentOfType", "namespacellzk.html#a5b768daf3c60f0a261a34d171f706304", null ],
     [ "getPathFromRoot", "namespacellzk.html#adb644c6ee4397684491d5b7e3519fe40", null ],
     [ "getPathFromRoot", "namespacellzk.html#a3d5f5cb52ce07e8385c8ed43ebfcb393", null ],
     [ "getPathFromRoot", "namespacellzk.html#a9d230c67381812388fc7b012cafdd068", null ],

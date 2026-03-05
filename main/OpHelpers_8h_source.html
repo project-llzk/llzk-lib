@@ -151,118 +151,119 @@ $(function(){initNavTree('OpHelpers_8h_source.html','',''); });
 </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span></div>
 <div class="foldopen" id="foldopen00045" data-start="{" data-end="}">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="namespacellzk.html#ab1f2b464265a6b9da227871d9394bd9e">   45</a></span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpClass&gt; <span class="keyword">inline</span> mlir::FailureOr&lt;OpClass&gt; <a class="code hl_function" href="namespacellzk.html#ab1f2b464265a6b9da227871d9394bd9e">getParentOfType</a>(mlir::Operation *op) {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordflow">if</span> (OpClass p = op-&gt;getParentOfType&lt;OpClass&gt;()) {</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordflow">return</span> p;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordflow">return</span> mlir::failure();</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">   45</a></span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpClass&gt; <span class="keyword">inline</span> OpClass <a class="code hl_function" href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">getParentOfType</a>(mlir::Operation *op) {</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordflow">if</span> (op) {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordflow">if</span> (OpClass p = op-&gt;getParentOfType&lt;OpClass&gt;()) {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <span class="keywordflow">return</span> p;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    }</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  }</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>}</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">return</span> {};</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>}</div>
 </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span></div>
-<div class="foldopen" id="foldopen00055" data-start="{" data-end="};">
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno"><a class="line" href="structllzk_1_1VerifySizesForMultiAffineOps.html">   55</a></span><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> OperandSegmentIndex&gt; <span class="keyword">struct </span><a class="code hl_struct" href="structllzk_1_1VerifySizesForMultiAffineOps.html">VerifySizesForMultiAffineOps</a> {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
 <div class="foldopen" id="foldopen00056" data-start="{" data-end="};">
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html">   56</a></span>  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> TypeClass&gt; <span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html">Impl</a> : <span class="keyword">public</span> mlir::OpTrait::TraitBase&lt;TypeClass, Impl&gt; {</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keyword">inline</span> <span class="keyword">static</span> mlir::LogicalResult verifyHelper(mlir::Operation *op, int32_t segmentSize) {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      TypeClass c = llvm::cast&lt;TypeClass&gt;(op);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#a8e95fbde1693eff6e93091abfe77cf16">affineMapHelpers::verifySizesForMultiAffineOps</a>(</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>          op, segmentSize, c.getMapOpGroupSizesAttr(), c.getMapOperands(), c.getNumDimsPerMapAttr()</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      );</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    }</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">public</span>:</div>
-<div class="foldopen" id="foldopen00065" data-start="{" data-end="}">
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html#ab888217efc279a1d2fe88ad99aebd6fc">   65</a></span>    <span class="keyword">static</span> mlir::LogicalResult <a class="code hl_function" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html#ab888217efc279a1d2fe88ad99aebd6fc">verifyTrait</a>(mlir::Operation *op) {</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      <span class="keywordflow">if</span> (TypeClass::template hasTrait&lt;mlir::OpTrait::AttrSizedOperandSegments&gt;()) {</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        <span class="comment">// If the AttrSizedOperandSegments trait is present, must have `OperandSegmentIndex`.</span></div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        <span class="keyword">static_assert</span>(</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>            OperandSegmentIndex &gt;= 0,</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>            <span class="stringliteral">&quot;When the `AttrSizedOperandSegments` trait is present, the index of `$mapOperands` &quot;</span></div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>            <span class="stringliteral">&quot;within the `operandSegmentSizes` attribute must be specified.&quot;</span></div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        );</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        mlir::DenseI32ArrayAttr segmentSizes = op-&gt;getAttrOfType&lt;mlir::DenseI32ArrayAttr&gt;(</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>            mlir::OpTrait::AttrSizedOperandSegments&lt;TypeClass&gt;::getOperandSegmentSizeAttr()</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        );</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>        assert(</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>            OperandSegmentIndex &lt; segmentSizes.size() &amp;&amp;</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>            <span class="stringliteral">&quot;Parameter of `VerifySizesForMultiAffineOps` exceeds the number of ODS-declared &quot;</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>            <span class="stringliteral">&quot;operands&quot;</span></div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        );</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        <span class="keywordflow">return</span> verifyHelper(op, segmentSizes[OperandSegmentIndex]);</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        <span class="comment">// If the trait is not present, the `OperandSegmentIndex` is ignored. Pass `-1` to indicate</span></div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>        <span class="comment">// that the checks against `operandSegmentSizes` should be skipped.</span></div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>        <span class="keywordflow">return</span> verifyHelper(op, -1);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      }</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    }</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="structllzk_1_1VerifySizesForMultiAffineOps.html">   56</a></span><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> OperandSegmentIndex&gt; <span class="keyword">struct </span><a class="code hl_struct" href="structllzk_1_1VerifySizesForMultiAffineOps.html">VerifySizesForMultiAffineOps</a> {</div>
+<div class="foldopen" id="foldopen00057" data-start="{" data-end="};">
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno"><a class="line" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html">   57</a></span>  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> TypeClass&gt; <span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html">Impl</a> : <span class="keyword">public</span> mlir::OpTrait::TraitBase&lt;TypeClass, Impl&gt; {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="keyword">inline</span> <span class="keyword">static</span> mlir::LogicalResult verifyHelper(mlir::Operation *op, int32_t segmentSize) {</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      TypeClass c = llvm::cast&lt;TypeClass&gt;(op);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#a8e95fbde1693eff6e93091abfe77cf16">affineMapHelpers::verifySizesForMultiAffineOps</a>(</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>          op, segmentSize, c.getMapOpGroupSizesAttr(), c.getMapOperands(), c.getNumDimsPerMapAttr()</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      );</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    }</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">public</span>:</div>
+<div class="foldopen" id="foldopen00066" data-start="{" data-end="}">
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html#ab888217efc279a1d2fe88ad99aebd6fc">   66</a></span>    <span class="keyword">static</span> mlir::LogicalResult <a class="code hl_function" href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html#ab888217efc279a1d2fe88ad99aebd6fc">verifyTrait</a>(mlir::Operation *op) {</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      <span class="keywordflow">if</span> (TypeClass::template hasTrait&lt;mlir::OpTrait::AttrSizedOperandSegments&gt;()) {</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        <span class="comment">// If the AttrSizedOperandSegments trait is present, must have `OperandSegmentIndex`.</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>        <span class="keyword">static_assert</span>(</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>            OperandSegmentIndex &gt;= 0,</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>            <span class="stringliteral">&quot;When the `AttrSizedOperandSegments` trait is present, the index of `$mapOperands` &quot;</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>            <span class="stringliteral">&quot;within the `operandSegmentSizes` attribute must be specified.&quot;</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        );</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        mlir::DenseI32ArrayAttr segmentSizes = op-&gt;getAttrOfType&lt;mlir::DenseI32ArrayAttr&gt;(</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>            mlir::OpTrait::AttrSizedOperandSegments&lt;TypeClass&gt;::getOperandSegmentSizeAttr()</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>        );</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>        assert(</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>            OperandSegmentIndex &lt; segmentSizes.size() &amp;&amp;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>            <span class="stringliteral">&quot;Parameter of `VerifySizesForMultiAffineOps` exceeds the number of ODS-declared &quot;</span></div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>            <span class="stringliteral">&quot;operands&quot;</span></div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        );</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        <span class="keywordflow">return</span> verifyHelper(op, segmentSizes[OperandSegmentIndex]);</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>        <span class="comment">// If the trait is not present, the `OperandSegmentIndex` is ignored. Pass `-1` to indicate</span></div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>        <span class="comment">// that the checks against `operandSegmentSizes` should be skipped.</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        <span class="keywordflow">return</span> verifyHelper(op, -1);</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      }</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    }</div>
 </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  };</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  };</div>
 </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>};</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>};</div>
 </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="keyword">template</span> &lt;<span class="keywordtype">unsigned</span> N&gt;</div>
-<div class="foldopen" id="foldopen00092" data-start="{" data-end="}">
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">   92</a></span><span class="keyword">inline</span> mlir::ParseResult <a class="code hl_function" href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">parseDimAndSymbolList</a>(</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    mlir::OpAsmParser &amp;parser,</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    mlir::SmallVector&lt;mlir::OpAsmParser::UnresolvedOperand, N&gt; &amp;mapOperands,</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    mlir::IntegerAttr &amp;numDims</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>) {</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#ad6a727262e168eb23aa752c9acd2c805">affineMapHelpers::parseDimAndSymbolList</a>(parser, mapOperands, numDims);</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>}</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="keyword">template</span> &lt;<span class="keywordtype">unsigned</span> N&gt;</div>
+<div class="foldopen" id="foldopen00093" data-start="{" data-end="}">
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">   93</a></span><span class="keyword">inline</span> mlir::ParseResult <a class="code hl_function" href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">parseDimAndSymbolList</a>(</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    mlir::OpAsmParser &amp;parser,</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    mlir::SmallVector&lt;mlir::OpAsmParser::UnresolvedOperand, N&gt; &amp;mapOperands,</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    mlir::IntegerAttr &amp;numDims</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>) {</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#ad6a727262e168eb23aa752c9acd2c805">affineMapHelpers::parseDimAndSymbolList</a>(parser, mapOperands, numDims);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>}</div>
 </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
-<div class="foldopen" id="foldopen00100" data-start="{" data-end="}">
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno"><a class="line" href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">  100</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">printDimAndSymbolList</a>(</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands,</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    mlir::IntegerAttr numDims</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>) {</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#af91c6a653493162862294c6b944aea02">affineMapHelpers::printDimAndSymbolList</a>(printer, op, mapOperands, numDims);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>}</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
+<div class="foldopen" id="foldopen00101" data-start="{" data-end="}">
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno"><a class="line" href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">  101</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">printDimAndSymbolList</a>(</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands,</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    mlir::IntegerAttr numDims</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>) {</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#af91c6a653493162862294c6b944aea02">affineMapHelpers::printDimAndSymbolList</a>(printer, op, mapOperands, numDims);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>}</div>
 </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="foldopen" id="foldopen00107" data-start="{" data-end="}">
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno"><a class="line" href="namespacellzk.html#acb80626795a01a586c626bb1cb366a6d">  107</a></span><span class="keyword">inline</span> mlir::ParseResult <a class="code hl_function" href="namespacellzk.html#acb80626795a01a586c626bb1cb366a6d">parseMultiDimAndSymbolList</a>(</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    mlir::OpAsmParser &amp;parser,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    mlir::SmallVector&lt;mlir::SmallVector&lt;mlir::OpAsmParser::UnresolvedOperand&gt;&gt; &amp;multiMapOperands,</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    mlir::DenseI32ArrayAttr &amp;numDimsPerMap</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>) {</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#a904d508111e58e79a0ce0af9ef3eddd7">affineMapHelpers::parseMultiDimAndSymbolList</a>(parser, multiMapOperands, numDimsPerMap);</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>}</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
+<div class="foldopen" id="foldopen00108" data-start="{" data-end="}">
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno"><a class="line" href="namespacellzk.html#acb80626795a01a586c626bb1cb366a6d">  108</a></span><span class="keyword">inline</span> mlir::ParseResult <a class="code hl_function" href="namespacellzk.html#acb80626795a01a586c626bb1cb366a6d">parseMultiDimAndSymbolList</a>(</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    mlir::OpAsmParser &amp;parser,</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    mlir::SmallVector&lt;mlir::SmallVector&lt;mlir::OpAsmParser::UnresolvedOperand&gt;&gt; &amp;multiMapOperands,</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    mlir::DenseI32ArrayAttr &amp;numDimsPerMap</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>) {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#a904d508111e58e79a0ce0af9ef3eddd7">affineMapHelpers::parseMultiDimAndSymbolList</a>(parser, multiMapOperands, numDimsPerMap);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>}</div>
 </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
-<div class="foldopen" id="foldopen00115" data-start="{" data-end="}">
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno"><a class="line" href="namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8">  115</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8">printMultiDimAndSymbolList</a>(</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands,</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    mlir::DenseI32ArrayAttr numDimsPerMap</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>) {</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#af820df20290e857d1944436cf35dbd91">affineMapHelpers::printMultiDimAndSymbolList</a>(printer, op, multiMapOperands, numDimsPerMap);</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>}</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="foldopen" id="foldopen00116" data-start="{" data-end="}">
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno"><a class="line" href="namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8">  116</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8">printMultiDimAndSymbolList</a>(</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands,</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    mlir::DenseI32ArrayAttr numDimsPerMap</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>) {</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#af820df20290e857d1944436cf35dbd91">affineMapHelpers::printMultiDimAndSymbolList</a>(printer, op, multiMapOperands, numDimsPerMap);</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>}</div>
 </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
-<div class="foldopen" id="foldopen00122" data-start="{" data-end="}">
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">  122</a></span><span class="keyword">inline</span> mlir::ParseResult <a class="code hl_function" href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">parseAttrDictWithWarnings</a>(</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    mlir::OpAsmParser &amp;parser, mlir::NamedAttrList &amp;extraAttrs, mlir::OperationState &amp;state</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>) {</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#ae518c6ab6b78dae5fab9a03ec999abc9">affineMapHelpers::parseAttrDictWithWarnings</a>(parser, extraAttrs, state);</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>}</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
+<div class="foldopen" id="foldopen00123" data-start="{" data-end="}">
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">  123</a></span><span class="keyword">inline</span> mlir::ParseResult <a class="code hl_function" href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">parseAttrDictWithWarnings</a>(</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    mlir::OpAsmParser &amp;parser, mlir::NamedAttrList &amp;extraAttrs, mlir::OperationState &amp;state</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>) {</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#ae518c6ab6b78dae5fab9a03ec999abc9">affineMapHelpers::parseAttrDictWithWarnings</a>(parser, extraAttrs, state);</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>}</div>
 </div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ConcreteOp&gt;</div>
-<div class="foldopen" id="foldopen00129" data-start="{" data-end="}">
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno"><a class="line" href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">  129</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">printAttrDictWithWarnings</a>(</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    mlir::OpAsmPrinter &amp;printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs,</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    <span class="keyword">typename</span> mlir::PropertiesSelector&lt;ConcreteOp&gt;::type state</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>) {</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#afedc53abf277eb054a807f1d7f63de35">affineMapHelpers::printAttrDictWithWarnings</a>(printer, op, extraAttrs, state);</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>}</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ConcreteOp&gt;</div>
+<div class="foldopen" id="foldopen00130" data-start="{" data-end="}">
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno"><a class="line" href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">  130</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">printAttrDictWithWarnings</a>(</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    mlir::OpAsmPrinter &amp;printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs,</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    <span class="keyword">typename</span> mlir::PropertiesSelector&lt;ConcreteOp&gt;::type state</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>) {</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1affineMapHelpers.html#afedc53abf277eb054a807f1d7f63de35">affineMapHelpers::printAttrDictWithWarnings</a>(printer, op, extraAttrs, state);</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>}</div>
 </div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aAffineHelper_8h_html"><div class="ttname"><a href="AffineHelper_8h.html">AffineHelper.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1VerifySizesForMultiAffineOps_1_1Impl_html"><div class="ttname"><a href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html">llzk::VerifySizesForMultiAffineOps::Impl</a></div><div class="ttdef"><b>Definition</b> <a href="#l00056">OpHelpers.h:56</a></div></div>
-<div class="ttc" id="aclassllzk_1_1VerifySizesForMultiAffineOps_1_1Impl_html_ab888217efc279a1d2fe88ad99aebd6fc"><div class="ttname"><a href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html#ab888217efc279a1d2fe88ad99aebd6fc">llzk::VerifySizesForMultiAffineOps::Impl::verifyTrait</a></div><div class="ttdeci">static mlir::LogicalResult verifyTrait(mlir::Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00065">OpHelpers.h:65</a></div></div>
+<div class="ttc" id="aclassllzk_1_1VerifySizesForMultiAffineOps_1_1Impl_html"><div class="ttname"><a href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html">llzk::VerifySizesForMultiAffineOps::Impl</a></div><div class="ttdef"><b>Definition</b> <a href="#l00057">OpHelpers.h:57</a></div></div>
+<div class="ttc" id="aclassllzk_1_1VerifySizesForMultiAffineOps_1_1Impl_html_ab888217efc279a1d2fe88ad99aebd6fc"><div class="ttname"><a href="classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html#ab888217efc279a1d2fe88ad99aebd6fc">llzk::VerifySizesForMultiAffineOps::Impl::verifyTrait</a></div><div class="ttdeci">static mlir::LogicalResult verifyTrait(mlir::Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00066">OpHelpers.h:66</a></div></div>
 <div class="ttc" id="allzk_2Util_2Constants_8h_html"><div class="ttname"><a href="llzk_2Util_2Constants_8h.html">Constants.h</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1affineMapHelpers_html_a8e95fbde1693eff6e93091abfe77cf16"><div class="ttname"><a href="namespacellzk_1_1affineMapHelpers.html#a8e95fbde1693eff6e93091abfe77cf16">llzk::affineMapHelpers::verifySizesForMultiAffineOps</a></div><div class="ttdeci">LogicalResult verifySizesForMultiAffineOps(Operation *op, int32_t segmentSize, ArrayRef&lt; int32_t &gt; mapOpGroupSizes, OperandRangeRange mapOperands, ArrayRef&lt; int32_t &gt; numDimsPerMap)</div><div class="ttdef"><b>Definition</b> <a href="AffineHelper_8cpp_source.html#l00126">AffineHelper.cpp:126</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1affineMapHelpers_html_a904d508111e58e79a0ce0af9ef3eddd7"><div class="ttname"><a href="namespacellzk_1_1affineMapHelpers.html#a904d508111e58e79a0ce0af9ef3eddd7">llzk::affineMapHelpers::parseMultiDimAndSymbolList</a></div><div class="ttdeci">ParseResult parseMultiDimAndSymbolList(OpAsmParser &amp;parser, SmallVectorImpl&lt; SmallVector&lt; OpAsmParser::UnresolvedOperand &gt; &gt; &amp;multiMapOperands, DenseI32ArrayAttr &amp;numDimsPerMap)</div><div class="ttdef"><b>Definition</b> <a href="AffineHelper_8cpp_source.html#l00060">AffineHelper.cpp:60</a></div></div>
@@ -272,16 +273,16 @@ $(function(){initNavTree('OpHelpers_8h_source.html','',''); });
 <div class="ttc" id="anamespacellzk_1_1affineMapHelpers_html_af91c6a653493162862294c6b944aea02"><div class="ttname"><a href="namespacellzk_1_1affineMapHelpers.html#af91c6a653493162862294c6b944aea02">llzk::affineMapHelpers::printDimAndSymbolList</a></div><div class="ttdeci">void printDimAndSymbolList(OpAsmPrinter &amp;printer, Operation *, OperandRange mapOperands, IntegerAttr numDims)</div><div class="ttdef"><b>Definition</b> <a href="AffineHelper_8cpp_source.html#l00054">AffineHelper.cpp:54</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1affineMapHelpers_html_afedc53abf277eb054a807f1d7f63de35"><div class="ttname"><a href="namespacellzk_1_1affineMapHelpers.html#afedc53abf277eb054a807f1d7f63de35">llzk::affineMapHelpers::printAttrDictWithWarnings</a></div><div class="ttdeci">void printAttrDictWithWarnings(mlir::OpAsmPrinter &amp;printer, ConcreteOp, mlir::DictionaryAttr extraAttrs, typename ConcreteOp::Properties)</div><div class="ttdef"><b>Definition</b> <a href="AffineHelper_8h_source.html#l00059">AffineHelper.h:59</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a467753751f4011cd7f8e3e628748b92c"><div class="ttname"><a href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">llzk::printDimAndSymbolList</a></div><div class="ttdeci">void printDimAndSymbolList(mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands, mlir::IntegerAttr numDims)</div><div class="ttdef"><b>Definition</b> <a href="#l00100">OpHelpers.h:100</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a6f3fe746926910eac20e7c7eeee63e3a"><div class="ttname"><a href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">llzk::parseAttrDictWithWarnings</a></div><div class="ttdeci">mlir::ParseResult parseAttrDictWithWarnings(mlir::OpAsmParser &amp;parser, mlir::NamedAttrList &amp;extraAttrs, mlir::OperationState &amp;state)</div><div class="ttdef"><b>Definition</b> <a href="#l00122">OpHelpers.h:122</a></div></div>
-<div class="ttc" id="anamespacellzk_html_aa9eb2d93ae702c8d8e1d2164e77f52e8"><div class="ttname"><a href="namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8">llzk::printMultiDimAndSymbolList</a></div><div class="ttdeci">void printMultiDimAndSymbolList(mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands, mlir::DenseI32ArrayAttr numDimsPerMap)</div><div class="ttdef"><b>Definition</b> <a href="#l00115">OpHelpers.h:115</a></div></div>
-<div class="ttc" id="anamespacellzk_html_aafb94145f42dd37435e37c9ce4b805a2"><div class="ttname"><a href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">llzk::printAttrDictWithWarnings</a></div><div class="ttdeci">void printAttrDictWithWarnings(mlir::OpAsmPrinter &amp;printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs, typename mlir::PropertiesSelector&lt; ConcreteOp &gt;::type state)</div><div class="ttdef"><b>Definition</b> <a href="#l00129">OpHelpers.h:129</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ab1f2b464265a6b9da227871d9394bd9e"><div class="ttname"><a href="namespacellzk.html#ab1f2b464265a6b9da227871d9394bd9e">llzk::getParentOfType</a></div><div class="ttdeci">mlir::FailureOr&lt; OpClass &gt; getParentOfType(mlir::Operation *op)</div><div class="ttdoc">Return the closest surrounding parent operation that is of type &#39;OpClass&#39;.</div><div class="ttdef"><b>Definition</b> <a href="#l00045">OpHelpers.h:45</a></div></div>
-<div class="ttc" id="anamespacellzk_html_acb80626795a01a586c626bb1cb366a6d"><div class="ttname"><a href="namespacellzk.html#acb80626795a01a586c626bb1cb366a6d">llzk::parseMultiDimAndSymbolList</a></div><div class="ttdeci">mlir::ParseResult parseMultiDimAndSymbolList(mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand &gt; &gt; &amp;multiMapOperands, mlir::DenseI32ArrayAttr &amp;numDimsPerMap)</div><div class="ttdef"><b>Definition</b> <a href="#l00107">OpHelpers.h:107</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a467753751f4011cd7f8e3e628748b92c"><div class="ttname"><a href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">llzk::printDimAndSymbolList</a></div><div class="ttdeci">void printDimAndSymbolList(mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands, mlir::IntegerAttr numDims)</div><div class="ttdef"><b>Definition</b> <a href="#l00101">OpHelpers.h:101</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a5b768daf3c60f0a261a34d171f706304"><div class="ttname"><a href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">llzk::getParentOfType</a></div><div class="ttdeci">OpClass getParentOfType(mlir::Operation *op)</div><div class="ttdoc">Return the closest surrounding parent operation that is of type &#39;OpClass&#39;.</div><div class="ttdef"><b>Definition</b> <a href="#l00045">OpHelpers.h:45</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a6f3fe746926910eac20e7c7eeee63e3a"><div class="ttname"><a href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">llzk::parseAttrDictWithWarnings</a></div><div class="ttdeci">mlir::ParseResult parseAttrDictWithWarnings(mlir::OpAsmParser &amp;parser, mlir::NamedAttrList &amp;extraAttrs, mlir::OperationState &amp;state)</div><div class="ttdef"><b>Definition</b> <a href="#l00123">OpHelpers.h:123</a></div></div>
+<div class="ttc" id="anamespacellzk_html_aa9eb2d93ae702c8d8e1d2164e77f52e8"><div class="ttname"><a href="namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8">llzk::printMultiDimAndSymbolList</a></div><div class="ttdeci">void printMultiDimAndSymbolList(mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRangeRange multiMapOperands, mlir::DenseI32ArrayAttr numDimsPerMap)</div><div class="ttdef"><b>Definition</b> <a href="#l00116">OpHelpers.h:116</a></div></div>
+<div class="ttc" id="anamespacellzk_html_aafb94145f42dd37435e37c9ce4b805a2"><div class="ttname"><a href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">llzk::printAttrDictWithWarnings</a></div><div class="ttdeci">void printAttrDictWithWarnings(mlir::OpAsmPrinter &amp;printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs, typename mlir::PropertiesSelector&lt; ConcreteOp &gt;::type state)</div><div class="ttdef"><b>Definition</b> <a href="#l00130">OpHelpers.h:130</a></div></div>
+<div class="ttc" id="anamespacellzk_html_acb80626795a01a586c626bb1cb366a6d"><div class="ttname"><a href="namespacellzk.html#acb80626795a01a586c626bb1cb366a6d">llzk::parseMultiDimAndSymbolList</a></div><div class="ttdeci">mlir::ParseResult parseMultiDimAndSymbolList(mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand &gt; &gt; &amp;multiMapOperands, mlir::DenseI32ArrayAttr &amp;numDimsPerMap)</div><div class="ttdef"><b>Definition</b> <a href="#l00108">OpHelpers.h:108</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ace40014709812c1c57cb0aa39b87558b"><div class="ttname"><a href="namespacellzk.html#ace40014709812c1c57cb0aa39b87558b">llzk::getOperationName</a></div><div class="ttdeci">llvm::StringLiteral getOperationName()</div><div class="ttdoc">Get the operation name, like &quot;constrain.eq&quot; for the given OpClass.</div><div class="ttdef"><b>Definition</b> <a href="#l00027">OpHelpers.h:27</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ad55d77a77dc0f2d6c27bc7b6bedbc952"><div class="ttname"><a href="namespacellzk.html#ad55d77a77dc0f2d6c27bc7b6bedbc952">llzk::getSelfOrParentOfType</a></div><div class="ttdeci">OpClass getSelfOrParentOfType(mlir::Operation *op)</div><div class="ttdoc">Return the closest operation that is of type &#39;OpClass&#39;, either the op itself or an ancestor.</div><div class="ttdef"><b>Definition</b> <a href="#l00032">OpHelpers.h:32</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ad5a2121be9e3d0627cae5e297852772b"><div class="ttname"><a href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">llzk::parseDimAndSymbolList</a></div><div class="ttdeci">mlir::ParseResult parseDimAndSymbolList(mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand, N &gt; &amp;mapOperands, mlir::IntegerAttr &amp;numDims)</div><div class="ttdef"><b>Definition</b> <a href="#l00092">OpHelpers.h:92</a></div></div>
-<div class="ttc" id="astructllzk_1_1VerifySizesForMultiAffineOps_html"><div class="ttname"><a href="structllzk_1_1VerifySizesForMultiAffineOps.html">llzk::VerifySizesForMultiAffineOps</a></div><div class="ttdoc">Produces errors if there is an inconsistency in the various attributes/values that are used to suppor...</div><div class="ttdef"><b>Definition</b> <a href="#l00055">OpHelpers.h:55</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ad5a2121be9e3d0627cae5e297852772b"><div class="ttname"><a href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">llzk::parseDimAndSymbolList</a></div><div class="ttdeci">mlir::ParseResult parseDimAndSymbolList(mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand, N &gt; &amp;mapOperands, mlir::IntegerAttr &amp;numDims)</div><div class="ttdef"><b>Definition</b> <a href="#l00093">OpHelpers.h:93</a></div></div>
+<div class="ttc" id="astructllzk_1_1VerifySizesForMultiAffineOps_html"><div class="ttname"><a href="structllzk_1_1VerifySizesForMultiAffineOps.html">llzk::VerifySizesForMultiAffineOps</a></div><div class="ttdoc">Produces errors if there is an inconsistency in the various attributes/values that are used to suppor...</div><div class="ttdef"><b>Definition</b> <a href="#l00056">OpHelpers.h:56</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
