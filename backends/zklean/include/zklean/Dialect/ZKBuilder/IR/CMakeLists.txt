@@ -16,5 +16,4 @@ mlir_tablegen(ZKBuilderOps.cpp.inc -gen-op-defs -dialect=ZKBuilder)
 llzk_add_mlir_doc(ZKBuilderDocGen dialect/ZKBuilderDialect.md -gen-dialect-doc -dialect=ZKBuilder)
 
 add_public_tablegen_target(ZKBuilderDialectIncGen)
-add_dependencies(mlir-headers ZKBuilderDialectIncGen)
 add_dependencies(ZKLeanDialectHeaders ZKBuilderDialectIncGen)
