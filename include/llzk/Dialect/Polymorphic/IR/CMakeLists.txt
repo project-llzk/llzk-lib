@@ -24,5 +24,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=pol
 llzk_add_mlir_doc(PolymorphicOpsDocGen dialect/PolymorphicDialect.md -gen-dialect-doc -dialect=poly)
 
 add_public_tablegen_target(PolymorphicDialectIncGen)
-add_dependencies(mlir-headers PolymorphicDialectIncGen)
 add_dependencies(LLZKDialectHeaders PolymorphicDialectIncGen)

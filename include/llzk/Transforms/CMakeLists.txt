@@ -8,5 +8,4 @@ mlir_tablegen(LLZKTransformationPasses.capi.cpp.inc -gen-pass-capi-impl --prefix
 llzk_add_mlir_doc(LLZKTransformationPassesDocGen passes/LLZKTransformationPasses.md -gen-pass-doc)
 
 add_public_tablegen_target(LLZKTransformationIncGen)
-add_dependencies(mlir-headers LLZKTransformationIncGen)
 add_dependencies(LLZKDialectHeaders LLZKTransformationIncGen)

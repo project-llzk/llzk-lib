@@ -26,5 +26,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=str
 llzk_add_mlir_doc(StructOpsDocGen dialect/StructDialect.md -gen-dialect-doc -dialect=struct)
 
 add_public_tablegen_target(StructDialectIncGen)
-add_dependencies(mlir-headers StructDialectIncGen)
 add_dependencies(LLZKDialectHeaders StructDialectIncGen)

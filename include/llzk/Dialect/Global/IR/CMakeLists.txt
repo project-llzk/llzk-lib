@@ -19,5 +19,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=glo
 llzk_add_mlir_doc(GlobalOpsDocGen dialect/GlobalDialect.md -gen-dialect-doc -dialect=global)
 
 add_public_tablegen_target(GlobalDialectIncGen)
-add_dependencies(mlir-headers GlobalDialectIncGen)
 add_dependencies(LLZKDialectHeaders GlobalDialectIncGen)
