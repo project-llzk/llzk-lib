@@ -12,11 +12,15 @@ add_test(NAME LLZK_CAPI_C_Test COMMAND LLZK_CAPI_C_Test)
 list(APPEND LLZK_UNITTESTS LLZK_CAPI_C_Test)
 
 # CAPI unit tests defined via C++ sources
-file(GLOB_RECURSE LLZK_CAPI_TEST_SOURCES "*.cpp")
+file(GLOB LLZK_CAPI_TEST_SOURCES "*.cpp")
 add_executable(LLZK_CAPI_Tests ${LLZK_CAPI_TEST_SOURCES})
 
 add_subdirectory(Dialect)
-add_subdirectory(Target)
+
+if (LLZK_WITH_PCL_BOOL)
+  add_subdirectory(Target)
+endif()
+
 target_link_libraries(
   LLZK_CAPI_Tests
   PUBLIC LLZK::DialectRegistration LLZK::AllDialects ${GTEST_LIB_TARGETS}
