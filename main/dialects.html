@@ -2710,7 +2710,12 @@ Results:</h4>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `poly.read_const` $const_name `:` type($val) attr-dict</div>
 </div><!-- fragment --><p>This operation reads the value from the named constant parameter of the struct/component in which this op appears. The op itself puts some restriction on the type of this value, but leaves it to a later type-checking pass to ensure the struct parameters are instantiated with types matching the uses of the parameter within the struct.</p>
-<p>Interfaces: <span class="tt">SymbolUserOpInterface</span></p>
+<p>Examples: </p><div class="fragment"><div class="line">// Read a `!felt.type` value from struct parameter &quot;@A&quot;</div>
+<div class="line">%0 = poly.read_const @A : !felt.type</div>
+<div class="line">// Read a value from struct parameter &quot;@B&quot; where its type is</div>
+<div class="line">// specified by struct parameter &quot;@T&quot;</div>
+<div class="line">%1 = poly.read_const @B : !poly.tvar&lt;@T&gt;</div>
+</div><!-- fragment --><p>Interfaces: <span class="tt">SymbolUserOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-18"></a>
 Attributes:</h4>
 <table class="doxtable">
