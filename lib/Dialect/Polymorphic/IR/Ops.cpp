@@ -22,6 +22,75 @@ using namespace llzk::component;
 namespace llzk::polymorphic {
 
 //===------------------------------------------------------------------===//
+// TemplateOp
+//===------------------------------------------------------------------===//
+
+SmallVector<Attribute> TemplateOp::getParamNames() {
+  return llvm::to_vector(llvm::map_range(getParamOps(), [](TemplateParamOp p) -> mlir::Attribute {
+    return FlatSymbolRefAttr::get(p.getSymNameAttr());
+  }));
+}
+
+bool TemplateOp::hasParamNamed(StringRef find) {
+  auto status = this->walk([&](TemplateParamOp paramOp) {
+    return (paramOp.getSymName() == find) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  return status.wasInterrupted();
+}
+
+//===------------------------------------------------------------------===//
+// TemplateParamOp
+//===------------------------------------------------------------------===//
+
+namespace {
+
+std::optional<Type> inferTypeFromRegion(TemplateParamOp op) {
+  Region &region = op.getRegion();
+  if (region.empty()) {
+    return std::nullopt;
+  }
+  YieldOp yieldOp = llvm::dyn_cast<YieldOp>(region.back().getTerminator());
+  assert(yieldOp && "final op in initializer region must be yield");
+  return yieldOp.getVal().getType();
+}
+
+} // namespace
+
+std::optional<Type> TemplateParamOp::getEffectiveType() {
+  if (TypeAttr attr = getTypeAttr()) {
+    return attr.getValue();
+  }
+  return inferTypeFromRegion(*this);
+}
+
+LogicalResult TemplateParamOp::verifyRegions() {
+  // If there is an explicit type and an initializer region, the type of the yield op
+  // within the initializer region must unify with the explicit type.
+  if (std::optional<Type> explicitTy = getType()) {
+    if (std::optional<Type> inferredTy = inferTypeFromRegion(*this)) {
+      if (!typesUnify(*explicitTy, *inferredTy)) {
+        return emitOpError() << "type " << *explicitTy << " cannot be initialized from '"
+                             << YieldOp::getOperationName() << "' with type " << *inferredTy;
+      }
+    }
+  }
+  return success();
+}
+
+LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &tables) {
+  // Ensure parameter name does not conflict with an existing top-level symbol
+  // because that would cause an ambiguity in symbol resolution within structs.
+  auto res = lookupTopLevelSymbol(tables, FlatSymbolRefAttr::get(getSymNameAttr()), *this, false);
+  if (succeeded(res)) {
+    return this->emitOpError()
+        .append("name conflicts with an existing symbol")
+        .attachNote(res->get()->getLoc())
+        .append("symbol already defined here");
+  }
+  return success();
+}
+
+//===------------------------------------------------------------------===//
 // ConstReadOp
 //===------------------------------------------------------------------===//
 
@@ -30,7 +99,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(getParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
-  // Ensure the named constant is a a parameter of the parent struct
+  // Ensure the named constant is a parameter of the parent struct
   if (!getParentRes->hasParamNamed(this->getConstNameAttr())) {
     return this->emitOpError()
         .append("references unknown symbol \"", this->getConstNameAttr(), '"')

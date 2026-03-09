@@ -563,7 +563,8 @@ class StructCloner {
     // Clone the original struct, apply the new name, and set the parameter list of the new struct
     // to contain only those that did not have concrete instantiated values.
     StructDefOp newStruct = origStruct.clone();
-    newStruct.setConstParamsAttr(reducedParamNameList);
+    assert(false && "TODO: `setConstParamsAttr` doesn't exist anymore");
+    //   newStruct.setConstParamsAttr(reducedParamNameList);
     newStruct.setSymName(
         BuildShortTypeString::from(
             typeAtCaller.getNameRef().getLeafReference().str(), attrsForInstantiatedNameSuffix
@@ -572,7 +573,8 @@ class StructCloner {
 
     // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
     // `SymbolTable::insert()` function directly so that the name will be made unique.
-    ModuleOp parentModule = origStruct.getParentOp<ModuleOp>(); // parent is ModuleOp per ODS
+    ModuleOp parentModule = getParentOfType<ModuleOp>(origStruct);
+    assert(parentModule && "StructDefOp must be nested in a ModuleOp");
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
     // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
     // use the remaining non-concrete parameters from the original type.
@@ -1960,9 +1962,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   LogicalResult eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
     SmallVector<StructDefOp> roots;
     rootMod.walk([&roots](StructDefOp op) {
-      // Note: no need to check if the ConstParamsAttr is empty since `EmptyParamRemovalPass`
-      // ran earlier.
-      if (!op.hasConstParamsAttr()) {
+      if (!op.hasParams()) {
         roots.push_back(op);
       }
       return WalkResult::skip(); // StructDefOp cannot be nested

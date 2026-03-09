@@ -37,7 +37,8 @@ class FunctionDialectOp<string mnemonic, list<Trait> traits = []>
 def FuncDefOp
     : FunctionDialectOp<
           "def",
-          [ParentOneOf<["::mlir::ModuleOp", "::llzk::component::StructDefOp"]>,
+          [ParentOneOf<["::mlir::ModuleOp", "::llzk::component::StructDefOp",
+                        "::llzk::polymorphic::TemplateOp"]>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
            AutomaticAllocationScope, FunctionOpInterface, IsolatedFromAbove]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global

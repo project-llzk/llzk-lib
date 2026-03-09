@@ -1,0 +1,181 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @P
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @P {} // empty region treated same as no region
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @P {
+      %v = arith.constant 42 : index
+      poly.yield %v : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @P {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @P : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @P : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @P : index {
+      %v = arith.constant 42 : index
+      poly.yield %v : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @P : index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @P : !poly.tvar<@P>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @P : !poly.tvar<@P>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @template_f {
+    poly.param @In
+    poly.param @Out
+    poly.param @N1
+    poly.param @N2
+
+    function.def @f(%inp: !poly.tvar<@In>) -> !poly.tvar<@Out> {
+      %1 = poly.unifiable_cast %inp : (!poly.tvar<@In>) -> !array.type<@N1,@N2 x !poly.tvar<@Out>>
+      %c0 = arith.constant 0 : index
+      // Problem: If the output type is scalar, this must be `read`, but if array, it must be `extract`.
+      %2 = array.read %1[%c0, %c0] : !array.type<@N1,@N2 x !poly.tvar<@Out>>, !poly.tvar<@Out>
+      function.return %2 : !poly.tvar<@Out>
+    }
+  }
+
+  function.def @test_func(%y: !array.type<10,5 x !felt.type>, %z: !array.type<10,5,5 x !felt.type>) {
+    function.call @template_f::@f(%z) : (!array.type<10,5,5 x !felt.type>) -> (!array.type<5 x !felt.type>)
+    function.call @template_f::@f(%y) : (!array.type<10,5 x !felt.type>) -> (!felt.type)
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @template_f {
+// CHECK-NEXT:      poly.param @In
+// CHECK-NEXT:      poly.param @Out
+// CHECK-NEXT:      poly.param @N1
+// CHECK-NEXT:      poly.param @N2
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@In>) -> !poly.tvar<@Out> {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!poly.tvar<@In>) -> !array.type<@N1,@N2 x !poly.tvar<@Out>>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_2]], %[[VAL_2]]] : <@N1,@N2 x !poly.tvar<@Out>>, !poly.tvar<@Out>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !poly.tvar<@Out>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test_func(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type>) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @template_f::@f(%[[VAL_5]]) : (!array.type<10,5,5 x !felt.type>) -> !array.type<5 x !felt.type>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_f::@f(%[[VAL_4]]) : (!array.type<10,5 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @template_f1 {
+    poly.param @N
+
+    function.def @f(%inp: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      %c0 = arith.constant 0 : index
+      %2 = array.extract %inp[%c0, %c0] : !array.type<8,5,@N x !felt.type>
+      function.return %2 : !array.type<@N x !felt.type>
+    }
+  }
+
+  poly.template @template_f2 {
+    poly.param @N
+
+    function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
+      function.return %2 : !felt.type
+    }
+  }
+
+  function.def @test_func(%y: !array.type<8,9 x !felt.type>, %z: !array.type<8,5,9 x !felt.type>) {
+    function.call @template_f1::@f(%z) : (!array.type<8,5,9 x !felt.type>) -> (!array.type<9 x !felt.type>)
+    function.call @template_f2::@f(%y) : (!array.type<8,9 x !felt.type>) -> (!felt.type)
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @template_f1 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5,@N x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !array.type<@N x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @template_f2 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,@N x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @test_func(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>) {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @template_f1::@f(%[[VAL_7]]) : (!array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @template_f2::@f(%[[VAL_6]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// TODO: need struct examples as well

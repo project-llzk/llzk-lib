@@ -652,7 +652,7 @@ builtin.module attributes {llzk.lang} {
 // -----
 builtin.module attributes {llzk.lang} {
   function.def @free_func() {
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
     struct.def @ComponentG {
       function.def @compute() -> !struct.type<@ComponentG> {
         %self = struct.new : !struct.type<@ComponentG>

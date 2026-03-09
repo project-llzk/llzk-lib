@@ -397,13 +397,12 @@ std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use ModuleOp as parent to avoid the following:
-      // error: 'struct.def' op expects parent op 'builtin.module'
+      // error: 'struct.def' op expects parent op to be one of 'builtin.module, poly.template'
       const auto *name = "TestStruct";
       this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
       auto result = llzkStruct_StructDefOpBuild(
           builder, location,
-          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name)),
-          MlirAttribute {}
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name))
       );
       // Populate the struct to avoid the errors mentioned below.
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.

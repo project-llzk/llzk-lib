@@ -2,14 +2,14 @@
 
 module attributes {llzk.lang} {
   struct.def @ComponentD<[@B, @D, @C]> {
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
     struct.def @ComponentA {}
   }
 }
 // -----
 module attributes {llzk.lang} {
   function.def @identity(%x: !felt.type) -> !felt.type {
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
     struct.def @ComponentA {}
     function.return %x: !felt.type
   }
@@ -499,7 +499,7 @@ module attributes {llzk.lang} {
       function.return
     }
 
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
     struct.def @InvalidNestedStruct {
       function.def @compute() {
         %self = struct.new : !struct.type<@InvalidNestedStruct>

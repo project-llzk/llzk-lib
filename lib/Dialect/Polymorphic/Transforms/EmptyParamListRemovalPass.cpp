@@ -76,7 +76,8 @@ public:
   void rewrite(
       StructDefOp op, OpAdaptor /*adaptor*/, ConversionPatternRewriter &rewriter
   ) const override {
-    rewriter.modifyOpInPlace(op, [&op]() { op.setConstParamsAttr(nullptr); });
+    assert(false && "TODO: `setConstParamsAttr` doesn't exist anymore");
+    // rewriter.modifyOpInPlace(op, [&op]() { op.setConstParamsAttr(nullptr); });
   }
 };
 

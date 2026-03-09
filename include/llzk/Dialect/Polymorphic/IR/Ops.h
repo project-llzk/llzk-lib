@@ -11,8 +11,11 @@
 
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 
 #include <mlir/Dialect/Affine/IR/AffineValueMap.h>
+#include <mlir/Interfaces/ControlFlowInterfaces.h>
+#include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES

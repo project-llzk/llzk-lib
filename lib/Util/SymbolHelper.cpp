@@ -90,6 +90,12 @@ public:
               .attachNote(m.getLoc())
               .append("unnamed '", ModuleOp::getOperationName(), "' here");
         }
+      } else if (TemplateOp t = llvm::dyn_cast_if_present<TemplateOp>(check)) {
+        if (StringAttr name = t.getSymNameAttr()) {
+          path.push_back(FlatSymbolRefAttr::get(name));
+        } else {
+          llvm_unreachable("TemplateOp must have a name");
+        }
       }
     } while ((check = check->getParentOp()));
 
@@ -346,11 +352,12 @@ LogicalResult verifyParamOfType(
     SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin
 ) {
   // Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of
-  // the StructDefOp that the current Operation is nested within. These are always flat references
+  // the template that the current Operation is nested within. These are always flat references
   // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
-    if (StructDefOp getParentRes = getParentOfType<StructDefOp>(origin)) {
-      if (getParentRes.hasParamNamed(param.getRootReference())) {
+    // Lookup within parameters of the enclosing TemplateOp
+    if (TemplateOp parent = getParentOfType<TemplateOp>(origin)) {
+      if (parent.hasParamNamed(param.getRootReference())) {
         return success();
       }
     }

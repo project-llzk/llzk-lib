@@ -18,6 +18,7 @@ namespace llzk {
 using namespace mlir;
 using namespace component;
 using namespace function;
+using namespace polymorphic;
 
 OwningOpRef<ModuleOp> createLLZKModule(MLIRContext * /*context*/, Location loc) {
   auto mod = ModuleOp::create(loc);
@@ -101,16 +102,17 @@ ModuleBuilder::insertEmptyStruct(std::string_view structName, Location loc, int 
   ensureNoSuchStruct(structName);
 
   OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()->begin());
-  auto structNameAttr = StringAttr::get(context, structName);
-  ArrayAttr structParams = nullptr;
-  if (numStructParams >= 0) {
-    SmallVector<Attribute> paramNames;
+  if (numStructParams >= 0) { // Note: `==0` creates TemplateOp with no TemplateParamOp
+    auto templateOp =
+        opBuilder.create<TemplateOp>(loc, StringAttr::get(context, Twine("Template") + structName));
+    opBuilder.setInsertionPointToStart(&templateOp.getBodyRegion().emplaceBlock());
     for (int i = 0; i < numStructParams; ++i) {
-      paramNames.push_back(FlatSymbolRefAttr::get(context, "T" + std::to_string(i)));
+      opBuilder.create<TemplateParamOp>(
+          loc, StringAttr::get(context, 'T' + std::to_string(i)), TypeAttr()
+      );
     }
-    structParams = opBuilder.getArrayAttr(paramNames);
   }
-  auto structDef = opBuilder.create<StructDefOp>(loc, structNameAttr, structParams);
+  auto structDef = opBuilder.create<StructDefOp>(loc, StringAttr::get(context, structName));
   // populate the initial region
   auto &region = structDef.getRegion();
   (void)region.emplaceBlock();
