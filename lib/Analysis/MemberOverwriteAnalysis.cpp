@@ -110,7 +110,8 @@ LogicalResult MemberOverwriteAnalysis::visitOperation(
   return success();
 }
 
-const MemberOverwriteLattice *analyzeStruct(component::StructDefOp structDef) {
+llvm::FailureOr<std::pair<llvm::SetVector<Overwrite>, FuzzySet>>
+analyzeStruct(component::StructDefOp structDef) {
   function::FuncDefOp computeOrProductFunc = structDef.getComputeFuncOp();
   if (!computeOrProductFunc) {
     computeOrProductFunc = structDef.getProductFuncOp();
@@ -120,22 +121,20 @@ const MemberOverwriteLattice *analyzeStruct(component::StructDefOp structDef) {
   llzk::dataflow::loadRequiredAnalyses(solver);
   solver.load<MemberOverwriteAnalysis>();
   if (failed(solver.initializeAndRun(computeOrProductFunc))) {
-    return nullptr;
+    return llvm::failure();
   }
 
   auto &funcBody = computeOrProductFunc.getBody();
   if (funcBody.empty()) {
     // If there's nothing, just build a default lattice element (no overwrites, everything is
     // unwritten)
-    return solver.getOrCreateState<MemberOverwriteLattice>(
-        solver.getProgramPointAfter(computeOrProductFunc)
-    );
+    return {{{}, {}}};
   }
 
   auto *returnOp = funcBody.back().getTerminator();
   const auto *lattice =
       solver.lookupState<MemberOverwriteLattice>(solver.getProgramPointAfter(returnOp));
-  return lattice;
+  return {{lattice->getOverwrites(), lattice->mustWrites}};
 }
 
 } // namespace llzk

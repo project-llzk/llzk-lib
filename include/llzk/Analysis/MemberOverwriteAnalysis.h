@@ -77,6 +77,8 @@ class MemberOverwriteAnalysis;
 
 using Overwrite = std::pair<component::MemberWriteOp, component::MemberWriteOp>;
 
+llvm::FailureOr<std::pair<llvm::SetVector<Overwrite>, FuzzySet>>
+    analyzeStruct(component::StructDefOp);
 class MemberOverwriteLattice : public mlir::dataflow::AbstractDenseLattice {
   llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> mayWrites;
   llvm::SetVector<Overwrite> overwrites;
@@ -84,6 +86,8 @@ class MemberOverwriteLattice : public mlir::dataflow::AbstractDenseLattice {
   FuzzySet mustWrites;
 
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const MemberOverwriteLattice &lat);
+  friend llvm::FailureOr<std::pair<llvm::SetVector<Overwrite>, FuzzySet>>
+      analyzeStruct(component::StructDefOp);
 
 public:
   using AbstractDenseLattice::AbstractDenseLattice;
@@ -123,7 +127,5 @@ public:
 
   void setToEntryState(MemberOverwriteLattice *lattice) override { lattice->entry(); }
 };
-
-const MemberOverwriteLattice *analyzeStruct(component::StructDefOp);
 
 }; // namespace llzk

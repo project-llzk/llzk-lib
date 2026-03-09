@@ -46,14 +46,20 @@ class EnforceNoMemberOverwritePass
 
   void runOnOperation() override {
     getOperation()->walk([this](StructDefOp structDef) {
-      const MemberOverwriteLattice *lattice = analyzeStruct(structDef);
-      if (lattice->getOverwrites().size() > 0) {
+      auto result = analyzeStruct(structDef);
+      if (failed(result)) {
         signalPassFailure();
       }
+      const auto &[overwrites, written] = *result;
+
       for (auto member : structDef.getMemberDefs()) {
-        if (!lattice->checkWritten(member)) {
+        if (!written.contains(member.getSymName())) {
           signalPassFailure();
         }
+      }
+
+      if (!overwrites.empty()) {
+        signalPassFailure();
       }
     });
   }

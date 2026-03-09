@@ -36,18 +36,20 @@ class MemberWriteValidatorPass
     : public llzk::impl::MemberWriteValidatorPassBase<MemberWriteValidatorPass> {
   void runOnOperation() override {
     StructDefOp structDef = getOperation();
-    const auto *lattice = analyzeStruct(structDef);
-    if (!lattice) {
+
+    auto result = analyzeStruct(structDef);
+    if (failed(result)) {
       signalPassFailure();
     }
+    const auto &[overwrites, written] = *result;
 
     for (auto member : structDef.getMemberDefs()) {
-      if (!lattice->checkWritten(member)) {
+      if (!written.contains(member.getSymName())) {
         member->emitWarning() << "member may not be written to";
       }
     }
 
-    for (auto [first, over] : lattice->getOverwrites()) {
+    for (auto [first, over] : overwrites) {
       auto diag = over->emitWarning()
                   << "may overwrite struct member '@" << over.getMemberName() << '\'';
       diag.attachNote(first.getLoc()) << "previously written to here";
