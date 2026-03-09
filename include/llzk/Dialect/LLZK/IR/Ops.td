@@ -26,9 +26,8 @@ class LLZKDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;
 
 def LLZK_NonDetOp
-    : LLZKDialectOp<"nondet", [ConstantLike, Pure,
-                               DeclareOpInterfaceMethods<
-                                   OpAsmOpInterface, ["getAsmResultNames"]>]> {
+    : LLZKDialectOp<"nondet", [DeclareOpInterfaceMethods<
+                                  OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "uninitialized variable";
   let description = [{
     This operation produces an SSA variable of the specified type but with
@@ -45,6 +44,20 @@ def LLZK_NonDetOp
     ```llzk
     %0 = llzk.nondet : !felt.type
     ```
+
+    Note that `llzk.nondet` is not `ConstantLike` or `Pure` because different SSA variables
+    initialized with `llzk.nondet` may be constrained in different ways.
+
+    Example:
+
+    ```llzk
+    %0 = llzk.nondet : !felt.type
+    %1 = llzk.nondet : !felt.type
+    %c1 = felt.const 1
+    constrain.eq %0, %c1 : !felt.type
+    ```
+
+    In the above example, `%0` and `%1` are no longer equivalent.
   }];
 
   let results = (outs AnyLLZKType:$res);

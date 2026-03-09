@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
@@ -239,6 +240,20 @@ private:
     llvm::DenseMap<StringRef, Value> member2pclvar;
     llvm::SmallVector<Value> outVars;
 
+    // Create a new variable name for an `llzk.nondet` op with a paranoid check
+    // that the generated name doesn't collide with any member names.
+    auto getNondetVarName = [&member2pclvar]() {
+      static unsigned id = 0;
+      std::string name;
+      llvm::raw_string_ostream os(name);
+      do {
+        name.clear();
+        os << "_nondet_internal_var__" << id;
+        id++;
+      } while (member2pclvar.contains(name));
+      return name;
+    };
+
     auto srcFunc = structDef.getConstrainFuncOp();
     auto srcArgs = srcFunc.getArguments().drop_front();
     auto dstArgs = dstFunc.getArguments();
@@ -275,6 +290,11 @@ private:
       })
           .Case<mlir::arith::ConstantOp>([&b, &llzkToPcl, &res](auto c) {
         res = lowerConst(b, c, llzkToPcl);
+      })
+          .Case<NonDetOp>([&b, &getNondetVarName, &llzkToPcl](auto n) {
+        auto varName = getNondetVarName();
+        auto pclVar = b.create<pcl::VarOp>(n.getLoc(), varName, /* public */ false);
+        rememberResult(n.getResult(), pclVar, llzkToPcl);
       })
           .Case<AddFeltOp>([&b, &llzkToPcl, &res](auto a) {
         res = lowerBinaryLike<AddFeltOp, pcl::AddOp>(b, a, llzkToPcl);
