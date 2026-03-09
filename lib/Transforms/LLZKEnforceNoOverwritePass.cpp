@@ -44,39 +44,9 @@ using namespace component;
 class EnforceNoMemberOverwritePass
     : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
 
-  bool containsOverwrite(FuncDefOp funcDef) {
-    DataFlowSolver solver {DataFlowConfig {}.setInterprocedural(false)};
-    dataflow::loadRequiredAnalyses(solver);
-    solver.load<MemberOverwriteAnalysis>();
-    if (failed(solver.initializeAndRun(funcDef))) {
-      signalPassFailure();
-    }
-
-    auto &funcBody = funcDef.getBody();
-    if (funcBody.empty()) {
-      // No overwrites if theres nothing
-      return false;
-    }
-
-    auto *returnOp = funcBody.back().getTerminator();
-    const auto *lattice =
-        solver.lookupState<MemberOverwriteLattice>(solver.getProgramPointAfter(returnOp));
-    if (!lattice) {
-      signalPassFailure();
-    }
-
-    auto structDef = funcDef->getParentOfType<StructDefOp>();
-    for (auto member : structDef.getMemberDefs()) {
-      lattice->ensureWritten(member);
-    }
-
-    lattice->emitOverwriteErrors();
-    return lattice->hasOverwrites();
-  }
-
   void runOnOperation() override {
     getOperation()->walk([this](FuncDefOp funcDef) {
-      if (containsOverwrite(funcDef)) {
+      if (false) {
         // TODO: we could instead do something to repair the overwrite
         signalPassFailure();
       }
