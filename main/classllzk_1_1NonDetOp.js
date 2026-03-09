@@ -5,7 +5,6 @@ var classllzk_1_1NonDetOp =
     [ "GenericAdaptor", "classllzk_1_1NonDetOp.html#a7c3f1780bea1b6d4af061f3ce6b56f15", null ],
     [ "getAsmResultNames", "classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f", null ],
     [ "getAttributeNames", "classllzk_1_1NonDetOp.html#afc4d545b1e3765a34566215e146d4877", null ],
-    [ "getEffects", "classllzk_1_1NonDetOp.html#afb7f36c8ce9337187c2e1f922af9e336", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1NonDetOp.html#a5325aa1a1def5e18974475f38b33df1a", null ],
     [ "getODSOperands", "classllzk_1_1NonDetOp.html#a10f34b3f7d82372061873a9e1925b014", null ],
     [ "getODSResultIndexAndLength", "classllzk_1_1NonDetOp.html#a970691afb18238ae5872084c637d5fdb", null ],

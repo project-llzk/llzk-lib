@@ -2433,9 +2433,24 @@ Operations</h2>
 <p>This op can be used in <span class="tt">@constrain()</span> functions in place of expressions that cannot be included in constraints. It may also be generated for a frontend language that supports uninitialized variables and can also be introduced by the <span class="tt">llzk-array-to-scalar</span> pass if there is a read from an array index that was not dominated by an earlier write to that same index.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">%0 = llzk.nondet : !felt.type</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">ConstantLike</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">OpAsmOpInterface</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+</div><!-- fragment --><p>Note that <span class="tt">llzk.nondet</span> is not <span class="tt">ConstantLike</span> or <span class="tt">Pure</span> because different SSA variables initialized with <span class="tt">llzk.nondet</span> may be constrained in different ways so they cannot be treated as identical values.</p>
+<p>Example:</p>
+<div class="fragment"><div class="line">%0 = llzk.nondet : !felt.type</div>
+<div class="line">%1 = llzk.nondet : !felt.type</div>
+<div class="line">%c1 = felt.const 1</div>
+<div class="line">constrain.eq %0, %c1 : !felt.type</div>
+<div class="line"> </div>
+<div class="line">%m = struct.readm %self[@m] : !struct.type&lt;@S&gt;, !felt.type</div>
+<div class="line">constrain.eq %m, %1 : !felt.type</div>
+</div><!-- fragment --><p>In the above example, <span class="tt">m</span> is effectively unconstrained, as it is only constrained to the nondet value <span class="tt">%1</span>. However, if <span class="tt">%0</span> and <span class="tt">%1</span> were treated as pure constants, <span class="tt">%0</span> and <span class="tt">%1</span> could be combined, resulting in:</p>
+<div class="fragment"><div class="line">%0 = llzk.nondet : !felt.type</div>
+<div class="line">%c1 = felt.const 1</div>
+<div class="line">constrain.eq %0, %c1 : !felt.type</div>
+<div class="line"> </div>
+<div class="line">%m = struct.readm %self[@m] : !struct.type&lt;@S&gt;, !felt.type</div>
+<div class="line">constrain.eq %m, %0 : !felt.type</div>
+</div><!-- fragment --><p>This transformation would constrain <span class="tt">m</span> to be exactly equal to 1, thus changing the semantics of the circuit.</p>
+<p>Interfaces: <span class="tt">OpAsmOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="results-31"></a>
 Results:</h4>
 <table class="markdownTable">

@@ -1,7 +1,5 @@
 var NAVTREEINDEX48 =
 {
-"namespacemembers_func_w.html":[10,1,1,19],
-"namespacemembers_g.html":[10,1,0,6],
 "namespacemembers_h.html":[10,1,0,7],
 "namespacemembers_i.html":[10,1,0,8],
 "namespacemembers_l.html":[10,1,0,9],
@@ -249,5 +247,7 @@ var NAVTREEINDEX48 =
 "structOpImplementationGenerator.html#a085f4e1c4aeb5195dc6dac2c49b3c2eb":[12,0,76,8],
 "structOpImplementationGenerator.html#a10002a345c87312cb8e2f62c8aef2f87":[12,0,76,9],
 "structOpImplementationGenerator.html#a19fbe7c2faea0d3d64b3914faaeb7242":[12,0,76,6],
-"structOpImplementationGenerator.html#a1d2696abd6ea27be4a4af28db45a57cd":[12,0,76,1]
+"structOpImplementationGenerator.html#a1d2696abd6ea27be4a4af28db45a57cd":[12,0,76,1],
+"structOpImplementationGenerator.html#a54559b2687f8ba2040b896ac0722f284":[12,0,76,10],
+"structOpImplementationGenerator.html#a7411c2e33f5ba3678d855edc003cc9bf":[12,0,76,11]
 };
