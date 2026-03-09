@@ -36,36 +36,23 @@ class MemberWriteValidatorPass
     : public llzk::impl::MemberWriteValidatorPassBase<MemberWriteValidatorPass> {
   void runOnOperation() override {
     StructDefOp structDef = getOperation();
-    FuncDefOp computeOrProductFunc = structDef.getComputeFuncOp();
-    if (!computeOrProductFunc) {
-      computeOrProductFunc = structDef.getProductFuncOp();
-    }
-
-    DataFlowSolver solver {DataFlowConfig {}.setInterprocedural(false)};
-    llzk::dataflow::loadRequiredAnalyses(solver);
-    solver.load<MemberOverwriteAnalysis>();
-    if (failed(solver.initializeAndRun(computeOrProductFunc))) {
-      signalPassFailure();
-    }
-
-    auto &funcBody = computeOrProductFunc.getBody();
-    if (funcBody.empty()) {
-      // No overwrites if theres nothing
-      return;
-    }
-
-    auto *returnOp = funcBody.back().getTerminator();
-    const auto *lattice =
-        solver.lookupState<MemberOverwriteLattice>(solver.getProgramPointAfter(returnOp));
+    const auto *lattice = analyzeStruct(structDef);
     if (!lattice) {
       signalPassFailure();
     }
 
     for (auto member : structDef.getMemberDefs()) {
-      lattice->ensureWritten(member);
+      if (!lattice->checkWritten(member)) {
+        member->emitWarning() << "member may not be written to";
+      }
     }
 
-    lattice->emitOverwriteErrors();
+    for (auto [first, over] : lattice->getOverwrites()) {
+      auto diag = over->emitWarning()
+                  << "may overwrite struct member '@" << over.getMemberName() << '\'';
+      diag.attachNote(first.getLoc()) << "previously written to here";
+      diag.report();
+    }
 
     markAllAnalysesPreserved();
   }

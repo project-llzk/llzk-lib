@@ -75,9 +75,11 @@ inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FuzzySet &set)
 
 class MemberOverwriteAnalysis;
 
+using Overwrite = std::pair<component::MemberWriteOp, component::MemberWriteOp>;
+
 class MemberOverwriteLattice : public mlir::dataflow::AbstractDenseLattice {
   llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> mayWrites;
-  llvm::SetVector<std::pair<component::MemberWriteOp, component::MemberWriteOp>> overwrites;
+  llvm::SetVector<Overwrite> overwrites;
 
   FuzzySet mustWrites;
 
@@ -107,8 +109,8 @@ public:
   mlir::ChangeResult record(component::MemberWriteOp write);
 
   bool hasOverwrites() const;
-  void emitOverwriteErrors() const;
-  void ensureWritten(component::MemberDefOp) const;
+  llvm::SetVector<Overwrite> getOverwrites() const;
+  bool checkWritten(component::MemberDefOp) const;
 };
 
 class MemberOverwriteAnalysis
@@ -121,5 +123,7 @@ public:
 
   void setToEntryState(MemberOverwriteLattice *lattice) override { lattice->entry(); }
 };
+
+const MemberOverwriteLattice *analyzeStruct(component::StructDefOp);
 
 }; // namespace llzk

@@ -45,10 +45,15 @@ class EnforceNoMemberOverwritePass
     : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
 
   void runOnOperation() override {
-    getOperation()->walk([this](FuncDefOp funcDef) {
-      if (false) {
-        // TODO: we could instead do something to repair the overwrite
+    getOperation()->walk([this](StructDefOp structDef) {
+      const MemberOverwriteLattice *lattice = analyzeStruct(structDef);
+      if (lattice->getOverwrites().size() > 0) {
         signalPassFailure();
+      }
+      for (auto member : structDef.getMemberDefs()) {
+        if (!lattice->checkWritten(member)) {
+          signalPassFailure();
+        }
       }
     });
   }

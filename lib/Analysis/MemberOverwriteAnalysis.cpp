@@ -7,7 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/MemberOverwriteAnalysis.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -70,20 +72,26 @@ ChangeResult MemberOverwriteLattice::join(const AbstractDenseLattice &other) {
 
 bool MemberOverwriteLattice::hasOverwrites() const { return overwrites.size() > 0; }
 
-void MemberOverwriteLattice::emitOverwriteErrors() const {
-  for (auto [first, over] : overwrites) {
-    auto diag = over->emitWarning()
-                << "may overwrite struct member '" << over.getMemberName() << '\'';
-    diag.attachNote(first.getLoc()) << "previously written to here";
-    diag.report();
-  }
+llvm::SetVector<Overwrite> MemberOverwriteLattice::getOverwrites() const { return overwrites; }
+
+bool MemberOverwriteLattice::checkWritten(component::MemberDefOp memberDef) const {
+  return mustWrites.contains(memberDef.getSymName());
 }
 
-void MemberOverwriteLattice::ensureWritten(MemberDefOp memberDef) const {
-  if (!mustWrites.contains(memberDef.getSymName())) {
-    memberDef->emitWarning() << "member may not be written to";
-  }
-}
+// void MemberOverwriteLattice::emitOverwriteErrors() const {
+//   for (auto [first, over] : overwrites) {
+//     auto diag = over->emitWarning()
+//                 << "may overwrite struct member '" << over.getMemberName() << '\'';
+//     diag.attachNote(first.getLoc()) << "previously written to here";
+//     diag.report();
+//   }
+// }
+
+// void MemberOverwriteLattice::ensureWritten(MemberDefOp memberDef) const {
+//   if (!mustWrites.contains(memberDef.getSymName())) {
+//     memberDef->emitWarning() << "member may not be written to";
+//   }
+// }
 
 void MemberOverwriteLattice::print(llvm::raw_ostream &os) const { os << *this << '\n'; }
 
@@ -100,6 +108,34 @@ LogicalResult MemberOverwriteAnalysis::visitOperation(
 
   propagateIfChanged(after, result);
   return success();
+}
+
+const MemberOverwriteLattice *analyzeStruct(component::StructDefOp structDef) {
+  function::FuncDefOp computeOrProductFunc = structDef.getComputeFuncOp();
+  if (!computeOrProductFunc) {
+    computeOrProductFunc = structDef.getProductFuncOp();
+  }
+
+  DataFlowSolver solver {DataFlowConfig {}.setInterprocedural(false)};
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<MemberOverwriteAnalysis>();
+  if (failed(solver.initializeAndRun(computeOrProductFunc))) {
+    return nullptr;
+  }
+
+  auto &funcBody = computeOrProductFunc.getBody();
+  if (funcBody.empty()) {
+    // If there's nothing, just build a default lattice element (no overwrites, everything is
+    // unwritten)
+    return solver.getOrCreateState<MemberOverwriteLattice>(
+        solver.getProgramPointAfter(computeOrProductFunc)
+    );
+  }
+
+  auto *returnOp = funcBody.back().getTerminator();
+  const auto *lattice =
+      solver.lookupState<MemberOverwriteLattice>(solver.getProgramPointAfter(returnOp));
+  return lattice;
 }
 
 } // namespace llzk
