@@ -73,7 +73,7 @@ bool MemberOverwriteLattice::hasOverwrites() const { return overwrites.size() > 
 void MemberOverwriteLattice::emitOverwriteErrors() const {
   for (auto [first, over] : overwrites) {
     auto diag = over->emitWarning()
-                << "overwriting struct member '" << over.getMemberName() << '\'';
+                << "may overwrite struct member '" << over.getMemberName() << '\'';
     diag.attachNote(first.getLoc()) << "previously written to here";
     diag.report();
   }
