@@ -1,2 +1,5 @@
 added:
-  - Added `--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members
+  - Created `--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members
+
+changed:
+  - Updated `--llzk-validate-member-writes` pass to correctly handle control flow
