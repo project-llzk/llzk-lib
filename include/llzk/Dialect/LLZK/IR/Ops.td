@@ -45,8 +45,9 @@ def LLZK_NonDetOp
     %0 = llzk.nondet : !felt.type
     ```
 
-    Note that `llzk.nondet` is not `ConstantLike` or `Pure` because different SSA variables
-    initialized with `llzk.nondet` may be constrained in different ways.
+    Note that `llzk.nondet` is not `ConstantLike` or `Pure` because different SSA
+    variables initialized with `llzk.nondet` may be constrained in different ways
+    so they cannot be treated as identical values.
 
     Example:
 
