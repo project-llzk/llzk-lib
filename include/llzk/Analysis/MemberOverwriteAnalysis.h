@@ -42,7 +42,7 @@ public:
   /// @param key
   bool contains(llvm::StringRef key) const { return _value_is(key, true); }
 
-  /// @brief `key \in *this` == false
+  /// @brief `key \in *this` == false (key is definitely not present)
   /// @param key
   bool doesNotContain(llvm::StringRef key) const { return _value_is(key, false); }
 
