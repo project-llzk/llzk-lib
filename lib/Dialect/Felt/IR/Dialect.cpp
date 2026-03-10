@@ -37,7 +37,7 @@ namespace llzk::felt {
 // it doesn't work to put it in Attrs.cpp.
 //===------------------------------------------------------------------===//
 
-mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
+mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
   mlir::Builder odsBuilder(odsParser.getContext());
   llvm::SMLoc odsLoc = odsParser.getCurrentLocation();
   mlir::FailureOr<mlir::StringAttr> fieldNameAttrRes;
@@ -123,6 +123,8 @@ auto FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Felt/IR/Types.cpp.inc"

@@ -54,7 +54,7 @@ def UnusedDeclarationEliminationPass
 
 def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
   let summary =
-      "Lowers the degree of all polynomial equations to a specified maximum";
+      "Lower the degree of all polynomial equations to a specified maximum";
   let description = [{
     Rewrites constraint expressions into an (observationally) equivalent system where the degree of
     every polynomial is less than or equal to the specified maximum.
@@ -99,7 +99,7 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
 
 def ComputeConstrainToProductPass
     : LLZKPass<"llzk-compute-constrain-to-product"> {
-  let summary = "Replaces separate @compute and @constrain functions in a "
+  let summary = "Replace separate @compute and @constrain functions in a "
                 "struct with a single @product function";
   let description = summary;
   let constructor = "llzk::createComputeConstrainToProductPass()";
@@ -110,8 +110,7 @@ def ComputeConstrainToProductPass
 }
 
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary =
-      "Fuses matching witness/constraint loops in a @product function";
+  let summary = "Fuse matching witness/constraint loops in a @product function";
   let description = summary;
   let constructor = "llzk::createFuseProductLoopsPass()";
   let options = [];

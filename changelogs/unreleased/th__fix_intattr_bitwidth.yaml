@@ -1,2 +1,0 @@
-fixed:
-  - Fix possible bitwidth mismatch error by ensuring APInt within IntegerAttr has the correct bit width when converting to IndexType.

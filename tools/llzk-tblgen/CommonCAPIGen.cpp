@@ -213,11 +213,13 @@ static inline std::string getDocumentation(
 
       // Trim whitespace
       if (!comment.empty()) {
+        std::string newDoc("/// ");
+        newDoc += comment;
         if (!documentation.empty()) {
-          documentation = "/// " + comment.str() + "\n" + documentation;
-        } else {
-          documentation = "/// " + comment.str();
+          newDoc += '\n';
+          newDoc += documentation;
         }
+        documentation = std::move(newDoc);
       }
     } else if (!curr.is(tok::unknown)) {
       // Stop looking backwards when we hit a non-comment, non-whitespace token
@@ -240,7 +242,7 @@ static inline std::string getDocumentation(
 //===----------------------------------------------------------------------===//
 
 /// Access level tracking for C++ class declarations
-enum class AccessLevel { Public, Private, Protected };
+enum class AccessLevel : std::uint8_t { Public, Private, Protected };
 
 /// Track the current access level (public, private, protected) in a C++ class declaration.
 /// Updates the access level when encountering access specifiers like "public:", "private:", etc.

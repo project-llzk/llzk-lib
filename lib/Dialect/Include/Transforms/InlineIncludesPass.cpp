@@ -58,7 +58,7 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
             includeStack.push_back(std::make_pair(incOp.getPath(), incOp.getLoc()));
             FailureOr<ModuleOp> result = incOp.inlineAndErase();
             if (succeeded(result)) {
-              ModuleOp newMod = std::move(result.value());
+              ModuleOp newMod = result.value();
               assert(succeeded(newMod.verify()) && "newMod must pass verification");
               nextLevel.push_back(make_pair(newMod, includeStack));
             }

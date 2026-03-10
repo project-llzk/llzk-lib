@@ -132,7 +132,7 @@ void SymbolDefTree::print(llvm::raw_ostream &os) const {
 
 void SymbolDefTree::dumpToDotFile(std::string filename) const {
   std::string title = llvm::DOTGraphTraits<const llzk::SymbolDefTree *>::getGraphName(this);
-  llvm::WriteGraph(this, "SymbolDefTree", /*ShortNames*/ false, title, filename);
+  llvm::WriteGraph(this, "SymbolDefTree", /*ShortNames*/ false, title, std::move(filename));
 }
 
 } // namespace llzk

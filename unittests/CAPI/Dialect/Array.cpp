@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Util/Compare.h"
 
 #include "llzk-c/Dialect/Array.h"
 #include "llzk-c/Support.h"
@@ -28,7 +29,9 @@
 
 struct ArrayDialectTests : public CAPITest {
   MlirType test_array(MlirType elt, llvm::ArrayRef<int64_t> dims) const {
-    return llzkArray_ArrayTypeGetWithShape(elt, dims.size(), dims.data());
+    return llzkArray_ArrayTypeGetWithShape(
+        elt, llzk::checkedCast<intptr_t>(dims.size()), dims.data()
+    );
   }
 
   llvm::SmallVector<MlirOperation> create_n_ops(int64_t n_ops, MlirType elt_type) const {
@@ -116,7 +119,7 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_values) {
         values.push_back(mlirOperationGetResult(op, 0));
       }
       return llzkArray_CreateArrayOpBuildWithValues(
-          builder, location, test_type, values.size(), values.data()
+          builder, location, test_type, llzk::checkedCast<intptr_t>(values.size()), values.data()
       );
     }
     void doOtherChecks(MlirOperation) override {
@@ -178,8 +181,9 @@ TEST_F(ArrayDialectTests, create_array_op_build_with_map_operands_and_dims) {
 // Implementation for `ArrayLengthOp_build_pass` test
 std::unique_ptr<ArrayLengthOpBuildFuncHelper> ArrayLengthOpBuildFuncHelper::get() {
   struct Impl : public ArrayLengthOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Value array;
       mlir::Value dim;
@@ -202,8 +206,9 @@ std::unique_ptr<ArrayLengthOpBuildFuncHelper> ArrayLengthOpBuildFuncHelper::get(
 // Implementation for `ReadArrayOp_build_pass` test
 std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
   struct Impl : public ReadArrayOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Type elemType;
       mlir::Value array;
@@ -221,7 +226,8 @@ std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
         indices.push_back(wrap(idx));
       }
       return llzkArray_ReadArrayOpBuild(
-          builder, location, wrap(elemType), wrap(array), indices.size(), indices.data()
+          builder, location, wrap(elemType), wrap(array),
+          llzk::checkedCast<intptr_t>(indices.size()), indices.data()
       );
     }
   };
@@ -231,8 +237,9 @@ std::unique_ptr<ReadArrayOpBuildFuncHelper> ReadArrayOpBuildFuncHelper::get() {
 // Implementation for `WriteArrayOp_build_pass` test
 std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() {
   struct Impl : public WriteArrayOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Value array;
       mlir::Value value;
@@ -250,7 +257,8 @@ std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() 
         value = idx;
       }
       return llzkArray_WriteArrayOpBuild(
-          builder, location, wrap(array), indices.size(), indices.data(), wrap(value)
+          builder, location, wrap(array), llzk::checkedCast<intptr_t>(indices.size()),
+          indices.data(), wrap(value)
       );
     }
   };
@@ -260,8 +268,9 @@ std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() 
 // Implementation for `InsertArrayOp_build_pass` test
 std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get() {
   struct Impl : public InsertArrayOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Value array_big;
       mlir::Value array_small;
@@ -284,7 +293,8 @@ std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get(
         );
       }
       return llzkArray_InsertArrayOpBuild(
-          builder, location, wrap(array_big), indices.size(), indices.data(), wrap(array_small)
+          builder, location, wrap(array_big), llzk::checkedCast<intptr_t>(indices.size()),
+          indices.data(), wrap(array_small)
       );
     }
   };
@@ -294,8 +304,9 @@ std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get(
 // Implementation for `ExtractArrayOp_build_pass` test
 std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::get() {
   struct Impl : public ExtractArrayOpBuildFuncHelper {
-    MlirOperation
-    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    MlirOperation callBuild(
+        const CAPITest & /*testClass*/, MlirOpBuilder builder, MlirLocation location
+    ) override {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       mlir::Value array_big;
       mlir::Type small_type;
@@ -317,7 +328,8 @@ std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::ge
             llzk::array::ArrayType::get(idxType, llvm::ArrayRef<mlir::Attribute> {intAttr1});
       }
       return llzkArray_ExtractArrayOpBuild(
-          builder, location, wrap(small_type), wrap(array_big), indices.size(), indices.data()
+          builder, location, wrap(small_type), wrap(array_big),
+          llzk::checkedCast<intptr_t>(indices.size()), indices.data()
       );
     }
   };

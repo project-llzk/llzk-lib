@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -72,6 +73,10 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
       }
     });
   }
+
+private:
+  friend Derived;
+  LLZKTypeSwitch() = default;
 };
 
 void BuildShortTypeString::appendSymName(StringRef str) {
@@ -191,8 +196,8 @@ std::string BuildShortTypeString::from(const std::string &base, ArrayRef<Attribu
   bldr.ret.reserve(base.size() + attrs.size()); // reserve minimum space required
 
   // First handle replacements of PLACEHOLDER
-  auto END = attrs.end();
-  auto IT = attrs.begin();
+  const auto *END = attrs.end();
+  const auto *IT = attrs.begin();
   {
     size_t start = 0;
     for (size_t pos; (pos = base.find(PLACEHOLDER, start)) != std::string::npos; start = pos + 1) {
@@ -512,7 +517,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
       }
       return !outer.no_struct && outer.areValidStructTypeParams(t.getParams());
     }
-    bool caseInvalid(Type _) { return false; }
+    bool caseInvalid(Type) { return false; }
   };
   return Impl(*this).match(type);
 }
@@ -546,7 +551,7 @@ bool isConcreteType(Type type, bool allowStructParams) {
 
 bool hasAffineMapAttr(Type type) {
   bool encountered = false;
-  type.walk([&](AffineMapAttr a) {
+  type.walk([&](AffineMapAttr) {
     encountered = true;
     return WalkResult::interrupt();
   });
@@ -562,10 +567,9 @@ uint64_t computeEmitEqCardinality(Type type) {
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
       int64_t n = t.getNumElements();
-      assert(n >= 0);
-      return static_cast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
+      return llzk::checkedCast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
     }
-    uint64_t caseStruct(StructType t) { llvm_unreachable("not a valid EmitEq type"); }
+    uint64_t caseStruct(StructType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t casePod(PodType t) {
       return std::accumulate(
           t.getRecords().begin(), t.getRecords().end(), 0,

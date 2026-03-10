@@ -379,7 +379,7 @@ private:
   FailureOr<func::FuncOp> buildPCLFunc(StructDefOp structDef) {
     SmallVector<Type> pclInputTypes, pclOutputTypes;
     auto constrainFunc = structDef.getConstrainFuncOp();
-    auto ctx = structDef.getContext();
+    auto *ctx = structDef.getContext();
     for (auto arg : constrainFunc.getArguments().drop_front()) {
       auto argType = arg.getType();
       if (!llvm::isa<FeltType>(argType)) {

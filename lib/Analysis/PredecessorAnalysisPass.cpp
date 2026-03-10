@@ -72,8 +72,8 @@ public:
       llvm::report_fatal_error("wrong lattice type provided for join");
     }
     ChangeResult r = ChangeResult::NoChange;
-    for (auto &[op, preds] : other->predecessors) {
-      for (auto pred : preds) {
+    for (const auto &[op, preds] : other->predecessors) {
+      for (auto *pred : preds) {
         r |= visit(op, pred);
       }
     }
@@ -90,7 +90,7 @@ public:
       os << "(empty)\n";
       return;
     }
-    for (auto &[k, v] : predecessors) {
+    for (const auto &[k, v] : predecessors) {
       os.indent(2);
       printRegionless(os, k, true) << " predecessors:";
       llvm::interleave(v, [&os](Operation *p) {
@@ -184,8 +184,9 @@ public:
   }
 
   void visitRegionBranchControlFlowTransfer(
-      RegionBranchOpInterface branch, std::optional<unsigned> _regionFrom,
-      std::optional<unsigned> _regionTo, const PredecessorLattice &before, PredecessorLattice *after
+      RegionBranchOpInterface branch, std::optional<unsigned> /*regionFrom*/,
+      std::optional<unsigned> /*regionTo*/, const PredecessorLattice &before,
+      PredecessorLattice *after
   ) override {
     // The default implementation is `join(after, before)`, but we want to
     // show the predecessor logic for branch operations as well.

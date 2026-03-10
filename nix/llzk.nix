@@ -11,9 +11,12 @@
   cmakeBuildType ? "Release"
 }:
 
+let
+  version = "1.1.5";
+in
 stdenv.mkDerivation {
   pname = "llzk-${lib.toLower cmakeBuildType}";
-  version = "0.1.0";
+  inherit version;
   src =
     let
       src0 = lib.cleanSource (builtins.path {
@@ -46,6 +49,7 @@ stdenv.mkDerivation {
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"
     "-DLLZK_BUILD_DEVTOOLS=ON"
+    "-DLLZK_VERSION_OVERRIDE=${version}"
   ];
 
   # Needed for mlir-tblgen to run properly.

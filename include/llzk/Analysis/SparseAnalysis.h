@@ -167,7 +167,7 @@ public:
   /// Visit a call operation to an externally defined function given the
   /// lattices of its arguments.
   virtual void visitExternalCall(
-      mlir::CallOpInterface call, mlir::ArrayRef<const StateT *> argumentLattices,
+      mlir::CallOpInterface /*call*/, mlir::ArrayRef<const StateT *> /*argumentLattices*/,
       mlir::ArrayRef<StateT *> resultLattices
   ) {
     setAllToEntryStates(resultLattices);
@@ -180,7 +180,7 @@ public:
   /// elements as having reached a pessimistic fixpoint. `firstIndex` is the
   /// index of the first element of `argLattices` that is set by control-flow.
   virtual void visitNonControlFlowArguments(
-      mlir::Operation *op, const mlir::RegionSuccessor &successor,
+      mlir::Operation * /*op*/, const mlir::RegionSuccessor &successor,
       mlir::ArrayRef<StateT *> argLattices, unsigned firstIndex
   ) {
     setAllToEntryStates(argLattices.take_front(firstIndex));

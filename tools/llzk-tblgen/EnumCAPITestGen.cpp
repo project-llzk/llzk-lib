@@ -45,7 +45,7 @@ struct EnumTestGenerator : public TestGenerator {
   /// @param outputStream The output stream for generated code
   EnumTestGenerator(llvm::raw_ostream &outputStream) : TestGenerator("Enum", outputStream) {}
 
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod & /*method*/) const override {
     llvm_unreachable("Enums cannot have extra methods");
   }
 

@@ -34,6 +34,8 @@ auto llzk::polymorphic::PolymorphicDialect::initialize() -> void {
     #include "llzk/Dialect/Polymorphic/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Polymorphic/IR/Types.cpp.inc"

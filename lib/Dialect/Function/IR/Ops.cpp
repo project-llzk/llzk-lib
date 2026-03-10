@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
@@ -326,15 +327,14 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 
 LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Additional checks for the compute/constrain/product functions within a struct
-  FailureOr<StructDefOp> parentStructOpt = getParentOfType<StructDefOp>(*this);
-  if (succeeded(parentStructOpt)) {
+  if (StructDefOp parentStructOpt = getParentOfType<StructDefOp>(*this)) {
     // Verify return type restrictions for functions within a StructDefOp
     if (nameIsCompute()) {
-      return verifyFuncTypeCompute(*this, tables, parentStructOpt.value());
+      return verifyFuncTypeCompute(*this, tables, parentStructOpt);
     } else if (nameIsConstrain()) {
-      return verifyFuncTypeConstrain(*this, tables, parentStructOpt.value());
+      return verifyFuncTypeConstrain(*this, tables, parentStructOpt);
     } else if (nameIsProduct()) {
-      return verifyFuncTypeProduct(*this, tables, parentStructOpt.value());
+      return verifyFuncTypeProduct(*this, tables, parentStructOpt);
     }
   }
   // In the general case, verify symbol resolution in all input and output types.
@@ -416,7 +416,7 @@ void CallOp::build(
   odsState.addTypes(resultTypes);
   odsState.addOperands(argOperands);
   Properties &props = affineMapHelpers::buildInstantiationAttrsEmpty<CallOp>(
-      odsBuilder, odsState, static_cast<int32_t>(argOperands.size())
+      odsBuilder, odsState, llzk::checkedCast<int32_t>(argOperands.size())
   );
   props.setCallee(callee);
 }
@@ -428,7 +428,8 @@ void CallOp::build(
   odsState.addTypes(resultTypes);
   odsState.addOperands(argOperands);
   Properties &props = affineMapHelpers::buildInstantiationAttrs<CallOp>(
-      odsBuilder, odsState, mapOperands, numDimsPerMap, argOperands.size()
+      odsBuilder, odsState, mapOperands, numDimsPerMap,
+      llzk::checkedCast<int32_t>(argOperands.size())
   );
   props.setCallee(callee);
 }
@@ -724,9 +725,10 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   // If the callee references a parameter of the struct where this call appears, perform the subset
   // of checks that can be done even though the target is unknown.
   if (calleeAttr.getNestedReferences().size() == 1) {
-    FailureOr<StructDefOp> parent = getParentOfType<StructDefOp>(*this);
-    if (succeeded(parent) && parent->hasParamNamed(calleeAttr.getRootReference())) {
-      return UnknownTargetVerifier(this, calleeAttr).verify();
+    if (StructDefOp parent = getParentOfType<StructDefOp>(*this)) {
+      if (parent.hasParamNamed(calleeAttr.getRootReference())) {
+        return UnknownTargetVerifier(this, calleeAttr).verify();
+      }
     }
   }
 
@@ -822,7 +824,7 @@ SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
 Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {
   FailureOr<SymbolLookupResult<FuncDefOp>> res =
       llzk::resolveCallable<FuncDefOp>(*symbolTable, *this);
-  if (LogicalResult(res).failed() || res->isManaged()) {
+  if (failed(res) || res->isManaged()) {
     // Cannot return pointer to a managed Operation since it would cause memory errors.
     return nullptr;
   }

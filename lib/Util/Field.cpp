@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <mutex>
 
-using namespace llvm;
+using namespace mlir;
 
 namespace llzk {
 
@@ -40,7 +40,7 @@ static DenseMap<StringRef, Field> knownFields;
 
 Field::Field(std::string_view primeStr, StringRef name) : Field(APSInt(primeStr), name) {}
 
-Field::Field(APInt prime, StringRef name) : primeName(name) {
+Field::Field(const APInt &prime, StringRef name) : primeName(name) {
   primeMod = toDynamicAPInt(prime);
   halfPrime = (primeMod + felt(1)) / felt(2);
   bitwidth = prime.getBitWidth();
@@ -57,29 +57,28 @@ FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fiel
 }
 
 LogicalResult Field::verifyFieldDefined(StringRef fieldName, EmitErrorFn errFn) {
-  if (mlir::failed(Field::tryGetField(fieldName))) {
+  if (failed(Field::tryGetField(fieldName))) {
     return errFn().append("field '", fieldName, "' is not defined");
   }
-  return mlir::success();
+  return success();
 }
 
 const Field &Field::getField(StringRef fieldName, EmitErrorFn errFn) {
   auto res = tryGetField(fieldName);
-  if (mlir::failed(res)) {
-    auto msg = "field \"" + Twine(fieldName) + "\" is unsupported";
-    if (errFn) {
-      errFn().append(msg).report();
-    } else {
-      report_fatal_error(msg);
-    }
+  if (succeeded(res)) {
+    return res.value().get();
   }
-  return res.value().get();
+  std::string msg = "field \"" + fieldName.str() + "\" is unsupported";
+  if (errFn) {
+    errFn().append(msg).report();
+  }
+  llvm::report_fatal_error(msg.c_str());
 }
 
 void Field::addField(Field &&f, EmitErrorFn errFn) {
   // Use `tryGetField()` to ensure knownFields is initialized before checking for conflicts.
   auto existing = Field::tryGetField(f.name());
-  if (mlir::succeeded(existing)) {
+  if (succeeded(existing)) {
     // Field exists and conflicts with existing definition.
     std::string msg;
     debug::Appender(msg) << "Definition of \"" << f.name()
@@ -88,7 +87,7 @@ void Field::addField(Field &&f, EmitErrorFn errFn) {
     if (errFn) {
       errFn().append(msg).report();
     } else {
-      report_fatal_error(msg.c_str());
+      llvm::report_fatal_error(msg.c_str());
     }
     return;
   }
@@ -135,30 +134,30 @@ DynamicAPInt Field::inv(const APInt &i) const {
 }
 
 // Parses Fields from the given attribute, if able.
-static LogicalResult parseFields(mlir::Attribute a) {
+static LogicalResult parseFields(Attribute a) {
   // clang-format off
   return TypeSwitch<
-             mlir::Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
-      .Case<mlir::UnitAttr>(
-          [](auto _) {
+             Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
+      .Case<UnitAttr>(
+          [](auto) {
             return success();
           })
-      .Case<mlir::StringAttr>(
+      .Case<StringAttr>(
           [](auto s) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
-            auto fieldRes = Field::tryGetField(s.getValue().data());
-            if (mlir::failed(fieldRes)) {
+            auto fieldRes = Field::tryGetField(s);
+            if (failed(fieldRes)) {
               return failure();
             }
             return SmallVector<std::reference_wrapper<const Field>> {fieldRes.value()};
           })
-      .Case<mlir::ArrayAttr>(
+      .Case<ArrayAttr>(
           [](auto arr) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
             // An ArrayAttr may only contain inner StringAttr
             SmallVector<std::reference_wrapper<const Field>> res;
-            for (mlir::Attribute elem : arr) {
-              if (auto s = llvm::dyn_cast<mlir::StringAttr>(elem)) {
-                auto fieldRes = Field::tryGetField(s.getValue().data());
-                if (mlir::failed(fieldRes)) {
+            for (Attribute elem : arr) {
+              if (auto s = llvm::dyn_cast<StringAttr>(elem)) {
+                auto fieldRes = Field::tryGetField(s);
+                if (failed(fieldRes)) {
                   return failure();
                 }
                 res.push_back(fieldRes.value());
@@ -168,16 +167,16 @@ static LogicalResult parseFields(mlir::Attribute a) {
             }
             return res;
           })
-      .Default([](auto _) { return failure(); });
+      .Default([](auto) { return failure(); });
   // clang-format on
 }
 
-LogicalResult addSpecifiedFields(mlir::ModuleOp modOp) {
-  if (mlir::Attribute a = modOp->getAttr(FIELD_ATTR_NAME)) {
+LogicalResult addSpecifiedFields(ModuleOp modOp) {
+  if (Attribute a = modOp->getAttr(FIELD_ATTR_NAME)) {
     return parseFields(a);
   }
   // Always recurse.
-  if (mlir::ModuleOp parentMod = modOp->getParentOfType<mlir::ModuleOp>()) {
+  if (ModuleOp parentMod = modOp->getParentOfType<ModuleOp>()) {
     return addSpecifiedFields(parentMod);
   }
   return success();

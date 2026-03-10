@@ -14,8 +14,11 @@ using namespace mlir;
 
 namespace llzk::felt {
 
-LogicalResult
-FeltConstAttr::verify(function_ref<InFlightDiagnostic()> errFn, APInt, StringAttr fieldName) {
+LogicalResult FeltConstAttr::verify(
+    function_ref<InFlightDiagnostic()> errFn,
+    APInt, // NOLINT(performance-unnecessary-value-param)
+    StringAttr fieldName
+) {
   return fieldName ? Field::verifyFieldDefined(
                          fieldName.getValue(), wrapNonNullableInFlightDiagnostic(errFn)
                      )

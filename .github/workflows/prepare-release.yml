@@ -1,10 +1,10 @@
-name: Prepare release
+name: Prepare Release
 
 on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Release version to prepare"
+        description: "Release version to prepare (ex: v1.0.0)"
         required: true
         type: string
       checkout_from:
@@ -16,4 +16,7 @@ on:
 jobs:
   call-workflow-prepare-release:
     uses: project-llzk/open-source-release-helpers/.github/workflows/prepare-release.yml@main
+    with:
+      release_version: ${{ inputs.release_version }}
+      checkout_from: ${{ inputs.checkout_from }}
     secrets: inherit

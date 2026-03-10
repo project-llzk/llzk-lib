@@ -42,21 +42,18 @@ using namespace llzk::function;
 
 namespace llzk::component {
 
-bool isInStruct(Operation *op) { return succeeded(getParentOfType<StructDefOp>(op)); }
+bool isInStruct(Operation *op) { return getParentOfType<StructDefOp>(op); }
 
 FailureOr<StructDefOp> verifyInStruct(Operation *op) {
-  FailureOr<StructDefOp> res = getParentOfType<StructDefOp>(op);
-  if (failed(res)) {
-    return op->emitOpError() << "only valid within a '" << StructDefOp::getOperationName()
-                             << "' ancestor";
+  if (StructDefOp res = getParentOfType<StructDefOp>(op)) {
+    return res;
   }
-  return res;
+  return op->emitOpError() << "only valid within a '" << StructDefOp::getOperationName()
+                           << "' ancestor";
 }
 
 bool isInStructFunctionNamed(Operation *op, char const *funcName) {
-  FailureOr<FuncDefOp> parentFuncOpt = getParentOfType<FuncDefOp>(op);
-  if (succeeded(parentFuncOpt)) {
-    FuncDefOp parentFunc = parentFuncOpt.value();
+  if (FuncDefOp parentFunc = getParentOfType<FuncDefOp>(op)) {
     if (isInStruct(parentFunc.getOperation())) {
       if (parentFunc.getSymName().compare(funcName) == 0) {
         return true;
@@ -533,12 +530,12 @@ verifyMemberDefTypeImpl(Type memberType, SymbolTableCollection &tables, Operatio
     if (failed(memberTypeRes)) {
       return failure(); // above already emits a sufficient error message
     }
-    FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(origin);
-    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
-    if (memberTypeRes.value() == parentRes.value()) {
+    StructDefOp parentRes = getParentOfType<StructDefOp>(origin);
+    assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def
+    if (memberTypeRes.value() == parentRes) {
       return origin->emitOpError()
           .append("type is circular")
-          .attachNote(parentRes.value().getLoc())
+          .attachNote(parentRes.getLoc())
           .append("references parent component defined here");
     }
     return success();
@@ -653,14 +650,13 @@ LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   // If the member is private and this read is outside the struct, then fail to validate.
   // The current op may be inside a struct or a free function, but the
   // member op (the member definition) is always inside a struct.
-  FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(*this);
   FailureOr<StructDefOp> memberParentRes = verifyInStruct(member->get());
   if (failed(memberParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
+  StructDefOp thisParent = getParentOfType<StructDefOp>(*this);
   StructDefOp memberParentStruct = memberParentRes.value();
-  if (!member->get().hasPublicAttr() &&
-      (failed(parentRes) || parentRes.value() != memberParentStruct)) {
+  if (!member->get().hasPublicAttr() && (!thisParent || thisParent != memberParentStruct)) {
     return emitOpError()
         .append(
             "cannot read from private member of struct \"", memberParentStruct.getHeaderString(),

@@ -30,7 +30,7 @@ namespace {
 /// @brief Generator for enum C header files
 struct EnumHeaderGenerator : public HeaderGenerator {
   using HeaderGenerator::HeaderGenerator;
-  virtual ~EnumHeaderGenerator() = default;
+  ~EnumHeaderGenerator() override = default;
 
   void setEnumName(StringRef enumCppNamespace, StringRef enumClassName) {
     std::string classNamePascal = toPascalCase(enumClassName);
@@ -75,9 +75,9 @@ protected:
 /// @brief Generator for enum C implementation files
 struct EnumImplementationGenerator : public ImplementationGenerator {
   using ImplementationGenerator::ImplementationGenerator;
-  virtual ~EnumImplementationGenerator() = default;
+  ~EnumImplementationGenerator() override = default;
 
-  void setEnumName(StringRef enumCppNamespace, StringRef enumClassName) {
+  void setEnumName(StringRef /*enumCppNamespace*/, StringRef enumClassName) {
     std::string classNamePascal = toPascalCase(enumClassName);
     this->cEnumName = toPascalCase(FunctionPrefix) + toPascalCase(DialectName) + classNamePascal;
   }

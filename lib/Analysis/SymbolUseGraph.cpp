@@ -93,7 +93,7 @@ SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolU
   SymbolOpInterface userSymbol = getSelfOrParentOfType<SymbolOpInterface>(u.getUser());
   return getPathAndCall<SymbolUseGraphNode *>(
       userSymbol, [this, &userSymbol](ModuleOp r, SymbolRefAttr p) {
-    auto n = this->getOrAddNode(r, p, nullptr);
+    auto *n = this->getOrAddNode(r, p, nullptr);
     n->opsThatUseTheSymbol.insert(userSymbol);
     return n;
   }
@@ -134,7 +134,7 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
             }
           }
         }
-        auto node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
+        auto *node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
         node->isStructConstParam = isStructParam;
         node->opsThatUseTheSymbol.insert(user);
       }
@@ -214,7 +214,7 @@ inline void safeAppendPathRoot(llvm::raw_ostream &os, ModuleOp root) {
 } // namespace
 
 void SymbolUseGraphNode::print(
-    llvm::raw_ostream &os, bool showLocations, std::string locationLinePrefix
+    llvm::raw_ostream &os, bool showLocations, const std::string &locationLinePrefix
 ) const {
   os << '\'' << symbolPath << '\'';
   if (isStructConstParam) {
@@ -279,7 +279,7 @@ void SymbolUseGraph::print(llvm::raw_ostream &os) const {
 
 void SymbolUseGraph::dumpToDotFile(std::string filename) const {
   std::string title = llvm::DOTGraphTraits<const llzk::SymbolUseGraph *>::getGraphName(this);
-  llvm::WriteGraph(this, "SymbolUseGraph", /*ShortNames*/ false, title, filename);
+  llvm::WriteGraph(this, "SymbolUseGraph", /*ShortNames*/ false, title, std::move(filename));
 }
 
 } // namespace llzk

@@ -43,6 +43,8 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
+    // Suppress false positive from `clang-tidy`
+    // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
     auto modOp = llvm::dyn_cast<mlir::ModuleOp>(getOperation());
     if (!modOp) {
       constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
@@ -53,10 +55,9 @@ protected:
     auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
 
     if (mlir::failed(fieldLookupRes)) {
-      std::string msg = (llvm::Twine("IntervalAnalysisPrinterPass error: unknown field \"") +
-                         fieldName.c_str() + "\" specified")
-                            .str();
-      modOp->emitError(msg).report();
+      modOp->emitError()
+          .append("IntervalAnalysisPrinterPass error: unknown field \"", fieldName, "\" specified")
+          .report();
       return;
     }
 
@@ -66,7 +67,7 @@ protected:
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
-    for (auto &[s, si] : mia.getCurrentResults()) {
+    for (const auto &[s, si] : mia.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
       auto fullName = getPathFromTopRoot(structDef);
       ensure(

@@ -22,6 +22,7 @@ mlir::LogicalResult verifyNotFieldNativeTraitImpl(mlir::Operation *op);
 /// Marker for ops that are specific to constraint generation.
 /// Verifies that the surrounding function is marked with the `AllowConstraintAttr`.
 template <typename TypeClass>
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 class ConstraintGen : public mlir::OpTrait::TraitBase<TypeClass, ConstraintGen> {
 public:
   inline static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
@@ -32,6 +33,7 @@ public:
 /// Marker for ops that are specific to witness generation.
 /// Verifies that the surrounding function is marked with the `AllowWitnessAttr`.
 template <typename TypeClass>
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 class WitnessGen : public mlir::OpTrait::TraitBase<TypeClass, WitnessGen> {
 public:
   inline static mlir::LogicalResult verifyTrait(mlir::Operation *op) {
@@ -42,6 +44,7 @@ public:
 /// Marker for ops over `llzk.felt` type operands that are not native to finite field arithmetic.
 /// Verifies that the surrounding function is marked with the `AllowNonNativeFieldOpsAttr`.
 template <typename TypeClass>
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 class NotFieldNative : public mlir::OpTrait::TraitBase<TypeClass, NotFieldNative> {
 public:
   inline static mlir::LogicalResult verifyTrait(mlir::Operation *op) {

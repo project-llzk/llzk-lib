@@ -32,7 +32,7 @@ private:
     DefaultAndFailInFlightDiagnostic(mlir::InFlightDiagnostic &&base)
         : mlir::InFlightDiagnostic(std::move(base)) {}
 
-    DefaultAndFailInFlightDiagnostic(DefaultAndFailInFlightDiagnostic &&other)
+    DefaultAndFailInFlightDiagnostic(DefaultAndFailInFlightDiagnostic &&other) noexcept
         : mlir::InFlightDiagnostic(std::move(other)) {}
 
     ~DefaultAndFailInFlightDiagnostic() {
