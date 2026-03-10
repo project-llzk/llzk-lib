@@ -7,5 +7,4 @@ mlir_tablegen(TransformationPasses.capi.cpp.inc -gen-pass-capi-impl --prefix PCL
 llzk_add_mlir_doc(PCLTransformationPassesDocGen passes/PCLTransformationPasses.md -gen-pass-doc)
 
 add_public_tablegen_target(PCLTransformationIncGen)
-add_dependencies(mlir-headers PCLTransformationIncGen)
 add_dependencies(LLZKDialectHeaders PCLTransformationIncGen)

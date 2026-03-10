@@ -33,5 +33,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=fel
 llzk_add_mlir_doc(FeltOpsDocGen dialect/FeltDialect.md -gen-dialect-doc -dialect=felt)
 
 add_public_tablegen_target(FeltDialectIncGen)
-add_dependencies(mlir-headers FeltDialectIncGen)
 add_dependencies(LLZKDialectHeaders FeltDialectIncGen)

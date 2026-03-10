@@ -7,5 +7,4 @@ mlir_tablegen(TransformationPasses.capi.cpp.inc -gen-pass-capi-impl --prefix LLZ
 llzk_add_mlir_doc(ArrayTransformationPassesDocGen passes/array/TransformationPasses.md -gen-pass-doc)
 
 add_public_tablegen_target(ArrayTransformationIncGen)
-add_dependencies(mlir-headers ArrayTransformationIncGen)
 add_dependencies(LLZKDialectHeaders ArrayTransformationIncGen)

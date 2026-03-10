@@ -4,5 +4,4 @@ set(LLVM_TARGET_DEFINITIONS "ZKLeanPasses.td")
 mlir_tablegen(ZKLeanPasses.h.inc -gen-pass-decls -name=ZKLean)
 
 add_public_tablegen_target(ZKLeanPassesIncGen)
-add_dependencies(mlir-headers ZKLeanPassesIncGen)
 add_dependencies(ZKLeanDialectHeaders ZKLeanPassesIncGen)

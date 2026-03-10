@@ -29,5 +29,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=boo
 llzk_add_mlir_doc(BooleanOpsDocGen dialect/BoolDialect.md -gen-dialect-doc -dialect=bool)
 
 add_public_tablegen_target(BoolDialectIncGen)
-add_dependencies(mlir-headers BoolDialectIncGen)
 add_dependencies(LLZKDialectHeaders BoolDialectIncGen)
