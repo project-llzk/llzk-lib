@@ -33,7 +33,7 @@ ChangeResult MemberOverwriteLattice::record(MemberWriteOp write) {
 
   bool changed = false;
 
-  if (mayWrites.contains(name) && mayWrites[name] != write) {
+  if (auto it = mayWrites.find(name); it != mayWrites.end() && it->second != write) {
     // .insert(...) returns true if an insertion was performed (i.e., it wasn't present before),
     // meaning there was a change
     changed |= overwrites.insert({mayWrites.at(name), write});
@@ -59,7 +59,8 @@ ChangeResult MemberOverwriteLattice::join(const AbstractDenseLattice &other) {
 
   // Union the mayWrites
   for (auto [name, write] : rhs->mayWrites) {
-    changed |= (!mayWrites.contains(name) || mayWrites[name] != write);
+    auto it = mayWrites.find(name);
+    changed |= it == mayWrites.end() || it->second != write;
     mayWrites[name] = write;
   }
   changed |= overwrites.set_union(rhs->overwrites);
@@ -77,21 +78,6 @@ llvm::SetVector<Overwrite> MemberOverwriteLattice::getOverwrites() const { retur
 bool MemberOverwriteLattice::checkWritten(component::MemberDefOp memberDef) const {
   return mustWrites.contains(memberDef.getSymName());
 }
-
-// void MemberOverwriteLattice::emitOverwriteErrors() const {
-//   for (auto [first, over] : overwrites) {
-//     auto diag = over->emitWarning()
-//                 << "may overwrite struct member '" << over.getMemberName() << '\'';
-//     diag.attachNote(first.getLoc()) << "previously written to here";
-//     diag.report();
-//   }
-// }
-
-// void MemberOverwriteLattice::ensureWritten(MemberDefOp memberDef) const {
-//   if (!mustWrites.contains(memberDef.getSymName())) {
-//     memberDef->emitWarning() << "member may not be written to";
-//   }
-// }
 
 void MemberOverwriteLattice::print(llvm::raw_ostream &os) const { os << *this << '\n'; }
 

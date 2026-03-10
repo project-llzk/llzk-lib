@@ -17,12 +17,19 @@
 
 namespace llzk {
 
+/// @brief Represents a set where the membership predicate can take three values: true, false, and
+/// "unknown". This is useful for building a lattice for intersection analysis. Internally, we
+/// represent the set as a mapping of elements to "present/not present" Booleans; any element for
+/// which this mapping doesn't exist is in the default "don't know" state.
 class FuzzySet {
-  llvm::DenseMap<llvm::StringRef, bool> isPresent;
-  bool _value_is(llvm::StringRef key, bool present) const {
+
+  using Present = bool;
+
+  llvm::DenseMap<llvm::StringRef, Present> isPresent;
+  bool _value_is(llvm::StringRef key, Present present) const {
     return isPresent.contains(key) && isPresent.at(key) == present;
   }
-  bool _set_to(llvm::StringRef key, bool present) {
+  bool _set_to(llvm::StringRef key, Present present) {
     bool changed = !_value_is(key, present);
     isPresent[key] = present;
     return changed;
@@ -31,13 +38,22 @@ class FuzzySet {
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FuzzySet &set);
 
 public:
+  /// @brief "key \in *this" == true
+  /// @param key
   bool contains(llvm::StringRef key) const { return _value_is(key, true); }
+
+  /// @brief "key \in *this" == false
+  /// @param key
   bool doesNotContain(llvm::StringRef key) const { return _value_is(key, false); }
 
   bool insert(llvm::StringRef key) { return _set_to(key, true); }
 
   bool remove(llvm::StringRef key) { return _set_to(key, false); }
 
+  /// @brief Perform an intersection in-place. If an element is only known about in one of the two
+  /// sets being intersected, keep it as-is; otherwise, intersect it as normal.
+  /// @param other
+  /// @return `true` if this set was modified, `false` otherwise
   bool intersect(const FuzzySet &other) {
     bool changed = false;
 
