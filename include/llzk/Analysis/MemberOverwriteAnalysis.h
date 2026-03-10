@@ -38,16 +38,20 @@ class FuzzySet {
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FuzzySet &set);
 
 public:
-  /// @brief "key \in *this" == true
+  /// @brief `key \in *this` == true
   /// @param key
   bool contains(llvm::StringRef key) const { return _value_is(key, true); }
 
-  /// @brief "key \in *this" == false
+  /// @brief `key \in *this` == false
   /// @param key
   bool doesNotContain(llvm::StringRef key) const { return _value_is(key, false); }
 
+  /// @brief Mark `key` as definitely present
+  /// @param key
   bool insert(llvm::StringRef key) { return _set_to(key, true); }
 
+  /// @brief Mark `key` as definitely not present
+  /// @param key
   bool remove(llvm::StringRef key) { return _set_to(key, false); }
 
   /// @brief Perform an intersection in-place. If an element is only known about in one of the two
