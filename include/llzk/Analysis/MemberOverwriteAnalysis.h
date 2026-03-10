@@ -38,7 +38,7 @@ class FuzzySet {
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FuzzySet &set);
 
 public:
-  /// @brief `key \in *this` == true
+  /// @brief `key \in *this` == true (key is definitely present)
   /// @param key
   bool contains(llvm::StringRef key) const { return _value_is(key, true); }
 
