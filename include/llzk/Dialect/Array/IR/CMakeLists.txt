@@ -26,5 +26,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=arr
 llzk_add_mlir_doc(ArrayOpsDocGen dialect/ArrayDialect.md -gen-dialect-doc -dialect=array)
 
 add_public_tablegen_target(ArrayDialectIncGen)
-add_dependencies(mlir-headers ArrayDialectIncGen)
 add_dependencies(LLZKDialectHeaders ArrayDialectIncGen)

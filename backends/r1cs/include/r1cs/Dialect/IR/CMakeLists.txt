@@ -24,5 +24,4 @@ mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=r1cs)
 llzk_add_mlir_doc(R1CSOpsDocGen dialect/R1CSDialect.md -gen-dialect-doc -dialect=r1cs)
 
 add_public_tablegen_target(R1CSDialectIncGen)
-add_dependencies(mlir-headers R1CSDialectIncGen)
 add_dependencies(LLZKDialectHeaders R1CSDialectIncGen)

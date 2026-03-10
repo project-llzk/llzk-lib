@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
@@ -82,12 +83,11 @@ template <typename SrcBinOp, typename DstBinOp>
 static LogicalResult
 lowerBinaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mapping) {
   auto loc = src.getLoc();
-  auto op = src.getOperation();
-  auto lhs = lookup(src.getLhs(), mapping, op);
+  auto lhs = lookup(src.getLhs(), mapping, src);
   if (failed(lhs)) {
     return failure();
   }
-  auto rhs = lookup(src.getRhs(), mapping, op);
+  auto rhs = lookup(src.getRhs(), mapping, src);
   if (failed(rhs)) {
     return failure();
   }
@@ -102,8 +102,7 @@ template <typename SrcBinOp, typename DstBinOp>
 static LogicalResult
 lowerUnaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mapping) {
   auto loc = src.getLoc();
-  auto op = src.getOperation();
-  auto operand = lookup(src.getOperand(), mapping, op);
+  auto operand = lookup(src.getOperand(), mapping, src);
   if (failed(operand)) {
     return failure();
   }
@@ -239,6 +238,20 @@ private:
     llvm::DenseMap<StringRef, Value> member2pclvar;
     llvm::SmallVector<Value> outVars;
 
+    // Create a new variable name for an `llzk.nondet` op with a paranoid check
+    // that the generated name doesn't collide with any member names.
+    auto getNondetVarName = [&member2pclvar]() {
+      static unsigned id = 0;
+      std::string name;
+      llvm::raw_string_ostream os(name);
+      do {
+        name.clear();
+        os << "_nondet_internal_var__" << id;
+        id++;
+      } while (member2pclvar.contains(name));
+      return name;
+    };
+
     auto srcFunc = structDef.getConstrainFuncOp();
     auto srcArgs = srcFunc.getArguments().drop_front();
     auto dstArgs = dstFunc.getArguments();
@@ -265,7 +278,7 @@ private:
       );
     }
     Block &srcEntry = srcFunc.getBody().front();
-    // Translate each op. Almost 1-1 and currently only support Felt ops.
+    // Translate each op. Almost 1-1 and currently only support Felt/Bool ops.
     // TODO: Support calls, if-else, globals/lookups.
     for (Operation &op : srcEntry) {
       LogicalResult res = success();
@@ -275,6 +288,11 @@ private:
       })
           .Case<mlir::arith::ConstantOp>([&b, &llzkToPcl, &res](auto c) {
         res = lowerConst(b, c, llzkToPcl);
+      })
+          .Case<NonDetOp>([&b, &getNondetVarName, &llzkToPcl](auto n) {
+        auto varName = getNondetVarName();
+        auto pclVar = b.create<pcl::VarOp>(n.getLoc(), varName, /* public */ false);
+        rememberResult(n.getResult(), pclVar, llzkToPcl);
       })
           .Case<AddFeltOp>([&b, &llzkToPcl, &res](auto a) {
         res = lowerBinaryLike<AddFeltOp, pcl::AddOp>(b, a, llzkToPcl);
@@ -288,8 +306,34 @@ private:
           .Case<NegFeltOp>([&b, &llzkToPcl, &res](auto n) {
         res = lowerUnaryLike<NegFeltOp, pcl::NegOp>(b, n, llzkToPcl);
       })
+          .Case<AndBoolOp>([&b, &llzkToPcl, &res](auto a) {
+        res = lowerBinaryLike<AndBoolOp, pcl::AndOp>(b, a, llzkToPcl);
+      })
+          .Case<OrBoolOp>([&b, &llzkToPcl, &res](auto o) {
+        res = lowerBinaryLike<OrBoolOp, pcl::OrOp>(b, o, llzkToPcl);
+      })
+          .Case<NotBoolOp>([&b, &llzkToPcl, &res](auto n) {
+        res = lowerUnaryLike<NotBoolOp, pcl::NotOp>(b, n, llzkToPcl);
+      })
+          .Case<XorBoolOp>([&b, &llzkToPcl, &res](auto x) {
+        // Translate xor as an iff followed by a boolean not
+        res = lowerBinaryLike<XorBoolOp, pcl::IffOp>(b, x, llzkToPcl);
+        if (failed(res)) {
+          return;
+        }
+        // Get the result from the `pcl::IffOp` to pass into `Not`
+        auto iffRes = lookup(x.getResult(), llzkToPcl, x);
+        if (failed(iffRes)) {
+          res = failure();
+          return;
+        }
+        auto loc = x.getLoc();
+        auto not_op = b.create<pcl::NotOp>(loc, *iffRes);
+        // Associate the result of the llzk-op with the result of the pcl-not
+        rememberResult(x.getResult(), not_op.getResult(), llzkToPcl);
+      })
           .Case<IntToFeltOp>([&llzkToPcl, &res](auto m) {
-        auto arg = lookup(m.getValue(), llzkToPcl, m.getOperation());
+        auto arg = lookup(m.getValue(), llzkToPcl, m);
         if (failed(arg)) {
           res = failure();
           return;
@@ -303,22 +347,22 @@ private:
           res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, cmp, llzkToPcl);
           break;
         case FeltCmpPredicate::NE: {
-          // Translate not-equals as an equality followed by a negation
+          // Translate not-equals as an equality followed by a boolean not
           auto eq = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, cmp, llzkToPcl);
           if (failed(eq)) {
             res = eq;
             break;
           }
-          // Get the result from the `pcl::CmpEqOp` to pass into `Neg`
-          auto eqRes = lookup(cmp.getResult(), llzkToPcl, cmp.getOperation());
+          // Get the result from the `pcl::CmpEqOp` to pass into `Not`
+          auto eqRes = lookup(cmp.getResult(), llzkToPcl, cmp);
           if (failed(eqRes)) {
             res = failure();
             break;
           }
           auto loc = cmp.getLoc();
-          auto neg = b.create<pcl::NegOp>(loc, *eqRes);
-          // Associate the result of the llzk-op with the result of the pcl-neg
-          rememberResult(cmp.getResult(), neg.getResult(), llzkToPcl);
+          auto not_op = b.create<pcl::NotOp>(loc, *eqRes);
+          // Associate the result of the llzk-op with the result of the pcl-not
+          rememberResult(cmp.getResult(), not_op.getResult(), llzkToPcl);
           break;
         }
         case FeltCmpPredicate::LT:
@@ -336,8 +380,8 @@ private:
         }
       })
           .Case<EmitEqualityOp>([&b, &llzkToPcl, &res](auto eq) {
-        auto lhs = lookup(eq.getLhs(), llzkToPcl, eq.getOperation());
-        auto rhs = lookup(eq.getRhs(), llzkToPcl, eq.getOperation());
+        auto lhs = lookup(eq.getLhs(), llzkToPcl, eq);
+        auto rhs = lookup(eq.getRhs(), llzkToPcl, eq);
         if (failed(lhs) || failed(rhs)) {
           res = failure();
           return;

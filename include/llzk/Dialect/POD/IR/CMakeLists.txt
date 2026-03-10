@@ -29,5 +29,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=pod
 llzk_add_mlir_doc(PODOpsDocGen dialect/PODDialect.md -gen-dialect-doc -dialect=pod)
 
 add_public_tablegen_target(PODDialectIncGen)
-add_dependencies(mlir-headers PODDialectIncGen)
 add_dependencies(LLZKDialectHeaders PODDialectIncGen)

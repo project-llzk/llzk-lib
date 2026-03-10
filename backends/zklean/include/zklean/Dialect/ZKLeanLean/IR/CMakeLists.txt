@@ -15,5 +15,4 @@ mlir_tablegen(ZKLeanLeanOps.cpp.inc -gen-op-defs -dialect=ZKLeanLean)
 llzk_add_mlir_doc(ZKLeanLeanDocGen dialect/ZKLeanLeanDialect.md -gen-dialect-doc -dialect=ZKLeanLean)
 
 add_public_tablegen_target(ZKLeanLeanDialectIncGen)
-add_dependencies(mlir-headers ZKLeanLeanDialectIncGen)
 add_dependencies(ZKLeanDialectHeaders ZKLeanLeanDialectIncGen)

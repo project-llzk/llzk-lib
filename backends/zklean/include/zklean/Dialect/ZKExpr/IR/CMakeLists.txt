@@ -15,5 +15,4 @@ mlir_tablegen(ZKExprOps.cpp.inc -gen-op-defs -dialect=ZKExpr)
 llzk_add_mlir_doc(ZKExprDocGen dialect/ZKExprDialect.md -gen-dialect-doc -dialect=ZKExpr)
 
 add_public_tablegen_target(ZKExprDialectIncGen)
-add_dependencies(mlir-headers ZKExprDialectIncGen)
 add_dependencies(ZKLeanDialectHeaders ZKExprDialectIncGen)

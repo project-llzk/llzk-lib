@@ -536,7 +536,7 @@ bool isValidEmitEqType(Type type) {
   return AllowedTypes().noString().noStruct().isValidTypeImpl(type);
 }
 
-// Allowed types must align with StructParamTypes (defined below)
+// Allowed types must be a subset of StructParamTypes (defined below)
 bool isValidConstReadType(Type type) {
   return AllowedTypes().noString().noStruct().noArray().isValidTypeImpl(type);
 }

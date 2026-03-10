@@ -1,0 +1,48 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>) attributes {function.allow_constraint} {
+      %0 = llzk.nondet : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921 : i65>} {
+// CHECK-NEXT:    func.func @A() {
+// CHECK-NEXT:      %0 = pcl.var "_nondet_internal_var__0" false
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @B {
+    struct.member @_nondet_internal_var__0 : !felt.type<"babybear">
+    function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
+      %self = struct.new : <@B>
+      function.return %self : !struct.type<@B>
+    }
+    function.def @constrain(%self: !struct.type<@B>) attributes {function.allow_constraint} {
+      %0 = llzk.nondet : !felt.type<"babybear">
+      %1 = llzk.nondet : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:  module attributes {pcl.prime = #pcl.prime<2013265921 : i65>} {
+// CHECK-NEXT:    func.func @B() {
+// CHECK-NEXT:      %0 = pcl.var "_nondet_internal_var__0" false
+// CHECK-NEXT:      %1 = pcl.var "_nondet_internal_var__1" false
+// CHECK-NEXT:      %2 = pcl.var "_nondet_internal_var__2" false
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

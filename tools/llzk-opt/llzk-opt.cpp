@@ -30,6 +30,7 @@
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Tools/mlir-opt/MlirOptMain.h>
+#include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
@@ -70,6 +71,8 @@ int main(int argc, char **argv) {
 
   // MLIR initialization
   mlir::DialectRegistry registry;
+  // registers CSE, etc
+  mlir::registerTransformsPasses();
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
   zklean::registerAllDialects(registry);

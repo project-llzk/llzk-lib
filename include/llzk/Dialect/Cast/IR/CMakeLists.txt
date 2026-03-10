@@ -15,5 +15,4 @@ llzk_tablegen(Ops.capi.test.cpp.inc -gen-op-capi-tests -prefix=llzk -dialect=cas
 llzk_add_mlir_doc(CastOpsDocGen dialect/CastDialect.md -gen-dialect-doc -dialect=cast)
 
 add_public_tablegen_target(CastDialectIncGen)
-add_dependencies(mlir-headers CastDialectIncGen)
 add_dependencies(LLZKDialectHeaders CastDialectIncGen)

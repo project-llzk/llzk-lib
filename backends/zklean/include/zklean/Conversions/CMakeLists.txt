@@ -6,5 +6,4 @@ mlir_tablegen(ConversionPasses.capi.h.inc -gen-pass-capi-header --prefix Convers
 mlir_tablegen(ConversionPasses.capi.cpp.inc -gen-pass-capi-impl --prefix Conversion)
 
 add_public_tablegen_target(ConversionsIncGen)
-add_dependencies(mlir-headers ConversionsIncGen)
 add_dependencies(ZKLeanDialectHeaders ConversionsIncGen)
