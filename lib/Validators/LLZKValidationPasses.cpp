@@ -50,8 +50,8 @@ class MemberWriteValidatorPass
     }
 
     for (auto [first, over] : overwrites) {
-      auto diag = over->emitWarning()
-                  << "may overwrite '", MemberDefOp::getOperationName(), "' \"@" << over.getMemberName() << '"';
+      auto diag = over->emitWarning() << "may overwrite '" << MemberDefOp::getOperationName()
+                                      << "' \"@" << over.getMemberName() << '"';
       diag.attachNote(first.getLoc()) << "previously written to here";
       diag.report();
     }

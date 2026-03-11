@@ -8,7 +8,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@MultipleWrites>
       // expected-note@+1 {{previously written to here}}
       struct.writem %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
-      // expected-warning@+1 {{may overwrite struct member '@f'}}
+      // expected-warning@+1 {{may overwrite 'struct.member' "@f"}}
       struct.writem %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
       function.return %self : !struct.type<@MultipleWrites>
     }
@@ -64,7 +64,7 @@ module attributes {llzk.lang} {
                 struct.writem %self[@foo] = %a : <@A>, !felt.type    
             }
             
-            // expected-warning@+1 {{may overwrite struct member '@foo'}}
+            // expected-warning@+1 {{may overwrite 'struct.member' "@foo"}}
             struct.writem %self[@foo] = %a : <@A>, !felt.type
             function.return %self : !struct.type<@A>
         }
@@ -84,7 +84,7 @@ module attributes {llzk.lang} {
                 struct.writem %self[@foo] = %a : <@A>, !felt.type    
             }
             
-            // expected-warning@+1 {{may overwrite struct member '@foo'}}
+            // expected-warning@+1 {{may overwrite 'struct.member' "@foo"}}
             struct.writem %self[@foo] = %a : <@A>, !felt.type
             function.return %self : !struct.type<@A>
         }
@@ -118,7 +118,7 @@ module attributes {llzk.lang} {
             }
 
             scf.if %b {
-                // expected-warning@+1 {{may overwrite struct member '@foo'}}
+                // expected-warning@+1 {{may overwrite 'struct.member' "@foo"}}
                 struct.writem %self[@foo] = %x : <@A>, !felt.type
                 scf.yield
             }
