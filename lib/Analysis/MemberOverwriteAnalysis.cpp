@@ -71,7 +71,7 @@ ChangeResult MemberOverwriteLattice::join(const AbstractDenseLattice &other) {
   return ChangeResult {changed};
 }
 
-bool MemberOverwriteLattice::hasOverwrites() const { return overwrites.size() > 0; }
+bool MemberOverwriteLattice::hasOverwrites() const { return !overwrites.empty(); }
 
 llvm::SetVector<Overwrite> MemberOverwriteLattice::getOverwrites() const { return overwrites; }
 

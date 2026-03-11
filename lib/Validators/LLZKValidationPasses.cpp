@@ -45,13 +45,13 @@ class MemberWriteValidatorPass
 
     for (auto member : structDef.getMemberDefs()) {
       if (!written.contains(member.getSymName())) {
-        member->emitWarning() << "member may not be written to";
+        member->emitWarning("member may not be written to").report();
       }
     }
 
     for (auto [first, over] : overwrites) {
       auto diag = over->emitWarning()
-                  << "may overwrite struct member '@" << over.getMemberName() << '\'';
+                  << "may overwrite '", MemberDefOp::getOperationName(), "' \"@" << over.getMemberName() << '"';
       diag.attachNote(first.getLoc()) << "previously written to here";
       diag.report();
     }

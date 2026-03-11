@@ -87,9 +87,9 @@ public:
 inline llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const FuzzySet &set) {
   os << "[ ";
   for (auto [key, c] : set.isPresent) {
-    os << (c ? "" : "x") << key << " ";
+    os << (c ? "" : "x") << key << ' ';
   }
-  os << "]";
+  os << ']';
   return os;
 }
 
@@ -99,6 +99,7 @@ using Overwrite = std::pair<component::MemberWriteOp, component::MemberWriteOp>;
 
 llvm::FailureOr<std::pair<llvm::SetVector<Overwrite>, FuzzySet>>
     analyzeStruct(component::StructDefOp);
+
 class MemberOverwriteLattice : public mlir::dataflow::AbstractDenseLattice {
   llvm::DenseMap<llvm::StringRef, component::MemberWriteOp> mayWrites;
   llvm::SetVector<Overwrite> overwrites;
