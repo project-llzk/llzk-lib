@@ -13,6 +13,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/AnalysisUtil.h"
+#include "llzk/Analysis/MemberOverwriteAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
@@ -34,45 +36,24 @@ class MemberWriteValidatorPass
     : public llzk::impl::MemberWriteValidatorPassBase<MemberWriteValidatorPass> {
   void runOnOperation() override {
     StructDefOp structDef = getOperation();
-    FuncDefOp computeFunc = structDef.getComputeFuncOp();
 
-    // Initialize map with all member names mapped to nullptr (i.e., no write found).
-    llvm::StringMap<MemberWriteOp> memberNameToWriteOp;
-    for (MemberDefOp x : structDef.getMemberDefs()) {
-      memberNameToWriteOp[x.getSymName()] = nullptr;
+    auto result = analyzeStruct(structDef);
+    if (failed(result)) {
+      signalPassFailure();
     }
-    // Search the function body for writes, store them in the map and emit warning if multiple
-    // writes to the same member are found.
-    for (Block &block : computeFunc.getBody()) {
-      for (Operation &op : block) {
-        if (MemberWriteOp write = dyn_cast<MemberWriteOp>(op)) {
-          // `MemberWriteOp::verifySymbolUses()` ensures MemberWriteOp only target the containing
-          // "self" struct. That means the target of the MemberWriteOp must be in
-          // `memberNameToWriteOp` so using 'at()' will not abort.
-          assert(structDef.getType() == write.getComponent().getType());
-          StringRef writeToMemberName = write.getMemberName();
-          if (MemberWriteOp earlierWrite = memberNameToWriteOp.at(writeToMemberName)) {
-            auto diag = write.emitWarning().append(
-                "found multiple writes to '", MemberDefOp::getOperationName(), "' named \"@",
-                writeToMemberName, '"'
-            );
-            diag.attachNote(earlierWrite.getLoc()).append("earlier write here");
-            diag.report();
-          }
-          memberNameToWriteOp[writeToMemberName] = write;
-        }
+    const auto &[overwrites, written] = *result;
+
+    for (auto member : structDef.getMemberDefs()) {
+      if (!written.contains(member.getSymName())) {
+        member->emitWarning("member may not be written to").report();
       }
     }
-    // Finally, report a warning if any member was not written at all.
-    for (auto &[a, b] : memberNameToWriteOp) {
-      if (!b) {
-        computeFunc.emitWarning()
-            .append(
-                '\'', FuncDefOp::getOperationName(), "' op \"@", FUNC_NAME_COMPUTE,
-                "\" missing write to '", MemberDefOp::getOperationName(), "' named \"@", a, '"'
-            )
-            .report();
-      }
+
+    for (auto [first, over] : overwrites) {
+      auto diag = over->emitWarning() << "may overwrite '" << MemberDefOp::getOperationName()
+                                      << "' \"@" << over.getMemberName() << '"';
+      diag.attachNote(first.getLoc()) << "previously written to here";
+      diag.report();
     }
 
     markAllAnalysesPreserved();
