@@ -5,6 +5,7 @@ target_sources(SMTConversions PRIVATE SMTLoweringPass.cpp)
 target_link_libraries(
   SMTConversions
   PUBLIC
+    SMTDialectHeaders
     LLZKDialectHeaders
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR
