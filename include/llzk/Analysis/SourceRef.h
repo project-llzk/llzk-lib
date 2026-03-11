@@ -12,6 +12,7 @@
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
@@ -125,6 +126,59 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// functions or another input) and optionally contain indices into that block
 /// argument (e.g., a member reference in a struct or a index into an array).
 class SourceRef {
+  /**
+   * BlockArgument:
+   * - If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
+   * (public means an output).
+   * - Otherwise, it is an input, either public or private.
+   *
+   * CreateStructOp
+   * - For compute functions, the "self" argument is an allocation site.
+   *
+   * NonDetOp
+   * - For constrain functions, a nondet operation is also an "allocation" site,
+   *   as it is a value that can be constrained/constrain other values.
+   */
+  using Root = std::variant<mlir::BlockArgument, component::CreateStructOp, NonDetOp>;
+  using Constant =
+      std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, polymorphic::ConstReadOp>;
+  using Path = std::vector<SourceRefIndex>;
+  struct Rooted {
+    Root root;
+    Path path;
+  };
+  // using mutable to reduce constant casts for certain get* functions.
+  mutable std::variant<Rooted, Constant> storage;
+
+  template <typename C> bool isConstantType() const {
+    if (const Constant *c = std::get_if<Constant>(&storage)) {
+      return std::holds_alternative<C>(*c);
+    }
+    return false;
+  }
+
+  template <typename C> C getConstantType() const {
+    assert(isConstantType<C>() && "wrong constant type");
+    return std::get<C>(std::get<Constant>(storage));
+  }
+
+  template <typename R> bool isRootType() const {
+    if (const Rooted *r = std::get_if<Rooted>(&storage)) {
+      return std::holds_alternative<R>(r->root);
+    }
+    return false;
+  }
+
+  template <typename R> R getRootType() const {
+    assert(isRootType<R>() && "wrong root type");
+    return std::get<R>(std::get<Rooted>(storage).root);
+  }
+
+  const Root &getRoot() const { return std::get<Rooted>(storage).root; }
+
+  const Constant &getConstant() const { return std::get<Constant>(storage); }
+
+  Path &getPath() { return std::get<Rooted>(storage).path; }
 
 public:
   /// Produce all possible SourceRefs that are present starting from the given root.
@@ -140,35 +194,26 @@ public:
   static std::vector<SourceRef>
   getAllSourceRefs(component::StructDefOp structDef, component::MemberDefOp memberDef);
 
-  explicit SourceRef(mlir::BlockArgument b) : root(b), memberRefs(), constantVal(std::nullopt) {}
-  SourceRef(mlir::BlockArgument b, std::vector<SourceRefIndex> f)
-      : root(b), memberRefs(std::move(f)), constantVal(std::nullopt) {}
+  /* Rooted constructors */
 
-  explicit SourceRef(component::CreateStructOp createOp)
-      : root(createOp), memberRefs(), constantVal(std::nullopt) {}
-  SourceRef(component::CreateStructOp createOp, std::vector<SourceRefIndex> f)
-      : root(createOp), memberRefs(std::move(f)), constantVal(std::nullopt) {}
+  SourceRef(mlir::BlockArgument b, Path path = {}) : storage(Rooted {.root = b, .path = path}) {}
+  SourceRef(component::CreateStructOp createOp, Path path = {})
+      : storage(Rooted {.root = createOp, .path = path}) {}
+  SourceRef(NonDetOp nondet, Path path = {}) : storage(Rooted {.root = nondet, .path = path}) {}
 
-  explicit SourceRef(felt::FeltConstantOp c) : root(std::nullopt), memberRefs(), constantVal(c) {}
-  explicit SourceRef(mlir::arith::ConstantIndexOp c)
-      : root(std::nullopt), memberRefs(), constantVal(c) {}
-  explicit SourceRef(polymorphic::ConstReadOp c)
-      : root(std::nullopt), memberRefs(), constantVal(c) {}
+  /* Constant constructors */
+
+  explicit SourceRef(felt::FeltConstantOp c) : storage(c) {}
+  explicit SourceRef(mlir::arith::ConstantIndexOp c) : storage(c) {}
+  explicit SourceRef(polymorphic::ConstReadOp c) : storage(c) {}
 
   mlir::Type getType() const;
 
-  bool isConstantFelt() const {
-    return constantVal.has_value() && std::holds_alternative<felt::FeltConstantOp>(*constantVal);
-  }
-  bool isConstantIndex() const {
-    return constantVal.has_value() &&
-           std::holds_alternative<mlir::arith::ConstantIndexOp>(*constantVal);
-  }
-  bool isTemplateConstant() const {
-    return constantVal.has_value() &&
-           std::holds_alternative<polymorphic::ConstReadOp>(*constantVal);
-  }
-  bool isConstant() const { return constantVal.has_value(); }
+  bool isConstantFelt() const { return isConstantType<felt::FeltConstantOp>(); }
+  bool isConstantIndex() const { return isConstantType<mlir::arith::ConstantIndexOp>(); }
+  bool isTemplateConstant() const { return isConstantType<polymorphic::ConstReadOp>(); }
+
+  bool isConstant() const { return std::holds_alternative<Constant>(storage); }
   bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }
 
   bool isFeltVal() const { return llvm::isa<felt::FeltType>(getType()); }
@@ -179,35 +224,25 @@ public:
     return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal() || isTypeVarVal();
   }
 
-  bool isBlockArgument() const {
-    return root.has_value() && std::holds_alternative<mlir::BlockArgument>(*root);
-  }
-  mlir::BlockArgument getBlockArgument() const {
-    ensure(isBlockArgument(), "is not a block argument");
-    return std::get<mlir::BlockArgument>(*root);
-  }
+  bool isRooted() const { return std::holds_alternative<Rooted>(storage); }
+  bool isBlockArgument() const { return isRootType<mlir::BlockArgument>(); }
+  mlir::BlockArgument getBlockArgument() const { return getRootType<mlir::BlockArgument>(); }
   unsigned getInputNum() const { return getBlockArgument().getArgNumber(); }
 
-  bool isCreateStructOp() const {
-    return root.has_value() && std::holds_alternative<component::CreateStructOp>(*root);
-  }
+  bool isCreateStructOp() const { return isRootType<component::CreateStructOp>(); }
   component::CreateStructOp getCreateStructOp() const {
-    ensure(isCreateStructOp(), "is not a create struct op");
-    return std::get<component::CreateStructOp>(*root);
+    return getRootType<component::CreateStructOp>();
   }
 
+  bool isNonDetOp() const { return isRootType<NonDetOp>(); }
+  NonDetOp getNonDetOp() const { return getRootType<NonDetOp>(); }
+
   llvm::DynamicAPInt getConstantFeltValue() const {
-    ensure(
-        isConstantFelt(), mlir::Twine(mlir::StringRef(__FUNCTION__), " requires a constant felt!")
-    );
-    llvm::APInt i = std::get<felt::FeltConstantOp>(*constantVal).getValue();
+    llvm::APInt i = getConstantType<felt::FeltConstantOp>().getValue();
     return toDynamicAPInt(i);
   }
   llvm::DynamicAPInt getConstantIndexValue() const {
-    ensure(
-        isConstantIndex(), mlir::Twine(mlir::StringRef(__FUNCTION__), " requires a constant index!")
-    );
-    return llvm::DynamicAPInt(std::get<mlir::arith::ConstantIndexOp>(*constantVal).value());
+    return llvm::DynamicAPInt(getConstantType<mlir::arith::ConstantIndexOp>().value());
   }
   llvm::DynamicAPInt getConstantValue() const {
     ensure(
@@ -236,11 +271,11 @@ public:
 
   /// @brief Create a new reference that is the immediate prefix of this reference if possible.
   mlir::FailureOr<SourceRef> getParentPrefix() const {
-    if (isConstantFelt() || memberRefs.empty()) {
+    if (!isRooted() || getPath().empty()) {
       return mlir::failure();
     }
     auto copy = *this;
-    copy.memberRefs.pop_back();
+    copy.getPath().pop_back();
     return copy;
   }
 
@@ -250,7 +285,7 @@ public:
 
   SourceRef createChild(const SourceRefIndex &r) const {
     auto copy = *this;
-    copy.memberRefs.push_back(r);
+    copy.getPath().push_back(r);
     return copy;
   }
 
@@ -259,7 +294,11 @@ public:
     return createChild(SourceRefIndex(other.getConstantIndexValue()));
   }
 
-  const std::vector<SourceRefIndex> &getPieces() const { return memberRefs; }
+  [[deprecated("Use getPath() instead")]]
+  const Path &getPieces() const {
+    return std::get<Rooted>(storage).path;
+  }
+  const Path &getPath() const { return std::get<Rooted>(storage).path; }
 
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
@@ -276,24 +315,6 @@ public:
   struct Hash {
     size_t operator()(const SourceRef &val) const;
   };
-
-private:
-  /**
-   * BlockArgument:
-   * - If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
-   * (public means an output).
-   * - Otherwise, it is an input, either public or private.
-   *
-   * CreateStructOp
-   * - For compute functions, the "self" argument is an allocation site.
-   */
-  std::optional<std::variant<mlir::BlockArgument, component::CreateStructOp>> root;
-
-  std::vector<SourceRefIndex> memberRefs;
-  // using mutable to reduce constant casts for certain get* functions.
-  mutable std::optional<
-      std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, polymorphic::ConstReadOp>>
-      constantVal;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);

@@ -202,6 +202,8 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
       return SourceRef(readConst);
     } else if (auto structNew = llvm::dyn_cast<CreateStructOp>(defOp)) {
       return SourceRef(structNew);
+    } else if (auto nonDet = llvm::dyn_cast<NonDetOp>(defOp)) {
+      return SourceRef(nonDet);
     }
   }
   return mlir::failure();
