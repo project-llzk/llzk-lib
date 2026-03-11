@@ -10,6 +10,7 @@ var searchData=
   ['new_20release_7',['Preparing a new release',['../maintanence.html#preparing-a-new-release',1,'']]],
   ['new_20version_8',['New Version',['../maintanence.html#releasing-a-new-version',1,'Releasing a New Version'],['../maintanence.html#tracking-a-new-version',1,'Tracking a New Version']]],
   ['nix_20setup_9',['Nix Setup',['../setup.html#nix-setup',1,'']]],
-  ['nondet_20_3a_3allzk_3a_3anondetop_10',['&lt;span class=&quot;tt&quot;&gt;llzk.nondet&lt;/span&gt; (llzk::NonDetOp)',['../dialects.html#llzknondet-llzknondetop',1,'']]],
-  ['not_20_3a_3allzk_3a_3aboolean_3a_3anotboolop_11',['&lt;span class=&quot;tt&quot;&gt;bool.not&lt;/span&gt; (llzk::boolean::NotBoolOp)',['../dialects.html#boolnot-llzkbooleannotboolop',1,'']]]
+  ['no_20overwrite_10',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
+  ['nondet_20_3a_3allzk_3a_3anondetop_11',['&lt;span class=&quot;tt&quot;&gt;llzk.nondet&lt;/span&gt; (llzk::NonDetOp)',['../dialects.html#llzknondet-llzknondetop',1,'']]],
+  ['not_20_3a_3allzk_3a_3aboolean_3a_3anotboolop_12',['&lt;span class=&quot;tt&quot;&gt;bool.not&lt;/span&gt; (llzk::boolean::NotBoolOp)',['../dialects.html#boolnot-llzkbooleannotboolop',1,'']]]
 ];

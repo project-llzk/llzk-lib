@@ -225,7 +225,20 @@ $(function(){initNavTree('LLZKTransformationPasses_8td_source.html','',''); });
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  let options = [];</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>}</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>#endif // LLZK_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>def EnforceNoMemberOverwritePass : LLZKPass&lt;&quot;llzk-enforce-no-overwrite&quot;&gt; {</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  let summary = &quot;Checks that every struct member is written exactly once&quot;;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  let description = [{</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      This pass currently reports an error if any struct member may not be written </div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>      exactly once (i.e. overwritten or left uninitialized), and does not </div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>      attempt to perform any repairs (e.g. SSA-ifying overwritten struct </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>      members, or default-initializing unwritten members). This pass </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      overapproximates conditionals, and can result in false positives.</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  }];</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  let constructor = &quot;llzk::createNoOverwritesPass()&quot;;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  let options = [];</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>}</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>#endif // LLZK_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -358,64 +358,52 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>      DenseMap&lt;Value, Value&gt; rewrites;</div>
 <div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>      SmallVector&lt;AuxAssignment&gt; auxAssignments;</div>
 <div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
-<div class="foldopen" id="foldopen00256" data-start="{" data-end="};">
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno"><a class="line" href="structllzk_1_1PolyLoweringPassOptions.html">  256</a></span>      <span class="comment">// Lower equality constraints</span></div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno"><a class="line" href="structllzk_1_1PolyLoweringPassOptions.html#a8ed7856c84369defac1a2aba9c2bd85f">  257</a></span>      constrainFunc.walk([&amp;](<a class="code hl_class" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> constraintOp) {</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      <span class="comment">// Lower equality constraints</span></div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>      constrainFunc.walk([&amp;](<a class="code hl_class" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">EmitEqualityOp</a> constraintOp) {</div>
 <div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>        <span class="keyword">auto</span> &amp;lhsOperand = constraintOp.<a class="code hl_function" href="classllzk_1_1constrain_1_1EmitEqualityOp.html#abcf43199225b120f748accab68b9c649">getLhsMutable</a>();</div>
-</div>
 <div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>        <span class="keyword">auto</span> &amp;rhsOperand = constraintOp.<a class="code hl_function" href="classllzk_1_1constrain_1_1EmitEqualityOp.html#a5350d359891c42f8cd38799f5fa80360">getRhsMutable</a>();</div>
 <div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>        <span class="keywordtype">unsigned</span> degreeLhs = getDegree(lhsOperand.get(), degreeMemo);</div>
 <div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>        <span class="keywordtype">unsigned</span> degreeRhs = getDegree(rhsOperand.get(), degreeMemo);</div>
 <div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>        <span class="keywordflow">if</span> (degreeLhs &gt; <a class="code hl_variable" href="structllzk_1_1PolyLoweringPassOptions.html#a8ed7856c84369defac1a2aba9c2bd85f">maxDegree</a>) {</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>        <span class="keywordflow">if</span> (degreeLhs &gt; maxDegree) {</div>
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>          Value loweredExpr = lowerExpression(</div>
-<div class="foldopen" id="foldopen00265" data-start="{" data-end="};">
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html">  265</a></span>              lhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>              lhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
 <div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>          );</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a3fe5cabf93c7cb41bb65bd84386a03d3">  267</a></span>          lhsOperand.set(loweredExpr);</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>          lhsOperand.set(loweredExpr);</div>
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>        }</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#aeed6af3c99cee9d1355eeb5c04ea8347">  269</a></span>        <span class="keywordflow">if</span> (degreeRhs &gt; <a class="code hl_variable" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc">maxDegree</a>) {</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a26f4ad51aab4a8841db2675dc1f9db7b">  270</a></span>          Value loweredExpr = lowerExpression(</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a96ffbf25e6c26e0c7b1189e766927ba4">  271</a></span>              rhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a4fc4e9104728e3e882816270e94e87a3">  272</a></span>          );</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#abf7d5cff8b675fffc3bd1d8a01cf7454">  273</a></span>          rhsOperand.set(loweredExpr);</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a224d8aadca1e2dc4c19dddba64dd9de3">  274</a></span>        }</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>        <span class="keywordflow">if</span> (degreeRhs &gt; maxDegree) {</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>          Value loweredExpr = lowerExpression(</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>              rhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>          );</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>          rhsOperand.set(loweredExpr);</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>        }</div>
 <div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>      });</div>
 <div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
-<div class="foldopen" id="foldopen00277" data-start="{" data-end="}">
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#ab9c0a5b14f2d2920496c2ced5d521566">  277</a></span>      <span class="comment">// The pass doesn&#39;t currently support EmitContainmentOp.</span></div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>      <span class="comment">// The pass doesn&#39;t currently support EmitContainmentOp.</span></div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>      <span class="comment">// See https://github.com/project-llzk/llzk-lib/issues/261</span></div>
 <div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>      constrainFunc.walk([<span class="keyword">this</span>, &amp;moduleOp](<a class="code hl_class" href="classllzk_1_1constrain_1_1EmitContainmentOp.html">EmitContainmentOp</a> <span class="comment">/*containOp*/</span>) {</div>
-</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#aee9261f2f8b316b0dd03cfd1fdc10b19">  280</a></span>        <span class="keyword">auto</span> diag = moduleOp.emitError();</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>        <span class="keyword">auto</span> diag = moduleOp.emitError();</div>
 <div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>        diag &lt;&lt; <span class="stringliteral">&quot;EmitContainmentOp is unsupported for now in the lowering pass&quot;</span>;</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#ae08a3a96837c3bd80770beb7ceec36f3">  282</a></span>        diag.report();</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>        diag.report();</div>
 <div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>        signalPassFailure();</div>
 <div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>        <span class="keywordflow">return</span>;</div>
-<div class="foldopen" id="foldopen00285" data-start="{" data-end="}">
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#acb262e212c55fec9a56af7f4ca04078f">  285</a></span>      });</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>      });</div>
 <div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span> </div>
 <div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>      <span class="comment">// Lower function call arguments</span></div>
-</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a19b500bae7f6334d5fa6b8a83761622f">  288</a></span>      constrainFunc.walk([&amp;](<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> callOp) {</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>      constrainFunc.walk([&amp;](<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> callOp) {</div>
 <div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>        <span class="keywordflow">if</span> (callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">calleeIsStructConstrain</a>()) {</div>
 <div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>          SmallVector&lt;Value&gt; newOperands = llvm::to_vector(callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8d81cd945d8f3898b56112f118ef74bd">getArgOperands</a>());</div>
-<div class="foldopen" id="foldopen00291" data-start="{" data-end="}">
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a938fe2d5109baeb910a5556b85d9147d">  291</a></span>          <span class="keywordtype">bool</span> modified = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>          <span class="keywordtype">bool</span> modified = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span> </div>
 <div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>          <span class="keywordflow">for</span> (Value &amp;arg : newOperands) {</div>
-</div>
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>            <span class="keywordtype">unsigned</span> deg = getDegree(arg, degreeMemo);</div>
 <div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
-<div class="foldopen" id="foldopen00296" data-start="{" data-end="}">
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a58b4d4c027f390c5188ea7ef2ccfab24">  296</a></span>            <span class="keywordflow">if</span> (deg &gt; 1) {</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>            <span class="keywordflow">if</span> (deg &gt; 1) {</div>
 <div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>              Value loweredArg = lowerExpression(</div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>                  arg, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
-</div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>              );</div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>              arg = loweredArg;</div>
-<div class="foldopen" id="foldopen00301" data-start="{" data-end="}">
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a417558b7e37b351faa2486e2da89f1a5">  301</a></span>              modified = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>              modified = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>            }</div>
 <div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>          }</div>
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
@@ -430,28 +418,26 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>          }</div>
 <div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>        }</div>
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>      });</div>
-</div>
 <div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span> </div>
 <div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>      DenseMap&lt;Value, Value&gt; rebuildMemo;</div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>      Block &amp;computeBlock = computeFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">getBody</a>().front();</div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>      OpBuilder builder(&amp;computeBlock, computeBlock.getTerminator()-&gt;getIterator());</div>
 <div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>      Value selfVal = computeFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a256c41aa6b834730cdafb6bc2b342283">getSelfValueFromCompute</a>();</div>
 <div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span> </div>
-<div class="foldopen" id="foldopen00322" data-start="{" data-end="}">
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#af0b4d46d9b18ae618a2644341816e443">  322</a></span>      <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;assign : auxAssignments) {</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>      <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;assign : auxAssignments) {</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>        Value rebuiltExpr =</div>
 <div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>            <a class="code hl_function" href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">rebuildExprInCompute</a>(assign.computedValue, computeFunc, builder, rebuildMemo);</div>
-</div>
 <div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>        builder.create&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a>&gt;(</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc">  326</a></span>            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),</div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>            rebuiltExpr</div>
 <div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>        );</div>
-</div>
 <div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>      }</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>    });</div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  }</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>};</div>
+<div class="foldopen" id="foldopen00331" data-start="{" data-end="};">
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno"><a class="line" href="structllzk_1_1PolyLoweringPassOptions.html">  331</a></span>  }</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno"><a class="line" href="structllzk_1_1PolyLoweringPassOptions.html#a8ed7856c84369defac1a2aba9c2bd85f">  332</a></span>};</div>
 <div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>} <span class="comment">// namespace</span></div>
+</div>
 <div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span> </div>
 <div class="foldopen" id="foldopen00335" data-start="{" data-end="}">
 <div class="line"><a id="l00335" name="l00335"></a><span class="lineno"><a class="line" href="namespacellzk.html#ab2e3f96bf4acbb53490221c9d79f8fb0">  335</a></span>std::unique_ptr&lt;mlir::Pass&gt; <a class="code hl_function" href="namespacellzk.html#ab2e3f96bf4acbb53490221c9d79f8fb0">llzk::createPolyLoweringPass</a>() {</div>
@@ -461,10 +447,12 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span> </div>
 <div class="foldopen" id="foldopen00339" data-start="{" data-end="}">
 <div class="line"><a id="l00339" name="l00339"></a><span class="lineno"><a class="line" href="namespacellzk.html#a12880da13a89153781456c8c5852bac4">  339</a></span>std::unique_ptr&lt;mlir::Pass&gt; <a class="code hl_function" href="namespacellzk.html#ab2e3f96bf4acbb53490221c9d79f8fb0">llzk::createPolyLoweringPass</a>(<span class="keywordtype">unsigned</span> maxDegree) {</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>  <span class="keyword">auto</span> pass = std::make_unique&lt;PolyLoweringPass&gt;();</div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  <span class="keyword">static_cast&lt;</span>PolyLoweringPass *<span class="keyword">&gt;</span>(pass.get())-&gt;setMaxDegree(maxDegree);</div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  <span class="keywordflow">return</span> pass;</div>
+<div class="foldopen" id="foldopen00340" data-start="{" data-end="};">
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html">  340</a></span>  <span class="keyword">auto</span> pass = std::make_unique&lt;PolyLoweringPass&gt;();</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  <span class="keyword">static_cast&lt;</span>PolyLoweringPass *<span class="keyword">&gt;</span>(pass.get())-&gt;setMaxDegree(<a class="code hl_variable" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc">maxDegree</a>);</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a3fe5cabf93c7cb41bb65bd84386a03d3">  342</a></span>  <span class="keywordflow">return</span> pass;</div>
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>}</div>
+</div>
 </div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aConstrain_2IR_2Ops_8h_html"><div class="ttname"><a href="Constrain_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -502,8 +490,8 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a256c41aa6b834730cdafb6bc2b342283"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a256c41aa6b834730cdafb6bc2b342283">llzk::function::FuncDefOp::getSelfValueFromCompute</a></div><div class="ttdeci">::mlir::Value getSelfValueFromCompute()</div><div class="ttdoc">Return the &quot;self&quot; value (i.e.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00354">Ops.cpp:354</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a42e42484a422941fa7cd557b93978749"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a42e42484a422941fa7cd557b93978749">llzk::function::FuncDefOp::getSelfValueFromConstrain</a></div><div class="ttdeci">::mlir::Value getSelfValueFromConstrain()</div><div class="ttdoc">Return the &quot;self&quot; value (i.e.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00373">Ops.cpp:373</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ae71c6dc38ab6cf2859fc1bd6cbb380ac"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">llzk::function::FuncDefOp::getBody</a></div><div class="ttdeci">::mlir::Region &amp; getBody()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00613">Ops.h.inc:613</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1PolyLoweringPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1PolyLoweringPassBase.html">llzk::impl::PolyLoweringPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00265">LLZKPolyLoweringPass.cpp:265</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1PolyLoweringPassBase_html_a2c75d7d87b6d63d647615f83f7c759dc"><div class="ttname"><a href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc">llzk::impl::PolyLoweringPassBase::maxDegree</a></div><div class="ttdeci">::mlir::Pass::Option&lt; unsigned &gt; maxDegree</div><div class="ttdef"><b>Definition</b> <a href="#l00326">LLZKPolyLoweringPass.cpp:326</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1PolyLoweringPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1PolyLoweringPassBase.html">llzk::impl::PolyLoweringPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00340">LLZKPolyLoweringPass.cpp:340</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1PolyLoweringPassBase_html_a2c75d7d87b6d63d647615f83f7c759dc"><div class="ttname"><a href="classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc">llzk::impl::PolyLoweringPassBase::maxDegree</a></div><div class="ttdeci">::mlir::Pass::Option&lt; unsigned &gt; maxDegree</div><div class="ttdef"><b>Definition</b> <a href="#l00401">LLZKPolyLoweringPass.cpp:401</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_source.html#l00043">Ops.cpp:43</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1constrain_html"><div class="ttname"><a href="namespacellzk_1_1constrain.html">llzk::constrain</a></div><div class="ttdef"><b>Definition</b> <a href="Constrain_2IR_2Ops_8cpp_source.html#l00024">Ops.cpp:24</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1felt_html"><div class="ttname"><a href="namespacellzk_1_1felt.html">llzk::felt</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Attrs_8cpp_source.html#l00015">Attrs.cpp:15</a></div></div>
@@ -517,7 +505,6 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_html_ab2e3f96bf4acbb53490221c9d79f8fb0"><div class="ttname"><a href="namespacellzk.html#ab2e3f96bf4acbb53490221c9d79f8fb0">llzk::createPolyLoweringPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createPolyLoweringPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00335">LLZKPolyLoweringPass.cpp:335</a></div></div>
 <div class="ttc" id="anamespacellzk_html_affe604776b9bbde83b6a6d31f9bc4c86"><div class="ttname"><a href="namespacellzk.html#affe604776b9bbde83b6a6d31f9bc4c86">llzk::checkForAuxMemberConflicts</a></div><div class="ttdeci">LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00086">LLZKLoweringUtils.cpp:86</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
-<div class="ttc" id="astructllzk_1_1PolyLoweringPassOptions_html_a8ed7856c84369defac1a2aba9c2bd85f"><div class="ttname"><a href="structllzk_1_1PolyLoweringPassOptions.html#a8ed7856c84369defac1a2aba9c2bd85f">llzk::PolyLoweringPassOptions::maxDegree</a></div><div class="ttdeci">unsigned maxDegree</div><div class="ttdef"><b>Definition</b> <a href="#l00257">LLZKPolyLoweringPass.cpp:257</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

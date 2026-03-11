@@ -195,6 +195,9 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-duplicate-read-write-elim"><span class="tt">-llzk-duplicate-read-write-elim</span> </a>
               </li>
               <li class="level4">
+                <a href="#autotoc_md-llzk-enforce-no-overwrite"><span class="tt">-llzk-enforce-no-overwrite</span> </a>
+              </li>
+              <li class="level4">
                 <a href="#autotoc_md-llzk-fuse-product-loops"><span class="tt">-llzk-fuse-product-loops</span> </a>
               </li>
               <li class="level4">
@@ -339,6 +342,10 @@ Options</h5>
 <span class="tt">-llzk-duplicate-read-write-elim</span></h4>
 <p><em>Remove redundant reads and writes</em></p>
 <p>Remove read and write operations to struct members and arrays that are redundant or unnecessary. </p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-enforce-no-overwrite"></a>
+<span class="tt">-llzk-enforce-no-overwrite</span></h4>
+<p><em>Checks that every struct member is written exactly once</em></p>
+<p>This pass currently reports an error if any struct member may not be written exactly once (i.e. overwritten or left uninitialized), and does not attempt to perform any repairs (e.g. SSA-ifying overwritten struct members, or default-initializing unwritten members). This pass overapproximates conditionals, and can result in false positives. </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-fuse-product-loops"></a>
 <span class="tt">-llzk-fuse-product-loops</span></h4>
 <p>_Fuse matching witness/constraint loops in a @product function_</p>
@@ -397,6 +404,8 @@ Validation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-validate-member-writes"></a>
 <span class="tt">-llzk-validate-member-writes</span></h4>
 <p><em>Detect multiple and missing writes to the same member of a component.</em></p>
+<p>Detect multiple and missing writes to the same member of a component.</p>
+<p>Note that this is overapproximate (i.e., some writes may erroneously be flagged as overwrites, and some members may erroneously be marked unwritten).  </p>
 <h1 class="doxsection"><a class="anchor" id="llzk-lsp-server"></a>
 llzk-lsp-server</h1>
 <p><span class="tt">cmake --build &lt;build dir&gt; --target llzk-lsp-server</span> will produce an LLZK-specific LSP server that can be used in an IDE to provide language information for LLZK. Refer to the <a href="https://mlir.llvm.org/docs/Tools/MLIRLSP/">MLIR LSP documentation</a> for a more detailed explanation of the MLIR LSP tools and how to set them up in your IDE.</p>

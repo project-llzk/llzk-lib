@@ -54,5 +54,6 @@ var searchData=
   ['functiontypeconverter_51',['FunctionTypeConverter',['../classllzk_1_1FunctionTypeConverter.html',1,'llzk']]],
   ['fuseproductloopspass_52',['FuseProductLoopsPass',['../classllzk_1_1FuseProductLoopsPass.html',1,'llzk']]],
   ['fuseproductloopspassbase_53',['FuseProductLoopsPassBase',['../classllzk_1_1impl_1_1FuseProductLoopsPassBase.html',1,'llzk::impl']]],
-  ['fuseproductloopspassbase_3c_20fuseproductloopspass_20_3e_54',['FuseProductLoopsPassBase&lt; FuseProductLoopsPass &gt;',['../classllzk_1_1impl_1_1FuseProductLoopsPassBase.html',1,'llzk::impl']]]
+  ['fuseproductloopspassbase_3c_20fuseproductloopspass_20_3e_54',['FuseProductLoopsPassBase&lt; FuseProductLoopsPass &gt;',['../classllzk_1_1impl_1_1FuseProductLoopsPassBase.html',1,'llzk::impl']]],
+  ['fuzzyset_55',['FuzzySet',['../classllzk_1_1FuzzySet.html',1,'llzk']]]
 ];

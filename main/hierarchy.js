@@ -1,6 +1,7 @@
 var hierarchy =
 [
     [ "mlir::dataflow::AbstractDenseLattice", null, [
+      [ "llzk::MemberOverwriteLattice", "classllzk_1_1MemberOverwriteLattice.html", null ],
       [ "llzk::PredecessorLattice", "classllzk_1_1PredecessorLattice.html", null ],
       [ "llzk::SourceRefLattice", "classllzk_1_1SourceRefLattice.html", null ]
     ] ],
@@ -213,6 +214,7 @@ var hierarchy =
       ] ]
     ] ],
     [ "mlir::dataflow::DenseForwardDataFlowAnalysis", null, [
+      [ "llzk::MemberOverwriteAnalysis", "classllzk_1_1MemberOverwriteAnalysis.html", null ],
       [ "llzk::PredecessorAnalysis", "classllzk_1_1PredecessorAnalysis.html", null ],
       [ "llzk::SourceRefAnalysis", "classllzk_1_1SourceRefAnalysis.html", null ]
     ] ],
@@ -307,6 +309,7 @@ var hierarchy =
       [ "llzk::function::FuncDefOpGenericAdaptor< RangeT >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::FunctionTypeConverter", "classllzk_1_1FunctionTypeConverter.html", null ],
+    [ "llzk::FuzzySet", "classllzk_1_1FuzzySet.html", null ],
     [ "Generator", "structGenerator.html", [
       [ "HeaderGenerator", "structHeaderGenerator.html", [
         [ "AttrOrTypeHeaderGenerator", "structAttrOrTypeHeaderGenerator.html", null ],
@@ -565,6 +568,9 @@ var hierarchy =
       [ "llzk::impl::ConstraintDependencyGraphPrinterPassBase< ConstraintDependencyGraphPrinterPass >", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", [
         [ "llzk::ConstraintDependencyGraphPrinterPass", "classllzk_1_1ConstraintDependencyGraphPrinterPass.html", null ]
       ] ],
+      [ "llzk::impl::EnforceNoMemberOverwritePassBase< EnforceNoMemberOverwritePass >", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", [
+        [ "llzk::EnforceNoMemberOverwritePass", "classllzk_1_1EnforceNoMemberOverwritePass.html", null ]
+      ] ],
       [ "llzk::impl::FuseProductLoopsPassBase< FuseProductLoopsPass >", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", [
         [ "llzk::FuseProductLoopsPass", "classllzk_1_1FuseProductLoopsPass.html", null ]
       ] ],
@@ -585,6 +591,7 @@ var hierarchy =
       [ "llzk::impl::CallGraphSCCsPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", null ],
       [ "llzk::impl::ComputeConstrainToProductPassBase< DerivedT >", "classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html", null ],
       [ "llzk::impl::ConstraintDependencyGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", null ],
+      [ "llzk::impl::EnforceNoMemberOverwritePassBase< DerivedT >", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", null ],
       [ "llzk::impl::FuseProductLoopsPassBase< DerivedT >", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", null ],
       [ "llzk::impl::InlineStructsPassBase< DerivedT >", "classllzk_1_1impl_1_1InlineStructsPassBase.html", null ],
       [ "llzk::impl::IntervalAnalysisPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", null ],

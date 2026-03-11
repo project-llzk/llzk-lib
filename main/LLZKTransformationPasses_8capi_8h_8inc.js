@@ -1,6 +1,7 @@
 var LLZKTransformationPasses_8capi_8h_8inc =
 [
     [ "mlirCreateLLZKTransformationComputeConstrainToProductPass", "LLZKTransformationPasses_8capi_8h_8inc.html#a6e596ce351b4ba62976dd59b88e9914f", null ],
+    [ "mlirCreateLLZKTransformationEnforceNoMemberOverwritePass", "LLZKTransformationPasses_8capi_8h_8inc.html#a3b06cc52a50a30a6b8ff0a8c8c8de961", null ],
     [ "mlirCreateLLZKTransformationFuseProductLoopsPass", "LLZKTransformationPasses_8capi_8h_8inc.html#adb5afaf8b74fcca495f7265841d60225", null ],
     [ "mlirCreateLLZKTransformationInlineStructsPass", "LLZKTransformationPasses_8capi_8h_8inc.html#abb2a8cca9c1fd7bf39d1880870fd5fdd", null ],
     [ "mlirCreateLLZKTransformationPolyLoweringPass", "LLZKTransformationPasses_8capi_8h_8inc.html#a9f43fc3150745d3498e40a0c91e71ab0", null ],
@@ -8,6 +9,7 @@ var LLZKTransformationPasses_8capi_8h_8inc =
     [ "mlirCreateLLZKTransformationRedundantReadAndWriteEliminationPass", "LLZKTransformationPasses_8capi_8h_8inc.html#a2e7c593400fd9748f0f6b47a23b932c6", null ],
     [ "mlirCreateLLZKTransformationUnusedDeclarationEliminationPass", "LLZKTransformationPasses_8capi_8h_8inc.html#abd5e3b7b014637a7f575add77c127eb8", null ],
     [ "mlirRegisterLLZKTransformationComputeConstrainToProductPass", "LLZKTransformationPasses_8capi_8h_8inc.html#ab131e4144be12e100b49f4bd6da059fa", null ],
+    [ "mlirRegisterLLZKTransformationEnforceNoMemberOverwritePass", "LLZKTransformationPasses_8capi_8h_8inc.html#a60de138cb467b6e921875dc9bf18747b", null ],
     [ "mlirRegisterLLZKTransformationFuseProductLoopsPass", "LLZKTransformationPasses_8capi_8h_8inc.html#a5e6eac2b21ad705e841f8e493353de42", null ],
     [ "mlirRegisterLLZKTransformationInlineStructsPass", "LLZKTransformationPasses_8capi_8h_8inc.html#a313e87ae9fd0c569694bd3a55c3edd63", null ],
     [ "mlirRegisterLLZKTransformationPasses", "LLZKTransformationPasses_8capi_8h_8inc.html#a5b67ebea1a6c52c17343358f99fc9ca4", null ],
