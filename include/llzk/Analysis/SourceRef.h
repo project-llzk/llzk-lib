@@ -178,7 +178,7 @@ class SourceRef {
 
   const Constant &getConstant() const { return std::get<Constant>(storage); }
 
-  Path &getPath() { return std::get<Rooted>(storage).path; }
+  Path &getPathMut() { return std::get<Rooted>(storage).path; }
 
 public:
   /// Produce all possible SourceRefs that are present starting from the given root.
@@ -275,7 +275,7 @@ public:
       return mlir::failure();
     }
     auto copy = *this;
-    copy.getPath().pop_back();
+    copy.getPathMut().pop_back();
     return copy;
   }
 
@@ -285,7 +285,7 @@ public:
 
   SourceRef createChild(const SourceRefIndex &r) const {
     auto copy = *this;
-    copy.getPath().push_back(r);
+    copy.getPathMut().push_back(r);
     return copy;
   }
 

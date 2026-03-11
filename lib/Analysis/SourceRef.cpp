@@ -247,7 +247,7 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
 
   SourceRef newSignalUsage = other; // copy
   if (newSignalUsage.isRooted()) {
-    SourceRef::Path &path = newSignalUsage.getPath();
+    SourceRef::Path &path = newSignalUsage.getPathMut();
     path.insert(path.end(), suffix->begin(), suffix->end());
   }
 
