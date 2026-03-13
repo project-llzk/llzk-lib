@@ -567,8 +567,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       && !isReturnOp(op)
       // The analysis ignores definition ops.
       && !isDefinitionOp(op)
-      // We do not need to analyze the creation of structs.
-      && !llvm::isa<CreateStructOp>(op)
+      // We do not need to analyze the creation of structs or nondets
+      && !llvm::isa<CreateStructOp, NonDetOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }

@@ -920,3 +920,26 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Foo ConstraintDependencyGraph { }
+
+// -----
+
+// COM: Test nondet handling
+module attributes {llzk.lang} {
+  struct.def @NondetProp {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@NondetProp> attributes {function.allow_witness} {
+      %self = struct.new : <@NondetProp>
+      function.return %self : !struct.type<@NondetProp>
+    }
+    function.def @constrain(%arg0: !struct.type<@NondetProp>,  %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+      %nondet = llzk.nondet : !felt.type
+
+      constrain.eq %nondet, %arg1 : !felt.type
+      constrain.eq %nondet, %arg2 : !felt.type
+
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NondetProp ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, %arg2, <%nondet = llzk.nondet : !felt.type> }
+// CHECK-NEXT: }

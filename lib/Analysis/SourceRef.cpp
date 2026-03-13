@@ -166,25 +166,35 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, Member
 }
 
 Type SourceRef::getType() const {
-  if (isConstantFelt()) {
-    return std::get<FeltConstantOp>(*constantVal).getType();
-  } else if (isConstantIndex()) {
-    return std::get<arith::ConstantIndexOp>(*constantVal).getType();
-  } else if (isTemplateConstant()) {
-    return std::get<ConstReadOp>(*constantVal).getType();
+  if (auto constant = std::get_if<Constant>(&storage)) {
+    if (auto f = std::get_if<FeltConstantOp>(constant)) {
+      return f->getType();
+    } else if (auto i = std::get_if<arith::ConstantIndexOp>(constant)) {
+      return i->getType();
+    } else if (auto r = std::get_if<ConstReadOp>(constant)) {
+      return r->getType();
+    } else {
+      llvm_unreachable("unsupported case");
+    }
   } else {
+    ensure(isRooted(), "must either be constant or rooted");
+    const auto &path = getPath();
     int array_derefs = 0;
-    int idx = llzk::checkedCast<int>(memberRefs.size()) - 1;
-    while (idx >= 0 && memberRefs[idx].isIndex()) {
+    int idx = llzk::checkedCast<int>(path.size()) - 1;
+    while (idx >= 0 && path[idx].isIndex()) {
       array_derefs++;
       idx--;
     }
 
     Type currTy = nullptr;
     if (idx >= 0) {
-      currTy = memberRefs[idx].getMember().getType();
+      currTy = path[idx].getMember().getType();
+    } else if (isBlockArgument()) {
+      currTy = getBlockArgument().getType();
+    } else if (isCreateStructOp()) {
+      currTy = getCreateStructOp().getType();
     } else {
-      currTy = isBlockArgument() ? getBlockArgument().getType() : getCreateStructOp().getType();
+      currTy = getNonDetOp().getType();
     }
 
     while (array_derefs > 0) {
@@ -196,28 +206,32 @@ Type SourceRef::getType() const {
 }
 
 bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
-  if (isConstant()) {
+  if (isConstant() || prefix.isConstant()) {
     return false;
   }
 
-  if (root != prefix.root || memberRefs.size() < prefix.memberRefs.size()) {
+  const auto &path = getPath();
+  const auto &prefixPath = prefix.getPath();
+  if (getRoot() != prefix.getRoot() || path.size() < prefixPath.size()) {
     return false;
   }
-  for (size_t i = 0; i < prefix.memberRefs.size(); i++) {
-    if (memberRefs[i] != prefix.memberRefs[i]) {
+  for (size_t i = 0; i < prefixPath.size(); i++) {
+    if (path[i] != prefixPath[i]) {
       return false;
     }
   }
   return true;
 }
 
-FailureOr<std::vector<SourceRefIndex>> SourceRef::getSuffix(const SourceRef &prefix) const {
+FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {
   if (!isValidPrefix(prefix)) {
     return failure();
   }
-  std::vector<SourceRefIndex> suffix;
-  for (size_t i = prefix.memberRefs.size(); i < memberRefs.size(); i++) {
-    suffix.push_back(memberRefs[i]);
+  Path suffix;
+  const Path &path = getPath();
+  const Path &prefixPath = prefix.getPath();
+  for (size_t i = prefixPath.size(); i < path.size(); i++) {
+    suffix.push_back(path[i]);
   }
   return suffix;
 }
@@ -231,8 +245,12 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
     return failure();
   }
 
-  auto newSignalUsage = other;
-  newSignalUsage.memberRefs.insert(newSignalUsage.memberRefs.end(), suffix->begin(), suffix->end());
+  SourceRef newSignalUsage = other; // copy
+  if (newSignalUsage.isRooted()) {
+    SourceRef::Path &path = newSignalUsage.getPathMut();
+    path.insert(path.end(), suffix->begin(), suffix->end());
+  }
+
   return newSignalUsage;
 }
 
@@ -293,19 +311,21 @@ void SourceRef::print(raw_ostream &os) const {
   } else if (isConstantIndex()) {
     os << "<index: " << getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
-    auto constRead = std::get<ConstReadOp>(*constantVal);
+    auto constRead = getConstantType<ConstReadOp>();
     auto structDefOp = constRead->getParentOfType<StructDefOp>();
     ensure(structDefOp, "struct template should have a struct parent");
     os << '@' << structDefOp.getName() << "<[@" << constRead.getConstName() << "]>";
   } else {
     if (isCreateStructOp()) {
       os << "%self";
+    } else if (isNonDetOp()) {
+      os << '<' << getNonDetOp() << '>';
     } else {
       ensure(isBlockArgument(), "unhandled print case");
       os << "%arg" << getInputNum();
     }
 
-    for (const auto &f : memberRefs) {
+    for (const auto &f : getPath()) {
       os << "[" << f << "]";
     }
   }
@@ -317,7 +337,10 @@ bool SourceRef::operator==(const SourceRef &rhs) const {
     DynamicAPInt lhsVal = getConstantValue(), rhsVal = rhs.getConstantValue();
     return getType() == rhs.getType() && lhsVal == rhsVal;
   }
-  return (root == rhs.root) && (memberRefs == rhs.memberRefs) && (constantVal == rhs.constantVal);
+  // Otherwise, just compare storage values directly.
+  return (isRooted() && rhs.isRooted() && (getRoot() == rhs.getRoot()) &&
+          (getPath() == rhs.getPath())) ||
+         (isConstant() && rhs.isConstant() && (getConstant() == rhs.getConstant()));
 }
 
 // required for EquivalenceClasses usage
@@ -348,16 +371,21 @@ bool SourceRef::operator<(const SourceRef &rhs) const {
   } else if (!isTemplateConstant() && rhs.isTemplateConstant()) {
     return true;
   } else if (isTemplateConstant() && rhs.isTemplateConstant()) {
-    StringRef lhsName = std::get<ConstReadOp>(*constantVal).getConstName();
-    StringRef rhsName = std::get<ConstReadOp>(*rhs.constantVal).getConstName();
+    StringRef lhsName = getConstantType<ConstReadOp>().getConstName();
+    StringRef rhsName = rhs.getConstantType<ConstReadOp>().getConstName();
     return lhsName.compare(rhsName) < 0;
   }
 
-  // Sort out the block argument vs struct.new cases
-  if (isBlockArgument() && rhs.isCreateStructOp()) {
+  // Sort out the block argument vs struct.new vs nondet cases
+  // block < struct.new < nondet
+  if (isBlockArgument() && !rhs.isBlockArgument()) {
     return true;
-  } else if (isCreateStructOp() && rhs.isBlockArgument()) {
+  } else if (!isBlockArgument() && rhs.isBlockArgument()) {
     return false;
+  } else if (isNonDetOp() && !rhs.isNonDetOp()) {
+    return false;
+  } else if (!isNonDetOp() && rhs.isNonDetOp()) {
+    return true;
   } else if (isBlockArgument() && rhs.isBlockArgument()) {
     if (getInputNum() < rhs.getInputNum()) {
       return true;
@@ -371,31 +399,50 @@ bool SourceRef::operator<(const SourceRef &rhs) const {
     } else if (lhsOp > rhsOp) {
       return false;
     }
+  } else if (isNonDetOp() && rhs.isNonDetOp()) {
+    NonDetOp lhsOp = getNonDetOp(), rhsOp = rhs.getNonDetOp();
+    if (lhsOp < rhsOp) {
+      return true;
+    } else if (lhsOp > rhsOp) {
+      return false;
+    }
   } else {
+    llvm::errs() << *this << " vs " << rhs << '\n';
     llvm_unreachable("unhandled operator< case");
   }
 
-  for (size_t i = 0; i < memberRefs.size() && i < rhs.memberRefs.size(); i++) {
-    if (memberRefs[i] < rhs.memberRefs[i]) {
+  const SourceRef::Path &path = getPath(), &rhsPath = rhs.getPath();
+  for (size_t i = 0; i < path.size() && i < rhsPath.size(); i++) {
+    if (path[i] < rhsPath[i]) {
       return true;
-    } else if (memberRefs[i] > rhs.memberRefs[i]) {
+    } else if (path[i] > rhsPath[i]) {
       return false;
     }
   }
-  return memberRefs.size() < rhs.memberRefs.size();
+  return path.size() < rhsPath.size();
 }
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
   if (val.isConstantInt()) {
     return llvm::hash_value(val.getConstantValue());
   } else if (val.isTemplateConstant()) {
-    return OpHash<ConstReadOp> {}(std::get<ConstReadOp>(*val.constantVal));
+    return OpHash<ConstReadOp> {}(val.getConstantType<ConstReadOp>());
   } else {
-    ensure(val.isBlockArgument() || val.isCreateStructOp(), "unhandled SourceRef hash case");
+    ensure(
+        val.isBlockArgument() || val.isCreateStructOp() || val.isNonDetOp(),
+        "unhandled SourceRef hash case"
+    );
 
-    size_t hash = val.isBlockArgument() ? std::hash<unsigned> {}(val.getInputNum())
-                                        : OpHash<CreateStructOp> {}(val.getCreateStructOp());
-    for (const auto &f : val.memberRefs) {
+    size_t hash;
+    if (val.isBlockArgument()) {
+      hash = std::hash<unsigned> {}(val.getInputNum());
+    } else if (val.isCreateStructOp()) {
+      hash = OpHash<CreateStructOp> {}(val.getCreateStructOp());
+    } else {
+      hash = OpHash<NonDetOp> {}(val.getNonDetOp());
+    }
+
+    for (const auto &f : val.getPath()) {
       hash ^= f.getHash();
     }
     return hash;

@@ -631,3 +631,28 @@ module attributes {llzk.lang} {
 
 // COM: Regression test to avoid assertion failure on empty modules
 module attributes {llzk.lang} { }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ConstantConstraintNonDet {
+    function.def @compute(%a: !felt.type) -> !struct.type<@ConstantConstraintNonDet> {
+      %self = struct.new : !struct.type<@ConstantConstraintNonDet>
+      function.return %self : !struct.type<@ConstantConstraintNonDet>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConstantConstraintNonDet>, %const: !felt.type) {
+      %a = felt.const 1
+      %b = felt.const 2
+      %c = felt.add %a, %b
+      %nondet = llzk.nondet : !felt.type
+      constrain.eq %const, %nondet : !felt.type
+      constrain.eq %c, %nondet : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConstantConstraintNonDet StructIntervals {
+// CHECK-NEXT:     %arg1 in Degenerate(3)
+// CHECK-NEXT: }
