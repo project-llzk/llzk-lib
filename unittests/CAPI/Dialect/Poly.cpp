@@ -289,6 +289,42 @@ std::unique_ptr<TemplateParamOpBuildFuncHelper> TemplateParamOpBuildFuncHelper::
   return std::make_unique<Impl>();
 }
 
+// Implementation for `TemplateExprOp_build_pass` test
+std::unique_ptr<TemplateExprOpBuildFuncHelper> TemplateExprOpBuildFuncHelper::get() {
+  struct Impl : public TemplateExprOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+
+      // Needs parent `poly.template` for verifier to pass.
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+        mlir::OpBuilder *cppBuilder = unwrap(builder);
+        auto polyTemplate = cppBuilder->create<llzk::polymorphic::TemplateOp>(
+            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "template_name")
+        );
+        cppBuilder->setInsertionPointToStart(&polyTemplate.getBodyRegion().emplaceBlock());
+      }
+      auto retVal = llzkPoly_TemplateExprOpBuild(
+          builder, location,
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("expr_name"))
+      );
+      // Needs region with 1 block and a `yield` op for verifier to pass.
+      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
+      {
+        auto exprOp = mlir::unwrap_cast<llzk::polymorphic::TemplateExprOp>(retVal);
+        mlir::OpBuilder *cppBuilder = unwrap(builder);
+        cppBuilder->setInsertionPointToStart(&exprOp.getInitializerRegion().emplaceBlock());
+        mlir::Value val = testClass.cppGenFeltConstant(builder, location);
+        cppBuilder->create<llzk::polymorphic::YieldOp>(unwrap(location), val);
+      }
+      return retVal;
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
 // Implementation for `YieldOp_build_pass` test
 std::unique_ptr<YieldOpBuildFuncHelper> YieldOpBuildFuncHelper::get() {
   struct Impl : public YieldOpBuildFuncHelper {
@@ -305,13 +341,12 @@ std::unique_ptr<YieldOpBuildFuncHelper> YieldOpBuildFuncHelper::get() {
             unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "template_name")
         );
         cppBuilder->setInsertionPointToStart(&polyTemplate.getBodyRegion().emplaceBlock());
-        auto templateParam = cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "param_name"),
-            nullptr
+        auto templateExpr = cppBuilder->create<llzk::polymorphic::TemplateExprOp>(
+            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "expr_name")
         );
-        cppBuilder->setInsertionPointToStart(&templateParam.getInitializerRegion().emplaceBlock());
+        cppBuilder->setInsertionPointToStart(&templateExpr.getInitializerRegion().emplaceBlock());
       }
-      auto val = testClass.cppGenFeltConstant(builder, location);
+      mlir::Value val = testClass.cppGenFeltConstant(builder, location);
       return llzkPoly_YieldOpBuild(builder, location, wrap(val));
     }
   };

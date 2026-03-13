@@ -106,18 +106,19 @@ def LLZK_TemplateOp
 def LLZK_TemplateParamOp
     : PolymorphicDialectOp<
           "param", [HasParent<"::llzk::polymorphic::TemplateOp">, Symbol,
-                    DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                    IsolatedFromAbove, NoRegionArguments, SingleBlock]> {
+                    DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "declares a parameter of a polymorphic template";
   let description = [{
-    Declare parameters of a `poly.template` that can be used by the function and/or struct
-    definitions within the template. Each parameter can have an optional type restriction
-    and/or an optional region that computes the parameter value as a function of the values
-    of other parameters.
+    Declares a parameter of a `poly.template` that can be used by the function and/or struct
+    definitions within the template. Each parameter can have an optional type restriction.
 
     Example:
     ```llzk
     poly.template @TemplateName {
+      poly.param @N
+      poly.param @F : !felt.type
+      // To restrict a parameter to accept only a type, use `!poly.tvar` with the parameter's own name.
+      poly.param @T : !poly.tvar<@T>
     }
     ```
   }];
@@ -125,27 +126,50 @@ def LLZK_TemplateParamOp
   let arguments = (ins SymbolNameAttr:$sym_name,
       OptionalAttr<TypeAttrOf<ConstReadType>>:$type);
 
-  let regions = (region AnyRegion:$initializerRegion);
+  let assemblyFormat = [{ $sym_name (`:` $type^)? attr-dict }];
+}
 
-  let assemblyFormat =
-      [{ $sym_name (`:` $type^)? ($initializerRegion^)? attr-dict }];
+def LLZK_TemplateExprOp
+    : PolymorphicDialectOp<
+          "expr", [HasParent<"::llzk::polymorphic::TemplateOp">, Symbol,
+                   DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                   IsolatedFromAbove, NoRegionArguments, SingleBlock]> {
+  let summary = "declares a named expression in a polymorphic template";
+  let description = [{
+    Declares an expression over parameters of a `poly.template` that can be used just like
+    a parameter within the function and/or struct definitions within the template.
+
+    Example:
+    ```llzk
+    poly.template @TemplateName {
+      poly.expr @ExprName {
+        %0 = some_op %param1, %param2 : (!felt.type, !felt.type) -> !felt.type
+        poly.yield %0 : !felt.type
+      }
+    }
+    ```
+  }];
+
+  let arguments = (ins SymbolNameAttr:$sym_name);
+  let regions = (region SizedRegion<1>:$initializerRegion);
+
+  let assemblyFormat = [{ $sym_name $initializerRegion attr-dict }];
 
   let hasRegionVerifier = 1;
 
   let extraClassDeclaration = [{
-    /// Returns the type specified for this parameter if present, else the type of
-    /// the `poly.yield` op in the initializer region if present, else `nullopt`.
-    ::std::optional<::mlir::Type> getEffectiveType();
+    /// Returns the type of the `poly.yield` op in the initializer region.
+    ::mlir::Type getType();
   }];
 }
 
 def LLZK_YieldOp
     : PolymorphicDialectOp<
-          "yield", [HasParent<"::llzk::polymorphic::TemplateParamOp">, Pure,
+          "yield", [HasParent<"::llzk::polymorphic::TemplateExprOp">, Pure,
                     ReturnLike, Terminator]> {
-  let summary = "param initialization yield and termination operation";
+  let summary = "expr initialization yield and termination operation";
   let description = [{
-    This operation yields an SSA value from a `poly.param` initialization
+    This operation yields an SSA value from a `poly.expr` initialization
     region and terminates the region.
   }];
 

@@ -44,50 +44,58 @@ bool TemplateOp::hasParamNamed(StringRef find) {
 
 namespace {
 
-std::optional<Type> inferTypeFromRegion(TemplateParamOp op) {
-  Region &region = op.getRegion();
-  if (region.empty()) {
-    return std::nullopt;
-  }
-  YieldOp yieldOp = llvm::dyn_cast<YieldOp>(region.back().getTerminator());
-  assert(yieldOp && "final op in initializer region must be yield");
-  return yieldOp.getVal().getType();
-}
-
-} // namespace
-
-std::optional<Type> TemplateParamOp::getEffectiveType() {
-  if (TypeAttr attr = getTypeAttr()) {
-    return attr.getValue();
-  }
-  return inferTypeFromRegion(*this);
-}
-
-LogicalResult TemplateParamOp::verifyRegions() {
-  // If there is an explicit type and an initializer region, the type of the yield op
-  // within the initializer region must unify with the explicit type.
-  if (std::optional<Type> explicitTy = getType()) {
-    if (std::optional<Type> inferredTy = inferTypeFromRegion(*this)) {
-      if (!typesUnify(*explicitTy, *inferredTy)) {
-        return emitOpError() << "type " << *explicitTy << " cannot be initialized from '"
-                             << YieldOp::getOperationName() << "' with type " << *inferredTy;
-      }
-    }
-  }
-  return success();
-}
-
-LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult checkForNameConflict(SymbolTableCollection &tables, SymbolOpInterface op) {
   // Ensure parameter name does not conflict with an existing top-level symbol
   // because that would cause an ambiguity in symbol resolution within structs.
-  auto res = lookupTopLevelSymbol(tables, FlatSymbolRefAttr::get(getSymNameAttr()), *this, false);
+  auto res = lookupTopLevelSymbol(tables, FlatSymbolRefAttr::get(op.getNameAttr()), op, false);
   if (succeeded(res)) {
-    return this->emitOpError()
+    return op.emitOpError()
         .append("name conflicts with an existing symbol")
         .attachNote(res->get()->getLoc())
         .append("symbol already defined here");
   }
   return success();
+}
+
+} // namespace
+
+LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &tables) {
+  return checkForNameConflict(tables, *this);
+}
+
+//===------------------------------------------------------------------===//
+// TemplateExprOp
+//===------------------------------------------------------------------===//
+
+LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &tables) {
+  return checkForNameConflict(tables, *this);
+}
+
+LogicalResult TemplateExprOp::verifyRegions() {
+  mlir::Region &region = getInitializerRegion();
+  if (!region.hasOneBlock()) {
+    return emitOpError("expected initializer region with a single block");
+  }
+  YieldOp yieldOp = llvm::dyn_cast<YieldOp>(region.back().getTerminator());
+  if (!yieldOp) {
+    return emitOpError("expected initializer region to end with a '")
+           << YieldOp::getOperationName() << '\'';
+  }
+
+  // TODO: VERIFY: An `poly.expr` symbol cannot be used within its own region.
+  // TODO: VERIFY: Cannot have cyclic definitions between expr regions.
+  // Both of these could be covered by simply ensuring that `poly.expr` symbols
+  // cannot be used at all within the initializer region.
+
+  return success();
+}
+
+Type TemplateExprOp::getType() {
+  mlir::Region &region = getInitializerRegion();
+  assert(region.hasOneBlock() && "per `verifyRegions()`");
+  YieldOp yieldOp = llvm::dyn_cast<YieldOp>(region.back().getTerminator());
+  assert(yieldOp && "per `verifyRegions()`");
+  return yieldOp.getVal().getType();
 }
 
 //===------------------------------------------------------------------===//

@@ -2,7 +2,7 @@
 
 module attributes {llzk.lang} {
   poly.template @T {
-    poly.param @P {
+    poly.expr @P {
       // expected-error@+1 {{block with no terminator}}
       %v = arith.constant 42 : index
     }
@@ -12,10 +12,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @T {
-    // expected-error@+1 {{'poly.param' op type '!felt.type' cannot be initialized from 'poly.yield' with type 'index'}}
-    poly.param @P : !felt.type {
-      %v = arith.constant 42 : index
-      poly.yield %v : index
-    }
+    // expected-error@+1 {{'poly.expr' op expects a non-empty block}}
+    poly.expr @P {}
   }
 }

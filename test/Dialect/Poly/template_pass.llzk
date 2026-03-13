@@ -14,36 +14,6 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @T {
-    poly.param @P {} // empty region treated same as no region
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @T {
-// CHECK-NEXT:      poly.param @P
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-module attributes {llzk.lang} {
-  poly.template @T {
-    poly.param @P {
-      %v = arith.constant 42 : index
-      poly.yield %v : index
-    }
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @T {
-// CHECK-NEXT:      poly.param @P {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
-// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-module attributes {llzk.lang} {
-  poly.template @T {
     poly.param @P : index
   }
 }
@@ -56,7 +26,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @T {
-    poly.param @P : index {
+    poly.expr @P {
       %v = arith.constant 42 : index
       poly.yield %v : index
     }
@@ -64,7 +34,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
-// CHECK-NEXT:      poly.param @P : index {
+// CHECK-NEXT:      poly.expr @P {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
 // CHECK-NEXT:        poly.yield %[[VAL_0]] : index
 // CHECK-NEXT:      }
