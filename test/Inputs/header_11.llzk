@@ -10,22 +10,31 @@ module attributes {llzk.lang} {
       function.return
     }
   }
-  struct.def @D1<[@M]> {
-    function.def @compute() -> !struct.type<@D1<[@M]>> {
-      %self = struct.new : !struct.type<@D1<[@M]>>
-      function.return %self: !struct.type<@D1<[@M]>>
-    }
-    function.def @constrain(%self: !struct.type<@D1<[@M]>>) {
-      function.return
+  poly.template @TD1 {
+    poly.param @M
+
+    struct.def @D1 {
+      function.def @compute() -> !struct.type<@TD1::@D1<[@M]>> {
+        %self = struct.new : !struct.type<@TD1::@D1<[@M]>>
+        function.return %self: !struct.type<@TD1::@D1<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@TD1::@D1<[@M]>>) {
+        function.return
+      }
     }
   }
-  struct.def @D2<[@M, @N]> {
-    function.def @compute() -> !struct.type<@D2<[@M, @N]>> {
-      %self = struct.new : !struct.type<@D2<[@M, @N]>>
-      function.return %self: !struct.type<@D2<[@M, @N]>>
-    }
-    function.def @constrain(%self: !struct.type<@D2<[@M, @N]>>) {
-      function.return
+  poly.template @TD2 {
+    poly.param @M
+    poly.param @N
+
+    struct.def @D2 {
+      function.def @compute() -> !struct.type<@TD2::@D2<[@M, @N]>> {
+        %self = struct.new : !struct.type<@TD2::@D2<[@M, @N]>>
+        function.return %self: !struct.type<@TD2::@D2<[@M, @N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TD2::@D2<[@M, @N]>>) {
+        function.return
+      }
     }
   }
 }

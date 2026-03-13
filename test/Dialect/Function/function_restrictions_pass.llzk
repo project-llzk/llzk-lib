@@ -293,29 +293,34 @@ module attributes {llzk.lang} {
 // COM: Allowed because the unknown target has no attributes, so does not specify
 // COM: allows constraints or allows witness.
 module attributes {llzk.lang} {
-  // function.def @global_fun() -> () { function.return }
-  struct.def @unknown_call_target<[@S]> {
-    function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> {
-      %self = struct.new : !struct.type<@unknown_call_target<[@S]>>
-      function.return %self : !struct.type<@unknown_call_target<[@S]>>
-    }
+  poly.template @Tunknown_call_target {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@unknown_call_target<[@S]>>) {
-      function.call @S::@global_fun() : () -> ()
-      function.return
+    struct.def @unknown_call_target {
+      function.def @compute() -> !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>> {
+        %self = struct.new : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+        function.return %self : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>) {
+        function.call @S::@global_fun() : () -> ()
+        function.return
+      }
     }
   }
 }
-
-//CHECK-LABEL: module attributes {llzk.lang} {
-//CHECK-NEXT:   struct.def @unknown_call_target<[@S]> {
-//CHECK-NEXT:     function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> attributes {function.allow_witness} {
-//CHECK-NEXT:       %self = struct.new : <@unknown_call_target<[@S]>>
-//CHECK-NEXT:       function.return %self : !struct.type<@unknown_call_target<[@S]>>
-//CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%arg0: !struct.type<@unknown_call_target<[@S]>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       function.call @S::@global_fun() : () -> ()
-//CHECK-NEXT:       function.return
-//CHECK-NEXT:     }
-//CHECK-NEXT:   }
-//CHECK-NEXT: }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Tunknown_call_target {
+// CHECK-NEXT:      poly.param @S
+// CHECK-NEXT:      struct.def @unknown_call_target {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Tunknown_call_target::@unknown_call_target<[@S]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.call @S::@global_fun() : () -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

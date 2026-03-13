@@ -2,49 +2,53 @@
 // REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
-    struct.def @A<[@N]> {
-        struct.member @arr : !array.type<@N, @N x !felt.type>
+    poly.template @TA {
+      poly.param @N
 
-        function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@A<[@N]>> {
-            %self = struct.new : <@A<[@N]>>
+      struct.def @A {
+          struct.member @arr : !array.type<@N, @N x !felt.type>
 
-            %c0 = arith.constant 0 : index
-            %c1 = arith.constant 1 : index
-            %N = poly.read_const @N : index
+          function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N]>> {
+              %self = struct.new : <@TA::@A<[@N]>>
 
-            %arr = array.new : !array.type<@N, @N x !felt.type>
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
+              %N = poly.read_const @N : index
 
-            scf.for %i = %c0 to %N step %c1 {
-                scf.for %j = %c0 to %N step %c1 {
-                    %k = arith.addi %i, %j : index
-                    %elem = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
-                    array.write %arr[%i, %j] = %elem : !array.type<@N, @N x !felt.type>, !felt.type
-                }
-            }
+              %arr = array.new : !array.type<@N, @N x !felt.type>
 
-            struct.writem %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
-            function.return %self : !struct.type<@A<[@N]>>
-        }
+              scf.for %i = %c0 to %N step %c1 {
+                  scf.for %j = %c0 to %N step %c1 {
+                      %k = arith.addi %i, %j : index
+                      %elem = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
+                      array.write %arr[%i, %j] = %elem : !array.type<@N, @N x !felt.type>, !felt.type
+                  }
+              }
 
-        function.def @constrain(%self: !struct.type<@A<[@N]>>, %inp: !array.type<@N x !felt.type>) {
-            %c0 = arith.constant 0 : index
-            %c1 = arith.constant 1 : index
-            %N = poly.read_const @N : index
+              struct.writem %self[@arr] = %arr : !struct.type<@TA::@A<[@N]>>, !array.type<@N, @N x !felt.type>
+              function.return %self : !struct.type<@TA::@A<[@N]>>
+          }
 
-            %arr = struct.readm %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
+          function.def @constrain(%self: !struct.type<@TA::@A<[@N]>>, %inp: !array.type<@N x !felt.type>) {
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
+              %N = poly.read_const @N : index
 
-            scf.for %i = %c0 to %N step %c1 {
-                scf.for %j = %c0 to %N step %c1 {
-                    %k = arith.addi %i, %j : index
-                    %elem1 = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
-                    %elem2 = array.read %arr[%i, %j] : !array.type<@N, @N x !felt.type>, !felt.type
-                    constrain.eq %elem1, %elem2 : !felt.type
-                }
-            }
+              %arr = struct.readm %self[@arr] : !struct.type<@TA::@A<[@N]>>, !array.type<@N, @N x !felt.type>
 
-            function.return
-        }
+              scf.for %i = %c0 to %N step %c1 {
+                  scf.for %j = %c0 to %N step %c1 {
+                      %k = arith.addi %i, %j : index
+                      %elem1 = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
+                      %elem2 = array.read %arr[%i, %j] : !array.type<@N, @N x !felt.type>, !felt.type
+                      constrain.eq %elem1, %elem2 : !felt.type
+                  }
+              }
 
+              function.return
+          }
+
+      }
     }
 }
 

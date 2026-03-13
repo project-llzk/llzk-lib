@@ -185,34 +185,42 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @unknown_call_target<[@S]> {
-    function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> {
-      %self = struct.new : !struct.type<@unknown_call_target<[@S]>>
-      function.return %self : !struct.type<@unknown_call_target<[@S]>>
-    }
+  poly.template @Tunknown_call_target {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@unknown_call_target<[@S]>>) {
-      // expected-error@+2 {{'function.call' op target '@S::@compute' has 'function.allow_witness' attribute, which is not specified by the caller '@constrain'}}
-      // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
-      function.call @S::@compute() : () -> ()
-      function.return
+    struct.def @unknown_call_target {
+      function.def @compute() -> !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>> {
+        %self = struct.new : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+        function.return %self : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>) {
+        // expected-error@+2 {{'function.call' op target '@S::@compute' has 'function.allow_witness' attribute, which is not specified by the caller '@constrain'}}
+        // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
+        function.call @S::@compute() : () -> ()
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @unknown_call_target<[@S]> {
-    function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> {
-      %self = struct.new : !struct.type<@unknown_call_target<[@S]>>
-      // expected-error@+3 {{'function.call' op target "@constrain" must have no return type}}
-      // expected-error@+2 {{'function.call' op target "@constrain" must have at least one input type}}
-      // expected-error@+1 {{'function.call' op target '@S::@constrain' has 'function.allow_constraint' attribute, which is not specified by the caller '@compute'}}
-      %wrong = function.call @S::@constrain() : () -> (!felt.type)
-      function.return %self : !struct.type<@unknown_call_target<[@S]>>
-    }
+  poly.template @Tunknown_call_target {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@unknown_call_target<[@S]>>) {
-      function.return
+    struct.def @unknown_call_target {
+      function.def @compute() -> !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>> {
+        %self = struct.new : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+        // expected-error@+3 {{'function.call' op target "@constrain" must have no return type}}
+        // expected-error@+2 {{'function.call' op target "@constrain" must have at least one input type}}
+        // expected-error@+1 {{'function.call' op target '@S::@constrain' has 'function.allow_constraint' attribute, which is not specified by the caller '@compute'}}
+        %wrong = function.call @S::@constrain() : () -> (!felt.type)
+        function.return %self : !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tunknown_call_target::@unknown_call_target<[@S]>>) {
+        function.return
+      }
     }
   }
 }
@@ -258,16 +266,20 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_compute_no_ret<[@S]> {
-    function.def @compute() -> !struct.type<@call_target_compute_no_ret<[@S]>> {
-      %self = struct.new : !struct.type<@call_target_compute_no_ret<[@S]>>
-      // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
-      function.call @S::@compute() : () -> ()
-      function.return %self : !struct.type<@call_target_compute_no_ret<[@S]>>
-    }
+  poly.template @Tcall_target_compute_no_ret {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@call_target_compute_no_ret<[@S]>>) {
-      function.return
+    struct.def @call_target_compute_no_ret {
+      function.def @compute() -> !struct.type<@Tcall_target_compute_no_ret::@call_target_compute_no_ret<[@S]>> {
+        %self = struct.new : !struct.type<@Tcall_target_compute_no_ret::@call_target_compute_no_ret<[@S]>>
+        // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
+        function.call @S::@compute() : () -> ()
+        function.return %self : !struct.type<@Tcall_target_compute_no_ret::@call_target_compute_no_ret<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_compute_no_ret::@call_target_compute_no_ret<[@S]>>) {
+        function.return
+      }
     }
   }
 }
@@ -287,16 +299,20 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_compute_multiple_ret<[@S]> {
-    function.def @compute() -> !struct.type<@call_target_compute_multiple_ret<[@S]>> {
-      %self = struct.new : !struct.type<@call_target_compute_multiple_ret<[@S]>>
-      // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
-      function.call @S::@compute() : () -> (!poly.tvar<@S>, i1)
-      function.return %self : !struct.type<@call_target_compute_multiple_ret<[@S]>>
-    }
+  poly.template @Tcall_target_compute_multiple_ret {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@call_target_compute_multiple_ret<[@S]>>) {
-      function.return
+    struct.def @call_target_compute_multiple_ret {
+      function.def @compute() -> !struct.type<@Tcall_target_compute_multiple_ret::@call_target_compute_multiple_ret<[@S]>> {
+        %self = struct.new : !struct.type<@Tcall_target_compute_multiple_ret::@call_target_compute_multiple_ret<[@S]>>
+        // expected-error@+1 {{'function.call' op target "@compute" must have exactly one return type}}
+        function.call @S::@compute() : () -> (!poly.tvar<@S>, i1)
+        function.return %self : !struct.type<@Tcall_target_compute_multiple_ret::@call_target_compute_multiple_ret<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_compute_multiple_ret::@call_target_compute_multiple_ret<[@S]>>) {
+        function.return
+      }
     }
   }
 }
@@ -316,23 +332,27 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_constrain_with_ret<[@S]> {
-    function.def @compute(%0: !poly.tvar<@S>) -> !struct.type<@call_target_constrain_with_ret<[@S]>> {
-      %self = struct.new : !struct.type<@call_target_constrain_with_ret<[@S]>>
-      function.return %self : !struct.type<@call_target_constrain_with_ret<[@S]>>
-    }
+  poly.template @Tcall_target_constrain_with_ret {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@call_target_constrain_with_ret<[@S]>>, %0: !poly.tvar<@S>) {
-      // expected-error@+1 {{'function.call' op target "@constrain" must have no return type}}
-      function.call @S::@constrain(%0) : (!poly.tvar<@S>) -> (!poly.tvar<@S>, i1)
-      function.return
+    struct.def @call_target_constrain_with_ret {
+      function.def @compute(%0: !poly.tvar<@S>) -> !struct.type<@Tcall_target_constrain_with_ret::@call_target_constrain_with_ret<[@S]>> {
+        %self = struct.new : !struct.type<@Tcall_target_constrain_with_ret::@call_target_constrain_with_ret<[@S]>>
+        function.return %self : !struct.type<@Tcall_target_constrain_with_ret::@call_target_constrain_with_ret<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_constrain_with_ret::@call_target_constrain_with_ret<[@S]>>, %0: !poly.tvar<@S>) {
+        // expected-error@+1 {{'function.call' op target "@constrain" must have no return type}}
+        function.call @S::@constrain(%0) : (!poly.tvar<@S>) -> (!poly.tvar<@S>, i1)
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
   struct.def @compute_with_wrong_ret {
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@compute_with_wrong_ret<[]>" as return type}}
     function.def @compute() -> index {
       %b = arith.constant 2 : index
       function.return %b : index
@@ -345,31 +365,41 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_compute_wrong_type_ret<[@S,@T]> {
-    function.def @compute() -> !struct.type<@call_target_compute_wrong_type_ret<[@S,@T]>> {
-      %self = struct.new : !struct.type<@call_target_compute_wrong_type_ret<[@S,@T]>>
-      // expected-error@+1 {{'function.call' op target "@compute" expected return type '!poly.tvar<@S>' but found 'i1'}}
-      function.call @S::@compute() : () -> i1
-      function.return %self : !struct.type<@call_target_compute_wrong_type_ret<[@S,@T]>>
-    }
+  poly.template @Tcall_target_compute_wrong_type_ret {
+    poly.param @S
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@call_target_compute_wrong_type_ret<[@S,@T]>>) {
-      function.return
+    struct.def @call_target_compute_wrong_type_ret {
+      function.def @compute() -> !struct.type<@Tcall_target_compute_wrong_type_ret::@call_target_compute_wrong_type_ret<[@S,@T]>> {
+        %self = struct.new : !struct.type<@Tcall_target_compute_wrong_type_ret::@call_target_compute_wrong_type_ret<[@S,@T]>>
+        // expected-error@+1 {{'function.call' op target "@compute" expected return type '!poly.tvar<@S>' but found 'i1'}}
+        function.call @S::@compute() : () -> i1
+        function.return %self : !struct.type<@Tcall_target_compute_wrong_type_ret::@call_target_compute_wrong_type_ret<[@S,@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_compute_wrong_type_ret::@call_target_compute_wrong_type_ret<[@S,@T]>>) {
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_compute_wrong_tvar_param_ret<[@S,@T]> {
-    function.def @compute() -> !struct.type<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>> {
-      %self = struct.new : !struct.type<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
-      // expected-error@+1 {{'function.call' op target "@compute" expected return type '!poly.tvar<@S>' but found '!poly.tvar<@T>'}}
-      function.call @S::@compute() : () -> !poly.tvar<@T>
-      function.return %self : !struct.type<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
-    }
+  poly.template @Tcall_target_compute_wrong_tvar_param_ret {
+    poly.param @S
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>) {
-      function.return
+    struct.def @call_target_compute_wrong_tvar_param_ret {
+      function.def @compute() -> !struct.type<@Tcall_target_compute_wrong_tvar_param_ret::@call_target_compute_wrong_tvar_param_ret<[@S,@T]>> {
+        %self = struct.new : !struct.type<@Tcall_target_compute_wrong_tvar_param_ret::@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
+        // expected-error@+1 {{'function.call' op target "@compute" expected return type '!poly.tvar<@S>' but found '!poly.tvar<@T>'}}
+        function.call @S::@compute() : () -> !poly.tvar<@T>
+        function.return %self : !struct.type<@Tcall_target_compute_wrong_tvar_param_ret::@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_compute_wrong_tvar_param_ret::@call_target_compute_wrong_tvar_param_ret<[@S,@T]>>) {
+        function.return
+      }
     }
   }
 }
@@ -386,7 +416,7 @@ module attributes {llzk.lang} {
   }
 
   struct.def @compute_with_wrong_ret {
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@compute_with_wrong_ret<[]>" as return type}}
     function.def @compute() -> !struct.type<@good> {
       %self = struct.new : !struct.type<@good>
       function.return %self : !struct.type<@good>
@@ -412,7 +442,7 @@ module attributes {llzk.lang} {
   }
   module @two {
     struct.def @good {
-      // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@two::@good" as return type}}
+      // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@two::@good<[]>" as return type}}
       function.def @compute() -> !struct.type<@one::@good> {
         %self = struct.new : !struct.type<@one::@good>
         function.return %self : !struct.type<@one::@good>
@@ -445,7 +475,7 @@ module attributes {llzk.lang} {
 module { // expected-note {{unnamed 'builtin.module' here}}
   // expected-error@+1 {{'struct.def' op has ancestor 'builtin.module' without "llzk.lang" attribute or a name}}
   struct.def @compute_with_wrong_ret {
-    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@compute_with_wrong_ret" as return type}}
+    // expected-error@+1 {{'function.def' op "@compute" must use type of its ancestor 'struct.def' "@compute_with_wrong_ret<[]>" as return type}}
     function.def @compute() -> index {
       %b = arith.constant 2 : index
       function.return %b : index
@@ -469,16 +499,20 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_constrain_without_args<[@S]> {
-    function.def @compute() -> !struct.type<@call_target_constrain_without_args<[@S]>> {
-      %self = struct.new : !struct.type<@call_target_constrain_without_args<[@S]>>
-      function.return %self : !struct.type<@call_target_constrain_without_args<[@S]>>
-    }
+  poly.template @Tcall_target_constrain_without_args {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@call_target_constrain_without_args<[@S]>>) {
-      // expected-error@+1 {{'function.call' op target "@constrain" must have at least one input type}}
-      function.call @S::@constrain() : () -> ()
-      function.return
+    struct.def @call_target_constrain_without_args {
+      function.def @compute() -> !struct.type<@Tcall_target_constrain_without_args::@call_target_constrain_without_args<[@S]>> {
+        %self = struct.new : !struct.type<@Tcall_target_constrain_without_args::@call_target_constrain_without_args<[@S]>>
+        function.return %self : !struct.type<@Tcall_target_constrain_without_args::@call_target_constrain_without_args<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_constrain_without_args::@call_target_constrain_without_args<[@S]>>) {
+        // expected-error@+1 {{'function.call' op target "@constrain" must have at least one input type}}
+        function.call @S::@constrain() : () -> ()
+        function.return
+      }
     }
   }
 }
@@ -489,7 +523,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@constrain_without_self_non_struct>
       function.return %self : !struct.type<@constrain_without_self_non_struct>
     }
-    // expected-error@+1 {{'function.def' op "@constrain" must use type of its ancestor 'struct.def' "@constrain_without_self_non_struct" as first input type}}
+    // expected-error@+1 {{'function.def' op "@constrain" must use type of its ancestor 'struct.def' "@constrain_without_self_non_struct<[]>" as first input type}}
     function.def @constrain(%self: !felt.type) {
       function.return
     }
@@ -497,17 +531,21 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_constrain_without_self_non_struct<[@S]> {
-    function.def @compute() -> !struct.type<@call_target_constrain_without_self_non_struct<[@S]>> {
-      %self = struct.new : !struct.type<@call_target_constrain_without_self_non_struct<[@S]>>
-      function.return %self : !struct.type<@call_target_constrain_without_self_non_struct<[@S]>>
-    }
+  poly.template @Tcall_target_constrain_without_self_non_struct {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@call_target_constrain_without_self_non_struct<[@S]>>) {
-      %0 = felt.const 1
-      // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!poly.tvar<@S>' but found '!felt.type'}}
-      function.call @S::@constrain(%0) : (!felt.type) -> ()
-      function.return
+    struct.def @call_target_constrain_without_self_non_struct {
+      function.def @compute() -> !struct.type<@Tcall_target_constrain_without_self_non_struct::@call_target_constrain_without_self_non_struct<[@S]>> {
+        %self = struct.new : !struct.type<@Tcall_target_constrain_without_self_non_struct::@call_target_constrain_without_self_non_struct<[@S]>>
+        function.return %self : !struct.type<@Tcall_target_constrain_without_self_non_struct::@call_target_constrain_without_self_non_struct<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_constrain_without_self_non_struct::@call_target_constrain_without_self_non_struct<[@S]>>) {
+        %0 = felt.const 1
+        // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!poly.tvar<@S>' but found '!felt.type'}}
+        function.call @S::@constrain(%0) : (!felt.type) -> ()
+        function.return
+      }
     }
   }
 }
@@ -527,7 +565,7 @@ module attributes {llzk.lang} {
       %self = struct.new : !struct.type<@constrain_without_self_wrong_struct>
       function.return %self : !struct.type<@constrain_without_self_wrong_struct>
     }
-    // expected-error@+1 {{'function.def' op "@constrain" must use type of its ancestor 'struct.def' "@constrain_without_self_wrong_struct" as first input type}}
+    // expected-error@+1 {{'function.def' op "@constrain" must use type of its ancestor 'struct.def' "@constrain_without_self_wrong_struct<[]>" as first input type}}
     function.def @constrain(%self: !struct.type<@other_type>) {
       function.return
     }
@@ -535,16 +573,21 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @call_target_constrain_without_self_wrong_tvar_param<[@S,@T]> {
-    function.def @compute(%0: !poly.tvar<@T>) -> !struct.type<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>> {
-      %self = struct.new : !struct.type<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
-      function.return %self : !struct.type<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
-    }
+  poly.template @Tcall_target_constrain_without_self_wrong_tvar_param {
+    poly.param @S
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>, %0: !poly.tvar<@T>) {
-      // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!poly.tvar<@S>' but found '!poly.tvar<@T>}}
-      function.call @S::@constrain(%0) : (!poly.tvar<@T>) -> ()
-      function.return
+    struct.def @call_target_constrain_without_self_wrong_tvar_param {
+      function.def @compute(%0: !poly.tvar<@T>) -> !struct.type<@Tcall_target_constrain_without_self_wrong_tvar_param::@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>> {
+        %self = struct.new : !struct.type<@Tcall_target_constrain_without_self_wrong_tvar_param::@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
+        function.return %self : !struct.type<@Tcall_target_constrain_without_self_wrong_tvar_param::@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Tcall_target_constrain_without_self_wrong_tvar_param::@call_target_constrain_without_self_wrong_tvar_param<[@S,@T]>>, %0: !poly.tvar<@T>) {
+        // expected-error@+1 {{'function.call' op target "@constrain" expected first input type '!poly.tvar<@S>' but found '!poly.tvar<@T>}}
+        function.call @S::@constrain(%0) : (!poly.tvar<@T>) -> ()
+        function.return
+      }
     }
   }
 }
@@ -595,23 +638,32 @@ module attributes {llzk.lang} {
 
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {llzk.lang} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
     }
   }
-  struct.def @Tester<[@S0, @S1]> {
-    // expected-error@+1 {{'function.def' op "@compute" parameters cannot contain affine map attributes but found '!struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
-    function.def @compute(%6: !struct.type<@T2<[#map1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[#map1]>>) {
-      function.return
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      // expected-error@+1 {{'function.def' op "@compute" parameters cannot contain affine map attributes but found '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
+      function.def @compute(%6: !struct.type<@TT2::@T2<[#map1]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %6: !struct.type<@TT2::@T2<[#map1]>>) {
+        function.return
+      }
     }
   }
 }
@@ -620,23 +672,32 @@ module attributes {llzk.lang} {
 
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {llzk.lang} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
     }
   }
-  struct.def @Tester<[@S0, @S1]> {
-     // expected-error@+1 {{'function.def' op "@constrain" parameters cannot contain affine map attributes but found '!struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[#map1]>>) {
-      function.return
-    }
-    function.def @compute(%6: !struct.type<@T2<[#map1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+       // expected-error@+1 {{'function.def' op "@constrain" parameters cannot contain affine map attributes but found '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>}}
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %6: !struct.type<@TT2::@T2<[#map1]>>) {
+        function.return
+      }
+      function.def @compute(%6: !struct.type<@TT2::@T2<[#map1]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
     }
   }
 }

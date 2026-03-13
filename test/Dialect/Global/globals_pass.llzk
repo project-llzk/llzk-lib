@@ -13,16 +13,20 @@ module attributes {llzk.lang} {
   global.def @ai : !array.type<3,3 x index>
 
   global.def @c : !struct.type<@Component01B>
-  global.def @c2s : !struct.type<@Component01A<[!string.type]>>
-  global.def @c2i : !struct.type<@Component01A<[23423]>>
-  global.def @c2a : !struct.type<@Component01A<[!array.type<2,2 x i1>]>>
+  global.def @c2s : !struct.type<@TComponent01A::@Component01A<[!string.type]>>
+  global.def @c2i : !struct.type<@TComponent01A::@Component01A<[23423]>>
+  global.def @c2a : !struct.type<@TComponent01A::@Component01A<[!array.type<2,2 x i1>]>>
 
-  struct.def @Component01A<[@Z]> {
-    function.def @compute() -> !struct.type<@Component01A<[@Z]>> {
-      %self = struct.new : !struct.type<@Component01A<[@Z]>>
-      function.return %self : !struct.type<@Component01A<[@Z]>>
+  poly.template @TComponent01A {
+    poly.param @Z
+
+    struct.def @Component01A {
+      function.def @compute() -> !struct.type<@TComponent01A::@Component01A<[@Z]>> {
+        %self = struct.new : !struct.type<@TComponent01A::@Component01A<[@Z]>>
+        function.return %self : !struct.type<@TComponent01A::@Component01A<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent01A::@Component01A<[@Z]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component01A<[@Z]>>) { function.return }
   }
   struct.def @Component01B {
     function.def @compute() -> !struct.type<@Component01B> {
@@ -40,9 +44,11 @@ module attributes {llzk.lang} {
 // CHECK-DAG: global.def @ab : !array.type<2,2 x i1>
 // CHECK-DAG: global.def @af : !array.type<6,5,3 x !felt.type>
 // CHECK-DAG: global.def @ai : !array.type<3,3 x index>
-// CHECK-DAG: global.def @c2s : !struct.type<@Component01A<[!string.type]>>
-// CHECK-DAG: global.def @c2i : !struct.type<@Component01A<[23423]>>
-// CHECK-DAG: global.def @c2a : !struct.type<@Component01A<[!array.type<2,2 x i1>]>>
+// CHECK-DAG: global.def @c : !struct.type<@Component01B>
+// CHECK-DAG: global.def @c2s : !struct.type<@TComponent01A::@Component01A<[!string.type]>>
+// CHECK-DAG: global.def @c2i : !struct.type<@TComponent01A::@Component01A<[23423]>>
+// CHECK-DAG: global.def @c2a : !struct.type<@TComponent01A::@Component01A<[!array.type<2,2 x i1>]>>
+
 // -----
 
 // TEST: initialized globals
@@ -177,15 +183,19 @@ module attributes {llzk.lang} {
     function.return
   }
 
-  struct.def @Component05A<[@Z]> {
-    function.def @compute() -> !struct.type<@Component05A<[@Z]>> {
-      %self = struct.new : !struct.type<@Component05A<[@Z]>>
-      function.return %self : !struct.type<@Component05A<[@Z]>>
+  poly.template @TComponent05A {
+    poly.param @Z
+
+    struct.def @Component05A {
+      function.def @compute() -> !struct.type<@TComponent05A::@Component05A<[@Z]>> {
+        %self = struct.new : !struct.type<@TComponent05A::@Component05A<[@Z]>>
+        function.return %self : !struct.type<@TComponent05A::@Component05A<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent05A::@Component05A<[@Z]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component05A<[@Z]>>) { function.return }
   }
   struct.def @Component05B {
-    struct.member @f : !struct.type<@Component05A<[@N]>>
+    struct.member @f : !struct.type<@TComponent05A::@Component05A<[@N]>>
 
     function.def @compute() -> !struct.type<@Component05B> {
       %self = struct.new : !struct.type<@Component05B>
@@ -199,17 +209,20 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @b(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @Component05A<[@Z]> {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Component05A<[@Z]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05A<[@Z]>>
-// CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Component05A<[@Z]>>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05A<[@Z]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
+// CHECK-NEXT:    poly.template @TComponent05A {
+// CHECK-NEXT:      poly.param @Z
+// CHECK-NEXT:      struct.def @Component05A {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent05A::@Component05A<[@Z]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent05A::@Component05A<[@Z]>>
+// CHECK-NEXT:          function.return %[[V1]] : !struct.type<@TComponent05A::@Component05A<[@Z]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent05A::@Component05A<[@Z]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Component05B {
-// CHECK-NEXT:      struct.member @f : !struct.type<@Component05A<[@N]>>
+// CHECK-NEXT:      struct.member @f : !struct.type<@TComponent05A::@Component05A<[@N]>>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Component05B> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05B>
 // CHECK-NEXT:        function.return %[[V3]] : !struct.type<@Component05B>
@@ -223,50 +236,57 @@ module attributes {llzk.lang} {
 
 // TEST: Read and write involving a struct-type global
 module attributes {llzk.lang} {
-  global.def @gvar : !struct.type<@Component06<[4]>>
+  global.def @gvar : !struct.type<@TComponent06::@Component06<[4]>>
 
-  struct.def @Component06<[@Z]> {
-    function.def @compute() -> !struct.type<@Component06<[@Z]>> {
-      %self = struct.new : !struct.type<@Component06<[@Z]>>
-      function.return %self : !struct.type<@Component06<[@Z]>>
+  poly.template @TComponent06 {
+    poly.param @Z
+
+    struct.def @Component06 {
+      function.def @compute() -> !struct.type<@TComponent06::@Component06<[@Z]>> {
+        %self = struct.new : !struct.type<@TComponent06::@Component06<[@Z]>>
+        function.return %self : !struct.type<@TComponent06::@Component06<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent06::@Component06<[@Z]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component06<[@Z]>>) { function.return }
   }
 
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      %s = function.call @Component06::@compute() : () -> !struct.type<@Component06<[4]>>
-      global.write @gvar = %s : !struct.type<@Component06<[4]>>
+      %s = function.call @TComponent06::@Component06::@compute() : () -> !struct.type<@TComponent06::@Component06<[4]>>
+      global.write @gvar = %s : !struct.type<@TComponent06::@Component06<[4]>>
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
-      %s = global.read @gvar : !struct.type<@Component06<[4]>>
+      %s = global.read @gvar : !struct.type<@TComponent06::@Component06<[4]>>
       function.return
     }
   }
 }
-// CHECK-LABEL:   global.def @gvar : !struct.type<@Component06<[4]>>
-//
-// CHECK-LABEL:   struct.def @Component06<[@Z]> {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Component06<[@Z]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component06<[@Z]>>
-// CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Component06<[@Z]>>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component06<[@Z]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @gvar : !struct.type<@TComponent06::@Component06<[4]>>
+// CHECK-NEXT:    poly.template @TComponent06 {
+// CHECK-NEXT:      poly.param @Z
+// CHECK-NEXT:      struct.def @Component06 {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent06::@Component06<[@Z]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent06::@Component06<[@Z]>>
+// CHECK-NEXT:          function.return %[[V0]] : !struct.type<@TComponent06::@Component06<[@Z]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent06::@Component06<[@Z]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-//
-// CHECK-LABEL:   struct.def @Main {
+// CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = function.call @Component06::@compute() : () -> !struct.type<@Component06<[4]>>
-// CHECK-NEXT:        global.write @gvar = %[[V0]] : !struct.type<@Component06<[4]>>
-// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Main>
+// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = function.call @TComponent06::@Component06::@compute() : () -> !struct.type<@TComponent06::@Component06<[4]>>
+// CHECK-NEXT:        global.write @gvar = %[[V2]] : !struct.type<@TComponent06::@Component06<[4]>>
+// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[V3]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V3:[0-9a-zA-Z_\.]+]] = global.read @gvar : !struct.type<@Component06<[4]>>
+// CHECK-NEXT:      function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = global.read @gvar : !struct.type<@TComponent06::@Component06<[4]>>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }

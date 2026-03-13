@@ -5,310 +5,332 @@
 module attributes {llzk.lang} {
   module @globals {
   }
-  struct.def @Component<[]> {
-    function.def @compute() -> !struct.type<@Component<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Component<[]>>
-      function.return %self : !struct.type<@Component<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Component<[]>>) attributes {function.allow_constraint} {
-      function.return
-    }
-  }
-  struct.def @NondetReg<[]> {
-    struct.member @"$super" : !felt.type {llzk.pub}
-    struct.member @reg : !felt.type {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@NondetReg<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@NondetReg<[]>>
-      struct.writem %self[@reg] = %arg0 : <@NondetReg<[]>>, !felt.type
-      struct.writem %self[@"$super"] = %arg0 : <@NondetReg<[]>>, !felt.type
-      function.return %self : !struct.type<@NondetReg<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NondetReg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
-      function.return
+  poly.template @TComponent {
+    struct.def @Component {
+      function.def @compute() -> !struct.type<@TComponent::@Component<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TComponent::@Component<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TComponent::@Component<[]>>) attributes {function.allow_constraint} {
+        function.return
+      }
     }
   }
-  struct.def @NondetExtReg<[]> {
-    struct.member @"$super" : !array.type<4 x !felt.type> {llzk.pub}
-    struct.member @reg : !array.type<4 x !felt.type> {column}
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@NondetExtReg<[]>>
-      struct.writem %self[@reg] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
-      struct.writem %self[@"$super"] = %arg0 : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
-      function.return %self : !struct.type<@NondetExtReg<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NondetExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
-      function.return
-    }
-  }
-  struct.def @EqzExt<[]> {
-    struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-      %felt_const_0 = felt.const  0
-      %c3 = arith.constant 3 : index
-      %c2 = arith.constant 2 : index
-      %c1 = arith.constant 1 : index
-      %c0 = arith.constant 0 : index
-      %self = struct.new : <@EqzExt<[]>>
-      %0 = array.read %arg0[%c0] : <4 x !felt.type>, !felt.type
-      %1 = array.read %arg0[%c1] : <4 x !felt.type>, !felt.type
-      %2 = array.read %arg0[%c2] : <4 x !felt.type>, !felt.type
-      %3 = array.read %arg0[%c3] : <4 x !felt.type>, !felt.type
-      %4 = bool.cmp eq(%0, %felt_const_0)
-      %5 = bool.cmp eq(%1, %felt_const_0)
-      %6 = bool.cmp eq(%2, %felt_const_0)
-      %7 = bool.cmp eq(%3, %felt_const_0)
-      %8 = bool.and %4, %5 : i1, i1
-      %9 = bool.and %8, %6 : i1, i1
-      %10 = bool.and %9, %7 : i1, i1
-      bool.assert %10, "failed assertion: extended field element is not equal to zero"
-      %11 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writem %self[@"$super"] = %11 : <@EqzExt<[]>>, !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@EqzExt<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@EqzExt<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
-      function.return
+  poly.template @TNondetReg {
+    struct.def @NondetReg {
+      struct.member @"$super" : !felt.type {llzk.pub}
+      struct.member @reg : !felt.type {column}
+      function.def @compute(%arg0: !felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TNondetReg::@NondetReg<[]>>
+        struct.writem %self[@reg] = %arg0 : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        struct.writem %self[@"$super"] = %arg0 : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        function.return %self : !struct.type<@TNondetReg::@NondetReg<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNondetReg::@NondetReg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+        function.return
+      }
     }
   }
-  struct.def @Reg<[]> {
-    struct.member @"$super" : !struct.type<@NondetReg<[]>>
-    struct.member @reg : !struct.type<@NondetReg<[]>> {column}
-    function.def @compute(%arg0: !felt.type) -> !struct.type<@Reg<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Reg<[]>>
-      %0 = function.call @NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@NondetReg<[]>>
-      struct.writem %self[@reg] = %0 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %1 = struct.readm %self[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      %2 = struct.readm %1[@"$super"] : <@NondetReg<[]>>, !felt.type
-      struct.writem %self[@"$super"] = %1 : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      function.return %self : !struct.type<@Reg<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Reg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
-      %0 = struct.readm %arg0[@reg] : <@Reg<[]>>, !struct.type<@NondetReg<[]>>
-      function.call @NondetReg::@constrain(%0, %arg1) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
-      %1 = struct.readm %0[@"$super"] : <@NondetReg<[]>>, !felt.type
-      constrain.eq %arg1, %1 : !felt.type, !felt.type
-      function.return
+  poly.template @TNondetExtReg {
+    struct.def @NondetExtReg {
+      struct.member @"$super" : !array.type<4 x !felt.type> {llzk.pub}
+      struct.member @reg : !array.type<4 x !felt.type> {column}
+      function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@TNondetExtReg::@NondetExtReg<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TNondetExtReg::@NondetExtReg<[]>>
+        struct.writem %self[@reg] = %arg0 : <@TNondetExtReg::@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+        struct.writem %self[@"$super"] = %arg0 : <@TNondetExtReg::@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+        function.return %self : !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNondetExtReg::@NondetExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+        function.return
+      }
     }
   }
-  struct.def @ExtReg<[]> {
-    struct.member @"$super" : !struct.type<@NondetExtReg<[]>>
-    struct.member @"$temp" : !struct.type<@EqzExt<[]>>
-    struct.member @reg : !struct.type<@NondetExtReg<[]>> {column}
-    function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@ExtReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-      %c3 = arith.constant 3 : index
-      %c2 = arith.constant 2 : index
-      %c1 = arith.constant 1 : index
-      %c0 = arith.constant 0 : index
-      %self = struct.new : <@ExtReg<[]>>
-      %0 = function.call @NondetExtReg::@compute(%arg0) : (!array.type<4 x !felt.type>) -> !struct.type<@NondetExtReg<[]>>
-      struct.writem %self[@reg] = %0 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
-      %1 = struct.readm %self[@reg] : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
-      %2 = struct.readm %1[@"$super"] : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
-      %3 = array.read %2[%c0] : <4 x !felt.type>, !felt.type
-      %4 = array.read %2[%c1] : <4 x !felt.type>, !felt.type
-      %5 = array.read %2[%c2] : <4 x !felt.type>, !felt.type
-      %6 = array.read %2[%c3] : <4 x !felt.type>, !felt.type
-      %7 = array.read %arg0[%c0] : <4 x !felt.type>, !felt.type
-      %8 = array.read %arg0[%c1] : <4 x !felt.type>, !felt.type
-      %9 = array.read %arg0[%c2] : <4 x !felt.type>, !felt.type
-      %10 = array.read %arg0[%c3] : <4 x !felt.type>, !felt.type
-      %11 = felt.sub %3, %7 : !felt.type, !felt.type
-      %12 = felt.sub %4, %8 : !felt.type, !felt.type
-      %13 = felt.sub %5, %9 : !felt.type, !felt.type
-      %14 = felt.sub %6, %10 : !felt.type, !felt.type
-      %array = array.new %11, %12, %13, %14 : <4 x !felt.type>
-      %15 = function.call @EqzExt::@compute(%array) : (!array.type<4 x !felt.type>) -> !struct.type<@EqzExt<[]>>
-      struct.writem %self[@"$temp"] = %15 : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
-      %16 = struct.readm %self[@"$temp"] : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
-      struct.writem %self[@"$super"] = %1 : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
-      function.return %self : !struct.type<@ExtReg<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@ExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
-      %c3 = arith.constant 3 : index
-      %c2 = arith.constant 2 : index
-      %c1 = arith.constant 1 : index
-      %c0 = arith.constant 0 : index
-      %0 = struct.readm %arg0[@reg] : <@ExtReg<[]>>, !struct.type<@NondetExtReg<[]>>
-      function.call @NondetExtReg::@constrain(%0, %arg1) : (!struct.type<@NondetExtReg<[]>>, !array.type<4 x !felt.type>) -> ()
-      %1 = struct.readm %0[@"$super"] : <@NondetExtReg<[]>>, !array.type<4 x !felt.type>
-      %2 = array.read %1[%c0] : <4 x !felt.type>, !felt.type
-      %3 = array.read %1[%c1] : <4 x !felt.type>, !felt.type
-      %4 = array.read %1[%c2] : <4 x !felt.type>, !felt.type
-      %5 = array.read %1[%c3] : <4 x !felt.type>, !felt.type
-      %6 = array.read %arg1[%c0] : <4 x !felt.type>, !felt.type
-      %7 = array.read %arg1[%c1] : <4 x !felt.type>, !felt.type
-      %8 = array.read %arg1[%c2] : <4 x !felt.type>, !felt.type
-      %9 = array.read %arg1[%c3] : <4 x !felt.type>, !felt.type
-      %10 = felt.sub %2, %6 : !felt.type, !felt.type
-      %11 = felt.sub %3, %7 : !felt.type, !felt.type
-      %12 = felt.sub %4, %8 : !felt.type, !felt.type
-      %13 = felt.sub %5, %9 : !felt.type, !felt.type
-      %array = array.new %10, %11, %12, %13 : <4 x !felt.type>
-      %14 = struct.readm %arg0[@"$temp"] : <@ExtReg<[]>>, !struct.type<@EqzExt<[]>>
-      function.call @EqzExt::@constrain(%14, %array) : (!struct.type<@EqzExt<[]>>, !array.type<4 x !felt.type>) -> ()
-      function.return
+  poly.template @TEqzExt {
+    struct.def @EqzExt {
+      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+      function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@TEqzExt::@EqzExt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %felt_const_0 = felt.const  0
+        %c3 = arith.constant 3 : index
+        %c2 = arith.constant 2 : index
+        %c1 = arith.constant 1 : index
+        %c0 = arith.constant 0 : index
+        %self = struct.new : <@TEqzExt::@EqzExt<[]>>
+        %0 = array.read %arg0[%c0] : <4 x !felt.type>, !felt.type
+        %1 = array.read %arg0[%c1] : <4 x !felt.type>, !felt.type
+        %2 = array.read %arg0[%c2] : <4 x !felt.type>, !felt.type
+        %3 = array.read %arg0[%c3] : <4 x !felt.type>, !felt.type
+        %4 = bool.cmp eq(%0, %felt_const_0)
+        %5 = bool.cmp eq(%1, %felt_const_0)
+        %6 = bool.cmp eq(%2, %felt_const_0)
+        %7 = bool.cmp eq(%3, %felt_const_0)
+        %8 = bool.and %4, %5 : i1, i1
+        %9 = bool.and %8, %6 : i1, i1
+        %10 = bool.and %9, %7 : i1, i1
+        bool.assert %10, "failed assertion: extended field element is not equal to zero"
+        %11 = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$super"] = %11 : <@TEqzExt::@EqzExt<[]>>, !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TEqzExt::@EqzExt<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TEqzExt::@EqzExt<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+        function.return
+      }
     }
   }
-  struct.def @Div<[]> {
-    struct.member @"$super" : !felt.type {llzk.pub}
-    struct.member @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-      %self = struct.new : <@Div<[]>>
-      %0 = felt.inv %arg1 : !felt.type
-      struct.writem %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
-      %1 = struct.readm %self[@reciprocal] : <@Div<[]>>, !felt.type
-      %2 = felt.mul %1, %arg0 : !felt.type, !felt.type
-      struct.writem %self[@"$super"] = %2 : <@Div<[]>>, !felt.type
-      function.return %self : !struct.type<@Div<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
-      %felt_const_1 = felt.const  1
-      %0 = struct.readm %arg0[@reciprocal] : <@Div<[]>>, !felt.type
-      %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
-      constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
-      function.return
-    }
-  }
-  struct.def @Log<[]> {
-    struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !string.type, %arg1: !array.type<? x !felt.type>) -> !struct.type<@Log<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Log<[]>>
-      %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>>
-      struct.writem %self[@"$super"] = %0 : <@Log<[]>>, !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@Log<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Log<[]>>, %arg1: !string.type, %arg2: !array.type<? x !felt.type>) attributes {function.allow_constraint} {
-      %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>>
-      function.return
+  poly.template @TReg {
+    struct.def @Reg {
+      struct.member @"$super" : !struct.type<@TNondetReg::@NondetReg<[]>>
+      struct.member @reg : !struct.type<@TNondetReg::@NondetReg<[]>> {column}
+      function.def @compute(%arg0: !felt.type) -> !struct.type<@TReg::@Reg<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TReg::@Reg<[]>>
+        %0 = function.call @TNondetReg::@NondetReg::@compute(%arg0) : (!felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>>
+        struct.writem %self[@reg] = %0 : <@TReg::@Reg<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %1 = struct.readm %self[@reg] : <@TReg::@Reg<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %2 = struct.readm %1[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        struct.writem %self[@"$super"] = %1 : <@TReg::@Reg<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        function.return %self : !struct.type<@TReg::@Reg<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TReg::@Reg<[]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
+        %0 = struct.readm %arg0[@reg] : <@TReg::@Reg<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        function.call @TNondetReg::@NondetReg::@constrain(%0, %arg1) : (!struct.type<@TNondetReg::@NondetReg<[]>>, !felt.type) -> ()
+        %1 = struct.readm %0[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        constrain.eq %arg1, %1 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
-  function.def private @Log$$extern(!string.type, !array.type<? x !felt.type>) -> !struct.type<@Component<[]>> attributes {extern}
-  struct.def @Abort<[]> {
-    struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute() -> !struct.type<@Abort<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Abort<[]>>
-      %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
-      struct.writem %self[@"$super"] = %0 : <@Abort<[]>>, !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@Abort<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Abort<[]>>) attributes {function.allow_constraint} {
-      %0 = function.call @Abort$$extern() : () -> !struct.type<@Component<[]>>
-      function.return
+  poly.template @TExtReg {
+    struct.def @ExtReg {
+      struct.member @"$super" : !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+      struct.member @"$temp" : !struct.type<@TEqzExt::@EqzExt<[]>>
+      struct.member @reg : !struct.type<@TNondetExtReg::@NondetExtReg<[]>> {column}
+      function.def @compute(%arg0: !array.type<4 x !felt.type>) -> !struct.type<@TExtReg::@ExtReg<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %c3 = arith.constant 3 : index
+        %c2 = arith.constant 2 : index
+        %c1 = arith.constant 1 : index
+        %c0 = arith.constant 0 : index
+        %self = struct.new : <@TExtReg::@ExtReg<[]>>
+        %0 = function.call @TNondetExtReg::@NondetExtReg::@compute(%arg0) : (!array.type<4 x !felt.type>) -> !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+        struct.writem %self[@reg] = %0 : <@TExtReg::@ExtReg<[]>>, !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+        %1 = struct.readm %self[@reg] : <@TExtReg::@ExtReg<[]>>, !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+        %2 = struct.readm %1[@"$super"] : <@TNondetExtReg::@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+        %3 = array.read %2[%c0] : <4 x !felt.type>, !felt.type
+        %4 = array.read %2[%c1] : <4 x !felt.type>, !felt.type
+        %5 = array.read %2[%c2] : <4 x !felt.type>, !felt.type
+        %6 = array.read %2[%c3] : <4 x !felt.type>, !felt.type
+        %7 = array.read %arg0[%c0] : <4 x !felt.type>, !felt.type
+        %8 = array.read %arg0[%c1] : <4 x !felt.type>, !felt.type
+        %9 = array.read %arg0[%c2] : <4 x !felt.type>, !felt.type
+        %10 = array.read %arg0[%c3] : <4 x !felt.type>, !felt.type
+        %11 = felt.sub %3, %7 : !felt.type, !felt.type
+        %12 = felt.sub %4, %8 : !felt.type, !felt.type
+        %13 = felt.sub %5, %9 : !felt.type, !felt.type
+        %14 = felt.sub %6, %10 : !felt.type, !felt.type
+        %array = array.new %11, %12, %13, %14 : <4 x !felt.type>
+        %15 = function.call @TEqzExt::@EqzExt::@compute(%array) : (!array.type<4 x !felt.type>) -> !struct.type<@TEqzExt::@EqzExt<[]>>
+        struct.writem %self[@"$temp"] = %15 : <@TExtReg::@ExtReg<[]>>, !struct.type<@TEqzExt::@EqzExt<[]>>
+        %16 = struct.readm %self[@"$temp"] : <@TExtReg::@ExtReg<[]>>, !struct.type<@TEqzExt::@EqzExt<[]>>
+        struct.writem %self[@"$super"] = %1 : <@TExtReg::@ExtReg<[]>>, !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+        function.return %self : !struct.type<@TExtReg::@ExtReg<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TExtReg::@ExtReg<[]>>, %arg1: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+        %c3 = arith.constant 3 : index
+        %c2 = arith.constant 2 : index
+        %c1 = arith.constant 1 : index
+        %c0 = arith.constant 0 : index
+        %0 = struct.readm %arg0[@reg] : <@TExtReg::@ExtReg<[]>>, !struct.type<@TNondetExtReg::@NondetExtReg<[]>>
+        function.call @TNondetExtReg::@NondetExtReg::@constrain(%0, %arg1) : (!struct.type<@TNondetExtReg::@NondetExtReg<[]>>, !array.type<4 x !felt.type>) -> ()
+        %1 = struct.readm %0[@"$super"] : <@TNondetExtReg::@NondetExtReg<[]>>, !array.type<4 x !felt.type>
+        %2 = array.read %1[%c0] : <4 x !felt.type>, !felt.type
+        %3 = array.read %1[%c1] : <4 x !felt.type>, !felt.type
+        %4 = array.read %1[%c2] : <4 x !felt.type>, !felt.type
+        %5 = array.read %1[%c3] : <4 x !felt.type>, !felt.type
+        %6 = array.read %arg1[%c0] : <4 x !felt.type>, !felt.type
+        %7 = array.read %arg1[%c1] : <4 x !felt.type>, !felt.type
+        %8 = array.read %arg1[%c2] : <4 x !felt.type>, !felt.type
+        %9 = array.read %arg1[%c3] : <4 x !felt.type>, !felt.type
+        %10 = felt.sub %2, %6 : !felt.type, !felt.type
+        %11 = felt.sub %3, %7 : !felt.type, !felt.type
+        %12 = felt.sub %4, %8 : !felt.type, !felt.type
+        %13 = felt.sub %5, %9 : !felt.type, !felt.type
+        %array = array.new %10, %11, %12, %13 : <4 x !felt.type>
+        %14 = struct.readm %arg0[@"$temp"] : <@TExtReg::@ExtReg<[]>>, !struct.type<@TEqzExt::@EqzExt<[]>>
+        function.call @TEqzExt::@EqzExt::@constrain(%14, %array) : (!struct.type<@TEqzExt::@EqzExt<[]>>, !array.type<4 x !felt.type>) -> ()
+        function.return
+      }
     }
   }
-  function.def private @Abort$$extern() -> !struct.type<@Component<[]>> attributes {extern}
-  struct.def @Assert<[]> {
-    struct.member @"$super" : !struct.type<@Component<[]>>
-    function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@Assert<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Assert<[]>>
-      %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
-      struct.writem %self[@"$super"] = %0 : <@Assert<[]>>, !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@Assert<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Assert<[]>>, %arg1: !felt.type, %arg2: !string.type) attributes {function.allow_constraint} {
-      %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.type, !string.type) -> !struct.type<@Component<[]>>
-      function.return
+  poly.template @TDiv {
+    struct.def @Div {
+      struct.member @"$super" : !felt.type {llzk.pub}
+      struct.member @reciprocal : !felt.type
+      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@TDiv::@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %self = struct.new : <@TDiv::@Div<[]>>
+        %0 = felt.inv %arg1 : !felt.type
+        struct.writem %self[@reciprocal] = %0 : <@TDiv::@Div<[]>>, !felt.type
+        %1 = struct.readm %self[@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+        %2 = felt.mul %1, %arg0 : !felt.type, !felt.type
+        struct.writem %self[@"$super"] = %2 : <@TDiv::@Div<[]>>, !felt.type
+        function.return %self : !struct.type<@TDiv::@Div<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TDiv::@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+        %felt_const_1 = felt.const  1
+        %0 = struct.readm %arg0[@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+        %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
+        constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
-  function.def private @Assert$$extern(!felt.type, !string.type) -> !struct.type<@Component<[]>> attributes {extern}
-  struct.def @Edwards2Montgomery<[]> {
-    struct.member @"$super" : !array.type<2 x !struct.type<@NondetReg<[]>>>
-    struct.member @out : !array.type<2 x !struct.type<@NondetReg<[]>>> {column}
-    struct.member @"$temp_1" : !struct.type<@NondetReg<[]>> {column}
-    struct.member @"$temp_0" : !struct.type<@Div<[]>>
-    struct.member @"$temp" : !struct.type<@NondetReg<[]>> {column}
-    struct.member @v : !struct.type<@Div<[]>>
-    function.def @compute(%arg0: !array.type<2 x !felt.type>) -> !struct.type<@Edwards2Montgomery<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-      %felt_const_0 = felt.const  0
-      %felt_const_1 = felt.const  1
-      %self = struct.new : <@Edwards2Montgomery<[]>>
-      %0 = cast.toindex %felt_const_1
-      %1 = array.read %arg0[%0] : <2 x !felt.type>, !felt.type
-      %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
-      %3 = cast.toindex %felt_const_1
-      %4 = array.read %arg0[%3] : <2 x !felt.type>, !felt.type
-      %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
-      %6 = function.call @Div::@compute(%2, %5) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writem %self[@v] = %6 : <@Edwards2Montgomery<[]>>, !struct.type<@Div<[]>>
-      %7 = struct.readm %self[@v] : <@Edwards2Montgomery<[]>>, !struct.type<@Div<[]>>
-      %8 = struct.readm %7[@"$super"] : <@Div<[]>>, !felt.type
-      %9 = function.call @NondetReg::@compute(%8) : (!felt.type) -> !struct.type<@NondetReg<[]>>
-      struct.writem %self[@"$temp"] = %9 : <@Edwards2Montgomery<[]>>, !struct.type<@NondetReg<[]>>
-      %10 = struct.readm %self[@"$temp"] : <@Edwards2Montgomery<[]>>, !struct.type<@NondetReg<[]>>
-      %11 = cast.toindex %felt_const_0
-      %12 = array.read %arg0[%11] : <2 x !felt.type>, !felt.type
-      %13 = struct.readm %7[@"$super"] : <@Div<[]>>, !felt.type
-      %14 = function.call @Div::@compute(%13, %12) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writem %self[@"$temp_0"] = %14 : <@Edwards2Montgomery<[]>>, !struct.type<@Div<[]>>
-      %15 = struct.readm %self[@"$temp_0"] : <@Edwards2Montgomery<[]>>, !struct.type<@Div<[]>>
-      %16 = struct.readm %15[@"$super"] : <@Div<[]>>, !felt.type
-      %17 = function.call @NondetReg::@compute(%16) : (!felt.type) -> !struct.type<@NondetReg<[]>>
-      struct.writem %self[@"$temp_1"] = %17 : <@Edwards2Montgomery<[]>>, !struct.type<@NondetReg<[]>>
-      %18 = struct.readm %self[@"$temp_1"] : <@Edwards2Montgomery<[]>>, !struct.type<@NondetReg<[]>>
-      %array = array.new %10, %18 : <2 x !struct.type<@NondetReg<[]>>>
-      struct.writem %self[@out] = %array : <@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@NondetReg<[]>>>
-      %19 = cast.toindex %felt_const_0
-      %20 = array.read %array[%19] : <2 x !struct.type<@NondetReg<[]>>>, !struct.type<@NondetReg<[]>>
-      %21 = cast.toindex %felt_const_1
-      %22 = array.read %arg0[%21] : <2 x !felt.type>, !felt.type
-      %23 = struct.readm %20[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %24 = cast.toindex %felt_const_1
-      %25 = array.read %arg0[%24] : <2 x !felt.type>, !felt.type
-      %26 = cast.toindex %felt_const_1
-      %27 = array.read %array[%26] : <2 x !struct.type<@NondetReg<[]>>>, !struct.type<@NondetReg<[]>>
-      %28 = cast.toindex %felt_const_0
-      %29 = array.read %arg0[%28] : <2 x !felt.type>, !felt.type
-      %30 = struct.readm %27[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %31 = cast.toindex %felt_const_1
-      %32 = array.read %array[%31] : <2 x !struct.type<@NondetReg<[]>>>, !struct.type<@NondetReg<[]>>
-      %33 = struct.readm %32[@"$super"] : <@NondetReg<[]>>, !felt.type
-      struct.writem %self[@"$super"] = %array : <@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@NondetReg<[]>>>
-      function.return %self : !struct.type<@Edwards2Montgomery<[]>>
+  poly.template @TLog {
+    struct.def @Log {
+      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+      function.def @compute(%arg0: !string.type, %arg1: !array.type<? x !felt.type>) -> !struct.type<@TLog::@Log<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TLog::@Log<[]>>
+        %0 = function.call @Log$$extern(%arg0, %arg1) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$super"] = %0 : <@TLog::@Log<[]>>, !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TLog::@Log<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TLog::@Log<[]>>, %arg1: !string.type, %arg2: !array.type<? x !felt.type>) attributes {function.allow_constraint} {
+        %0 = function.call @Log$$extern(%arg1, %arg2) : (!string.type, !array.type<? x !felt.type>) -> !struct.type<@TComponent::@Component<[]>>
+        function.return
+      }
     }
-    function.def @constrain(%arg0: !struct.type<@Edwards2Montgomery<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
-      %felt_const_0 = felt.const  0
-      %felt_const_1 = felt.const  1
-      %0 = cast.toindex %felt_const_1
-      %1 = array.read %arg1[%0] : <2 x !felt.type>, !felt.type
-      %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
-      %3 = cast.toindex %felt_const_1
-      %4 = array.read %arg1[%3] : <2 x !felt.type>, !felt.type
-      %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
-      %6 = struct.readm %arg0[@v] : <@Edwards2Montgomery<[]>>, !struct.type<@Div<[]>>
-      function.call @Div::@constrain(%6, %2, %5) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %7 = struct.readm %6[@"$super"] : <@Div<[]>>, !felt.type
-      %8 = struct.readm %arg0[@"$temp"] : <@Edwards2Montgomery<[]>>, !struct.type<@NondetReg<[]>>
-      function.call @NondetReg::@constrain(%8, %7) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
-      %9 = cast.toindex %felt_const_0
-      %10 = array.read %arg1[%9] : <2 x !felt.type>, !felt.type
-      %11 = struct.readm %6[@"$super"] : <@Div<[]>>, !felt.type
-      %12 = struct.readm %arg0[@"$temp_0"] : <@Edwards2Montgomery<[]>>, !struct.type<@Div<[]>>
-      function.call @Div::@constrain(%12, %11, %10) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %13 = struct.readm %12[@"$super"] : <@Div<[]>>, !felt.type
-      %14 = struct.readm %arg0[@"$temp_1"] : <@Edwards2Montgomery<[]>>, !struct.type<@NondetReg<[]>>
-      function.call @NondetReg::@constrain(%14, %13) : (!struct.type<@NondetReg<[]>>, !felt.type) -> ()
-      %array = array.new %8, %14 : <2 x !struct.type<@NondetReg<[]>>>
-      %15 = cast.toindex %felt_const_0
-      %16 = array.read %array[%15] : <2 x !struct.type<@NondetReg<[]>>>, !struct.type<@NondetReg<[]>>
-      %17 = cast.toindex %felt_const_1
-      %18 = array.read %arg1[%17] : <2 x !felt.type>, !felt.type
-      %19 = felt.sub %felt_const_1, %18 : !felt.type, !felt.type
-      %20 = struct.readm %16[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %21 = felt.mul %20, %19 : !felt.type, !felt.type
-      %22 = cast.toindex %felt_const_1
-      %23 = array.read %arg1[%22] : <2 x !felt.type>, !felt.type
-      %24 = felt.add %23, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %21, %24 : !felt.type, !felt.type
-      %25 = cast.toindex %felt_const_1
-      %26 = array.read %array[%25] : <2 x !struct.type<@NondetReg<[]>>>, !struct.type<@NondetReg<[]>>
-      %27 = cast.toindex %felt_const_0
-      %28 = array.read %arg1[%27] : <2 x !felt.type>, !felt.type
-      %29 = struct.readm %26[@"$super"] : <@NondetReg<[]>>, !felt.type
-      %30 = felt.mul %29, %28 : !felt.type, !felt.type
-      %31 = cast.toindex %felt_const_1
-      %32 = array.read %array[%31] : <2 x !struct.type<@NondetReg<[]>>>, !struct.type<@NondetReg<[]>>
-      %33 = struct.readm %32[@"$super"] : <@NondetReg<[]>>, !felt.type
-      constrain.eq %30, %33 : !felt.type, !felt.type
-      function.return
+  }
+  function.def private @Log$$extern(!string.type, !array.type<? x !felt.type>) -> !struct.type<@TComponent::@Component<[]>> attributes {extern}
+  poly.template @TAbort {
+    struct.def @Abort {
+      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+      function.def @compute() -> !struct.type<@TAbort::@Abort<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TAbort::@Abort<[]>>
+        %0 = function.call @Abort$$extern() : () -> !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$super"] = %0 : <@TAbort::@Abort<[]>>, !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TAbort::@Abort<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TAbort::@Abort<[]>>) attributes {function.allow_constraint} {
+        %0 = function.call @Abort$$extern() : () -> !struct.type<@TComponent::@Component<[]>>
+        function.return
+      }
+    }
+  }
+  function.def private @Abort$$extern() -> !struct.type<@TComponent::@Component<[]>> attributes {extern}
+  poly.template @TAssert {
+    struct.def @Assert {
+      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+      function.def @compute(%arg0: !felt.type, %arg1: !string.type) -> !struct.type<@TAssert::@Assert<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TAssert::@Assert<[]>>
+        %0 = function.call @Assert$$extern(%arg0, %arg1) : (!felt.type, !string.type) -> !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$super"] = %0 : <@TAssert::@Assert<[]>>, !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TAssert::@Assert<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TAssert::@Assert<[]>>, %arg1: !felt.type, %arg2: !string.type) attributes {function.allow_constraint} {
+        %0 = function.call @Assert$$extern(%arg1, %arg2) : (!felt.type, !string.type) -> !struct.type<@TComponent::@Component<[]>>
+        function.return
+      }
+    }
+  }
+  function.def private @Assert$$extern(!felt.type, !string.type) -> !struct.type<@TComponent::@Component<[]>> attributes {extern}
+  poly.template @TEdwards2Montgomery {
+    struct.def @Edwards2Montgomery {
+      struct.member @"$super" : !array.type<2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
+      struct.member @out : !array.type<2 x !struct.type<@TNondetReg::@NondetReg<[]>>> {column}
+      struct.member @"$temp_1" : !struct.type<@TNondetReg::@NondetReg<[]>> {column}
+      struct.member @"$temp_0" : !struct.type<@TDiv::@Div<[]>>
+      struct.member @"$temp" : !struct.type<@TNondetReg::@NondetReg<[]>> {column}
+      struct.member @v : !struct.type<@TDiv::@Div<[]>>
+      function.def @compute(%arg0: !array.type<2 x !felt.type>) -> !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %felt_const_0 = felt.const  0
+        %felt_const_1 = felt.const  1
+        %self = struct.new : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>
+        %0 = cast.toindex %felt_const_1
+        %1 = array.read %arg0[%0] : <2 x !felt.type>, !felt.type
+        %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
+        %3 = cast.toindex %felt_const_1
+        %4 = array.read %arg0[%3] : <2 x !felt.type>, !felt.type
+        %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
+        %6 = function.call @TDiv::@Div::@compute(%2, %5) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+        struct.writem %self[@v] = %6 : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        %7 = struct.readm %self[@v] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        %8 = struct.readm %7[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
+        %9 = function.call @TNondetReg::@NondetReg::@compute(%8) : (!felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>>
+        struct.writem %self[@"$temp"] = %9 : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %10 = struct.readm %self[@"$temp"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %11 = cast.toindex %felt_const_0
+        %12 = array.read %arg0[%11] : <2 x !felt.type>, !felt.type
+        %13 = struct.readm %7[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
+        %14 = function.call @TDiv::@Div::@compute(%13, %12) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+        struct.writem %self[@"$temp_0"] = %14 : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        %15 = struct.readm %self[@"$temp_0"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        %16 = struct.readm %15[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
+        %17 = function.call @TNondetReg::@NondetReg::@compute(%16) : (!felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>>
+        struct.writem %self[@"$temp_1"] = %17 : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %18 = struct.readm %self[@"$temp_1"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %array = array.new %10, %18 : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
+        struct.writem %self[@out] = %array : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
+        %19 = cast.toindex %felt_const_0
+        %20 = array.read %array[%19] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %21 = cast.toindex %felt_const_1
+        %22 = array.read %arg0[%21] : <2 x !felt.type>, !felt.type
+        %23 = struct.readm %20[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        %24 = cast.toindex %felt_const_1
+        %25 = array.read %arg0[%24] : <2 x !felt.type>, !felt.type
+        %26 = cast.toindex %felt_const_1
+        %27 = array.read %array[%26] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %28 = cast.toindex %felt_const_0
+        %29 = array.read %arg0[%28] : <2 x !felt.type>, !felt.type
+        %30 = struct.readm %27[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        %31 = cast.toindex %felt_const_1
+        %32 = array.read %array[%31] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %33 = struct.readm %32[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        struct.writem %self[@"$super"] = %array : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !array.type<2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
+        function.return %self : !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
+        %felt_const_0 = felt.const  0
+        %felt_const_1 = felt.const  1
+        %0 = cast.toindex %felt_const_1
+        %1 = array.read %arg1[%0] : <2 x !felt.type>, !felt.type
+        %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
+        %3 = cast.toindex %felt_const_1
+        %4 = array.read %arg1[%3] : <2 x !felt.type>, !felt.type
+        %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
+        %6 = struct.readm %arg0[@v] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        function.call @TDiv::@Div::@constrain(%6, %2, %5) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+        %7 = struct.readm %6[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
+        %8 = struct.readm %arg0[@"$temp"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        function.call @TNondetReg::@NondetReg::@constrain(%8, %7) : (!struct.type<@TNondetReg::@NondetReg<[]>>, !felt.type) -> ()
+        %9 = cast.toindex %felt_const_0
+        %10 = array.read %arg1[%9] : <2 x !felt.type>, !felt.type
+        %11 = struct.readm %6[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
+        %12 = struct.readm %arg0[@"$temp_0"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        function.call @TDiv::@Div::@constrain(%12, %11, %10) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+        %13 = struct.readm %12[@"$super"] : <@TDiv::@Div<[]>>, !felt.type
+        %14 = struct.readm %arg0[@"$temp_1"] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        function.call @TNondetReg::@NondetReg::@constrain(%14, %13) : (!struct.type<@TNondetReg::@NondetReg<[]>>, !felt.type) -> ()
+        %array = array.new %8, %14 : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>
+        %15 = cast.toindex %felt_const_0
+        %16 = array.read %array[%15] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %17 = cast.toindex %felt_const_1
+        %18 = array.read %arg1[%17] : <2 x !felt.type>, !felt.type
+        %19 = felt.sub %felt_const_1, %18 : !felt.type, !felt.type
+        %20 = struct.readm %16[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        %21 = felt.mul %20, %19 : !felt.type, !felt.type
+        %22 = cast.toindex %felt_const_1
+        %23 = array.read %arg1[%22] : <2 x !felt.type>, !felt.type
+        %24 = felt.add %23, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %21, %24 : !felt.type, !felt.type
+        %25 = cast.toindex %felt_const_1
+        %26 = array.read %array[%25] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %27 = cast.toindex %felt_const_0
+        %28 = array.read %arg1[%27] : <2 x !felt.type>, !felt.type
+        %29 = struct.readm %26[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        %30 = felt.mul %29, %28 : !felt.type, !felt.type
+        %31 = cast.toindex %felt_const_1
+        %32 = array.read %array[%31] : <2 x !struct.type<@TNondetReg::@NondetReg<[]>>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+        %33 = struct.readm %32[@"$super"] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+        constrain.eq %30, %33 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
