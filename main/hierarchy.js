@@ -825,6 +825,7 @@ var hierarchy =
       ] ]
     ] ],
     [ "mlir::OpTrait::TraitBase", null, [
+      [ "llzk::LLZKSymbolTableImplTrait< TypeClass >", "classllzk_1_1LLZKSymbolTableImplTrait.html", null ],
       [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >::Impl< TypeClass >", "classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html", null ],
       [ "llzk::component::InStructFunctionNamed< FuncName >::Impl< TypeClass >", "classllzk_1_1component_1_1InStructFunctionNamed_1_1Impl.html", null ],
       [ "llzk::component::SetFuncAllowAttrs< TypeClass >", "classllzk_1_1component_1_1SetFuncAllowAttrs.html", null ],

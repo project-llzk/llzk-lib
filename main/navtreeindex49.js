@@ -1,5 +1,7 @@
 var NAVTREEINDEX49 =
 {
+"structHeaderGenerator.html#a68aaa133f9cb546c88e9b5c4eb47ea9a":[12,0,49,5],
+"structHeaderGenerator.html#a7cbcad14ba5a655c3914dc5bef32f3c3":[12,0,49,3],
 "structHeaderGenerator.html#a862377cbd4a6c53d68d8e3d1ffcee819":[12,0,49,0],
 "structHeaderGenerator.html#adda6cb28d56591e986424cb87a1ee0e0":[12,0,49,1],
 "structHeaderGenerator.html#af55bea69ad04c7bb3ceec5d9dddab60b":[12,0,49,4],
@@ -247,7 +249,5 @@ var NAVTREEINDEX49 =
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a714bad10cf4fd218a27c8d12eebb7b7d":[10,0,1,16,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a714bad10cf4fd218a27c8d12eebb7b7d":[12,0,0,16,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[10,0,1,15],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[12,0,0,15],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[10,0,1,15,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[12,0,0,15,0]
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[12,0,0,15]
 };

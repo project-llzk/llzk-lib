@@ -417,6 +417,7 @@ var annotated_dup =
       [ "LLZKDialect", "classllzk_1_1LLZKDialect.html", "classllzk_1_1LLZKDialect" ],
       [ "LLZKDialectBytecodeInterface", "structllzk_1_1LLZKDialectBytecodeInterface.html", "structllzk_1_1LLZKDialectBytecodeInterface" ],
       [ "LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", "structllzk_1_1LLZKDialectVersion" ],
+      [ "LLZKSymbolTableImplTrait", "classllzk_1_1LLZKSymbolTableImplTrait.html", null ],
       [ "LLZKTypeSwitch", "structllzk_1_1LLZKTypeSwitch.html", "structllzk_1_1LLZKTypeSwitch" ],
       [ "LocationComparator", "structllzk_1_1LocationComparator.html", "structllzk_1_1LocationComparator" ],
       [ "MemberOverwriteAnalysis", "classllzk_1_1MemberOverwriteAnalysis.html", "classllzk_1_1MemberOverwriteAnalysis" ],

@@ -1,5 +1,6 @@
 var OpHelpers_8h =
 [
+    [ "llzk::LLZKSymbolTableImplTrait< TypeClass >", "classllzk_1_1LLZKSymbolTableImplTrait.html", null ],
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", "structllzk_1_1VerifySizesForMultiAffineOps" ],
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >::Impl< TypeClass >", "classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html", null ],
     [ "llzk::getOperationName", "namespacellzk.html#ace40014709812c1c57cb0aa39b87558b", null ],
