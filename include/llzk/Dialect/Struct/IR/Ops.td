@@ -40,7 +40,7 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 
 def LLZK_StructDefOp
     : StructDialectOp<
-          "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
+          "def", [HasParent<"::mlir::ModuleOp">, Symbol, LLZKSymbolTable,
                   IsolatedFromAbove, SetFuncAllowAttrs,
                   DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
