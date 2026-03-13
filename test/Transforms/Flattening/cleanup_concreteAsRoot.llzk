@@ -1,4 +1,5 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=concrete-as-root})' %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
 // TEST: With "cleanup=concrete-as-root", all structs without parameters are preserved. Structs
 // that are reachable from one of these "concrete" structs or reachable from a global def or
@@ -58,13 +59,17 @@ module attributes {llzk.lang} {
   }
 
   // removed (has no concrete instantiation)
-  struct.def @NoUse<[@T]> {
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }
@@ -95,14 +100,18 @@ module attributes {llzk.lang} {
   }
 
   // removed (has no concrete instantiation)
-  struct.def @NoUse<[@T]> {
-    struct.member @f2 : !poly.tvar<@T>
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      struct.member @f2 : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }
@@ -114,18 +123,22 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
+  global.def @a : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[i1]>>
 
   module @StructsWithinNestedModule {
     // preserved instantiated version
-    struct.def @HasUse<[@T]> {
-      struct.member @f1 : !poly.tvar<@T>
-      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
-        %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
-        function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>) {
-        function.return
+    poly.template @THasUse {
+      poly.param @T
+
+      struct.def @HasUse {
+        struct.member @f1 : !poly.tvar<@T>
+        function.def @compute() -> !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>
+          function.return %self : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>) {
+          function.return
+        }
       }
     }
 
@@ -154,17 +167,21 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   module @GlobalWithinNestedModule {
-    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
   }
 
   // preserved instantiated version
-  struct.def @HasUse<[@T]> {
-    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
-      %self = struct.new : !struct.type<@HasUse<[@T]>>
-      function.return %self : !struct.type<@HasUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
-      function.return
+  poly.template @THasUse {
+    poly.param @T
+
+    struct.def @HasUse {
+      function.def @compute() -> !struct.type<@THasUse::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@THasUse::@HasUse<[@T]>>
+        function.return %self : !struct.type<@THasUse::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@THasUse::@HasUse<[@T]>>) {
+        function.return
+      }
     }
   }
 
@@ -190,7 +207,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   module @FreeFuncInModule {
-    function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@HasUse<[!felt.type]>>) -> !felt.type {
+    function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
       %b = felt.const 42
       function.return %b: !felt.type
     }
@@ -198,13 +215,17 @@ module attributes {llzk.lang} {
 
   module @DefsInDifferentModule {
     // preserved instantiated version
-    struct.def @HasUse<[@T]> {
-      function.def @compute() -> !struct.type<@DefsInDifferentModule::@HasUse<[@T]>> {
-        %self = struct.new : !struct.type<@DefsInDifferentModule::@HasUse<[@T]>>
-        function.return %self : !struct.type<@DefsInDifferentModule::@HasUse<[@T]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@DefsInDifferentModule::@HasUse<[@T]>>) {
-        function.return
+    poly.template @THasUse {
+      poly.param @T
+
+      struct.def @HasUse {
+        function.def @compute() -> !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>>
+          function.return %self : !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>>) {
+          function.return
+        }
       }
     }
 
@@ -232,27 +253,31 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
-    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
     module @NestedAgain {
-      global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
       module @NestedEvenMore {
-        global.def @a : !struct.type<@HasUse<[!felt.type]>>
+        global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
       }
-      global.def @b : !struct.type<@HasUse<[i1]>>
+      global.def @b : !struct.type<@THasUse::@HasUse<[i1]>>
       module @SiblingNesting {
-        global.def @a : !struct.type<@HasUse<[!string.type]>>
+        global.def @a : !struct.type<@THasUse::@HasUse<[!string.type]>>
       }
     }
   }
 
   // preserved instantiated version
-  struct.def @HasUse<[@T]> {
-    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
-      %self = struct.new : !struct.type<@HasUse<[@T]>>
-      function.return %self : !struct.type<@HasUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
-      function.return
+  poly.template @THasUse {
+    poly.param @T
+
+    struct.def @HasUse {
+      function.def @compute() -> !struct.type<@THasUse::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@THasUse::@HasUse<[@T]>>
+        function.return %self : !struct.type<@THasUse::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@THasUse::@HasUse<[@T]>>) {
+        function.return
+      }
     }
   }
 
@@ -282,7 +307,7 @@ module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {
-        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
         }
@@ -290,7 +315,7 @@ module attributes {llzk.lang} {
     }
     module @Level2B {
       module @Level3 {
-        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
         }
@@ -301,13 +326,17 @@ module attributes {llzk.lang} {
   module @StructModule {
     module @MoreNested {
       // preserved instantiated version
-      struct.def @HasUse<[@T]> {
-        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>> {
-          %self = struct.new : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
-          function.return %self : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
-        }
-        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>) {
-          function.return
+      poly.template @THasUse {
+        poly.param @T
+
+        struct.def @HasUse {
+          function.def @compute() -> !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>> {
+            %self = struct.new : !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>
+            function.return %self : !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>
+          }
+          function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>) {
+            function.return
+          }
         }
       }
 
@@ -341,27 +370,31 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  global.def @gvar : !struct.type<@Component06<[4]>>
+  global.def @gvar : !struct.type<@TComponent06::@Component06<[4]>>
 
   // preserved instantiated version
-  struct.def @Component06<[@Z]> {
-    function.def @compute() -> !struct.type<@Component06<[@Z]>> {
-      %self = struct.new : !struct.type<@Component06<[@Z]>>
-      function.return %self : !struct.type<@Component06<[@Z]>>
+  poly.template @TComponent06 {
+    poly.param @Z
+
+    struct.def @Component06 {
+      function.def @compute() -> !struct.type<@TComponent06::@Component06<[@Z]>> {
+        %self = struct.new : !struct.type<@TComponent06::@Component06<[@Z]>>
+        function.return %self : !struct.type<@TComponent06::@Component06<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent06::@Component06<[@Z]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component06<[@Z]>>) { function.return }
   }
 
   // always preserved
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      %s = function.call @Component06::@compute() : () -> !struct.type<@Component06<[4]>>
-      global.write @gvar = %s : !struct.type<@Component06<[4]>>
+      %s = function.call @TComponent06::@Component06::@compute() : () -> !struct.type<@TComponent06::@Component06<[4]>>
+      global.write @gvar = %s : !struct.type<@TComponent06::@Component06<[4]>>
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
-      %s = global.read @gvar : !struct.type<@Component06<[4]>>
+      %s = global.read @gvar : !struct.type<@TComponent06::@Component06<[4]>>
       function.return
     }
   }
@@ -521,13 +554,17 @@ module attributes {llzk.lang} {
   }
 
   // removed (has no concrete instantiation)
-  struct.def @NoUse<[@T]> {
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }

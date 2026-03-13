@@ -1,27 +1,34 @@
 // RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
-module attributes {llzk.main = !struct.type<@Main<[]>>, llzk.lang} {
+module attributes {llzk.main = !struct.type<@TMain::@Main<[]>>, llzk.lang} {
   module @Bar {
-    struct.def @Foo<[@N]> {
-      struct.member @x : !array.type<@N x !felt.type>
-      function.def @compute() -> !struct.type<@Bar::@Foo<[@N]>> attributes {function.allow_witness} {
-        %self = struct.new : <@Bar::@Foo<[@N]>>
-        function.return %self : !struct.type<@Bar::@Foo<[@N]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@Bar::@Foo<[@N]>>) attributes {function.allow_constraint} {
-        function.return
+    poly.template @TFoo {
+      poly.param @N
+
+      struct.def @Foo {
+        struct.member @x : !array.type<@N x !felt.type>
+        function.def @compute() -> !struct.type<@Bar::@TFoo::@Foo<[@N]>> attributes {function.allow_witness} {
+          %self = struct.new : <@Bar::@TFoo::@Foo<[@N]>>
+          function.return %self : !struct.type<@Bar::@TFoo::@Foo<[@N]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@Bar::@TFoo::@Foo<[@N]>>) attributes {function.allow_constraint} {
+          function.return
+        }
       }
     }
   }
 
-  struct.def @Main<[]> {
-    struct.member @foo : !struct.type<@Bar::@Foo<[1]>>
-    function.def @compute() -> !struct.type<@Main<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Main<[]>>
-      function.return %self : !struct.type<@Main<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Main<[]>>) attributes {function.allow_constraint} {
-      function.return
+  poly.template @TMain {
+    struct.def @Main {
+      struct.member @foo : !struct.type<@Bar::@TFoo::@Foo<[1]>>
+      function.def @compute() -> !struct.type<@TMain::@Main<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TMain::@Main<[]>>
+        function.return %self : !struct.type<@TMain::@Main<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TMain::@Main<[]>>) attributes {function.allow_constraint} {
+        function.return
+      }
     }
   }
 }

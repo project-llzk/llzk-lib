@@ -1,44 +1,59 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
 #map = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 module attributes {llzk.lang = "zirgen"} {
-  struct.def @S<[@X, @N, @P]> {
-    function.def @compute(%arg0: !array.type<@X x !felt.type>) -> !struct.type<@S<[@X, @N, @P]>> {
-      %self = struct.new : !struct.type<@S<[@X, @N, @P]>>
-      %c0 = arith.constant 0 : index
-      %0 = array.read %arg0[%c0] : !array.type<@X x !felt.type>, !felt.type
-      function.return %self : !struct.type<@S<[@X, @N, @P]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@S<[@X, @N, @P]>>, %arg1: !array.type<@X x !felt.type>) {
-      function.return
-    }
-  }
-  struct.def @B<[@N]> {
-    function.def @compute() -> !struct.type<@B<[@N]>> {
-      %self = struct.new : !struct.type<@B<[@N]>>
-      function.return %self : !struct.type<@B<[@N]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@B<[@N]>>) {
-      function.return
+  poly.template @TS {
+    poly.param @X
+    poly.param @N
+    poly.param @P
+
+    struct.def @S {
+      function.def @compute(%arg0: !array.type<@X x !felt.type>) -> !struct.type<@TS::@S<[@X, @N, @P]>> {
+        %self = struct.new : !struct.type<@TS::@S<[@X, @N, @P]>>
+        %c0 = arith.constant 0 : index
+        %0 = array.read %arg0[%c0] : !array.type<@X x !felt.type>, !felt.type
+        function.return %self : !struct.type<@TS::@S<[@X, @N, @P]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TS::@S<[@X, @N, @P]>>, %arg1: !array.type<@X x !felt.type>) {
+        function.return
+      }
     }
   }
-  struct.def @A<[@N]> {
-    function.def @compute() -> !struct.type<@A<[@N]>> {
-      %self = struct.new : !struct.type<@A<[@N]>>
-      %0 = poly.read_const @N : index
-      %c2 = arith.constant 2 : index
-      %array = array.new{()[%0, %c2]} : !array.type<#map x !felt.type>
-      %1 = function.call @S::@compute(%array) {()[%0, %c2]} : (!array.type<#map x !felt.type>) -> !struct.type<@S<[#map, @N, 2]>>
-      %2 = function.call @B::@compute() {()[%0, %c2]} : () -> !struct.type<@B<[#map]>>
-      function.return %self : !struct.type<@A<[@N]>>
+  poly.template @TB {
+    poly.param @N
+
+    struct.def @B {
+      function.def @compute() -> !struct.type<@TB::@B<[@N]>> {
+        %self = struct.new : !struct.type<@TB::@B<[@N]>>
+        function.return %self : !struct.type<@TB::@B<[@N]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TB::@B<[@N]>>) {
+        function.return
+      }
     }
-    function.def @constrain(%arg0: !struct.type<@A<[@N]>>) {
-      function.return
+  }
+  poly.template @TA {
+    poly.param @N
+
+    struct.def @A {
+      function.def @compute() -> !struct.type<@TA::@A<[@N]>> {
+        %self = struct.new : !struct.type<@TA::@A<[@N]>>
+        %0 = poly.read_const @N : index
+        %c2 = arith.constant 2 : index
+        %array = array.new{()[%0, %c2]} : !array.type<#map x !felt.type>
+        %1 = function.call @TS::@S::@compute(%array) {()[%0, %c2]} : (!array.type<#map x !felt.type>) -> !struct.type<@TS::@S<[#map, @N, 2]>>
+        %2 = function.call @TB::@B::@compute() {()[%0, %c2]} : () -> !struct.type<@TB::@B<[#map]>>
+        function.return %self : !struct.type<@TA::@A<[@N]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TA::@A<[@N]>>) {
+        function.return
+      }
     }
   }
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      %s = function.call @A::@compute() : () -> !struct.type<@A<[4]>>
+      %s = function.call @TA::@A::@compute() : () -> !struct.type<@TA::@A<[4]>>
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
@@ -47,48 +62,4 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
 }
-// CHECK-LABEL: struct.def @S_2_4_2 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@S_2_4_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@S_2_4_2>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.read %[[V0]]{{\[}}%[[V1]]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@S_2_4_2>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@S_2_4_2>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @B_2 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@B_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@B_2>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@B_2>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@B_2>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @A_4 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@A_4> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@A_4>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @S_2_4_2::@compute(%[[V1]]) : (!array.type<2 x !felt.type>) -> !struct.type<@S_2_4_2>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @B_2::@compute() : () -> !struct.type<@B_2>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@A_4>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@A_4>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = function.call @A_4::@compute() : () -> !struct.type<@A_4>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO

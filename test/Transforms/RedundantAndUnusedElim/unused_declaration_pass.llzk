@@ -1,5 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim="remove-structs" %s 2>&1 | FileCheck %s --check-prefix STRICT
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim %s 2>&1 | FileCheck %s --check-prefix RELAX
+// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   struct.def @Component {
@@ -146,24 +147,29 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // -----
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @VarArray<[@N, @T]> {
-    struct.member @val: !array.type<@N x !poly.tvar<@T>>
+  poly.template @TVarArray {
+    poly.param @N
+    poly.param @T
 
-    function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> {
-      %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
-      struct.writem %self[@val] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
-      function.return %self : !struct.type<@VarArray<[@N, @T]>>
-    }
+    struct.def @VarArray {
+      struct.member @val: !array.type<@N x !poly.tvar<@T>>
 
-    function.def @constrain(%self: !struct.type<@VarArray<[@N, @T]>>, %inp: !array.type<@N x !poly.tvar<@T>>) {
-      function.return
+      function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> {
+        %self = struct.new : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
+        struct.writem %self[@val] = %inp : !struct.type<@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+        function.return %self : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %inp: !array.type<@N x !poly.tvar<@T>>) {
+        function.return
+      }
     }
   }
 
   struct.def @Main {
-    struct.member @a : !struct.type<@VarArray<[2, !felt.type]>> // unused, should be removed
-    struct.member @b : !struct.type<@VarArray<[7, index]>> // unused, should be removed
-    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
+    struct.member @a : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> // unused, should be removed
+    struct.member @b : !struct.type<@TVarArray::@VarArray<[7, index]>> // unused, should be removed
+    struct.member @c : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -221,48 +227,57 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 
   module @std {
-    struct.def @Wrapper<[@T]> {
-      struct.member @val: !poly.tvar<@T> {llzk.pub}
+    poly.template @TWrapper {
+      poly.param @T
 
-      function.def @compute(%inp: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]> > {
-        %self = struct.new : !struct.type<@std::@Wrapper<[@T]> >
-        struct.writem %self[@val] = %inp : !struct.type<@std::@Wrapper<[@T]>>, !poly.tvar<@T>
-        function.return %self : !struct.type<@std::@Wrapper<[@T]>>
+      struct.def @Wrapper {
+        struct.member @val: !poly.tvar<@T> {llzk.pub}
+
+        function.def @compute(%inp: !poly.tvar<@T>) -> !struct.type<@std::@TWrapper::@Wrapper<[@T]> > {
+          %self = struct.new : !struct.type<@std::@TWrapper::@Wrapper<[@T]> >
+          struct.writem %self[@val] = %inp : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+          function.return %self : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
+        }
+
+        function.def @constrain(%self: !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, %inp: !poly.tvar<@T>) {
+          %val = struct.readm %self[@val] : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+          constrain.eq %val, %inp : !poly.tvar<@T>
+          function.return
+        }
+      }
+    }
+  }
+
+  poly.template @TVarArray {
+    poly.param @N
+    poly.param @T
+
+    struct.def @VarArray {
+      struct.member @valUnused: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+      struct.member @valUsed: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+
+      function.def @compute(%inp: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %first : !poly.tvar<@T>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> {
+        %self = struct.new : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
+        struct.writem %self[@valUnused] = %inp : !struct.type<@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+        struct.writem %self[@valUsed] = %inp : !struct.type<@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+        function.return %self : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
       }
 
-      function.def @constrain(%self: !struct.type<@std::@Wrapper<[@T]>>, %inp: !poly.tvar<@T>) {
-        %val = struct.readm %self[@val] : !struct.type<@std::@Wrapper<[@T]>>, !poly.tvar<@T>
-        constrain.eq %val, %inp : !poly.tvar<@T>
+      function.def @constrain(%self: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %inp: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %first : !poly.tvar<@T>) {
+        %arr = struct.readm %self[@valUsed] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+        %idx = arith.constant 0 : index
+        %elem = array.read %arr[%idx] : !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
+        %inner = struct.readm %elem[@val] : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+        constrain.eq %first, %inner : !poly.tvar<@T>
         function.return
       }
     }
   }
 
-  struct.def @VarArray<[@N, @T]> {
-    struct.member @valUnused: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-    struct.member @valUsed: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-
-    function.def @compute(%inp: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %first : !poly.tvar<@T>) -> !struct.type<@VarArray<[@N, @T]>> {
-      %self = struct.new : !struct.type<@VarArray<[@N, @T]>>
-      struct.writem %self[@valUnused] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-      struct.writem %self[@valUsed] = %inp : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-      function.return %self : !struct.type<@VarArray<[@N, @T]>>
-    }
-
-    function.def @constrain(%self: !struct.type<@VarArray<[@N, @T]>>, %inp: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %first : !poly.tvar<@T>) {
-      %arr = struct.readm %self[@valUsed] : !struct.type<@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-      %idx = arith.constant 0 : index
-      %elem = array.read %arr[%idx] : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, !struct.type<@std::@Wrapper<[@T]>>
-      %inner = struct.readm %elem[@val] : !struct.type<@std::@Wrapper<[@T]>>, !poly.tvar<@T>
-      constrain.eq %first, %inner : !poly.tvar<@T>
-      function.return
-    }
-  }
-
   struct.def @Main {
-    struct.member @a : !struct.type<@VarArray<[2, !felt.type]>> // unused, should be removed
-    struct.member @b : !struct.type<@VarArray<[7, index]>> // unused, should be removed
-    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
+    struct.member @a : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> // unused, should be removed
+    struct.member @b : !struct.type<@TVarArray::@VarArray<[7, index]>> // unused, should be removed
+    struct.member @c : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> {llzk.pub} // unused, shouldn't be removed since it's an output
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>

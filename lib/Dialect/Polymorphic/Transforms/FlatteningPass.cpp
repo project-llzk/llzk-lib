@@ -575,6 +575,9 @@ class StructCloner {
     // `SymbolTable::insert()` function directly so that the name will be made unique.
     ModuleOp parentModule = getParentOfType<ModuleOp>(origStruct);
     assert(parentModule && "StructDefOp must be nested in a ModuleOp");
+    // TODO: the direct parent could be ModuleOp or TemplateOp and the insertion here probably
+    // needs to be different for those two cases.
+    assert(false && "TODO");
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
     // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
     // use the remaining non-concrete parameters from the original type.

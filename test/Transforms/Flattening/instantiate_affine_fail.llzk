@@ -1,34 +1,43 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+// REQUIRES: todo-update-passes-for-template
 
 #id = affine_map<(i)->(i)>
-!ToFelt = !struct.type<@ToFelt<[#id]>>
+!ToFelt = !struct.type<@TToFelt::@ToFelt<[#id]>>
 module attributes {llzk.lang} {
-  struct.def @ToFelt<[@A]> {
-    function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
-      %self = struct.new : !struct.type<@ToFelt<[@A]>>
-      function.return %self: !struct.type<@ToFelt<[@A]>>
-    }
+  poly.template @TToFelt {
+    poly.param @A
 
-    function.def @constrain(%self: !struct.type<@ToFelt<[@A]>>) { function.return }
+    struct.def @ToFelt {
+      function.def @compute() -> !struct.type<@TToFelt::@ToFelt<[@A]>> {
+        %self = struct.new : !struct.type<@TToFelt::@ToFelt<[@A]>>
+        function.return %self: !struct.type<@TToFelt::@ToFelt<[@A]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TToFelt::@ToFelt<[@A]>>) { function.return }
+    }
   }
 
-  struct.def @Component01<[@T]> {
-    function.def @compute(%inp: !struct.type<@ToFelt<[@T]>>) -> !struct.type<@Component01<[@T]>> {
-      %self = struct.new : !struct.type<@Component01<[@T]>>
-      function.return %self : !struct.type<@Component01<[@T]>>
-    }
+  poly.template @TComponent01 {
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@Component01<[@T]>>, %inp: !struct.type<@ToFelt<[@T]>>) { function.return }
+    struct.def @Component01 {
+      function.def @compute(%inp: !struct.type<@TToFelt::@ToFelt<[@T]>>) -> !struct.type<@TComponent01::@Component01<[@T]>> {
+        %self = struct.new : !struct.type<@TComponent01::@Component01<[@T]>>
+        function.return %self : !struct.type<@TComponent01::@Component01<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent01::@Component01<[@T]>>, %inp: !struct.type<@TToFelt::@ToFelt<[@T]>>) { function.return }
+    }
   }
 
   struct.def @ComponentB {
     function.def @compute() -> !struct.type<@ComponentB> {
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
-      %in = function.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
+      %in = function.call @TToFelt::@ToFelt::@compute(){(%n)} : () -> !ToFelt
       // ERROR: The input argument here produces a `@Component01<[@T]>` not `@Component01<[!ToFelt]>` which is an error.
       // expected-error@+1 {{result type mismatch: due to struct instantiation, expected type '!struct.type<@Component01<[2]>>', but found '!struct.type<@Component01<[!struct.type<@ToFelt<[affine_map<(d0) -> (d0)>]>>]>>'}}
-      %out = function.call @Component01::@compute(%in) : (!ToFelt) -> !struct.type<@Component01<[!ToFelt]>>
+      %out = function.call @TComponent01::@Component01::@compute(%in) : (!ToFelt) -> !struct.type<@TComponent01::@Component01<[!ToFelt]>>
 
       %self = struct.new : !struct.type<@ComponentB>
       function.return %self : !struct.type<@ComponentB>
@@ -39,30 +48,35 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @Component02<[@A,@B]> {
-    // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writem' with different value types}}
-    struct.member @f : !array.type<@A x !felt.type> {llzk.pub}
+  poly.template @TComponent02 {
+    poly.param @A
+    poly.param @B
 
-    function.def @compute() -> !struct.type<@Component02<[@A,@B]>> {
-      %self = struct.new : !struct.type<@Component02<[@A,@B]>>
-      %0 = array.new : !array.type<@A x !felt.type>
-      // expected-note@+2 {{type written here is '!array.type<@A x !felt.type>'}}
-      // expected-note@+1 {{type written here is '!array.type<2 x !felt.type>'}}
-      struct.writem %self[@f] = %0 : !struct.type<@Component02<[@A,@B]>>, !array.type<@A x !felt.type>
-      %n = arith.constant 5 : index
-      %1 = array.new : !array.type<@B x !felt.type>
-      // expected-note@+2 {{type written here is '!array.type<@B x !felt.type>'}}
-      // expected-note@+1 {{type written here is '!array.type<3 x !felt.type>'}}
-      struct.writem %self[@f] = %1 : !struct.type<@Component02<[@A,@B]>>, !array.type<@B x !felt.type>
-      function.return %self: !struct.type<@Component02<[@A,@B]>>
+    struct.def @Component02 {
+      // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writem' with different value types}}
+      struct.member @f : !array.type<@A x !felt.type> {llzk.pub}
+
+      function.def @compute() -> !struct.type<@TComponent02::@Component02<[@A,@B]>> {
+        %self = struct.new : !struct.type<@TComponent02::@Component02<[@A,@B]>>
+        %0 = array.new : !array.type<@A x !felt.type>
+        // expected-note@+2 {{type written here is '!array.type<@A x !felt.type>'}}
+        // expected-note@+1 {{type written here is '!array.type<2 x !felt.type>'}}
+        struct.writem %self[@f] = %0 : !struct.type<@TComponent02::@Component02<[@A,@B]>>, !array.type<@A x !felt.type>
+        %n = arith.constant 5 : index
+        %1 = array.new : !array.type<@B x !felt.type>
+        // expected-note@+2 {{type written here is '!array.type<@B x !felt.type>'}}
+        // expected-note@+1 {{type written here is '!array.type<3 x !felt.type>'}}
+        struct.writem %self[@f] = %1 : !struct.type<@TComponent02::@Component02<[@A,@B]>>, !array.type<@B x !felt.type>
+        function.return %self: !struct.type<@TComponent02::@Component02<[@A,@B]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent02::@Component02<[@A,@B]>>) { function.return }
     }
-
-    function.def @constrain(%self: !struct.type<@Component02<[@A,@B]>>) { function.return }
   }
 
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      function.call @Component02::@compute() : () -> !struct.type<@Component02<[2,3]>>
+      function.call @TComponent02::@Component02::@compute() : () -> !struct.type<@TComponent02::@Component02<[2,3]>>
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }

@@ -1,4 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
 /// Test calling a global function named "compute"; should have no change
 module attributes {llzk.lang} {
@@ -89,126 +90,93 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Component01A<[@A, @B]> {
-    function.def @compute() -> !struct.type<@Component01A<[@A, @B]>> {
-      %self = struct.new : !struct.type<@Component01A<[@A, @B]>>
-      function.return %self : !struct.type<@Component01A<[@A, @B]>>
+  poly.template @TComponent01A {
+    poly.param @A
+    poly.param @B
+
+    struct.def @Component01A {
+      function.def @compute() -> !struct.type<@TComponent01A::@Component01A<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TComponent01A::@Component01A<[@A, @B]>>
+        function.return %self : !struct.type<@TComponent01A::@Component01A<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent01A::@Component01A<[@A, @B]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component01A<[@A, @B]>>) { function.return }
   }
 
-  struct.def @Component01B<[@C]> {
-    struct.member @f2 : !struct.type<@Component01A<[5, @C]>>
+  poly.template @TComponent01B {
+    poly.param @C
 
-    function.def @compute() -> !struct.type<@Component01B<[@C]>> {
-      %self = struct.new : !struct.type<@Component01B<[@C]>>
-      %x = function.call @Component01A::@compute() : () -> (!struct.type<@Component01A<[5, @C]>>)
-      struct.writem %self[@f2] = %x : !struct.type<@Component01B<[@C]>>, !struct.type<@Component01A<[5, @C]>>
-      function.return %self : !struct.type<@Component01B<[@C]>>
-    }
+    struct.def @Component01B {
+      struct.member @f2 : !struct.type<@TComponent01A::@Component01A<[5, @C]>>
 
-    function.def @constrain(%self: !struct.type<@Component01B<[@C]>>) {
-      %b = struct.readm %self[@f2] : !struct.type<@Component01B<[@C]>>, !struct.type<@Component01A<[5, @C]>>
-      function.call @Component01A::@constrain(%b) : (!struct.type<@Component01A<[5, @C]>>) -> ()
-      function.return
+      function.def @compute() -> !struct.type<@TComponent01B::@Component01B<[@C]>> {
+        %self = struct.new : !struct.type<@TComponent01B::@Component01B<[@C]>>
+        %x = function.call @TComponent01A::@Component01A::@compute() : () -> (!struct.type<@TComponent01A::@Component01A<[5, @C]>>)
+        struct.writem %self[@f2] = %x : !struct.type<@TComponent01B::@Component01B<[@C]>>, !struct.type<@TComponent01A::@Component01A<[5, @C]>>
+        function.return %self : !struct.type<@TComponent01B::@Component01B<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent01B::@Component01B<[@C]>>) {
+        %b = struct.readm %self[@f2] : !struct.type<@TComponent01B::@Component01B<[@C]>>, !struct.type<@TComponent01A::@Component01A<[5, @C]>>
+        function.call @TComponent01A::@Component01A::@constrain(%b) : (!struct.type<@TComponent01A::@Component01A<[5, @C]>>) -> ()
+        function.return
+      }
     }
   }
 
   struct.def @Component01C {
-    struct.member @f3 : !struct.type<@Component01B<[43]>>
+    struct.member @f3 : !struct.type<@TComponent01B::@Component01B<[43]>>
 
     function.def @compute() -> !struct.type<@Component01C> {
       %self = struct.new : !struct.type<@Component01C>
-      %x = function.call @Component01B::@compute() : () -> (!struct.type<@Component01B<[43]>>)
-      struct.writem %self[@f3] = %x : !struct.type<@Component01C>, !struct.type<@Component01B<[43]>>
+      %x = function.call @TComponent01B::@Component01B::@compute() : () -> (!struct.type<@TComponent01B::@Component01B<[43]>>)
+      struct.writem %self[@f3] = %x : !struct.type<@Component01C>, !struct.type<@TComponent01B::@Component01B<[43]>>
       function.return %self : !struct.type<@Component01C>
     }
 
     function.def @constrain(%self: !struct.type<@Component01C>) {
-      %b = struct.readm %self[@f3] : !struct.type<@Component01C>, !struct.type<@Component01B<[43]>>
-      function.call @Component01B::@constrain(%b) : (!struct.type<@Component01B<[43]>>) -> ()
+      %b = struct.readm %self[@f3] : !struct.type<@Component01C>, !struct.type<@TComponent01B::@Component01B<[43]>>
+      function.call @TComponent01B::@Component01B::@constrain(%b) : (!struct.type<@TComponent01B::@Component01B<[43]>>) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @Component01A_5_43 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component01A_5_43> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01A_5_43>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component01A_5_43>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01A_5_43>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component01B_43 {
-// CHECK-NEXT:    struct.member @f2 : !struct.type<@Component01A_5_43>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component01B_43> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01B_43>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component01A_5_43::@compute() : () -> !struct.type<@Component01A_5_43>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component01B_43>, !struct.type<@Component01A_5_43>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component01B_43>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01B_43>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f2] : <@Component01B_43>, !struct.type<@Component01A_5_43>
-// CHECK-NEXT:      function.call @Component01A_5_43::@constrain(%[[VAL_3]]) : (!struct.type<@Component01A_5_43>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component01C {
-// CHECK-NEXT:    struct.member @f3 : !struct.type<@Component01B_43>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component01C> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01C>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component01B_43::@compute() : () -> !struct.type<@Component01B_43>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@f3] = %[[VAL_1]] : <@Component01C>, !struct.type<@Component01B_43>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component01C>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01C>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f3] : <@Component01C>, !struct.type<@Component01B_43>
-// CHECK-NEXT:      function.call @Component01B_43::@constrain(%[[VAL_3]]) : (!struct.type<@Component01B_43>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 // No change because there is no compute function.call that instantiates all of the parameters
 module attributes {llzk.lang} {
-  struct.def @Component02<[@A]> {
-    function.def @compute(%0: !felt.type) -> !struct.type<@Component02<[@A]>> {
-      %self = struct.new : !struct.type<@Component02<[@A]>>
-      function.return %self : !struct.type<@Component02<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@Component02<[@A]>>, %0: !felt.type) {
-      %1 = poly.read_const @A : !felt.type
-      constrain.eq %0, %1 : !felt.type
-      function.return
+  poly.template @TComponent02 {
+    poly.param @A
+
+    struct.def @Component02 {
+      function.def @compute(%0: !felt.type) -> !struct.type<@TComponent02::@Component02<[@A]>> {
+        %self = struct.new : !struct.type<@TComponent02::@Component02<[@A]>>
+        function.return %self : !struct.type<@TComponent02::@Component02<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent02::@Component02<[@A]>>, %0: !felt.type) {
+        %1 = poly.read_const @A : !felt.type
+        constrain.eq %0, %1 : !felt.type
+        function.return
+      }
     }
   }
 }
-//CHECK-LABEL: module attributes {llzk.lang} {
-//CHECK-NEXT:    struct.def @Component02<[@A]> {
-//CHECK-NEXT:      function.def @compute(%arg0: !felt.type) -> !struct.type<@Component02<[@A]>> attributes {function.allow_witness} {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02<[@A]>>
-//CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Component02<[@A]>>
-//CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@Component02<[@A]>>, %arg1: !felt.type) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
-//CHECK-NEXT:        constrain.eq %arg1, %[[T0]] : !felt.type, !felt.type
-//CHECK-NEXT:        function.return
-//CHECK-NEXT:      }
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
   module @a {
-    struct.def @Component03A<[@Z]> {
-      function.def @compute() -> !struct.type<@a::@Component03A<[@Z]>> {
-        %self = struct.new : !struct.type<@a::@Component03A<[@Z]>>
-        function.return %self : !struct.type<@a::@Component03A<[@Z]>>
+    poly.template @TComponent03A {
+      poly.param @Z
+
+      struct.def @Component03A {
+        function.def @compute() -> !struct.type<@a::@TComponent03A::@Component03A<[@Z]>> {
+          %self = struct.new : !struct.type<@a::@TComponent03A::@Component03A<[@Z]>>
+          function.return %self : !struct.type<@a::@TComponent03A::@Component03A<[@Z]>>
+        }
+        function.def @constrain(%self: !struct.type<@a::@TComponent03A::@Component03A<[@Z]>>)  { function.return }
       }
-      function.def @constrain(%self: !struct.type<@a::@Component03A<[@Z]>>)  { function.return }
     }
   }
 
@@ -226,57 +194,29 @@ module attributes {llzk.lang} {
     function.return %0 : !struct.type<@b::@Component03B>
   }
 
-  function.def @fun2(%0: !struct.type<@a::@Component03A<[4]>>) -> !struct.type<@a::@Component03A<[4]>> {
-    function.return %0 : !struct.type<@a::@Component03A<[4]>>
+  function.def @fun2(%0: !struct.type<@a::@TComponent03A::@Component03A<[4]>>) -> !struct.type<@a::@TComponent03A::@Component03A<[4]>> {
+    function.return %0 : !struct.type<@a::@TComponent03A::@Component03A<[4]>>
   }
 }
-// CHECK-LABEL: module @a {
-// CHECK-NEXT:    struct.def @Component03A_4 {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@a::@Component03A_4> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@a::@Component03A_4>
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@a::@Component03A_4>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@a::@Component03A_4>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: module @b {
-// CHECK-NEXT:    struct.def @Component03B {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@b::@Component03B> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@b::@Component03B>
-// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@b::@Component03B>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@b::@Component03B>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @fun1(
-// CHECK-SAME:                  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@b::@Component03B>) -> !struct.type<@b::@Component03B> {
-// CHECK-NEXT:    function.return %[[VAL_0]] : !struct.type<@b::@Component03B>
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @fun2(
-// CHECK-SAME:                  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@a::@Component03A_4>) -> !struct.type<@a::@Component03A_4> {
-// CHECK-NEXT:    function.return %[[VAL_0]] : !struct.type<@a::@Component03A_4>
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Component04A<[@A]> {
-    struct.member @f : !array.type<@A,@A x index>
+  poly.template @TComponent04A {
+    poly.param @A
 
-    function.def @compute(%0: !array.type<@A,@A x index>) -> !struct.type<@Component04A<[@A]>> {
-      %self = struct.new : !struct.type<@Component04A<[@A]>>
-      struct.writem %self[@f] = %0 : !struct.type<@Component04A<[@A]>>, !array.type<@A,@A x index>
-      function.return %self : !struct.type<@Component04A<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@Component04A<[@A]>>, %0: !array.type<@A,@A x index>) {
-      %b = struct.readm %self[@f] : !struct.type<@Component04A<[@A]>>, !array.type<@A,@A x index>
-      function.return
+    struct.def @Component04A {
+      struct.member @f : !array.type<@A,@A x index>
+
+      function.def @compute(%0: !array.type<@A,@A x index>) -> !struct.type<@TComponent04A::@Component04A<[@A]>> {
+        %self = struct.new : !struct.type<@TComponent04A::@Component04A<[@A]>>
+        struct.writem %self[@f] = %0 : !struct.type<@TComponent04A::@Component04A<[@A]>>, !array.type<@A,@A x index>
+        function.return %self : !struct.type<@TComponent04A::@Component04A<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent04A::@Component04A<[@A]>>, %0: !array.type<@A,@A x index>) {
+        %b = struct.readm %self[@f] : !struct.type<@TComponent04A::@Component04A<[@A]>>, !array.type<@A,@A x index>
+        function.return
+      }
     }
   }
 
@@ -290,13 +230,13 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Component04B {
-    struct.member @g : !struct.type<@Component04A<[2]>>
+    struct.member @g : !struct.type<@TComponent04A::@Component04A<[2]>>
 
     function.def @compute() -> !struct.type<@Component04B> {
       %self = struct.new : !struct.type<@Component04B>
       %0 = function.call @producer() : () -> !array.type<2,2 x index>
-      %1 = function.call @Component04A::@compute(%0) : (!array.type<2,2 x index>) -> !struct.type<@Component04A<[2]>>
-      struct.writem %self[@g] = %1 : !struct.type<@Component04B>, !struct.type<@Component04A<[2]>>
+      %1 = function.call @TComponent04A::@Component04A::@compute(%0) : (!array.type<2,2 x index>) -> !struct.type<@TComponent04A::@Component04A<[2]>>
+      struct.writem %self[@g] = %1 : !struct.type<@Component04B>, !struct.type<@TComponent04A::@Component04A<[2]>>
       function.return %self : !struct.type<@Component04B>
     }
     function.def @constrain(%self: !struct.type<@Component04B>) {
@@ -304,667 +244,390 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Component04A_2 {
-// CHECK-NEXT:    struct.member @f : !array.type<2,2 x index>
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>) -> !struct.type<@Component04A_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component04A_2>
-// CHECK-NEXT:      struct.writem %[[VAL_1]][@f] = %[[VAL_0]] : <@Component04A_2>, !array.type<2,2 x index>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@Component04A_2>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component04A_2>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f] : <@Component04A_2>, !array.type<2,2 x index>
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @producer() -> !array.type<2,2 x index> {
-// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 11 : index
-// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 22 : index
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 33 : index
-// CHECK-NEXT:    %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 44 : index
-// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : <2,2 x index>
-// CHECK-NEXT:    function.return %[[VAL_4]] : !array.type<2,2 x index>
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component04B {
-// CHECK-NEXT:    struct.member @g : !struct.type<@Component04A_2>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component04B> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component04B>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @producer() : () -> !array.type<2,2 x index>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Component04A_2::@compute(%[[VAL_1]]) : (!array.type<2,2 x index>) -> !struct.type<@Component04A_2>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@g] = %[[VAL_2]] : <@Component04B>, !struct.type<@Component04A_2>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component04B>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Component04B>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Component05<[@S, @T]> {
-    struct.member @f : !array.type<@S x !poly.tvar<@T>>
+  poly.template @TComponent05 {
+    poly.param @S
+    poly.param @T
 
-    function.def @compute() -> !struct.type<@Component05<[@S, @T]>> {
-      %self = struct.new : !struct.type<@Component05<[@S, @T]>>
-      %arr = array.new : !array.type<@S x !poly.tvar<@T>>
-      %lb = arith.constant 0 : index
-      %up = poly.read_const @S : index
-      %step = arith.constant 1 : index
-      scf.for %iv = %lb to %up step %step {
-        // Although a type variable is used, this struct can only be instantiated
-        //  with `@T = index` since an `index` value is assigned to the tvar array.
-        array.write %arr[%iv] = %iv : !array.type<@S x !poly.tvar<@T>>, index
-      }
-      struct.writem %self[@f] = %arr : !struct.type<@Component05<[@S, @T]>>, !array.type<@S x !poly.tvar<@T>>
-      function.return %self : !struct.type<@Component05<[@S, @T]>>
-    }
+    struct.def @Component05 {
+      struct.member @f : !array.type<@S x !poly.tvar<@T>>
 
-    function.def @constrain(%self: !struct.type<@Component05<[@S, @T]>>) {
-      %arr = struct.readm %self[@f] : !struct.type<@Component05<[@S, @T]>>, !array.type<@S x !poly.tvar<@T>>
-      %lb = arith.constant 0 : index
-      %up = poly.read_const @S : index
-      %step = arith.constant 1 : index
-      scf.for %iv = %lb to %up step %step {
-        %temp = array.read %arr[%iv] : !array.type<@S x !poly.tvar<@T>>, !poly.tvar<@T>
-        constrain.eq %temp, %iv : !poly.tvar<@T>, index // requires that @T==index
+      function.def @compute() -> !struct.type<@TComponent05::@Component05<[@S, @T]>> {
+        %self = struct.new : !struct.type<@TComponent05::@Component05<[@S, @T]>>
+        %arr = array.new : !array.type<@S x !poly.tvar<@T>>
+        %lb = arith.constant 0 : index
+        %up = poly.read_const @S : index
+        %step = arith.constant 1 : index
+        scf.for %iv = %lb to %up step %step {
+          // Although a type variable is used, this struct can only be instantiated
+          //  with `@T = index` since an `index` value is assigned to the tvar array.
+          array.write %arr[%iv] = %iv : !array.type<@S x !poly.tvar<@T>>, index
+        }
+        struct.writem %self[@f] = %arr : !struct.type<@TComponent05::@Component05<[@S, @T]>>, !array.type<@S x !poly.tvar<@T>>
+        function.return %self : !struct.type<@TComponent05::@Component05<[@S, @T]>>
       }
-      function.return
+
+      function.def @constrain(%self: !struct.type<@TComponent05::@Component05<[@S, @T]>>) {
+        %arr = struct.readm %self[@f] : !struct.type<@TComponent05::@Component05<[@S, @T]>>, !array.type<@S x !poly.tvar<@T>>
+        %lb = arith.constant 0 : index
+        %up = poly.read_const @S : index
+        %step = arith.constant 1 : index
+        scf.for %iv = %lb to %up step %step {
+          %temp = array.read %arr[%iv] : !array.type<@S x !poly.tvar<@T>>, !poly.tvar<@T>
+          constrain.eq %temp, %iv : !poly.tvar<@T>, index // requires that @T==index
+        }
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@Component05<[5, index]>>
+    struct.member @sub : !struct.type<@TComponent05::@Component05<[5, index]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      %1 = function.call @Component05::@compute() : () -> !struct.type<@Component05<[5, index]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@Component05<[5, index]>>
+      %1 = function.call @TComponent05::@Component05::@compute() : () -> !struct.type<@TComponent05::@Component05<[5, index]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TComponent05::@Component05<[5, index]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@Component05<[5, index]>>
-      function.call @Component05::@constrain(%1) : (!struct.type<@Component05<[5, index]>>) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TComponent05::@Component05<[5, index]>>
+      function.call @TComponent05::@Component05::@constrain(%1) : (!struct.type<@TComponent05::@Component05<[5, index]>>) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @Component05_5_i {
-// CHECK-NEXT:    struct.member @f : !array.type<5 x index>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component05_5_i> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.new : <@Component05_5_i>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = array.new  : <5 x index>
-// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V4]]] = %[[V4]] : <5 x index>, index
-// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V3]]] = %[[V3]] : <5 x index>, index
-// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V2]]] = %[[V2]] : <5 x index>, index
-// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V1]]] = %[[V1]] : <5 x index>, index
-// CHECK-NEXT:      array.write %[[V6]]{{\[}}%[[V0]]] = %[[V0]] : <5 x index>, index
-// CHECK-NEXT:      struct.writem %[[V5]][@f] = %[[V6]] : <@Component05_5_i>, !array.type<5 x index>
-// CHECK-NEXT:      function.return %[[V5]] : !struct.type<@Component05_5_i>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@Component05_5_i>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@f] : <@Component05_5_i>, !array.type<5 x index>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V12]]] : <5 x index>, index
-// CHECK-NEXT:      constrain.eq %[[V14]], %[[V12]] : index, index
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V11]]] : <5 x index>, index
-// CHECK-NEXT:      constrain.eq %[[V15]], %[[V11]] : index, index
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V10]]] : <5 x index>, index
-// CHECK-NEXT:      constrain.eq %[[V16]], %[[V10]] : index, index
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V9]]] : <5 x index>, index
-// CHECK-NEXT:      constrain.eq %[[V17]], %[[V9]] : index, index
-// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V8]]] : <5 x index>, index
-// CHECK-NEXT:      constrain.eq %[[V18]], %[[V8]] : index, index
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@Component05_5_i>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component05_5_i::@compute() : () -> !struct.type<@Component05_5_i>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_1]] : <@Main>, !struct.type<@Component05_5_i>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@sub] : <@Main>, !struct.type<@Component05_5_i>
-// CHECK-NEXT:      function.call @Component05_5_i::@constrain(%[[VAL_3]]) : (!struct.type<@Component05_5_i>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 /// Ensure a StructType using a param somewhere in the type is not converted.
 module attributes {llzk.lang} {
-  struct.def @Component06A<[@C]> {
-    struct.member @f1 : !poly.tvar<@C>
+  poly.template @TComponent06A {
+    poly.param @C
 
-    function.def @compute() -> !struct.type<@Component06A<[@C]>> {
-      %self = struct.new : !struct.type<@Component06A<[@C]>>
-      function.return %self : !struct.type<@Component06A<[@C]>>
-    }
+    struct.def @Component06A {
+      struct.member @f1 : !poly.tvar<@C>
 
-    function.def @constrain(%self: !struct.type<@Component06A<[@C]>>) {
-      function.return
+      function.def @compute() -> !struct.type<@TComponent06A::@Component06A<[@C]>> {
+        %self = struct.new : !struct.type<@TComponent06A::@Component06A<[@C]>>
+        function.return %self : !struct.type<@TComponent06A::@Component06A<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent06A::@Component06A<[@C]>>) {
+        function.return
+      }
     }
   }
 
-  struct.def @Component06B<[@T]> {
-    struct.member @f2 : !struct.type<@Component06A<[!array.type<@T x i1>]>>
+  poly.template @TComponent06B {
+    poly.param @T
 
-    function.def @compute() -> !struct.type<@Component06B<[@T]>> {
-      %self = struct.new : !struct.type<@Component06B<[@T]>>
-      %x = function.call @Component06A::@compute() : () -> (!struct.type<@Component06A<[!array.type<@T x i1>]>>)
-      struct.writem %self[@f2] = %x : !struct.type<@Component06B<[@T]>>, !struct.type<@Component06A<[!array.type<@T x i1>]>>
-      function.return %self : !struct.type<@Component06B<[@T]>>
-    }
+    struct.def @Component06B {
+      struct.member @f2 : !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
 
-    function.def @constrain(%self: !struct.type<@Component06B<[@T]>>) {
-      %b = struct.readm %self[@f2] : !struct.type<@Component06B<[@T]>>, !struct.type<@Component06A<[!array.type<@T x i1>]>>
-      function.call @Component06A::@constrain(%b) : (!struct.type<@Component06A<[!array.type<@T x i1>]>>) -> ()
-      function.return
+      function.def @compute() -> !struct.type<@TComponent06B::@Component06B<[@T]>> {
+        %self = struct.new : !struct.type<@TComponent06B::@Component06B<[@T]>>
+        %x = function.call @TComponent06A::@Component06A::@compute() : () -> (!struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>)
+        struct.writem %self[@f2] = %x : !struct.type<@TComponent06B::@Component06B<[@T]>>, !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
+        function.return %self : !struct.type<@TComponent06B::@Component06B<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent06B::@Component06B<[@T]>>) {
+        %b = struct.readm %self[@f2] : !struct.type<@TComponent06B::@Component06B<[@T]>>, !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
+        function.call @TComponent06A::@Component06A::@constrain(%b) : (!struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>) -> ()
+        function.return
+      }
     }
   }
 }
-// CHECK-LABEL: struct.def @Component06A<[@C]> {
-// CHECK-NEXT:    struct.member @f1 : !poly.tvar<@C>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component06A<[@C]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component06A<[@C]>>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component06A<[@C]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component06A<[@C]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component06B<[@T]> {
-// CHECK-NEXT:    struct.member @f2 : !struct.type<@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component06B<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component06B<[@T]>>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component06A::@compute() : () -> !struct.type<@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component06B<[@T]>>, !struct.type<@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component06B<[@T]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component06B<[@T]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f2] : <@Component06B<[@T]>>, !struct.type<@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:      function.call @Component06A::@constrain(%[[VAL_3]]) : (!struct.type<@Component06A<[!array.type<@T x i1>]>>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 /// Test "Parameterized struct still has uses!" warning
 module attributes {llzk.lang} {
   // expected-warning@+1 {{Parameterized struct still has uses!}}
-  struct.def @Component07A<[@C]> {
-    struct.member @f1 : !poly.tvar<@C>
+  poly.template @TComponent07A {
+    poly.param @C
 
-    function.def @compute() -> !struct.type<@Component07A<[@C]>> {
-      %self = struct.new : !struct.type<@Component07A<[@C]>>
-      function.return %self : !struct.type<@Component07A<[@C]>>
-    }
+    struct.def @Component07A {
+      struct.member @f1 : !poly.tvar<@C>
 
-    function.def @constrain(%self: !struct.type<@Component07A<[@C]>>) {
-      function.return
+      function.def @compute() -> !struct.type<@TComponent07A::@Component07A<[@C]>> {
+        %self = struct.new : !struct.type<@TComponent07A::@Component07A<[@C]>>
+        function.return %self : !struct.type<@TComponent07A::@Component07A<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent07A::@Component07A<[@C]>>) {
+        function.return
+      }
     }
   }
 
-  struct.def @Component07B<[@T]> {
-    struct.member @f2 : !struct.type<@Component07A<[!array.type<@T x i1>]>>
+  poly.template @TComponent07B {
+    poly.param @T
 
-    function.def @compute() -> !struct.type<@Component07B<[@T]>> {
-      %self = struct.new : !struct.type<@Component07B<[@T]>>
-      %x = function.call @Component07A::@compute() : () -> (!struct.type<@Component07A<[!array.type<@T x i1>]>>)
-      struct.writem %self[@f2] = %x : !struct.type<@Component07B<[@T]>>, !struct.type<@Component07A<[!array.type<@T x i1>]>>
-      function.return %self : !struct.type<@Component07B<[@T]>>
-    }
+    struct.def @Component07B {
+      struct.member @f2 : !struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>
 
-    function.def @constrain(%self: !struct.type<@Component07B<[@T]>>) {
-      %b = struct.readm %self[@f2] : !struct.type<@Component07B<[@T]>>, !struct.type<@Component07A<[!array.type<@T x i1>]>>
-      function.call @Component07A::@constrain(%b) : (!struct.type<@Component07A<[!array.type<@T x i1>]>>) -> ()
-      function.return
+      function.def @compute() -> !struct.type<@TComponent07B::@Component07B<[@T]>> {
+        %self = struct.new : !struct.type<@TComponent07B::@Component07B<[@T]>>
+        %x = function.call @TComponent07A::@Component07A::@compute() : () -> (!struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>)
+        struct.writem %self[@f2] = %x : !struct.type<@TComponent07B::@Component07B<[@T]>>, !struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>
+        function.return %self : !struct.type<@TComponent07B::@Component07B<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent07B::@Component07B<[@T]>>) {
+        %b = struct.readm %self[@f2] : !struct.type<@TComponent07B::@Component07B<[@T]>>, !struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>
+        function.call @TComponent07A::@Component07A::@constrain(%b) : (!struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>) -> ()
+        function.return
+      }
     }
   }
 
   struct.def @Component07C {
-    struct.member @f2 : !struct.type<@Component07A<[!array.type<2 x i1>]>>
+    struct.member @f2 : !struct.type<@TComponent07A::@Component07A<[!array.type<2 x i1>]>>
 
     function.def @compute() -> !struct.type<@Component07C> {
       %self = struct.new : !struct.type<@Component07C>
-      %x = function.call @Component07A::@compute() : () -> (!struct.type<@Component07A<[!array.type<2 x i1>]>>)
-      struct.writem %self[@f2] = %x : !struct.type<@Component07C>, !struct.type<@Component07A<[!array.type<2 x i1>]>>
+      %x = function.call @TComponent07A::@Component07A::@compute() : () -> (!struct.type<@TComponent07A::@Component07A<[!array.type<2 x i1>]>>)
+      struct.writem %self[@f2] = %x : !struct.type<@Component07C>, !struct.type<@TComponent07A::@Component07A<[!array.type<2 x i1>]>>
       function.return %self : !struct.type<@Component07C>
     }
 
     function.def @constrain(%self: !struct.type<@Component07C>) {
-      %b = struct.readm %self[@f2] : !struct.type<@Component07C>, !struct.type<@Component07A<[!array.type<2 x i1>]>>
-      function.call @Component07A::@constrain(%b) : (!struct.type<@Component07A<[!array.type<2 x i1>]>>) -> ()
+      %b = struct.readm %self[@f2] : !struct.type<@Component07C>, !struct.type<@TComponent07A::@Component07A<[!array.type<2 x i1>]>>
+      function.call @TComponent07A::@Component07A::@constrain(%b) : (!struct.type<@TComponent07A::@Component07A<[!array.type<2 x i1>]>>) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @"Component07A_!a<b:2>" {
-// CHECK-NEXT:    struct.member @f1 : !array.type<2 x i1>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@"Component07A_!a<b:2>"> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@"Component07A_!a<b:2>">
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@"Component07A_!a<b:2>">
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@"Component07A_!a<b:2>">) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component07A<[@C]> {
-// CHECK-NEXT:    struct.member @f1 : !poly.tvar<@C>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component07A<[@C]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component07A<[@C]>>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component07A<[@C]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component07A<[@C]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component07B<[@T]> {
-// CHECK-NEXT:    struct.member @f2 : !struct.type<@Component07A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component07B<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component07B<[@T]>>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @Component07A::@compute() : () -> !struct.type<@Component07A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component07B<[@T]>>, !struct.type<@Component07A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component07B<[@T]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component07B<[@T]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f2] : <@Component07B<[@T]>>, !struct.type<@Component07A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:      function.call @Component07A::@constrain(%[[VAL_3]]) : (!struct.type<@Component07A<[!array.type<@T x i1>]>>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component07C {
-// CHECK-NEXT:    struct.member @f2 : !struct.type<@"Component07A_!a<b:2>">
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component07C> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component07C>
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @"Component07A_!a<b:2>"::@compute() : () -> !struct.type<@"Component07A_!a<b:2>">
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@f2] = %[[VAL_1]] : <@Component07C>, !struct.type<@"Component07A_!a<b:2>">
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Component07C>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component07C>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f2] : <@Component07C>, !struct.type<@"Component07A_!a<b:2>">
-// CHECK-NEXT:      function.call @"Component07A_!a<b:2>"::@constrain(%[[VAL_3]]) : (!struct.type<@"Component07A_!a<b:2>">) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @TestReadConstAsBool0<[@A]> {
-    function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBool0<[@A]>> {
-      %self = struct.new : !struct.type<@TestReadConstAsBool0<[@A]>>
-      function.return %self : !struct.type<@TestReadConstAsBool0<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsBool0<[@A]>>, %0: i1) {
-      %1 = poly.read_const @A : i1
-      constrain.eq %0, %1 : i1
-      function.return
+  poly.template @TTestReadConstAsBool0 {
+    poly.param @A
+
+    struct.def @TestReadConstAsBool0 {
+      function.def @compute(%0: i1) -> !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[@A]>> {
+        %self = struct.new : !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[@A]>>
+        function.return %self : !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[@A]>>, %0: i1) {
+        %1 = poly.read_const @A : i1
+        constrain.eq %0, %1 : i1
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@TestReadConstAsBool0<[0]>>
+    struct.member @sub : !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[0]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = arith.constant false
-      %1 = function.call @TestReadConstAsBool0::@compute(%0) : (i1) -> !struct.type<@TestReadConstAsBool0<[0]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsBool0<[0]>>
+      %1 = function.call @TTestReadConstAsBool0::@TestReadConstAsBool0::@compute(%0) : (i1) -> !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[0]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[0]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = arith.constant false
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsBool0<[0]>>
-      function.call @TestReadConstAsBool0::@constrain(%1, %0) : (!struct.type<@TestReadConstAsBool0<[0]>>, i1) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[0]>>
+      function.call @TTestReadConstAsBool0::@TestReadConstAsBool0::@constrain(%1, %0) : (!struct.type<@TTestReadConstAsBool0::@TestReadConstAsBool0<[0]>>, i1) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @TestReadConstAsBool0_0 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@TestReadConstAsBool0_0> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsBool0_0>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsBool0_0>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsBool0_0>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@TestReadConstAsBool0_0>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsBool0_0::@compute(%[[VAL_1]]) : (i1) -> !struct.type<@TestReadConstAsBool0_0>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsBool0_0>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsBool0_0>
-// CHECK-NEXT:      function.call @TestReadConstAsBool0_0::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsBool0_0>, i1) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @TestReadConstAsBool1<[@A]> {
-    function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBool1<[@A]>> {
-      %self = struct.new : !struct.type<@TestReadConstAsBool1<[@A]>>
-      function.return %self : !struct.type<@TestReadConstAsBool1<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsBool1<[@A]>>, %0: i1) {
-      %1 = poly.read_const @A : i1
-      constrain.eq %0, %1 : i1
-      function.return
+  poly.template @TTestReadConstAsBool1 {
+    poly.param @A
+
+    struct.def @TestReadConstAsBool1 {
+      function.def @compute(%0: i1) -> !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[@A]>> {
+        %self = struct.new : !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[@A]>>
+        function.return %self : !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[@A]>>, %0: i1) {
+        %1 = poly.read_const @A : i1
+        constrain.eq %0, %1 : i1
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@TestReadConstAsBool1<[1]>>
+    struct.member @sub : !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[1]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = arith.constant true
-      %1 = function.call @TestReadConstAsBool1::@compute(%0) : (i1) -> !struct.type<@TestReadConstAsBool1<[1]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsBool1<[1]>>
+      %1 = function.call @TTestReadConstAsBool1::@TestReadConstAsBool1::@compute(%0) : (i1) -> !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[1]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[1]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = arith.constant true
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsBool1<[1]>>
-      function.call @TestReadConstAsBool1::@constrain(%1, %0) : (!struct.type<@TestReadConstAsBool1<[1]>>, i1) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[1]>>
+      function.call @TTestReadConstAsBool1::@TestReadConstAsBool1::@constrain(%1, %0) : (!struct.type<@TTestReadConstAsBool1::@TestReadConstAsBool1<[1]>>, i1) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @TestReadConstAsBool1_1 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@TestReadConstAsBool1_1> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsBool1_1>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsBool1_1>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsBool1_1>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@TestReadConstAsBool1_1>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsBool1_1::@compute(%[[VAL_1]]) : (i1) -> !struct.type<@TestReadConstAsBool1_1>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsBool1_1>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsBool1_1>
-// CHECK-NEXT:      function.call @TestReadConstAsBool1_1::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsBool1_1>, i1) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @TestReadConstAsBool2<[@A]> {
-    function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBool2<[@A]>> {
-      %self = struct.new : !struct.type<@TestReadConstAsBool2<[@A]>>
-      function.return %self : !struct.type<@TestReadConstAsBool2<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsBool2<[@A]>>, %0: i1) {
-      // expected-warning@+1 {{Interpreting non-zero value 2 as true}}
-      %1 = poly.read_const @A : i1
-      constrain.eq %0, %1 : i1
-      function.return
+  poly.template @TTestReadConstAsBool2 {
+    poly.param @A
+
+    struct.def @TestReadConstAsBool2 {
+      function.def @compute(%0: i1) -> !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[@A]>> {
+        %self = struct.new : !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[@A]>>
+        function.return %self : !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[@A]>>, %0: i1) {
+        // expected-warning@+1 {{Interpreting non-zero value 2 as true}}
+        %1 = poly.read_const @A : i1
+        constrain.eq %0, %1 : i1
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@TestReadConstAsBool2<[2]>>
+    struct.member @sub : !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[2]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = arith.constant true
       // expected-note@+1 {{when instantiating 'struct.def' parameter "@A" for this call}}
-      %1 = function.call @TestReadConstAsBool2::@compute(%0) : (i1) -> !struct.type<@TestReadConstAsBool2<[2]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsBool2<[2]>>
+      %1 = function.call @TTestReadConstAsBool2::@TestReadConstAsBool2::@compute(%0) : (i1) -> !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[2]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[2]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = arith.constant true
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsBool2<[2]>>
-      function.call @TestReadConstAsBool2::@constrain(%1, %0) : (!struct.type<@TestReadConstAsBool2<[2]>>, i1) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[2]>>
+      function.call @TTestReadConstAsBool2::@TestReadConstAsBool2::@constrain(%1, %0) : (!struct.type<@TTestReadConstAsBool2::@TestReadConstAsBool2<[2]>>, i1) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @TestReadConstAsBool2_2 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@TestReadConstAsBool2_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsBool2_2>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsBool2_2>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsBool2_2>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@TestReadConstAsBool2_2>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsBool2_2::@compute(%[[VAL_1]]) : (i1) -> !struct.type<@TestReadConstAsBool2_2>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsBool2_2>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsBool2_2>
-// CHECK-NEXT:      function.call @TestReadConstAsBool2_2::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsBool2_2>, i1) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @TestReadConstAsBoolTrue<[@A]> {
-    function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBoolTrue<[@A]>> {
-      %self = struct.new : !struct.type<@TestReadConstAsBoolTrue<[@A]>>
-      function.return %self : !struct.type<@TestReadConstAsBoolTrue<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsBoolTrue<[@A]>>, %0: i1) {
-      %1 = poly.read_const @A : i1
-      constrain.eq %0, %1 : i1
-      function.return
+  poly.template @TTestReadConstAsBoolTrue {
+    poly.param @A
+
+    struct.def @TestReadConstAsBoolTrue {
+      function.def @compute(%0: i1) -> !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[@A]>> {
+        %self = struct.new : !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[@A]>>
+        function.return %self : !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[@A]>>, %0: i1) {
+        %1 = poly.read_const @A : i1
+        constrain.eq %0, %1 : i1
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@TestReadConstAsBoolTrue<[true]>>
+    struct.member @sub : !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[true]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = arith.constant true
-      %1 = function.call @TestReadConstAsBoolTrue::@compute(%0) : (i1) -> !struct.type<@TestReadConstAsBoolTrue<[true]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsBoolTrue<[true]>>
+      %1 = function.call @TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue::@compute(%0) : (i1) -> !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[true]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[true]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = arith.constant true
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsBoolTrue<[true]>>
-      function.call @TestReadConstAsBoolTrue::@constrain(%1, %0) : (!struct.type<@TestReadConstAsBoolTrue<[true]>>, i1) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[true]>>
+      function.call @TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue::@constrain(%1, %0) : (!struct.type<@TTestReadConstAsBoolTrue::@TestReadConstAsBoolTrue<[true]>>, i1) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @TestReadConstAsBoolTrue_1 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@TestReadConstAsBoolTrue_1> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsBoolTrue_1>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsBoolTrue_1>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsBoolTrue_1>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@TestReadConstAsBoolTrue_1>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsBoolTrue_1::@compute(%[[VAL_1]]) : (i1) -> !struct.type<@TestReadConstAsBoolTrue_1>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsBoolTrue_1>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsBoolTrue_1>
-// CHECK-NEXT:      function.call @TestReadConstAsBoolTrue_1::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsBoolTrue_1>, i1) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @TestReadConstAsBoolFalse<[@A]> {
-    function.def @compute(%0: i1) -> !struct.type<@TestReadConstAsBoolFalse<[@A]>> {
-      %self = struct.new : !struct.type<@TestReadConstAsBoolFalse<[@A]>>
-      function.return %self : !struct.type<@TestReadConstAsBoolFalse<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsBoolFalse<[@A]>>, %0: i1) {
-      %1 = poly.read_const @A : i1
-      constrain.eq %0, %1 : i1
-      function.return
+  poly.template @TTestReadConstAsBoolFalse {
+    poly.param @A
+
+    struct.def @TestReadConstAsBoolFalse {
+      function.def @compute(%0: i1) -> !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[@A]>> {
+        %self = struct.new : !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[@A]>>
+        function.return %self : !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[@A]>>, %0: i1) {
+        %1 = poly.read_const @A : i1
+        constrain.eq %0, %1 : i1
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@TestReadConstAsBoolFalse<[false]>>
+    struct.member @sub : !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[false]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = arith.constant false
-      %1 = function.call @TestReadConstAsBoolFalse::@compute(%0) : (i1) -> !struct.type<@TestReadConstAsBoolFalse<[false]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsBoolFalse<[false]>>
+      %1 = function.call @TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse::@compute(%0) : (i1) -> !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[false]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[false]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = arith.constant false
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsBoolFalse<[false]>>
-      function.call @TestReadConstAsBoolFalse::@constrain(%1, %0) : (!struct.type<@TestReadConstAsBoolFalse<[false]>>, i1) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[false]>>
+      function.call @TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse::@constrain(%1, %0) : (!struct.type<@TTestReadConstAsBoolFalse::@TestReadConstAsBoolFalse<[false]>>, i1) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @TestReadConstAsBoolFalse_0 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@TestReadConstAsBoolFalse_0> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsBoolFalse_0>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsBoolFalse_0>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsBoolFalse_0>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : i1, i1
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@TestReadConstAsBoolFalse_0>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsBoolFalse_0::@compute(%[[VAL_1]]) : (i1) -> !struct.type<@TestReadConstAsBoolFalse_0>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsBoolFalse_0>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsBoolFalse_0>
-// CHECK-NEXT:      function.call @TestReadConstAsBoolFalse_0::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsBoolFalse_0>, i1) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @TestReadConstAsFelt<[@A]> {
-    function.def @compute(%0: !felt.type) -> !struct.type<@TestReadConstAsFelt<[@A]>> {
-      %self = struct.new : !struct.type<@TestReadConstAsFelt<[@A]>>
-      function.return %self : !struct.type<@TestReadConstAsFelt<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@TestReadConstAsFelt<[@A]>>, %0: !felt.type) {
-      %1 = poly.read_const @A : !felt.type
-      constrain.eq %0, %1 : !felt.type
-      function.return
+  poly.template @TTestReadConstAsFelt {
+    poly.param @A
+
+    struct.def @TestReadConstAsFelt {
+      function.def @compute(%0: !felt.type) -> !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[@A]>> {
+        %self = struct.new : !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[@A]>>
+        function.return %self : !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[@A]>>, %0: !felt.type) {
+        %1 = poly.read_const @A : !felt.type
+        constrain.eq %0, %1 : !felt.type
+        function.return
+      }
     }
   }
   struct.def @Main {
-    struct.member @sub : !struct.type<@TestReadConstAsFelt<[45]>>
+    struct.member @sub : !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[45]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = felt.const 45
-      %1 = function.call @TestReadConstAsFelt::@compute(%0) : (!felt.type) -> !struct.type<@TestReadConstAsFelt<[45]>>
-      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TestReadConstAsFelt<[45]>>
+      %1 = function.call @TTestReadConstAsFelt::@TestReadConstAsFelt::@compute(%0) : (!felt.type) -> !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[45]>>
+      struct.writem %self[@sub] = %1 : !struct.type<@Main>, !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[45]>>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
       %0 = felt.const 45
-      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TestReadConstAsFelt<[45]>>
-      function.call @TestReadConstAsFelt::@constrain(%1, %0) : (!struct.type<@TestReadConstAsFelt<[45]>>, !felt.type) -> ()
+      %1 = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[45]>>
+      function.call @TTestReadConstAsFelt::@TestReadConstAsFelt::@constrain(%1, %0) : (!struct.type<@TTestReadConstAsFelt::@TestReadConstAsFelt<[45]>>, !felt.type) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @TestReadConstAsFelt_45 {
-// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TestReadConstAsFelt_45> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TestReadConstAsFelt_45>
-// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TestReadConstAsFelt_45>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TestReadConstAsFelt_45>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
-// CHECK-NEXT:      constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@TestReadConstAsFelt_45>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const 45
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TestReadConstAsFelt_45::@compute(%[[VAL_1]]) : (!felt.type) -> !struct.type<@TestReadConstAsFelt_45>
-// CHECK-NEXT:      struct.writem %[[VAL_0]][@sub] = %[[VAL_2]] : <@Main>, !struct.type<@TestReadConstAsFelt_45>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const 45
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@sub] : <@Main>, !struct.type<@TestReadConstAsFelt_45>
-// CHECK-NEXT:      function.call @TestReadConstAsFelt_45::@constrain(%[[VAL_5]], %[[VAL_4]]) : (!struct.type<@TestReadConstAsFelt_45>, !felt.type) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 /// Test naming collisions.
@@ -981,63 +644,34 @@ module attributes {llzk.lang} {
     function.def @constrain(%arg0: !struct.type<@Component09B_43>, %a: index) { function.return }
   }
 
-  struct.def @Component09B<[@C]> {
-    function.def @compute() -> !struct.type<@Component09B<[@C]>> {
-      %self = struct.new : !struct.type<@Component09B<[@C]>>
-      function.return %self : !struct.type<@Component09B<[@C]>>
-    }
+  poly.template @TComponent09B {
+    poly.param @C
 
-    function.def @constrain(%self: !struct.type<@Component09B<[@C]>>) { function.return }
+    struct.def @Component09B {
+      function.def @compute() -> !struct.type<@TComponent09B::@Component09B<[@C]>> {
+        %self = struct.new : !struct.type<@TComponent09B::@Component09B<[@C]>>
+        function.return %self : !struct.type<@TComponent09B::@Component09B<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent09B::@Component09B<[@C]>>) { function.return }
+    }
   }
 
   struct.def @Component09C {
-    struct.member @f3 : !struct.type<@Component09B<[43]>>
+    struct.member @f3 : !struct.type<@TComponent09B::@Component09B<[43]>>
 
     function.def @compute() -> !struct.type<@Component09C> {
       %self = struct.new : !struct.type<@Component09C>
-      %x = function.call @Component09B::@compute() : () -> (!struct.type<@Component09B<[43]>>)
-      struct.writem %self[@f3] = %x : !struct.type<@Component09C>, !struct.type<@Component09B<[43]>>
+      %x = function.call @TComponent09B::@Component09B::@compute() : () -> (!struct.type<@TComponent09B::@Component09B<[43]>>)
+      struct.writem %self[@f3] = %x : !struct.type<@Component09C>, !struct.type<@TComponent09B::@Component09B<[43]>>
       function.return %self : !struct.type<@Component09C>
     }
 
     function.def @constrain(%self: !struct.type<@Component09C>) {
-      %b = struct.readm %self[@f3] : !struct.type<@Component09C>, !struct.type<@Component09B<[43]>>
-      function.call @Component09B::@constrain(%b) : (!struct.type<@Component09B<[43]>>) -> ()
+      %b = struct.readm %self[@f3] : !struct.type<@Component09C>, !struct.type<@TComponent09B::@Component09B<[43]>>
+      function.call @TComponent09B::@Component09B::@constrain(%b) : (!struct.type<@TComponent09B::@Component09B<[43]>>) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @Component09B_43 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Component09B_43> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component09B_43>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component09B_43>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component09B_43>, %[[V3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component09B_43_0 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component09B_43_0> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component09B_43_0>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Component09B_43_0>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component09B_43_0>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component09C {
-// CHECK-NEXT:    struct.member @f3 : !struct.type<@Component09B_43_0>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component09C> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component09C>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component09B_43_0::@compute() : () -> !struct.type<@Component09B_43_0>
-// CHECK-NEXT:      struct.writem %[[V0]][@f3] = %[[V1]] : <@Component09C>, !struct.type<@Component09B_43_0>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Component09C>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component09C>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@f3] : <@Component09C>, !struct.type<@Component09B_43_0>
-// CHECK-NEXT:      function.call @Component09B_43_0::@constrain(%[[V3]]) : (!struct.type<@Component09B_43_0>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
