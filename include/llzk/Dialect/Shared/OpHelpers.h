@@ -14,12 +14,33 @@
 
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringRef.h>
 
 namespace llzk {
+
+/// See `LLZKSymbolTable` ODS documentation for details.
+template <typename TypeClass>
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
+class LLZKSymbolTableImplTrait
+    : public mlir::OpTrait::TraitBase<TypeClass, LLZKSymbolTableImplTrait> {
+public:
+  static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
+    // Note: the current op will be checked by the normal `SymbolTable` trait that is
+    // included in `LLZKSymbolTable`. Checking it here would cause the same error described
+    // in `LLZKSymbolTable`.
+    while ((op = op->getParentWithTrait<mlir::OpTrait::SymbolTable>())) {
+      if (mlir::failed(mlir::detail::verifySymbolTable(op))) {
+        return mlir::failure();
+      }
+    }
+    return mlir::success();
+  }
+};
 
 /// Get the operation name, like "constrain.eq" for the given OpClass.
 /// This function can be used when the compiler would complain about
