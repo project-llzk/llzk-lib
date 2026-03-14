@@ -157,73 +157,83 @@ function.def @more_dimensions(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @UnificationInDims<[@A, @B]> {
-    function.def @compute(%a: !array.type<@A x i1>, %b: !array.type<@B x i1>) -> !struct.type<@UnificationInDims<[@A, @B]>> {
-      %self = struct.new : !struct.type<@UnificationInDims<[@A, @B]>>
-      %c = array.new : !array.type<2,3 x i1>
-      %0 = arith.constant 0 : index
-      array.insert %c[%0] = %a : !array.type<2,3 x i1>, !array.type<@A x i1>
-      %1 = arith.constant 1 : index
-      array.insert %c[%1] = %b : !array.type<2,3 x i1>, !array.type<@B x i1>
-      function.return %self : !struct.type<@UnificationInDims<[@A, @B]>>
+  poly.template @TUnificationInDims {
+    poly.param @A
+    poly.param @B
+
+    struct.def @UnificationInDims {
+      function.def @compute(%a: !array.type<@A x i1>, %b: !array.type<@B x i1>) -> !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>
+        %c = array.new : !array.type<2,3 x i1>
+        %0 = arith.constant 0 : index
+        array.insert %c[%0] = %a : !array.type<2,3 x i1>, !array.type<@A x i1>
+        %1 = arith.constant 1 : index
+        array.insert %c[%1] = %b : !array.type<2,3 x i1>, !array.type<@B x i1>
+        function.return %self : !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>, %a: !array.type<@A x i1>, %b: !array.type<@B x i1>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@UnificationInDims<[@A, @B]>>, %a: !array.type<@A x i1>, %b: !array.type<@B x i1>) { function.return }
   }
 }
-// CHECK-LABEL: struct.def @UnificationInDims<[@A, @B]> {
-// CHECK-NEXT:    function.def @compute(
-// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>,
-// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !array.type<@B x i1>
-// CHECK-SAME:                  ) -> !struct.type<@UnificationInDims<[@A, @B]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = struct.new : <@UnificationInDims<[@A, @B]>>
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
-// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      array.insert %[[V_3]]{{\[}}%[[V_4]]] = %[[V_0]] : <2,3 x i1>, <@A x i1>
-// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      array.insert %[[V_3]]{{\[}}%[[V_5]]] = %[[V_1]] : <2,3 x i1>, <@B x i1>
-// CHECK-NEXT:      function.return %[[V_2]] : !struct.type<@UnificationInDims<[@A, @B]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(
-// CHECK-SAME:                    %[[V_6:[0-9a-zA-Z_\.]+]]: !struct.type<@UnificationInDims<[@A, @B]>>,
-// CHECK-SAME:                    %[[V_7:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>,
-// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !array.type<@B x i1>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TUnificationInDims {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      struct.def @UnificationInDims {
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<@B x i1>) -> !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TUnificationInDims::@UnificationInDims<[@A, @B]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <2,3 x i1>, <@A x i1>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <2,3 x i1>, <@B x i1>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<@B x i1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @UnificationInTypes<[@A, @B]> {
-    function.def @compute(%a: !array.type<3 x !poly.tvar<@A>>, %b: !array.type<3 x !poly.tvar<@B>>) -> !struct.type<@UnificationInTypes<[@A, @B]>> {
-      %self = struct.new : !struct.type<@UnificationInTypes<[@A, @B]>>
-      %c = array.new : !array.type<2,3 x i1>
-      %0 = arith.constant 0 : index
-      array.insert %c[%0] = %a : !array.type<2,3 x i1>, !array.type<3 x !poly.tvar<@A>>
-      %1 = arith.constant 1 : index
-      array.insert %c[%1] = %b : !array.type<2,3 x i1>, !array.type<3 x !poly.tvar<@B>>
-      function.return %self : !struct.type<@UnificationInTypes<[@A, @B]>>
+  poly.template @TUnificationInTypes {
+    poly.param @A
+    poly.param @B
+
+    struct.def @UnificationInTypes {
+      function.def @compute(%a: !array.type<3 x !poly.tvar<@A>>, %b: !array.type<3 x !poly.tvar<@B>>) -> !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
+        %c = array.new : !array.type<2,3 x i1>
+        %0 = arith.constant 0 : index
+        array.insert %c[%0] = %a : !array.type<2,3 x i1>, !array.type<3 x !poly.tvar<@A>>
+        %1 = arith.constant 1 : index
+        array.insert %c[%1] = %b : !array.type<2,3 x i1>, !array.type<3 x !poly.tvar<@B>>
+        function.return %self : !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>, %a: !array.type<3 x !poly.tvar<@A>>, %b: !array.type<3 x !poly.tvar<@B>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@UnificationInTypes<[@A, @B]>>, %a: !array.type<3 x !poly.tvar<@A>>, %b: !array.type<3 x !poly.tvar<@B>>) { function.return }
   }
 }
-// CHECK-LABEL: struct.def @UnificationInTypes<[@A, @B]> {
-// CHECK-NEXT:    function.def @compute(
-// CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@A>>,
-// CHECK-SAME:                  %[[V_1:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@B>>
-// CHECK-SAME:                  ) -> !struct.type<@UnificationInTypes<[@A, @B]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V_2:[0-9a-zA-Z_\.]+]] = struct.new : <@UnificationInTypes<[@A, @B]>>
-// CHECK-NEXT:      %[[V_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
-// CHECK-NEXT:      %[[V_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      array.insert %[[V_3]]{{\[}}%[[V_4]]] = %[[V_0]] : <2,3 x i1>, <3 x !poly.tvar<@A>>
-// CHECK-NEXT:      %[[V_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      array.insert %[[V_3]]{{\[}}%[[V_5]]] = %[[V_1]] : <2,3 x i1>, <3 x !poly.tvar<@B>>
-// CHECK-NEXT:      function.return %[[V_2]] : !struct.type<@UnificationInTypes<[@A, @B]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(
-// CHECK-SAME:                    %[[V_6:[0-9a-zA-Z_\.]+]]: !struct.type<@UnificationInTypes<[@A, @B]>>,
-// CHECK-SAME:                    %[[V_7:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@A>>,
-// CHECK-SAME:                    %[[V_8:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@B>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TUnificationInTypes {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      struct.def @UnificationInTypes {
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@A>>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@B>>) -> !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,3 x i1>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_0]] : <2,3 x i1>, <3 x !poly.tvar<@A>>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <2,3 x i1>, <3 x !poly.tvar<@B>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TUnificationInTypes::@UnificationInTypes<[@A, @B]>>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@A>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<3 x !poly.tvar<@B>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----

@@ -244,14 +244,6 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_header_string) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
-  auto op = test_op();
-  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    auto name = mlirStringRefCreateFromCString("p");
-    llzkStruct_StructDefOpHasParamName(op.op, name);
-  }
-}
-
 TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
@@ -397,13 +389,12 @@ std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use ModuleOp as parent to avoid the following:
-      // error: 'struct.def' op expects parent op 'builtin.module'
+      // error: 'struct.def' op expects parent op to be one of 'builtin.module, poly.template'
       const auto *name = "TestStruct";
       this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
       auto result = llzkStruct_StructDefOpBuild(
           builder, location,
-          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name)),
-          MlirAttribute {}
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name))
       );
       // Populate the struct to avoid the errors mentioned below.
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.

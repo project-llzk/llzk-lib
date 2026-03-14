@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/SymbolUseGraph.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Compare.h"
@@ -112,30 +113,31 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
     if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
       // Create child node for each Symbol use, as successor of the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
-        bool isStructParam = false;
+        bool isTemplateParam = false;
         Operation *user = u.getUser();
         SymbolRefAttr symRef = u.getSymbolRef();
         // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
-        // where the user is a MemberRefOpInterface or the user is located within a StructDefOp and
-        // append the StructDefOp path with the FlatSymbolRefAttr.
+        // where the user is a MemberRefOpInterface or the user is located within a TemplateOp and
+        // append the TemplateOp path with the FlatSymbolRefAttr.
         if (FlatSymbolRefAttr flatSymRef = llvm::dyn_cast<FlatSymbolRefAttr>(symRef)) {
           if (auto fref = llvm::dyn_cast<component::MemberRefOpInterface>(user);
               fref && fref.getMemberNameAttr() == flatSymRef) {
             symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
-          } else if (auto userStruct = getSelfOrParentOfType<component::StructDefOp>(user)) {
+          } else if (auto userTemplate = getSelfOrParentOfType<polymorphic::TemplateOp>(user)) {
             StringAttr localName = flatSymRef.getAttr();
-            isStructParam = userStruct.hasParamNamed(localName);
-            if (isStructParam || tables.getSymbolTable(userStruct).lookup(localName)) {
-              // If 'flatSymRef' is defined in the SymbolTable for 'userStruct' then it's
-              // a local symbol so prepend the full path of the struct itself.
-              auto parentPath = llzk::getPathFromRoot(userStruct);
+            isTemplateParam =
+                userTemplate.hasConstNamed<polymorphic::ConstParamSymbolOpInterface>(localName);
+            if (isTemplateParam || tables.getSymbolTable(userTemplate).lookup(localName)) {
+              // If 'flatSymRef' is defined in the SymbolTable for 'userTemplate' then it's
+              // a local symbol so prepend the full path of the template itself.
+              auto parentPath = llzk::getPathFromRoot(userTemplate);
               assert(succeeded(parentPath));
               symRef = llzk::appendLeaf(parentPath.value(), flatSymRef);
             }
           }
         }
         auto *node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
-        node->isStructConstParam = isStructParam;
+        node->isTemplateConstParam = isTemplateParam;
         node->opsThatUseTheSymbol.insert(user);
       }
     }
@@ -217,7 +219,7 @@ void SymbolUseGraphNode::print(
     llvm::raw_ostream &os, bool showLocations, const std::string &locationLinePrefix
 ) const {
   os << '\'' << symbolPath << '\'';
-  if (isStructConstParam) {
+  if (isTemplateConstParam) {
     os << " (struct param)";
   }
   os << " with root module ";

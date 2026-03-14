@@ -11,9 +11,11 @@
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -39,6 +41,7 @@ using namespace llzk::felt;
 using namespace llzk::array;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 namespace llzk::component {
 
@@ -126,14 +129,15 @@ LogicalResult checkSelfType(
           .append("uses this type instead");
     }
     // Check for an EXACT match in the parameter list since it must reference the "self" type.
-    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+    ArrayAttr actualTypeParamsAttr = actualStructType.getParams(); // may be nullptr
+    ArrayRef<Attribute> actualTypeParams =
+        actualTypeParamsAttr ? actualTypeParamsAttr.getValue() : ArrayRef<Attribute> {};
+    if (ArrayRef(expectedStruct.getTemplateParamOpNames()) != actualTypeParams) {
       // To make error messages more consistent and meaningful, if the parameters don't match
       // because the actual type uses symbols that are not defined, generate an error about the
       // undefined symbol(s).
-      if (ArrayAttr tyParams = actualStructType.getParams()) {
-        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
-          return failure();
-        }
+      if (failed(verifyParamsOfType(tables, actualTypeParams, actualStructType, origin))) {
+        return failure();
       }
       // Otherwise, generate an error stating the parent struct type must be used.
       return genCompareErr(expectedStruct, origin, aspect)
@@ -153,7 +157,16 @@ LogicalResult checkSelfType(
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
   assert(succeeded(pathRes)); // consistent with StructType::get() with invalid args
-  return StructType::get(pathRes.value(), constParams.value_or(getConstParamsAttr()));
+  // Use the specified parameters if provided.
+  if (constParams.has_value()) {
+    return StructType::get(pathRes.value(), constParams.value());
+  }
+  // Check if there is an enclosing `TemplateOp` defining parameters, else there are none.
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return StructType::get(pathRes.value(), parent.getConstNames<TemplateParamOp>());
+  } else {
+    return StructType::get(pathRes.value());
+  }
 }
 
 std::string StructDefOp::getHeaderString() {
@@ -166,55 +179,29 @@ std::string StructDefOp::getHeaderString() {
       //  just print its symbol name directly.
       ss << '@' << this->getSymName();
     }
-    if (auto attr = this->getConstParamsAttr()) {
-      ss << '<' << attr << '>';
-    }
+    ss << '<' << debug::toStringList(this->getTemplateParamOpNames()) << '>';
   });
 }
 
-bool StructDefOp::hasParamNamed(StringRef find) {
-  if (ArrayAttr params = this->getConstParamsAttr()) {
-    for (Attribute attr : params) {
-      assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
-      if (llvm::cast<FlatSymbolRefAttr>(attr).getRootReference().strref() == find) {
-        return true;
-      }
-    }
+bool StructDefOp::hasTemplateConstParam() {
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return parent.hasConstOps<ConstParamSymbolOpInterface>();
   }
   return false;
+}
+
+SmallVector<Attribute> StructDefOp::getTemplateParamOpNames() {
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return parent.getConstNames<TemplateParamOp>();
+  } else {
+    return SmallVector<Attribute>();
+  }
 }
 
 SymbolRefAttr StructDefOp::getFullyQualifiedName() {
   auto res = getPathFromRoot(*this);
   assert(succeeded(res));
   return res.value();
-}
-
-LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
-  if (ArrayAttr params = this->getConstParamsAttr()) {
-    // Ensure struct parameter names are unique
-    llvm::StringSet<> uniqNames;
-    for (Attribute attr : params) {
-      assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
-      StringRef name = llvm::cast<FlatSymbolRefAttr>(attr).getValue();
-      if (!uniqNames.insert(name).second) {
-        return this->emitOpError().append("has more than one parameter named \"@", name, '"');
-      }
-    }
-    // Ensure they do not conflict with existing symbols
-    for (Attribute attr : params) {
-      auto res = lookupTopLevelSymbol(tables, llvm::cast<FlatSymbolRefAttr>(attr), *this, false);
-      if (succeeded(res)) {
-        return this->emitOpError()
-            .append("parameter name \"@")
-            .append(llvm::cast<FlatSymbolRefAttr>(attr).getValue())
-            .append("\" conflicts with an existing symbol")
-            .attachNote(res->get()->getLoc())
-            .append("symbol already defined here");
-      }
-    }
-  }
-  return success();
 }
 
 namespace {

@@ -375,7 +375,8 @@ std::unique_ptr<FuncDefOpBuildFuncHelper> FuncDefOpBuildFuncHelper::get() {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       {
         // Use ModuleOp as parent to avoid the following:
-        // error: 'function.def' op expects parent op to be one of 'builtin.module, struct.def'
+        // error: 'function.def' op expects parent op to be one of 'builtin.module, struct.def,
+        // poly.template'
         this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
         // setup function type
         fTy = mlir::FunctionType::get(unwrap(ctx), mlir::TypeRange {}, mlir::TypeRange {});

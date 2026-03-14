@@ -294,28 +294,33 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   // Constrains arr[0] === @A and arr[2] === @B, leaving arr[1] unconstrained
-  struct.def @ArrayConstrain<[@A, @B]> {
-    function.def @compute(%arr: !array.type<3 x !felt.type>) -> !struct.type<@ArrayConstrain<[@A, @B]>> {
-      %self = struct.new : !struct.type<@ArrayConstrain<[@A, @B]>>
-      function.return %self : !struct.type<@ArrayConstrain<[@A, @B]>>
-    }
+  poly.template @TArrayConstrain {
+    poly.param @A
+    poly.param @B
 
-    function.def @constrain(%self: !struct.type<@ArrayConstrain<[@A, @B]>>, %arr: !array.type<3 x !felt.type>) {
-      %const0 = poly.read_const @A : !felt.type
-      %const2 = poly.read_const @B : !felt.type
-      %0 = arith.constant 0 : index
-      %2 = arith.constant 2 : index
-      %elem0 = array.read %arr[%0] : !array.type<3 x !felt.type>, !felt.type
-      %elem2 = array.read %arr[%2] : !array.type<3 x !felt.type>, !felt.type
-      constrain.eq %elem0, %const0 : !felt.type
-      constrain.eq %elem2, %const2 : !felt.type
-      function.return
+    struct.def @ArrayConstrain {
+      function.def @compute(%arr: !array.type<3 x !felt.type>) -> !struct.type<@TArrayConstrain::@ArrayConstrain<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TArrayConstrain::@ArrayConstrain<[@A, @B]>>
+        function.return %self : !struct.type<@TArrayConstrain::@ArrayConstrain<[@A, @B]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TArrayConstrain::@ArrayConstrain<[@A, @B]>>, %arr: !array.type<3 x !felt.type>) {
+        %const0 = poly.read_const @A : !felt.type
+        %const2 = poly.read_const @B : !felt.type
+        %0 = arith.constant 0 : index
+        %2 = arith.constant 2 : index
+        %elem0 = array.read %arr[%0] : !array.type<3 x !felt.type>, !felt.type
+        %elem2 = array.read %arr[%2] : !array.type<3 x !felt.type>, !felt.type
+        constrain.eq %elem0, %const0 : !felt.type
+        constrain.eq %elem2, %const2 : !felt.type
+        function.return
+      }
     }
   }
 
   struct.def @MatrixConstrain {
-    struct.member @check0 : !struct.type<@ArrayConstrain<[7, 11]>>
-    struct.member @check1 : !struct.type<@ArrayConstrain<[13, 17]>>
+    struct.member @check0 : !struct.type<@TArrayConstrain::@ArrayConstrain<[7, 11]>>
+    struct.member @check1 : !struct.type<@TArrayConstrain::@ArrayConstrain<[13, 17]>>
 
     function.def @compute(%mat: !array.type<2,3 x !felt.type>) -> !struct.type<@MatrixConstrain> {
       %self = struct.new : !struct.type<@MatrixConstrain>
@@ -324,15 +329,15 @@ module attributes {llzk.lang} {
 
     function.def @constrain(%self: !struct.type<@MatrixConstrain>, %mat: !array.type<2,3 x !felt.type>) {
       // split into two arrays and constrain each
-      %check0 = struct.readm %self[@check0] : !struct.type<@MatrixConstrain>, !struct.type<@ArrayConstrain<[7, 11]>>
+      %check0 = struct.readm %self[@check0] : !struct.type<@MatrixConstrain>, !struct.type<@TArrayConstrain::@ArrayConstrain<[7, 11]>>
       %0 = arith.constant 0 : index
       %arr0 = array.extract %mat[%0] : !array.type<2,3 x !felt.type>
-      function.call @ArrayConstrain::@constrain(%check0, %arr0) : (!struct.type<@ArrayConstrain<[7, 11]>>, !array.type<3 x !felt.type>) -> ()
+      function.call @TArrayConstrain::@ArrayConstrain::@constrain(%check0, %arr0) : (!struct.type<@TArrayConstrain::@ArrayConstrain<[7, 11]>>, !array.type<3 x !felt.type>) -> ()
 
-      %check1 = struct.readm %self[@check1] : !struct.type<@MatrixConstrain>, !struct.type<@ArrayConstrain<[13, 17]>>
+      %check1 = struct.readm %self[@check1] : !struct.type<@MatrixConstrain>, !struct.type<@TArrayConstrain::@ArrayConstrain<[13, 17]>>
       %1 = arith.constant 1 : index
       %arr1 = array.extract %mat[%1] : !array.type<2,3 x !felt.type>
-      function.call @ArrayConstrain::@constrain(%check1, %arr1) : (!struct.type<@ArrayConstrain<[13, 17]>>, !array.type<3 x !felt.type>) -> ()
+      function.call @TArrayConstrain::@ArrayConstrain::@constrain(%check1, %arr1) : (!struct.type<@TArrayConstrain::@ArrayConstrain<[13, 17]>>, !array.type<3 x !felt.type>) -> ()
       function.return
     }
   }
@@ -422,18 +427,22 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @UnknownArrayConstrain<[@N]> {
-    function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@UnknownArrayConstrain<[@N]>> {
-      %self = struct.new : !struct.type<@UnknownArrayConstrain<[@N]>>
-      function.return %self : !struct.type<@UnknownArrayConstrain<[@N]>>
-    }
+  poly.template @TUnknownArrayConstrain {
+    poly.param @N
 
-    function.def @constrain(%self: !struct.type<@UnknownArrayConstrain<[@N]>>, %arr: !array.type<@N x !felt.type>) {
-      %const = felt.const 7
-      %1 = arith.constant 1 : index
-      %elem = array.read %arr[%1] : !array.type<@N x !felt.type>, !felt.type
-      constrain.eq %elem, %const : !felt.type
-      function.return
+    struct.def @UnknownArrayConstrain {
+      function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>> {
+        %self = struct.new : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
+        function.return %self : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>, %arr: !array.type<@N x !felt.type>) {
+        %const = felt.const 7
+        %1 = arith.constant 1 : index
+        %elem = array.read %arr[%1] : !array.type<@N x !felt.type>, !felt.type
+        constrain.eq %elem, %const : !felt.type
+        function.return
+      }
     }
   }
 }
@@ -447,35 +456,44 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @UnknownArrayConstrain<[@N]> {
-    function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@UnknownArrayConstrain<[@N]>> {
-      %self = struct.new : !struct.type<@UnknownArrayConstrain<[@N]>>
-      function.return %self : !struct.type<@UnknownArrayConstrain<[@N]>>
-    }
+  poly.template @TUnknownArrayConstrain {
+    poly.param @N
 
-    function.def @constrain(%self: !struct.type<@UnknownArrayConstrain<[@N]>>, %arr: !array.type<@N x !felt.type>) {
-      %const = felt.const 7
-      %1 = arith.constant 1 : index
-      %elem = array.read %arr[%1] : !array.type<@N x !felt.type>, !felt.type
-      constrain.eq %elem, %const : !felt.type
-      function.return
+    struct.def @UnknownArrayConstrain {
+      function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>> {
+        %self = struct.new : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
+        function.return %self : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>, %arr: !array.type<@N x !felt.type>) {
+        %const = felt.const 7
+        %1 = arith.constant 1 : index
+        %elem = array.read %arr[%1] : !array.type<@N x !felt.type>, !felt.type
+        constrain.eq %elem, %const : !felt.type
+        function.return
+      }
     }
   }
 
-  struct.def @UnknownMatrixConstrain<[@M, @N]> {
-    struct.member @check : !struct.type<@UnknownArrayConstrain<[@N]>>
+  poly.template @TUnknownMatrixConstrain {
+    poly.param @M
+    poly.param @N
 
-    function.def @compute(%mat: !array.type<@M,@N x !felt.type>) -> !struct.type<@UnknownMatrixConstrain<[@M, @N]>> {
-      %self = struct.new : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>
-      function.return %self : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>
-    }
+    struct.def @UnknownMatrixConstrain {
+      struct.member @check : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
 
-    function.def @constrain(%self: !struct.type<@UnknownMatrixConstrain<[@M, @N]>>, %mat: !array.type<@M,@N x !felt.type>) {
-      %check = struct.readm %self[@check] : !struct.type<@UnknownMatrixConstrain<[@M, @N]>>, !struct.type<@UnknownArrayConstrain<[@N]>>
-      %0 = arith.constant 0 : index
-      %arr = array.extract %mat[%0] : !array.type<@M,@N x !felt.type>
-      function.call @UnknownArrayConstrain::@constrain(%check, %arr) : (!struct.type<@UnknownArrayConstrain<[@N]>>, !array.type<@N x !felt.type>) -> ()
-      function.return
+      function.def @compute(%mat: !array.type<@M,@N x !felt.type>) -> !struct.type<@TUnknownMatrixConstrain::@UnknownMatrixConstrain<[@M, @N]>> {
+        %self = struct.new : !struct.type<@TUnknownMatrixConstrain::@UnknownMatrixConstrain<[@M, @N]>>
+        function.return %self : !struct.type<@TUnknownMatrixConstrain::@UnknownMatrixConstrain<[@M, @N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TUnknownMatrixConstrain::@UnknownMatrixConstrain<[@M, @N]>>, %mat: !array.type<@M,@N x !felt.type>) {
+        %check = struct.readm %self[@check] : !struct.type<@TUnknownMatrixConstrain::@UnknownMatrixConstrain<[@M, @N]>>, !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
+        %0 = arith.constant 0 : index
+        %arr = array.extract %mat[%0] : !array.type<@M,@N x !felt.type>
+        function.call @TUnknownArrayConstrain::@UnknownArrayConstrain::@constrain(%check, %arr) : (!struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>, !array.type<@N x !felt.type>) -> ()
+        function.return
+      }
     }
   }
 }
@@ -606,10 +624,10 @@ module attributes {llzk.lang} {
 }
 
 // COM: @zir::@B is empty since it uses an uninitialized array
-// CHECK-LABEL: @zir::@Head ConstraintDependencyGraph {
+// CHECK-LABEL: @zir::@THead::@Head ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
 // CHECK-NEXT: }
-// CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
+// CHECK-NEXT: @zir::@TA::@A ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@$super][@$super], @A<[@N]> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
@@ -761,108 +779,112 @@ module attributes {llzk.lang} {
 
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
-  struct.def @Foo<[@N]> {
-    struct.member @"$temp_0" : !array.type<#map x !felt.type> {column}
-    struct.member @outp : !array.type<#map x !felt.type> {column}
-    struct.member @"$temp" : !array.type<#map x !felt.type> {column}
-    struct.member @internal : !array.type<#map x !felt.type> {column}
-    function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness, function.allow_non_native_field_ops} {
-      %c0 = arith.constant 0 : index
-      %c1 = arith.constant 1 : index
-      %self = struct.new : <@Foo<[@N]>>
-      %0 = poly.read_const @N : !felt.type
-      %1 = poly.read_const @N : index
-      %array = array.new{()[%1]} : <#map x !felt.type>
-      %2 = poly.read_const @N : index
-      scf.for %arg1 = %c0 to %2 step %c1 {
-        %10 = cast.tofelt %arg1 : index
-        array.write %array[%arg1] = %10 : <#map x !felt.type>, !felt.type
+  poly.template @TFoo {
+    poly.param @N
+
+    struct.def @Foo {
+      struct.member @"$temp_0" : !array.type<#map x !felt.type> {column}
+      struct.member @outp : !array.type<#map x !felt.type> {column}
+      struct.member @"$temp" : !array.type<#map x !felt.type> {column}
+      struct.member @internal : !array.type<#map x !felt.type> {column}
+      function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N]>> attributes {function.allow_witness, function.allow_non_native_field_ops} {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %self = struct.new : <@TFoo::@Foo<[@N]>>
+        %0 = poly.read_const @N : !felt.type
+        %1 = poly.read_const @N : index
+        %array = array.new{()[%1]} : <#map x !felt.type>
+        %2 = poly.read_const @N : index
+        scf.for %arg1 = %c0 to %2 step %c1 {
+          %10 = cast.tofelt %arg1 : index
+          array.write %array[%arg1] = %10 : <#map x !felt.type>, !felt.type
+        }
+        %3 = poly.read_const @N : index
+        %array_0 = array.new{()[%3]} : <#map x !felt.type>
+        %4 = array.len %array, %c0 : <#map x !felt.type>
+        scf.for %arg1 = %c0 to %4 step %c1 {
+          %10 = array.read %array[%arg1] : <#map x !felt.type>, !felt.type
+          %11 = cast.toindex %10
+          %12 = array.read %arg0[%11] : <@N x !felt.type>, !felt.type
+          %14 = struct.readm %self[@"$temp"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          array.write %14[%arg1] = %12 : <#map x !felt.type>, !felt.type
+          struct.writem %self[@"$temp"] = %14 : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %15 = struct.readm %self[@"$temp"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %16 = array.read %15[%arg1] : <#map x !felt.type>, !felt.type
+          array.write %array_0[%arg1] = %16 : <#map x !felt.type>, !felt.type
+        } {original_op = "map"}
+        struct.writem %self[@internal] = %array_0 : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+        %5 = struct.readm %self[@internal] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+        %6 = poly.read_const @N : index
+        %array_1 = array.new{()[%6]} : <#map x !felt.type>
+        scf.for %arg1 = %c0 to %2 step %c1 {
+          %10 = cast.tofelt %arg1 : index
+          array.write %array_1[%arg1] = %10 : <#map x !felt.type>, !felt.type
+        }
+        %7 = poly.read_const @N : index
+        %array_2 = array.new{()[%7]} : <#map x !felt.type>
+        %8 = array.len %array_1, %c0 : <#map x !felt.type>
+        scf.for %arg1 = %c0 to %8 step %c1 {
+          %10 = array.read %array_1[%arg1] : <#map x !felt.type>, !felt.type
+          %11 = cast.toindex %10
+          %12 = array.read %5[%11] : <#map x !felt.type>, !felt.type
+          %16 = struct.readm %self[@"$temp_0"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          array.write %16[%arg1] = %12 : <#map x !felt.type>, !felt.type
+          struct.writem %self[@"$temp_0"] = %16 : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %17 = struct.readm %self[@"$temp_0"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %18 = array.read %17[%arg1] : <#map x !felt.type>, !felt.type
+          array.write %array_2[%arg1] = %18 : <#map x !felt.type>, !felt.type
+        } {original_op = "map"}
+        struct.writem %self[@outp] = %array_2 : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+        function.return %self : !struct.type<@TFoo::@Foo<[@N]>>
       }
-      %3 = poly.read_const @N : index
-      %array_0 = array.new{()[%3]} : <#map x !felt.type>
-      %4 = array.len %array, %c0 : <#map x !felt.type>
-      scf.for %arg1 = %c0 to %4 step %c1 {
-        %10 = array.read %array[%arg1] : <#map x !felt.type>, !felt.type
-        %11 = cast.toindex %10
-        %12 = array.read %arg0[%11] : <@N x !felt.type>, !felt.type
-        %14 = struct.readm %self[@"$temp"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        array.write %14[%arg1] = %12 : <#map x !felt.type>, !felt.type
-        struct.writem %self[@"$temp"] = %14 : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %15 = struct.readm %self[@"$temp"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %16 = array.read %15[%arg1] : <#map x !felt.type>, !felt.type
-        array.write %array_0[%arg1] = %16 : <#map x !felt.type>, !felt.type
-      } {original_op = "map"}
-      struct.writem %self[@internal] = %array_0 : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-      %5 = struct.readm %self[@internal] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-      %6 = poly.read_const @N : index
-      %array_1 = array.new{()[%6]} : <#map x !felt.type>
-      scf.for %arg1 = %c0 to %2 step %c1 {
-        %10 = cast.tofelt %arg1 : index
-        array.write %array_1[%arg1] = %10 : <#map x !felt.type>, !felt.type
+      function.def @constrain(%arg0: !struct.type<@TFoo::@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %0 = poly.read_const @N : !felt.type
+        %1 = poly.read_const @N : index
+        %array = array.new{()[%1]} : <#map x !felt.type>
+        %2 = poly.read_const @N : index
+        scf.for %arg2 = %c0 to %2 step %c1 {
+          %10 = cast.tofelt %arg2 : index
+          array.write %array[%arg2] = %10 : <#map x !felt.type>, !felt.type
+        }
+        %3 = poly.read_const @N : index
+        %array_0 = array.new{()[%3]} : <#map x !felt.type>
+        %4 = array.len %array, %c0 : <#map x !felt.type>
+        scf.for %arg2 = %c0 to %4 step %c1 {
+          %10 = array.read %array[%arg2] : <#map x !felt.type>, !felt.type
+          %11 = cast.toindex %10
+          %12 = array.read %arg1[%11] : <@N x !felt.type>, !felt.type
+          %largeIdx = arith.constant 7000 : index
+          %foobar = array.read %arg1[%largeIdx] : !array.type<@N x !felt.type>, !felt.type
+          %13 = struct.readm %arg0[@"$temp"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %14 = struct.readm %arg0[@"$temp"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %15 = array.read %14[%arg2] : <#map x !felt.type>, !felt.type
+          array.write %array_0[%arg2] = %15 : <#map x !felt.type>, !felt.type
+        } {original_op = "map"}
+        %5 = struct.readm %arg0[@internal] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+        %6 = poly.read_const @N : index
+        %array_1 = array.new{()[%6]} : <#map x !felt.type>
+        scf.for %arg2 = %c0 to %2 step %c1 {
+          %10 = cast.tofelt %arg2 : index
+          array.write %array_1[%arg2] = %10 : <#map x !felt.type>, !felt.type
+        }
+        %7 = poly.read_const @N : index
+        %array_2 = array.new{()[%7]} : <#map x !felt.type>
+        %8 = array.len %array_1, %c0 : <#map x !felt.type>
+        scf.for %arg2 = %c0 to %8 step %c1 {
+          %10 = array.read %array_1[%arg2] : <#map x !felt.type>, !felt.type
+          %11 = cast.toindex %10
+          %12 = array.read %5[%11] : <#map x !felt.type>, !felt.type
+          %15 = struct.readm %arg0[@"$temp_0"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %16 = struct.readm %arg0[@"$temp_0"] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+          %17 = array.read %16[%arg2] : <#map x !felt.type>, !felt.type
+          array.write %array_2[%arg2] = %17 : <#map x !felt.type>, !felt.type
+        } {original_op = "map"}
+        %9 = struct.readm %arg0[@outp] : <@TFoo::@Foo<[@N]>>, !array.type<#map x !felt.type>
+        function.return
       }
-      %7 = poly.read_const @N : index
-      %array_2 = array.new{()[%7]} : <#map x !felt.type>
-      %8 = array.len %array_1, %c0 : <#map x !felt.type>
-      scf.for %arg1 = %c0 to %8 step %c1 {
-        %10 = array.read %array_1[%arg1] : <#map x !felt.type>, !felt.type
-        %11 = cast.toindex %10
-        %12 = array.read %5[%11] : <#map x !felt.type>, !felt.type
-        %16 = struct.readm %self[@"$temp_0"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        array.write %16[%arg1] = %12 : <#map x !felt.type>, !felt.type
-        struct.writem %self[@"$temp_0"] = %16 : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %17 = struct.readm %self[@"$temp_0"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %18 = array.read %17[%arg1] : <#map x !felt.type>, !felt.type
-        array.write %array_2[%arg1] = %18 : <#map x !felt.type>, !felt.type
-      } {original_op = "map"}
-      struct.writem %self[@outp] = %array_2 : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-      function.return %self : !struct.type<@Foo<[@N]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-      %c0 = arith.constant 0 : index
-      %c1 = arith.constant 1 : index
-      %0 = poly.read_const @N : !felt.type
-      %1 = poly.read_const @N : index
-      %array = array.new{()[%1]} : <#map x !felt.type>
-      %2 = poly.read_const @N : index
-      scf.for %arg2 = %c0 to %2 step %c1 {
-        %10 = cast.tofelt %arg2 : index
-        array.write %array[%arg2] = %10 : <#map x !felt.type>, !felt.type
-      }
-      %3 = poly.read_const @N : index
-      %array_0 = array.new{()[%3]} : <#map x !felt.type>
-      %4 = array.len %array, %c0 : <#map x !felt.type>
-      scf.for %arg2 = %c0 to %4 step %c1 {
-        %10 = array.read %array[%arg2] : <#map x !felt.type>, !felt.type
-        %11 = cast.toindex %10
-        %12 = array.read %arg1[%11] : <@N x !felt.type>, !felt.type
-        %largeIdx = arith.constant 7000 : index
-        %foobar = array.read %arg1[%largeIdx] : !array.type<@N x !felt.type>, !felt.type
-        %13 = struct.readm %arg0[@"$temp"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %14 = struct.readm %arg0[@"$temp"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %15 = array.read %14[%arg2] : <#map x !felt.type>, !felt.type
-        array.write %array_0[%arg2] = %15 : <#map x !felt.type>, !felt.type
-      } {original_op = "map"}
-      %5 = struct.readm %arg0[@internal] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-      %6 = poly.read_const @N : index
-      %array_1 = array.new{()[%6]} : <#map x !felt.type>
-      scf.for %arg2 = %c0 to %2 step %c1 {
-        %10 = cast.tofelt %arg2 : index
-        array.write %array_1[%arg2] = %10 : <#map x !felt.type>, !felt.type
-      }
-      %7 = poly.read_const @N : index
-      %array_2 = array.new{()[%7]} : <#map x !felt.type>
-      %8 = array.len %array_1, %c0 : <#map x !felt.type>
-      scf.for %arg2 = %c0 to %8 step %c1 {
-        %10 = array.read %array_1[%arg2] : <#map x !felt.type>, !felt.type
-        %11 = cast.toindex %10
-        %12 = array.read %5[%11] : <#map x !felt.type>, !felt.type
-        %15 = struct.readm %arg0[@"$temp_0"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %16 = struct.readm %arg0[@"$temp_0"] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-        %17 = array.read %16[%arg2] : <#map x !felt.type>, !felt.type
-        array.write %array_2[%arg2] = %17 : <#map x !felt.type>, !felt.type
-      } {original_op = "map"}
-      %9 = struct.readm %arg0[@outp] : <@Foo<[@N]>>, !array.type<#map x !felt.type>
-      function.return
     }
   }
 }
@@ -874,21 +896,25 @@ module attributes {llzk.lang} {
 
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
-  struct.def @Foo<[@N]> {
-    function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@Foo<[@N]>> attributes {function.allow_witness} {
-      %self = struct.new : <@Foo<[@N]>>
-      function.return %self : !struct.type<@Foo<[@N]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
-      %c0 = arith.constant 0 : index
-      %c1 = arith.constant 999 : index
+  poly.template @TFoo {
+    poly.param @N
 
-      %0 = array.read %arg1[%c0] : <@N x !felt.type>, !felt.type
-      %1 = array.read %arg1[%c1] : <@N x !felt.type>, !felt.type
+    struct.def @Foo {
+      function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TFoo::@Foo<[@N]>>
+        function.return %self : !struct.type<@TFoo::@Foo<[@N]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TFoo::@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 999 : index
 
-      constrain.eq %0, %1 : !felt.type
+        %0 = array.read %arg1[%c0] : <@N x !felt.type>, !felt.type
+        %1 = array.read %arg1[%c1] : <@N x !felt.type>, !felt.type
 
-      function.return
+        constrain.eq %0, %1 : !felt.type
+
+        function.return
+      }
     }
   }
 }

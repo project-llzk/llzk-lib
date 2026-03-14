@@ -56,13 +56,17 @@ module attributes {llzk.lang} {
 
 // -----
 module attributes {llzk.lang} {
-  struct.def @ComponentB1<[@T]> {
-    function.def @compute() -> !struct.type<@ComponentB1<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentB1<[@T]>>
-      function.return %self : !struct.type<@ComponentB1<[@T]>>
-    }
+  poly.template @TComponentB1 {
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@ComponentB1<[@T]>>) { function.return }
+    struct.def @ComponentB1 {
+      function.def @compute() -> !struct.type<@TComponentB1::@ComponentB1<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentB1::@ComponentB1<[@T]>>
+        function.return %self : !struct.type<@TComponentB1::@ComponentB1<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentB1::@ComponentB1<[@T]>>) { function.return }
+    }
   }
 
   struct.def @ComponentB2 {
@@ -70,12 +74,12 @@ module attributes {llzk.lang} {
     //  "!poly.tvar<@X>" is redundant. Just "@X" for the parameter would be equivalent.
     //
     // expected-error@+1 {{'function.def' op references unknown symbol "@X"}}
-    function.def @compute(%0: !struct.type<@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB2> {
+    function.def @compute(%0: !struct.type<@TComponentB1::@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB2> {
       %self = struct.new : !struct.type<@ComponentB2>
       function.return %self : !struct.type<@ComponentB2>
     }
 
-    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !struct.type<@ComponentB1<[!poly.tvar<@X>]>>) { function.return }
+    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !struct.type<@TComponentB1::@ComponentB1<[!poly.tvar<@X>]>>) { function.return }
   }
 }
 // -----
@@ -83,27 +87,35 @@ module attributes {llzk.lang} {
 // TypeVarType in CreateArrayOp (`array.new`), non-exact match via unification of `tvar`
 // See description of LLZK_CreateArrayOp for full explanation of why this fails.
 module attributes {llzk.lang} {
-  struct.def @ComponentC1<[@T]> {
-    function.def @compute() -> !struct.type<@ComponentC1<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentC1<[@T]>>
-      function.return %self : !struct.type<@ComponentC1<[@T]>>
+  poly.template @TComponentC1 {
+    poly.param @T
+
+    struct.def @ComponentC1 {
+      function.def @compute() -> !struct.type<@TComponentC1::@ComponentC1<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentC1::@ComponentC1<[@T]>>
+        function.return %self : !struct.type<@TComponentC1::@ComponentC1<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponentC1::@ComponentC1<[@T]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@ComponentC1<[@T]>>) { function.return }
   }
 
-  struct.def @ComponentC2<[@T]> {
-    struct.member @f : !array.type<2 x !poly.tvar<@T>>
+  poly.template @TComponentC2 {
+    poly.param @T
 
-    function.def @compute() -> !struct.type<@ComponentC2<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentC2<[@T]>>
-      %a1 = function.call @ComponentC1::@compute() : () -> !struct.type<@ComponentC1<[5]>> // expected-note {{prior use here}}
-      %a2 = function.call @ComponentC1::@compute() : () -> !struct.type<@ComponentC1<[7]>>
-      // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!poly.tvar<@T>' vs '!struct.type<@ComponentC1<[5]>>'}}
-      %arr = array.new %a1, %a2 : !array.type<2 x !poly.tvar<@T>>
-      struct.writem %self[@f] = %arr : !struct.type<@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
-      function.return %self : !struct.type<@ComponentC2<[@T]>>
+    struct.def @ComponentC2 {
+      struct.member @f : !array.type<2 x !poly.tvar<@T>>
+
+      function.def @compute() -> !struct.type<@TComponentC2::@ComponentC2<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentC2::@ComponentC2<[@T]>>
+        %a1 = function.call @TComponentC1::@ComponentC1::@compute() : () -> !struct.type<@TComponentC1::@ComponentC1<[5]>> // expected-note {{prior use here}}
+        %a2 = function.call @TComponentC1::@ComponentC1::@compute() : () -> !struct.type<@TComponentC1::@ComponentC1<[7]>>
+        // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!poly.tvar<@T>' vs '!struct.type<@TComponentC1::@ComponentC1<[5]>>'}}
+        %arr = array.new %a1, %a2 : !array.type<2 x !poly.tvar<@T>>
+        struct.writem %self[@f] = %arr : !struct.type<@TComponentC2::@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
+        function.return %self : !struct.type<@TComponentC2::@ComponentC2<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentC2::@ComponentC2<[@T]>>) { function.return }
     }
-
-    function.def @constrain(%self: !struct.type<@ComponentC2<[@T]>>) { function.return }
   }
 }

@@ -1,81 +1,122 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 module attributes {llzk.lang} {
-  struct.def @ComponentD<[@B, @D, @C]> {
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
-    struct.def @ComponentA {}
+  poly.template @TComponentD {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    struct.def @ComponentD {
+      // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
+      struct.def @ComponentA {}
+    }
   }
 }
 // -----
 module attributes {llzk.lang} {
   function.def @identity(%x: !felt.type) -> !felt.type {
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
     struct.def @ComponentA {}
     function.return %x: !felt.type
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @ComponentB<[@B, @D, @C]> {
-    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@invalidname"}}
-    function.def @invalidname(%a: !felt.type, %b: !felt.type) {
-      function.return
-    }
-  }
-}
-// -----
-module attributes {llzk.lang} {
-  struct.def @ComponentE<[@B, @D, @C]> {
-    // expected-note@+1 {{see existing symbol definition here}}
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentE<[@B, @D, @C]>> {
-      %self = struct.new : !struct.type<@ComponentE<[@B, @D, @C]>>
-      function.return %self : !struct.type<@ComponentE<[@B, @D, @C]>>
-    }
-    // expected-error@+1 {{redefinition of symbol named 'compute'}}
-    function.def @compute() -> !struct.type<@ComponentE<[@B, @D, @C]>> {
-      %self = struct.new : !struct.type<@ComponentE<[@B, @D, @C]>>
-      function.return %self : !struct.type<@ComponentE<[@B, @D, @C]>>
-    }
-  }
-}
-// -----
-module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@constrain", missing "@compute"}}
-  struct.def @ComponentF0<[@B, @D, @C]> {
-    function.def @constrain(%self: !struct.type<@ComponentF0<[@B, @D, @C]>>, %a: !felt.type, %b: !felt.type) {
-      function.return
-    }
-  }
-}
-// -----
-module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
-  struct.def @ComponentF1<[@B, @D, @C]> {
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF1<[@B, @D, @C]>> {
-      %self = struct.new : !struct.type<@ComponentF1<[@B, @D, @C]>>
-      function.return %self : !struct.type<@ComponentF1<[@B, @D, @C]>>
-    }
-  }
-}
-// -----
-module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
-  struct.def @ComponentF2<[@B, @D, @C]> {
-    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF2<[@B, @D, @C]>> {
-      %self = struct.new : !struct.type<@ComponentF2<[@B, @D, @C]>>
-      function.return %self : !struct.type<@ComponentF2<[@B, @D, @C]>>
-    }
-    function.def @product(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComponentF2<[@B, @D, @C]>> {
-      %self = struct.new : !struct.type<@ComponentF2<[@B, @D, @C]>>
-      function.return %self : !struct.type<@ComponentF2<[@B, @D, @C]>>
-    }
-  }
-}
-// -----
-module attributes {llzk.lang} {
-  // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
-  struct.def @ComponentF3<[@B, @D, @C]> {
+  poly.template @TComponentB {
+    poly.param @B
+    poly.param @D
+    poly.param @C
 
+    struct.def @ComponentB {
+      // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@invalidname"}}
+      function.def @invalidname(%a: !felt.type, %b: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TComponentE {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    struct.def @ComponentE {
+      // expected-note@+1 {{see existing symbol definition here}}
+      function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@TComponentE::@ComponentE<[@B, @D, @C]>> {
+        %self = struct.new : !struct.type<@TComponentE::@ComponentE<[@B, @D, @C]>>
+        function.return %self : !struct.type<@TComponentE::@ComponentE<[@B, @D, @C]>>
+      }
+      // expected-error@+1 {{redefinition of symbol named 'compute'}}
+      function.def @compute() -> !struct.type<@TComponentE::@ComponentE<[@B, @D, @C]>> {
+        %self = struct.new : !struct.type<@TComponentE::@ComponentE<[@B, @D, @C]>>
+        function.return %self : !struct.type<@TComponentE::@ComponentE<[@B, @D, @C]>>
+      }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TComponentF0 {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@constrain", missing "@compute"}}
+    struct.def @ComponentF0 {
+      function.def @constrain(%self: !struct.type<@TComponentF0::@ComponentF0<[@B, @D, @C]>>, %a: !felt.type, %b: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TComponentF1 {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
+    struct.def @ComponentF1 {
+      function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@TComponentF1::@ComponentF1<[@B, @D, @C]>> {
+        %self = struct.new : !struct.type<@TComponentF1::@ComponentF1<[@B, @D, @C]>>
+        function.return %self : !struct.type<@TComponentF1::@ComponentF1<[@B, @D, @C]>>
+      }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TComponentF2 {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; found "@compute", missing "@constrain"}}
+    struct.def @ComponentF2 {
+      function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@TComponentF2::@ComponentF2<[@B, @D, @C]>> {
+        %self = struct.new : !struct.type<@TComponentF2::@ComponentF2<[@B, @D, @C]>>
+        function.return %self : !struct.type<@TComponentF2::@ComponentF2<[@B, @D, @C]>>
+      }
+      function.def @product(%a: !felt.type, %b: !felt.type) -> !struct.type<@TComponentF2::@ComponentF2<[@B, @D, @C]>> {
+        %self = struct.new : !struct.type<@TComponentF2::@ComponentF2<[@B, @D, @C]>>
+        function.return %self : !struct.type<@TComponentF2::@ComponentF2<[@B, @D, @C]>>
+      }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TComponentF3 {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
+    struct.def @ComponentF3 {
+    }
   }
 }
 // -----
@@ -109,13 +150,19 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @ComponentG<[@B, @D, @C]> {
-    function.def @compute() -> !struct.type<@ComponentG<[@B, @D, @C]>> {
-      %self = struct.new : !struct.type<@ComponentG<[@B, @D, @C]>>
-      function.return %self : !struct.type<@ComponentG<[@B, @D, @C]>>
-    }
-    // expected-error@+1 {{'builtin.module' op invalid operation in 'struct.def'; only 'struct.member' and 'function.def' operations are permitted}}
-    builtin.module {
+  poly.template @TComponentG {
+    poly.param @B
+    poly.param @D
+    poly.param @C
+
+    struct.def @ComponentG {
+      function.def @compute() -> !struct.type<@TComponentG::@ComponentG<[@B, @D, @C]>> {
+        %self = struct.new : !struct.type<@TComponentG::@ComponentG<[@B, @D, @C]>>
+        function.return %self : !struct.type<@TComponentG::@ComponentG<[@B, @D, @C]>>
+      }
+      // expected-error@+1 {{'builtin.module' op invalid operation in 'struct.def'; only 'struct.member' and 'function.def' operations are permitted}}
+      builtin.module {
+      }
     }
   }
 }
@@ -305,7 +352,7 @@ module attributes {llzk.lang} {
   struct.def @ComponentX {
     function.def @compute() -> !struct.type<@ComponentX> {
       %self = struct.new : !struct.type<@ComponentX>
-      // expected-error@+1 {{'struct.new' op must use type of its ancestor 'struct.def' "@ComponentX" as result type}}
+      // expected-error@+1 {{'struct.new' op must use type of its ancestor 'struct.def' "@ComponentX<[]>" as result type}}
       %invalid = struct.new : !struct.type<@WrongComponent>
       function.return %self : !struct.type<@ComponentX>
     }
@@ -369,78 +416,102 @@ module attributes {llzk.main = !struct.type<@MyMain>, llzk.lang} {
 // -----
 // expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: 12}}
 module attributes {llzk.main = 12, llzk.lang} {
-  struct.def @MustBeStruct<[@N]> {
-    function.def @compute() -> !struct.type<@MustBeStruct<[@N]>> {
-      %self = struct.new : !struct.type<@MustBeStruct<[@N]>>
-      function.return %self : !struct.type<@MustBeStruct<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@MustBeStruct<[@N]>>)  {
-      function.return
+  poly.template @TMustBeStruct {
+    poly.param @N
+
+    struct.def @MustBeStruct {
+      function.def @compute() -> !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>> {
+        %self = struct.new : !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>>
+        function.return %self : !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>>)  {
+        function.return
+      }
     }
   }
 }
 // -----
 // expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !felt.type}}
 module attributes {llzk.main = !felt.type, llzk.lang} {
-  struct.def @MustBeStruct<[@N]> {
-    function.def @compute() -> !struct.type<@MustBeStruct<[@N]>> {
-      %self = struct.new : !struct.type<@MustBeStruct<[@N]>>
-      function.return %self : !struct.type<@MustBeStruct<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@MustBeStruct<[@N]>>)  {
-      function.return
-    }
-  }
-}
-// -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@NotAffine<[affine_map}}
-module attributes {llzk.main = !struct.type<@NotAffine<[affine_map<(i)->(i)>]>>, llzk.lang} {
-  struct.def @NotAffine<[@N]> {
-    function.def @compute() -> !struct.type<@NotAffine<[@N]>> {
-      %self = struct.new : !struct.type<@NotAffine<[@N]>>
-      function.return %self : !struct.type<@NotAffine<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@NotAffine<[@N]>>)  {
-      function.return
+  poly.template @TMustBeStruct {
+    poly.param @N
+
+    struct.def @MustBeStruct {
+      function.def @compute() -> !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>> {
+        %self = struct.new : !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>>
+        function.return %self : !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMustBeStruct::@MustBeStruct<[@N]>>)  {
+        function.return
+      }
     }
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@NotSymbol<[@X]>>}}
-module attributes {llzk.main = !struct.type<@NotSymbol<[@X]>>, llzk.lang} {
-  struct.def @NotSymbol<[@N]> {
-    function.def @compute() -> !struct.type<@NotSymbol<[@N]>> {
-      %self = struct.new : !struct.type<@NotSymbol<[@N]>>
-      function.return %self : !struct.type<@NotSymbol<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@NotSymbol<[@N]>>)  {
-      function.return
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotAffine::@NotAffine<[affine_map}}
+module attributes {llzk.main = !struct.type<@TNotAffine::@NotAffine<[affine_map<(i)->(i)>]>>, llzk.lang} {
+  poly.template @TNotAffine {
+    poly.param @N
+
+    struct.def @NotAffine {
+      function.def @compute() -> !struct.type<@TNotAffine::@NotAffine<[@N]>> {
+        %self = struct.new : !struct.type<@TNotAffine::@NotAffine<[@N]>>
+        function.return %self : !struct.type<@TNotAffine::@NotAffine<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TNotAffine::@NotAffine<[@N]>>)  {
+        function.return
+      }
     }
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@NotVar<[!poly.tvar<@X>]>>}}
-module attributes {llzk.main = !struct.type<@NotVar<[!poly.tvar<@X>]>>, llzk.lang} {
-  struct.def @NotVar<[@N]> {
-    function.def @compute() -> !struct.type<@NotVar<[@N]>> {
-      %self = struct.new : !struct.type<@NotVar<[@N]>>
-      function.return %self : !struct.type<@NotVar<[@N]>>
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotSymbol::@NotSymbol<[@X]>>}}
+module attributes {llzk.main = !struct.type<@TNotSymbol::@NotSymbol<[@X]>>, llzk.lang} {
+  poly.template @TNotSymbol {
+    poly.param @N
+
+    struct.def @NotSymbol {
+      function.def @compute() -> !struct.type<@TNotSymbol::@NotSymbol<[@N]>> {
+        %self = struct.new : !struct.type<@TNotSymbol::@NotSymbol<[@N]>>
+        function.return %self : !struct.type<@TNotSymbol::@NotSymbol<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TNotSymbol::@NotSymbol<[@N]>>)  {
+        function.return
+      }
     }
-    function.def @constrain(%self: !struct.type<@NotVar<[@N]>>)  {
-      function.return
+  }
+}
+// -----
+// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotVar::@NotVar<[!poly.tvar<@X>]>>}}
+module attributes {llzk.main = !struct.type<@TNotVar::@NotVar<[!poly.tvar<@X>]>>, llzk.lang} {
+  poly.template @TNotVar {
+    poly.param @N
+
+    struct.def @NotVar {
+      function.def @compute() -> !struct.type<@TNotVar::@NotVar<[@N]>> {
+        %self = struct.new : !struct.type<@TNotVar::@NotVar<[@N]>>
+        function.return %self : !struct.type<@TNotVar::@NotVar<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TNotVar::@NotVar<[@N]>>)  {
+        function.return
+      }
     }
   }
 }
 // -----
 // expected-error@+1 {{duplicate key 'llzk.main' in dictionary attribute}}
-module attributes {llzk.main = !struct.type<@Multiple<[2]>>, llzk.main = !struct.type<@Multiple<[3]>>, llzk.lang} {
-  struct.def @Multiple<[@N]> {
-    function.def @compute() -> !struct.type<@Multiple<[@N]>> {
-      %self = struct.new : !struct.type<@Multiple<[@N]>>
-      function.return %self : !struct.type<@Multiple<[@N]>>
-    }
-    function.def @constrain(%self: !struct.type<@Multiple<[@N]>>)  {
-      function.return
+module attributes {llzk.main = !struct.type<@TMultiple::@Multiple<[2]>>, llzk.main = !struct.type<@TMultiple::@Multiple<[3]>>, llzk.lang} {
+  poly.template @TMultiple {
+    poly.param @N
+
+    struct.def @Multiple {
+      function.def @compute() -> !struct.type<@TMultiple::@Multiple<[@N]>> {
+        %self = struct.new : !struct.type<@TMultiple::@Multiple<[@N]>>
+        function.return %self : !struct.type<@TMultiple::@Multiple<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMultiple::@Multiple<[@N]>>)  {
+        function.return
+      }
     }
   }
 }
@@ -499,7 +570,7 @@ module attributes {llzk.lang} {
       function.return
     }
 
-    // expected-error@+1 {{'struct.def' op expects parent op 'builtin.module'}}
+    // expected-error@+1 {{'struct.def' op expects parent op to be one of 'builtin.module, poly.template'}}
     struct.def @InvalidNestedStruct {
       function.def @compute() {
         %self = struct.new : !struct.type<@InvalidNestedStruct>

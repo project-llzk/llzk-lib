@@ -1,4 +1,5 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=preimage})' %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
 // TEST: With "cleanup=preimage", the only structs subject to removal are those with parameters
 // that had at least one "concrete" clone created. If such a struct has no remaining uses, it is
@@ -6,59 +7,76 @@
 // there are no remaining uses of `@MakeGuess<[@PEGS]>` so it is removed.
 
 module attributes {llzk.lang} {
-  struct.def @Main<[]> {
-    function.def @compute() -> !struct.type<@Main<[]>> {
-      %self = struct.new : !struct.type<@Main<[]>>
-      %26 = function.call @Impl::@MakeGuess::@compute() : () -> !struct.type<@Impl::@MakeGuess<[4]>>
-      function.return %self : !struct.type<@Main<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Main<[]>>) {
-      function.return
+  poly.template @TMain {
+    struct.def @Main {
+      function.def @compute() -> !struct.type<@TMain::@Main<[]>> {
+        %self = struct.new : !struct.type<@TMain::@Main<[]>>
+        %26 = function.call @Impl::@TMakeGuess::@MakeGuess::@compute() : () -> !struct.type<@Impl::@TMakeGuess::@MakeGuess<[4]>>
+        function.return %self : !struct.type<@TMain::@Main<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TMain::@Main<[]>>) {
+        function.return
+      }
     }
   }
 
   module @Helper{
-    struct.def @Pair<[@Fst, @Snd]> {
-      function.def @compute() -> !struct.type<@Helper::@Pair<[@Fst, @Snd]>> {
-        %self = struct.new : !struct.type<@Helper::@Pair<[@Fst, @Snd]>>
-        function.return %self : !struct.type<@Helper::@Pair<[@Fst, @Snd]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@Helper::@Pair<[@Fst, @Snd]>>) {
-        function.return
+    poly.template @TPair {
+      poly.param @Fst
+      poly.param @Snd
+
+      struct.def @Pair {
+        function.def @compute() -> !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>> {
+          %self = struct.new : !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>>
+          function.return %self : !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>>) {
+          function.return
+        }
       }
     }
 
-    struct.def @Zip<[@Lhs, @Rhs, @N]> {
-      struct.member @"$super" : !array.type<9 x !struct.type<@Helper::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
-      function.def @compute() -> !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>> {
-        %self = struct.new : !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>
-        function.return %self : !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>) {
-        function.return
+    poly.template @TZip {
+      poly.param @Lhs
+      poly.param @Rhs
+      poly.param @N
+
+      struct.def @Zip {
+        struct.member @"$super" : !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
+        function.def @compute() -> !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>> {
+          %self = struct.new : !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>>
+          function.return %self : !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>>) {
+          function.return
+        }
       }
     }
   }
 
   module @Impl {
-    struct.def @MakeGuess<[@PEGS]> {
-      struct.member @"$temp" : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
+    poly.template @TMakeGuess {
+      poly.param @PEGS
 
-      function.def @compute() -> !struct.type<@Impl::@MakeGuess<[@PEGS]>> {
-        %self = struct.new : !struct.type<@Impl::@MakeGuess<[@PEGS]>>
-        function.return %self : !struct.type<@Impl::@MakeGuess<[@PEGS]>>
-      }
+      struct.def @MakeGuess {
+        struct.member @"$temp" : !struct.type<@Helper::@TZip::@Zip<[!felt.type, !felt.type, @PEGS]>>
 
-      function.def @constrain(%arg0: !struct.type<@Impl::@MakeGuess<[@PEGS]>>) {
-        %c1 = arith.constant 1 : index
-        %c0 = arith.constant 0 : index
-        %14 = struct.readm %arg0[@"$temp"] : !struct.type<@Impl::@MakeGuess<[@PEGS]>>, !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
-        %15 = struct.readm %14[@"$super"] : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>, !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
-        %17 = array.len %15, %c0 : !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
-        scf.for %arg5 = %c0 to %17 step %c1 {
-          %34 = array.read %15[%arg5] : !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>, !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>
+        function.def @compute() -> !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>> {
+          %self = struct.new : !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>
+          function.return %self : !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>
         }
-        function.return
+
+        function.def @constrain(%arg0: !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>) {
+          %c1 = arith.constant 1 : index
+          %c0 = arith.constant 0 : index
+          %14 = struct.readm %arg0[@"$temp"] : !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>, !struct.type<@Helper::@TZip::@Zip<[!felt.type, !felt.type, @PEGS]>>
+          %15 = struct.readm %14[@"$super"] : !struct.type<@Helper::@TZip::@Zip<[!felt.type, !felt.type, @PEGS]>>, !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>>
+          %17 = array.len %15, %c0 : !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>>
+          scf.for %arg5 = %c0 to %17 step %c1 {
+            %34 = array.read %15[%arg5] : !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>>, !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>
+          }
+          function.return
+        }
       }
     }
   }

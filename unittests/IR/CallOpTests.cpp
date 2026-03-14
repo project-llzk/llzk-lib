@@ -217,9 +217,9 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
         verifyOrDie(op, true);
       },
       "error: 'function.call' op result type mismatch: expected type "
-      "'!struct.type<@StructB<\\[@T0, @T1\\]>>', but found "
-      "'!struct.type<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, affine_map<\\(d0\\) -> "
-      "\\(d0\\)>\\]>>' for result number 0"
+      "'!struct.type<@TemplateStructB::@StructB<\\[@T0, @T1\\]>>', but found "
+      "'!struct.type<@TemplateStructA::@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, "
+      "affine_map<\\(d0\\) -> \\(d0\\)>\\]>>' for result number 0"
   );
 }
 

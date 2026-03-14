@@ -1,0 +1,18 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.expr @P {
+      // expected-error@+1 {{block with no terminator}}
+      %v = arith.constant 42 : index
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-error@+1 {{'poly.expr' op expects a non-empty block}}
+    poly.expr @P {}
+  }
+}

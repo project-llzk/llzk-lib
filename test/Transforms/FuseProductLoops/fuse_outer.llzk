@@ -2,52 +2,56 @@
 // REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
-    struct.def @A<[@N]> {
-        struct.member @arr : !array.type<@N x !felt.type>
-        
-        function.def @compute(%as: !array.type<@N x !felt.type>) -> !struct.type<@A<[@N]>> {
-            %self = struct.new : <@A<[@N]>>
+    poly.template @TA {
+      poly.param @N
 
-            %N = poly.read_const @N : index
-            %c0 = arith.constant 0 : index
-            %c1 = arith.constant 1 : index
+      struct.def @A {
+          struct.member @arr : !array.type<@N x !felt.type>
 
-            %arr = array.new : !array.type<@N x !felt.type>
+          function.def @compute(%as: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N]>> {
+              %self = struct.new : <@TA::@A<[@N]>>
 
-            scf.for %i = %c0 to %N step %c1 {
-                %sum0 = felt.const 0
-                %sum = scf.for %j = %i to %N step %c1 iter_args(%iter_sum = %sum0) -> !felt.type {
-                    %a_j = array.read %as[%j] : !array.type<@N x !felt.type>, !felt.type
-                    %0 = felt.add %iter_sum, %a_j
-                    scf.yield %0 : !felt.type
-                }
-                array.write %arr[%i] = %sum : !array.type<@N x !felt.type>, !felt.type
-                scf.yield
-            }
+              %N = poly.read_const @N : index
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
 
-            struct.writem %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N x !felt.type>
-            function.return %self : !struct.type<@A<[@N]>>
-        }
-        function.def @constrain(%self : !struct.type<@A<[@N]>>, %as: !array.type<@N x !felt.type>) {
-            %N = poly.read_const @N : index
-            %c0 = arith.constant 0 : index
-            %c1 = arith.constant 1 : index
+              %arr = array.new : !array.type<@N x !felt.type>
 
-            %arr = struct.readm %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N x !felt.type>
+              scf.for %i = %c0 to %N step %c1 {
+                  %sum0 = felt.const 0
+                  %sum = scf.for %j = %i to %N step %c1 iter_args(%iter_sum = %sum0) -> !felt.type {
+                      %a_j = array.read %as[%j] : !array.type<@N x !felt.type>, !felt.type
+                      %0 = felt.add %iter_sum, %a_j
+                      scf.yield %0 : !felt.type
+                  }
+                  array.write %arr[%i] = %sum : !array.type<@N x !felt.type>, !felt.type
+                  scf.yield
+              }
 
-            scf.for %i = %c0 to %N step %c1 {
-                %j = arith.addi %i, %c1 : index
-                
-                %arr_i = array.read %arr[%i] : !array.type<@N x !felt.type>, !felt.type
-                %arr_j = array.read %arr[%j] : !array.type<@N x !felt.type>, !felt.type
-                %a = array.read %as[%i] : !array.type<@N x !felt.type>, !felt.type
-                %diff = felt.sub %arr_j, %arr_i
-                constrain.eq %a, %diff : !felt.type
-                scf.yield
-            }
+              struct.writem %self[@arr] = %arr : !struct.type<@TA::@A<[@N]>>, !array.type<@N x !felt.type>
+              function.return %self : !struct.type<@TA::@A<[@N]>>
+          }
+          function.def @constrain(%self : !struct.type<@TA::@A<[@N]>>, %as: !array.type<@N x !felt.type>) {
+              %N = poly.read_const @N : index
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
 
-            function.return
-        }
+              %arr = struct.readm %self[@arr] : !struct.type<@TA::@A<[@N]>>, !array.type<@N x !felt.type>
+
+              scf.for %i = %c0 to %N step %c1 {
+                  %j = arith.addi %i, %c1 : index
+
+                  %arr_i = array.read %arr[%i] : !array.type<@N x !felt.type>, !felt.type
+                  %arr_j = array.read %arr[%j] : !array.type<@N x !felt.type>, !felt.type
+                  %a = array.read %as[%i] : !array.type<@N x !felt.type>, !felt.type
+                  %diff = felt.sub %arr_j, %arr_i
+                  constrain.eq %a, %diff : !felt.type
+                  scf.yield
+              }
+
+              function.return
+          }
+      }
     }
 }
 

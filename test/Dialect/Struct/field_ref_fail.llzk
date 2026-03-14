@@ -164,7 +164,7 @@ module attributes {llzk.lang} {
   struct.def @ComponentN {
     function.def @compute(%0: !struct.type<@WrongComponent>, %1: !felt.type) -> !struct.type<@ComponentN> {
       %self = struct.new : !struct.type<@ComponentN>
-      // expected-error@+1 {{'struct.writem' op must use type of its ancestor 'struct.def' "@ComponentN" as base value type}}
+      // expected-error@+1 {{'struct.writem' op must use type of its ancestor 'struct.def' "@ComponentN<[]>" as base value type}}
       struct.writem %0[@f] = %1 : !struct.type<@WrongComponent>, !felt.type
       function.return %self : !struct.type<@ComponentN>
     }
@@ -186,7 +186,7 @@ module attributes {llzk.lang} {
   struct.def @ComponentN {
     function.def @compute(%0: !struct.type<@PrivateComponent>, %1: !felt.type) -> !struct.type<@ComponentN> {
       %self = struct.new : !struct.type<@ComponentN>
-      // expected-error@+1 {{'struct.readm' op cannot read from private member of struct "@PrivateComponent"}}
+      // expected-error@+1 {{'struct.readm' op cannot read from private member of struct "@PrivateComponent<[]>"}}
       %res = struct.readm %0[@f] : !struct.type<@PrivateComponent>, !felt.type
       function.return %self : !struct.type<@ComponentN>
     }

@@ -126,10 +126,6 @@ const char *llzkStruct_StructDefOpGetHeaderString(
   return dst;
 }
 
-bool llzkStruct_StructDefOpHasParamName(MlirOperation op, MlirStringRef name) {
-  return llvm::cast<StructDefOp>(unwrap(op)).hasParamNamed(unwrap(name));
-}
-
 //===----------------------------------------------------------------------===//
 // MemberReadOp
 //===----------------------------------------------------------------------===//

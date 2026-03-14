@@ -131,27 +131,29 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Div<[]> {
-    struct.member @"$super" : !felt.type
-    struct.member @reciprocal : !felt.type
-    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
-      %self = struct.new : <@Div<[]>>
-      %0 = felt.inv %arg1 : !felt.type
-      struct.writem %self[@reciprocal] = %0 : <@Div<[]>>, !felt.type
-      %1 = struct.readm %self[@reciprocal] : <@Div<[]>>, !felt.type
-      %2 = felt.mul %1, %arg1 : !felt.type, !felt.type
-      %felt_const_1 = felt.const  1
-      %3 = felt.mul %1, %arg0 : !felt.type, !felt.type
-      struct.writem %self[@"$super"] = %3 : <@Div<[]>>, !felt.type
-      function.return %self : !struct.type<@Div<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) {
-      %0 = struct.readm %arg0[@reciprocal] : <@Div<[]>>, !felt.type
-      %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
-      %felt_const_1 = felt.const  1
-      // Since reciprocal * arg2 === 1, reciprocal nor arg2 can be 0
-      constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
-      function.return
+  poly.template @TDiv {
+    struct.def @Div {
+      struct.member @"$super" : !felt.type
+      struct.member @reciprocal : !felt.type
+      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@TDiv::@Div<[]>> attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : <@TDiv::@Div<[]>>
+        %0 = felt.inv %arg1 : !felt.type
+        struct.writem %self[@reciprocal] = %0 : <@TDiv::@Div<[]>>, !felt.type
+        %1 = struct.readm %self[@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+        %2 = felt.mul %1, %arg1 : !felt.type, !felt.type
+        %felt_const_1 = felt.const  1
+        %3 = felt.mul %1, %arg0 : !felt.type, !felt.type
+        struct.writem %self[@"$super"] = %3 : <@TDiv::@Div<[]>>, !felt.type
+        function.return %self : !struct.type<@TDiv::@Div<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TDiv::@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) {
+        %0 = struct.readm %arg0[@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+        %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
+        %felt_const_1 = felt.const  1
+        // Since reciprocal * arg2 === 1, reciprocal nor arg2 can be 0
+        constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -394,28 +396,30 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @IntTest<[]> {
-    struct.member @x : !felt.type {llzk.pub}
-    struct.member @y : !felt.type {llzk.pub}
-    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@IntTest<[]>>
-      function.return %self : !struct.type<@IntTest<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
-      %0 = struct.readm %arg0[@x] : <@IntTest<[]>>, !felt.type
-      %1 = struct.readm %arg0[@y] : <@IntTest<[]>>, !felt.type
-      %felt_const_65536 = felt.const  65536
-      %felt_const_1 = felt.const  1
-      %felt_const_256 = felt.const  256
-      %felt_const_512 = felt.const  512
-      %2 = felt.add %0, %1 : !felt.type, !felt.type
-      %3 = bool.cmp lt(%2, %felt_const_65536)
-      %4 = bool.cmp lt(%0, %felt_const_512)
-      %5 = cast.tofelt %3 : i1
-      %6 = cast.tofelt %4 : i1
-      constrain.eq %5, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
-      function.return
+  poly.template @TIntTest {
+    struct.def @IntTest {
+      struct.member @x : !felt.type {llzk.pub}
+      struct.member @y : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TIntTest::@IntTest<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TIntTest::@IntTest<[]>>
+        function.return %self : !struct.type<@TIntTest::@IntTest<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TIntTest::@IntTest<[]>>) attributes {function.allow_constraint} {
+        %0 = struct.readm %arg0[@x] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %1 = struct.readm %arg0[@y] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %felt_const_65536 = felt.const  65536
+        %felt_const_1 = felt.const  1
+        %felt_const_256 = felt.const  256
+        %felt_const_512 = felt.const  512
+        %2 = felt.add %0, %1 : !felt.type, !felt.type
+        %3 = bool.cmp lt(%2, %felt_const_65536)
+        %4 = bool.cmp lt(%0, %felt_const_512)
+        %5 = cast.tofelt %3 : i1
+        %6 = cast.tofelt %4 : i1
+        constrain.eq %5, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -428,39 +432,41 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @IntTest<[]> {
-    struct.member @x : !felt.type {llzk.pub}
-    struct.member @y : !felt.type {llzk.pub}
-    struct.member @z : !felt.type {llzk.pub}
-    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@IntTest<[]>>
-      function.return %self : !struct.type<@IntTest<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
-      %0 = struct.readm %arg0[@x] : <@IntTest<[]>>, !felt.type
-      %1 = struct.readm %arg0[@y] : <@IntTest<[]>>, !felt.type
-      %2 = struct.readm %arg0[@z] : <@IntTest<[]>>, !felt.type
-      %felt_const_65536 = felt.const  65536
-      %felt_const_1 = felt.const  1
-      %felt_const_256 = felt.const  256
-      %felt_const_512 = felt.const  512
-      %3 = felt.mul %0, %1 : !felt.type, !felt.type
-      %4 = bool.cmp lt(%3, %felt_const_65536)
-      %5 = bool.cmp ge(%1, %felt_const_256)
-      %6 = bool.cmp lt(%1, %felt_const_512)
-      %7 = bool.cmp lt(%0, %felt_const_512)
-      %8 = cast.tofelt %4 : i1
-      %9 = cast.tofelt %5 : i1
-      %10 = cast.tofelt %7 : i1
-      %11 = cast.tofelt %6 : i1
-      constrain.eq %8, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %9, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %10, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %11, %felt_const_1 : !felt.type, !felt.type
-      %12 = felt.mul %1, %felt_const_256 : !felt.type, !felt.type
-      %13 = felt.add %12, %0 : !felt.type, !felt.type
-      constrain.eq %2, %13 : !felt.type, !felt.type
-      function.return
+  poly.template @TIntTest {
+    struct.def @IntTest {
+      struct.member @x : !felt.type {llzk.pub}
+      struct.member @y : !felt.type {llzk.pub}
+      struct.member @z : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TIntTest::@IntTest<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TIntTest::@IntTest<[]>>
+        function.return %self : !struct.type<@TIntTest::@IntTest<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TIntTest::@IntTest<[]>>) attributes {function.allow_constraint} {
+        %0 = struct.readm %arg0[@x] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %1 = struct.readm %arg0[@y] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %2 = struct.readm %arg0[@z] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %felt_const_65536 = felt.const  65536
+        %felt_const_1 = felt.const  1
+        %felt_const_256 = felt.const  256
+        %felt_const_512 = felt.const  512
+        %3 = felt.mul %0, %1 : !felt.type, !felt.type
+        %4 = bool.cmp lt(%3, %felt_const_65536)
+        %5 = bool.cmp ge(%1, %felt_const_256)
+        %6 = bool.cmp lt(%1, %felt_const_512)
+        %7 = bool.cmp lt(%0, %felt_const_512)
+        %8 = cast.tofelt %4 : i1
+        %9 = cast.tofelt %5 : i1
+        %10 = cast.tofelt %7 : i1
+        %11 = cast.tofelt %6 : i1
+        constrain.eq %8, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %9, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %10, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %11, %felt_const_1 : !felt.type, !felt.type
+        %12 = felt.mul %1, %felt_const_256 : !felt.type, !felt.type
+        %13 = felt.add %12, %0 : !felt.type, !felt.type
+        constrain.eq %2, %13 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -475,35 +481,37 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @IntTest<[]> {
-    struct.member @x: !felt.type {llzk.pub}
-    struct.member @y : !felt.type {llzk.pub}
+  poly.template @TIntTest {
+    struct.def @IntTest {
+      struct.member @x: !felt.type {llzk.pub}
+      struct.member @y : !felt.type {llzk.pub}
 
-    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@IntTest<[]>>
-      function.return %self : !struct.type<@IntTest<[]>>
-    }
+      function.def @compute() -> !struct.type<@TIntTest::@IntTest<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TIntTest::@IntTest<[]>>
+        function.return %self : !struct.type<@TIntTest::@IntTest<[]>>
+      }
 
-    function.def @constrain(%self: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
-      %x = struct.readm %self[@x] : <@IntTest<[]>>, !felt.type
-      %y = struct.readm %self[@y] : <@IntTest<[]>>, !felt.type
-      %65536 = felt.const 65536
+      function.def @constrain(%self: !struct.type<@TIntTest::@IntTest<[]>>) attributes {function.allow_constraint} {
+        %x = struct.readm %self[@x] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %y = struct.readm %self[@y] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %65536 = felt.const 65536
 
-      %one = felt.const 1
-      %256 = felt.const 256
-      %512 = felt.const 512
-      %m = felt.add %x, %y : !felt.type, !felt.type
-      // These two conditions are contradictory
-      %0 = bool.cmp lt(%m, %65536)
-      %1 = bool.cmp ge(%m, %65536)
-      %2 = bool.cmp lt(%x, %512)
-      %bool0 = cast.tofelt %0 : i1
-      %bool1 = cast.tofelt %1 : i1
-      %bool2 = cast.tofelt %2 : i1
-      constrain.eq %bool0, %one : !felt.type, !felt.type
-      constrain.eq %bool1, %one : !felt.type, !felt.type
-      constrain.eq %bool2, %one : !felt.type, !felt.type
-      function.return
+        %one = felt.const 1
+        %256 = felt.const 256
+        %512 = felt.const 512
+        %m = felt.add %x, %y : !felt.type, !felt.type
+        // These two conditions are contradictory
+        %0 = bool.cmp lt(%m, %65536)
+        %1 = bool.cmp ge(%m, %65536)
+        %2 = bool.cmp lt(%x, %512)
+        %bool0 = cast.tofelt %0 : i1
+        %bool1 = cast.tofelt %1 : i1
+        %bool2 = cast.tofelt %2 : i1
+        constrain.eq %bool0, %one : !felt.type, !felt.type
+        constrain.eq %bool1, %one : !felt.type, !felt.type
+        constrain.eq %bool2, %one : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -516,35 +524,37 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @IntTest<[]> {
-    struct.member @x: !felt.type {llzk.pub}
-    struct.member @y : !felt.type {llzk.pub}
+  poly.template @TIntTest {
+    struct.def @IntTest {
+      struct.member @x: !felt.type {llzk.pub}
+      struct.member @y : !felt.type {llzk.pub}
 
-    function.def @compute() -> !struct.type<@IntTest<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@IntTest<[]>>
-      function.return %self : !struct.type<@IntTest<[]>>
-    }
+      function.def @compute() -> !struct.type<@TIntTest::@IntTest<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TIntTest::@IntTest<[]>>
+        function.return %self : !struct.type<@TIntTest::@IntTest<[]>>
+      }
 
-    function.def @constrain(%self: !struct.type<@IntTest<[]>>) attributes {function.allow_constraint} {
-      %x = struct.readm %self[@x] : <@IntTest<[]>>, !felt.type
-      %y = struct.readm %self[@y] : <@IntTest<[]>>, !felt.type
-      %65536 = felt.const 65536
-      %32768 = felt.const 32768
+      function.def @constrain(%self: !struct.type<@TIntTest::@IntTest<[]>>) attributes {function.allow_constraint} {
+        %x = struct.readm %self[@x] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %y = struct.readm %self[@y] : <@TIntTest::@IntTest<[]>>, !felt.type
+        %65536 = felt.const 65536
+        %32768 = felt.const 32768
 
-      %one = felt.const 1
-      %256 = felt.const 256
-      %512 = felt.const 512
-      %m = felt.add %x, %y : !felt.type, !felt.type
-      %0 = bool.cmp lt(%m, %65536)
-      %1 = bool.cmp ge(%m, %32768)
-      %2 = bool.cmp lt(%x, %512)
-      %bool0 = cast.tofelt %0 : i1
-      %bool1 = cast.tofelt %1 : i1
-      %bool2 = cast.tofelt %2 : i1
-      constrain.eq %bool0, %one : !felt.type, !felt.type
-      constrain.eq %bool1, %one : !felt.type, !felt.type
-      constrain.eq %bool2, %one : !felt.type, !felt.type
-      function.return
+        %one = felt.const 1
+        %256 = felt.const 256
+        %512 = felt.const 512
+        %m = felt.add %x, %y : !felt.type, !felt.type
+        %0 = bool.cmp lt(%m, %65536)
+        %1 = bool.cmp ge(%m, %32768)
+        %2 = bool.cmp lt(%x, %512)
+        %bool0 = cast.tofelt %0 : i1
+        %bool1 = cast.tofelt %1 : i1
+        %bool2 = cast.tofelt %2 : i1
+        constrain.eq %bool0, %one : !felt.type, !felt.type
+        constrain.eq %bool1, %one : !felt.type, !felt.type
+        constrain.eq %bool2, %one : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -557,30 +567,32 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @SubTest<[]> {
-    struct.member @x : !felt.type {llzk.pub}
-    struct.member @y : !felt.type {llzk.pub}
-    struct.member @z : !felt.type {llzk.pub}
-    function.def @compute() -> !struct.type<@SubTest<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@SubTest<[]>>
-      function.return %self : !struct.type<@SubTest<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@SubTest<[]>>) attributes {function.allow_constraint} {
-      %0 = struct.readm %arg0[@x] : <@SubTest<[]>>, !felt.type
-      %1 = struct.readm %arg0[@y] : <@SubTest<[]>>, !felt.type
-      // Note: y is read twice
-      %2 = struct.readm %arg0[@y] : <@SubTest<[]>>, !felt.type
-      %felt_const_1 = felt.const  1
-      %felt_const_256 = felt.const  256
-      %3 = felt.sub %0, %1 : !felt.type, !felt.type
-      %4 = bool.cmp lt(%0, %felt_const_256)
-      %5 = bool.cmp lt(%1, %felt_const_256)
-      %6 = cast.tofelt %4 : i1
-      %7 = cast.tofelt %5 : i1
-      constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %7, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %2, %3 : !felt.type, !felt.type
-      function.return
+  poly.template @TSubTest {
+    struct.def @SubTest {
+      struct.member @x : !felt.type {llzk.pub}
+      struct.member @y : !felt.type {llzk.pub}
+      struct.member @z : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TSubTest::@SubTest<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TSubTest::@SubTest<[]>>
+        function.return %self : !struct.type<@TSubTest::@SubTest<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TSubTest::@SubTest<[]>>) attributes {function.allow_constraint} {
+        %0 = struct.readm %arg0[@x] : <@TSubTest::@SubTest<[]>>, !felt.type
+        %1 = struct.readm %arg0[@y] : <@TSubTest::@SubTest<[]>>, !felt.type
+        // Note: y is read twice
+        %2 = struct.readm %arg0[@y] : <@TSubTest::@SubTest<[]>>, !felt.type
+        %felt_const_1 = felt.const  1
+        %felt_const_256 = felt.const  256
+        %3 = felt.sub %0, %1 : !felt.type, !felt.type
+        %4 = bool.cmp lt(%0, %felt_const_256)
+        %5 = bool.cmp lt(%1, %felt_const_256)
+        %6 = cast.tofelt %4 : i1
+        %7 = cast.tofelt %5 : i1
+        constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %7, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %2, %3 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -594,29 +606,31 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @SubTest<[]> {
-    struct.member @x : !felt.type {llzk.pub}
-    struct.member @y : !felt.type {llzk.pub}
-    struct.member @z : !felt.type {llzk.pub}
-    function.def @compute() -> !struct.type<@SubTest<[]>> attributes {function.allow_witness} {
-      %self = struct.new : <@SubTest<[]>>
-      function.return %self : !struct.type<@SubTest<[]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@SubTest<[]>>) attributes {function.allow_constraint} {
-      %0 = struct.readm %arg0[@x] : <@SubTest<[]>>, !felt.type
-      %1 = struct.readm %arg0[@y] : <@SubTest<[]>>, !felt.type
-      %2 = struct.readm %arg0[@z] : <@SubTest<[]>>, !felt.type
-      %felt_const_1 = felt.const  1
-      %felt_const_256 = felt.const  256
-      %3 = felt.sub %0, %1 : !felt.type, !felt.type
-      %4 = bool.cmp lt(%0, %felt_const_256)
-      %5 = bool.cmp lt(%1, %felt_const_256)
-      %6 = cast.tofelt %4 : i1
-      %7 = cast.tofelt %5 : i1
-      constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %7, %felt_const_1 : !felt.type, !felt.type
-      constrain.eq %2, %3 : !felt.type, !felt.type
-      function.return
+  poly.template @TSubTest {
+    struct.def @SubTest {
+      struct.member @x : !felt.type {llzk.pub}
+      struct.member @y : !felt.type {llzk.pub}
+      struct.member @z : !felt.type {llzk.pub}
+      function.def @compute() -> !struct.type<@TSubTest::@SubTest<[]>> attributes {function.allow_witness} {
+        %self = struct.new : <@TSubTest::@SubTest<[]>>
+        function.return %self : !struct.type<@TSubTest::@SubTest<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TSubTest::@SubTest<[]>>) attributes {function.allow_constraint} {
+        %0 = struct.readm %arg0[@x] : <@TSubTest::@SubTest<[]>>, !felt.type
+        %1 = struct.readm %arg0[@y] : <@TSubTest::@SubTest<[]>>, !felt.type
+        %2 = struct.readm %arg0[@z] : <@TSubTest::@SubTest<[]>>, !felt.type
+        %felt_const_1 = felt.const  1
+        %felt_const_256 = felt.const  256
+        %3 = felt.sub %0, %1 : !felt.type, !felt.type
+        %4 = bool.cmp lt(%0, %felt_const_256)
+        %5 = bool.cmp lt(%1, %felt_const_256)
+        %6 = cast.tofelt %4 : i1
+        %7 = cast.tofelt %5 : i1
+        constrain.eq %6, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %7, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %2, %3 : !felt.type, !felt.type
+        function.return
+      }
     }
   }
 }

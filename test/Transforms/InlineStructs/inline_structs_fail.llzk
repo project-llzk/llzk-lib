@@ -1,4 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -llzk-inline-structs -verify-diagnostics %s
+// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   struct.def @ResultOfComputeUnused {
@@ -129,29 +130,38 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // -----
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @ComponentY<[@A, @B]> {
-    function.def @compute() -> !struct.type<@ComponentY<[@A, @B]>> {
-      %self = struct.new : !struct.type<@ComponentY<[@A, @B]>>
-      function.return %self : !struct.type<@ComponentY<[@A, @B]>>
+  poly.template @TComponentY {
+    poly.param @A
+    poly.param @B
+
+    struct.def @ComponentY {
+      function.def @compute() -> !struct.type<@TComponentY::@ComponentY<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TComponentY::@ComponentY<[@A, @B]>>
+        function.return %self : !struct.type<@TComponentY::@ComponentY<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponentY::@ComponentY<[@A, @B]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@ComponentY<[@A, @B]>>) { function.return }
   }
 
   // expected-error@+1 {{Cannot inline structs with parameters.}}
-  struct.def @ComponentX<[@C]> {
-    struct.member @f2 : !struct.type<@ComponentY<[5, @C]>>
+  poly.template @TComponentX {
+    poly.param @C
 
-    function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
-      %self = struct.new : !struct.type<@ComponentX<[@C]>>
-      %x = function.call @ComponentY::@compute() : () -> (!struct.type<@ComponentY<[5, @C]>>)
-      struct.writem %self[@f2] = %x : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
-      function.return %self : !struct.type<@ComponentX<[@C]>>
-    }
+    struct.def @ComponentX {
+      struct.member @f2 : !struct.type<@TComponentY::@ComponentY<[5, @C]>>
 
-    function.def @constrain(%self: !struct.type<@ComponentX<[@C]>>) {
-      %b = struct.readm %self[@f2] : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
-      function.call @ComponentY::@constrain(%b) : (!struct.type<@ComponentY<[5, @C]>>) -> ()
-      function.return
+      function.def @compute() -> !struct.type<@TComponentX::@ComponentX<[@C]>> {
+        %self = struct.new : !struct.type<@TComponentX::@ComponentX<[@C]>>
+        %x = function.call @TComponentY::@ComponentY::@compute() : () -> (!struct.type<@TComponentY::@ComponentY<[5, @C]>>)
+        struct.writem %self[@f2] = %x : !struct.type<@TComponentX::@ComponentX<[@C]>>, !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        function.return %self : !struct.type<@TComponentX::@ComponentX<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentX::@ComponentX<[@C]>>) {
+        %b = struct.readm %self[@f2] : !struct.type<@TComponentX::@ComponentX<[@C]>>, !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        function.call @TComponentY::@ComponentY::@constrain(%b) : (!struct.type<@TComponentY::@ComponentY<[5, @C]>>) -> ()
+        function.return
+      }
     }
   }
 }

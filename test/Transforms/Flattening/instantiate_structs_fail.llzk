@@ -1,12 +1,19 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.lang} {
-  struct.def @Unpack<[@N, @P, @Aff]> {
-    function.def @compute(%arg0: !array.type<@Aff x !felt.type>) -> !struct.type<@Unpack<[@N, @P, @Aff]>> {
-      %self = struct.new : !struct.type<@Unpack<[@N, @P, @Aff]>>
-      function.return %self : !struct.type<@Unpack<[@N, @P, @Aff]>>
+  poly.template @TUnpack {
+    poly.param @N
+    poly.param @P
+    poly.param @Aff
+
+    struct.def @Unpack {
+      function.def @compute(%arg0: !array.type<@Aff x !felt.type>) -> !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>> {
+        %self = struct.new : !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>>
+        function.return %self : !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>>, %arg1: !array.type<@Aff x !felt.type>) { function.return }
     }
-    function.def @constrain(%arg0: !struct.type<@Unpack<[@N, @P, @Aff]>>, %arg1: !array.type<@Aff x !felt.type>) { function.return }
   }
   struct.def @User1 {
     function.def @compute() -> !struct.type<@User1> {
@@ -17,8 +24,8 @@ module attributes {llzk.lang} {
       %a = arith.constant 8 : index
       %b = arith.constant 2 : index
       // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!array.type<4 x !felt.type>', but found '!array.type<2 x !felt.type>' for operand number 0}}
-      %s = function.call @Unpack::@compute(%arr) {()[%a, %b]}
-        : (!array.type<2 x !felt.type>) -> !struct.type<@Unpack<[8, 2, affine_map<()[s0, s1] -> (s0 floordiv s1)>]>>
+      %s = function.call @TUnpack::@Unpack::@compute(%arr) {()[%a, %b]}
+        : (!array.type<2 x !felt.type>) -> !struct.type<@TUnpack::@Unpack<[8, 2, affine_map<()[s0, s1] -> (s0 floordiv s1)>]>>
       %self = struct.new : !struct.type<@User1>
       function.return %self : !struct.type<@User1>
     }

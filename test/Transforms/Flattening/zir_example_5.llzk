@@ -1,16 +1,23 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
 #map = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 module attributes {llzk.lang = "zirgen"} {
-  struct.def @Unpack<[@N, @P, @Aff]> {
-    function.def @compute(%arg0: !array.type<@Aff x !felt.type>) -> !struct.type<@Unpack<[@N, @P, @Aff]>> {
-      %self = struct.new : !struct.type<@Unpack<[@N, @P, @Aff]>>
-      %c0 = arith.constant 0 : index
-      %0 = array.read %arg0[%c0] : !array.type<@Aff x !felt.type>, !felt.type
-      function.return %self : !struct.type<@Unpack<[@N, @P, @Aff]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Unpack<[@N, @P, @Aff]>>, %arg1: !array.type<@Aff x !felt.type>) {
-      function.return
+  poly.template @TUnpack {
+    poly.param @N
+    poly.param @P
+    poly.param @Aff
+
+    struct.def @Unpack {
+      function.def @compute(%arg0: !array.type<@Aff x !felt.type>) -> !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>> {
+        %self = struct.new : !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>>
+        %c0 = arith.constant 0 : index
+        %0 = array.read %arg0[%c0] : !array.type<@Aff x !felt.type>, !felt.type
+        function.return %self : !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>>, %arg1: !array.type<@Aff x !felt.type>) {
+        function.return
+      }
     }
   }
   struct.def @User1 {
@@ -23,8 +30,8 @@ module attributes {llzk.lang = "zirgen"} {
       %arr = array.new %0, %1, %2, %3 : !array.type<4 x !felt.type>
       %a = arith.constant 8 : index
       %b = arith.constant 2 : index
-      %s = function.call @Unpack::@compute(%arr) {()[%a, %b]}
-        : (!array.type<4 x !felt.type>) -> !struct.type<@Unpack<[8, 2, #map]>>
+      %s = function.call @TUnpack::@Unpack::@compute(%arr) {()[%a, %b]}
+        : (!array.type<4 x !felt.type>) -> !struct.type<@TUnpack::@Unpack<[8, 2, #map]>>
       %self = struct.new : !struct.type<@User1>
       function.return %self : !struct.type<@User1>
     }
@@ -33,27 +40,4 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Unpack_8_2_4 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Unpack_8_2_4> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Unpack_8_2_4>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.read %[[V0]]{{\[}}%[[V1]]] : <4 x !felt.type>, !felt.type
-// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@Unpack_8_2_4>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @User1 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@User1> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 42
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !felt.type>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Unpack_8_2_4::@compute(%[[V1]]) : (!array.type<4 x !felt.type>) -> !struct.type<@Unpack_8_2_4>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@User1>
-// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@User1>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@User1>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO

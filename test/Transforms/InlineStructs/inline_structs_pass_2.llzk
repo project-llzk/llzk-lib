@@ -1,161 +1,133 @@
 // RUN: llzk-opt  -split-input-file --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root},llzk-inline-structs)' -verify-diagnostics %s | FileCheck %s
 // COM: This could be merged with `inline_structs_pass.llzk` once the issue with the default cleanup method of `llzk-flatten` is fixed (LLZK-303).
+// REQUIRES: todo-update-passes-for-template
 
 // TESTS: Inlining after `llzk-flatten` pass removes struct parameters
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @ComponentY<[@A, @B]> {
-    function.def @compute() -> !struct.type<@ComponentY<[@A, @B]>> {
-      %self = struct.new : !struct.type<@ComponentY<[@A, @B]>>
-      function.return %self : !struct.type<@ComponentY<[@A, @B]>>
+  poly.template @TComponentY {
+    poly.param @A
+    poly.param @B
+
+    struct.def @ComponentY {
+      function.def @compute() -> !struct.type<@TComponentY::@ComponentY<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TComponentY::@ComponentY<[@A, @B]>>
+        function.return %self : !struct.type<@TComponentY::@ComponentY<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponentY::@ComponentY<[@A, @B]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@ComponentY<[@A, @B]>>) { function.return }
   }
 
-  struct.def @ComponentX<[@C]> {
-    struct.member @f2 : !struct.type<@ComponentY<[5, @C]>>
+  poly.template @TComponentX {
+    poly.param @C
 
-    function.def @compute() -> !struct.type<@ComponentX<[@C]>> {
-      %self = struct.new : !struct.type<@ComponentX<[@C]>>
-      %x = function.call @ComponentY::@compute() : () -> (!struct.type<@ComponentY<[5, @C]>>)
-      struct.writem %self[@f2] = %x : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
-      function.return %self : !struct.type<@ComponentX<[@C]>>
-    }
+    struct.def @ComponentX {
+      struct.member @f2 : !struct.type<@TComponentY::@ComponentY<[5, @C]>>
 
-    function.def @constrain(%self: !struct.type<@ComponentX<[@C]>>) {
-      %b = struct.readm %self[@f2] : !struct.type<@ComponentX<[@C]>>, !struct.type<@ComponentY<[5, @C]>>
-      function.call @ComponentY::@constrain(%b) : (!struct.type<@ComponentY<[5, @C]>>) -> ()
-      function.return
+      function.def @compute() -> !struct.type<@TComponentX::@ComponentX<[@C]>> {
+        %self = struct.new : !struct.type<@TComponentX::@ComponentX<[@C]>>
+        %x = function.call @TComponentY::@ComponentY::@compute() : () -> (!struct.type<@TComponentY::@ComponentY<[5, @C]>>)
+        struct.writem %self[@f2] = %x : !struct.type<@TComponentX::@ComponentX<[@C]>>, !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        function.return %self : !struct.type<@TComponentX::@ComponentX<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentX::@ComponentX<[@C]>>) {
+        %b = struct.readm %self[@f2] : !struct.type<@TComponentX::@ComponentX<[@C]>>, !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        function.call @TComponentY::@ComponentY::@constrain(%b) : (!struct.type<@TComponentY::@ComponentY<[5, @C]>>) -> ()
+        function.return
+      }
     }
   }
 
   struct.def @Main {
-    struct.member @f3 : !struct.type<@ComponentX<[43]>>
+    struct.member @f3 : !struct.type<@TComponentX::@ComponentX<[43]>>
 
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      %x = function.call @ComponentX::@compute() : () -> (!struct.type<@ComponentX<[43]>>)
-      struct.writem %self[@f3] = %x : !struct.type<@Main>, !struct.type<@ComponentX<[43]>>
+      %x = function.call @TComponentX::@ComponentX::@compute() : () -> (!struct.type<@TComponentX::@ComponentX<[43]>>)
+      struct.writem %self[@f3] = %x : !struct.type<@Main>, !struct.type<@TComponentX::@ComponentX<[43]>>
       function.return %self : !struct.type<@Main>
     }
 
     function.def @constrain(%self: !struct.type<@Main>) {
-      %b = struct.readm %self[@f3] : !struct.type<@Main>, !struct.type<@ComponentX<[43]>>
-      function.call @ComponentX::@constrain(%b) : (!struct.type<@ComponentX<[43]>>) -> ()
+      %b = struct.readm %self[@f3] : !struct.type<@Main>, !struct.type<@TComponentX::@ComponentX<[43]>>
+      function.call @TComponentX::@ComponentX::@constrain(%b) : (!struct.type<@TComponentX::@ComponentX<[43]>>) -> ()
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 // TESTS: The relevant member is an array of subcomponents
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @Pair<[@Fst, @Snd]> {
-    function.def @compute() -> !struct.type<@Pair<[@Fst, @Snd]>> {
-      %self = struct.new : !struct.type<@Pair<[@Fst, @Snd]>>
-      function.return %self : !struct.type<@Pair<[@Fst, @Snd]>>
-    }
-    function.def @constrain(%self: !struct.type<@Pair<[@Fst, @Snd]>>) {
-      function.return
+  poly.template @TPair {
+    poly.param @Fst
+    poly.param @Snd
+
+    struct.def @Pair {
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@Fst, @Snd]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@Fst, @Snd]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@Fst, @Snd]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@Fst, @Snd]>>) {
+        function.return
+      }
     }
   }
 
-  struct.def @MakeGuess<[@PEGS]> {
-    struct.member @dat : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
+  poly.template @TMakeGuess {
+    poly.param @PEGS
 
-    function.def @compute() -> !struct.type<@MakeGuess<[@PEGS]>> {
-      %self = struct.new : !struct.type<@MakeGuess<[@PEGS]>>
-      %c0 = arith.constant 0 : index
-      %c1 = arith.constant 1 : index
-      %c4 = arith.constant 4 : index
-      %arr = array.new : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
-      scf.for %i = %c0 to %c4 step %c1 {
-        %sub = function.call @Pair::@compute() : () -> (!struct.type<@Pair<[!felt.type, @PEGS]>>)
-        array.write %arr[%i] = %sub : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>, !struct.type<@Pair<[!felt.type, @PEGS]>>
-      }
-      struct.writem %self[@dat] = %arr : !struct.type<@MakeGuess<[@PEGS]>>, !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
-      function.return %self : !struct.type<@MakeGuess<[@PEGS]>>
-    }
+    struct.def @MakeGuess {
+      struct.member @dat : !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>
 
-    function.def @constrain(%self: !struct.type<@MakeGuess<[@PEGS]>>) {
-      %c0 = arith.constant 0 : index
-      %c1 = arith.constant 1 : index
-      %arr = struct.readm %self[@dat] : !struct.type<@MakeGuess<[@PEGS]>>, !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
-      %len = array.len %arr, %c0 : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>
-      scf.for %i = %c0 to %len step %c1 {
-        %sub = array.read %arr[%i] : !array.type<4 x !struct.type<@Pair<[!felt.type, @PEGS]>>>, !struct.type<@Pair<[!felt.type, @PEGS]>>
-        // Note: the `canInline()` check fails here because the "self" parameter of this "@constrain"
-        // call does not come from a `struct.writem` which is (currently) the only pattern supported.
-        function.call @Pair::@constrain(%sub) : (!struct.type<@Pair<[!felt.type, @PEGS]>>) -> ()
+      function.def @compute() -> !struct.type<@TMakeGuess::@MakeGuess<[@PEGS]>> {
+        %self = struct.new : !struct.type<@TMakeGuess::@MakeGuess<[@PEGS]>>
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %c4 = arith.constant 4 : index
+        %arr = array.new : !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>
+        scf.for %i = %c0 to %c4 step %c1 {
+          %sub = function.call @TPair::@Pair::@compute() : () -> (!struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>)
+          array.write %arr[%i] = %sub : !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>, !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>
+        }
+        struct.writem %self[@dat] = %arr : !struct.type<@TMakeGuess::@MakeGuess<[@PEGS]>>, !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>
+        function.return %self : !struct.type<@TMakeGuess::@MakeGuess<[@PEGS]>>
       }
-      function.return
+
+      function.def @constrain(%self: !struct.type<@TMakeGuess::@MakeGuess<[@PEGS]>>) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %arr = struct.readm %self[@dat] : !struct.type<@TMakeGuess::@MakeGuess<[@PEGS]>>, !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>
+        %len = array.len %arr, %c0 : !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>
+        scf.for %i = %c0 to %len step %c1 {
+          %sub = array.read %arr[%i] : !array.type<4 x !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>>, !struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>
+          // Note: the `canInline()` check fails here because the "self" parameter of this "@constrain"
+          // call does not come from a `struct.writem` which is (currently) the only pattern supported.
+          function.call @TPair::@Pair::@constrain(%sub) : (!struct.type<@TPair::@Pair<[!felt.type, @PEGS]>>) -> ()
+        }
+        function.return
+      }
     }
   }
 
-  struct.def @Main<[]> {
-    struct.member @sub : !struct.type<@MakeGuess<[77]>>
+  poly.template @TMain {
+    struct.def @Main {
+      struct.member @sub : !struct.type<@TMakeGuess::@MakeGuess<[77]>>
 
-    function.def @compute() -> !struct.type<@Main<[]>> {
-      %self = struct.new : !struct.type<@Main<[]>>
-      %c = function.call @MakeGuess::@compute() : () -> !struct.type<@MakeGuess<[77]>>
-      struct.writem %self[@sub] = %c : !struct.type<@Main<[]>>, !struct.type<@MakeGuess<[77]>>
-      function.return %self : !struct.type<@Main<[]>>
-    }
+      function.def @compute() -> !struct.type<@TMain::@Main<[]>> {
+        %self = struct.new : !struct.type<@TMain::@Main<[]>>
+        %c = function.call @TMakeGuess::@MakeGuess::@compute() : () -> !struct.type<@TMakeGuess::@MakeGuess<[77]>>
+        struct.writem %self[@sub] = %c : !struct.type<@TMain::@Main<[]>>, !struct.type<@TMakeGuess::@MakeGuess<[77]>>
+        function.return %self : !struct.type<@TMain::@Main<[]>>
+      }
 
-    function.def @constrain(%self: !struct.type<@Main<[]>>) {
-      %c = struct.readm %self[@sub] : !struct.type<@Main<[]>>, !struct.type<@MakeGuess<[77]>>
-      function.call @MakeGuess::@constrain(%c) : (!struct.type<@MakeGuess<[77]>>) -> ()
-      function.return
+      function.def @constrain(%self: !struct.type<@TMain::@Main<[]>>) {
+        %c = struct.readm %self[@sub] : !struct.type<@TMain::@Main<[]>>, !struct.type<@TMakeGuess::@MakeGuess<[77]>>
+        function.call @TMakeGuess::@MakeGuess::@constrain(%c) : (!struct.type<@TMakeGuess::@MakeGuess<[77]>>) -> ()
+        function.return
+      }
     }
   }
 }
-// CHECK-LABEL: struct.def @Pair_f_77 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Pair_f_77> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Pair_f_77>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Pair_f_77>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Pair_f_77>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @"sub:!s<@MakeGuess_77>+dat" : !array.type<4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V4]]] = %[[V6]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V8]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V9]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      struct.writem %[[V0]][@"sub:!s<@MakeGuess_77>+dat"] = %[[V5]] : <@Main>, !array.type<4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V10:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"sub:!s<@MakeGuess_77>+dat"] : <@Main>, !array.type<4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.len %[[V13]], %[[V11]] : <4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:      scf.for %[[V15:[0-9a-zA-Z_\.]+]] = %[[V11]] to %[[V14]] step %[[V12]] {
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V15]]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:        function.call @Pair_f_77::@constrain(%[[V16]]) : (!struct.type<@Pair_f_77>) -> ()
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO

@@ -40,9 +40,9 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 
 def LLZK_StructDefOp
     : StructDialectOp<
-          "def", [HasParent<"::mlir::ModuleOp">, Symbol, LLZKSymbolTable,
-                  IsolatedFromAbove, SetFuncAllowAttrs,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+          "def", [ParentOneOf<["::mlir::ModuleOp",
+                               "::llzk::polymorphic::TemplateOp"]>,
+                  Symbol, LLZKSymbolTable, IsolatedFromAbove, SetFuncAllowAttrs,
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
   let summary = "circuit component definition";
   let description = [{
@@ -98,21 +98,15 @@ def LLZK_StructDefOp
       ```
   }];
 
-  // Note: `$const_params` contains symbol definitions that do not use the
-  // standard SymbolTable mechanism. Instead hasParamNamed() can be used to
-  // check if a certain FlatSymbolRefAttr is a parameter in the function.
-  let arguments = (ins SymbolNameAttr:$sym_name,
-      OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
+  let arguments = (ins SymbolNameAttr:$sym_name);
 
   let regions = (region SizedRegion<1>:$bodyRegion);
 
-  let assemblyFormat = [{
-    $sym_name (`<` $const_params^ `>`)? $bodyRegion attr-dict
-  }];
+  let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
-    /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
+    /// the type are not given, the StructType will use `this->getParams()`.
     StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {});
     inline StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {}) const {
       return const_cast<StructDefOp*>(this)->getType(constParams);
@@ -151,24 +145,18 @@ def LLZK_StructDefOp
     /// Returns `true` iff this structure defines compute and constrain functions.
     bool hasComputeConstrain() { return lookupSymbol(FUNC_NAME_COMPUTE) != nullptr && lookupSymbol(FUNC_NAME_CONSTRAIN) != nullptr; }
 
-    /// Generate header string, in the same format as the assemblyFormat
+    /// Generate header string, in the same format as the assemblyFormat.
     ::std::string getHeaderString();
 
-    /// Return `false` iff `getConstParamsAttr()` returns `nullptr`
-    bool hasConstParamsAttr() { return getProperties().const_params != nullptr; };
+    /// Return `true` iff the `struct.def` appears within a `poly.template` that defines
+    /// constant parameters and/or expressions.
+    bool hasTemplateConstParam();
 
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::StringRef find);
-
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    inline bool hasParamNamed(::mlir::StringAttr find) {
-      return hasParamNamed(find.strref());
-    }
-
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
-      return hasParamNamed(find.getRootReference());
-    }
+    /// If this `StructDefOp` is within a `TemplateOp`, return names of all `TemplateParamOp`
+    /// within the `TemplateOp` in the order they are defined. Otherwise, return empty. The
+    /// names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type is
+    /// used in the return type since that's usually what's needed.
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateParamOpNames();
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.

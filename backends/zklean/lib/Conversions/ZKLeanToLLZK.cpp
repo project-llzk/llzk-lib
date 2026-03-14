@@ -119,9 +119,8 @@ static void emitStructDefsFromZKLean(ModuleOp source, ZKLeanToLLZKState &state) 
     }
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
-    auto structDef = state.builder.create<llzk::component::StructDefOp>(
-        def.getLoc(), def.getSymNameAttr(), ArrayAttr()
-    );
+    auto structDef =
+        state.builder.create<llzk::component::StructDefOp>(def.getLoc(), def.getSymNameAttr());
     auto &body = structDef.getBodyRegion().emplaceBlock();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::zkleanlean::MemberDefOp>()) {

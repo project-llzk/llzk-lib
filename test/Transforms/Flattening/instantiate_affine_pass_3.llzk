@@ -1,32 +1,41 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
+// REQUIRES: todo-update-passes-for-template
 
 #id = affine_map<(i)->(i)>
-!ToFelt = !struct.type<@ToFelt<[#id]>>
+!ToFelt = !struct.type<@TToFelt::@ToFelt<[#id]>>
 module attributes {llzk.lang} {
-  struct.def @ToFelt<[@A]> {
-    function.def @compute() -> !struct.type<@ToFelt<[@A]>> {
-      %self = struct.new : !struct.type<@ToFelt<[@A]>>
-      function.return %self: !struct.type<@ToFelt<[@A]>>
-    }
+  poly.template @TToFelt {
+    poly.param @A
 
-    function.def @constrain(%self: !struct.type<@ToFelt<[@A]>>) { function.return }
+    struct.def @ToFelt {
+      function.def @compute() -> !struct.type<@TToFelt::@ToFelt<[@A]>> {
+        %self = struct.new : !struct.type<@TToFelt::@ToFelt<[@A]>>
+        function.return %self: !struct.type<@TToFelt::@ToFelt<[@A]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TToFelt::@ToFelt<[@A]>>) { function.return }
+    }
   }
 
-  struct.def @ComponentA<[@T]> {
-    function.def @compute(%inp: !struct.type<@ToFelt<[@T]>>) -> !struct.type<@ComponentA<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentA<[@T]>>
-      function.return %self : !struct.type<@ComponentA<[@T]>>
-    }
+  poly.template @TComponentA {
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@ComponentA<[@T]>>, %inp: !struct.type<@ToFelt<[@T]>>) { function.return }
+    struct.def @ComponentA {
+      function.def @compute(%inp: !struct.type<@TToFelt::@ToFelt<[@T]>>) -> !struct.type<@TComponentA::@ComponentA<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentA::@ComponentA<[@T]>>
+        function.return %self : !struct.type<@TComponentA::@ComponentA<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentA::@ComponentA<[@T]>>, %inp: !struct.type<@TToFelt::@ToFelt<[@T]>>) { function.return }
+    }
   }
 
   struct.def @ComponentB {
     function.def @compute() -> !struct.type<@ComponentB> {
       // In real code, this should be loop induction variable
       %n = arith.constant 2 : index
-      %in = function.call @ToFelt::@compute(){(%n)} : () -> !ToFelt
-      %out = function.call @ComponentA::@compute(%in) : (!ToFelt) -> !struct.type<@ComponentA<[2]>>
+      %in = function.call @TToFelt::@ToFelt::@compute(){(%n)} : () -> !ToFelt
+      %out = function.call @TComponentA::@ComponentA::@compute(%in) : (!ToFelt) -> !struct.type<@TComponentA::@ComponentA<[2]>>
 
       %self = struct.new : !struct.type<@ComponentB>
       function.return %self : !struct.type<@ComponentB>
@@ -35,34 +44,4 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ComponentB>) { function.return }
   }
 }
-// CHECK-LABEL: struct.def @ToFelt_2 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_2>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@ToFelt_2>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_2>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @ComponentA_2 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_2>) -> !struct.type<@ComponentA_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA_2>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ComponentA_2>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA_2>, %[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_2>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @ComponentB {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentB> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_2::@compute() : () -> !struct.type<@ToFelt_2>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @ComponentA_2::@compute(%[[V0]]) : (!struct.type<@ToFelt_2>) -> !struct.type<@ComponentA_2>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
-// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@ComponentB>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentB>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO

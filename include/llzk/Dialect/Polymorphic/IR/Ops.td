@@ -12,13 +12,192 @@
 
 include "llzk/Dialect/Polymorphic/IR/Dialect.td"
 include "llzk/Dialect/Polymorphic/IR/Types.td"
+include "llzk/Dialect/Polymorphic/IR/OpInterfaces.td"
+include "llzk/Dialect/Shared/OpTraits.td"
 
 include "mlir/IR/OpBase.td"
+include "mlir/IR/RegionKindInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
+include "mlir/Interfaces/ControlFlowInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
 class PolymorphicDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<PolymorphicDialect, mnemonic, traits>;
+
+def LLZK_TemplateOp
+    : PolymorphicDialectOp<"template", [HasParent<"::mlir::ModuleOp">, Symbol,
+                                        LLZKSymbolTable, IsolatedFromAbove,
+                                        NoRegionArguments, NoTerminator,
+                                        SingleBlock]> {
+  let summary = "defines polymorphic functions or structs";
+  let description = [{
+    The `poly.template` allows defining polymorphic templated functions and structs.
+    The body contains the definitions of the template's parameters along with the
+    function and/or struct definitions that utilize those parameters in their bodies.
+
+    Example:
+    ```llzk
+    poly.template @TemplateName {
+      poly.param @N
+      poly.param @T
+
+      function.def @f(%inp: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
+        // function header and body can use parameters @N and @T
+      }
+
+      struct.def @StructName {
+        function.def @compute() -> !struct.type<@TemplateName::@StructName> {
+          ...
+        }
+        function.def @constrain(%self: !struct.type<@TemplateName::@StructName>) {
+          ...
+        }
+      }
+    }
+    ```
+
+    The order of `poly.param` definitions in the template body determines the order that
+    template parameters must be listed in the parameter list of a `struct.type` refering
+    to a struct nested within the template. In the example above, the type of `@StructName`
+    is `!struct.type<@TemplateName::@StructName<[@N, @T]>>`.
+  }];
+
+  let arguments = (ins SymbolNameAttr:$sym_name);
+
+  let regions = (region SizedRegion<1>:$bodyRegion);
+
+  let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
+
+  let extraClassDeclaration = [{
+    /// Return ops of type `OpT` within the body region.
+    /// Ops are returned in the order they are defined in the IR.
+    template <ConstParamSymbol OpT>
+    inline ::llvm::iterator_range<::mlir::Region::op_iterator<OpT>> getConstOps() {
+      return getBodyRegion().getOps<OpT>();
+    }
+
+    /// Return `true` if there are ops of type `OpT` within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstOps() {
+      return !getConstOps<OpT>().empty();
+    }
+
+    /// Return the number of ops of type `OpT` within the body region.
+    template <ConstParamSymbol OpT>
+    inline size_t numConstOps() {
+      return llvm::range_size(getConstOps<OpT>());
+    }
+
+    /// Return the names of all ops of type `OpT` within the body region in the order they
+    /// are defined. The names are returned as `FlatSymbolRefAttr` but the more general
+    /// `Attribute` type is used in the return type since that's usually what's needed.
+    template <ConstParamSymbol OpT>
+    ::llvm::SmallVector<::mlir::Attribute> getConstNames() {
+      return ::llvm::to_vector(::llvm::map_range(getConstOps<OpT>(), [](auto p) -> ::mlir::Attribute {
+        return ::mlir::FlatSymbolRefAttr::get(p.getNameAttr());
+      }));
+    }
+
+    /// Return `true` if there is an op of type `OpT` with the given name within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstNamed(::mlir::StringRef find) {
+      auto status = this->walk([&](OpT op) {
+        return (op.getName() == find) ? ::mlir::WalkResult::interrupt()
+                                      : ::mlir::WalkResult::advance();
+      });
+      return status.wasInterrupted();
+    }
+
+    /// Return `true` if there is an op of type `OpT` with the given name within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstNamed(::mlir::StringAttr find) {
+      return hasConstNamed<OpT>(find.strref());
+    }
+
+    /// Return `true` if there is an op of type `OpT` with the given name within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstNamed(::mlir::FlatSymbolRefAttr find) {
+      return hasConstNamed<OpT>(find.getRootReference());
+    }
+  }];
+}
+
+def LLZK_TemplateParamOp
+    : PolymorphicDialectOp<
+          "param", [HasParent<"::llzk::polymorphic::TemplateOp">,
+                    DeclareOpInterfaceMethods<ConstParamSymbolOpInterface>,
+                    DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  let summary = "declares a parameter of a polymorphic template";
+  let description = [{
+    Declares a parameter of a `poly.template` that can be used by the function and/or struct
+    definitions within the template. Each parameter can have an optional type restriction.
+
+    Example:
+    ```llzk
+    poly.template @TemplateName {
+      poly.param @N
+      poly.param @F : !felt.type
+      // To restrict a parameter to accept only a type, use `!poly.tvar` with the parameter's own name.
+      poly.param @T : !poly.tvar<@T>
+    }
+    ```
+  }];
+
+  let arguments = (ins SymbolNameAttr:$sym_name,
+      OptionalAttr<TypeAttrOf<ConstReadType>>:$type);
+
+  let assemblyFormat = [{ $sym_name (`:` $type^)? attr-dict }];
+}
+
+def LLZK_TemplateExprOp
+    : PolymorphicDialectOp<
+          "expr", [HasParent<"::llzk::polymorphic::TemplateOp">,
+                   DeclareOpInterfaceMethods<ConstParamSymbolOpInterface>,
+                   DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                   IsolatedFromAbove, NoRegionArguments, SingleBlock]> {
+  let summary = "declares a named expression in a polymorphic template";
+  let description = [{
+    Declares an expression over parameters of a `poly.template` that can be used just like
+    a parameter within the function and/or struct definitions within the template.
+
+    Example:
+    ```llzk
+    poly.template @TemplateName {
+      poly.expr @ExprName {
+        %0 = some_op %param1, %param2 : (!felt.type, !felt.type) -> !felt.type
+        poly.yield %0 : !felt.type
+      }
+    }
+    ```
+  }];
+
+  let arguments = (ins SymbolNameAttr:$sym_name);
+  let regions = (region SizedRegion<1>:$initializerRegion);
+
+  let assemblyFormat = [{ $sym_name $initializerRegion attr-dict }];
+
+  let hasRegionVerifier = 1;
+
+  let extraClassDeclaration = [{
+    /// Returns the type of the `poly.yield` op in the initializer region.
+    ::mlir::Type getType();
+  }];
+}
+
+def LLZK_YieldOp
+    : PolymorphicDialectOp<
+          "yield", [HasParent<"::llzk::polymorphic::TemplateExprOp">, Pure,
+                    ReturnLike, Terminator]> {
+  let summary = "expr initialization yield and termination operation";
+  let description = [{
+    This operation yields an SSA value from a `poly.expr` initialization
+    region and terminates the region.
+  }];
+
+  let arguments = (ins ConstReadType:$val);
+
+  let assemblyFormat = [{ $val `:` type($val) attr-dict }];
+}
 
 def LLZK_ConstReadOp
     : PolymorphicDialectOp<

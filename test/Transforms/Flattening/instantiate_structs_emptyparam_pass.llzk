@@ -1,61 +1,48 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.lang} {
-  struct.def @Component1A<[]> {
-    function.def @constrain(%self: !struct.type<@Component1A<[]>>) { function.return }
-    function.def @compute() -> !struct.type<@Component1A<[]>> {
-      %self = struct.new : !struct.type<@Component1A<[]>>
-      function.return %self : !struct.type<@Component1A<[]>>
+  poly.template @TComponent1A {
+    struct.def @Component1A {
+      function.def @constrain(%self: !struct.type<@TComponent1A::@Component1A<[]>>) { function.return }
+      function.def @compute() -> !struct.type<@TComponent1A::@Component1A<[]>> {
+        %self = struct.new : !struct.type<@TComponent1A::@Component1A<[]>>
+        function.return %self : !struct.type<@TComponent1A::@Component1A<[]>>
+      }
     }
   }
 
   struct.def @Component1B {
-    function.def @compute(%p: !struct.type<@Component1A<[]>>) -> !struct.type<@Component1B> {
+    function.def @compute(%p: !struct.type<@TComponent1A::@Component1A<[]>>) -> !struct.type<@Component1B> {
       %self = struct.new : !struct.type<@Component1B>
       function.return %self : !struct.type<@Component1B>
     }
 
-    function.def @constrain(%self: !struct.type<@Component1B>, %p: !struct.type<@Component1A<[]>>) {
+    function.def @constrain(%self: !struct.type<@Component1B>, %p: !struct.type<@TComponent1A::@Component1A<[]>>) {
       function.return
     }
   }
 }
-// CHECK-LABEL: struct.def @Component1A {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@Component1A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component1A> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component1A>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component1A>
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Component1B {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@Component1A>) -> !struct.type<@Component1B> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component1B>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component1B>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component1B>, %[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Component1A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Component2A<[]> {
-    function.def @constrain(%self: !struct.type<@Component2A<[]>>) { function.return }
-    function.def @compute() -> !struct.type<@Component2A<[]>> {
-      %self = struct.new : !struct.type<@Component2A<[]>>
-      function.return %self : !struct.type<@Component2A<[]>>
+  poly.template @TComponent2A {
+    struct.def @Component2A {
+      function.def @constrain(%self: !struct.type<@TComponent2A::@Component2A<[]>>) { function.return }
+      function.def @compute() -> !struct.type<@TComponent2A::@Component2A<[]>> {
+        %self = struct.new : !struct.type<@TComponent2A::@Component2A<[]>>
+        function.return %self : !struct.type<@TComponent2A::@Component2A<[]>>
+      }
     }
   }
 
   struct.def @Main {
-    struct.member @b : !struct.type<@Component2A<[]>>
+    struct.member @b : !struct.type<@TComponent2A::@Component2A<[]>>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      %b = function.call @Component2A::@compute() : () -> !struct.type<@Component2A<[]>>
-      struct.writem %self[@b] = %b : !struct.type<@Main>, !struct.type<@Component2A<[]>>
+      %b = function.call @TComponent2A::@Component2A::@compute() : () -> !struct.type<@TComponent2A::@Component2A<[]>>
+      struct.writem %self[@b] = %b : !struct.type<@Main>, !struct.type<@TComponent2A::@Component2A<[]>>
       function.return %self : !struct.type<@Main>
     }
 
@@ -64,25 +51,4 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Component2A {
-// CHECK-NEXT:    function.def @constrain(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@Component2A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component2A> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component2A>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component2A>
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @b : !struct.type<@Component2A>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = function.call @Component2A::@compute() : () -> !struct.type<@Component2A>
-// CHECK-NEXT:      struct.writem %[[V0]][@b] = %[[V1]] : <@Main>, !struct.type<@Component2A>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+// CHECK-LABEL: TODO

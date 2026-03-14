@@ -2,14 +2,16 @@
 
 #map = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {llzk.lang = "zirgen"} {
-  struct.def @Component<[]> {
-    function.def @compute() -> !struct.type<@Component<[]>> {
-      %self = struct.new : !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@Component<[]>>
-    }
+  poly.template @TComponent {
+    struct.def @Component {
+      function.def @compute() -> !struct.type<@TComponent::@Component<[]>> {
+        %self = struct.new : !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TComponent::@Component<[]>>
+      }
 
-    function.def @constrain(%self: !struct.type<@Component<[]>>) {
-      function.return
+      function.def @constrain(%self: !struct.type<@TComponent::@Component<[]>>) {
+        function.return
+      }
     }
   }
 
@@ -30,216 +32,242 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
 
-  struct.def @Div<[]> {
-    struct.member @reciprocal : !felt.type
-    // ZIR frontend should mark function.return value with `pub`
-    struct.member @synthetic_return : !felt.type {llzk.pub}
+  poly.template @TDiv {
+    struct.def @Div {
+      struct.member @reciprocal : !felt.type
+      // ZIR frontend should mark function.return value with `pub`
+      struct.member @synthetic_return : !felt.type {llzk.pub}
 
-    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops} {
-      %self = struct.new : !struct.type<@Div<[]>>
-      // res_inv := inv(rhs);
-      %res_inv = felt.inv %rhs
-      struct.writem %self[@reciprocal] = %res_inv : !struct.type<@Div<[]>>, !felt.type
-      // self.synthetic_return := res_inv * lhs;
-      %res_mul = felt.mul %res_inv, %lhs
-      struct.writem %self[@synthetic_return] = %res_mul : !struct.type<@Div<[]>>, !felt.type
-      //
-      function.return %self : !struct.type<@Div<[]>>
-    }
+      function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@TDiv::@Div<[]>> attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : !struct.type<@TDiv::@Div<[]>>
+        // res_inv := inv(rhs);
+        %res_inv = felt.inv %rhs
+        struct.writem %self[@reciprocal] = %res_inv : !struct.type<@TDiv::@Div<[]>>, !felt.type
+        // self.synthetic_return := res_inv * lhs;
+        %res_mul = felt.mul %res_inv, %lhs
+        struct.writem %self[@synthetic_return] = %res_mul : !struct.type<@TDiv::@Div<[]>>, !felt.type
+        //
+        function.return %self : !struct.type<@TDiv::@Div<[]>>
+      }
 
-    function.def @constrain(%self: !struct.type<@Div<[]>>, %lhs: !felt.type, %rhs: !felt.type) {
-      // emit self.reciprocal * rhs = 1;
-      %res_inv = struct.readm %self[@reciprocal] : !struct.type<@Div<[]>>, !felt.type
-      %res_mul_1 = felt.mul %res_inv, %rhs
-      %const_1 = felt.const 1
-      constrain.eq %res_mul_1, %const_1 : !felt.type
-      // emit self.synthetic_return = self.reciprocal * lhs;
-      %res_self = struct.readm %self[@synthetic_return] : !struct.type<@Div<[]>>, !felt.type
-      %res_mul_2 = felt.mul %res_inv, %lhs
-      constrain.eq %res_self, %res_mul_2 : !felt.type
-      //
-      function.return
+      function.def @constrain(%self: !struct.type<@TDiv::@Div<[]>>, %lhs: !felt.type, %rhs: !felt.type) {
+        // emit self.reciprocal * rhs = 1;
+        %res_inv = struct.readm %self[@reciprocal] : !struct.type<@TDiv::@Div<[]>>, !felt.type
+        %res_mul_1 = felt.mul %res_inv, %rhs
+        %const_1 = felt.const 1
+        constrain.eq %res_mul_1, %const_1 : !felt.type
+        // emit self.synthetic_return = self.reciprocal * lhs;
+        %res_self = struct.readm %self[@synthetic_return] : !struct.type<@TDiv::@Div<[]>>, !felt.type
+        %res_mul_2 = felt.mul %res_inv, %lhs
+        constrain.eq %res_self, %res_mul_2 : !felt.type
+        //
+        function.return
+      }
     }
   }
 
-  struct.def @Foo<[@N, @P, @Aff$0]> {
-    struct.member @"$super" : !struct.type<@Component<[]>>
-    struct.member @"$temp_0" : !struct.type<@Component<[]>>
-    struct.member @"$temp" : !struct.type<@Div<[]>>
-    function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops} {
-      %self = struct.new : !struct.type<@Foo<[@N, @P, @Aff$0]>>
-      %0 = poly.read_const @N : !felt.type
-      %1 = poly.read_const @P : !felt.type
-      %2 = function.call @Div::@compute(%0, %1) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writem %self[@"$temp"] = %2 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      %3 = struct.readm %self[@"$temp"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      %4 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writem %self[@"$temp_0"] = %4 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      %5 = struct.readm %self[@"$temp_0"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      struct.writem %self[@"$super"] = %5 : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@Foo<[@N, @P, @Aff$0]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Foo<[@N, @P, @Aff$0]>>, %arg1: !array.type<@Aff$0 x !felt.type>) {
-      %0 = poly.read_const @N : !felt.type
-      %1 = poly.read_const @P : !felt.type
-      %2 = struct.readm %arg0[@"$temp"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      function.call @Div::@constrain(%2, %0, %1) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %3 = struct.readm %arg0[@"$temp_0"] : !struct.type<@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      function.call @Component::@constrain(%3) : (!struct.type<@Component<[]>>) -> ()
-      function.return
+  poly.template @TFoo {
+    poly.param @N
+    poly.param @P
+    poly.param @Aff$0
+
+    struct.def @Foo {
+      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+      struct.member @"$temp_0" : !struct.type<@TComponent::@Component<[]>>
+      struct.member @"$temp" : !struct.type<@TDiv::@Div<[]>>
+      function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>
+        %0 = poly.read_const @N : !felt.type
+        %1 = poly.read_const @P : !felt.type
+        %2 = function.call @TDiv::@Div::@compute(%0, %1) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+        struct.writem %self[@"$temp"] = %2 : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+        %3 = struct.readm %self[@"$temp"] : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+        %4 = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$temp_0"] = %4 : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        %5 = struct.readm %self[@"$temp_0"] : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$super"] = %5 : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, %arg1: !array.type<@Aff$0 x !felt.type>) {
+        %0 = poly.read_const @N : !felt.type
+        %1 = poly.read_const @P : !felt.type
+        %2 = struct.readm %arg0[@"$temp"] : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+        function.call @TDiv::@Div::@constrain(%2, %0, %1) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+        %3 = struct.readm %arg0[@"$temp_0"] : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        function.call @TComponent::@Component::@constrain(%3) : (!struct.type<@TComponent::@Component<[]>>) -> ()
+        function.return
+      }
     }
   }
 
-  struct.def @Bar<[@N, @P, @Aff$0]> {
-    struct.member @"$super" : !struct.type<@Component<[]>>
-    struct.member @"$temp_1" : !struct.type<@Component<[]>>
-    struct.member @"$temp_0" : !struct.type<@Foo<[@N, @P, #map]>>
-    struct.member @"$temp" : !struct.type<@Div<[]>>
-    function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops} {
-      %self = struct.new : !struct.type<@Bar<[@N, @P, @Aff$0]>>
-      %0 = poly.read_const @N : !felt.type
-      %1 = poly.read_const @P : !felt.type
-      %2 = function.call @Div::@compute(%0, %1) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-      struct.writem %self[@"$temp"] = %2 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      %3 = struct.readm %self[@"$temp"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      %4 = poly.read_const @N : !felt.type
-      %5 = cast.toindex %4
-      %6 = poly.read_const @P : !felt.type
-      %7 = cast.toindex %6
-      %8 = function.call @Foo::@compute(%arg0) {()[%5, %7]} : (!array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, #map]>>
-      struct.writem %self[@"$temp_0"] = %8 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
-      %9 = struct.readm %self[@"$temp_0"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
-      %10 = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-      struct.writem %self[@"$temp_1"] = %10 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      %11 = struct.readm %self[@"$temp_1"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      struct.writem %self[@"$super"] = %11 : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      function.return %self : !struct.type<@Bar<[@N, @P, @Aff$0]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@Bar<[@N, @P, @Aff$0]>>, %arg1: !array.type<@Aff$0 x !felt.type>) {
-      %0 = poly.read_const @N : !felt.type
-      %1 = poly.read_const @P : !felt.type
-      %2 = struct.readm %arg0[@"$temp"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-      function.call @Div::@constrain(%2, %0, %1) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-      %3 = struct.readm %arg0[@"$temp_0"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #map]>>
-      function.call @Foo::@constrain(%3, %arg1) : (!struct.type<@Foo<[@N, @P, #map]>>, !array.type<@Aff$0 x !felt.type>) -> ()
-      %4 = struct.readm %arg0[@"$temp_1"] : !struct.type<@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-      function.call @Component::@constrain(%4) : (!struct.type<@Component<[]>>) -> ()
-      function.return
+  poly.template @TBar {
+    poly.param @N
+    poly.param @P
+    poly.param @Aff$0
+
+    struct.def @Bar {
+      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+      struct.member @"$temp_1" : !struct.type<@TComponent::@Component<[]>>
+      struct.member @"$temp_0" : !struct.type<@TFoo::@Foo<[@N, @P, #map]>>
+      struct.member @"$temp" : !struct.type<@TDiv::@Div<[]>>
+      function.def @compute(%arg0: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>
+        %0 = poly.read_const @N : !felt.type
+        %1 = poly.read_const @P : !felt.type
+        %2 = function.call @TDiv::@Div::@compute(%0, %1) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+        struct.writem %self[@"$temp"] = %2 : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+        %3 = struct.readm %self[@"$temp"] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+        %4 = poly.read_const @N : !felt.type
+        %5 = cast.toindex %4
+        %6 = poly.read_const @P : !felt.type
+        %7 = cast.toindex %6
+        %8 = function.call @TFoo::@Foo::@compute(%arg0) {()[%5, %7]} : (!array.type<@Aff$0 x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N, @P, #map]>>
+        struct.writem %self[@"$temp_0"] = %8 : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TFoo::@Foo<[@N, @P, #map]>>
+        %9 = struct.readm %self[@"$temp_0"] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TFoo::@Foo<[@N, @P, #map]>>
+        %10 = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$temp_1"] = %10 : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        %11 = struct.readm %self[@"$temp_1"] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        struct.writem %self[@"$super"] = %11 : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        function.return %self : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, %arg1: !array.type<@Aff$0 x !felt.type>) {
+        %0 = poly.read_const @N : !felt.type
+        %1 = poly.read_const @P : !felt.type
+        %2 = struct.readm %arg0[@"$temp"] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+        function.call @TDiv::@Div::@constrain(%2, %0, %1) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+        %3 = struct.readm %arg0[@"$temp_0"] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TFoo::@Foo<[@N, @P, #map]>>
+        function.call @TFoo::@Foo::@constrain(%3, %arg1) : (!struct.type<@TFoo::@Foo<[@N, @P, #map]>>, !array.type<@Aff$0 x !felt.type>) -> ()
+        %4 = struct.readm %arg0[@"$temp_1"] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+        function.call @TComponent::@Component::@constrain(%4) : (!struct.type<@TComponent::@Component<[]>>) -> ()
+        function.return
+      }
     }
   }
 }
 
 // CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
 //
-// CHECK-LABEL: struct.def @Component<[]> {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Component<[]>> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Component<[]>>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Component<[]>>
+// CHECK-LABEL: module attributes {llzk.lang = "zirgen"} {
+// CHECK-NEXT:    poly.template @TComponent {
+// CHECK-NEXT:      struct.def @Component {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent::@Component<[]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent::@Component<[]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent::@Component<[]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component<[]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    struct.def @Reg {
+// CHECK-NEXT:      struct.member @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@reg] = %[[VAL_2]] : <@Reg>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Reg>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@reg] : <@Reg>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Reg {
-// CHECK-NEXT:    struct.member @reg : !felt.type {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
-// CHECK-NEXT:      struct.writem %[[V1]][@reg] = %[[V0]] : <@Reg>, !felt.type
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Reg>
+// CHECK-NEXT:    poly.template @TDiv {
+// CHECK-NEXT:      struct.def @Div {
+// CHECK-NEXT:        struct.member @reciprocal : !felt.type
+// CHECK-NEXT:        struct.member @synthetic_return : !felt.type {llzk.pub}
+// CHECK-NEXT:        function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TDiv::@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@TDiv::@Div<[]>>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.inv %[[VAL_8]] : !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_9]][@reciprocal] = %[[VAL_10]] : <@TDiv::@Div<[]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_9]][@synthetic_return] = %[[VAL_11]] : <@TDiv::@Div<[]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_9]] : !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@TDiv::@Div<[]>>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          constrain.eq %[[VAL_16]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@synthetic_return] : <@TDiv::@Div<[]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_18]], %[[VAL_19]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V2]][@reg] : <@Reg>, !felt.type
-// CHECK-NEXT:      constrain.eq %[[V3]], %[[V4]] : !felt.type, !felt.type
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    poly.template @TFoo {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      poly.param @Aff$0
+// CHECK-NEXT:      struct.def @Foo {
+// CHECK-NEXT:        struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:        struct.member @"$temp_0" : !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:        struct.member @"$temp" : !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_20:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.new : <@TFoo::@Foo<[@N, @P, @Aff$0]>>
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
+// CHECK-NEXT:          %[[VAL_24:[0-9a-zA-Z_\.]+]] = function.call @TDiv::@Div::@compute(%[[VAL_22]], %[[VAL_23]]) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          struct.writem %[[VAL_21]][@"$temp"] = %[[VAL_24]] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_21]][@"$temp"] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          %[[VAL_26:[0-9a-zA-Z_\.]+]] = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          struct.writem %[[VAL_21]][@"$temp_0"] = %[[VAL_26]] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_21]][@"$temp_0"] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          struct.writem %[[VAL_21]][@"$super"] = %[[VAL_27]] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          function.return %[[VAL_21]] : !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_28:[0-9a-zA-Z_\.]+]]: !struct.type<@TFoo::@Foo<[@N, @P, @Aff$0]>>, %[[VAL_29:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_30:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_31:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
+// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_28]][@"$temp"] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          function.call @TDiv::@Div::@constrain(%[[VAL_32]], %[[VAL_30]], %[[VAL_31]]) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+// CHECK-NEXT:          %[[VAL_33:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_28]][@"$temp_0"] : <@TFoo::@Foo<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          function.call @TComponent::@Component::@constrain(%[[VAL_33]]) : (!struct.type<@TComponent::@Component<[]>>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Div<[]> {
-// CHECK-NEXT:    struct.member @reciprocal : !felt.type
-// CHECK-NEXT:    struct.member @synthetic_return : !felt.type {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Div<[]>>
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = felt.inv %[[V1]] : !felt.type
-// CHECK-NEXT:      struct.writem %[[V2]][@reciprocal] = %[[V3]] : <@Div<[]>>, !felt.type
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = felt.mul %[[V3]], %[[V0]] : !felt.type, !felt.type
-// CHECK-NEXT:      struct.writem %[[V2]][@synthetic_return] = %[[V4]] : <@Div<[]>>, !felt.type
-// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@Div<[]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@Div<[]>>, %[[V6:[0-9a-zA-Z_\.]+]]: !felt.type, %[[V7:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@reciprocal] : <@Div<[]>>, !felt.type
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V7]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.const  1
-// CHECK-NEXT:      constrain.eq %[[V9]], %[[V10]] : !felt.type, !felt.type
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readm %[[V5]][@synthetic_return] : <@Div<[]>>, !felt.type
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = felt.mul %[[V8]], %[[V6]] : !felt.type, !felt.type
-// CHECK-NEXT:      constrain.eq %[[V11]], %[[V12]] : !felt.type, !felt.type
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Foo<[@N, @P, @Aff$0]> {
-// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div<[]>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo<[@N, @P, @Aff$0]>>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V3]]) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$temp"] = %[[V4]] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"$temp"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$temp_0"] = %[[V6]] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"$temp_0"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$super"] = %[[V7]] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Foo<[@N, @P, @Aff$0]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo<[@N, @P, @Aff$0]>>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-// CHECK-NEXT:      function.call @Div::@constrain(%[[V12]], %[[V10]], %[[V11]]) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp_0"] : <@Foo<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      function.call @Component::@constrain(%[[V13]]) : (!struct.type<@Component<[]>>) -> ()
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Bar<[@N, @P, @Aff$0]> {
-// CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.member @"$temp_1" : !struct.type<@Component<[]>>
-// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
-// CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div<[]>>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar<[@N, @P, @Aff$0]>>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V3]]) : (!felt.type, !felt.type) -> !struct.type<@Div<[]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$temp"] = %[[V4]] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"$temp"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = cast.toindex %[[V6]]
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[V8]]
-// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = function.call @Foo::@compute(%[[V0]]) {(){{\[}}%[[V7]], %[[V9]]]} : (!array.type<@Aff$0 x !felt.type>) -> !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$temp_0"] = %[[V10]] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"$temp_0"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component<[]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$temp_1"] = %[[V12]] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@"$temp_1"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      struct.writem %[[V1]][@"$super"] = %[[V13]] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Bar<[@N, @P, @Aff$0]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !struct.type<@Bar<[@N, @P, @Aff$0]>>, %[[V15:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
-// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
-// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = struct.readm %[[V14]][@"$temp"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Div<[]>>
-// CHECK-NEXT:      function.call @Div::@constrain(%[[V18]], %[[V16]], %[[V17]]) : (!struct.type<@Div<[]>>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = struct.readm %[[V14]][@"$temp_0"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Foo<[@N, @P, #[[$M0]]]>>
-// CHECK-NEXT:      function.call @Foo::@constrain(%[[V19]], %[[V15]]) : (!struct.type<@Foo<[@N, @P, #[[$M0]]]>>, !array.type<@Aff$0 x !felt.type>) -> ()
-// CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = struct.readm %[[V14]][@"$temp_1"] : <@Bar<[@N, @P, @Aff$0]>>, !struct.type<@Component<[]>>
-// CHECK-NEXT:      function.call @Component::@constrain(%[[V20]]) : (!struct.type<@Component<[]>>) -> ()
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    poly.template @TBar {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      poly.param @Aff$0
+// CHECK-NEXT:      struct.def @Bar {
+// CHECK-NEXT:        struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:        struct.member @"$temp_1" : !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:        struct.member @"$temp_0" : !struct.type<@TFoo::@Foo<[@N, @P, #[[$M0]]]>>
+// CHECK-NEXT:        struct.member @"$temp" : !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_34:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) -> !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_35:[0-9a-zA-Z_\.]+]] = struct.new : <@TBar::@Bar<[@N, @P, @Aff$0]>>
+// CHECK-NEXT:          %[[VAL_36:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_37:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
+// CHECK-NEXT:          %[[VAL_38:[0-9a-zA-Z_\.]+]] = function.call @TDiv::@Div::@compute(%[[VAL_36]], %[[VAL_37]]) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          struct.writem %[[VAL_35]][@"$temp"] = %[[VAL_38]] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          %[[VAL_39:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_35]][@"$temp"] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          %[[VAL_40:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_41:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_40]] : !felt.type
+// CHECK-NEXT:          %[[VAL_42:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
+// CHECK-NEXT:          %[[VAL_43:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_42]] : !felt.type
+// CHECK-NEXT:          %[[VAL_44:[0-9a-zA-Z_\.]+]] = function.call @TFoo::@Foo::@compute(%[[VAL_34]]) {(){{\[}}%[[VAL_41]], %[[VAL_43]]]} : (!array.type<@Aff$0 x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N, @P, #[[$M0]]]>>
+// CHECK-NEXT:          struct.writem %[[VAL_35]][@"$temp_0"] = %[[VAL_44]] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TFoo::@Foo<[@N, @P, #[[$M0]]]>>
+// CHECK-NEXT:          %[[VAL_45:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_35]][@"$temp_0"] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TFoo::@Foo<[@N, @P, #[[$M0]]]>>
+// CHECK-NEXT:          %[[VAL_46:[0-9a-zA-Z_\.]+]] = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          struct.writem %[[VAL_35]][@"$temp_1"] = %[[VAL_46]] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          %[[VAL_47:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_35]][@"$temp_1"] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          struct.writem %[[VAL_35]][@"$super"] = %[[VAL_47]] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          function.return %[[VAL_35]] : !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_48:[0-9a-zA-Z_\.]+]]: !struct.type<@TBar::@Bar<[@N, @P, @Aff$0]>>, %[[VAL_49:[0-9a-zA-Z_\.]+]]: !array.type<@Aff$0 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_50:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_51:[0-9a-zA-Z_\.]+]] = poly.read_const @P : !felt.type
+// CHECK-NEXT:          %[[VAL_52:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_48]][@"$temp"] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TDiv::@Div<[]>>
+// CHECK-NEXT:          function.call @TDiv::@Div::@constrain(%[[VAL_52]], %[[VAL_50]], %[[VAL_51]]) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+// CHECK-NEXT:          %[[VAL_53:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_48]][@"$temp_0"] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TFoo::@Foo<[@N, @P, #[[$M0]]]>>
+// CHECK-NEXT:          function.call @TFoo::@Foo::@constrain(%[[VAL_53]], %[[VAL_49]]) : (!struct.type<@TFoo::@Foo<[@N, @P, #[[$M0]]]>>, !array.type<@Aff$0 x !felt.type>) -> ()
+// CHECK-NEXT:          %[[VAL_54:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_48]][@"$temp_1"] : <@TBar::@Bar<[@N, @P, @Aff$0]>>, !struct.type<@TComponent::@Component<[]>>
+// CHECK-NEXT:          function.call @TComponent::@Component::@constrain(%[[VAL_54]]) : (!struct.type<@TComponent::@Component<[]>>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
