@@ -1965,7 +1965,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   LogicalResult eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
     SmallVector<StructDefOp> roots;
     rootMod.walk([&roots](StructDefOp op) {
-      if (!op.hasParams()) {
+      if (!op.hasTemplateConstParam()) {
         roots.push_back(op);
       }
       return WalkResult::skip(); // StructDefOp cannot be nested

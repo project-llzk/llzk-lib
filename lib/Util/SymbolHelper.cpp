@@ -355,9 +355,8 @@ LogicalResult verifyParamOfType(
   // the template that the current Operation is nested within. These are always flat references
   // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
-    // Lookup within parameters of the enclosing TemplateOp
     if (TemplateOp parent = getParentOfType<TemplateOp>(origin)) {
-      if (parent.hasParamNamed(param.getRootReference())) {
+      if (parent.hasConstNamed<ConstParamSymbolOpInterface>(param.getRootReference())) {
         return success();
       }
     }

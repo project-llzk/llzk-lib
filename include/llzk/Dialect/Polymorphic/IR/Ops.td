@@ -12,6 +12,7 @@
 
 include "llzk/Dialect/Polymorphic/IR/Dialect.td"
 include "llzk/Dialect/Polymorphic/IR/Types.td"
+include "llzk/Dialect/Polymorphic/IR/OpInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 
 include "mlir/IR/OpBase.td"
@@ -68,44 +69,63 @@ def LLZK_TemplateOp
   let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 
   let extraClassDeclaration = [{
-    /// Return all `TemplateParamOp` within this `TemplateOp` in the order they are defined.
-    inline ::llvm::iterator_range<::mlir::Region::op_iterator<TemplateParamOp>> getParamOps() {
-      return getBodyRegion().getOps<TemplateParamOp>();
+    /// Return ops of type `OpT` within the body region.
+    /// Ops are returned in the order they are defined in the IR.
+    template <ConstParamSymbol OpT>
+    inline ::llvm::iterator_range<::mlir::Region::op_iterator<OpT>> getConstOps() {
+      return getBodyRegion().getOps<OpT>();
     }
 
-    /// Return `true` iff there are `TemplateParamOp` within this `TemplateOp`.
-    inline bool hasParamOps() {
-      return !getParamOps().empty();
+    /// Return `true` if there are ops of type `OpT` within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstOps() {
+      return !getConstOps<OpT>().empty();
     }
 
-    /// Return the number of `TemplateParamOp` within this `TemplateOp`.
-    inline size_t getNumParamOps() {
-      return llvm::range_size(getParamOps());
+    /// Return the number of ops of type `OpT` within the body region.
+    template <ConstParamSymbol OpT>
+    inline size_t numConstOps() {
+      return llvm::range_size(getConstOps<OpT>());
     }
 
-    /// Return names of all `TemplateParamOp` within this `TemplateOp` in the order they
+    /// Return the names of all ops of type `OpT` within the body region in the order they
     /// are defined. The names are returned as `FlatSymbolRefAttr` but the more general
     /// `Attribute` type is used in the return type since that's usually what's needed.
-    ::llvm::SmallVector<::mlir::Attribute> getParamNames();
-
-    /// Return `true` iff this `TemplateOp` has a parameter with the given name.
-    bool hasParamNamed(::mlir::StringRef find);
-
-    /// Return `true` iff this `TemplateOp` has a parameter with the given name.
-    inline bool hasParamNamed(::mlir::StringAttr find) {
-      return hasParamNamed(find.strref());
+    template <ConstParamSymbol OpT>
+    ::llvm::SmallVector<::mlir::Attribute> getConstNames() {
+      return ::llvm::to_vector(::llvm::map_range(getConstOps<OpT>(), [](auto p) -> ::mlir::Attribute {
+        return ::mlir::FlatSymbolRefAttr::get(p.getNameAttr());
+      }));
     }
 
-    /// Return `true` iff this `TemplateOp` has a parameter with the given name.
-    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
-      return hasParamNamed(find.getRootReference());
+    /// Return `true` if there is an op of type `OpT` with the given name within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstNamed(::mlir::StringRef find) {
+      auto status = this->walk([&](OpT op) {
+        return (op.getName() == find) ? ::mlir::WalkResult::interrupt()
+                                      : ::mlir::WalkResult::advance();
+      });
+      return status.wasInterrupted();
+    }
+
+    /// Return `true` if there is an op of type `OpT` with the given name within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstNamed(::mlir::StringAttr find) {
+      return hasConstNamed<OpT>(find.strref());
+    }
+
+    /// Return `true` if there is an op of type `OpT` with the given name within the body region.
+    template <ConstParamSymbol OpT>
+    inline bool hasConstNamed(::mlir::FlatSymbolRefAttr find) {
+      return hasConstNamed<OpT>(find.getRootReference());
     }
   }];
 }
 
 def LLZK_TemplateParamOp
     : PolymorphicDialectOp<
-          "param", [HasParent<"::llzk::polymorphic::TemplateOp">, Symbol,
+          "param", [HasParent<"::llzk::polymorphic::TemplateOp">,
+                    DeclareOpInterfaceMethods<ConstParamSymbolOpInterface>,
                     DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   let summary = "declares a parameter of a polymorphic template";
   let description = [{
@@ -131,7 +151,8 @@ def LLZK_TemplateParamOp
 
 def LLZK_TemplateExprOp
     : PolymorphicDialectOp<
-          "expr", [HasParent<"::llzk::polymorphic::TemplateOp">, Symbol,
+          "expr", [HasParent<"::llzk::polymorphic::TemplateOp">,
+                   DeclareOpInterfaceMethods<ConstParamSymbolOpInterface>,
                    DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                    IsolatedFromAbove, NoRegionArguments, SingleBlock]> {
   let summary = "declares a named expression in a polymorphic template";

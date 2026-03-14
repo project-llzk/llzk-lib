@@ -2,17 +2,17 @@
 
 module attributes {llzk.lang} {
   function.def @bad(%0: !felt.type) {
-    // expected-error@+1 {{'poly.read_const' op only valid within a 'struct.def' ancestor}}
+    // expected-error@+1 {{'poly.read_const' op only valid within a 'poly.template' ancestor}}
     %1 = poly.read_const @X : !felt.type
     function.return
   }
 }
 // -----
 module attributes {llzk.lang} {
-  poly.template @TComponentV {
+  poly.template @TComponentV { // expected-note {{must reference a param or expr of this template}}
     poly.param @A
 
-    struct.def @ComponentV { // expected-note {{must reference a parameter of this struct}}
+    struct.def @ComponentV {
       function.def @compute(%0: !felt.type) -> !struct.type<@TComponentV::@ComponentV<[@A]>> {
         %self = struct.new : !struct.type<@TComponentV::@ComponentV<[@A]>>
         function.return %self : !struct.type<@TComponentV::@ComponentV<[@A]>>

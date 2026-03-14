@@ -12,6 +12,9 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
 
+// Include TableGen'd declarations
+#include "llzk/Dialect/Polymorphic/IR/OpInterfaces.cpp.inc"
+
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Polymorphic/IR/Ops.cpp.inc"
@@ -21,21 +24,14 @@ using namespace llzk::component;
 
 namespace llzk::polymorphic {
 
-//===------------------------------------------------------------------===//
-// TemplateOp
-//===------------------------------------------------------------------===//
+bool isInTemplate(Operation *op) { return getParentOfType<TemplateOp>(op); }
 
-SmallVector<Attribute> TemplateOp::getParamNames() {
-  return llvm::to_vector(llvm::map_range(getParamOps(), [](TemplateParamOp p) -> mlir::Attribute {
-    return FlatSymbolRefAttr::get(p.getSymNameAttr());
-  }));
-}
-
-bool TemplateOp::hasParamNamed(StringRef find) {
-  auto status = this->walk([&](TemplateParamOp paramOp) {
-    return (paramOp.getSymName() == find) ? WalkResult::interrupt() : WalkResult::advance();
-  });
-  return status.wasInterrupted();
+FailureOr<TemplateOp> verifyInTemplate(Operation *op) {
+  if (TemplateOp res = getParentOfType<TemplateOp>(op)) {
+    return res;
+  }
+  return op->emitOpError() << "only valid within a '" << TemplateOp::getOperationName()
+                           << "' ancestor";
 }
 
 //===------------------------------------------------------------------===//
@@ -103,16 +99,17 @@ Type TemplateExprOp::getType() {
 //===------------------------------------------------------------------===//
 
 LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  FailureOr<StructDefOp> getParentRes = verifyInStruct(*this);
+  FailureOr<TemplateOp> getParentRes = verifyInTemplate(*this);
   if (failed(getParentRes)) {
-    return failure(); // verifyInStruct() already emits a sufficient error message
+    return failure(); // verifyInTemplate() already emits a sufficient error message
   }
   // Ensure the named constant is a parameter of the parent struct
-  if (!getParentRes->hasParamNamed(this->getConstNameAttr())) {
+  FlatSymbolRefAttr name = this->getConstNameAttr();
+  if (!getParentRes->hasConstNamed<ConstParamSymbolOpInterface>(name)) {
     return this->emitOpError()
-        .append("references unknown symbol \"", this->getConstNameAttr(), '"')
+        .append("references unknown symbol \"", name, '"')
         .attachNote(getParentRes->getLoc())
-        .append("must reference a parameter of this struct");
+        .append("must reference a param or expr of this template");
   }
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(tables, *this, getType());

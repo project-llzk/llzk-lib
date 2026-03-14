@@ -68,7 +68,7 @@ FailureOr<SymbolLookupResult<StructDefOp>> StructType::getDefinition(
   if (typeParams) {
     size_t numExpected = 0;
     if (TemplateOp parent = getParentOfType<TemplateOp>(*res.value())) {
-      numExpected = parent.getNumParamOps();
+      numExpected = parent.numConstOps<TemplateParamOp>();
     }
     if (typeParams.size() != numExpected) {
       return op->emitError() << '\'' << StructType::name << "' type has " << typeParams.size()

@@ -722,11 +722,11 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
     return emitOpError("requires a 'callee' symbol reference attribute");
   }
 
-  // If the callee references a parameter of the struct where this call appears, perform the subset
-  // of checks that can be done even though the target is unknown.
+  // If the callee references a parameter of the template where this call appears, perform
+  // the subset of checks that can be done even though the target is unknown.
   if (calleeAttr.getNestedReferences().size() == 1) {
-    if (StructDefOp parent = getParentOfType<StructDefOp>(*this)) {
-      if (parent.hasParamNamed(calleeAttr.getRootReference())) {
+    if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+      if (parent.hasConstNamed<TemplateParamOp>(calleeAttr.getRootReference())) {
         return UnknownTargetVerifier(this, calleeAttr).verify();
       }
     }

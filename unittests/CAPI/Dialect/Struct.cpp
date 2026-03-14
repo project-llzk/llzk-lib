@@ -244,14 +244,6 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_header_string) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
-  auto op = test_op();
-  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    auto name = mlirStringRefCreateFromCString("p");
-    llzkStruct_StructDefOpHasParamName(op.op, name);
-  }
-}
-
 TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {

@@ -147,5 +147,50 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
 
-// TODO: need struct examples as well
+module attributes {llzk.lang} {
+  poly.template @TemplateA {
+    poly.param @A
+    poly.param @B
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type
+      %b = poly.read_const @B : !felt.type
+      %c = felt.add %a, %b
+      poly.yield %c : !felt.type
+    }
+
+    struct.def @StructA {
+      function.def @compute() -> !struct.type<@TemplateA::@StructA<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TemplateA::@StructA<[@A, @B]>>
+        %c = poly.read_const @C : !felt.type
+        function.return %self : !struct.type<@TemplateA::@StructA<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TemplateA::@StructA<[@A, @B]>>)   {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TemplateA {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      poly.expr @C {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @B : !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @StructA {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TemplateA::@StructA<[@A, @B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TemplateA::@StructA<[@A, @B]>>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TemplateA::@StructA<[@A, @B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TemplateA::@StructA<[@A, @B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

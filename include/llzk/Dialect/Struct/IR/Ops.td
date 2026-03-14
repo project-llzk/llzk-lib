@@ -145,30 +145,18 @@ def LLZK_StructDefOp
     /// Returns `true` iff this structure defines compute and constrain functions.
     bool hasComputeConstrain() { return lookupSymbol(FUNC_NAME_COMPUTE) != nullptr && lookupSymbol(FUNC_NAME_CONSTRAIN) != nullptr; }
 
-    /// Generate header string, in the same format as the assemblyFormat
+    /// Generate header string, in the same format as the assemblyFormat.
     ::std::string getHeaderString();
 
-    /// Return `true` iff the `struct.def` appears within a `TemplateOp` that defines parameters.
-    bool hasParams();
+    /// Return `true` iff the `struct.def` appears within a `poly.template` that defines
+    /// constant parameters and/or expressions.
+    bool hasTemplateConstParam();
 
     /// If this `StructDefOp` is within a `TemplateOp`, return names of all `TemplateParamOp`
     /// within the `TemplateOp` in the order they are defined. Otherwise, return empty. The
     /// names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type is
     /// used in the return type since that's usually what's needed.
-    ::llvm::SmallVector<::mlir::Attribute> getParams();
-
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::StringRef find);
-
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    inline bool hasParamNamed(::mlir::StringAttr find) {
-      return hasParamNamed(find.strref());
-    }
-
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
-      return hasParamNamed(find.getRootReference());
-    }
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateParamOpNames();
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.

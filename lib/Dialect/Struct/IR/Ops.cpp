@@ -132,7 +132,7 @@ LogicalResult checkSelfType(
     ArrayAttr actualTypeParamsAttr = actualStructType.getParams(); // may be nullptr
     ArrayRef<Attribute> actualTypeParams =
         actualTypeParamsAttr ? actualTypeParamsAttr.getValue() : ArrayRef<Attribute> {};
-    if (ArrayRef(expectedStruct.getParams()) != actualTypeParams) {
+    if (ArrayRef(expectedStruct.getTemplateParamOpNames()) != actualTypeParams) {
       // To make error messages more consistent and meaningful, if the parameters don't match
       // because the actual type uses symbols that are not defined, generate an error about the
       // undefined symbol(s).
@@ -163,7 +163,7 @@ StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   }
   // Check if there is an enclosing `TemplateOp` defining parameters, else there are none.
   if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
-    return StructType::get(pathRes.value(), parent.getParamNames());
+    return StructType::get(pathRes.value(), parent.getConstNames<TemplateParamOp>());
   } else {
     return StructType::get(pathRes.value());
   }
@@ -179,33 +179,23 @@ std::string StructDefOp::getHeaderString() {
       //  just print its symbol name directly.
       ss << '@' << this->getSymName();
     }
-    ss << '<' << debug::toStringList(this->getParams()) << '>';
+    ss << '<' << debug::toStringList(this->getTemplateParamOpNames()) << '>';
   });
 }
 
-bool StructDefOp::hasParams() {
+bool StructDefOp::hasTemplateConstParam() {
   if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
-    return parent.hasParamOps();
+    return parent.hasConstOps<ConstParamSymbolOpInterface>();
   }
   return false;
 }
 
-SmallVector<Attribute> StructDefOp::getParams() {
+SmallVector<Attribute> StructDefOp::getTemplateParamOpNames() {
   if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
-    return parent.getParamNames();
+    return parent.getConstNames<TemplateParamOp>();
   } else {
     return SmallVector<Attribute>();
   }
-}
-
-bool StructDefOp::hasParamNamed(StringRef find) {
-  for (Attribute attr : this->getParams()) {
-    assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
-    if (llvm::cast<FlatSymbolRefAttr>(attr).getRootReference().strref() == find) {
-      return true;
-    }
-  }
-  return false;
 }
 
 SymbolRefAttr StructDefOp::getFullyQualifiedName() {
