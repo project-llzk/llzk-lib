@@ -121,14 +121,30 @@ public:
   mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  div(const llvm::SMTSolverRef &solver, felt::DivFeltOp op, const ExpressionValue &lhs,
+  div(const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
+
+  friend ExpressionValue uintDiv(
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
+      const ExpressionValue &rhs
+  );
+
+  friend ExpressionValue sintDiv(
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
+      const ExpressionValue &rhs
+  );
 
   friend ExpressionValue
   mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
   bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  bitOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  bitXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue shiftLeft(
       const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
@@ -150,19 +166,6 @@ public:
 
   friend ExpressionValue
   boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
-
-  /// @brief Computes a solver expression based on the operation, but computes a fallback
-  /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
-  /// operations.
-  /// @param solver
-  /// @param op
-  /// @param lhs
-  /// @param rhs
-  /// @return
-  friend ExpressionValue fallbackBinaryOp(
-      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
-      const ExpressionValue &rhs
-  );
 
   friend ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
@@ -306,11 +309,26 @@ private:
     (void)lattice->setValue(ExpressionValue(field.get()));
   }
 
-  llvm::SMTExprRef createFeltSymbol(const SourceRef &r) const;
+  static bool isBooleanType(mlir::Type ty) {
+    if (auto intTy = llvm::dyn_cast<mlir::IntegerType>(ty)) {
+      return intTy.getWidth() == 1;
+    }
+    return false;
+  }
 
-  llvm::SMTExprRef createFeltSymbol(mlir::Value val) const;
+  Interval getDefaultIntervalForType(mlir::Type ty) const {
+    return isBooleanType(ty) ? Interval::Boolean(field.get()) : Interval::Entire(field.get());
+  }
 
-  llvm::SMTExprRef createFeltSymbol(const char *name) const;
+  llvm::SMTExprRef createSymbol(mlir::Type ty, const char *name) const;
+
+  llvm::SMTExprRef createSymbol(const SourceRef &r) const;
+
+  llvm::SMTExprRef createSymbol(mlir::Value val) const;
+
+  ExpressionValue createUnknownValue(mlir::Value val) const {
+    return ExpressionValue(createSymbol(val), getDefaultIntervalForType(val.getType()));
+  }
 
   inline bool isConstOp(mlir::Operation *op) const {
     return llvm::isa<
@@ -342,9 +360,9 @@ private:
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
         felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
-        felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
-        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
-        boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
+        mlir::arith::XOrIOp, felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp,
+        felt::XorFeltOp, felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp,
+        boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
   }
 
   ExpressionValue

@@ -664,6 +664,222 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @ArithXorI {
+    struct.member @case0 : i1
+    struct.member @case1 : i1
+    struct.member @case2 : i1
+
+    function.def @compute(%flag: i1) -> !struct.type<@ArithXorI> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@ArithXorI>
+      %true = arith.constant true
+      %false = arith.constant false
+
+      %case0 = arith.xori %true, %false : i1
+      %case1 = arith.xori %true, %true : i1
+      %case2 = arith.xori %flag, %true : i1
+
+      struct.writem %self[@case0] = %case0 : !struct.type<@ArithXorI>, i1
+      struct.writem %self[@case1] = %case1 : !struct.type<@ArithXorI>, i1
+      struct.writem %self[@case2] = %case2 : !struct.type<@ArithXorI>, i1
+
+      function.return %self : !struct.type<@ArithXorI>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArithXorI>, %flag: i1) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArithXorI StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:    %self[@case0] in Degenerate(1)
+// CHECK-NEXT:    %self[@case1] in Degenerate(0)
+// CHECK-NEXT:    %self[@case2] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @BitOrFelt {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@BitOrFelt> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@BitOrFelt>
+
+      %0 = felt.const 0
+      %1 = felt.const 1
+      %2 = felt.const 2
+
+      %cmp0 = bool.cmp ge(%a, %1)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %2)
+      bool.assert %cmp1
+
+      %case0 = felt.bit_or %1, %2
+      %case1 = felt.bit_or %a, %0
+      %case2 = felt.bit_or %a, %1
+
+      struct.writem %self[@case0] = %case0 : <@BitOrFelt>, !felt.type
+      struct.writem %self[@case1] = %case1 : <@BitOrFelt>, !felt.type
+      struct.writem %self[@case2] = %case2 : <@BitOrFelt>, !felt.type
+
+      function.return %self : !struct.type<@BitOrFelt>
+    }
+
+    function.def @constrain(%self: !struct.type<@BitOrFelt>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BitOrFelt StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in TypeA:[ 1, 2 ]
+// CHECK-NEXT:    %self[@case0] in Degenerate(3)
+// CHECK-NEXT:    %self[@case1] in TypeA:[ 1, 2 ]
+// CHECK-NEXT:    %self[@case2] in Entire
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArithSelectBools {
+    struct.member @out : i1
+
+    function.def @compute(%cond: i1, %flag: i1) -> !struct.type<@ArithSelectBools> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@ArithSelectBools>
+      %true = arith.constant true
+      %flip = arith.xori %flag, %true : i1
+      %res = arith.select %cond, %true, %flip : i1
+      struct.writem %self[@out] = %res : !struct.type<@ArithSelectBools>, i1
+      function.return %self : !struct.type<@ArithSelectBools>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArithSelectBools>, %cond: i1, %flag: i1) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArithSelectBools StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:    %arg1 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:    %self[@out] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArithSelect {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ArithSelect> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@ArithSelect>
+
+      %10 = felt.const 10
+      %11 = felt.const 11
+      %12 = felt.const 12
+      %20 = felt.const 20
+      %22 = felt.const 22
+      %true = arith.constant true
+      %false = arith.constant false
+
+      %cmp0 = bool.cmp ge(%a, %10)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %12)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp ge(%b, %20)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp le(%b, %22)
+      bool.assert %cmp3
+
+      %cond = bool.cmp le(%a, %11)
+      %case0 = arith.select %true, %a, %b : !felt.type
+      %case1 = arith.select %false, %a, %b : !felt.type
+      %case2 = arith.select %cond, %a, %b : !felt.type
+
+      struct.writem %self[@case0] = %case0 : <@ArithSelect>, !felt.type
+      struct.writem %self[@case1] = %case1 : <@ArithSelect>, !felt.type
+      struct.writem %self[@case2] = %case2 : <@ArithSelect>, !felt.type
+
+      function.return %self : !struct.type<@ArithSelect>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArithSelect>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArithSelect StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 10, 12 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 20, 22 ]
+// CHECK-NEXT:     %self[@case0] in TypeA:[ 10, 12 ]
+// CHECK-NEXT:     %self[@case1] in TypeA:[ 20, 22 ]
+// CHECK-NEXT:     %self[@case2] in TypeA:[ 10, 22 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArithSelectConstraint {
+    struct.member @cond : i1
+    struct.member @value : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ArithSelectConstraint> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@ArithSelectConstraint>
+
+      %10 = felt.const 10
+      %11 = felt.const 11
+      %12 = felt.const 12
+      %20 = felt.const 20
+      %22 = felt.const 22
+
+      %cmp0 = bool.cmp ge(%a, %10)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %12)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp ge(%b, %20)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp le(%b, %22)
+      bool.assert %cmp3
+
+      %cond = bool.cmp le(%a, %11)
+      %value = arith.select %cond, %a, %b : !felt.type
+      %cmp4 = bool.cmp le(%value, %12)
+      bool.assert %cmp4
+
+      struct.writem %self[@cond] = %cond : <@ArithSelectConstraint>, i1
+      struct.writem %self[@value] = %value : <@ArithSelectConstraint>, !felt.type
+
+      function.return %self : !struct.type<@ArithSelectConstraint>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArithSelectConstraint>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArithSelectConstraint StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 10, 11 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 20, 22 ]
+// CHECK-NEXT:     %self[@cond] in Degenerate(1)
+// CHECK-NEXT:     %self[@value] in TypeA:[ 10, 12 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ArithConstraint {
 
     function.def @constrain(%self: !struct.type<@ArithConstraint>, %a: !felt.type, %b: !felt.type) {
@@ -705,4 +921,141 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 5, 7 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 8, 11 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UIntDiv {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@UIntDiv> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@UIntDiv>
+
+      %5 = felt.const 5
+      %10 = felt.const 10
+      %15 = felt.const 15
+
+      %cmp0 = bool.cmp ge(%a, %10)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %15)
+      bool.assert %cmp1
+
+      %case0 = felt.uintdiv %a, %5
+      %case1 = felt.uintdiv %15, %5
+      %case2 = felt.uintdiv %10, %a
+
+      struct.writem %self[@case0] = %case0 : <@UIntDiv>, !felt.type
+      struct.writem %self[@case1] = %case1 : <@UIntDiv>, !felt.type
+      struct.writem %self[@case2] = %case2 : <@UIntDiv>, !felt.type
+
+      function.return %self : !struct.type<@UIntDiv>
+    }
+
+    function.def @constrain(%self: !struct.type<@UIntDiv>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @UIntDiv StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 10, 15 ]
+// CHECK-NEXT:     %self[@case0] in TypeA:[ 2, 3 ]
+// CHECK-NEXT:     %self[@case1] in Degenerate(3)
+// CHECK-NEXT:     %self[@case2] in TypeA:[ 0, 1 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SIntDiv {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@SIntDiv> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@SIntDiv>
+
+      %10 = felt.const 10
+      %15 = felt.const 15
+
+      %cmp0 = bool.cmp ge(%a, %10)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %15)
+      bool.assert %cmp1
+
+      %neg10 = felt.neg %10
+      %negA = felt.neg %a
+
+      %case0 = felt.sintdiv %10, %a
+      %case1 = felt.sintdiv %neg10, %negA
+      %case2 = felt.sintdiv %negA, %10
+
+      struct.writem %self[@case0] = %case0 : <@SIntDiv>, !felt.type
+      struct.writem %self[@case1] = %case1 : <@SIntDiv>, !felt.type
+      struct.writem %self[@case2] = %case2 : <@SIntDiv>, !felt.type
+
+      function.return %self : !struct.type<@SIntDiv>
+    }
+
+    function.def @constrain(%self: !struct.type<@SIntDiv>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SIntDiv StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 10, 15 ]
+// CHECK-NEXT:     %self[@case0] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case1] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@case2] in Degenerate(2013265920)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @DivIntervals {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+    struct.member @case2 : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@DivIntervals> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@DivIntervals>
+
+      %1 = felt.const 1
+      %2 = felt.const 2
+      %10 = felt.const 10
+
+      %cmp0 = bool.cmp ge(%a, %1)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %2)
+      bool.assert %cmp1
+
+      %case0 = felt.div %10, %a
+      %case1 = felt.div %10, %2
+      %case2 = felt.div %1, %2
+
+      struct.writem %self[@case0] = %case0 : <@DivIntervals>, !felt.type
+      struct.writem %self[@case1] = %case1 : <@DivIntervals>, !felt.type
+      struct.writem %self[@case2] = %case2 : <@DivIntervals>, !felt.type
+
+      function.return %self : !struct.type<@DivIntervals>
+    }
+
+    function.def @constrain(%self: !struct.type<@DivIntervals>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @DivIntervals StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 1, 2 ]
+// CHECK-NEXT:     %self[@case0] in Entire
+// CHECK-NEXT:     %self[@case1] in Degenerate(5)
+// CHECK-NEXT:     %self[@case2] in Degenerate(1006632961)
 // CHECK-NEXT: }
