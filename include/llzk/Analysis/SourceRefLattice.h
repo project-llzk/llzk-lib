@@ -67,12 +67,12 @@ public:
   /// @param memberRef The member reference into the current value.
   /// @return The new value and a change result indicating if the value is different than the
   /// original value.
-  std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+  mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
   referenceMember(SymbolLookupResult<component::MemberDefOp> memberRef) const;
 
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
-  std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+  mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
   extract(const std::vector<SourceRefIndex> &indices) const;
 
 protected:
@@ -82,8 +82,10 @@ protected:
 
   /// @brief Perform a recursive transformation over all elements of this value and
   /// return a new value with the modifications.
-  virtual std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-  elementwiseTransform(llvm::function_ref<SourceRef(const SourceRef &)> transform) const;
+  virtual mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+  elementwiseTransform(
+      llvm::function_ref<mlir::FailureOr<SourceRef>(const SourceRef &)> transform
+  ) const;
 };
 
 /// A lattice for use in dense analysis.

@@ -29,6 +29,42 @@ using namespace function;
 using namespace polymorphic;
 using namespace string;
 
+namespace {
+
+std::strong_ordering
+compareDynamicAPInt(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs) {
+  if (lhs < rhs) {
+    return std::strong_ordering::less;
+  }
+  if (rhs < lhs) {
+    return std::strong_ordering::greater;
+  }
+  return std::strong_ordering::equal;
+}
+
+std::strong_ordering compareStringRef(llvm::StringRef lhs, llvm::StringRef rhs) {
+  int cmp = lhs.compare(rhs);
+  if (cmp < 0) {
+    return std::strong_ordering::less;
+  }
+  if (cmp > 0) {
+    return std::strong_ordering::greater;
+  }
+  return std::strong_ordering::equal;
+}
+
+std::strong_ordering
+compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceRefIndex> rhs) {
+  for (size_t i = 0; i < lhs.size() && i < rhs.size(); i++) {
+    if (auto cmp = lhs[i] <=> rhs[i]; cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+  }
+  return lhs.size() <=> rhs.size();
+}
+
+} // namespace
+
 /* SourceRefIndex */
 
 void SourceRefIndex::print(raw_ostream &os) const {
@@ -46,27 +82,38 @@ void SourceRefIndex::print(raw_ostream &os) const {
   }
 }
 
-bool SourceRefIndex::operator<(const SourceRefIndex &rhs) const {
+std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) const {
   if (isMember() && rhs.isMember()) {
-    return NamedOpLocationLess<MemberDefOp> {}(getMember(), rhs.getMember());
+    if (NamedOpLocationLess<MemberDefOp> {}(getMember(), rhs.getMember())) {
+      return std::strong_ordering::less;
+    }
+    if (NamedOpLocationLess<MemberDefOp> {}(rhs.getMember(), getMember())) {
+      return std::strong_ordering::greater;
+    }
+    return std::strong_ordering::equal;
   }
   if (isIndex() && rhs.isIndex()) {
-    return getIndex() < rhs.getIndex();
+    return compareDynamicAPInt(getIndex(), rhs.getIndex());
   }
   if (isIndexRange() && rhs.isIndexRange()) {
     auto [ll, lu] = getIndexRange();
     auto [rl, ru] = rhs.getIndexRange();
-    return ll < rl || (ll == rl && lu < ru);
+    if (auto cmp = compareDynamicAPInt(ll, rl); cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+    return compareDynamicAPInt(lu, ru);
   }
 
   if (isMember()) {
-    return true;
+    return std::strong_ordering::less;
   }
-  if (isIndex() && !rhs.isMember()) {
-    return true;
+  if (rhs.isMember()) {
+    return std::strong_ordering::greater;
   }
-
-  return false;
+  if (isIndex()) {
+    return std::strong_ordering::less;
+  }
+  return std::strong_ordering::greater;
 }
 
 size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
@@ -88,6 +135,75 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
 }
 
 /* SourceRef */
+
+SourceRef::SortCategory SourceRef::getSortCategory() const {
+  if (isBlockArgument()) {
+    return SortCategory::BlockArgument;
+  }
+  if (isCreateStructOp()) {
+    return SortCategory::CreateStruct;
+  }
+  if (isNonDetOp()) {
+    return SortCategory::NonDet;
+  }
+  if (isTemplateConstant()) {
+    return SortCategory::TemplateConstant;
+  }
+  if (isConstantIndex()) {
+    return SortCategory::ConstantIndex;
+  }
+  if (isConstantFelt()) {
+    return SortCategory::ConstantFelt;
+  }
+
+  llvm::errs() << *this << '\n';
+  llvm_unreachable("unhandled SourceRef sort category");
+}
+
+StringRef SourceRef::getTemplateConstantName() const {
+  auto constantVal = getConstant();
+  ensure(succeeded(constantVal), "template constant must be constant");
+  auto constRead = llvm::dyn_cast<ConstReadOp>(constantVal->getDefiningOp());
+  ensure(constRead, "template constant must be backed by const.read");
+  return constRead.getConstName();
+}
+
+std::strong_ordering
+SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) const {
+  switch (category) {
+  case SortCategory::BlockArgument: {
+    if (auto cmp = *getInputNum() <=> *rhs.getInputNum(); cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+    if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+        cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+    return compareSourceRefPaths(getPath(), rhs.getPath());
+  }
+  case SortCategory::CreateStruct:
+  case SortCategory::NonDet: {
+    if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+        cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+    return compareSourceRefPaths(getPath(), rhs.getPath());
+  }
+  case SortCategory::TemplateConstant: {
+    if (auto cmp = compareStringRef(getTemplateConstantName(), rhs.getTemplateConstantName());
+        cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+    return getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
+  }
+  case SortCategory::ConstantIndex:
+    return compareDynamicAPInt(*getConstantIndexValue(), *rhs.getConstantIndexValue());
+  case SortCategory::ConstantFelt:
+    return compareDynamicAPInt(*getConstantFeltValue(), *rhs.getConstantFeltValue());
+  }
+
+  llvm_unreachable("unhandled SourceRef category compare");
+}
 
 /// @brief Lookup a `StructDefOp` from a given `StructType`.
 /// @param tables
@@ -166,43 +282,20 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, Member
 }
 
 Type SourceRef::getType() const {
-  if (auto constant = std::get_if<Constant>(&storage)) {
-    if (auto f = std::get_if<FeltConstantOp>(constant)) {
-      return f->getType();
-    } else if (auto i = std::get_if<arith::ConstantIndexOp>(constant)) {
-      return i->getType();
-    } else if (auto r = std::get_if<ConstReadOp>(constant)) {
-      return r->getType();
-    } else {
-      llvm_unreachable("unsupported case");
-    }
-  } else {
-    ensure(isRooted(), "must either be constant or rooted");
-    const auto &path = getPath();
-    int array_derefs = 0;
-    int idx = llzk::checkedCast<int>(path.size()) - 1;
-    while (idx >= 0 && path[idx].isIndex()) {
-      array_derefs++;
-      idx--;
-    }
-
-    Type currTy = nullptr;
-    if (idx >= 0) {
-      currTy = path[idx].getMember().getType();
-    } else if (isBlockArgument()) {
-      currTy = getBlockArgument().getType();
-    } else if (isCreateStructOp()) {
-      currTy = getCreateStructOp().getType();
-    } else {
-      currTy = getNonDetOp().getType();
-    }
-
-    while (array_derefs > 0) {
-      currTy = dyn_cast<ArrayType>(currTy).getElementType();
-      array_derefs--;
-    }
-    return currTy;
+  auto pathRef = getPath();
+  int array_derefs = 0;
+  int idx = llzk::checkedCast<int>(pathRef.size()) - 1;
+  while (idx >= 0 && pathRef[idx].isIndex()) {
+    array_derefs++;
+    idx--;
   }
+
+  Type currTy = idx >= 0 ? pathRef[idx].getMember().getType() : value.getType();
+  while (array_derefs > 0) {
+    currTy = dyn_cast<ArrayType>(currTy).getElementType();
+    array_derefs--;
+  }
+  return currTy;
 }
 
 bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
@@ -210,13 +303,13 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
     return false;
   }
 
-  const auto &path = getPath();
-  const auto &prefixPath = prefix.getPath();
-  if (getRoot() != prefix.getRoot() || path.size() < prefixPath.size()) {
+  auto pathRef = getPath();
+  auto prefixPath = prefix.getPath();
+  if (value != prefix.value || pathRef.size() < prefixPath.size()) {
     return false;
   }
   for (size_t i = 0; i < prefixPath.size(); i++) {
-    if (path[i] != prefixPath[i]) {
+    if (pathRef[i] != prefixPath[i]) {
       return false;
     }
   }
@@ -228,10 +321,11 @@ FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {
     return failure();
   }
   Path suffix;
-  const Path &path = getPath();
-  const Path &prefixPath = prefix.getPath();
-  for (size_t i = prefixPath.size(); i < path.size(); i++) {
-    suffix.push_back(path[i]);
+  auto pathRef = getPath();
+  auto prefixPath = prefix.getPath();
+  suffix.reserve(pathRef.size() - prefixPath.size());
+  for (size_t i = prefixPath.size(); i < pathRef.size(); i++) {
+    suffix.push_back(pathRef[i]);
   }
   return suffix;
 }
@@ -247,8 +341,8 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
 
   SourceRef newSignalUsage = other; // copy
   if (newSignalUsage.isRooted()) {
-    SourceRef::Path &path = newSignalUsage.getPathMut();
-    path.insert(path.end(), suffix->begin(), suffix->end());
+    SourceRef::Path &pathRef = newSignalUsage.getPathMut();
+    pathRef.insert(pathRef.end(), suffix->begin(), suffix->end());
   }
 
   return newSignalUsage;
@@ -260,8 +354,9 @@ std::vector<SourceRef> getAllChildren(
   std::vector<SourceRef> res;
   // Recurse into arrays by iterating over their elements
   for (int64_t i = 0; i < arrayTy.getDimSize(0); i++) {
-    SourceRef childRef = root.createChild(SourceRefIndex(i));
-    res.push_back(childRef);
+    auto childRef = root.createChild(SourceRefIndex(i));
+    ensure(succeeded(childRef), "array children require a rooted SourceRef");
+    res.push_back(*childRef);
   }
 
   return res;
@@ -285,10 +380,11 @@ std::vector<SourceRef> getAllChildren(
         mod.getOperation()
     );
     ensure(succeeded(memberLookup), "could not get SymbolLookupResult of existing MemberDefOp");
-    SourceRef childRef = root.createChild(SourceRefIndex(memberLookup.value()));
+    auto childRef = root.createChild(SourceRefIndex(memberLookup.value()));
+    ensure(succeeded(childRef), "struct children require a rooted SourceRef");
     // Make a reference to the current member, regardless of if it is a composite
     // type or not.
-    res.push_back(childRef);
+    res.push_back(*childRef);
   }
   return res;
 }
@@ -307,22 +403,23 @@ SourceRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
 
 void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
-    os << "<felt.const: " << getConstantFeltValue() << '>';
+    os << "<felt.const: " << *getConstantFeltValue() << '>';
   } else if (isConstantIndex()) {
-    os << "<index: " << getConstantIndexValue() << '>';
+    os << "<index: " << *getConstantIndexValue() << '>';
   } else if (isTemplateConstant()) {
-    auto constRead = getConstantType<ConstReadOp>();
-    auto structDefOp = constRead->getParentOfType<StructDefOp>();
+    auto constRead = getDefiningOp<ConstReadOp>();
+    ensure(succeeded(constRead), "template constant should be backed by a const.read op");
+    auto structDefOp = (*constRead)->getParentOfType<StructDefOp>();
     ensure(structDefOp, "struct template should have a struct parent");
-    os << '@' << structDefOp.getName() << "<[@" << constRead.getConstName() << "]>";
+    os << '@' << structDefOp.getName() << "<[@" << constRead->getConstName() << "]>";
   } else {
     if (isCreateStructOp()) {
       os << "%self";
     } else if (isNonDetOp()) {
-      os << '<' << getNonDetOp() << '>';
+      os << '<' << *getNonDetOp() << '>';
     } else {
       ensure(isBlockArgument(), "unhandled print case");
-      os << "%arg" << getInputNum();
+      os << "%arg" << *getInputNum();
     }
 
     for (const auto &f : getPath()) {
@@ -334,116 +431,36 @@ void SourceRef::print(raw_ostream &os) const {
 bool SourceRef::operator==(const SourceRef &rhs) const {
   // This way two felt constants can be equal even if the declared in separate ops.
   if (isConstantInt() && rhs.isConstantInt()) {
-    DynamicAPInt lhsVal = getConstantValue(), rhsVal = rhs.getConstantValue();
+    DynamicAPInt lhsVal = *getConstantValue(), rhsVal = *rhs.getConstantValue();
     return getType() == rhs.getType() && lhsVal == rhsVal;
   }
-  // Otherwise, just compare storage values directly.
-  return (isRooted() && rhs.isRooted() && (getRoot() == rhs.getRoot()) &&
-          (getPath() == rhs.getPath())) ||
-         (isConstant() && rhs.isConstant() && (getConstant() == rhs.getConstant()));
+  return constant == rhs.constant && value == rhs.value && llvm::equal(getPath(), rhs.getPath());
 }
 
 // required for EquivalenceClasses usage
-bool SourceRef::operator<(const SourceRef &rhs) const {
-  if (isConstantFelt() && !rhs.isConstantFelt()) {
-    // Put all constants at the end
-    return false;
-  } else if (!isConstantFelt() && rhs.isConstantFelt()) {
-    return true;
-  } else if (isConstantFelt() && rhs.isConstantFelt()) {
-    DynamicAPInt lhsInt = getConstantFeltValue(), rhsInt = rhs.getConstantFeltValue();
-    return lhsInt < rhsInt;
+std::strong_ordering SourceRef::operator<=>(const SourceRef &rhs) const {
+  auto lhsCategory = getSortCategory();
+  auto rhsCategory = rhs.getSortCategory();
+  if (auto cmp = lhsCategory <=> rhsCategory; cmp != std::strong_ordering::equal) {
+    return cmp;
   }
-
-  if (isConstantIndex() && !rhs.isConstantIndex()) {
-    // Put all constant indices next at the end
-    return false;
-  } else if (!isConstantIndex() && rhs.isConstantIndex()) {
-    return true;
-  } else if (isConstantIndex() && rhs.isConstantIndex()) {
-    DynamicAPInt lhsVal = getConstantIndexValue(), rhsVal = rhs.getConstantIndexValue();
-    return lhsVal < rhsVal;
-  }
-
-  if (isTemplateConstant() && !rhs.isTemplateConstant()) {
-    // Put all template constants next at the end
-    return false;
-  } else if (!isTemplateConstant() && rhs.isTemplateConstant()) {
-    return true;
-  } else if (isTemplateConstant() && rhs.isTemplateConstant()) {
-    StringRef lhsName = getConstantType<ConstReadOp>().getConstName();
-    StringRef rhsName = rhs.getConstantType<ConstReadOp>().getConstName();
-    return lhsName.compare(rhsName) < 0;
-  }
-
-  // Sort out the block argument vs struct.new vs nondet cases
-  // block < struct.new < nondet
-  if (isBlockArgument() && !rhs.isBlockArgument()) {
-    return true;
-  } else if (!isBlockArgument() && rhs.isBlockArgument()) {
-    return false;
-  } else if (isNonDetOp() && !rhs.isNonDetOp()) {
-    return false;
-  } else if (!isNonDetOp() && rhs.isNonDetOp()) {
-    return true;
-  } else if (isBlockArgument() && rhs.isBlockArgument()) {
-    if (getInputNum() < rhs.getInputNum()) {
-      return true;
-    } else if (getInputNum() > rhs.getInputNum()) {
-      return false;
-    }
-  } else if (isCreateStructOp() && rhs.isCreateStructOp()) {
-    CreateStructOp lhsOp = getCreateStructOp(), rhsOp = rhs.getCreateStructOp();
-    if (lhsOp < rhsOp) {
-      return true;
-    } else if (lhsOp > rhsOp) {
-      return false;
-    }
-  } else if (isNonDetOp() && rhs.isNonDetOp()) {
-    NonDetOp lhsOp = getNonDetOp(), rhsOp = rhs.getNonDetOp();
-    if (lhsOp < rhsOp) {
-      return true;
-    } else if (lhsOp > rhsOp) {
-      return false;
-    }
-  } else {
-    llvm::errs() << *this << " vs " << rhs << '\n';
-    llvm_unreachable("unhandled operator< case");
-  }
-
-  const SourceRef::Path &path = getPath(), &rhsPath = rhs.getPath();
-  for (size_t i = 0; i < path.size() && i < rhsPath.size(); i++) {
-    if (path[i] < rhsPath[i]) {
-      return true;
-    } else if (path[i] > rhsPath[i]) {
-      return false;
-    }
-  }
-  return path.size() < rhsPath.size();
+  return compareWithinCategory(rhs, lhsCategory);
 }
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
   if (val.isConstantInt()) {
-    return llvm::hash_value(val.getConstantValue());
+    return llvm::hash_combine(val.getType(), *val.getConstantValue());
   } else if (val.isTemplateConstant()) {
-    return OpHash<ConstReadOp> {}(val.getConstantType<ConstReadOp>());
+    return llvm::hash_value(val.getAsOpaquePointer());
   } else {
     ensure(
         val.isBlockArgument() || val.isCreateStructOp() || val.isNonDetOp(),
         "unhandled SourceRef hash case"
     );
 
-    size_t hash;
-    if (val.isBlockArgument()) {
-      hash = std::hash<unsigned> {}(val.getInputNum());
-    } else if (val.isCreateStructOp()) {
-      hash = OpHash<CreateStructOp> {}(val.getCreateStructOp());
-    } else {
-      hash = OpHash<NonDetOp> {}(val.getNonDetOp());
-    }
-
+    size_t hash = llvm::hash_value(val.getAsOpaquePointer());
     for (const auto &f : val.getPath()) {
-      hash ^= f.getHash();
+      hash = llvm::hash_combine(hash, f.getHash());
     }
     return hash;
   }

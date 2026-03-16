@@ -23,10 +23,14 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Pass/AnalysisManager.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/EquivalenceClasses.h>
+#include <llvm/ADT/TypeSwitch.h>
 
+#include <compare>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 namespace llzk {
@@ -86,9 +90,7 @@ public:
     return index == rhs.index;
   }
 
-  bool operator<(const SourceRefIndex &rhs) const;
-
-  bool operator>(const SourceRefIndex &rhs) const { return rhs < *this; }
+  std::strong_ordering operator<=>(const SourceRefIndex &rhs) const;
 
   struct Hash {
     size_t operator()(const SourceRefIndex &c) const;
@@ -122,63 +124,49 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// for intermediate operations (e.g., readm to read a nested struct).
 ///
 /// These references are relative to a particular function call, so they are either (1) constants,
-/// or (2) rooted at a block argument (which is either "self" in @constrain
-/// functions or another input) and optionally contain indices into that block
-/// argument (e.g., a member reference in a struct or a index into an array).
+/// or (2) rooted at a value (e.g., `self`, a nondet op, or another block argument),
+/// and optionally contain indices into root (e.g., a member reference in a struct or a index into
+/// an array).
 class SourceRef {
-  /**
-   * BlockArgument:
-   * - If the block arg is 0, then it refers to "self", meaning the signal is internal or an output
-   * (public means an output).
-   * - Otherwise, it is an input, either public or private.
-   *
-   * CreateStructOp
-   * - For compute functions, the "self" argument is an allocation site.
-   *
-   * NonDetOp
-   * - For constrain functions, a nondet operation is also an "allocation" site,
-   *   as it is a value that can be constrained/constrain other values.
-   */
-  using Root = std::variant<mlir::BlockArgument, component::CreateStructOp, NonDetOp>;
-  using Constant =
-      std::variant<felt::FeltConstantOp, mlir::arith::ConstantIndexOp, polymorphic::ConstReadOp>;
+public:
   using Path = std::vector<SourceRefIndex>;
-  struct Rooted {
-    Root root;
-    Path path;
+
+private:
+  // Sort in the following order:
+  // block arg < struct.new < nondet < template const < const index < const felt.
+  enum class SortCategory {
+    BlockArgument,
+    CreateStruct,
+    NonDet,
+    TemplateConstant,
+    ConstantIndex,
+    ConstantFelt,
   };
-  // using mutable to reduce constant casts for certain get* functions.
-  mutable std::variant<Rooted, Constant> storage;
 
-  template <typename C> bool isConstantType() const {
-    if (const Constant *c = std::get_if<Constant>(&storage)) {
-      return std::holds_alternative<C>(*c);
+  template <typename OpT> static mlir::Value getSingleResultValue(OpT op) {
+    ensure(op, "SourceRef requires a non-null operation");
+    ensure(op->getNumResults() == 1, "SourceRef expects a single-result operation");
+    return op->getResult(0);
+  }
+
+  template <typename OpT> mlir::FailureOr<OpT> getDefiningOp() const {
+    if (auto op = llvm::dyn_cast_if_present<OpT>(value.getDefiningOp())) {
+      return op;
     }
-    return false;
+    return mlir::failure();
   }
 
-  template <typename C> C getConstantType() const {
-    assert(isConstantType<C>() && "wrong constant type");
-    return std::get<C>(std::get<Constant>(storage));
+  SourceRef(mlir::Value sourceValue, bool isConstantStorage, Path sourcePath = {})
+      : value(sourceValue), path(std::move(sourcePath)), constant(isConstantStorage) {
+    ensure(value != nullptr, "SourceRef requires a non-null value");
+    ensure(!constant || this->path.empty(), "constant SourceRef cannot have a path");
   }
 
-  template <typename R> bool isRootType() const {
-    if (const Rooted *r = std::get_if<Rooted>(&storage)) {
-      return std::holds_alternative<R>(r->root);
-    }
-    return false;
-  }
-
-  template <typename R> R getRootType() const {
-    assert(isRootType<R>() && "wrong root type");
-    return std::get<R>(std::get<Rooted>(storage).root);
-  }
-
-  const Root &getRoot() const { return std::get<Rooted>(storage).root; }
-
-  const Constant &getConstant() const { return std::get<Constant>(storage); }
-
-  Path &getPathMut() { return std::get<Rooted>(storage).path; }
+  Path &getPathMut() { return path; }
+  const void *getAsOpaquePointer() const { return value.getAsOpaquePointer(); }
+  SortCategory getSortCategory() const;
+  llvm::StringRef getTemplateConstantName() const;
+  std::strong_ordering compareWithinCategory(const SourceRef &rhs, SortCategory category) const;
 
 public:
   /// Produce all possible SourceRefs that are present starting from the given root.
@@ -196,24 +184,35 @@ public:
 
   /* Rooted constructors */
 
-  SourceRef(mlir::BlockArgument b, Path path = {}) : storage(Rooted {.root = b, .path = path}) {}
+  SourceRef(mlir::BlockArgument b, Path path = {}) : SourceRef(b, /*constant=*/false, path) {}
   SourceRef(component::CreateStructOp createOp, Path path = {})
-      : storage(Rooted {.root = createOp, .path = path}) {}
-  SourceRef(NonDetOp nondet, Path path = {}) : storage(Rooted {.root = nondet, .path = path}) {}
+      : SourceRef(getSingleResultValue(createOp), /*constant=*/false, path) {}
+  SourceRef(NonDetOp nondet, Path path = {})
+      : SourceRef(getSingleResultValue(nondet), /*constant=*/false, path) {}
 
   /* Constant constructors */
 
-  explicit SourceRef(felt::FeltConstantOp c) : storage(c) {}
-  explicit SourceRef(mlir::arith::ConstantIndexOp c) : storage(c) {}
-  explicit SourceRef(polymorphic::ConstReadOp c) : storage(c) {}
+  explicit SourceRef(felt::FeltConstantOp c)
+      : SourceRef(getSingleResultValue(c), /*constant=*/true) {}
+  explicit SourceRef(mlir::arith::ConstantIndexOp c)
+      : SourceRef(getSingleResultValue(c), /*constant=*/true) {}
+  explicit SourceRef(polymorphic::ConstReadOp c)
+      : SourceRef(getSingleResultValue(c), /*constant=*/true) {}
 
   mlir::Type getType() const;
 
-  bool isConstantFelt() const { return isConstantType<felt::FeltConstantOp>(); }
-  bool isConstantIndex() const { return isConstantType<mlir::arith::ConstantIndexOp>(); }
-  bool isTemplateConstant() const { return isConstantType<polymorphic::ConstReadOp>(); }
+  bool isConstantFelt() const {
+    return isConstant() && llvm::isa_and_present<felt::FeltConstantOp>(value.getDefiningOp());
+  }
+  bool isConstantIndex() const {
+    return isConstant() &&
+           llvm::isa_and_present<mlir::arith::ConstantIndexOp>(value.getDefiningOp());
+  }
+  bool isTemplateConstant() const {
+    return isConstant() && llvm::isa_and_present<polymorphic::ConstReadOp>(value.getDefiningOp());
+  }
 
-  bool isConstant() const { return std::holds_alternative<Constant>(storage); }
+  bool isConstant() const { return constant; }
   bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }
 
   bool isFeltVal() const { return llvm::isa<felt::FeltType>(getType()); }
@@ -224,32 +223,67 @@ public:
     return isConstant() || isFeltVal() || isIndexVal() || isIntegerVal() || isTypeVarVal();
   }
 
-  bool isRooted() const { return std::holds_alternative<Rooted>(storage); }
-  bool isBlockArgument() const { return isRootType<mlir::BlockArgument>(); }
-  mlir::BlockArgument getBlockArgument() const { return getRootType<mlir::BlockArgument>(); }
-  unsigned getInputNum() const { return getBlockArgument().getArgNumber(); }
-
-  bool isCreateStructOp() const { return isRootType<component::CreateStructOp>(); }
-  component::CreateStructOp getCreateStructOp() const {
-    return getRootType<component::CreateStructOp>();
+  bool isRooted() const { return !constant; }
+  bool isBlockArgument() const { return isRooted() && llvm::isa<mlir::BlockArgument>(value); }
+  mlir::FailureOr<mlir::Value> getRoot() const {
+    if (isRooted()) {
+      return value;
+    }
+    return mlir::failure();
+  }
+  mlir::FailureOr<mlir::Value> getConstant() const {
+    if (isConstant()) {
+      return value;
+    }
+    return mlir::failure();
+  }
+  mlir::FailureOr<mlir::BlockArgument> getBlockArgument() const {
+    if (auto blockArg = llvm::dyn_cast<mlir::BlockArgument>(value)) {
+      return blockArg;
+    }
+    return mlir::failure();
+  }
+  mlir::FailureOr<unsigned> getInputNum() const {
+    auto blockArg = getBlockArgument();
+    if (succeeded(blockArg)) {
+      return blockArg->getArgNumber();
+    }
+    return mlir::failure();
   }
 
-  bool isNonDetOp() const { return isRootType<NonDetOp>(); }
-  NonDetOp getNonDetOp() const { return getRootType<NonDetOp>(); }
+  bool isCreateStructOp() const { return succeeded(getCreateStructOp()); }
+  mlir::FailureOr<component::CreateStructOp> getCreateStructOp() const {
+    return getDefiningOp<component::CreateStructOp>();
+  }
 
-  llvm::DynamicAPInt getConstantFeltValue() const {
-    llvm::APInt i = getConstantType<felt::FeltConstantOp>().getValue();
-    return toDynamicAPInt(i);
+  bool isNonDetOp() const { return succeeded(getNonDetOp()); }
+  mlir::FailureOr<NonDetOp> getNonDetOp() const { return getDefiningOp<NonDetOp>(); }
+
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantFeltValue() const {
+    auto feltConst = getDefiningOp<felt::FeltConstantOp>();
+    if (succeeded(feltConst)) {
+      llvm::APInt i = feltConst->getValue();
+      return toDynamicAPInt(i);
+    }
+    return mlir::failure();
   }
-  llvm::DynamicAPInt getConstantIndexValue() const {
-    return llvm::DynamicAPInt(getConstantType<mlir::arith::ConstantIndexOp>().value());
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantIndexValue() const {
+    auto indexConst = getDefiningOp<mlir::arith::ConstantIndexOp>();
+    if (succeeded(indexConst)) {
+      return llvm::DynamicAPInt(indexConst->value());
+    }
+    return mlir::failure();
   }
-  llvm::DynamicAPInt getConstantValue() const {
-    ensure(
-        isConstantFelt() || isConstantIndex(),
-        mlir::Twine(mlir::StringRef(__FUNCTION__), " requires a constant int type!")
-    );
-    return isConstantFelt() ? getConstantFeltValue() : getConstantIndexValue();
+  mlir::FailureOr<llvm::DynamicAPInt> getConstantValue() const {
+    auto feltVal = getConstantFeltValue();
+    if (succeeded(feltVal)) {
+      return *feltVal;
+    }
+    auto indexVal = getConstantIndexValue();
+    if (succeeded(indexVal)) {
+      return *indexVal;
+    }
+    return mlir::failure();
   }
 
   /// @brief Returns true iff `prefix` is a valid prefix of this reference.
@@ -283,22 +317,29 @@ public:
   std::vector<SourceRef>
   getAllChildren(mlir::SymbolTableCollection &tables, mlir::ModuleOp mod) const;
 
-  SourceRef createChild(const SourceRefIndex &r) const {
+  mlir::FailureOr<SourceRef> createChild(const SourceRefIndex &r) const {
+    if (!isRooted()) {
+      return mlir::failure();
+    }
     auto copy = *this;
     copy.getPathMut().push_back(r);
     return copy;
   }
 
-  SourceRef createChild(const SourceRef &other) const {
-    assert(other.isConstantIndex());
-    return createChild(SourceRefIndex(other.getConstantIndexValue()));
+  mlir::FailureOr<SourceRef> createChild(const SourceRef &other) const {
+    auto idxVal = other.getConstantIndexValue();
+    if (failed(idxVal)) {
+      return mlir::failure();
+    }
+    return createChild(SourceRefIndex(*idxVal));
   }
 
   [[deprecated("Use getPath() instead")]]
-  const Path &getPieces() const {
-    return std::get<Rooted>(storage).path;
+  // NOTE: When this function is removed, do not delete it, rewrite as `... = delete`.
+  llvm::ArrayRef<SourceRefIndex> getPieces() const {
+    return path;
   }
-  const Path &getPath() const { return std::get<Rooted>(storage).path; }
+  llvm::ArrayRef<SourceRefIndex> getPath() const { return path; }
 
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
@@ -308,13 +349,18 @@ public:
   bool operator!=(const SourceRef &rhs) const { return !(*this == rhs); }
 
   // required for EquivalenceClasses usage
-  bool operator<(const SourceRef &rhs) const;
-
-  bool operator>(const SourceRef &rhs) const { return rhs < *this; }
+  std::strong_ordering operator<=>(const SourceRef &rhs) const;
 
   struct Hash {
     size_t operator()(const SourceRef &val) const;
   };
+
+  friend struct llvm::DenseMapInfo<SourceRef>;
+
+private:
+  mlir::Value value;
+  Path path;
+  bool constant;
 };
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);
@@ -350,7 +396,7 @@ template <> struct DenseMapInfo<llzk::SourceRef> {
   }
   static unsigned getHashValue(const llzk::SourceRef &ref) {
     if (ref == getEmptyKey() || ref == getTombstoneKey()) {
-      return llvm::hash_value(ref.getBlockArgument().getAsOpaquePointer());
+      return llvm::hash_value(ref.getAsOpaquePointer());
     }
     return llzk::SourceRef::Hash {}(ref);
   }

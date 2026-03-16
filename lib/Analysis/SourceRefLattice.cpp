@@ -59,14 +59,16 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
   return {newVal, res};
 }
 
-std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
 SourceRefLatticeValue::referenceMember(SymbolLookupResult<MemberDefOp> memberRef) const {
   SourceRefIndex idx(std::move(memberRef));
-  auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
+  auto transform = [&idx](const SourceRef &r) -> mlir::FailureOr<SourceRef> {
+    return r.createChild(idx);
+  };
   return elementwiseTransform(transform);
 }
 
-std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
 SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const {
   if (isArray()) {
     ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");
@@ -111,7 +113,7 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
       for (auto idx : currIdxs) {
         (void)extractedVal.update(getElemFlatIdx(idx));
       }
-      return {extractedVal, mlir::ChangeResult::Change};
+      return std::make_pair(extractedVal, mlir::ChangeResult::Change);
     } else {
       // extract case, where the return value is an array of fewer dimensions.
       SourceRefLatticeValue extractedVal(newArrayDims);
@@ -120,18 +122,24 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
           (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart + i));
         }
       }
-      return {extractedVal, mlir::ChangeResult::Change};
+      return std::make_pair(extractedVal, mlir::ChangeResult::Change);
     }
   } else {
     auto currVal = *this;
     auto res = mlir::ChangeResult::NoChange;
     for (const auto &idx : indices) {
-      auto transform = [&idx](const SourceRef &r) -> SourceRef { return r.createChild(idx); };
-      auto [newVal, transformRes] = currVal.elementwiseTransform(transform);
-      currVal = newVal;
+      auto transform = [&idx](const SourceRef &r) -> mlir::FailureOr<SourceRef> {
+        return r.createChild(idx);
+      };
+      auto transformedVal = currVal.elementwiseTransform(transform);
+      if (failed(transformedVal)) {
+        return mlir::failure();
+      }
+      auto [newVal, transformRes] = *transformedVal;
+      currVal = std::move(newVal);
       res |= transformRes;
     }
-    return {currVal, res};
+    return std::make_pair(currVal, res);
   }
 }
 
@@ -159,15 +167,20 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
   return res;
 }
 
-std::pair<SourceRefLatticeValue, mlir::ChangeResult> SourceRefLatticeValue::elementwiseTransform(
-    llvm::function_ref<SourceRef(const SourceRef &)> transform
+mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+SourceRefLatticeValue::elementwiseTransform(
+    llvm::function_ref<mlir::FailureOr<SourceRef>(const SourceRef &)> transform
 ) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;
   if (newVal.isScalar()) {
     ScalarTy indexed;
     for (const auto &ref : newVal.getScalarValue()) {
-      auto [_, inserted] = indexed.insert(transform(ref));
+      auto transformedRef = transform(ref);
+      if (failed(transformedRef)) {
+        return mlir::failure();
+      }
+      auto [_, inserted] = indexed.insert(*transformedRef);
       if (inserted) {
         res |= mlir::ChangeResult::Change;
       }
@@ -175,12 +188,16 @@ std::pair<SourceRefLatticeValue, mlir::ChangeResult> SourceRefLatticeValue::elem
     newVal.getScalarValue() = indexed;
   } else {
     for (auto &elem : newVal.getArrayValue()) {
-      auto [newElem, elemRes] = elem->elementwiseTransform(transform);
-      (*elem) = newElem;
+      auto transformedElem = elem->elementwiseTransform(transform);
+      if (failed(transformedElem)) {
+        return mlir::failure();
+      }
+      auto [newElem, elemRes] = *transformedElem;
+      (*elem) = std::move(newElem);
       res |= elemRes;
     }
   }
-  return {newVal, res};
+  return std::make_pair(newVal, res);
 }
 
 mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRefLatticeValue &v) {

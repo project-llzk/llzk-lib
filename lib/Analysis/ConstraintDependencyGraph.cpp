@@ -160,7 +160,9 @@ LogicalResult SourceRefAnalysis::visitOperation(
     }
 
     const auto &ops = operandVals.at(memberRefOp.getComponent());
-    auto [memberVals, _] = ops.referenceMember(memberOpRes.value());
+    auto memberValsRes = ops.referenceMember(memberOpRes.value());
+    ensure(succeeded(memberValsRes), "could not create SourceRef child for member reference");
+    auto [memberVals, _] = *memberValsRes;
 
     res |= after->setValue(memberRefRes, memberVals);
   } else if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
@@ -250,7 +252,7 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
     // was missing, there would be a semantic check failure. So we accept either
     // so we don't have to track the cast ourselves.
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      SourceRefIndex idx(idxVals.getSingleValue().getConstantValue());
+      SourceRefIndex idx(*idxVals.getSingleValue().getConstantValue());
       indices.push_back(idx);
     } else {
       // Otherwise, assume any range is valid.
@@ -262,7 +264,9 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
     }
   }
 
-  auto [newVals, _] = currVals.extract(indices);
+  auto newValsRes = currVals.extract(indices);
+  ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
+  auto [newVals, _] = *newValsRes;
 
   if (llvm::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read/write must produce a scalar value");
@@ -512,7 +516,9 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
             mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
         );
 
-        auto [resolvedVals, _] = vals.extract(suffix.value());
+        auto resolvedValsRes = vals.extract(suffix.value());
+        ensure(succeeded(resolvedValsRes), "could not create SourceRef child while resolving refs");
+        auto [resolvedVals, _] = *resolvedValsRes;
         auto folded = resolvedVals.foldToScalar();
         refs.insert(refs.end(), folded.begin(), folded.end());
       } else {

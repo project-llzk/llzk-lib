@@ -507,7 +507,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto memberDefRes = writem.getMemberDefOp(tables);
       if (succeeded(memberDefRes)) {
         SourceRefIndex idx(memberDefRes.value());
-        SourceRef memberRef = refSet.getSingleValue().createChild(idx);
+        auto memberRefRes = refSet.getSingleValue().createChild(idx);
+        ensure(succeeded(memberRefRes), "could not create SourceRef child for member write");
+        SourceRef memberRef = *memberRefRes;
         llvm::SMTExprRef expr = getOrCreateSymbol(memberRef);
         ExpressionValue written(expr, writeVal.getInterval());
 
