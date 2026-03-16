@@ -150,10 +150,10 @@ def LLZK_StructDefOp
 
     /// Return `true` iff the `struct.def` appears within a `poly.template` that defines
     /// constant parameters and/or expressions.
-    bool hasTemplateConstParam();
+    bool hasTemplateConstParamSymbols();
 
-    /// If this `StructDefOp` is within a `TemplateOp`, return names of all `TemplateParamOp`
-    /// within the `TemplateOp` in the order they are defined. Otherwise, return empty. The
+    /// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty. The
     /// names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type is
     /// used in the return type since that's usually what's needed.
     ::llvm::SmallVector<::mlir::Attribute> getTemplateParamOpNames();
@@ -162,7 +162,7 @@ def LLZK_StructDefOp
     /// any surrounding module scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
-    /// Return `true` iff this StructDefOp is the main struct. See `llzk::MAIN_ATTR_NAME`.
+    /// Return `true` iff this `struct.def` is the main struct. See `llzk::MAIN_ATTR_NAME`.
     bool isMainComponent();
   }];
 

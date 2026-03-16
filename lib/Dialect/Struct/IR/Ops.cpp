@@ -183,7 +183,7 @@ std::string StructDefOp::getHeaderString() {
   });
 }
 
-bool StructDefOp::hasTemplateConstParam() {
+bool StructDefOp::hasTemplateConstParamSymbols() {
   if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
     return parent.hasConstOps<ConstParamSymbolOpInterface>();
   }

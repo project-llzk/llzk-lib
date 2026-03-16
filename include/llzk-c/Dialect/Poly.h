@@ -48,6 +48,40 @@ llzkPoly_TypeVarTypeGetFromStringRef(MlirContext context, MlirStringRef value);
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
 MLIR_CAPI_EXPORTED MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute value);
 
+//===------------------------------------------------------------------===//
+// TemplateOp
+//===------------------------------------------------------------------===//
+
+/// Returns true if the TemplateOp has any TemplateParamOp children.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op);
+
+/// Returns the number of TemplateParamOp children in the TemplateOp.
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_TemplateOpNumConstParamOps(MlirOperation op);
+
+/// Writes into the destination buffer the names of all TemplateParamOp children
+/// as FlatSymbolRefAttr attributes, in definition order.
+/// The buffer must be preallocated and the caller is responsible for its lifetime.
+/// See `llzkPoly_TemplateOpNumConstParamOps`.
+MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpGetConstParamNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns true if the TemplateOp has a TemplateParamOp with the given name.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamNamed(MlirOperation op, MlirStringRef find);
+
+/// Returns true if the TemplateOp has any TemplateExprOp children.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstExprOps(MlirOperation op);
+
+/// Returns the number of TemplateExprOp children in the TemplateOp.
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_TemplateOpNumConstExprOps(MlirOperation op);
+
+/// Writes into the destination buffer the names of all TemplateExprOp children
+/// as FlatSymbolRefAttr attributes, in definition order.
+/// The buffer must be preallocated and the caller is responsible for its lifetime.
+/// See `llzkPoly_TemplateOpNumConstExprOps`.
+MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpGetConstExprNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns true if the TemplateOp has a TemplateExprOp with the given name.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstExprNamed(MlirOperation op, MlirStringRef find);
+
 //===----------------------------------------------------------------------===//
 // ApplyMapOp
 //===----------------------------------------------------------------------===//

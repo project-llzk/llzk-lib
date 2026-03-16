@@ -110,8 +110,17 @@ MLIR_CAPI_EXPORTED const char *llzkStruct_StructDefOpGetHeaderString(
     MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t)
 );
 
-/// Returns true if the struct has a parameter that has the given name.
-LLZK_DECLARE_NARY_OP_PREDICATE(Struct, StructDefOp, HasParamName, MlirStringRef name);
+/// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
+/// within the `poly.template` in the order they are defined. Otherwise, return empty. The
+/// names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type is
+/// used in the return type since that's usually what's needed.
+///
+/// The pointer to the attributes must have been preallocated. See
+/// `llzkStruct_StructDefOpGetNumTemplateParamOpNames` for obtaining the required size of the array.
+void llzkStruct_StructDefOpGetTemplateParamOpNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns the number of `poly.param` operations defined within this template.
+intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op);
 
 //===----------------------------------------------------------------------===//
 // MemberReadOp
