@@ -1,6 +1,41 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 module attributes {llzk.lang} {
+  // expected-error@+1 {{'poly.param' op expects parent op 'poly.template'}}
+  poly.param @P
+}
+// -----
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'poly.expr' op expects parent op 'poly.template'}}
+  poly.expr @P {
+    %v = arith.constant 42 : index
+    poly.yield %v : index
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // The parsing error isn't clear but this tests that `param` doesn't allow a region.
+  // expected-error@+1 {{expected attribute name}}
+  poly.param @P {
+    %v = arith.constant 42 : index
+    poly.yield %v : index
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // The parsing error isn't clear but this tests that `param` doesn't allow a region.
+  // expected-error@+1 {{expected attribute name}}
+  poly.param @P : index {
+    %v = arith.constant 42 : index
+    poly.yield %v : index
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
   poly.template @T {
     poly.expr @P {
       // expected-error@+1 {{block with no terminator}}
@@ -14,5 +49,33 @@ module attributes {llzk.lang} {
   poly.template @T {
     // expected-error@+1 {{'poly.expr' op expects a non-empty block}}
     poly.expr @P {}
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-error@+1 {{'poly.param' op attribute 'type' failed to satisfy constraint: type attribute of integral, felt, or typevar type}}
+    poly.param @P : !string.type
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.expr @P {
+      %str = string.new "hi"
+      // expected-error@+1 {{'poly.yield' op operand #0 must be integral, felt, or typevar type, but got '!string.type'}}
+      poly.yield %str : !string.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ComponentE1 {
+    // expected-error@+1 {{'poly.template' op expects parent op 'builtin.module'}}
+    poly.template @TComponentE1 {
+    }
   }
 }

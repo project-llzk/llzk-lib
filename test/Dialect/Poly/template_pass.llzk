@@ -194,3 +194,81 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// Multiple templated defs can exist in a single template
+module attributes {llzk.lang} {
+  poly.template @TemplateA {
+    poly.param @A
+    poly.param @B
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type
+      %b = poly.read_const @B : !felt.type
+      %c = felt.add %a, %b
+      poly.yield %c : !felt.type
+    }
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @StructB1 {
+      function.def @compute() -> !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>> {
+        %self = struct.new : !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>>
+        %c = poly.read_const @C : !felt.type
+        function.return %self : !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>>)   {
+        function.return
+      }
+    }
+
+    struct.def @StructB2 {
+      function.def @compute() -> !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>> {
+        %self = struct.new : !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>>
+        %c = poly.read_const @C : !felt.type
+        function.return %self : !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>>)   {
+        function.return
+      }
+    }
+
+    function.def @f(%inp: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %inp : !poly.tvar<@T>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TemplateA {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      poly.expr @C {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @B : !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      struct.def @StructB1 {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TemplateA::@StructB1<[@A, @B, @T]>>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TemplateA::@StructB1<[@A, @B, @T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @StructB2 {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@TemplateA::@StructB2<[@A, @B, @T]>>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@TemplateA::@StructB2<[@A, @B, @T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_9]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
