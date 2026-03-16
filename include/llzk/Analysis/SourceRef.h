@@ -184,11 +184,11 @@ public:
 
   /* Rooted constructors */
 
-  SourceRef(mlir::BlockArgument b, Path path = {}) : SourceRef(b, /*constant=*/false, path) {}
-  SourceRef(component::CreateStructOp createOp, Path path = {})
-      : SourceRef(getSingleResultValue(createOp), /*constant=*/false, path) {}
-  SourceRef(NonDetOp nondet, Path path = {})
-      : SourceRef(getSingleResultValue(nondet), /*constant=*/false, path) {}
+  SourceRef(mlir::BlockArgument b, Path p = {}) : SourceRef(b, /*constant=*/false, p) {}
+  SourceRef(component::CreateStructOp createOp, Path p = {})
+      : SourceRef(getSingleResultValue(createOp), /*constant=*/false, p) {}
+  SourceRef(NonDetOp nondet, Path p = {})
+      : SourceRef(getSingleResultValue(nondet), /*constant=*/false, p) {}
 
   /* Constant constructors */
 
