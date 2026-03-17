@@ -101,11 +101,9 @@ def LLZK_TemplateOp
     /// Return `true` if there is an op of type `OpT` with the given name within the body region.
     template <ConstParamSymbol OpT>
     inline bool hasConstNamed(::mlir::StringRef find) {
-      auto status = this->walk([&](OpT op) {
-        return (op.getName() == find) ? ::mlir::WalkResult::interrupt()
-                                      : ::mlir::WalkResult::advance();
+      return ::llvm::any_of(getConstOps<OpT>(), [&](OpT op) {
+        return op.getName() == find;
       });
-      return status.wasInterrupted();
     }
 
     /// Return `true` if there is an op of type `OpT` with the given name within the body region.
