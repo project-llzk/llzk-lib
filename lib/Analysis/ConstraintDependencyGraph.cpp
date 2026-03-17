@@ -120,8 +120,16 @@ void SourceRefAnalysis::visitCallControlFlowTransfer(
     // before the call to after the call, since the external call won't invalidate
     // any of that information. It also, conservatively, makes no assumptions about
     // external calls and their computation, so CDG edges will not be computed over
-    // input arguments to external functions.
-    join(after, before);
+    // input arguments to external functions. However, the results of the external
+    // call still act like fresh allocation sites, so give them stable SourceRef roots.
+    ChangeResult updated = after->join(before);
+    for (Value result : call->getResults()) {
+      auto resultRef = SourceRefLattice::getSourceRef(result);
+      if (succeeded(resultRef)) {
+        updated |= after->setValue(result, *resultRef);
+      }
+    }
+    propagateIfChanged(after, updated);
   }
 }
 

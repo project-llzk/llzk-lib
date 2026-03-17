@@ -103,8 +103,8 @@ public:
 
   /* Static utilities */
 
-  /// If val is the source of other values (i.e., a block argument from the function
-  /// args or a constant), create the base reference to the val. Otherwise,
+  /// If val is the source of other values (i.e., a block argument, an allocation-like op result,
+  /// or a constant), create the base reference to the val. Otherwise,
   /// return failure.
   /// Our lattice values must originate from somewhere.
   static mlir::FailureOr<SourceRef> getSourceRef(mlir::Value val);

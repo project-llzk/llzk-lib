@@ -18,6 +18,8 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
+#include <mlir/IR/AsmState.h>
+
 using namespace mlir;
 
 namespace llzk {
@@ -146,6 +148,9 @@ SourceRef::SortCategory SourceRef::getSortCategory() const {
   if (isNonDetOp()) {
     return SortCategory::NonDet;
   }
+  if (isCallResult()) {
+    return SortCategory::CallResult;
+  }
   if (isTemplateConstant()) {
     return SortCategory::TemplateConstant;
   }
@@ -182,7 +187,8 @@ SourceRef::compareWithinCategory(const SourceRef &rhs, SortCategory category) co
     return compareSourceRefPaths(getPath(), rhs.getPath());
   }
   case SortCategory::CreateStruct:
-  case SortCategory::NonDet: {
+  case SortCategory::NonDet:
+  case SortCategory::CallResult: {
     if (auto cmp = getAsOpaquePointer() <=> rhs.getAsOpaquePointer();
         cmp != std::strong_ordering::equal) {
       return cmp;
@@ -417,6 +423,19 @@ void SourceRef::print(raw_ostream &os) const {
       os << "%self";
     } else if (isNonDetOp()) {
       os << '<' << *getNonDetOp() << '>';
+    } else if (isCallResult()) {
+      auto callOp = *getCallOp();
+      os << "<call " << callOp.getCallee();
+      os << ' ';
+      Operation *printScope = callOp.getOperation();
+      if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
+        printScope = funcOp.getOperation();
+      }
+      // Allows us to print the SSA result value of the call to disambiguate
+      // repeated calls in the same function.
+      AsmState state(printScope);
+      value.printAsOperand(os, state);
+      os << '>';
     } else {
       ensure(isBlockArgument(), "unhandled print case");
       os << "%arg" << *getInputNum();
@@ -454,7 +473,7 @@ size_t SourceRef::Hash::operator()(const SourceRef &val) const {
     return llvm::hash_value(val.getAsOpaquePointer());
   } else {
     ensure(
-        val.isBlockArgument() || val.isCreateStructOp() || val.isNonDetOp(),
+        val.isBlockArgument() || val.isCreateStructOp() || val.isNonDetOp() || val.isCallResult(),
         "unhandled SourceRef hash case"
     );
 

@@ -711,8 +711,9 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ExternAdder>, %a: !felt.type, %b: !felt.type) {
       %sum = struct.readm %self[@sum] : !struct.type<@ExternAdder>, !felt.type
       %c = function.call @extern_add(%a, %b) : (!felt.type, !felt.type) -> (!felt.type)
-      // We make no assumptions about what %c could be, so this constraint is
-      // effectively `%sum === {}`, so the CDG will be empty.
+      // External call results are treated as fresh roots, so the CDG should
+      // preserve the dependency on the call result without connecting it to
+      // the input arguments.
       constrain.eq %sum, %c : !felt.type
       function.return
     }
@@ -720,6 +721,98 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternAdder ConstraintDependencyGraph { }
+// CHECK-NEXT:     { %arg0[@sum], <call @extern_add %[[ADD_RESULT:[0-9]+]]> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+
+  struct.def @ExternPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPayload> {
+      %self = struct.new : !struct.type<@ExternPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ExternPayload>, !felt.type
+      function.return %self : !struct.type<@ExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+
+  struct.def @ExternMemberDependency {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternMemberDependency> {
+      %self = struct.new : !struct.type<@ExternMemberDependency>
+      function.return %self : !struct.type<@ExternMemberDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternMemberDependency>, %value: !felt.type) {
+      %expected = struct.readm %self[@value] : !struct.type<@ExternMemberDependency>, !felt.type
+      %payload = function.call @extern_wrap(%value) : (!felt.type) -> !struct.type<@ExternPayload>
+      %actual = struct.readm %payload[@value] : !struct.type<@ExternPayload>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternMemberDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@value], <call @extern_wrap %[[WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+
+  struct.def @ExternPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPayload> {
+      %self = struct.new : !struct.type<@ExternPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ExternPayload>, !felt.type
+      function.return %self : !struct.type<@ExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+
+  struct.def @ExternRepeatedMemberDependency {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@ExternRepeatedMemberDependency> {
+      %self = struct.new : !struct.type<@ExternRepeatedMemberDependency>
+      function.return %self : !struct.type<@ExternRepeatedMemberDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternRepeatedMemberDependency>, %lhs: !felt.type, %rhs: !felt.type) {
+      %expectedL = struct.readm %self[@lhs] : !struct.type<@ExternRepeatedMemberDependency>, !felt.type
+      %expectedR = struct.readm %self[@rhs] : !struct.type<@ExternRepeatedMemberDependency>, !felt.type
+      %leftPayload = function.call @extern_wrap(%lhs) : (!felt.type) -> !struct.type<@ExternPayload>
+      %rightPayload = function.call @extern_wrap(%rhs) : (!felt.type) -> !struct.type<@ExternPayload>
+      %actualL = struct.readm %leftPayload[@value] : !struct.type<@ExternPayload>, !felt.type
+      %actualR = struct.readm %rightPayload[@value] : !struct.type<@ExternPayload>, !felt.type
+      constrain.eq %expectedL, %actualL : !felt.type
+      constrain.eq %expectedR, %actualR : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternRepeatedMemberDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@lhs], <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT:     { %arg0[@rhs], <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT: }
 
 // -----
 

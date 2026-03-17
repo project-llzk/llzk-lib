@@ -11,6 +11,7 @@
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
@@ -124,7 +125,8 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// for intermediate operations (e.g., readm to read a nested struct).
 ///
 /// These references are relative to a particular function call, so they are either (1) constants,
-/// or (2) rooted at a value (e.g., `self`, a nondet op, or another block argument),
+/// or (2) rooted at a value (e.g., `self`, a nondet op, an external call result, or another
+/// block argument),
 /// and optionally contain indices into root (e.g., a member reference in a struct or a index into
 /// an array).
 class SourceRef {
@@ -133,11 +135,12 @@ public:
 
 private:
   // Sort in the following order:
-  // block arg < struct.new < nondet < template const < const index < const felt.
+  // block arg < struct.new < nondet < call result < template const < const index < const felt.
   enum class SortCategory {
     BlockArgument,
     CreateStruct,
     NonDet,
+    CallResult,
     TemplateConstant,
     ConstantIndex,
     ConstantFelt,
@@ -189,6 +192,8 @@ public:
       : SourceRef(getSingleResultValue(createOp), /*constant=*/false, p) {}
   SourceRef(NonDetOp nondet, Path p = {})
       : SourceRef(getSingleResultValue(nondet), /*constant=*/false, p) {}
+  SourceRef(function::CallOp callOp, Path p = {})
+      : SourceRef(getSingleResultValue(callOp), /*constant=*/false, p) {}
 
   /* Constant constructors */
 
@@ -258,6 +263,9 @@ public:
 
   bool isNonDetOp() const { return succeeded(getNonDetOp()); }
   mlir::FailureOr<NonDetOp> getNonDetOp() const { return getDefiningOp<NonDetOp>(); }
+
+  bool isCallResult() const { return succeeded(getCallOp()); }
+  mlir::FailureOr<function::CallOp> getCallOp() const { return getDefiningOp<function::CallOp>(); }
 
   mlir::FailureOr<llvm::DynamicAPInt> getConstantFeltValue() const {
     auto feltConst = getDefiningOp<felt::FeltConstantOp>();
