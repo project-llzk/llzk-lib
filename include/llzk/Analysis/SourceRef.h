@@ -152,6 +152,14 @@ private:
     return op->getResult(0);
   }
 
+  static mlir::Value getCallResultValue(mlir::OpResult result) {
+    ensure(
+        llvm::isa<function::CallOp>(result.getOwner()),
+        "SourceRef expects an OpResult produced by function.call"
+    );
+    return result;
+  }
+
   template <typename OpT> mlir::FailureOr<OpT> getDefiningOp() const {
     if (auto op = llvm::dyn_cast_if_present<OpT>(value.getDefiningOp())) {
       return op;
@@ -192,8 +200,8 @@ public:
       : SourceRef(getSingleResultValue(createOp), /*constant=*/false, p) {}
   SourceRef(NonDetOp nondet, Path p = {})
       : SourceRef(getSingleResultValue(nondet), /*constant=*/false, p) {}
-  SourceRef(function::CallOp callOp, Path p = {})
-      : SourceRef(getSingleResultValue(callOp), /*constant=*/false, p) {}
+  SourceRef(mlir::OpResult callResult, Path p = {})
+      : SourceRef(getCallResultValue(callResult), /*constant=*/false, p) {}
 
   /* Constant constructors */
 

@@ -10,4 +10,4 @@ fixed:
   - Preserve boolean SMT sorts when over-approximating unknown values in interval analysis, avoiding sort-mismatch failures in boolean `arith.select` cases.
   - Add focused compute-pass and unit-test coverage for division-related and bitwise interval analysis behavior, including negative signed division results and finite-field division semantics.
   - Treat external `function.call` results as SourceRef roots so member and array accesses through external-call values remain trackable in SourceRef-based analyses.
-  - Disambiguate printed external-call SourceRefs using their SSA result values, and add regression coverage for repeated extern call sites.
+  - Disambiguate printed external-call SourceRefs using their SSA result values, including multi-result external calls, and add regression coverage for repeated extern call sites.

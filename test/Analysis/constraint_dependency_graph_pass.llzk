@@ -720,7 +720,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: @ExternAdder ConstraintDependencyGraph { }
+// CHECK-LABEL: @ExternAdder ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@sum], <call @extern_add %[[ADD_RESULT:[0-9]+]]> }
 // CHECK-NEXT: }
 
@@ -812,6 +812,37 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @ExternRepeatedMemberDependency ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@lhs], <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>[@value] }
 // CHECK-NEXT:     { %arg0[@rhs], <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+
+  function.def private @extern_pair(%value: !felt.type) -> (!felt.type, !felt.type) attributes {extern}
+
+  struct.def @ExternPairDependency {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPairDependency> {
+      %self = struct.new : !struct.type<@ExternPairDependency>
+      function.return %self : !struct.type<@ExternPairDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPairDependency>, %value: !felt.type) {
+      %expectedL = struct.readm %self[@lhs] : !struct.type<@ExternPairDependency>, !felt.type
+      %expectedR = struct.readm %self[@rhs] : !struct.type<@ExternPairDependency>, !felt.type
+      %actualL, %actualR = function.call @extern_pair(%value) : (!felt.type) -> (!felt.type, !felt.type)
+      constrain.eq %expectedL, %actualL : !felt.type
+      constrain.eq %expectedR, %actualR : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternPairDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@lhs], <call @extern_pair %[[PAIR_RESULT:[0-9]+]]#0> }
+// CHECK-NEXT:     { %arg0[@rhs], <call @extern_pair %[[PAIR_RESULT]]#1> }
 // CHECK-NEXT: }
 
 // -----
