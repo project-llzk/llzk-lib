@@ -9,8 +9,10 @@
 
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/SymbolTableLLZK.h"
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Polymorphic/IR/OpInterfaces.cpp.inc"
@@ -64,7 +66,44 @@ LogicalResult TemplateParamOp::verifySymbolUses(SymbolTableCollection &tables) {
 //===------------------------------------------------------------------===//
 
 LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &tables) {
-  return checkForNameConflict(tables, *this);
+  if (failed(checkForNameConflict(tables, *this))) {
+    return failure(); // checkForNameConflict() already emits a sufficient error message
+  }
+  // Ensure no symbol used within the initializer region is defined via a `TemplateExprOp`.
+  // This prevents cyclic definitions of `TemplateExprOp`. Searches all symbol uses within
+  // this op and also within any nested symbol tables.
+  Operation *thisOp = this->getOperation();
+  if (TemplateOp parentTemplate = getParentOfType<TemplateOp>(thisOp)) {
+    LogicalResult errorState = success();
+    auto checkUses = [this, &parentTemplate, &errorState](Operation *symTableOp, bool) {
+      if (auto uses = llzk::getSymbolUses(symTableOp)) {
+        for (SymbolTable::SymbolUse use : uses.value()) {
+          // Only need to check flat refs since `TemplateExprOp` refs must be flat
+          auto usedSym = llvm::dyn_cast<FlatSymbolRefAttr>(use.getSymbolRef());
+          if (usedSym && parentTemplate.hasConstNamed<TemplateExprOp>(usedSym)) {
+            InFlightDiagnostic diag = this->emitOpError().append(
+                "initialization cannot use a symbol defined by another `",
+                TemplateExprOp::getOperationName(), "` within this template"
+            );
+            diag.attachNote(use.getUser()->getLoc()).append("symbol ", usedSym, " used here");
+            auto def = parentTemplate.getConstNamed<TemplateExprOp>(usedSym);
+            diag.attachNote(def.getLoc()).append("defined here");
+            errorState = diag; // transformation to LogicalResult reports the error
+            return;
+          }
+        }
+      }
+    };
+    checkUses(thisOp, true);
+    if (failed(errorState)) {
+      return errorState;
+    }
+    SymbolTable::walkSymbolTables(thisOp, /*allSymUsesVisible=*/true, checkUses);
+    if (failed(errorState)) {
+      return errorState;
+    }
+  }
+  return success();
 }
 
 LogicalResult TemplateExprOp::verifyRegions() {
@@ -77,12 +116,6 @@ LogicalResult TemplateExprOp::verifyRegions() {
     return emitOpError("expected initializer region to end with a '")
            << YieldOp::getOperationName() << '\'';
   }
-
-  // TODO: VERIFY: An `poly.expr` symbol cannot be used within its own region.
-  // TODO: VERIFY: Cannot have cyclic definitions between expr regions.
-  // Both of these could be covered by simply ensuring that `poly.expr` symbols
-  // cannot be used at all within the initializer region.
-
   return success();
 }
 

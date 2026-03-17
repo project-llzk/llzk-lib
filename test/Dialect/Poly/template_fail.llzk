@@ -73,9 +73,35 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @ComponentE1 {
+  struct.def @S1 {
     // expected-error@+1 {{'poly.template' op expects parent op 'builtin.module'}}
-    poly.template @TComponentE1 {
+    poly.template @T1 {
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T2 {
+    // expected-error@+1 {{'poly.expr' op initialization cannot use a symbol defined by another `poly.expr` within this template}}
+    poly.expr @C { // expected-note {{defined here}}
+      %c = poly.read_const @C : !felt.type // expected-note {{symbol @C used here}}
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T3 {
+    poly.expr @D { // expected-note {{defined here}}
+      %c = felt.const 54
+      poly.yield %c : !felt.type
+    }
+    // expected-error@+1 {{'poly.expr' op initialization cannot use a symbol defined by another `poly.expr` within this template}}
+    poly.expr @F {
+      %c = poly.read_const @D : !felt.type // expected-note {{symbol @D used here}}
+      poly.yield %c : !felt.type
     }
   }
 }

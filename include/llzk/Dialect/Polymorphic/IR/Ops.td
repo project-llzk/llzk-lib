@@ -117,6 +117,26 @@ def LLZK_TemplateOp
     inline bool hasConstNamed(::mlir::FlatSymbolRefAttr find) {
       return hasConstNamed<OpT>(find.getRootReference());
     }
+
+    /// Return the op of type `OpT` with the given name within the body region if it exists, else `nullptr`.
+    template <ConstParamSymbol OpT>
+    inline OpT getConstNamed(::mlir::StringRef find) {
+      auto range = getConstOps<OpT>();
+      auto it = ::llvm::find_if(range, [&find](OpT op) { return op.getName() == find; });
+      return it != range.end() ? *it : OpT{};
+    }
+
+    /// Return the op of type `OpT` with the given name within the body region if it exists, else `nullptr`.
+    template <ConstParamSymbol OpT>
+    inline OpT getConstNamed(::mlir::StringAttr find) {
+      return getConstNamed<OpT>(find.strref());
+    }
+
+    /// Return the op of type `OpT` with the given name within the body region if it exists, else `nullptr`.
+    template <ConstParamSymbol OpT>
+    inline OpT getConstNamed(::mlir::FlatSymbolRefAttr find) {
+      return getConstNamed<OpT>(find.getRootReference());
+    }
   }];
 }
 
