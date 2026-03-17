@@ -55,7 +55,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @T {
-    // expected-error@+1 {{'poly.param' op attribute 'type' failed to satisfy constraint: type attribute of integral, felt, or typevar type}}
+    // expected-error@+1 {{'poly.param' op attribute 'type_opt' failed to satisfy constraint: type attribute of integral, felt, or typevar type}}
     poly.param @P : !string.type
   }
 }

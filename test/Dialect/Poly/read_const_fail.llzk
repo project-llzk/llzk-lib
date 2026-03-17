@@ -80,3 +80,42 @@ module attributes {llzk.lang} {
     }
   }
 }
+// -----
+module attributes {llzk.lang} {
+  poly.template @TReadConstTypeMismatchA {
+    poly.param @T : index
+
+    struct.def @ReadConstTypeMismatchA {
+      function.def @compute() -> !struct.type<@TReadConstTypeMismatchA::@ReadConstTypeMismatchA<[@T]>> {
+        %self = struct.new : !struct.type<@TReadConstTypeMismatchA::@ReadConstTypeMismatchA<[@T]>>
+        function.return %self : !struct.type<@TReadConstTypeMismatchA::@ReadConstTypeMismatchA<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TReadConstTypeMismatchA::@ReadConstTypeMismatchA<[@T]>>) {
+        // expected-error@+1 {{'poly.read_const' op type '!felt.type' does not match constant param type 'index'}}
+        %0 = poly.read_const @T : !felt.type
+        function.return
+      }
+    }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TReadConstTypeMismatchB {
+    poly.expr @T {
+      %v = arith.constant 42 : index
+      poly.yield %v : index
+    }
+
+    struct.def @ReadConstTypeMismatchB {
+      function.def @compute() -> !struct.type<@TReadConstTypeMismatchB::@ReadConstTypeMismatchB> {
+        %self = struct.new : !struct.type<@TReadConstTypeMismatchB::@ReadConstTypeMismatchB>
+        function.return %self : !struct.type<@TReadConstTypeMismatchB::@ReadConstTypeMismatchB>
+      }
+      function.def @constrain(%self: !struct.type<@TReadConstTypeMismatchB::@ReadConstTypeMismatchB>) {
+        // expected-error@+1 {{'poly.read_const' op type '!felt.type' does not match constant param type 'index'}}
+        %0 = poly.read_const @T : !felt.type
+        function.return
+      }
+    }
+  }
+}

@@ -162,9 +162,9 @@ def LLZK_TemplateParamOp
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name,
-      OptionalAttr<TypeAttrOf<ConstReadType>>:$type);
+      OptionalAttr<TypeAttrOf<ConstReadType>>:$type_opt);
 
-  let assemblyFormat = [{ $sym_name (`:` $type^)? attr-dict }];
+  let assemblyFormat = [{ $sym_name (`:` $type_opt^)? attr-dict }];
 }
 
 def LLZK_TemplateExprOp

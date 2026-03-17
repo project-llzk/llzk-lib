@@ -20,6 +20,11 @@ def ConstParamSymbolOpInterface
     defined within a `TemplateOp`
   }];
 
+  let methods = [InterfaceMethod<
+                     [{Gets the optional type of this constant symbol.}],
+                     "::std::optional<::mlir::Type>", "getTypeOpt", (ins)>,
+  ];
+
   let cppNamespace = "::llzk::polymorphic";
 }
 
