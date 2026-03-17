@@ -16,8 +16,7 @@ var classllzk_1_1SourceRefIndex =
     [ "isIndex", "classllzk_1_1SourceRefIndex.html#a339c262bbc02a18553e108139edd0727", null ],
     [ "isIndexRange", "classllzk_1_1SourceRefIndex.html#a1e88d72883ea4028d097b842a0c0b4a0", null ],
     [ "isMember", "classllzk_1_1SourceRefIndex.html#a373bef0ab8d60663d938d86f3315c0ca", null ],
-    [ "operator<", "classllzk_1_1SourceRefIndex.html#a207a14ca52e487c96138e30272fd42ad", null ],
+    [ "operator<=>", "classllzk_1_1SourceRefIndex.html#a1d6036549b476aa2b7f2c18fc2d53847", null ],
     [ "operator==", "classllzk_1_1SourceRefIndex.html#a1e0f193c8efafd7cef0230a5d780b3e1", null ],
-    [ "operator>", "classllzk_1_1SourceRefIndex.html#a23c02bbf5863cf15b04156baf987cf29", null ],
     [ "print", "classllzk_1_1SourceRefIndex.html#a99f5b6ca8abf9eceb0e436b582d62b1f", null ]
 ];
