@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.lang} {
   function.def @new_then_read() -> index {
@@ -619,7 +618,34 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TComponentB2 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @ComponentB2 {
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) -> !struct.type<@TComponentB2::@ComponentB2<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB2::@ComponentB2<[@N]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_0]][@f1] : <@TComponentB1::@ComponentB1<[@N]>>, !array.type<4,@N x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponentB2::@ComponentB2<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB2::@ComponentB2<[@N]>>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TComponentB1 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @ComponentB1 {
+// CHECK-NEXT:        struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponentB1::@ComponentB1<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB1::@ComponentB1<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@TComponentB1::@ComponentB1<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 // Func and CallOp w/ non-static shape (i.e., cannot be flattened to scalars)
@@ -658,7 +684,35 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TComponentC1 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @ComponentC1 {
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC1::@ComponentC1<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentC1::@ComponentC1<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponentC1::@ComponentC1<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentC1::@ComponentC1<[@N]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TComponentC2 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @ComponentC2 {
+// CHECK-NEXT:        struct.member @f1 : !struct.type<@TComponentC1::@ComponentC1<[@N]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC2::@ComponentC2<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentC2::@ComponentC2<[@N]>>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TComponentC1::@ComponentC1::@compute(%[[VAL_4]]) : (!array.type<@N x !felt.type>) -> !struct.type<@TComponentC1::@ComponentC1<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@f1] = %[[VAL_6]] : <@TComponentC2::@ComponentC2<[@N]>>, !struct.type<@TComponentC1::@ComponentC1<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@TComponentC2::@ComponentC2<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentC2::@ComponentC2<[@N]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 !F = !felt.type
