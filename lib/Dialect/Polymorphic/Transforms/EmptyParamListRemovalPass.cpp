@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -32,15 +33,14 @@ namespace llzk::polymorphic {
 using namespace mlir;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
 namespace {
 
-bool hasEmptyParamList(StructType t) {
+inline bool hasEmptyParamList(StructType t) {
   if (ArrayAttr paramList = t.getParams()) {
-    if (paramList.empty()) {
-      return true;
-    }
+    return paramList.empty();
   }
   return false;
 }
@@ -65,19 +65,31 @@ public:
   }
 };
 
-class CallOpTypeReplacePattern : public OpConversionPattern<StructDefOp> {
+class TemplateOpPattern : public OpConversionPattern<TemplateOp> {
 public:
-  using OpConversionPattern<StructDefOp>::OpConversionPattern;
+  using OpConversionPattern<TemplateOp>::OpConversionPattern;
 
-  LogicalResult match(StructDefOp op) const override {
-    return success(hasEmptyParamList(op.getType()));
-  }
-
-  void rewrite(
-      StructDefOp op, OpAdaptor /*adaptor*/, ConversionPatternRewriter &rewriter
+  LogicalResult matchAndRewrite(
+      TemplateOp op, TemplateOpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    assert(false && "TODO: `setConstParamsAttr` doesn't exist anymore");
-    // rewriter.modifyOpInPlace(op, [&op]() { op.setConstParamsAttr(nullptr); });
+    if (op.hasConstOps<ConstParamSymbolOpInterface>()) {
+      return failure();
+    }
+    ModuleOp newOp = rewriter.create<ModuleOp>(op.getLoc(), adaptor.getSymName());
+    // Clear body region of the new module
+    Region &newOpBody = newOp.getBodyRegion();
+    if (!newOpBody.empty()) {
+      rewriter.eraseBlock(&newOpBody.front());
+    }
+    // Move the template body into the module
+    Region &oldOpBody = adaptor.getBodyRegion();
+    if (failed(rewriter.convertRegionTypes(&oldOpBody, *getTypeConverter()))) {
+      return failure();
+    }
+    rewriter.inlineRegionBefore(oldOpBody, newOpBody, newOpBody.end());
+    // Erase the now-empty TemplateOp
+    rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -91,12 +103,12 @@ class EmptyParamRemovalPass
     MLIRContext *ctx = modOp.getContext();
     EmptyParamListStructTypeConverter tyConv;
     ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
-    // Mark StructDefOp with empty parameter list as illegal
-    target.addDynamicallyLegalOp<StructDefOp>([](StructDefOp op) {
-      return !hasEmptyParamList(op.getType());
+    // Mark TemplateOp legal only if it has constant param or expr.
+    target.addDynamicallyLegalOp<TemplateOp>([](TemplateOp op) {
+      return op.hasConstOps<ConstParamSymbolOpInterface>();
     });
     RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-    patterns.add<CallOpTypeReplacePattern>(tyConv, ctx);
+    patterns.add<TemplateOpPattern>(tyConv, ctx);
     if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
       signalPassFailure();
     }
