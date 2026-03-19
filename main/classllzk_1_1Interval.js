@@ -47,8 +47,9 @@ var classllzk_1_1Interval =
     [ "operator*", "classllzk_1_1Interval.html#aa2520cd567cc7ab64e8a09814fab8e9e", null ],
     [ "operator+", "classllzk_1_1Interval.html#ad8cfa36210170ef8d48a6a62c5fdbf87", null ],
     [ "operator-", "classllzk_1_1Interval.html#a1bad8a5db51d934bb04c73a6993b583c", null ],
-    [ "operator/", "classllzk_1_1Interval.html#ac1b9f9e6e9abbe2effe85b1628b05dc1", null ],
     [ "operator<<", "classllzk_1_1Interval.html#a4f7ab94846952ce0c0aa4108f2ff7251", null ],
     [ "operator<<", "classllzk_1_1Interval.html#a8c19e248098a43cb8f66b383dd76eb50", null ],
-    [ "operator>>", "classllzk_1_1Interval.html#aafd21791f728d9be54b1dfe7b56c3c22", null ]
+    [ "operator>>", "classllzk_1_1Interval.html#aafd21791f728d9be54b1dfe7b56c3c22", null ],
+    [ "operator^", "classllzk_1_1Interval.html#a582fccb762d9880f194b6f460dbb7cb4", null ],
+    [ "operator|", "classllzk_1_1Interval.html#a903e9487c4956731e6aed500222de8cb", null ]
 ];

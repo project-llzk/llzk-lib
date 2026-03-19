@@ -160,7 +160,7 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a71b30e8d0735e91de64eb19a3a2e0ffd" id="r_a71b30e8d0735e91de64eb19a3a2e0ffd"><td class="memItemLeft" align="right" valign="top">static mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71b30e8d0735e91de64eb19a3a2e0ffd">getSourceRef</a> (mlir::Value val)</td></tr>
-<tr class="memdesc:a71b30e8d0735e91de64eb19a3a2e0ffd"><td class="mdescLeft">&#160;</td><td class="mdescRight">If val is the source of other values (i.e., a block argument from the function args or a constant), create the base reference to the val.  <br /></td></tr>
+<tr class="memdesc:a71b30e8d0735e91de64eb19a3a2e0ffd"><td class="mdescLeft">&#160;</td><td class="mdescRight">If val is the source of other values (i.e., a block argument, an allocation-like op result, or a constant), create the base reference to the val.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -386,7 +386,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00272">272</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00280">280</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -432,7 +432,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00287">287</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00295">295</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -459,10 +459,10 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>If val is the source of other values (i.e., a block argument from the function args or a constant), create the base reference to the val. </p>
+<p>If val is the source of other values (i.e., a block argument, an allocation-like op result, or a constant), create the base reference to the val. </p>
 <p>Otherwise, return failure. Our lattice values must originate from somewhere. </p>
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00210">210</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00212">212</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -510,7 +510,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00298">298</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00306">306</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -566,7 +566,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00229">229</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00237">237</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -589,7 +589,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00267">267</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00275">275</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -612,7 +612,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00260">260</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00268">268</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -631,7 +631,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00252">252</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00260">260</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>

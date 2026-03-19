@@ -17,13 +17,14 @@ var classllzk_1_1ExpressionValue =
     [ "withInterval", "classllzk_1_1ExpressionValue.html#a560696e67fa3740487377d457aac6dd4", null ],
     [ "add", "classllzk_1_1ExpressionValue.html#afc0f5383e2ad29f2dc91e45740cad553", null ],
     [ "bitAnd", "classllzk_1_1ExpressionValue.html#a7baf9fd12dd95ea775ea694ffc567b8a", null ],
+    [ "bitOr", "classllzk_1_1ExpressionValue.html#a20c905ead6a5dc2d50eac58356c19268", null ],
+    [ "bitXor", "classllzk_1_1ExpressionValue.html#a7152c28f81c1cee1e30fa25f8bfb3304", null ],
     [ "boolAnd", "classllzk_1_1ExpressionValue.html#a047d01e701488010688549c1e77685c8", null ],
     [ "boolNot", "classllzk_1_1ExpressionValue.html#ab9efaa820fed23103f11905c98c0f504", null ],
     [ "boolOr", "classllzk_1_1ExpressionValue.html#aae364040d54db3f84b7d47ac4ae5dcb6", null ],
     [ "boolXor", "classllzk_1_1ExpressionValue.html#a5956e15b29f2483f6d2cbad1f3a819da", null ],
     [ "cmp", "classllzk_1_1ExpressionValue.html#a8f0cebcc27052ec56decc2346bb2eeea", null ],
-    [ "div", "classllzk_1_1ExpressionValue.html#a67fbc3f110f6c900a993e5830cda0a57", null ],
-    [ "fallbackBinaryOp", "classllzk_1_1ExpressionValue.html#a5e17452af3691b4ea3836f9b217f81a2", null ],
+    [ "div", "classllzk_1_1ExpressionValue.html#a3fe2927c13b0690ddbb8c6234518aa61", null ],
     [ "fallbackUnaryOp", "classllzk_1_1ExpressionValue.html#a148699f5eabc138b3590ca716b746647", null ],
     [ "intersection", "classllzk_1_1ExpressionValue.html#a2c821eaeba3a565befc77ff660f126d5", null ],
     [ "join", "classllzk_1_1ExpressionValue.html#a90e5553646478ea3e0b6285faff4c749", null ],
@@ -34,5 +35,7 @@ var classllzk_1_1ExpressionValue =
     [ "operator<<", "classllzk_1_1ExpressionValue.html#ad108cf876df327969f4a1dabbaa69dc1", null ],
     [ "shiftLeft", "classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65", null ],
     [ "shiftRight", "classllzk_1_1ExpressionValue.html#a271316b130771e48d355e0cb0eeecf35", null ],
-    [ "sub", "classllzk_1_1ExpressionValue.html#a5557d8783805ebf1f2c14b910f33d08e", null ]
+    [ "sintDiv", "classllzk_1_1ExpressionValue.html#a10c17bf2a5d629f5ac3e63135c8a72b5", null ],
+    [ "sub", "classllzk_1_1ExpressionValue.html#a5557d8783805ebf1f2c14b910f33d08e", null ],
+    [ "uintDiv", "classllzk_1_1ExpressionValue.html#a331f1f28f025622986c77a6d444ae874", null ]
 ];

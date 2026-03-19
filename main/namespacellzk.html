@@ -306,21 +306,26 @@ Functions</h2></td></tr>
 <tr class="memitem:a81bdf67dd777af0f515ba3c876468bcd" id="r_a81bdf67dd777af0f515ba3c876468bcd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a81bdf67dd777af0f515ba3c876468bcd">createCallGraphPrinterPass</a> (llvm::raw_ostream &amp;os=llvm::errs())</td></tr>
 <tr class="memitem:a80271c2440367129b787c6a3d49528ff" id="r_a80271c2440367129b787c6a3d49528ff"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a80271c2440367129b787c6a3d49528ff">createCallGraphSCCsPrinterPass</a> (llvm::raw_ostream &amp;os=llvm::errs())</td></tr>
 <tr class="memitem:a580c97b052e21d14057b861edfb047b9" id="r_a580c97b052e21d14057b861edfb047b9"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a580c97b052e21d14057b861edfb047b9">createConstraintDependencyGraphPrinterPass</a> (llvm::raw_ostream &amp;os=llvm::errs())</td></tr>
+<tr class="memitem:a5fc2a3916d97a802becd6439128ad114" id="r_a5fc2a3916d97a802becd6439128ad114"><td class="memItemLeft" align="right" valign="top">llvm::SMTExprRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5fc2a3916d97a802becd6439128ad114">createFieldInverseExpr</a> (const llvm::SMTSolverRef &amp;solver, Operation *op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;val, StringRef suffix=&quot;&quot;)</td></tr>
 <tr class="memitem:a9161e4d7f33d7b28aea3635931a17570" id="r_a9161e4d7f33d7b28aea3635931a17570"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9161e4d7f33d7b28aea3635931a17570">boolToFelt</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;expr, unsigned bitwidth)</td></tr>
+<tr class="memitem:afdf1c2e6485144f772cc0cb6e28a7e24" id="r_afdf1c2e6485144f772cc0cb6e28a7e24"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afdf1c2e6485144f772cc0cb6e28a7e24">selectValue</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;cond, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;trueVal, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;falseVal)</td></tr>
 <tr class="memitem:a160d32b5250af73dbd20a60ccedfedfd" id="r_a160d32b5250af73dbd20a60ccedfedfd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a160d32b5250af73dbd20a60ccedfedfd">intersection</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a043252dc88df97886ee3b6f3f83c1cf4" id="r_a043252dc88df97886ee3b6f3f83c1cf4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a043252dc88df97886ee3b6f3f83c1cf4">add</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:ad332be6d448049b9e437167d3b630fef" id="r_ad332be6d448049b9e437167d3b630fef"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad332be6d448049b9e437167d3b630fef">sub</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a8b33b9355a067d821226cff34134b7d4" id="r_a8b33b9355a067d821226cff34134b7d4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8b33b9355a067d821226cff34134b7d4">mul</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
-<tr class="memitem:add996d75716a5d64192b64ae8739d479" id="r_add996d75716a5d64192b64ae8739d479"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#add996d75716a5d64192b64ae8739d479">div</a> (const llvm::SMTSolverRef &amp;solver, <a class="el" href="classllzk_1_1felt_1_1DivFeltOp.html">felt::DivFeltOp</a> op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
+<tr class="memitem:a899c6e0f79352e9eadb489f1cf822dce" id="r_a899c6e0f79352e9eadb489f1cf822dce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a899c6e0f79352e9eadb489f1cf822dce">div</a> (const llvm::SMTSolverRef &amp;solver, Operation *op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
+<tr class="memitem:aac7d18d0d69dc644aad5c68eadb5c825" id="r_aac7d18d0d69dc644aad5c68eadb5c825"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aac7d18d0d69dc644aad5c68eadb5c825">uintDiv</a> (const llvm::SMTSolverRef &amp;solver, Operation *op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
+<tr class="memitem:a6fc0f75dc297614006fe47db9a98d638" id="r_a6fc0f75dc297614006fe47db9a98d638"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6fc0f75dc297614006fe47db9a98d638">sintDiv</a> (const llvm::SMTSolverRef &amp;solver, Operation *op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a17efa635db7bf7658f865515aefd0cce" id="r_a17efa635db7bf7658f865515aefd0cce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a17efa635db7bf7658f865515aefd0cce">mod</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:ab1df1ca26bb548da9dd1d7d11a5c9db3" id="r_ab1df1ca26bb548da9dd1d7d11a5c9db3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab1df1ca26bb548da9dd1d7d11a5c9db3">bitAnd</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
+<tr class="memitem:a9f56287370613ea28dce42066fd4d880" id="r_a9f56287370613ea28dce42066fd4d880"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9f56287370613ea28dce42066fd4d880">bitOr</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
+<tr class="memitem:ae0ddab68bb1a9e2badbd6e06cffaaf50" id="r_ae0ddab68bb1a9e2badbd6e06cffaaf50"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae0ddab68bb1a9e2badbd6e06cffaaf50">bitXor</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a1998bc2f299c5283fc5c74a324306f3b" id="r_a1998bc2f299c5283fc5c74a324306f3b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1998bc2f299c5283fc5c74a324306f3b">shiftLeft</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:ac7e06f695c4b1f9358e3a1d255352cf7" id="r_ac7e06f695c4b1f9358e3a1d255352cf7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac7e06f695c4b1f9358e3a1d255352cf7">shiftRight</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a562ddceaa4861060a3920d4427ac2909" id="r_a562ddceaa4861060a3920d4427ac2909"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a562ddceaa4861060a3920d4427ac2909">cmp</a> (const llvm::SMTSolverRef &amp;solver, <a class="el" href="classllzk_1_1boolean_1_1CmpOp.html">boolean::CmpOp</a> op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a77748d0244083ce6979cb3e0ac727257" id="r_a77748d0244083ce6979cb3e0ac727257"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a77748d0244083ce6979cb3e0ac727257">boolAnd</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:af900f5a6121aed2db044149c3d761a48" id="r_af900f5a6121aed2db044149c3d761a48"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af900f5a6121aed2db044149c3d761a48">boolOr</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a536563485d7849982f0a5d6949cf8a4f" id="r_a536563485d7849982f0a5d6949cf8a4f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a536563485d7849982f0a5d6949cf8a4f">boolXor</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
-<tr class="memitem:a227c45023d4390b2b5c103ea991a239a" id="r_a227c45023d4390b2b5c103ea991a239a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a227c45023d4390b2b5c103ea991a239a">fallbackBinaryOp</a> (const llvm::SMTSolverRef &amp;solver, Operation *op, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;lhs, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a573de69c46da2c30863428ac17deeae8" id="r_a573de69c46da2c30863428ac17deeae8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a573de69c46da2c30863428ac17deeae8">neg</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;val)</td></tr>
 <tr class="memitem:aebb77a8bf5d05c1fa010e41374f8de17" id="r_aebb77a8bf5d05c1fa010e41374f8de17"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aebb77a8bf5d05c1fa010e41374f8de17">notOp</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;val)</td></tr>
 <tr class="memitem:a017e66dd32c70ab020a54ec2eebc6c4d" id="r_a017e66dd32c70ab020a54ec2eebc6c4d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a017e66dd32c70ab020a54ec2eebc6c4d">boolNot</a> (const llvm::SMTSolverRef &amp;solver, const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;val)</td></tr>
@@ -334,9 +339,16 @@ Functions</h2></td></tr>
 <tr class="memitem:a40449a39011029007b6c1b32e0537d51" id="r_a40449a39011029007b6c1b32e0537d51"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a40449a39011029007b6c1b32e0537d51">operator+</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:acdac41547ae59c95df683ecca710db95" id="r_acdac41547ae59c95df683ecca710db95"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acdac41547ae59c95df683ecca710db95">operator-</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:a06bf01ff7ac76db96afcaadea1fd29c1" id="r_a06bf01ff7ac76db96afcaadea1fd29c1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a06bf01ff7ac76db96afcaadea1fd29c1">operator*</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
-<tr class="memitem:a54bf00755ecf536427677ca6f0ecffcf" id="r_a54bf00755ecf536427677ca6f0ecffcf"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a54bf00755ecf536427677ca6f0ecffcf">operator/</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
+<tr class="memitem:af49a31336d658a9fdf7604b99a5d9b8b" id="r_af49a31336d658a9fdf7604b99a5d9b8b"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af49a31336d658a9fdf7604b99a5d9b8b">feltDiv</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
+<tr class="memdesc:af49a31336d658a9fdf7604b99a5d9b8b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes finite-field division by multiplying the dividend by the multiplicative inverse of the divisor.  <br /></td></tr>
+<tr class="memitem:a7f16779a8290b3604ad7ee49256fb594" id="r_a7f16779a8290b3604ad7ee49256fb594"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7f16779a8290b3604ad7ee49256fb594">unsignedIntDiv</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
+<tr class="memdesc:a7f16779a8290b3604ad7ee49256fb594"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes unsigned integer division with possibly non-Degenerate divisors.  <br /></td></tr>
+<tr class="memitem:a16ea3883a9e7284312007f6de4f7b809" id="r_a16ea3883a9e7284312007f6de4f7b809"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a16ea3883a9e7284312007f6de4f7b809">signedIntDiv</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
+<tr class="memdesc:a16ea3883a9e7284312007f6de4f7b809"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes signed integer division with possibly non-Degenerate divisors.  <br /></td></tr>
 <tr class="memitem:a55d0cf465a99fe73abdc138f5ba0815f" id="r_a55d0cf465a99fe73abdc138f5ba0815f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a55d0cf465a99fe73abdc138f5ba0815f">operator%</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:aa27b5260e5b373868e1f59a9f0676843" id="r_aa27b5260e5b373868e1f59a9f0676843"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa27b5260e5b373868e1f59a9f0676843">operator&amp;</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
+<tr class="memitem:a3f35b59bfdb8b8339f2e9a2978984a1b" id="r_a3f35b59bfdb8b8339f2e9a2978984a1b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3f35b59bfdb8b8339f2e9a2978984a1b">operator|</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
+<tr class="memitem:a41877dee22a597e2a10095dd80ceb786" id="r_a41877dee22a597e2a10095dd80ceb786"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a41877dee22a597e2a10095dd80ceb786">operator^</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:a5e4f88183c04d290fa8ffde7bfe4afd6" id="r_a5e4f88183c04d290fa8ffde7bfe4afd6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e4f88183c04d290fa8ffde7bfe4afd6">operator&lt;&lt;</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:aa0684a91edd323e82c739f7e542c4525" id="r_aa0684a91edd323e82c739f7e542c4525"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa0684a91edd323e82c739f7e542c4525">operator&gt;&gt;</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
 <tr class="memitem:a4151c4347305c5773a85f7a4422a5cdd" id="r_a4151c4347305c5773a85f7a4422a5cdd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1Interval.html">Interval</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4151c4347305c5773a85f7a4422a5cdd">boolAnd</a> (const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;lhs, const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;rhs)</td></tr>
@@ -973,7 +985,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00061">61</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00111">111</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1613,7 +1625,63 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00112">112</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00223">223</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a9f56287370613ea28dce42066fd4d880" name="a9f56287370613ea28dce42066fd4d880"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f56287370613ea28dce42066fd4d880">&#9670;&#160;</a></span>bitOr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> llzk::bitOr </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00231">231</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ae0ddab68bb1a9e2badbd6e06cffaaf50" name="ae0ddab68bb1a9e2badbd6e06cffaaf50"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae0ddab68bb1a9e2badbd6e06cffaaf50">&#9670;&#160;</a></span>bitXor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> llzk::bitXor </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00239">239</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1636,7 +1704,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00484">484</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00652">652</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -1664,7 +1732,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00202">202</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00333">333</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1683,7 +1751,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00544">544</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00712">712</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -1706,7 +1774,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00262">262</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00373">373</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1729,7 +1797,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00501">501</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00669">669</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -1757,7 +1825,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00210">210</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00341">341</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1785,7 +1853,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00045">45</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00074">74</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1808,7 +1876,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00518">518</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00686">686</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -1836,7 +1904,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00218">218</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00349">349</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1989,7 +2057,7 @@ template&lt;typename T, typename U&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00147">147</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00149">149</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -2097,7 +2165,7 @@ template&lt;typename T, typename U&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00138">138</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00269">269</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2295,6 +2363,39 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00069">69</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5fc2a3916d97a802becd6439128ad114" name="a5fc2a3916d97a802becd6439128ad114"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5fc2a3916d97a802becd6439128ad114">&#9670;&#160;</a></span>createFieldInverseExpr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::SMTExprRef llzk::createFieldInverseExpr </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>val</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>suffix</em></span><span class="paramdefsep"> = </span><span class="paramdefval">&quot;&quot;</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00035">35</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2666,8 +2767,8 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 
 </div>
 </div>
-<a id="add996d75716a5d64192b64ae8739d479" name="add996d75716a5d64192b64ae8739d479"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add996d75716a5d64192b64ae8739d479">&#9670;&#160;</a></span>div()</h2>
+<a id="a899c6e0f79352e9eadb489f1cf822dce" name="a899c6e0f79352e9eadb489f1cf822dce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a899c6e0f79352e9eadb489f1cf822dce">&#9670;&#160;</a></span>div()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2680,7 +2781,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1felt_1_1DivFeltOp.html">felt::DivFeltOp</a></td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -2695,7 +2796,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00085">85</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00135">135</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2730,39 +2831,6 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 
 </div>
 </div>
-<a id="a227c45023d4390b2b5c103ea991a239a" name="a227c45023d4390b2b5c103ea991a239a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a227c45023d4390b2b5c103ea991a239a">&#9670;&#160;</a></span>fallbackBinaryOp()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> llzk::fallbackBinaryOp </td>
-          <td>(</td>
-          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00228">228</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
-
-</div>
-</div>
 <a id="a2176aa1303939b2957b8385543246aea" name="a2176aa1303939b2957b8385543246aea"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2176aa1303939b2957b8385543246aea">&#9670;&#160;</a></span>fallbackUnaryOp()</h2>
 
@@ -2787,7 +2855,33 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00270">270</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00381">381</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
+<a id="af49a31336d658a9fdf7604b99a5d9b8b" name="af49a31336d658a9fdf7604b99a5d9b8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af49a31336d658a9fdf7604b99a5d9b8b">&#9670;&#160;</a></span>feltDiv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt; llzk::feltDiv </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Computes finite-field division by multiplying the dividend by the multiplicative inverse of the divisor. </p>
+<p>Only non-zero Degenerate divisors are supported. Supporting arbitrary divisor intervals soundly would require considering the inverse of every possible divisor value and joining the results, which is too expensive for this analysis. </p>
+
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00485">485</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -3010,7 +3104,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00351">351</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00368">368</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -3043,7 +3137,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00365">365</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00382">382</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -3996,7 +4090,7 @@ template&lt;typename OpClass&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A <span class="tt"><a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a></span> for the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> found. Note that returning the lookup result is important, as it may manage a ModuleOp if the struct is found via an include. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00216">216</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00222">222</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -4365,7 +4459,7 @@ template&lt;typename GraphT&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00052">52</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00102">102</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -5282,7 +5376,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00104">104</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00215">215</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -5408,7 +5502,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00077">77</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00127">127</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -5431,7 +5525,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00248">248</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00359">359</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -5454,7 +5548,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00255">255</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00366">366</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -5477,7 +5571,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00420">420</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00552">552</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5523,7 +5617,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00425">425</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00557">557</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5567,7 +5661,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00390">390</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00466">466</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5590,7 +5684,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00106">106</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00108">108</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5613,7 +5707,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00377">377</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00453">453</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5636,7 +5730,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00097">97</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00099">99</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5659,7 +5753,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00388">388</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00464">464</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5682,30 +5776,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00102">102</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a54bf00755ecf536427677ca6f0ecffcf" name="a54bf00755ecf536427677ca6f0ecffcf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a54bf00755ecf536427677ca6f0ecffcf">&#9670;&#160;</a></span>operator/()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt; llzk::operator/ </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00409">409</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00104">104</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5751,7 +5822,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00440">440</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00608">608</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -5849,7 +5920,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00305">305</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00313">313</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -5893,7 +5964,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00203">203</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00205">205</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -5916,7 +5987,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00469">469</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00502">502</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -5939,7 +6010,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00481">481</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00514">514</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -5962,7 +6033,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00122">122</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00124">124</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -6008,7 +6079,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00456">456</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00624">624</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -6034,7 +6105,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
 </div>
 </div>
 <a id="af93bf248388cf47f2e92c92d911d7519" name="af93bf248388cf47f2e92c92d911d7519"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af93bf248388cf47f2e92c92d911d7519">&#9670;&#160;</a></span>operator^() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af93bf248388cf47f2e92c92d911d7519">&#9670;&#160;</a></span>operator^() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6056,8 +6127,32 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
 
 </div>
 </div>
+<a id="a41877dee22a597e2a10095dd80ceb786" name="a41877dee22a597e2a10095dd80ceb786"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41877dee22a597e2a10095dd80ceb786">&#9670;&#160;</a></span>operator^() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1Interval.html">Interval</a> llzk::operator^ </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This over-approximates for non-degenerate intervals on non-identity cases. </p>
+
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00590">590</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a0841c189e0c22cc4c75ab9a378029d4c" name="a0841c189e0c22cc4c75ab9a378029d4c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0841c189e0c22cc4c75ab9a378029d4c">&#9670;&#160;</a></span>operator^() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a0841c189e0c22cc4c75ab9a378029d4c">&#9670;&#160;</a></span>operator^() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6078,7 +6173,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
 </div>
 </div>
 <a id="a92b8f56629d729dd2462d2385bdd7094" name="a92b8f56629d729dd2462d2385bdd7094"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a92b8f56629d729dd2462d2385bdd7094">&#9670;&#160;</a></span>operator|() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a92b8f56629d729dd2462d2385bdd7094">&#9670;&#160;</a></span>operator|() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6100,8 +6195,32 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
 
 </div>
 </div>
+<a id="a3f35b59bfdb8b8339f2e9a2978984a1b" name="a3f35b59bfdb8b8339f2e9a2978984a1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f35b59bfdb8b8339f2e9a2978984a1b">&#9670;&#160;</a></span>operator|() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1Interval.html">Interval</a> llzk::operator| </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This over-approximates for non-degenerate intervals on non-identity cases. </p>
+
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00572">572</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a82e0f350b35605a55c3383c14dbbdc2c" name="a82e0f350b35605a55c3383c14dbbdc2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a82e0f350b35605a55c3383c14dbbdc2c">&#9670;&#160;</a></span>operator|() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a82e0f350b35605a55c3383c14dbbdc2c">&#9670;&#160;</a></span>operator|() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -7827,6 +7946,39 @@ template&lt;typename T&gt; </div>
 
 </div>
 </div>
+<a id="afdf1c2e6485144f772cc0cb6e28a7e24" name="afdf1c2e6485144f772cc0cb6e28a7e24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afdf1c2e6485144f772cc0cb6e28a7e24">&#9670;&#160;</a></span>selectValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> llzk::selectValue </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>cond</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>trueVal</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>falseVal</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00081">81</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a1998bc2f299c5283fc5c74a324306f3b" name="a1998bc2f299c5283fc5c74a324306f3b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1998bc2f299c5283fc5c74a324306f3b">&#9670;&#160;</a></span>shiftLeft()</h2>
 
@@ -7851,7 +8003,7 @@ template&lt;typename T&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00119">119</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00250">250</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -7879,7 +8031,33 @@ template&lt;typename T&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00128">128</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00259">259</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a16ea3883a9e7284312007f6de4f7b809" name="a16ea3883a9e7284312007f6de4f7b809"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16ea3883a9e7284312007f6de4f7b809">&#9670;&#160;</a></span>signedIntDiv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt; llzk::signedIntDiv </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Computes signed integer division with possibly non-Degenerate divisors. </p>
+<p>Returns failure if the divisor interval may contain zero. </p>
+
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00526">526</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>
@@ -7923,6 +8101,39 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00234">234</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a6fc0f75dc297614006fe47db9a98d638" name="a6fc0f75dc297614006fe47db9a98d638"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6fc0f75dc297614006fe47db9a98d638">&#9670;&#160;</a></span>sintDiv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> llzk::sintDiv </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00194">194</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8081,7 +8292,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00069">69</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00119">119</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8703,6 +8914,65 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00888">888</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aac7d18d0d69dc644aad5c68eadb5c825" name="aac7d18d0d69dc644aad5c68eadb5c825"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac7d18d0d69dc644aad5c68eadb5c825">&#9670;&#160;</a></span>uintDiv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> llzk::uintDiv </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::SMTSolverRef &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00174">174</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a7f16779a8290b3604ad7ee49256fb594" name="a7f16779a8290b3604ad7ee49256fb594"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f16779a8290b3604ad7ee49256fb594">&#9670;&#160;</a></span>unsignedIntDiv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt; llzk::unsignedIntDiv </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Interval.html">Interval</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Computes unsigned integer division with possibly non-Degenerate divisors. </p>
+<p>Returns failure if the divisor interval may contain zero. </p>
+
+<p class="definition">Definition at line <a class="el" href="Intervals_8cpp_source.html#l00500">500</a> of file <a class="el" href="Intervals_8cpp_source.html">Intervals.cpp</a>.</p>
 
 </div>
 </div>

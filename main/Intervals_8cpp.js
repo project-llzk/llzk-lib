@@ -5,6 +5,7 @@ var Intervals_8cpp =
     [ "llzk::boolOr", "namespacellzk.html#a3e5cbfb473f83cd708aafe6b6cb706eb", null ],
     [ "llzk::boolXor", "namespacellzk.html#a9a5d035608b9efe5cccc5330a8f76c4c", null ],
     [ "llzk::checkFields", "namespacellzk.html#acf5eaa8548259d578f83f0ab17fce45c", null ],
+    [ "llzk::feltDiv", "namespacellzk.html#af49a31336d658a9fdf7604b99a5d9b8b", null ],
     [ "llzk::operator%", "namespacellzk.html#a55d0cf465a99fe73abdc138f5ba0815f", null ],
     [ "llzk::operator&", "namespacellzk.html#aa27b5260e5b373868e1f59a9f0676843", null ],
     [ "llzk::operator*", "namespacellzk.html#a06bf01ff7ac76db96afcaadea1fd29c1", null ],
@@ -13,8 +14,11 @@ var Intervals_8cpp =
     [ "llzk::operator+", "namespacellzk.html#ad13198c26cc750d881f4b0e53a5955a8", null ],
     [ "llzk::operator-", "namespacellzk.html#acdac41547ae59c95df683ecca710db95", null ],
     [ "llzk::operator-", "namespacellzk.html#a92d9e6ddc8de341fe1c6799854ba6585", null ],
-    [ "llzk::operator/", "namespacellzk.html#a54bf00755ecf536427677ca6f0ecffcf", null ],
     [ "llzk::operator<<", "namespacellzk.html#a5e4f88183c04d290fa8ffde7bfe4afd6", null ],
     [ "llzk::operator<=>", "namespacellzk.html#a8e9a147744897bef293d3a64a10dedc0", null ],
-    [ "llzk::operator>>", "namespacellzk.html#aa0684a91edd323e82c739f7e542c4525", null ]
+    [ "llzk::operator>>", "namespacellzk.html#aa0684a91edd323e82c739f7e542c4525", null ],
+    [ "llzk::operator^", "namespacellzk.html#a41877dee22a597e2a10095dd80ceb786", null ],
+    [ "llzk::operator|", "namespacellzk.html#a3f35b59bfdb8b8339f2e9a2978984a1b", null ],
+    [ "llzk::signedIntDiv", "namespacellzk.html#a16ea3883a9e7284312007f6de4f7b809", null ],
+    [ "llzk::unsignedIntDiv", "namespacellzk.html#a7f16779a8290b3604ad7ee49256fb594", null ]
 ];

@@ -1779,13 +1779,16 @@ Results:</h4>
 </table>
 <h3 class="doxsection"><a class="anchor" id="feltdiv-llzkfeltdivfeltop"></a>
 <span class="tt">felt.div</span> (::llzk::felt::DivFeltOp)</h3>
-<p><em>Division operator for field elements</em></p>
+<p><em>Field-division operator for field elements</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `felt.div` $lhs `,` $rhs</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($lhs), &quot;true&quot;)</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($rhs), &quot;false&quot;)</div>
 <div class="line">              attr-dict</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span></p>
+</div><!-- fragment --><p>Performs finite-field division by multiplying the dividend by the multiplicative inverse of the divisor. For a non-zero divisor <span class="tt">b</span>, <span class="tt">felt.div a, b</span> computes <span class="tt">a * inv(b)</span> modulo the field prime of the result prime field.</p>
+<p>The divisor must be non-zero.</p>
+<p>This is not integer division. Use <span class="tt">felt.uintdiv</span> or <span class="tt">felt.sintdiv</span> when the operands should be interpreted as integers.</p>
+<p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
 <h4 class="doxsection"><a class="anchor" id="operands-21"></a>
