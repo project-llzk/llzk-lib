@@ -45,14 +45,16 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    auto modOp = llvm::dyn_cast_if_present<mlir::ModuleOp>(getOperation());
+    // Suppress false positive from `clang-tidy`
+    // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
+    auto modOp = llvm::dyn_cast<mlir::ModuleOp>(getOperation());
     if (!modOp) {
       constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg).report();
       return;
     }
 
-    // Initialize to the fallback field value;
+    // Initialize to the fallback field value
     FieldRef selectedField = Field::getField("bn128");
     if (!fieldName.empty()) {
       auto fieldLookupRes = Field::tryGetField(fieldName.c_str());

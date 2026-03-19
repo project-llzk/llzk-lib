@@ -205,7 +205,7 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
   TypeSwitch<mlir::Type> ts(type);
   ts.Case([&ctx](llzk::felt::FeltType felt) {
     if (felt.hasField()) {
-      ctx.fields.insert(std::cref(felt.getField()));
+      ctx.fields.insert(felt.getField());
     } else {
       ctx.status = failure();
       ctx.scope->emitWarning()
