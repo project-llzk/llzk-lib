@@ -1,6 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim="remove-structs" %s 2>&1 | FileCheck %s --check-prefix STRICT
 // RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim %s 2>&1 | FileCheck %s --check-prefix RELAX
-// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   struct.def @Component {
@@ -180,18 +179,18 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   }
 }
 
-// STRICT-LABEL: struct.def @VarArray<[@N, @T]> {
-// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_1:.*]] = struct.new : <@VarArray<[@N, @T]>>
-// STRICT-NEXT:      function.return %[[VAL_1]] : !struct.type<@VarArray<[@N, @T]>>
+// STRICT-LABEL: struct.def @VarArray {
+// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// STRICT-NEXT:      %[[VAL_1:.*]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// STRICT-NEXT:      function.return %[[VAL_1]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// STRICT-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// STRICT-NEXT:    struct.member @c : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -201,18 +200,18 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
-// RELAX-LABEL: struct.def @VarArray<[@N, @T]> {
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_1:.*]] = struct.new : <@VarArray<[@N, @T]>>
-// RELAX-NEXT:      function.return %[[VAL_1]] : !struct.type<@VarArray<[@N, @T]>>
+// RELAX-LABEL: struct.def @VarArray {
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// RELAX-NEXT:      %[[VAL_1:.*]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// RELAX-NEXT:      function.return %[[VAL_1]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// RELAX-NEXT:    function.def @constrain(%[[VAL_2:.*]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_3:.*]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @Main {
-// RELAX-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// RELAX-NEXT:    struct.member @c : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -289,40 +288,40 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 }
 
 // STRICT-LABEL: module @std {
-// STRICT-NEXT:    struct.def @Wrapper<[@T]> {
+// STRICT-LABEL:   struct.def @Wrapper {
 // STRICT-NEXT:      struct.member @val : !poly.tvar<@T>
-// STRICT-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]>> attributes {function.allow_witness} {
-// STRICT-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@Wrapper<[@T]>>
-// STRICT-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
-// STRICT-NEXT:        function.return %[[VAL_1]] : !struct.type<@std::@Wrapper<[@T]>>
+// STRICT-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@TWrapper::@Wrapper<[@T]>> attributes {function.allow_witness} {
+// STRICT-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@TWrapper::@Wrapper<[@T]>>
+// STRICT-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+// STRICT-NEXT:        function.return %[[VAL_1]] : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
 // STRICT-NEXT:      }
-// STRICT-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// STRICT-NEXT:        %[[VAL_4:.*]] = struct.readm %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
+// STRICT-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// STRICT-NEXT:        %[[VAL_4:.*]] = struct.readm %[[VAL_2]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // STRICT-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !poly.tvar<@T>, !poly.tvar<@T>
 // STRICT-NEXT:        function.return
 // STRICT-NEXT:      }
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
-// STRICT-LABEL: struct.def @VarArray<[@N, @T]> {
-// STRICT-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_2:.*]] = struct.new : <@VarArray<[@N, @T]>>
-// STRICT-NEXT:      struct.writem %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-// STRICT-NEXT:      function.return %[[VAL_2]] : !struct.type<@VarArray<[@N, @T]>>
+// STRICT-LABEL: struct.def @VarArray {
+// STRICT-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+// STRICT-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// STRICT-NEXT:      %[[VAL_2:.*]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// STRICT-NEXT:      struct.writem %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+// STRICT-NEXT:      function.return %[[VAL_2]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !struct.type<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// STRICT-NEXT:      %[[VAL_6:.*]] = struct.readm %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
+// STRICT-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// STRICT-NEXT:      %[[VAL_6:.*]] = struct.readm %[[VAL_3]][@valUsed] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
 // STRICT-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
-// STRICT-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.type<@std::@Wrapper<[@T]>>>, !struct.type<@std::@Wrapper<[@T]>>
-// STRICT-NEXT:      %[[VAL_9:.*]] = struct.readm %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
+// STRICT-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
+// STRICT-NEXT:      %[[VAL_9:.*]] = struct.readm %[[VAL_8]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // STRICT-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_9]] : !poly.tvar<@T>, !poly.tvar<@T>
 // STRICT-NEXT:      function.return
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
 // STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// STRICT-NEXT:    struct.member @c : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> {llzk.pub}
 // STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
@@ -333,40 +332,40 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // STRICT-NEXT:  }
 
 // RELAX-LABEL: module @std {
-// RELAX-NEXT:    struct.def @Wrapper<[@T]> {
+// RELAX-LABEL:   struct.def @Wrapper {
 // RELAX-NEXT:      struct.member @val : !poly.tvar<@T>
-// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@Wrapper<[@T]>> attributes {function.allow_witness} {
-// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@Wrapper<[@T]>>
-// RELAX-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
-// RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@std::@Wrapper<[@T]>>
+// RELAX-NEXT:      function.def @compute(%[[VAL_0:.*]]: !poly.tvar<@T>) -> !struct.type<@std::@TWrapper::@Wrapper<[@T]>> attributes {function.allow_witness} {
+// RELAX-NEXT:        %[[VAL_1:.*]] = struct.new : <@std::@TWrapper::@Wrapper<[@T]>>
+// RELAX-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
+// RELAX-NEXT:        function.return %[[VAL_1]] : !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
 // RELAX-NEXT:      }
-// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@std::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// RELAX-NEXT:        %[[VAL_4:.*]] = struct.readm %[[VAL_2]][@val] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
+// RELAX-NEXT:      function.def @constrain(%[[VAL_2:.*]]: !struct.type<@std::@TWrapper::@Wrapper<[@T]>>, %[[VAL_3:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// RELAX-NEXT:        %[[VAL_4:.*]] = struct.readm %[[VAL_2]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // RELAX-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !poly.tvar<@T>, !poly.tvar<@T>
 // RELAX-NEXT:        function.return
 // RELAX-NEXT:      }
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
 
-// RELAX-LABEL: struct.def @VarArray<[@N, @T]> {
-// RELAX-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// RELAX-NEXT:      %[[VAL_2:.*]] = struct.new : <@VarArray<[@N, @T]>>
-// RELAX-NEXT:      struct.writem %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
-// RELAX-NEXT:      function.return %[[VAL_2]] : !struct.type<@VarArray<[@N, @T]>>
+// RELAX-LABEL: struct.def @VarArray {
+// RELAX-NEXT:    struct.member @valUsed : !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+// RELAX-NEXT:    function.def @compute(%[[VAL_0:.*]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_1:.*]]: !poly.tvar<@T>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// RELAX-NEXT:      %[[VAL_2:.*]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// RELAX-NEXT:      struct.writem %[[VAL_2]][@valUsed] = %[[VAL_0]] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
+// RELAX-NEXT:      function.return %[[VAL_2]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // RELAX-NEXT:    }
-// RELAX-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !struct.type<@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// RELAX-NEXT:      %[[VAL_6:.*]] = struct.readm %[[VAL_3]][@valUsed] : <@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@Wrapper<[@T]>>>
+// RELAX-NEXT:    function.def @constrain(%[[VAL_3:.*]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_4:.*]]: !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, %[[VAL_5:.*]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// RELAX-NEXT:      %[[VAL_6:.*]] = struct.readm %[[VAL_3]][@valUsed] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>
 // RELAX-NEXT:      %[[VAL_7:.*]] = arith.constant 0 : index
-// RELAX-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.type<@std::@Wrapper<[@T]>>>, !struct.type<@std::@Wrapper<[@T]>>
-// RELAX-NEXT:      %[[VAL_9:.*]] = struct.readm %[[VAL_8]][@val] : <@std::@Wrapper<[@T]>>, !poly.tvar<@T>
+// RELAX-NEXT:      %[[VAL_8:.*]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <@N x !struct.type<@std::@TWrapper::@Wrapper<[@T]>>>, !struct.type<@std::@TWrapper::@Wrapper<[@T]>>
+// RELAX-NEXT:      %[[VAL_9:.*]] = struct.readm %[[VAL_8]][@val] : <@std::@TWrapper::@Wrapper<[@T]>>, !poly.tvar<@T>
 // RELAX-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_9]] : !poly.tvar<@T>, !poly.tvar<@T>
 // RELAX-NEXT:      function.return
 // RELAX-NEXT:    }
 // RELAX-NEXT:  }
 
 // RELAX-LABEL: struct.def @Main {
-// RELAX-NEXT:    struct.member @c : !struct.type<@VarArray<[2, !felt.type]>> {llzk.pub}
+// RELAX-NEXT:    struct.member @c : !struct.type<@TVarArray::@VarArray<[2, !felt.type]>> {llzk.pub}
 // RELAX-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
 // RELAX-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
 // RELAX-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
