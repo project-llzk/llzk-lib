@@ -25,6 +25,8 @@
 
 namespace llzk {
 
+#define DEBUG_TYPE "llzk-interval-analysis-pass"
+
 #define GEN_PASS_DECL_INTERVALANALYSISPRINTERPASS
 #define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
@@ -52,17 +54,41 @@ protected:
       return;
     }
 
-    auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
-
-    if (mlir::failed(fieldLookupRes)) {
-      modOp->emitError()
-          .append("IntervalAnalysisPrinterPass error: unknown field \"", fieldName, "\" specified")
-          .report();
-      return;
+    const Field *selectedField = nullptr;
+    if (!fieldName.empty()) {
+      auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
+      if (mlir::failed(fieldLookupRes)) {
+        modOp->emitError()
+            .append(
+                "IntervalAnalysisPrinterPass error: unknown field \"", fieldName, "\" specified"
+            )
+            .report();
+        return;
+      }
+      selectedField = &fieldLookupRes.value().get();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[IntervalAnalysisPrinterPass] using explicit -field override '"
+                       << selectedField->name() << "'\n";
+      );
+    } else if (auto detectedField = tryDetectSpecifiedField(modOp)) {
+      selectedField = &detectedField->get();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[IntervalAnalysisPrinterPass] detected module field '"
+                       << selectedField->name() << "' from module felt usage\n";
+      );
+    } else {
+      selectedField = &Field::getField("bn128");
+      modOp->emitWarning() << "could not detect a unique module field; falling back to '"
+                           << selectedField->name() << "'";
+      LLVM_DEBUG(
+          llvm::dbgs() << "[IntervalAnalysisPrinterPass] no explicit or detectable module field; "
+                          "falling back to '"
+                       << selectedField->name() << "'\n";
+      );
     }
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
-    mia.setField(fieldLookupRes.value());
+    mia.setField(*selectedField);
     mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);

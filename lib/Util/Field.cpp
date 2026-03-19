@@ -205,7 +205,7 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
   TypeSwitch<mlir::Type> ts(type);
   ts.Case([&ctx](llzk::felt::FeltType felt) {
     if (felt.hasField()) {
-      ctx.fields.insert(felt.getField());
+      ctx.fields.insert(std::cref(felt.getField()));
     } else {
       ctx.status = failure();
       ctx.scope->emitWarning()
@@ -228,7 +228,7 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
   // Accepted types that are no-ops.
   doNothing<
       // clang-format off
-      llzk::component::StructType, 
+      llzk::component::StructType,
       llzk::string::StringType,
       mlir::IntegerType,
       llzk::polymorphic::TypeVarType
@@ -284,4 +284,26 @@ LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields)
   });
 
   return status;
+}
+
+std::optional<std::reference_wrapper<const llzk::Field>>
+llzk::tryDetectSpecifiedField(Operation *root) {
+  if (!root) {
+    return std::nullopt;
+  }
+
+  ModuleOp modOp = dyn_cast<ModuleOp>(root);
+  if (!modOp) {
+    modOp = root->getParentOfType<ModuleOp>();
+  }
+
+  if (!modOp) {
+    return std::nullopt;
+  }
+
+  FieldSet fields;
+  if (failed(collectFields(modOp, fields)) || fields.size() != 1) {
+    return std::nullopt;
+  }
+  return *fields.begin();
 }

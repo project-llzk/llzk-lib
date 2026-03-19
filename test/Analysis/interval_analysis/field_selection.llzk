@@ -1,0 +1,56 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis %s 2>&1 | FileCheck %s --check-prefix=DEFAULT
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear" %s 2>&1 | FileCheck %s --check-prefix=OVERRIDE
+
+module attributes {llzk.lang} {
+  struct.def @FallbackBn128 {
+    function.def @compute(%a: !felt.type) -> !struct.type<@FallbackBn128> {
+      %self = struct.new : !struct.type<@FallbackBn128>
+      function.return %self : !struct.type<@FallbackBn128>
+    }
+
+    function.def @constrain(%self: !struct.type<@FallbackBn128>, %a: !felt.type) {
+      %one = felt.const 1
+      %cmp = bool.cmp gt(%a, %one) : !felt.type, !felt.type
+      bool.assert %cmp
+      function.return
+    }
+  }
+}
+
+// DEFAULT: warning: could not detect a unique module field; falling back to 'bn128'
+// DEFAULT-LABEL: @FallbackBn128 StructIntervals {
+// DEFAULT-NEXT:     %arg1 in TypeC:[ 2, 21888242871839275222246405745257275088696311157297823662689037894645226208582 ]
+// DEFAULT-NEXT: }
+
+// OVERRIDE-NOT: warning: could not detect a unique module field; falling back to 'bn128'
+// OVERRIDE-LABEL: @FallbackBn128 StructIntervals {
+// OVERRIDE-NEXT:     %arg1 in TypeC:[ 2, 2013265920 ]
+// OVERRIDE-NEXT: }
+
+// -----
+
+!F = !felt.type<"mersenne31">
+module attributes {llzk.lang} {
+  struct.def @DetectMersenne31 {
+    function.def @compute(%a: !F) -> !struct.type<@DetectMersenne31> {
+      %self = struct.new : !struct.type<@DetectMersenne31>
+      function.return %self : !struct.type<@DetectMersenne31>
+    }
+
+    function.def @constrain(%self: !struct.type<@DetectMersenne31>, %a: !F) {
+      %one = felt.const 1 <"mersenne31">
+      %cmp = bool.cmp gt(%a, %one) : !F, !F
+      bool.assert %cmp
+      function.return
+    }
+  }
+}
+
+// DEFAULT-NOT: warning: could not detect a unique module field; falling back to 'bn128'
+// DEFAULT-LABEL: @DetectMersenne31 StructIntervals {
+// DEFAULT-NEXT:     %arg1 in TypeC:[ 2, 2147483646 ]
+// DEFAULT-NEXT: }
+
+// OVERRIDE-LABEL: @DetectMersenne31 StructIntervals {
+// OVERRIDE-NEXT:     %arg1 in TypeC:[ 2, 2013265920 ]
+// OVERRIDE-NEXT: }
