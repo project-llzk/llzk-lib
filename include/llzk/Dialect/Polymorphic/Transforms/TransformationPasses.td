@@ -14,8 +14,9 @@ include "llzk/Pass/PassBase.td"
 include "mlir/IR/EnumAttr.td"
 
 def StructCleanupModeDescription {
-  string r = "Specifies the extent to which unused parameterized structs are "
-             "removed during the flattening pass.";
+  string r = "Specifies the extent to which unused parameterized structs (i.e. "
+             "structs within a `poly.template`) are removed during the "
+             "flattening pass.";
 }
 
 def StructCleanupMode
@@ -38,7 +39,8 @@ def StructCleanupMode
 }
 
 def EmptyParamListRemovalPass : LLZKPass<"llzk-drop-empty-params"> {
-  let summary = "Remove empty struct parameter lists";
+  let summary = "Convert templates with no constant parameters or expressions "
+                "into modules.";
   let constructor = "llzk::polymorphic::createEmptyParamListRemoval()";
 }
 
