@@ -490,7 +490,7 @@ FailureOr<Interval> feltDiv(const Interval &lhs, const Interval &rhs) {
   if (!rhs.isDegenerate() || rhs.lhs() == f.zero()) {
     // Supporting arbitrary divisor intervals would require enumerating every
     // possible divisor, inverting each value, and joining the products, which
-    // is tool expensive. So, we return a failure in the non-degenerate case
+    // is too expensive. So, we return a failure in the non-degenerate case
     // and in the divide-by-zero case.
     return failure();
   }

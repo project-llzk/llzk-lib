@@ -144,7 +144,8 @@ def LLZK_DivFeltOp : FeltDialectBinaryOp<"div"> {
   let description = [{
     Performs finite-field division by multiplying the dividend by the
     multiplicative inverse of the divisor. For a non-zero divisor `b`,
-    `felt.div %a, %b` computes `%a * inv(%b)` modulo the active field prime.
+    `felt.div %a, %b` computes `%a * inv(%b)` modulo the field prime of the result
+    prime field.
 
     The divisor must be non-zero.
 
