@@ -261,7 +261,7 @@ class IntervalDataFlowAnalysis
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
 
-  // Map members to their symbols
+  // Map SourceRefs to their symbols.
   using SymbolMap = mlir::DenseMap<SourceRef, llvm::SMTExprRef>;
 
 public:
@@ -283,13 +283,11 @@ public:
   /// @return
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
 
-  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getMemberReadResults() const {
-    return memberReadResults;
+  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getReadResults() const {
+    return readResults;
   }
 
-  const llvm::DenseMap<SourceRef, ExpressionValue> &getMemberWriteResults() const {
-    return memberWriteResults;
-  }
+  const llvm::DenseMap<SourceRef, ExpressionValue> &getWriteResults() const { return writeResults; }
 
 private:
   mlir::DataFlowSolver &_dataflowSolver;
@@ -299,10 +297,10 @@ private:
   bool propagateInputConstraints;
   mlir::SymbolTableCollection tables;
 
-  // Track member reads so that propagations to members can be all updated efficiently.
-  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> memberReadResults;
-  // Track member writes values. For now, we'll overapproximate this.
-  llvm::DenseMap<SourceRef, ExpressionValue> memberWriteResults;
+  // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> readResults;
+  // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
+  llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
@@ -393,6 +391,30 @@ private:
   }
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+
+  /// @brief Convert an array access op's indices into SourceRef path components.
+  /// Constant indices are tracked precisely, while dynamic indices are widened to
+  /// the full valid range for that array dimension.
+  std::vector<SourceRefIndex>
+  getArrayAccessIndices(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
+
+  /// @brief Build the SourceRef addressed by an array access op when its base is a
+  /// block argument or rooted SSA value.
+  mlir::FailureOr<SourceRef>
+  getArrayAccessRef(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
+
+  /// @brief Compute the best known interval for a SourceRef from writes, constants,
+  /// or an already-initialized root lattice value.
+  Interval getRefInterval(const SourceRef &ref);
+
+  /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
+  /// written value when available and otherwise pairing a fresh SSA symbol with the
+  /// SourceRef's current interval.
+  ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
+
+  /// @brief Record a write to the given SourceRef and eagerly refine any reads that
+  /// are currently tracking the same storage location.
+  void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
 
   /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
   /// if `val` has no associated SourceRefLattice.

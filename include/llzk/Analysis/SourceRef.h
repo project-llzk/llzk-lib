@@ -125,8 +125,8 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// for intermediate operations (e.g., readm to read a nested struct).
 ///
 /// These references are relative to a particular function call, so they are either (1) constants,
-/// or (2) rooted at a value (e.g., `self`, a nondet op, an external call result, or another
-/// block argument),
+/// or (2) rooted at a value (e.g., `self`, a nondet op, an external call result, an array.new
+/// result, an array.read result, or another block argument),
 /// and optionally contain indices into root (e.g., a member reference in a struct or a index into
 /// an array).
 class SourceRef {
@@ -135,12 +135,13 @@ public:
 
 private:
   // Sort in the following order:
-  // block arg < struct.new < nondet < call result < template const < const index < const felt.
+  // block arg < struct.new < nondet < other rooted result < template const < const index <
+  // const felt.
   enum class SortCategory {
     BlockArgument,
     CreateStruct,
     NonDet,
-    CallResult,
+    RootResult,
     TemplateConstant,
     ConstantIndex,
     ConstantFelt,
@@ -152,10 +153,12 @@ private:
     return op->getResult(0);
   }
 
-  static mlir::Value getCallResultValue(mlir::OpResult result) {
+  static mlir::Value getRootResultValue(mlir::OpResult result) {
     ensure(
-        llvm::isa<function::CallOp>(result.getOwner()),
-        "SourceRef expects an OpResult produced by function.call"
+        !llvm::isa<
+            felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp,
+            polymorphic::ConstReadOp>(result.getOwner()),
+        "SourceRef rooted OpResult constructors must not be used for constant values"
     );
     return result;
   }
@@ -200,8 +203,8 @@ public:
       : SourceRef(getSingleResultValue(createOp), /*constant=*/false, p) {}
   SourceRef(NonDetOp nondet, Path p = {})
       : SourceRef(getSingleResultValue(nondet), /*constant=*/false, p) {}
-  SourceRef(mlir::OpResult callResult, Path p = {})
-      : SourceRef(getCallResultValue(callResult), /*constant=*/false, p) {}
+  SourceRef(mlir::OpResult rootResult, Path p = {})
+      : SourceRef(getRootResultValue(rootResult), /*constant=*/false, p) {}
 
   /* Constant constructors */
 

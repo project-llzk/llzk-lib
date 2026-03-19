@@ -632,6 +632,49 @@ module attributes {llzk.lang} {
 
 // -----
 
+module attributes {llzk.lang} {
+  struct.def @MultiValueReadJoin {
+    struct.member @out : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type, %idx: index) -> !struct.type<@MultiValueReadJoin> {
+      %self = struct.new : !struct.type<@MultiValueReadJoin>
+      %5 = felt.const 5
+      %6 = felt.const 6
+      %10 = felt.const 10
+      %11 = felt.const 11
+
+      %cmp0 = bool.cmp ge(%a, %5)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %6)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp ge(%b, %10)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp le(%b, %11)
+      bool.assert %cmp3
+
+      %array = array.new %a, %b : !array.type<2 x !felt.type>
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      struct.writem %self[@out] = %elem : !struct.type<@MultiValueReadJoin>, !felt.type
+      function.return %self : !struct.type<@MultiValueReadJoin>
+    }
+
+    function.def
+        @constrain(%self: !struct.type<@MultiValueReadJoin>, %a: !felt.type, %b: !felt.type, %idx: index) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @MultiValueReadJoin StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:    %arg1 in TypeA:[ 10, 11 ]
+// CHECK-NEXT:    %arg2 in Entire
+// CHECK-NEXT:    %self[@out] in TypeA:[ 5, 11 ]
+// CHECK-NEXT:  }
+
+// -----
+
 // COM: Regression test for convergence of the interval analysis.
 module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/Inputs/zir_example_loops.llzk" as @zir_loops
@@ -1058,4 +1101,158 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     %self[@case0] in Entire
 // CHECK-NEXT:     %self[@case1] in Degenerate(5)
 // CHECK-NEXT:     %self[@case2] in Degenerate(1006632961)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayWrite {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+
+    function.def @compute(%arr: !array.type<2 x !felt.type>, %a: !felt.type) -> !struct.type<@ArrayWrite> {
+      %self = struct.new : !struct.type<@ArrayWrite>
+
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %5 = felt.const 5
+      %6 = felt.const 6
+
+      %cmp0 = bool.cmp ge(%a, %5)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %6)
+      bool.assert %cmp1
+
+      array.write %arr[%c0] = %a : !array.type<2 x !felt.type>, !felt.type
+
+      %case0 = array.read %arr[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %case1 = array.read %arr[%c1] : !array.type<2 x !felt.type>, !felt.type
+
+      struct.writem %self[@case0] = %case0 : !struct.type<@ArrayWrite>, !felt.type
+      struct.writem %self[@case1] = %case1 : !struct.type<@ArrayWrite>, !felt.type
+
+      function.return %self : !struct.type<@ArrayWrite>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrayWrite>, %arr: !array.type<2 x !felt.type>, %a: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayWrite StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0[0] in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %arg0[1] in Entire
+// CHECK-NEXT:     %arg1 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self[@case0] in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self[@case1] in Entire
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayNew {
+    struct.member @case0 : !felt.type
+    struct.member @case1 : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@ArrayNew> {
+      %self = struct.new : !struct.type<@ArrayNew>
+
+      %arr = array.new : !array.type<2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %5 = felt.const 5
+      %6 = felt.const 6
+
+      %cmp0 = bool.cmp ge(%a, %5)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %6)
+      bool.assert %cmp1
+
+      %case0 = array.read %arr[%c0] : !array.type<2 x !felt.type>, !felt.type
+      array.write %arr[%c1] = %a : !array.type<2 x !felt.type>, !felt.type
+      %case1 = array.read %arr[%c1] : !array.type<2 x !felt.type>, !felt.type
+
+      struct.writem %self[@case0] = %case0 : !struct.type<@ArrayNew>, !felt.type
+      struct.writem %self[@case1] = %case1 : !struct.type<@ArrayNew>, !felt.type
+
+      function.return %self : !struct.type<@ArrayNew>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayNew>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayNew StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self[@case0] in Entire
+// CHECK-NEXT:     %self[@case1] in TypeA:[ 5, 6 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayNewInit {
+    struct.member @case00 : !felt.type
+    struct.member @case01 : !felt.type
+    struct.member @case10 : !felt.type
+    struct.member @case11 : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ArrayNewInit> {
+      %self = struct.new : !struct.type<@ArrayNewInit>
+
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %5 = felt.const 5
+      %6 = felt.const 6
+      %10 = felt.const 10
+      %11 = felt.const 11
+      %7 = felt.const 7
+      %8 = felt.const 8
+
+      %cmp0 = bool.cmp ge(%a, %5)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %6)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp ge(%b, %10)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp le(%b, %11)
+      bool.assert %cmp3
+
+      %arr = array.new %a, %b, %7, %8 : !array.type<2,2 x !felt.type>
+
+      %case00 = array.read %arr[%c0, %c0] : !array.type<2,2 x !felt.type>, !felt.type
+      %case01 = array.read %arr[%c0, %c1] : !array.type<2,2 x !felt.type>, !felt.type
+      %case10 = array.read %arr[%c1, %c0] : !array.type<2,2 x !felt.type>, !felt.type
+      %case11 = array.read %arr[%c1, %c1] : !array.type<2,2 x !felt.type>, !felt.type
+
+      struct.writem %self[@case00] = %case00 : !struct.type<@ArrayNewInit>, !felt.type
+      struct.writem %self[@case01] = %case01 : !struct.type<@ArrayNewInit>, !felt.type
+      struct.writem %self[@case10] = %case10 : !struct.type<@ArrayNewInit>, !felt.type
+      struct.writem %self[@case11] = %case11 : !struct.type<@ArrayNewInit>, !felt.type
+
+      function.return %self : !struct.type<@ArrayNewInit>
+    }
+
+    function.def
+        @constrain(%self: !struct.type<@ArrayNewInit>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayNewInit StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 10, 11 ]
+// CHECK-NEXT:     %self[@case00] in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self[@case01] in TypeA:[ 10, 11 ]
+// CHECK-NEXT:     %self[@case10] in Degenerate(7)
+// CHECK-NEXT:     %self[@case11] in Degenerate(8)
 // CHECK-NEXT: }

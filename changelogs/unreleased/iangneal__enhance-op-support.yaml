@@ -1,5 +1,7 @@
 added:
   - Add interval analysis support for `arith.select`, `arith.xori`, `felt.uintdiv`, `felt.sintdiv`, and `felt.bit_or`
+  - Add interval analysis support for `array.write` so later `array.read` operations can reuse written intervals
+  - Add interval analysis support for `array.new`, including empty-array roots and explicit element initializers
 
 changed:
   - Clarify `felt.div` in documentation and interval analysis

@@ -10,6 +10,7 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
@@ -459,6 +460,100 @@ IntervalDataFlowAnalysis::getSourceRefLattice(Operation *baseOp, Value val) {
   return defaultSourceRefLattice;
 }
 
+std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
+    Operation *baseOp, ArrayAccessOpInterface arrayAccessOp
+) {
+  std::vector<SourceRefIndex> indices;
+  ArrayType arrayType = arrayAccessOp.getArrRefType();
+  size_t numIndices = arrayAccessOp.getIndices().size();
+  indices.reserve(numIndices);
+
+  for (size_t i = 0; i < numIndices; ++i) {
+    Value idxOperand = arrayAccessOp.getIndices()[i];
+    SourceRefLatticeValue idxVals =
+        getSourceRefLattice(baseOp, idxOperand)->getOrDefault(idxOperand);
+
+    // Only exact constant indices get tracked precisely.
+    if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
+      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+    } else {
+      auto lower = APInt::getZero(64);
+      APInt upper(64, arrayType.getDimSize(i));
+      indices.emplace_back(lower, upper);
+    }
+  }
+
+  return indices;
+}
+
+mlir::FailureOr<SourceRef> IntervalDataFlowAnalysis::getArrayAccessRef(
+    Operation *baseOp, ArrayAccessOpInterface arrayAccessOp
+) {
+  std::vector<SourceRefIndex> indices = getArrayAccessIndices(baseOp, arrayAccessOp);
+  Value arrayVal = arrayAccessOp.getArrRef();
+  if (auto blockArg = llvm::dyn_cast<BlockArgument>(arrayVal)) {
+    return SourceRef(blockArg, std::move(indices));
+  }
+  if (auto result = llvm::dyn_cast<OpResult>(arrayVal)) {
+    return SourceRef(result, std::move(indices));
+  }
+  return failure();
+}
+
+Interval IntervalDataFlowAnalysis::getRefInterval(const SourceRef &ref) {
+  if (auto it = writeResults.find(ref); it != writeResults.end()) {
+    return it->second.getInterval();
+  }
+
+  if (ref.isConstantInt()) {
+    auto constVal = ref.getConstantValue();
+    if (succeeded(constVal)) {
+      return Interval::Degenerate(field.get(), *constVal);
+    }
+  }
+
+  if (ref.isRooted() && ref.getPath().empty()) {
+    auto rootVal = ref.getRoot();
+    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType>(rootVal->getType())) {
+      const ExpressionValue &rootExpr = getLatticeElement(*rootVal)->getValue().getScalarValue();
+      if (rootExpr.getExpr() != nullptr) {
+        return rootExpr.getInterval();
+      }
+    }
+  }
+
+  return getDefaultIntervalForType(ref.getType());
+}
+
+ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
+  if (auto it = writeResults.find(ref); it != writeResults.end()) {
+    return it->second;
+  }
+  return createUnknownValue(val).withInterval(getRefInterval(ref));
+}
+
+void IntervalDataFlowAnalysis::recordRefWrite(
+    const SourceRef &writtenRef, const ExpressionValue &writeVal
+) {
+  llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
+  ExpressionValue written(expr, writeVal.getInterval());
+
+  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
+    const ExpressionValue &old = it->second;
+    Interval combinedWrite = old.getInterval().join(written.getInterval());
+    writeResults[writtenRef] = old.withInterval(combinedWrite);
+  } else {
+    writeResults[writtenRef] = written;
+  }
+
+  for (Lattice *readerLattice : readResults[writtenRef]) {
+    ExpressionValue prior = readerLattice->getValue().getScalarValue();
+    Interval intersection = prior.getInterval().intersect(written.getInterval());
+    ExpressionValue newVal = prior.withInterval(intersection);
+    propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
+  }
+}
+
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     Operation *op, ArrayRef<const Lattice *> operands, ArrayRef<Lattice *> results
 ) {
@@ -491,6 +586,18 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
+    if (auto readArr = llvm::dyn_cast_if_present<ReadArrayOp>(val.getDefiningOp())) {
+      auto arrayRef = getArrayAccessRef(op, readArr);
+      if (succeeded(arrayRef)) {
+        if (auto it = writeResults.find(*arrayRef); it != writeResults.end()) {
+          operandVals.emplace_back(it->second);
+          Lattice *operandLattice = getLatticeElement(val);
+          (void)operandLattice->setValue(it->second);
+          continue;
+        }
+      }
+    }
+
     // Else, look up the stored value by `SourceRef`.
     // We only care about scalar type values, so we ignore composite types, which
     // are currently limited to structs and arrays.
@@ -516,24 +623,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       // results to the user.
       return success();
     } else if (!refSet.isSingleValue()) {
-      std::string warning;
-      debug::Appender(warning) << "operand " << val << " is not a single value " << refSet
-                               << ", overapproximating";
-      op->emitWarning(warning).report();
-      // Here, we will override the prior lattice value with a new symbol, representing
-      // "any" value, then use that value for the operands.
-      ExpressionValue anyVal = createUnknownValue(val);
+      Interval joinedInterval = Interval::Empty(field.get());
+      for (const SourceRef &ref : refSet.getScalarValue()) {
+        joinedInterval = joinedInterval.join(getRefInterval(ref));
+      }
+      ExpressionValue anyVal = createUnknownValue(val).withInterval(joinedInterval);
       operandVals.emplace_back(anyVal);
     } else {
       const SourceRef &ref = refSet.getSingleValue();
-      // See if we've written the value before. If so, use that.
-      if (auto it = memberWriteResults.find(ref); it != memberWriteResults.end()) {
-        operandVals.emplace_back(it->second);
-      } else {
-        // Otherwise, create a new unknown value with the `val` as the source.
-        ExpressionValue exprVal = createUnknownValue(val);
-        operandVals.emplace_back(exprVal);
-      }
+      operandVals.emplace_back(getRefValue(ref, val));
     }
 
     // Since we initialized a value that was not found in the before lattice,
@@ -620,24 +718,55 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         auto memberRefRes = refSet.getSingleValue().createChild(idx);
         ensure(succeeded(memberRefRes), "could not create SourceRef child for member write");
         SourceRef memberRef = *memberRefRes;
-        llvm::SMTExprRef expr = getOrCreateSymbol(memberRef);
-        ExpressionValue written(expr, writeVal.getInterval());
+        recordRefWrite(memberRef, writeVal);
+      }
+    }
+  } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
+    ExpressionValue writeVal = operandVals.back().getScalarValue();
+    auto arrayRef = getArrayAccessRef(op, writeArr);
+    if (succeeded(arrayRef)) {
+      recordRefWrite(*arrayRef, writeVal);
+    }
 
-        if (auto it = memberWriteResults.find(memberRef); it != memberWriteResults.end()) {
-          const ExpressionValue &old = it->second;
-          Interval combinedWrite = old.getInterval().join(written.getInterval());
-          memberWriteResults[memberRef] = old.withInterval(combinedWrite);
-        } else {
-          memberWriteResults[memberRef] = written;
+    SourceRefLatticeValue arrayVals =
+        getSourceRefLattice(op, writeArr.getArrRef())->getOrDefault(writeArr.getArrRef());
+    if (arrayVals.isScalar()) {
+      std::vector<SourceRefIndex> indices = getArrayAccessIndices(op, writeArr);
+      auto targetRefsRes = arrayVals.extract(indices);
+      ensure(succeeded(targetRefsRes), "could not create SourceRef child for array write");
+      auto [targetRefs, _] = *targetRefsRes;
+      ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
+      for (const SourceRef &ref : targetRefs.getScalarValue()) {
+        recordRefWrite(ref, writeVal);
+      }
+    }
+  } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
+    const auto &elements = createArray.getElements();
+    ArrayType arrayTy = createArray.getType();
+    Type elemTy = arrayTy.getElementType();
+
+    if (!elements.empty() && !llvm::isa<ArrayType, StructType>(elemTy)) {
+      ensure(arrayTy.hasStaticShape(), "array.new with explicit elements must have static shape");
+      ensure(
+          std::cmp_equal(elements.size(), arrayTy.getNumElements()),
+          "array.new explicit initializer length must match array shape"
+      );
+
+      array::ArrayIndexGen indexGen = array::ArrayIndexGen::from(arrayTy);
+      auto arrayRes = llvm::cast<OpResult>(createArray->getResult(0));
+      for (unsigned i = 0; i < elements.size(); ++i) {
+        auto maybeIndices = indexGen.delinearize(i, op->getContext());
+        ensure(maybeIndices.has_value(), "could not delinearize array.new element index");
+
+        SourceRef::Path path;
+        path.reserve(maybeIndices->size());
+        for (Attribute attr : *maybeIndices) {
+          auto idxAttr = llvm::dyn_cast<IntegerAttr>(attr);
+          ensure(idxAttr != nullptr, "array.new delinearize should produce integer attributes");
+          path.emplace_back(idxAttr.getValue());
         }
 
-        // Propagate to all member readers we've collected so far.
-        for (Lattice *readerLattice : memberReadResults[memberRef]) {
-          ExpressionValue prior = readerLattice->getValue().getScalarValue();
-          Interval intersection = prior.getInterval().intersect(written.getInterval());
-          ExpressionValue newVal = prior.withInterval(intersection);
-          propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
-        }
+        recordRefWrite(SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue());
       }
     }
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
@@ -679,8 +808,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       && !isReturnOp(op)
       // The analysis ignores definition ops.
       && !isDefinitionOp(op)
-      // We do not need to analyze the creation of structs or nondets
-      && !llvm::isa<CreateStructOp, NonDetOp>(op)
+      // We do not need to analyze storage creation directly.
+      && !llvm::isa<CreateArrayOp, CreateStructOp, NonDetOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }
@@ -1076,10 +1205,10 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
     if (sourceRefVal.isSingleValue()) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
-      memberReadResults[ref].insert(valLattice);
+      readResults[ref].insert(valLattice);
 
       // Also propagate to all other member read results for this member
-      for (Lattice *l : memberReadResults[ref]) {
+      for (Lattice *l : readResults[ref]) {
         if (l != valLattice) {
           propagateIfChanged(l, l->setValue(newLatticeVal));
         }
@@ -1088,15 +1217,26 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   };
 
   auto readArrCase = [&](ReadArrayOp) {
+    auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
+    if (succeeded(arrayRef)) {
+      readResults[*arrayRef].insert(valLattice);
+
+      for (Lattice *l : readResults[*arrayRef]) {
+        if (l != valLattice) {
+          propagateIfChanged(l, l->setValue(newLatticeVal));
+        }
+      }
+    }
+
     const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
     SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
 
     if (sourceRefVal.isSingleValue()) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
-      memberReadResults[ref].insert(valLattice);
+      readResults[ref].insert(valLattice);
 
       // Also propagate to all other member read results for this member
-      for (Lattice *l : memberReadResults[ref]) {
+      for (Lattice *l : readResults[ref]) {
         if (l != valLattice) {
           propagateIfChanged(l, l->setValue(newLatticeVal));
         }
@@ -1251,7 +1391,7 @@ LogicalResult StructIntervals::computeIntervals(
     }
 
     // Iterate over members that were touched by the analysis
-    for (const auto &[ref, lattices] : ctx.intervalDFA->getMemberReadResults()) {
+    for (const auto &[ref, lattices] : ctx.intervalDFA->getReadResults()) {
       // All lattices should have the same value, so we can get the front.
       if (!lattices.empty() && searchSet.erase(ref)) {
         const IntervalAnalysisLattice *lattice = *lattices.begin();
@@ -1260,7 +1400,7 @@ LogicalResult StructIntervals::computeIntervals(
       }
     }
 
-    for (const auto &[ref, val] : ctx.intervalDFA->getMemberWriteResults()) {
+    for (const auto &[ref, val] : ctx.intervalDFA->getWriteResults()) {
       if (searchSet.erase(ref)) {
         memberRanges[ref] = val.getInterval();
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
