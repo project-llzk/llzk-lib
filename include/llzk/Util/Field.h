@@ -151,8 +151,9 @@ using FieldSet = llvm::SmallSet<FieldRef, 2>;
 /// @brief Collects all the fields used in a circuit.
 /// @param root Takes the operation as root and inspects any FeltType for its Field.
 /// @param fields Destination where fields are written into.
+/// @param silent Does not report warnings if set.
 /// @return Failure if any FeltType does not specify a field.
-mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &fields);
+mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &fields, bool silent = true);
 
 /// @brief Try to detect a uniquely used field from the enclosing LLZK module.
 /// @param root Operation inside the LLZK module to inspect.
