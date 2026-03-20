@@ -289,3 +289,49 @@ module attributes {llzk.lang} {
 //CHECK-NEXT:  - Node : [0x[[R18]]] 'function.def' named "constrain"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  -----------------------
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @MyTemplate {
+    poly.param @A
+    poly.param @B
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type
+      %b = poly.read_const @B : !felt.type
+      %c = felt.add %a, %b
+      poly.yield %c : !felt.type
+    }
+
+    struct.def @MyStruct {
+      function.def @compute() -> !struct.type<@MyTemplate::@MyStruct<[@A, @B]>> {
+        %self = struct.new : !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>
+        function.return %self : !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>) {
+        function.return
+      }
+    }
+
+    function.def private @MyFunc () -> !felt.type
+  }
+}
+//CHECK-LABEL: ---- SymbolDefTree ----
+//CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] 'builtin.module' without a name
+//CHECK-NEXT:  --- Children : [0x[[R01:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R01]]] 'poly.template' named "MyTemplate"
+//CHECK-NEXT:  --- Children : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] 'poly.param' named "A"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] 'poly.param' named "B"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] 'poly.expr' named "C"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.def' named "MyStruct"
+//CHECK-NEXT:  --- Children : [0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'function.def' named "MyFunc"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  -----------------------

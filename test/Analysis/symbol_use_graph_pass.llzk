@@ -912,3 +912,66 @@ module attributes {llzk.lang} {
 //CHECK-NEXT:  --- Predecessors : []
 //CHECK-NEXT:  --- Successors : [0x[[R08]], 0x[[R09]], 0x[[R02]], 0x[[R05]]]
 //CHECK-NEXT:  ------------------------
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @MyTemplate {
+    poly.param @A
+    poly.param @B
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type
+      %b = poly.read_const @B : !felt.type
+      %c = felt.add %a, %b
+      poly.yield %c : !felt.type
+    }
+
+    struct.def @MyStruct {
+      function.def @compute() -> !struct.type<@MyTemplate::@MyStruct<[@A, @B]>> {
+        %self = struct.new : !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>
+        function.return %self : !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>) {
+        function.return
+      }
+    }
+
+    function.def private @MyFunc () -> !felt.type
+  }
+}
+//CHECK-LABEL: ---- SymbolUseGraph ----
+//CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] '@MyTemplate::@MyStruct::@compute' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R01:[0-9a-f]+]], 0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R01]]] '@MyTemplate::@MyStruct' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":16:17)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":17:9)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- Predecessors : [0x[[R00]], 0x[[R04:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R02]]] '@MyTemplate::@A' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":8:12)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":16:17)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":17:9)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- Predecessors : [0x[[R00]], 0x[[R04]], 0x[[R05:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] '@MyTemplate::@B' (struct param) with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":9:12)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":15:7)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":16:17)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":17:9)
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- Predecessors : [0x[[R00]], 0x[[R04]], 0x[[R05]]]
+//CHECK-NEXT:  --- Successors : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] '@MyTemplate::@MyStruct::@constrain' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":19:7)
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R01]], 0x[[R02]], 0x[[R03]]]
+//CHECK-NEXT:  - Node : [0x[[R05]]] '@MyTemplate::@C' with root module @"<<symbol lookup root>>"
+//CHECK-NEXT:  --- loc("within split at {{.*}}symbol_use_graph_pass.llzk:915 offset ":7:5)
+//CHECK-NEXT:  --- Predecessors : []
+//CHECK-NEXT:  --- Successors : [0x[[R02]], 0x[[R03]]]
+//CHECK-NEXT:  ------------------------
