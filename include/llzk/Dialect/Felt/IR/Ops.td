@@ -140,8 +140,18 @@ def LLZK_PowFeltOp : FeltDialectBinaryOp<"pow", [NotFieldNative]> {
 }
 
 def LLZK_DivFeltOp : FeltDialectBinaryOp<"div"> {
-  let summary = "division operator for field elements";
-  let description = [{}];
+  let summary = "field-division operator for field elements";
+  let description = [{
+    Performs finite-field division by multiplying the dividend by the
+    multiplicative inverse of the divisor. For a non-zero divisor `b`,
+    `felt.div %a, %b` computes `%a * inv(%b)` modulo the field prime of the result
+    prime field.
+
+    The divisor must be non-zero.
+
+    This is not integer division. Use `felt.uintdiv` or `felt.sintdiv` when the
+    operands should be interpreted as integers.
+  }];
 }
 
 def LLZK_UnsignedIntDivFeltOp

@@ -287,9 +287,13 @@ public:
   friend Interval operator-(const Interval &lhs, const Interval &rhs);
   friend Interval operator*(const Interval &lhs, const Interval &rhs);
   friend Interval operator%(const Interval &lhs, const Interval &rhs);
-  /// @brief Returns failure if a division-by-zero is encountered.
-  friend mlir::FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs);
   friend Interval operator&(const Interval &lhs, const Interval &rhs);
+  /// Perform a bitwise OR between the two intervals. This over-approximates for
+  /// non-degenerate intervals on non-identity cases.
+  friend Interval operator|(const Interval &lhs, const Interval &rhs);
+  /// Perform a bitwise XOR between the two intervals. This over-approximates for
+  /// non-degenerate intervals on non-identity cases.
+  friend Interval operator^(const Interval &lhs, const Interval &rhs);
   friend Interval operator<<(const Interval &lhs, const Interval &rhs);
   friend Interval operator>>(const Interval &lhs, const Interval &rhs);
 
@@ -352,5 +356,22 @@ private:
   Type ty;
   llvm::DynamicAPInt a, b;
 };
+
+/// Computes finite-field division by multiplying the dividend by the
+/// multiplicative inverse of the divisor.
+///
+/// Only non-zero Degenerate divisors are supported. Supporting arbitrary
+/// divisor intervals soundly would require considering the inverse of every
+/// possible divisor value and joining the results, which is too expensive for
+/// this analysis.
+mlir::FailureOr<Interval> feltDiv(const Interval &lhs, const Interval &rhs);
+
+/// Computes unsigned integer division with possibly non-Degenerate divisors.
+/// Returns failure if the divisor interval may contain zero.
+mlir::FailureOr<Interval> unsignedIntDiv(const Interval &lhs, const Interval &rhs);
+
+/// Computes signed integer division with possibly non-Degenerate divisors.
+/// Returns failure if the divisor interval may contain zero.
+mlir::FailureOr<Interval> signedIntDiv(const Interval &lhs, const Interval &rhs);
 
 } // namespace llzk
