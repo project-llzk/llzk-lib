@@ -1,5 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -llzk-inline-structs -verify-diagnostics %s
-// REQUIRES: todo-update-passes-for-template
+// REQUIRES: todo-update-llzk-inline-structs
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   struct.def @ResultOfComputeUnused {

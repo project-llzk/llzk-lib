@@ -1,5 +1,4 @@
 // RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.main = !struct.type<@TMain::@Main<[]>>, llzk.lang} {
   module @Bar attributes {llzk.lang} {
@@ -34,4 +33,34 @@ module attributes {llzk.main = !struct.type<@TMain::@Main<[]>>, llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@TMain::@Main<[]>>} {
+// CHECK-NEXT:    module @Bar attributes {llzk.lang} {
+// CHECK-NEXT:      module @Baz attributes {llzk.lang} {
+// CHECK-NEXT:        struct.def @Foo_1 {
+// CHECK-NEXT:          struct.member @x : !array.type<1 x !felt.type>
+// CHECK-NEXT:          function.def @compute() -> !struct.type<@Foo_1> attributes {function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo_1>
+// CHECK-NEXT:            function.return %[[VAL_0]] : !struct.type<@Foo_1>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:            function.return
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:        poly.template @TFoo {
+// CHECK-NEXT:          poly.param @N
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @TMain {
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        struct.member @foo : !struct.type<@Bar::@Baz::@Foo_1>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TMain::@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TMain::@Main>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TMain::@Main>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TMain::@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

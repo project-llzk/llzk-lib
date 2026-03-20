@@ -1,12 +1,11 @@
 // RUN: llzk-opt -I %input_dir -llzk-inline-includes -llzk-flatten %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.main = !struct.type<@TMain::@Main<[]>>, llzk.lang} {
   include.from "Inputs/bar.llzk" as @Bar
 
   poly.template @TMain {
     struct.def @Main {
-      struct.member @foo : !struct.type<@Bar::@Foo<[1]>>
+      struct.member @foo : !struct.type<@Bar::@TFoo::@Foo<[1]>>
       function.def @compute() -> !struct.type<@TMain::@Main<[]>> attributes {function.allow_witness} {
         %self = struct.new : <@TMain::@Main<[]>>
         function.return %self : !struct.type<@TMain::@Main<[]>>

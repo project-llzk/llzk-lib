@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.lang} {
   struct.def @SingleLoop {
@@ -270,4 +269,72 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Component01 {
+// CHECK-NEXT:      struct.member @f : !array.type<2 x !felt.type>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !struct.type<@Component01> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@f] = %[[VAL_0]] : <@Component01>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Component01>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f] : <@Component01>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Component02_3 {
+// CHECK-NEXT:      struct.member @g : !array.type<3 x !struct.type<@Component01>>
+// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) -> !struct.type<@Component02_3> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02_3>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <3 x !struct.type<@Component01>>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_8]]] : <3,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[VAL_11]]) : (!array.type<2 x !felt.type>) -> !struct.type<@Component01>
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_8]]] = %[[VAL_12]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_7]]] : <3,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[VAL_13]]) : (!array.type<2 x !felt.type>) -> !struct.type<@Component01>
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_7]]] = %[[VAL_14]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_6]]] : <3,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[VAL_15]]) : (!array.type<2 x !felt.type>) -> !struct.type<@Component01>
+// CHECK-NEXT:        array.write %[[VAL_10]]{{\[}}%[[VAL_6]]] = %[[VAL_16]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
+// CHECK-NEXT:        struct.writem %[[VAL_9]][@g] = %[[VAL_10]] : <@Component02_3>, !array.type<3 x !struct.type<@Component01>>
+// CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@Component02_3>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Component02_3>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_17]][@g] : <@Component02_3>, !array.type<3 x !struct.type<@Component01>>
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_18]]{{\[}}%[[VAL_21]]] : <3,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_22]]{{\[}}%[[VAL_21]]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
+// CHECK-NEXT:        function.call @Component01::@constrain(%[[VAL_24]], %[[VAL_23]]) : (!struct.type<@Component01>, !array.type<2 x !felt.type>) -> ()
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_18]]{{\[}}%[[VAL_20]]] : <3,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_22]]{{\[}}%[[VAL_20]]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
+// CHECK-NEXT:        function.call @Component01::@constrain(%[[VAL_26]], %[[VAL_25]]) : (!struct.type<@Component01>, !array.type<2 x !felt.type>) -> ()
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_18]]{{\[}}%[[VAL_19]]] : <3,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_22]]{{\[}}%[[VAL_19]]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
+// CHECK-NEXT:        function.call @Component01::@constrain(%[[VAL_28]], %[[VAL_27]]) : (!struct.type<@Component01>, !array.type<2 x !felt.type>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TComponent02 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @sub : !struct.type<@Component02_3>
+// CHECK-NEXT:      function.def @compute(%[[VAL_29:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = function.call @Component02_3::@compute(%[[VAL_29]]) : (!array.type<3,2 x !felt.type>) -> !struct.type<@Component02_3>
+// CHECK-NEXT:        struct.writem %[[VAL_30]][@sub] = %[[VAL_31]] : <@Main>, !struct.type<@Component02_3>
+// CHECK-NEXT:        function.return %[[VAL_30]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_32:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_33:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_32]][@sub] : <@Main>, !struct.type<@Component02_3>
+// CHECK-NEXT:        function.call @Component02_3::@constrain(%[[VAL_34]], %[[VAL_33]]) : (!struct.type<@Component02_3>, !array.type<3,2 x !felt.type>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

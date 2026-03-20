@@ -1,5 +1,5 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=preimage})' %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
+// REQUIRES: todo-update-llzk-flatten-partial
 
 // TEST: With "cleanup=preimage", the only structs subject to removal are those with parameters
 // that had at least one "concrete" clone created. If such a struct has no remaining uses, it is

@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=concrete-as-root})' %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
 
 // TEST: With "cleanup=concrete-as-root", all structs without parameters are preserved. Structs
 // that are reachable from one of these "concrete" structs or reachable from a global def or

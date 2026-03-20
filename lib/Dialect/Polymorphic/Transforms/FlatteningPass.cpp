@@ -520,9 +520,9 @@ class StructCloner {
     // where the original attribute from the current instantiation site was not concrete. This is
     // used for generating the new struct name. See `BuildShortTypeString::from()`.
     SmallVector<Attribute> attrsForInstantiatedNameSuffix;
-    // Parameter list for the new StructDefOp containing the names that must be preserved because
-    // they were not assigned concrete values at the current instantiation site.
-    ArrayAttr reducedParamNameList = nullptr;
+    // List of template const param names that must be preserved because they
+    // were not assigned concrete values at the current instantiation site.
+    SmallVector<Attribute> remainingNames;
     // Reduced from `typeAtCallerParams` to contain only the non-concrete Attributes.
     ArrayAttr reducedCallerParams = nullptr;
     {
@@ -532,7 +532,6 @@ class StructCloner {
       assert(!isNullOrEmpty(paramNames));
       assert(paramNames.size() == typeAtCallerParams.size());
 
-      SmallVector<Attribute> remainingNames;
       SmallVector<Attribute> nonConcreteParams;
       for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
         Attribute next = typeAtCallerParams[i];
@@ -555,46 +554,47 @@ class StructCloner {
         return failure();
       }
       if (!remainingNames.empty()) {
-        reducedParamNameList = ArrayAttr::get(ctx, remainingNames);
         reducedCallerParams = ArrayAttr::get(ctx, nonConcreteParams);
       }
     }
 
-    // Clone the original struct, apply the new name, and set the parameter list of the new struct
-    // to contain only those that did not have concrete instantiated values.
+    // Clone the original struct and apply the new name.
+    SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
     StructDefOp newStruct = origStruct.clone();
-    assert(false && "TODO: `setConstParamsAttr` doesn't exist anymore");
-    //   newStruct.setConstParamsAttr(reducedParamNameList);
     newStruct.setSymName(
         BuildShortTypeString::from(
-            typeAtCaller.getNameRef().getLeafReference().str(), attrsForInstantiatedNameSuffix
+            typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
         )
     );
+    // Drop struct and template name from the list that will be used to build new external type..
+    typeAtCallerSymPieces.pop_back();
+    typeAtCallerSymPieces.pop_back();
 
-    // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
-    // `SymbolTable::insert()` function directly so that the name will be made unique.
-    ModuleOp parentModule = getParentOfType<ModuleOp>(origStruct);
-    assert(parentModule && "StructDefOp must be nested in a ModuleOp");
-    // TODO: the direct parent could be ModuleOp or TemplateOp and the insertion here probably
-    // needs to be different for those two cases.
-    assert(false && "TODO");
-    symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
-    // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
-    // use the remaining non-concrete parameters from the original type.
-    StructType newLocalType = newStruct.getType(reducedCallerParams);
-    auto typeAtCallerSym = typeAtCaller.getNameRef();
-    // Copy the leafs of the type at the caller.
-    SmallVector<FlatSymbolRefAttr> newLeafs(typeAtCallerSym.getNestedReferences());
-    auto rootSym = typeAtCallerSym.getRootReference();
-    if (!newLeafs.empty()) {
-      // Replace the last one with the new name.
-      newLeafs.back() = FlatSymbolRefAttr::get(newLocalType.getNameRef().getLeafReference());
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
+    assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
+    if (remainingNames.empty()) {
+      // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
+      // `SymbolTable::insert()` function directly so that the name will be made unique.
+      ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+      assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+      symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
     } else {
-      // If there's only one symbol then write the new name on the root.
-      rootSym = newLocalType.getNameRef().getLeafReference();
+      // TODO: This transformation will be a bit different now. Since there are parameters
+      // remaining, create a TemplateOp with the remaining parameters to be parent of the new
+      // StructDefOp.
+      //
+      // TODO: add the new template name to `typeAtCallerSymPieces`
+      assert(false && "not yet implemented");
     }
+
+    // Retrieve the new type AFTER inserting since the struct name may be appended to make
+    // it unique and use the remaining non-concrete parameters from the original type.
+    StructType newLocalType = newStruct.getType(reducedCallerParams);
+    typeAtCallerSymPieces.push_back(
+        FlatSymbolRefAttr::get(newLocalType.getNameRef().getLeafReference())
+    );
     StructType newRemoteType =
-        StructType::get(SymbolRefAttr::get(rootSym, newLeafs), newLocalType.getParams());
+        StructType::get(asSymbolRefAttr(typeAtCallerSymPieces), newLocalType.getParams());
     LLVM_DEBUG({
       llvm::dbgs() << "[StructCloner]   original def type: " << typeAtDef << '\n';
       llvm::dbgs() << "[StructCloner]   cloned def type: " << newStruct.getType() << '\n';
@@ -1744,10 +1744,11 @@ private:
     visitedPlusSafetyResult[check] = true;
 
     // Check if it's safe according to both the def tree and use graph.
-    // Note: every symbol must have a def node but module symbols may not have a use node.
+    // Note: Every symbol must have a def node but ModuleOp and TemplateOp symbols may not have a
+    // use node since they are not "terminal" symbols (i.e. they are not referred to directly).
     if (collectSafeToErase(defTree.lookupNode(check))) {
       const auto *useNode = useGraph.lookupNode(check);
-      assert(useNode || llvm::isa<ModuleOp>(check.getOperation()));
+      assert(useNode || (llvm::isa<ModuleOp, TemplateOp>(check.getOperation())));
       if (!useNode || collectSafeToErase(useNode)) {
         return true;
       }

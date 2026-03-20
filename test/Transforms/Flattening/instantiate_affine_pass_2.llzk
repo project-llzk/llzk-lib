@@ -1,5 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
+// REQUIRES: todo-update-llzk-flatten-partial
 
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>

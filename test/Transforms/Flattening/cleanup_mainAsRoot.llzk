@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root})' %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
 
 // TEST: With "cleanup=main-as-root", all structs reachable from the main struct are preserved.
 // If there is no main struct, all structs are removed (except those that have a reference from

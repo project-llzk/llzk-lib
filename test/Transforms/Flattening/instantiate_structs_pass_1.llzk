@@ -1,5 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
+// REQUIRES: todo-update-llzk-flatten-partial
 
 /// Test calling a global function named "compute"; should have no change
 module attributes {llzk.lang} {

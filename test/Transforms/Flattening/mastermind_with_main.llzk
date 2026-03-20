@@ -1,5 +1,5 @@
 // RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-passes-for-template
+// REQUIRES: todo-update-llzk-flatten-partial
 
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
@@ -1083,16 +1083,16 @@ module attributes {llzk.lang} {
   }
   poly.template @TMultiplyByMExt {
     struct.def @MultiplyByMExt {
-      struct.member @"$super" : !array.type<24 x !struct.type<@block$<[]>>> {llzk.pub}
-      struct.member @"$temp_2" : !array.type<24 x !struct.type<@block$<[]>>>
+      struct.member @"$super" : !array.type<24 x !struct.type<@Tblock$::@block$<[]>>> {llzk.pub}
+      struct.member @"$temp_2" : !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
       struct.member @g : !array.type<24 x !felt.type>
       struct.member @j : !array.type<24 x !struct.type<@TBitAnd::@BitAnd<[]>>>
-      struct.member @"$array" : !array.type<24 x !struct.type<@block$<[]>>>
+      struct.member @"$array" : !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
       struct.member @"$temp_1" : !array.type<6 x !struct.type<@TReduceVec4::@ReduceVec4<[]>>>
-      struct.member @"$temp_0" : !array.type<6 x !struct.type<@block$_2<[]>>>
+      struct.member @"$temp_0" : !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
       struct.member @"$temp" : !array.type<6 x !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>>
       struct.member @chunk : !array.type<6,4 x !felt.type>
-      struct.member @grouped : !array.type<6 x !struct.type<@block$_2<[]>>>
+      struct.member @grouped : !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
       function.def @compute(%arg0: !array.type<24 x !felt.type>) -> !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
         %felt_const_1509949441 = felt.const 1509949441
         %c24 = arith.constant 24 : index
@@ -1126,7 +1126,7 @@ module attributes {llzk.lang} {
         %felt_const_0 = felt.const 0
         %self = struct.new : !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
         %array = array.new %felt_const_0, %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4, %felt_const_5 : <6 x !felt.type>
-        %array_0 = array.new  : <6 x !struct.type<@block$_2<[]>>>
+        %array_0 = array.new  : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
         scf.for %arg1 = %c0 to %c6 step %c1 {
           %3 = array.read %array[%arg1] : <6 x !felt.type>, !felt.type
           %array_4 = array.new %felt_const_0, %felt_const_1, %felt_const_2, %felt_const_3 : <4 x !felt.type>
@@ -1152,20 +1152,20 @@ module attributes {llzk.lang} {
           %10 = array.read %9[%arg1] : <6 x !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
           %11 = struct.readm %self[@chunk] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6,4 x !felt.type>
           %12 = array.extract %11[%arg1] : <6,4 x !felt.type>
-          %13 = function.call @block$_2::@compute(%10, %12) : (!struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>) -> !struct.type<@block$_2<[]>>
-          %14 = struct.readm %self[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
-          array.write %14[%arg1] = %13 : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          struct.writem %self[@"$temp_0"] = %14 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
-          %15 = struct.readm %self[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
-          %16 = array.read %15[%arg1] : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          array.write %array_0[%arg1] = %16 : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
+          %13 = function.call @Tblock$_2::@block$_2::@compute(%10, %12) : (!struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>) -> !struct.type<@Tblock$_2::@block$_2<[]>>
+          %14 = struct.readm %self[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
+          array.write %14[%arg1] = %13 : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          struct.writem %self[@"$temp_0"] = %14 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
+          %15 = struct.readm %self[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
+          %16 = array.read %15[%arg1] : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          array.write %array_0[%arg1] = %16 : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
         } {original_op = "map"}
-        struct.writem %self[@grouped] = %array_0 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
-        %0 = struct.readm %self[@grouped] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
+        struct.writem %self[@grouped] = %array_0 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
+        %0 = struct.readm %self[@grouped] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
         %array_1 = array.new %felt_const_0, %felt_const_0, %felt_const_0, %felt_const_0 : <4 x !felt.type>
         %1 = scf.for %arg1 = %c0 to %c6 step %c1 iter_args(%arg2 = %array_1) -> (!array.type<4 x !felt.type>) {
-          %3 = array.read %0[%arg1] : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          %4 = struct.readm %3[@"$super"] : <@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
+          %3 = array.read %0[%arg1] : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          %4 = struct.readm %3[@"$super"] : <@Tblock$_2::@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
           %5 = struct.readm %4[@"$super"] : <@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>
           %6 = poly.unifiable_cast %5 : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
           %7 = function.call @TReduceVec4::@ReduceVec4::@compute(%arg2, %6) : (!array.type<4 x !felt.type>, !array.type<4 x !felt.type>) -> !struct.type<@TReduceVec4::@ReduceVec4<[]>>
@@ -1179,7 +1179,7 @@ module attributes {llzk.lang} {
           scf.yield %12 : !array.type<4 x !felt.type>
         } {original_op = "reduce"}
         %array_2 = array.new %felt_const_0, %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4, %felt_const_5, %felt_const_6, %felt_const_7, %felt_const_8, %felt_const_9, %felt_const_10, %felt_const_11, %felt_const_12, %felt_const_13, %felt_const_14, %felt_const_15, %felt_const_16, %felt_const_17, %felt_const_18, %felt_const_19, %felt_const_20, %felt_const_21, %felt_const_22, %felt_const_23 : <24 x !felt.type>
-        %array_3 = array.new  : <24 x !struct.type<@block$<[]>>>
+        %array_3 = array.new  : <24 x !struct.type<@Tblock$::@block$<[]>>>
         scf.for %arg1 = %c0 to %c24 step %c1 {
           %3 = array.read %array_2[%arg1] : <24 x !felt.type>, !felt.type
           %4 = function.call @TBitAnd::@BitAnd::@compute(%3, %felt_const_3) : (!felt.type, !felt.type) -> !struct.type<@TBitAnd::@BitAnd<[]>>
@@ -1195,8 +1195,8 @@ module attributes {llzk.lang} {
           array.write %11[%arg1] = %10 : <24 x !felt.type>, !felt.type
           struct.writem %self[@g] = %11 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !felt.type>
           %12 = cast.toindex %10
-          %13 = array.read %0[%12] : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          %14 = struct.readm %13[@"$super"] : <@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
+          %13 = array.read %0[%12] : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          %14 = struct.readm %13[@"$super"] : <@Tblock$_2::@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
           %15 = struct.readm %14[@"$super"] : <@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>
           %16 = struct.readm %7[@"$super"] : <@TBitAnd::@BitAnd<[]>>, !felt.type
           %17 = cast.toindex %16
@@ -1209,17 +1209,17 @@ module attributes {llzk.lang} {
           %24 = array.read %23[%arg1] : <24 x !felt.type>, !felt.type
           %25 = struct.readm %self[@j] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@TBitAnd::@BitAnd<[]>>>
           %26 = array.read %25[%arg1] : <24 x !struct.type<@TBitAnd::@BitAnd<[]>>>, !struct.type<@TBitAnd::@BitAnd<[]>>
-          %27 = function.call @block$::@compute(%22, %24, %26) : (!felt.type, !felt.type, !struct.type<@TBitAnd::@BitAnd<[]>>) -> !struct.type<@block$<[]>>
-          %28 = struct.readm %self[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-          array.write %28[%arg1] = %27 : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-          struct.writem %self[@"$temp_2"] = %28 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-          %29 = struct.readm %self[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-          %30 = array.read %29[%arg1] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-          array.write %array_3[%arg1] = %30 : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
+          %27 = function.call @Tblock$::@block$::@compute(%22, %24, %26) : (!felt.type, !felt.type, !struct.type<@TBitAnd::@BitAnd<[]>>) -> !struct.type<@Tblock$::@block$<[]>>
+          %28 = struct.readm %self[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+          array.write %28[%arg1] = %27 : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+          struct.writem %self[@"$temp_2"] = %28 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+          %29 = struct.readm %self[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+          %30 = array.read %29[%arg1] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+          array.write %array_3[%arg1] = %30 : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
         } {original_op = "map"}
-        struct.writem %self[@"$array"] = %array_3 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-        %2 = struct.readm %self[@"$array"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-        struct.writem %self[@"$super"] = %2 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+        struct.writem %self[@"$array"] = %array_3 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+        %2 = struct.readm %self[@"$array"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+        struct.writem %self[@"$super"] = %2 : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
         function.return %self : !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
       }
       function.def @constrain(%arg0: !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>, %arg1: !array.type<24 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
@@ -1254,7 +1254,7 @@ module attributes {llzk.lang} {
         %felt_const_4 = felt.const 4
         %felt_const_5 = felt.const 5
         %array = array.new %felt_const_0, %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4, %felt_const_5 : <6 x !felt.type>
-        %array_0 = array.new  : <6 x !struct.type<@block$_2<[]>>>
+        %array_0 = array.new  : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
         scf.for %arg2 = %c0 to %c6 step %c1 {
           %3 = array.read %array[%arg2] : <6 x !felt.type>, !felt.type
           %array_4 = array.new %felt_const_0, %felt_const_1, %felt_const_2, %felt_const_3 : <4 x !felt.type>
@@ -1276,17 +1276,17 @@ module attributes {llzk.lang} {
           function.call @TMultiplyByCirculant::@MultiplyByCirculant::@constrain(%9, %6) : (!struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>) -> ()
           %10 = struct.readm %arg0[@chunk] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6,4 x !felt.type>
           %11 = array.extract %10[%arg2] : <6,4 x !felt.type>
-          %12 = struct.readm %arg0[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
-          %13 = struct.readm %arg0[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
-          %14 = array.read %13[%arg2] : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          function.call @block$_2::@constrain(%14, %9, %11) : (!struct.type<@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>) -> ()
-          array.write %array_0[%arg2] = %14 : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
+          %12 = struct.readm %arg0[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
+          %13 = struct.readm %arg0[@"$temp_0"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
+          %14 = array.read %13[%arg2] : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          function.call @Tblock$_2::@block$_2::@constrain(%14, %9, %11) : (!struct.type<@Tblock$_2::@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>) -> ()
+          array.write %array_0[%arg2] = %14 : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
         } {original_op = "map"}
-        %0 = struct.readm %arg0[@grouped] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@block$_2<[]>>>
+        %0 = struct.readm %arg0[@grouped] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@Tblock$_2::@block$_2<[]>>>
         %array_1 = array.new %felt_const_0, %felt_const_0, %felt_const_0, %felt_const_0 : <4 x !felt.type>
         %1 = scf.for %arg2 = %c0 to %c6 step %c1 iter_args(%arg3 = %array_1) -> (!array.type<4 x !felt.type>) {
-          %3 = array.read %0[%arg2] : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          %4 = struct.readm %3[@"$super"] : <@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
+          %3 = array.read %0[%arg2] : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          %4 = struct.readm %3[@"$super"] : <@Tblock$_2::@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
           %5 = struct.readm %4[@"$super"] : <@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>
           %6 = poly.unifiable_cast %5 : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
           %7 = struct.readm %arg0[@"$temp_1"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<6 x !struct.type<@TReduceVec4::@ReduceVec4<[]>>>
@@ -1298,7 +1298,7 @@ module attributes {llzk.lang} {
           scf.yield %11 : !array.type<4 x !felt.type>
         } {original_op = "reduce"}
         %array_2 = array.new %felt_const_0, %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4, %felt_const_5, %felt_const_6, %felt_const_7, %felt_const_8, %felt_const_9, %felt_const_10, %felt_const_11, %felt_const_12, %felt_const_13, %felt_const_14, %felt_const_15, %felt_const_16, %felt_const_17, %felt_const_18, %felt_const_19, %felt_const_20, %felt_const_21, %felt_const_22, %felt_const_23 : <24 x !felt.type>
-        %array_3 = array.new  : <24 x !struct.type<@block$<[]>>>
+        %array_3 = array.new  : <24 x !struct.type<@Tblock$::@block$<[]>>>
         scf.for %arg2 = %c0 to %c24 step %c1 {
           %3 = array.read %array_2[%arg2] : <24 x !felt.type>, !felt.type
           %4 = struct.readm %arg0[@j] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@TBitAnd::@BitAnd<[]>>>
@@ -1310,8 +1310,8 @@ module attributes {llzk.lang} {
           %9 = felt.mul %8, %felt_const_1509949441 : !felt.type, !felt.type
           %10 = struct.readm %arg0[@g] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !felt.type>
           %11 = cast.toindex %9
-          %12 = array.read %0[%11] : <6 x !struct.type<@block$_2<[]>>>, !struct.type<@block$_2<[]>>
-          %13 = struct.readm %12[@"$super"] : <@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
+          %12 = array.read %0[%11] : <6 x !struct.type<@Tblock$_2::@block$_2<[]>>>, !struct.type<@Tblock$_2::@block$_2<[]>>
+          %13 = struct.readm %12[@"$super"] : <@Tblock$_2::@block$_2<[]>>, !struct.type<@TMultiplyByCirculant::@MultiplyByCirculant<[]>>
           %14 = struct.readm %13[@"$super"] : <@TMultiplyByCirculant::@MultiplyByCirculant<[]>>, !array.type<4 x !felt.type>
           %15 = struct.readm %6[@"$super"] : <@TBitAnd::@BitAnd<[]>>, !felt.type
           %16 = cast.toindex %15
@@ -1324,13 +1324,13 @@ module attributes {llzk.lang} {
           %23 = array.read %22[%arg2] : <24 x !felt.type>, !felt.type
           %24 = struct.readm %arg0[@j] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@TBitAnd::@BitAnd<[]>>>
           %25 = array.read %24[%arg2] : <24 x !struct.type<@TBitAnd::@BitAnd<[]>>>, !struct.type<@TBitAnd::@BitAnd<[]>>
-          %26 = struct.readm %arg0[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-          %27 = struct.readm %arg0[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
-          %28 = array.read %27[%arg2] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-          function.call @block$::@constrain(%28, %21, %23, %25) : (!struct.type<@block$<[]>>, !felt.type, !felt.type, !struct.type<@TBitAnd::@BitAnd<[]>>) -> ()
-          array.write %array_3[%arg2] = %28 : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
+          %26 = struct.readm %arg0[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+          %27 = struct.readm %arg0[@"$temp_2"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
+          %28 = array.read %27[%arg2] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+          function.call @Tblock$::@block$::@constrain(%28, %21, %23, %25) : (!struct.type<@Tblock$::@block$<[]>>, !felt.type, !felt.type, !struct.type<@TBitAnd::@BitAnd<[]>>) -> ()
+          array.write %array_3[%arg2] = %28 : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
         } {original_op = "map"}
-        %2 = struct.readm %arg0[@"$array"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+        %2 = struct.readm %arg0[@"$array"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
         function.return
       }
     }
@@ -2223,8 +2223,8 @@ module attributes {llzk.lang} {
     poly.param @PEGS
 
     struct.def @CheckBounds {
-      struct.member @"$super" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-      struct.member @"$temp_4" : !array.type<@PEGS x !struct.type<@block$_1<[]>>> {column}
+      struct.member @"$super" : !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+      struct.member @"$temp_4" : !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>> {column}
       struct.member @"$temp_3" : !array.type<@PEGS x !struct.type<@TComponent::@Component<[]>>>
       struct.member @"$temp_2" : !array.type<@PEGS x !struct.type<@TAssert::@Assert<[]>>>
       struct.member @check : !array.type<@PEGS x !struct.type<@TReg::@Reg<[]>>> {column}
@@ -2232,7 +2232,7 @@ module attributes {llzk.lang} {
       struct.member @"$temp_0" : !array.type<@PEGS x !struct.type<@TNondetReg::@NondetReg<[]>>> {column}
       struct.member @"$temp" : !array.type<@PEGS,#map x !struct.type<@TNondetReg::@NondetReg<[]>>> {column}
       struct.member @"$array_0" : !array.type<@PEGS,#map x !struct.type<@TNondetReg::@NondetReg<[]>>> {column}
-      struct.member @"$array" : !array.type<@PEGS x !struct.type<@block$_1<[]>>>
+      struct.member @"$array" : !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
       function.def @compute(%arg0: !struct.type<@TPegs::@Pegs<[@PEGS]>>) -> !struct.type<@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
         %0 = string.new "Not a valid color"
         %felt_const_1 = felt.const 1
@@ -2241,7 +2241,7 @@ module attributes {llzk.lang} {
         %self = struct.new : !struct.type<@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>
         %1 = poly.read_const @COLORS : !felt.type
         %2 = struct.readm %arg0[@"$super"] : <@TPegs::@Pegs<[@PEGS]>>, !array.type<@PEGS x !struct.type<@TReg::@Reg<[]>>>
-        %array = array.new  : <@PEGS x !struct.type<@block$_1<[]>>>
+        %array = array.new  : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
         %3 = array.len %2, %c0 : <@PEGS x !struct.type<@TReg::@Reg<[]>>>
         scf.for %arg1 = %c0 to %3 step %c1 {
           %5 = array.read %2[%arg1] : <@PEGS x !struct.type<@TReg::@Reg<[]>>>, !struct.type<@TReg::@Reg<[]>>
@@ -2316,17 +2316,17 @@ module attributes {llzk.lang} {
           %35 = array.read %34[%arg1] : <@PEGS x !struct.type<@TComponent::@Component<[]>>>, !struct.type<@TComponent::@Component<[]>>
           %36 = struct.readm %self[@check] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@TReg::@Reg<[]>>>
           %37 = array.read %36[%arg1] : <@PEGS x !struct.type<@TReg::@Reg<[]>>>, !struct.type<@TReg::@Reg<[]>>
-          %38 = function.call @block$_1::@compute(%35, %37) : (!struct.type<@TComponent::@Component<[]>>, !struct.type<@TReg::@Reg<[]>>) -> !struct.type<@block$_1<[]>>
-          %39 = struct.readm %self[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-          array.write %39[%arg1] = %38 : <@PEGS x !struct.type<@block$_1<[]>>>, !struct.type<@block$_1<[]>>
-          struct.writem %self[@"$temp_4"] = %39 : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-          %40 = struct.readm %self[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-          %41 = array.read %40[%arg1] : <@PEGS x !struct.type<@block$_1<[]>>>, !struct.type<@block$_1<[]>>
-          array.write %array[%arg1] = %41 : <@PEGS x !struct.type<@block$_1<[]>>>, !struct.type<@block$_1<[]>>
+          %38 = function.call @Tblock$_1::@block$_1::@compute(%35, %37) : (!struct.type<@TComponent::@Component<[]>>, !struct.type<@TReg::@Reg<[]>>) -> !struct.type<@Tblock$_1::@block$_1<[]>>
+          %39 = struct.readm %self[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+          array.write %39[%arg1] = %38 : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>, !struct.type<@Tblock$_1::@block$_1<[]>>
+          struct.writem %self[@"$temp_4"] = %39 : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+          %40 = struct.readm %self[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+          %41 = array.read %40[%arg1] : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>, !struct.type<@Tblock$_1::@block$_1<[]>>
+          array.write %array[%arg1] = %41 : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>, !struct.type<@Tblock$_1::@block$_1<[]>>
         } {original_op = "map"}
-        struct.writem %self[@"$array"] = %array : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-        %4 = struct.readm %self[@"$array"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-        struct.writem %self[@"$super"] = %4 : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
+        struct.writem %self[@"$array"] = %array : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+        %4 = struct.readm %self[@"$array"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+        struct.writem %self[@"$super"] = %4 : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
         function.return %self : !struct.type<@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>
       }
       function.def @constrain(%arg0: !struct.type<@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, %arg1: !struct.type<@TPegs::@Pegs<[@PEGS]>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
@@ -2337,7 +2337,7 @@ module attributes {llzk.lang} {
         %c1 = arith.constant 1 : index
         %1 = poly.read_const @COLORS : !felt.type
         %2 = struct.readm %arg1[@"$super"] : <@TPegs::@Pegs<[@PEGS]>>, !array.type<@PEGS x !struct.type<@TReg::@Reg<[]>>>
-        %array = array.new  : <@PEGS x !struct.type<@block$_1<[]>>>
+        %array = array.new  : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
         %3 = array.len %2, %c0 : <@PEGS x !struct.type<@TReg::@Reg<[]>>>
         scf.for %arg2 = %c0 to %3 step %c1 {
           %5 = array.read %2[%arg2] : <@PEGS x !struct.type<@TReg::@Reg<[]>>>, !struct.type<@TReg::@Reg<[]>>
@@ -2399,13 +2399,13 @@ module attributes {llzk.lang} {
           function.call @TComponent::@Component::@constrain(%31) : (!struct.type<@TComponent::@Component<[]>>) -> ()
           %32 = struct.readm %arg0[@check] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@TReg::@Reg<[]>>>
           %33 = array.read %32[%arg2] : <@PEGS x !struct.type<@TReg::@Reg<[]>>>, !struct.type<@TReg::@Reg<[]>>
-          %34 = struct.readm %arg0[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-          %35 = struct.readm %arg0[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
-          %36 = array.read %35[%arg2] : <@PEGS x !struct.type<@block$_1<[]>>>, !struct.type<@block$_1<[]>>
-          function.call @block$_1::@constrain(%36, %31, %33) : (!struct.type<@block$_1<[]>>, !struct.type<@TComponent::@Component<[]>>, !struct.type<@TReg::@Reg<[]>>) -> ()
-          array.write %array[%arg2] = %36 : <@PEGS x !struct.type<@block$_1<[]>>>, !struct.type<@block$_1<[]>>
+          %34 = struct.readm %arg0[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+          %35 = struct.readm %arg0[@"$temp_4"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
+          %36 = array.read %35[%arg2] : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>, !struct.type<@Tblock$_1::@block$_1<[]>>
+          function.call @Tblock$_1::@block$_1::@constrain(%36, %31, %33) : (!struct.type<@Tblock$_1::@block$_1<[]>>, !struct.type<@TComponent::@Component<[]>>, !struct.type<@TReg::@Reg<[]>>) -> ()
+          array.write %array[%arg2] = %36 : <@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>, !struct.type<@Tblock$_1::@block$_1<[]>>
         } {original_op = "map"}
-        %4 = struct.readm %arg0[@"$array"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@block$_1<[]>>>
+        %4 = struct.readm %arg0[@"$array"] : <@TCheckBounds::@CheckBounds<[@COLORS, @PEGS]>>, !array.type<@PEGS x !struct.type<@Tblock$_1::@block$_1<[]>>>
         function.return
       }
     }
@@ -2523,12 +2523,12 @@ module attributes {llzk.lang} {
         %array_2 = array.new %felt_const_0_0, %felt_const_1, %felt_const_2, %felt_const_3 : <4 x !felt.type>
         %4 = scf.for %arg2 = %c0 to %c4 step %c1 iter_args(%arg3 = %3) -> (!struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>) {
           %13 = array.read %array_2[%arg2] : <4 x !felt.type>, !felt.type
-          %14 = struct.readm %arg3[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+          %14 = struct.readm %arg3[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
           %array_4 = array.new  : <24 x !felt.type>
-          %15 = array.len %14, %c0 : <24 x !struct.type<@block$<[]>>>
+          %15 = array.len %14, %c0 : <24 x !struct.type<@Tblock$::@block$<[]>>>
           scf.for %arg4 = %c0 to %c1 step %15 {
-            %22 = array.read %14[%arg4] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-            %23 = struct.readm %22[@"$super"] : <@block$<[]>>, !felt.type
+            %22 = array.read %14[%arg4] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+            %23 = struct.readm %22[@"$super"] : <@Tblock$::@block$<[]>>, !felt.type
             array.write %array_4[%arg4] = %23 : <24 x !felt.type>, !felt.type
           }
           %16 = function.call @TDoExtRoundByIdx::@DoExtRoundByIdx::@compute(%array_4, %13) : (!array.type<24 x !felt.type>, !felt.type) -> !struct.type<@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>
@@ -2541,12 +2541,12 @@ module attributes {llzk.lang} {
           %21 = struct.readm %20[@"$super"] : <@TDoExtRound::@DoExtRound<[]>>, !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
           scf.yield %21 : !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
         } {original_op = "reduce"}
-        %5 = struct.readm %4[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+        %5 = struct.readm %4[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
         %array_3 = array.new  : <24 x !felt.type>
-        %6 = array.len %5, %c0 : <24 x !struct.type<@block$<[]>>>
+        %6 = array.len %5, %c0 : <24 x !struct.type<@Tblock$::@block$<[]>>>
         scf.for %arg2 = %c0 to %c1 step %6 {
-          %13 = array.read %5[%arg2] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-          %14 = struct.readm %13[@"$super"] : <@block$<[]>>, !felt.type
+          %13 = array.read %5[%arg2] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+          %14 = struct.readm %13[@"$super"] : <@Tblock$::@block$<[]>>, !felt.type
           array.write %array_3[%arg2] = %14 : <24 x !felt.type>, !felt.type
         }
         %7 = function.call @TDoIntRounds::@DoIntRounds::@compute(%array_3) : (!array.type<24 x !felt.type>) -> !struct.type<@TDoIntRounds::@DoIntRounds<[]>>
@@ -2563,12 +2563,12 @@ module attributes {llzk.lang} {
           %17 = array.read %16[%arg2] : <4 x !struct.type<@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>>, !struct.type<@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>
           %18 = struct.readm %17[@"$super"] : <@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>, !struct.type<@TDoExtRound::@DoExtRound<[]>>
           %19 = struct.readm %18[@"$super"] : <@TDoExtRound::@DoExtRound<[]>>, !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
-          %20 = struct.readm %19[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+          %20 = struct.readm %19[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
           %array_4 = array.new  : <24 x !felt.type>
-          %21 = array.len %20, %c0 : <24 x !struct.type<@block$<[]>>>
+          %21 = array.len %20, %c0 : <24 x !struct.type<@Tblock$::@block$<[]>>>
           scf.for %arg4 = %c0 to %c1 step %21 {
-            %22 = array.read %20[%arg4] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-            %23 = struct.readm %22[@"$super"] : <@block$<[]>>, !felt.type
+            %22 = array.read %20[%arg4] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+            %23 = struct.readm %22[@"$super"] : <@Tblock$::@block$<[]>>, !felt.type
             array.write %array_4[%arg4] = %23 : <24 x !felt.type>, !felt.type
           }
           scf.yield %array_4 : !array.type<24 x !felt.type>
@@ -2665,12 +2665,12 @@ module attributes {llzk.lang} {
         %array_2 = array.new %felt_const_0_0, %felt_const_1, %felt_const_2, %felt_const_3 : <4 x !felt.type>
         %3 = scf.for %arg3 = %c0 to %c4 step %c1 iter_args(%arg4 = %2) -> (!struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>) {
           %10 = array.read %array_2[%arg3] : <4 x !felt.type>, !felt.type
-          %11 = struct.readm %arg4[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+          %11 = struct.readm %arg4[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
           %array_4 = array.new  : <24 x !felt.type>
-          %12 = array.len %11, %c0 : <24 x !struct.type<@block$<[]>>>
+          %12 = array.len %11, %c0 : <24 x !struct.type<@Tblock$::@block$<[]>>>
           scf.for %arg5 = %c0 to %c1 step %12 {
-            %18 = array.read %11[%arg5] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-            %19 = struct.readm %18[@"$super"] : <@block$<[]>>, !felt.type
+            %18 = array.read %11[%arg5] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+            %19 = struct.readm %18[@"$super"] : <@Tblock$::@block$<[]>>, !felt.type
             array.write %array_4[%arg5] = %19 : <24 x !felt.type>, !felt.type
           }
           %13 = struct.readm %arg0[@"$temp"] : <@TGenerateCodeHash::@GenerateCodeHash<[@N]>>, !array.type<4 x !struct.type<@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>>
@@ -2681,12 +2681,12 @@ module attributes {llzk.lang} {
           %17 = struct.readm %16[@"$super"] : <@TDoExtRound::@DoExtRound<[]>>, !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
           scf.yield %17 : !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
         } {original_op = "reduce"}
-        %4 = struct.readm %3[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+        %4 = struct.readm %3[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
         %array_3 = array.new  : <24 x !felt.type>
-        %5 = array.len %4, %c0 : <24 x !struct.type<@block$<[]>>>
+        %5 = array.len %4, %c0 : <24 x !struct.type<@Tblock$::@block$<[]>>>
         scf.for %arg3 = %c0 to %c1 step %5 {
-          %10 = array.read %4[%arg3] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-          %11 = struct.readm %10[@"$super"] : <@block$<[]>>, !felt.type
+          %10 = array.read %4[%arg3] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+          %11 = struct.readm %10[@"$super"] : <@Tblock$::@block$<[]>>, !felt.type
           array.write %array_3[%arg3] = %11 : <24 x !felt.type>, !felt.type
         }
         %6 = struct.readm %arg0[@stage2] : <@TGenerateCodeHash::@GenerateCodeHash<[@N]>>, !struct.type<@TDoIntRounds::@DoIntRounds<[]>>
@@ -2700,12 +2700,12 @@ module attributes {llzk.lang} {
           function.call @TDoExtRoundByIdx::@DoExtRoundByIdx::@constrain(%13, %arg4, %10) : (!struct.type<@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>, !array.type<24 x !felt.type>, !felt.type) -> ()
           %14 = struct.readm %13[@"$super"] : <@TDoExtRoundByIdx::@DoExtRoundByIdx<[]>>, !struct.type<@TDoExtRound::@DoExtRound<[]>>
           %15 = struct.readm %14[@"$super"] : <@TDoExtRound::@DoExtRound<[]>>, !struct.type<@TMultiplyByMExt::@MultiplyByMExt<[]>>
-          %16 = struct.readm %15[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@block$<[]>>>
+          %16 = struct.readm %15[@"$super"] : <@TMultiplyByMExt::@MultiplyByMExt<[]>>, !array.type<24 x !struct.type<@Tblock$::@block$<[]>>>
           %array_4 = array.new  : <24 x !felt.type>
-          %17 = array.len %16, %c0 : <24 x !struct.type<@block$<[]>>>
+          %17 = array.len %16, %c0 : <24 x !struct.type<@Tblock$::@block$<[]>>>
           scf.for %arg5 = %c0 to %c1 step %17 {
-            %18 = array.read %16[%arg5] : <24 x !struct.type<@block$<[]>>>, !struct.type<@block$<[]>>
-            %19 = struct.readm %18[@"$super"] : <@block$<[]>>, !felt.type
+            %18 = array.read %16[%arg5] : <24 x !struct.type<@Tblock$::@block$<[]>>>, !struct.type<@Tblock$::@block$<[]>>
+            %19 = struct.readm %18[@"$super"] : <@Tblock$::@block$<[]>>, !felt.type
             array.write %array_4[%arg5] = %19 : <24 x !felt.type>, !felt.type
           }
           scf.yield %array_4 : !array.type<24 x !felt.type>
@@ -3102,11 +3102,11 @@ module attributes {llzk.lang} {
       struct.member @"$temp_8" : !struct.type<@TLog::@Log<[]>>
       struct.member @partialGuesses : !felt.type
       struct.member @"$temp_7" : !array.type<#map x !felt.type>
-      struct.member @"$temp_6" : !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
+      struct.member @"$temp_6" : !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
       struct.member @"$temp_5" : !array.type<#map x !struct.type<@TMinimum::@Minimum<[]>>>
       struct.member @pegsCount : !array.type<#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>
       struct.member @guessCount : !array.type<#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>
-      struct.member @"$array_0" : !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
+      struct.member @"$array_0" : !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
       struct.member @"$temp_4" : !struct.type<@TLog::@Log<[]>>
       struct.member @"$temp_3" : !array.type<#map x !felt.type>
       struct.member @"$temp_2" : !array.type<#map x !struct.type<@TIsZero::@IsZero<[]>>> {column}
@@ -3202,7 +3202,7 @@ module attributes {llzk.lang} {
           array.write %array_3[%arg4] = %41 : <#map x !felt.type>, !felt.type
         }
         %30 = poly.read_const @COLORS : index
-        %array_4 = array.new{()[%30]} : <#map x !struct.type<@block$_0<[@PEGS]>>>
+        %array_4 = array.new{()[%30]} : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
         %31 = array.len %array_3, %c0 : <#map x !felt.type>
         scf.for %arg4 = %c0 to %31 step %c1 {
           %41 = array.read %array_3[%arg4] : <#map x !felt.type>, !felt.type
@@ -3230,20 +3230,20 @@ module attributes {llzk.lang} {
           %57 = array.read %56[%arg4] : <#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>
           %58 = struct.readm %self[@pegsCount] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>
           %59 = array.read %58[%arg4] : <#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>
-          %60 = function.call @block$_0::@compute(%55, %57, %59) : (!struct.type<@TMinimum::@Minimum<[]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>) -> !struct.type<@block$_0<[@PEGS]>>
-          %61 = struct.readm %self[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-          array.write %61[%arg4] = %60 : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
-          struct.writem %self[@"$temp_6"] = %61 : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-          %62 = struct.readm %self[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-          %63 = array.read %62[%arg4] : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
-          array.write %array_4[%arg4] = %63 : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
+          %60 = function.call @Tblock$_0::@block$_0::@compute(%55, %57, %59) : (!struct.type<@TMinimum::@Minimum<[]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>) -> !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
+          %61 = struct.readm %self[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+          array.write %61[%arg4] = %60 : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
+          struct.writem %self[@"$temp_6"] = %61 : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+          %62 = struct.readm %self[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+          %63 = array.read %62[%arg4] : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
+          array.write %array_4[%arg4] = %63 : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
         } {original_op = "map"}
-        struct.writem %self[@"$array_0"] = %array_4 : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-        %32 = struct.readm %self[@"$array_0"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-        %33 = array.len %32, %c0 : <#map x !struct.type<@block$_0<[@PEGS]>>>
+        struct.writem %self[@"$array_0"] = %array_4 : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+        %32 = struct.readm %self[@"$array_0"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+        %33 = array.len %32, %c0 : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
         %34 = scf.for %arg4 = %c0 to %33 step %c1 iter_args(%arg5 = %felt_const_0) -> (!felt.type) {
-          %41 = array.read %32[%arg4] : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
-          %42 = struct.readm %41[@"$super"] : <@block$_0<[@PEGS]>>, !struct.type<@TMinimum::@Minimum<[]>>
+          %41 = array.read %32[%arg4] : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
+          %42 = struct.readm %41[@"$super"] : <@Tblock$_0::@block$_0<[@PEGS]>>, !struct.type<@TMinimum::@Minimum<[]>>
           %43 = struct.readm %42[@"$super"] : <@TMinimum::@Minimum<[]>>, !felt.type
           %44 = felt.add %arg5, %43 : !felt.type, !felt.type
           %45 = struct.readm %self[@"$temp_7"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !felt.type>
@@ -3341,7 +3341,7 @@ module attributes {llzk.lang} {
           array.write %array_3[%arg5] = %34 : <#map x !felt.type>, !felt.type
         }
         %25 = poly.read_const @COLORS : index
-        %array_4 = array.new{()[%25]} : <#map x !struct.type<@block$_0<[@PEGS]>>>
+        %array_4 = array.new{()[%25]} : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
         %26 = array.len %array_3, %c0 : <#map x !felt.type>
         scf.for %arg5 = %c0 to %26 step %c1 {
           %34 = array.read %array_3[%arg5] : <#map x !felt.type>, !felt.type
@@ -3363,17 +3363,17 @@ module attributes {llzk.lang} {
           %47 = array.read %46[%arg5] : <#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>
           %48 = struct.readm %arg0[@pegsCount] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>
           %49 = array.read %48[%arg5] : <#map x !struct.type<@TCountColors::@CountColors<[@PEGS]>>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>
-          %50 = struct.readm %arg0[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-          %51 = struct.readm %arg0[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-          %52 = array.read %51[%arg5] : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
-          function.call @block$_0::@constrain(%52, %45, %47, %49) : (!struct.type<@block$_0<[@PEGS]>>, !struct.type<@TMinimum::@Minimum<[]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>) -> ()
-          array.write %array_4[%arg5] = %52 : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
+          %50 = struct.readm %arg0[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+          %51 = struct.readm %arg0[@"$temp_6"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+          %52 = array.read %51[%arg5] : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
+          function.call @Tblock$_0::@block$_0::@constrain(%52, %45, %47, %49) : (!struct.type<@Tblock$_0::@block$_0<[@PEGS]>>, !struct.type<@TMinimum::@Minimum<[]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>, !struct.type<@TCountColors::@CountColors<[@PEGS]>>) -> ()
+          array.write %array_4[%arg5] = %52 : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
         } {original_op = "map"}
-        %27 = struct.readm %arg0[@"$array_0"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@block$_0<[@PEGS]>>>
-        %28 = array.len %27, %c0 : <#map x !struct.type<@block$_0<[@PEGS]>>>
+        %27 = struct.readm %arg0[@"$array_0"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
+        %28 = array.len %27, %c0 : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>
         %29 = scf.for %arg5 = %c0 to %28 step %c1 iter_args(%arg6 = %felt_const_0) -> (!felt.type) {
-          %34 = array.read %27[%arg5] : <#map x !struct.type<@block$_0<[@PEGS]>>>, !struct.type<@block$_0<[@PEGS]>>
-          %35 = struct.readm %34[@"$super"] : <@block$_0<[@PEGS]>>, !struct.type<@TMinimum::@Minimum<[]>>
+          %34 = array.read %27[%arg5] : <#map x !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>>, !struct.type<@Tblock$_0::@block$_0<[@PEGS]>>
+          %35 = struct.readm %34[@"$super"] : <@Tblock$_0::@block$_0<[@PEGS]>>, !struct.type<@TMinimum::@Minimum<[]>>
           %36 = struct.readm %35[@"$super"] : <@TMinimum::@Minimum<[]>>, !felt.type
           %37 = struct.readm %arg0[@"$temp_7"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !felt.type>
           %38 = struct.readm %arg0[@"$temp_7"] : <@TMakeGuess::@MakeGuess<[@COLORS, @PEGS]>>, !array.type<#map x !felt.type>

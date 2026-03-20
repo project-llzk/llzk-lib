@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file %s -llzk-flatten -verify-diagnostics
-// REQUIRES: todo-update-passes-for-template
 
 module attributes {llzk.lang} {
   poly.template @TComponentA1 {

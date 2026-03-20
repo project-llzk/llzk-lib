@@ -1,6 +1,6 @@
 // RUN: llzk-opt  -split-input-file --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root},llzk-inline-structs)' -verify-diagnostics %s | FileCheck %s
 // COM: This could be merged with `inline_structs_pass.llzk` once the issue with the default cleanup method of `llzk-flatten` is fixed (LLZK-303).
-// REQUIRES: todo-update-passes-for-template
+// REQUIRES: todo-update-llzk-inline-structs
 
 // TESTS: Inlining after `llzk-flatten` pass removes struct parameters
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
