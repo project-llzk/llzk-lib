@@ -76,64 +76,65 @@ module attributes {llzk.lang = "zirgen"} {
   }
 }
 
-// CHECK-LABEL: module attributes {llzk.lang = "zirgen"} {
-// CHECK-NEXT:    poly.template @TNondetReg {
-// CHECK-NEXT:      struct.def @NondetReg {
-// CHECK-NEXT:        struct.member @"$super" : !felt.type
-// CHECK-NEXT:        struct.member @reg : !felt.type {llzk.pub}
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TNondetReg::@NondetReg<[]>>
-// CHECK-NEXT:          struct.writem %[[VAL_1]][@reg] = %[[VAL_0]] : <@TNondetReg::@NondetReg<[]>>, !felt.type
-// CHECK-NEXT:          struct.writem %[[VAL_1]][@"$super"] = %[[VAL_0]] : <@TNondetReg::@NondetReg<[]>>, !felt.type
-// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TNondetReg::@NondetReg<[]>>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TNondetReg::@NondetReg<[]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
+// CHECK-LABEL: poly.template @TNondetReg {
+// CHECK-NEXT:    struct.def @NondetReg {
+// CHECK-NEXT:      struct.member @"$super" : !felt.type
+// CHECK-NEXT:      struct.member @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TNondetReg::@NondetReg<[]>>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@reg] = %[[VAL_0]] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@"$super"] = %[[VAL_0]] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TNondetReg::@NondetReg<[]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    poly.template @TGlobal {
-// CHECK-NEXT:      poly.param @Type
-// CHECK-NEXT:      struct.def @Global {
-// CHECK-NEXT:        struct.member @val : !poly.tvar<@Type> {llzk.pub}
-// CHECK-NEXT:        struct.member @init : i1 {llzk.pub}
-// CHECK-NEXT:        function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) -> !struct.type<@TGlobal::@Global<[@Type]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@TGlobal::@Global<[@Type]>>
-// CHECK-NEXT:          struct.writem %[[VAL_5]][@val] = %[[VAL_4]] : <@TGlobal::@Global<[@Type]>>, !poly.tvar<@Type>
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:          struct.writem %[[VAL_5]][@init] = %[[VAL_6]] : <@TGlobal::@Global<[@Type]>>, i1
-// CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@TGlobal::@Global<[@Type]>>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TGlobal::@Global<[@Type]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    module @globals {
-// CHECK-NEXT:      global.def @A : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @Top {
-// CHECK-NEXT:      function.def @compute(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Top> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TNondetReg::@NondetReg::@compute(%[[VAL_9]]) : (!felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>>
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = global.read @globals::@A : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@init] : <@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>, i1
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_13]], %[[VAL_14]] : i1
-// CHECK-NEXT:        bool.assert %[[VAL_15]], "Invalid set of \22global\22"
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @TGlobal::@Global::@compute(%[[VAL_11]]) : (!struct.type<@TNondetReg::@NondetReg<[]>>) -> !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
-// CHECK-NEXT:        global.write @globals::@A = %[[VAL_16]] : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
-// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Top>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = global.read @globals::@A : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@init] : <@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>, i1
-// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_20]], %[[VAL_21]] : i1
-// CHECK-NEXT:        bool.assert %[[VAL_22]], "Read before write \22global\22"
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@val] : <@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_23]][@reg] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TNondetReg::@NondetReg<[]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @TGlobal {
+// CHECK-NEXT:    poly.param @Type
+// CHECK-NEXT:    struct.def @Global {
+// CHECK-NEXT:      struct.member @val : !poly.tvar<@Type> {llzk.pub}
+// CHECK-NEXT:      struct.member @init : i1 {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) -> !struct.type<@TGlobal::@Global<[@Type]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@TGlobal::@Global<[@Type]>>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@val] = %[[VAL_4]] : <@TGlobal::@Global<[@Type]>>, !poly.tvar<@Type>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@init] = %[[VAL_6]] : <@TGlobal::@Global<[@Type]>>, i1
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@TGlobal::@Global<[@Type]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TGlobal::@Global<[@Type]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: module @globals {
+// CHECK-NEXT:    global.def @A : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Top {
+// CHECK-NEXT:    function.def @compute(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TNondetReg::@NondetReg::@compute(%[[VAL_9]]) : (!felt.type) -> !struct.type<@TNondetReg::@NondetReg<[]>>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = global.read @globals::@A : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@init] : <@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>, i1
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_13]], %[[VAL_14]] : i1
+// CHECK-NEXT:      bool.assert %[[VAL_15]], "Invalid set of \22global\22"
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @TGlobal::@Global::@compute(%[[VAL_11]]) : (!struct.type<@TNondetReg::@NondetReg<[]>>) -> !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
+// CHECK-NEXT:      global.write @globals::@A = %[[VAL_16]] : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
+// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@Top>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = global.read @globals::@A : !struct.type<@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>
+// CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@init] : <@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>, i1
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_20]], %[[VAL_21]] : i1
+// CHECK-NEXT:      bool.assert %[[VAL_22]], "Read before write \22global\22"
+// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@val] : <@TGlobal::@Global<[!struct.type<@TNondetReg::@NondetReg<[]>>]>>, !struct.type<@TNondetReg::@NondetReg<[]>>
+// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_23]][@reg] : <@TNondetReg::@NondetReg<[]>>, !felt.type
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -510,35 +510,34 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @TComponent06A {
-// CHECK-NEXT:      poly.param @C
-// CHECK-NEXT:      struct.def @Component06A {
-// CHECK-NEXT:        struct.member @f1 : !poly.tvar<@C>
-// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent06A::@Component06A<[@C]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent06A::@Component06A<[@C]>>
-// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TComponent06A::@Component06A<[@C]>>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent06A::@Component06A<[@C]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
+// CHECK-LABEL: poly.template @TComponent06A {
+// CHECK-NEXT:    poly.param @C
+// CHECK-NEXT:    struct.def @Component06A {
+// CHECK-NEXT:      struct.member @f1 : !poly.tvar<@C>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent06A::@Component06A<[@C]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent06A::@Component06A<[@C]>>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TComponent06A::@Component06A<[@C]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent06A::@Component06A<[@C]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    poly.template @TComponent06B {
-// CHECK-NEXT:      poly.param @T
-// CHECK-NEXT:      struct.def @Component06B {
-// CHECK-NEXT:        struct.member @f2 : !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent06B::@Component06B<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent06B::@Component06B<[@T]>>
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponent06A::@Component06A::@compute() : () -> !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:          struct.writem %[[VAL_2]][@f2] = %[[VAL_3]] : <@TComponent06B::@Component06B<[@T]>>, !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TComponent06B::@Component06B<[@T]>>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent06B::@Component06B<[@T]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@f2] : <@TComponent06B::@Component06B<[@T]>>, !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
-// CHECK-NEXT:          function.call @TComponent06A::@Component06A::@constrain(%[[VAL_5]]) : (!struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>) -> ()
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @TComponent06B {
+// CHECK-NEXT:    poly.param @T
+// CHECK-NEXT:    struct.def @Component06B {
+// CHECK-NEXT:      struct.member @f2 : !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent06B::@Component06B<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent06B::@Component06B<[@T]>>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponent06A::@Component06A::@compute() : () -> !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@f2] = %[[VAL_3]] : <@TComponent06B::@Component06B<[@T]>>, !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TComponent06B::@Component06B<[@T]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent06B::@Component06B<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@f2] : <@TComponent06B::@Component06B<[@T]>>, !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
+// CHECK-NEXT:        function.call @TComponent06A::@Component06A::@constrain(%[[VAL_5]]) : (!struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>) -> ()
+// CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

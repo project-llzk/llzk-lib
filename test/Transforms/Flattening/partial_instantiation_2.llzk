@@ -79,10 +79,10 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: struct.def @Pair_f_f {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Pair_f_f> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Pair_f_f>
-// CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@Pair_f_f>
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Pair_f_f>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Pair_f_f>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Pair_f_f>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Pair_f_f>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -90,10 +90,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Zip_0_f_f {
 // CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>> {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_0_f_f> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_0_f_f>
-// CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Zip_0_f_f>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_0_f_f>
+// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@Zip_0_f_f>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_0_f_f>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_0_f_f>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -101,10 +101,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Zip_1_f_f {
 // CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>> {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_1_f_f> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_1_f_f>
-// CHECK-NEXT:      function.return %[[VAL_4]] : !struct.type<@Zip_1_f_f>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_1_f_f>
+// CHECK-NEXT:      function.return %[[V4]] : !struct.type<@Zip_1_f_f>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_1_f_f>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_1_f_f>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -112,10 +112,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Zip_2_f_f {
 // CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>> {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_2_f_f> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_2_f_f>
-// CHECK-NEXT:      function.return %[[VAL_6]] : !struct.type<@Zip_2_f_f>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_2_f_f>
+// CHECK-NEXT:      function.return %[[V6]] : !struct.type<@Zip_2_f_f>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_2_f_f>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_2_f_f>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -123,10 +123,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Zip_3_f_f {
 // CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>> {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_3_f_f> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_3_f_f>
-// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@Zip_3_f_f>
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_3_f_f>
+// CHECK-NEXT:      function.return %[[V8]] : !struct.type<@Zip_3_f_f>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_3_f_f>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V9:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_3_f_f>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -134,10 +134,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @Zip_4_f_f {
 // CHECK-NEXT:    struct.member @"$super" : !array.type<9 x !struct.type<@Pair_f_f>> {llzk.pub}
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Zip_4_f_f> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_4_f_f>
-// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@Zip_4_f_f>
+// CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = struct.new : <@Zip_4_f_f>
+// CHECK-NEXT:      function.return %[[V10]] : !struct.type<@Zip_4_f_f>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_4_f_f>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V11:[0-9a-zA-Z_\.]+]]: !struct.type<@Zip_4_f_f>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -145,17 +145,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @MakeGuess_0 {
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_0_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_0> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_0>
-// CHECK-NEXT:      function.return %[[VAL_12]] : !struct.type<@MakeGuess_0>
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_0>
+// CHECK-NEXT:      function.return %[[V12]] : !struct.type<@MakeGuess_0>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_0>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_13]][@"$temp"] : <@MakeGuess_0>, !struct.type<@Zip_0_f_f>
-// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@"$super"] : <@Zip_0_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_17]], %[[VAL_15]] : <9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      scf.for %[[VAL_19:[0-9a-zA-Z_\.]+]] = %[[VAL_15]] to %[[VAL_18]] step %[[VAL_14]] {
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_17]]{{\[}}%[[VAL_19]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
+// CHECK-NEXT:    function.def @constrain(%[[V13:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V13]][@"$temp"] : <@MakeGuess_0>, !struct.type<@Zip_0_f_f>
+// CHECK-NEXT:      %[[V17:[0-9a-zA-Z_\.]+]] = struct.readm %[[V16]][@"$super"] : <@Zip_0_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      %[[V18:[0-9a-zA-Z_\.]+]] = array.len %[[V17]], %[[V15]] : <9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      scf.for %[[V19:[0-9a-zA-Z_\.]+]] = %[[V15]] to %[[V18]] step %[[V14]] {
+// CHECK-NEXT:        %[[V20:[0-9a-zA-Z_\.]+]] = array.read %[[V17]]{{\[}}%[[V19]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -164,17 +164,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @MakeGuess_1 {
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_1_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_1> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_1>
-// CHECK-NEXT:      function.return %[[VAL_21]] : !struct.type<@MakeGuess_1>
+// CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_1>
+// CHECK-NEXT:      function.return %[[V21]] : !struct.type<@MakeGuess_1>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_1>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_25:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_22]][@"$temp"] : <@MakeGuess_1>, !struct.type<@Zip_1_f_f>
-// CHECK-NEXT:      %[[VAL_26:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_25]][@"$super"] : <@Zip_1_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_26]], %[[VAL_24]] : <9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      scf.for %[[VAL_28:[0-9a-zA-Z_\.]+]] = %[[VAL_24]] to %[[VAL_27]] step %[[VAL_23]] {
-// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_28]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
+// CHECK-NEXT:    function.def @constrain(%[[V22:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V25:[0-9a-zA-Z_\.]+]] = struct.readm %[[V22]][@"$temp"] : <@MakeGuess_1>, !struct.type<@Zip_1_f_f>
+// CHECK-NEXT:      %[[V26:[0-9a-zA-Z_\.]+]] = struct.readm %[[V25]][@"$super"] : <@Zip_1_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      %[[V27:[0-9a-zA-Z_\.]+]] = array.len %[[V26]], %[[V24]] : <9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      scf.for %[[V28:[0-9a-zA-Z_\.]+]] = %[[V24]] to %[[V27]] step %[[V23]] {
+// CHECK-NEXT:        %[[V29:[0-9a-zA-Z_\.]+]] = array.read %[[V26]]{{\[}}%[[V28]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -183,17 +183,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @MakeGuess_2 {
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_2_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_2>
-// CHECK-NEXT:      function.return %[[VAL_30]] : !struct.type<@MakeGuess_2>
+// CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_2>
+// CHECK-NEXT:      function.return %[[V30]] : !struct.type<@MakeGuess_2>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_31:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_2>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_33:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_34:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_31]][@"$temp"] : <@MakeGuess_2>, !struct.type<@Zip_2_f_f>
-// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_34]][@"$super"] : <@Zip_2_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_35]], %[[VAL_33]] : <9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      scf.for %[[VAL_37:[0-9a-zA-Z_\.]+]] = %[[VAL_33]] to %[[VAL_36]] step %[[VAL_32]] {
-// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_35]]{{\[}}%[[VAL_37]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
+// CHECK-NEXT:    function.def @constrain(%[[V31:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V32:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V33:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = struct.readm %[[V31]][@"$temp"] : <@MakeGuess_2>, !struct.type<@Zip_2_f_f>
+// CHECK-NEXT:      %[[V35:[0-9a-zA-Z_\.]+]] = struct.readm %[[V34]][@"$super"] : <@Zip_2_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      %[[V36:[0-9a-zA-Z_\.]+]] = array.len %[[V35]], %[[V33]] : <9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      scf.for %[[V37:[0-9a-zA-Z_\.]+]] = %[[V33]] to %[[V36]] step %[[V32]] {
+// CHECK-NEXT:        %[[V38:[0-9a-zA-Z_\.]+]] = array.read %[[V35]]{{\[}}%[[V37]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -202,17 +202,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @MakeGuess_3 {
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_3_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_3> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_39:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_3>
-// CHECK-NEXT:      function.return %[[VAL_39]] : !struct.type<@MakeGuess_3>
+// CHECK-NEXT:      %[[V39:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_3>
+// CHECK-NEXT:      function.return %[[V39]] : !struct.type<@MakeGuess_3>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_40:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_3>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_42:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_40]][@"$temp"] : <@MakeGuess_3>, !struct.type<@Zip_3_f_f>
-// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_43]][@"$super"] : <@Zip_3_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_44]], %[[VAL_42]] : <9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      scf.for %[[VAL_46:[0-9a-zA-Z_\.]+]] = %[[VAL_42]] to %[[VAL_45]] step %[[VAL_41]] {
-// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_46]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
+// CHECK-NEXT:    function.def @constrain(%[[V40:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_3>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V41:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V42:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V43:[0-9a-zA-Z_\.]+]] = struct.readm %[[V40]][@"$temp"] : <@MakeGuess_3>, !struct.type<@Zip_3_f_f>
+// CHECK-NEXT:      %[[V44:[0-9a-zA-Z_\.]+]] = struct.readm %[[V43]][@"$super"] : <@Zip_3_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      %[[V45:[0-9a-zA-Z_\.]+]] = array.len %[[V44]], %[[V42]] : <9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      scf.for %[[V46:[0-9a-zA-Z_\.]+]] = %[[V42]] to %[[V45]] step %[[V41]] {
+// CHECK-NEXT:        %[[V47:[0-9a-zA-Z_\.]+]] = array.read %[[V44]]{{\[}}%[[V46]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -221,17 +221,17 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @MakeGuess_4 {
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Zip_4_f_f>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@MakeGuess_4> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_48:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_4>
-// CHECK-NEXT:      function.return %[[VAL_48]] : !struct.type<@MakeGuess_4>
+// CHECK-NEXT:      %[[V48:[0-9a-zA-Z_\.]+]] = struct.new : <@MakeGuess_4>
+// CHECK-NEXT:      function.return %[[V48]] : !struct.type<@MakeGuess_4>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_49:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_4>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_50:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_51:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_52:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_49]][@"$temp"] : <@MakeGuess_4>, !struct.type<@Zip_4_f_f>
-// CHECK-NEXT:      %[[VAL_53:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_52]][@"$super"] : <@Zip_4_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      %[[VAL_54:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_53]], %[[VAL_51]] : <9 x !struct.type<@Pair_f_f>>
-// CHECK-NEXT:      scf.for %[[VAL_55:[0-9a-zA-Z_\.]+]] = %[[VAL_51]] to %[[VAL_54]] step %[[VAL_50]] {
-// CHECK-NEXT:        %[[VAL_56:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_53]]{{\[}}%[[VAL_55]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
+// CHECK-NEXT:    function.def @constrain(%[[V49:[0-9a-zA-Z_\.]+]]: !struct.type<@MakeGuess_4>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[V50:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[V51:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V52:[0-9a-zA-Z_\.]+]] = struct.readm %[[V49]][@"$temp"] : <@MakeGuess_4>, !struct.type<@Zip_4_f_f>
+// CHECK-NEXT:      %[[V53:[0-9a-zA-Z_\.]+]] = struct.readm %[[V52]][@"$super"] : <@Zip_4_f_f>, !array.type<9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      %[[V54:[0-9a-zA-Z_\.]+]] = array.len %[[V53]], %[[V51]] : <9 x !struct.type<@Pair_f_f>>
+// CHECK-NEXT:      scf.for %[[V55:[0-9a-zA-Z_\.]+]] = %[[V51]] to %[[V54]] step %[[V50]] {
+// CHECK-NEXT:        %[[V56:[0-9a-zA-Z_\.]+]] = array.read %[[V53]]{{\[}}%[[V55]]] : <9 x !struct.type<@Pair_f_f>>, !struct.type<@Pair_f_f>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -239,15 +239,15 @@ module attributes {llzk.lang} {
 //
 // CHECK-LABEL: struct.def @Main {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_57:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_58:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_0::@compute() : () -> !struct.type<@MakeGuess_0>
-// CHECK-NEXT:      %[[VAL_59:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_1::@compute() : () -> !struct.type<@MakeGuess_1>
-// CHECK-NEXT:      %[[VAL_60:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_2::@compute() : () -> !struct.type<@MakeGuess_2>
-// CHECK-NEXT:      %[[VAL_61:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_3::@compute() : () -> !struct.type<@MakeGuess_3>
-// CHECK-NEXT:      %[[VAL_62:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_4::@compute() : () -> !struct.type<@MakeGuess_4>
-// CHECK-NEXT:      function.return %[[VAL_57]] : !struct.type<@Main>
+// CHECK-NEXT:      %[[V57:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[V58:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_0::@compute() : () -> !struct.type<@MakeGuess_0>
+// CHECK-NEXT:      %[[V59:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_1::@compute() : () -> !struct.type<@MakeGuess_1>
+// CHECK-NEXT:      %[[V60:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_2::@compute() : () -> !struct.type<@MakeGuess_2>
+// CHECK-NEXT:      %[[V61:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_3::@compute() : () -> !struct.type<@MakeGuess_3>
+// CHECK-NEXT:      %[[V62:[0-9a-zA-Z_\.]+]] = function.call @MakeGuess_4::@compute() : () -> !struct.type<@MakeGuess_4>
+// CHECK-NEXT:      function.return %[[V57]] : !struct.type<@Main>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_63:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V63:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

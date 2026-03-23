@@ -39,41 +39,40 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    module @TComponent {
-// CHECK-NEXT:      struct.def @Component {
-// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent::@Component> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent::@Component>
-// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TComponent::@Component>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent::@Component>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
+// CHECK-LABEL: module @TComponent {
+// CHECK-NEXT:    struct.def @Component {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent::@Component> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent::@Component>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TComponent::@Component>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent::@Component>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    poly.template @TPair {
-// CHECK-NEXT:      poly.param @Fst
-// CHECK-NEXT:      poly.param @Snd
-// CHECK-NEXT:      struct.def @Pair {
-// CHECK-NEXT:        struct.member @"$super" : !struct.type<@TComponent::@Component>
-// CHECK-NEXT:        struct.member @"$temp" : !struct.type<@TComponent::@Component>
-// CHECK-NEXT:        struct.member @snd : !poly.tvar<@Snd>
-// CHECK-NEXT:        struct.member @fst : !poly.tvar<@Fst>
-// CHECK-NEXT:        function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) -> !struct.type<@TPair::@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair::@Pair<[@Fst, @Snd]>>
-// CHECK-NEXT:          struct.writem %[[VAL_4]][@fst] = %[[VAL_2]] : <@TPair::@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>
-// CHECK-NEXT:          struct.writem %[[VAL_4]][@snd] = %[[VAL_3]] : <@TPair::@Pair<[@Fst, @Snd]>>, !poly.tvar<@Snd>
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component>
-// CHECK-NEXT:          struct.writem %[[VAL_4]][@"$temp"] = %[[VAL_5]] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
-// CHECK-NEXT:          struct.writem %[[VAL_4]][@"$super"] = %[[VAL_6]] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
-// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@TPair::@Pair<[@Fst, @Snd]>>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair::@Pair<[@Fst, @Snd]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
-// CHECK-NEXT:          function.call @TComponent::@Component::@constrain(%[[VAL_10]]) : (!struct.type<@TComponent::@Component>) -> ()
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @TPair {
+// CHECK-NEXT:    poly.param @Fst
+// CHECK-NEXT:    poly.param @Snd
+// CHECK-NEXT:    struct.def @Pair {
+// CHECK-NEXT:      struct.member @"$super" : !struct.type<@TComponent::@Component>
+// CHECK-NEXT:      struct.member @"$temp" : !struct.type<@TComponent::@Component>
+// CHECK-NEXT:      struct.member @snd : !poly.tvar<@Snd>
+// CHECK-NEXT:      struct.member @fst : !poly.tvar<@Fst>
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) -> !struct.type<@TPair::@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair::@Pair<[@Fst, @Snd]>>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@fst] = %[[VAL_2]] : <@TPair::@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@snd] = %[[VAL_3]] : <@TPair::@Pair<[@Fst, @Snd]>>, !poly.tvar<@Snd>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@"$temp"] = %[[VAL_5]] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@"$super"] = %[[VAL_6]] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TPair::@Pair<[@Fst, @Snd]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair::@Pair<[@Fst, @Snd]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        function.call @TComponent::@Component::@constrain(%[[VAL_10]]) : (!struct.type<@TComponent::@Component>) -> ()
+// CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

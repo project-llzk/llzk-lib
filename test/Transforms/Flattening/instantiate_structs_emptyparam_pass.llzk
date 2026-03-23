@@ -22,26 +22,25 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    module @TComponent1A {
-// CHECK-NEXT:      struct.def @Component1A {
-// CHECK-NEXT:        function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent1A::@Component1A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent1A::@Component1A> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent1A::@Component1A>
-// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponent1A::@Component1A>
-// CHECK-NEXT:        }
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @Component1B {
-// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent1A::@Component1A>) -> !struct.type<@Component1B> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component1B>
-// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Component1B>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Component1B>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent1A::@Component1A>) attributes {function.allow_constraint} {
+// CHECK-LABEL: module @TComponent1A {
+// CHECK-NEXT:    struct.def @Component1A {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent1A::@Component1A>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent1A::@Component1A> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent1A::@Component1A>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TComponent1A::@Component1A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Component1B {
+// CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent1A::@Component1A>) -> !struct.type<@Component1B> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Component1B>
+// CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@Component1B>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Component1B>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent1A::@Component1A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -71,28 +70,27 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    module @TComponent2A {
-// CHECK-NEXT:      struct.def @Component2A {
-// CHECK-NEXT:        function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent2A::@Component2A>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @compute() -> !struct.type<@TComponent2A::@Component2A> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent2A::@Component2A>
-// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponent2A::@Component2A>
-// CHECK-NEXT:        }
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @Main {
-// CHECK-NEXT:      struct.member @b : !struct.type<@TComponent2A::@Component2A>
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponent2A::@Component2A::@compute() : () -> !struct.type<@TComponent2A::@Component2A>
-// CHECK-NEXT:        struct.writem %[[VAL_2]][@b] = %[[VAL_3]] : <@Main>, !struct.type<@TComponent2A::@Component2A>
-// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Main>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-LABEL: module @TComponent2A {
+// CHECK-NEXT:    struct.def @Component2A {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent2A::@Component2A>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent2A::@Component2A> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent2A::@Component2A>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TComponent2A::@Component2A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    struct.member @b : !struct.type<@TComponent2A::@Component2A>
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponent2A::@Component2A::@compute() : () -> !struct.type<@TComponent2A::@Component2A>
+// CHECK-NEXT:      struct.writem %[[VAL_2]][@b] = %[[VAL_3]] : <@Main>, !struct.type<@TComponent2A::@Component2A>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
