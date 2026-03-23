@@ -121,11 +121,13 @@ $(function(){initNavTree('Field_8h.html','',''); });
 <code>#include &lt;llvm/ADT/SmallSet.h&gt;</code><br />
 <code>#include &lt;llvm/Support/LogicalResult.h&gt;</code><br />
 <code>#include &lt;llvm/Support/SMTAPI.h&gt;</code><br />
+<code>#include &lt;functional&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
 <code>#include &lt;string_view&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Field.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Field_8h__incl.svg" width="2667" height="190"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Field_8h__incl.svg" width="2876" height="190"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -146,15 +148,19 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:afcf0832d47bace30c3d2e7d4ceb4a291" id="r_afcf0832d47bace30c3d2e7d4ceb4a291"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#afcf0832d47bace30c3d2e7d4ceb4a291">llzk::FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="classllzk_1_1Field.html">Field</a>, 2&gt;</td></tr>
-<tr class="memdesc:afcf0832d47bace30c3d2e7d4ceb4a291"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a set of Fields.  <br /></td></tr>
+<tr class="memitem:a18840b85883a143d6c8297343ecfe583" id="r_a18840b85883a143d6c8297343ecfe583"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a18840b85883a143d6c8297343ecfe583">llzk::FieldRef</a> = std::reference_wrapper&lt;const <a class="el" href="classllzk_1_1Field.html">Field</a>&gt;</td></tr>
+<tr class="memdesc:a18840b85883a143d6c8297343ecfe583"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a stable reference to a known <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a>.  <br /></td></tr>
+<tr class="memitem:ace41b88b3084e2fb14bd6573034e41f2" id="r_ace41b88b3084e2fb14bd6573034e41f2"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="namespacellzk.html#a18840b85883a143d6c8297343ecfe583">FieldRef</a>, 2&gt;</td></tr>
+<tr class="memdesc:ace41b88b3084e2fb14bd6573034e41f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a set of Fields.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a1fe63805b18ec9f9ed2841653d53a1aa" id="r_a1fe63805b18ec9f9ed2841653d53a1aa"><td class="memItemLeft" align="right" valign="top">llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a1fe63805b18ec9f9ed2841653d53a1aa">llzk::addSpecifiedFields</a> (mlir::ModuleOp modOp)</td></tr>
 <tr class="memdesc:a1fe63805b18ec9f9ed2841653d53a1aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the set of available prime fields with the fields specified on the root module.  <br /></td></tr>
-<tr class="memitem:a1d0bcd0018688751afbefca0a70d9f25" id="r_a1d0bcd0018688751afbefca0a70d9f25"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a1d0bcd0018688751afbefca0a70d9f25">llzk::collectFields</a> (mlir::Operation *root, <a class="el" href="namespacellzk.html#afcf0832d47bace30c3d2e7d4ceb4a291">FieldSet</a> &amp;fields)</td></tr>
-<tr class="memdesc:a1d0bcd0018688751afbefca0a70d9f25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collects all the fields used in a circuit.  <br /></td></tr>
+<tr class="memitem:afcfdee46edb27b06b8bd67475a16ec37" id="r_afcfdee46edb27b06b8bd67475a16ec37"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">llzk::collectFields</a> (mlir::Operation *root, <a class="el" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">FieldSet</a> &amp;fields, bool silent=true)</td></tr>
+<tr class="memdesc:afcfdee46edb27b06b8bd67475a16ec37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collects all the fields used in a circuit.  <br /></td></tr>
+<tr class="memitem:ad9aa681c2fc2160938a72878439bad3d" id="r_ad9aa681c2fc2160938a72878439bad3d"><td class="memItemLeft" align="right" valign="top">std::optional&lt; std::reference_wrapper&lt; const <a class="el" href="classllzk_1_1Field.html">Field</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d">llzk::tryDetectSpecifiedField</a> (mlir::Operation *root)</td></tr>
+<tr class="memdesc:ad9aa681c2fc2160938a72878439bad3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try to detect a uniquely used field from the enclosing LLZK module.  <br /></td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

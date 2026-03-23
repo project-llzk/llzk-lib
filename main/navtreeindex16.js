@@ -1,5 +1,6 @@
 var NAVTREEINDEX16 =
 {
+"classllzk_1_1SourceRefLattice.html#a32da7fb294484bcb7f086c868c29e782":[12,0,1,81,0],
 "classllzk_1_1SourceRefLattice.html#a373755c765d094afdebb43e3b531772d":[10,0,2,84,7],
 "classllzk_1_1SourceRefLattice.html#a373755c765d094afdebb43e3b531772d":[12,0,1,81,7],
 "classllzk_1_1SourceRefLattice.html#a3a25a232e97c71d469d871328ef3c743":[10,0,2,84,20],
@@ -248,6 +249,5 @@ var NAVTREEINDEX16 =
 "classllzk_1_1SymbolLookupResultUntyped.html#af2738d0072123be0e06ba87ff77b24d8":[12,0,1,92,16],
 "classllzk_1_1SymbolLookupResultUntyped.html#af530a22ec1d6f72ec8ebaff2b5d28f93":[10,0,2,95,20],
 "classllzk_1_1SymbolLookupResultUntyped.html#af530a22ec1d6f72ec8ebaff2b5d28f93":[12,0,1,92,20],
-"classllzk_1_1SymbolUseGraph.html":[10,0,2,96],
-"classllzk_1_1SymbolUseGraph.html":[12,0,1,93]
+"classllzk_1_1SymbolUseGraph.html":[10,0,2,96]
 };

@@ -1,5 +1,6 @@
 var NAVTREEINDEX44 =
 {
+"dialects.html#attributes-6":[7,5,0,0,0],
 "dialects.html#attributes-7":[7,5,0,1,0],
 "dialects.html#attributes-8":[7,6,0,0,0],
 "dialects.html#attributes-9":[7,6,0,1,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX44 =
 "dir_7093d9bec9e6df023c20339d9b6c0d59.html":[13,0,2,0,5],
 "dir_7cd65e7901416fd0d2f87c71ddc27dff.html":[13,0,3,3,12],
 "dir_7e2804bcc10ad74e4cdf72f15229a980.html":[13,0,0,0,0,2,0],
-"dir_7ffa7d2298bc408bd49e79287d86cc12.html":[13,0,0,0,0,2,7],
-"dir_85c338a369c289f6d40b1416a55396c6.html":[13,0,3,3,10]
+"dir_7ffa7d2298bc408bd49e79287d86cc12.html":[13,0,0,0,0,2,7]
 };

@@ -130,83 +130,110 @@ $(function(){initNavTree('IntervalAnalysisPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="IntervalAnalysisPass_8cpp.html#af9853a81d90d2e4b437cee161b57e289">   28</a></span><span class="preprocessor">#define GEN_PASS_DECL_INTERVALANALYSISPRINTERPASS</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="IntervalAnalysisPass_8cpp.html#a5de49b58f2fa1b0bbfeeca8ae70b8456">   29</a></span><span class="preprocessor">#define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;<a class="code" href="AnalysisPasses_8h_8inc.html">llzk/Analysis/AnalysisPasses.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">using namespace </span>component;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="IntervalAnalysisPass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">   28</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-interval-analysis-pass&quot;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="IntervalAnalysisPass_8cpp.html#af9853a81d90d2e4b437cee161b57e289">   30</a></span><span class="preprocessor">#define GEN_PASS_DECL_INTERVALANALYSISPRINTERPASS</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno"><a class="line" href="IntervalAnalysisPass_8cpp.html#a5de49b58f2fa1b0bbfeeca8ae70b8456">   31</a></span><span class="preprocessor">#define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &quot;<a class="code" href="AnalysisPasses_8h_8inc.html">llzk/Analysis/AnalysisPasses.h.inc</a>&quot;</span></div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="foldopen" id="foldopen00034" data-start="{" data-end="};">
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="classllzk_1_1IntervalAnalysisPrinterPass.html">   34</a></span><span class="keyword">class </span><a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">IntervalAnalysisPrinterPass</a></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html">impl::IntervalAnalysisPrinterPassBase</a>&lt;IntervalAnalysisPrinterPass&gt; {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  llvm::raw_ostream &amp;os;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">public</span>:</div>
-<div class="foldopen" id="foldopen00039" data-start="{" data-end="}">
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">   39</a></span>  <span class="keyword">explicit</span> <a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">IntervalAnalysisPrinterPass</a>(llvm::raw_ostream &amp;ostream)</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>      : <a class="code hl_namespace" href="namespacellzk_1_1impl.html">impl</a>::<a class="code hl_function" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#aea370608acdb563e6e283152ab470f43">IntervalAnalysisPrinterPassBase</a>&lt;<a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">IntervalAnalysisPrinterPass</a>&gt;(), os(ostream) {}</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">using namespace </span>component;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="foldopen" id="foldopen00036" data-start="{" data-end="};">
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classllzk_1_1IntervalAnalysisPrinterPass.html">   36</a></span><span class="keyword">class </span><a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">IntervalAnalysisPrinterPass</a></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html">impl::IntervalAnalysisPrinterPassBase</a>&lt;IntervalAnalysisPrinterPass&gt; {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  llvm::raw_ostream &amp;os;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">public</span>:</div>
+<div class="foldopen" id="foldopen00041" data-start="{" data-end="}">
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">   41</a></span>  <span class="keyword">explicit</span> <a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">IntervalAnalysisPrinterPass</a>(llvm::raw_ostream &amp;ostream)</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>      : <a class="code hl_namespace" href="namespacellzk_1_1impl.html">impl</a>::<a class="code hl_function" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#aea370608acdb563e6e283152ab470f43">IntervalAnalysisPrinterPassBase</a>&lt;<a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">IntervalAnalysisPrinterPass</a>&gt;(), os(ostream) {}</div>
 </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">protected</span>:</div>
-<div class="foldopen" id="foldopen00043" data-start="{" data-end="}">
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classllzk_1_1IntervalAnalysisPrinterPass.html#aa0d9e953fe234e01c79477ce35d6087a">   43</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#aa0d9e953fe234e01c79477ce35d6087a">runOnOperation</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    markAllAnalysesPreserved();</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keyword">auto</span> modOp = llvm::dyn_cast&lt;mlir::ModuleOp&gt;(getOperation());</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordflow">if</span> (!modOp) {</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      <span class="keyword">constexpr</span> <span class="keyword">const</span> <span class="keywordtype">char</span> *msg = <span class="stringliteral">&quot;IntervalAnalysisPrinterPass error: should be run on ModuleOp!&quot;</span>;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>      getOperation()-&gt;emitError(msg).report();</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    }</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="keyword">auto</span> fieldLookupRes = <a class="code hl_function" href="classllzk_1_1Field.html#a1ccf00c3886c63cef1ab39286fc73c07">Field::tryGetField</a>(<a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7">fieldName</a>.c_str());</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keyword">protected</span>:</div>
+<div class="foldopen" id="foldopen00045" data-start="{" data-end="}">
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1IntervalAnalysisPrinterPass.html#aa0d9e953fe234e01c79477ce35d6087a">   45</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1IntervalAnalysisPrinterPass.html#aa0d9e953fe234e01c79477ce35d6087a">runOnOperation</a>()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keyword">auto</span> modOp = llvm::dyn_cast&lt;mlir::ModuleOp&gt;(getOperation());</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keywordflow">if</span> (!modOp) {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      <span class="keyword">constexpr</span> <span class="keyword">const</span> <span class="keywordtype">char</span> *msg = <span class="stringliteral">&quot;IntervalAnalysisPrinterPass error: should be run on ModuleOp!&quot;</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      getOperation()-&gt;emitError(msg).report();</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    }</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keywordflow">if</span> (mlir::failed(fieldLookupRes)) {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      modOp-&gt;emitError()</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>          .append(<span class="stringliteral">&quot;IntervalAnalysisPrinterPass error: unknown field \&quot;&quot;</span>, <a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7">fieldName</a>, <span class="stringliteral">&quot;\&quot; specified&quot;</span>)</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>          .report();</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    }</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keyword">auto</span> &amp;mia = getAnalysis&lt;ModuleIntervalAnalysis&gt;();</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    mia.setField(fieldLookupRes.value());</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    mia.setPropagateInputConstraints(<a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a7a1675797e85a84f52050c0e0322889b">propagateInputConstraints</a>);</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keyword">auto</span> am = getAnalysisManager();</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    mia.ensureAnalysisRun(am);</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[s, si] : mia.getCurrentResults()) {</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      <span class="keyword">auto</span> &amp;structDef = <span class="keyword">const_cast&lt;</span><a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &amp;<span class="keyword">&gt;</span>(s);</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>      <span class="keyword">auto</span> fullName = <a class="code hl_function" href="namespacellzk.html#ac44528a6b83765bbf6c7f96c8fe2adf9">getPathFromTopRoot</a>(structDef);</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>      <a class="code hl_function" href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">ensure</a>(</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>          mlir::succeeded(fullName),</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>          <span class="stringliteral">&quot;could not resolve fully qualified name of struct &quot;</span> + mlir::Twine(structDef.getName())</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      );</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>      os &lt;&lt; fullName.value() &lt;&lt; <span class="charliteral">&#39; &#39;</span>;</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>      si.get().print(os, <a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#aa326b4238b0878905c530e976c86a4a0">printSolverConstraints</a>, <a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a4a387d940c6ecec65cb6659d35a0610b">printComputeIntervals</a>);</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    }</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  }</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="comment">// Initialize to the fallback field value</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <a class="code hl_typedef" href="namespacellzk.html#a18840b85883a143d6c8297343ecfe583">FieldRef</a> selectedField = <a class="code hl_function" href="classllzk_1_1Field.html#ae2df03a056e5ffabd26768c63cd5a1bf">Field::getField</a>(<span class="stringliteral">&quot;bn128&quot;</span>);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="keywordflow">if</span> (!<a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7">fieldName</a>.empty()) {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      <span class="keyword">auto</span> fieldLookupRes = <a class="code hl_function" href="classllzk_1_1Field.html#a1ccf00c3886c63cef1ab39286fc73c07">Field::tryGetField</a>(<a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7">fieldName</a>.c_str());</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      <span class="keywordflow">if</span> (mlir::failed(fieldLookupRes)) {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        modOp-&gt;emitError()</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>            .append(</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>                <span class="stringliteral">&quot;IntervalAnalysisPrinterPass error: unknown field \&quot;&quot;</span>, <a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7">fieldName</a>, <span class="stringliteral">&quot;\&quot; specified&quot;</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>            )</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>            .report();</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      }</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      selectedField = fieldLookupRes.value();</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>      LLVM_DEBUG(</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[IntervalAnalysisPrinterPass] using explicit -field override &#39;&quot;</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>                       &lt;&lt; selectedField.get().name() &lt;&lt; <span class="stringliteral">&quot;&#39;\n&quot;</span>;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>      );</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> detectedField = <a class="code hl_function" href="namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d">tryDetectSpecifiedField</a>(modOp)) {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>      selectedField = detectedField.value();</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      LLVM_DEBUG(</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[IntervalAnalysisPrinterPass] detected module field &#39;&quot;</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                       &lt;&lt; selectedField.get().name() &lt;&lt; <span class="stringliteral">&quot;&#39; from module felt usage\n&quot;</span>;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>      );</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      modOp-&gt;emitWarning() &lt;&lt; <span class="stringliteral">&quot;could not detect a unique module field; falling back to &#39;&quot;</span></div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                           &lt;&lt; selectedField.get().name() &lt;&lt; <span class="stringliteral">&quot;&#39;&quot;</span>;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      LLVM_DEBUG(</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>          llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[IntervalAnalysisPrinterPass] no explicit or detectable module field; &quot;</span></div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>                          <span class="stringliteral">&quot;falling back to &#39;&quot;</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>                       &lt;&lt; selectedField.get().name() &lt;&lt; <span class="stringliteral">&quot;&#39;\n&quot;</span>;</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      );</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    }</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <span class="keyword">auto</span> &amp;mia = getAnalysis&lt;ModuleIntervalAnalysis&gt;();</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    mia.setField(selectedField);</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    mia.setPropagateInputConstraints(<a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a7a1675797e85a84f52050c0e0322889b">propagateInputConstraints</a>);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="keyword">auto</span> am = getAnalysisManager();</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    mia.ensureAnalysisRun(am);</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[s, si] : mia.getCurrentResults()) {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      <span class="keyword">auto</span> &amp;structDef = <span class="keyword">const_cast&lt;</span><a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &amp;<span class="keyword">&gt;</span>(s);</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      <span class="keyword">auto</span> fullName = <a class="code hl_function" href="namespacellzk.html#ac44528a6b83765bbf6c7f96c8fe2adf9">getPathFromTopRoot</a>(structDef);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      <a class="code hl_function" href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">ensure</a>(</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>          mlir::succeeded(fullName),</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>          <span class="stringliteral">&quot;could not resolve fully qualified name of struct &quot;</span> + mlir::Twine(structDef.getName())</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>      );</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      os &lt;&lt; fullName.value() &lt;&lt; <span class="charliteral">&#39; &#39;</span>;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      si.get().print(os, <a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#aa326b4238b0878905c530e976c86a4a0">printSolverConstraints</a>, <a class="code hl_variable" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a4a387d940c6ecec65cb6659d35a0610b">printComputeIntervals</a>);</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    }</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  }</div>
 </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>};</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>};</div>
 </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>std::unique_ptr&lt;mlir::Pass&gt;</div>
-<div class="foldopen" id="foldopen00084" data-start="{" data-end="}">
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno"><a class="line" href="namespacellzk.html#a59d66a0caa073316e9e8ccf5f96be707">   84</a></span><a class="code hl_function" href="namespacellzk.html#a59d66a0caa073316e9e8ccf5f96be707">createIntervalAnalysisPrinterPass</a>(llvm::raw_ostream &amp;os = llvm::errs()) {</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordflow">return</span> std::make_unique&lt;IntervalAnalysisPrinterPass&gt;(os);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>}</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>std::unique_ptr&lt;mlir::Pass&gt;</div>
+<div class="foldopen" id="foldopen00110" data-start="{" data-end="}">
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno"><a class="line" href="namespacellzk.html#a59d66a0caa073316e9e8ccf5f96be707">  110</a></span><a class="code hl_function" href="namespacellzk.html#a59d66a0caa073316e9e8ccf5f96be707">createIntervalAnalysisPrinterPass</a>(llvm::raw_ostream &amp;os = llvm::errs()) {</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordflow">return</span> std::make_unique&lt;IntervalAnalysisPrinterPass&gt;(os);</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>}</div>
 </div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aAnalysisPasses_8h_8inc_html"><div class="ttname"><a href="AnalysisPasses_8h_8inc.html">AnalysisPasses.h.inc</a></div></div>
 <div class="ttc" id="aAnalysisPasses_8h_html"><div class="ttname"><a href="AnalysisPasses_8h.html">AnalysisPasses.h</a></div></div>
 <div class="ttc" id="aBool_2IR_2Ops_8h_html"><div class="ttname"><a href="Bool_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aIntervalAnalysis_8h_html"><div class="ttname"><a href="IntervalAnalysis_8h.html">IntervalAnalysis.h</a></div></div>
 <div class="ttc" id="aSymbolHelper_8h_html"><div class="ttname"><a href="SymbolHelper_8h.html">SymbolHelper.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_a1ccf00c3886c63cef1ab39286fc73c07"><div class="ttname"><a href="classllzk_1_1Field.html#a1ccf00c3886c63cef1ab39286fc73c07">llzk::Field::tryGetField</a></div><div class="ttdeci">static llvm::FailureOr&lt; std::reference_wrapper&lt; const Field &gt; &gt; tryGetField(llvm::StringRef fieldName)</div><div class="ttdoc">Get a Field from a given field name string, or failure if the field is not defined.</div><div class="ttdef"><b>Definition</b> <a href="Field_8cpp_source.html#l00049">Field.cpp:49</a></div></div>
-<div class="ttc" id="aclassllzk_1_1IntervalAnalysisPrinterPass_html_a0cdcf52f614a7863c0ca036711d0b42c"><div class="ttname"><a href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">llzk::IntervalAnalysisPrinterPass::IntervalAnalysisPrinterPass</a></div><div class="ttdeci">IntervalAnalysisPrinterPass(llvm::raw_ostream &amp;ostream)</div><div class="ttdef"><b>Definition</b> <a href="#l00039">IntervalAnalysisPass.cpp:39</a></div></div>
-<div class="ttc" id="aclassllzk_1_1IntervalAnalysisPrinterPass_html_aa0d9e953fe234e01c79477ce35d6087a"><div class="ttname"><a href="classllzk_1_1IntervalAnalysisPrinterPass.html#aa0d9e953fe234e01c79477ce35d6087a">llzk::IntervalAnalysisPrinterPass::runOnOperation</a></div><div class="ttdeci">void runOnOperation() override</div><div class="ttdef"><b>Definition</b> <a href="#l00043">IntervalAnalysisPass.cpp:43</a></div></div>
+<div class="ttc" id="aclassllzk_1_1Field_html_ae2df03a056e5ffabd26768c63cd5a1bf"><div class="ttname"><a href="classllzk_1_1Field.html#ae2df03a056e5ffabd26768c63cd5a1bf">llzk::Field::getField</a></div><div class="ttdeci">static const Field &amp; getField(llvm::StringRef fieldName, EmitErrorFn errFn)</div><div class="ttdoc">Get a Field from a given field name string.</div></div>
+<div class="ttc" id="aclassllzk_1_1IntervalAnalysisPrinterPass_html_a0cdcf52f614a7863c0ca036711d0b42c"><div class="ttname"><a href="classllzk_1_1IntervalAnalysisPrinterPass.html#a0cdcf52f614a7863c0ca036711d0b42c">llzk::IntervalAnalysisPrinterPass::IntervalAnalysisPrinterPass</a></div><div class="ttdeci">IntervalAnalysisPrinterPass(llvm::raw_ostream &amp;ostream)</div><div class="ttdef"><b>Definition</b> <a href="#l00041">IntervalAnalysisPass.cpp:41</a></div></div>
+<div class="ttc" id="aclassllzk_1_1IntervalAnalysisPrinterPass_html_aa0d9e953fe234e01c79477ce35d6087a"><div class="ttname"><a href="classllzk_1_1IntervalAnalysisPrinterPass.html#aa0d9e953fe234e01c79477ce35d6087a">llzk::IntervalAnalysisPrinterPass::runOnOperation</a></div><div class="ttdeci">void runOnOperation() override</div><div class="ttdef"><b>Definition</b> <a href="#l00045">IntervalAnalysisPass.cpp:45</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01159">Ops.h.inc:1159</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html">llzk::impl::IntervalAnalysisPrinterPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00261">IntervalAnalysisPass.cpp:261</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase_html_a4a387d940c6ecec65cb6659d35a0610b"><div class="ttname"><a href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a4a387d940c6ecec65cb6659d35a0610b">llzk::impl::IntervalAnalysisPrinterPassBase&lt; IntervalAnalysisPrinterPass &gt;::printComputeIntervals</a></div><div class="ttdeci">::mlir::Pass::Option&lt; bool &gt; printComputeIntervals</div><div class="ttdef"><b>Definition</b> <a href="#l00328">IntervalAnalysisPass.cpp:328</a></div></div>
@@ -217,9 +244,11 @@ $(function(){initNavTree('IntervalAnalysisPass_8cpp_source.html','',''); });
 <div class="ttc" id="allzk_2Util_2Constants_8h_html"><div class="ttname"><a href="llzk_2Util_2Constants_8h.html">Constants.h</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1impl_html"><div class="ttname"><a href="namespacellzk_1_1impl.html">llzk::impl</a></div><div class="ttdef"><b>Definition</b> <a href="CallGraphPasses_8cpp_source.html#l00023">CallGraphPasses.cpp:23</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a18840b85883a143d6c8297343ecfe583"><div class="ttname"><a href="namespacellzk.html#a18840b85883a143d6c8297343ecfe583">llzk::FieldRef</a></div><div class="ttdeci">std::reference_wrapper&lt; const Field &gt; FieldRef</div><div class="ttdoc">Typealias for a stable reference to a known Field.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00146">Field.h:146</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a43a1a0bc20c43606f2cd2aa67022fdac"><div class="ttname"><a href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">llzk::ensure</a></div><div class="ttdeci">void ensure(bool condition, const llvm::Twine &amp;errMsg)</div><div class="ttdef"><b>Definition</b> <a href="ErrorHelper_8h_source.html#l00152">ErrorHelper.h:152</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a59d66a0caa073316e9e8ccf5f96be707"><div class="ttname"><a href="namespacellzk.html#a59d66a0caa073316e9e8ccf5f96be707">llzk::createIntervalAnalysisPrinterPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createIntervalAnalysisPrinterPass(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdef"><b>Definition</b> <a href="#l00084">IntervalAnalysisPass.cpp:84</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a59d66a0caa073316e9e8ccf5f96be707"><div class="ttname"><a href="namespacellzk.html#a59d66a0caa073316e9e8ccf5f96be707">llzk::createIntervalAnalysisPrinterPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createIntervalAnalysisPrinterPass(llvm::raw_ostream &amp;os=llvm::errs())</div><div class="ttdef"><b>Definition</b> <a href="#l00110">IntervalAnalysisPass.cpp:110</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ac44528a6b83765bbf6c7f96c8fe2adf9"><div class="ttname"><a href="namespacellzk.html#ac44528a6b83765bbf6c7f96c8fe2adf9">llzk::getPathFromTopRoot</a></div><div class="ttdeci">FailureOr&lt; SymbolRefAttr &gt; getPathFromTopRoot(SymbolOpInterface to, ModuleOp *foundRoot)</div><div class="ttdef"><b>Definition</b> <a href="SymbolHelper_8cpp_source.html#l00292">SymbolHelper.cpp:292</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ad9aa681c2fc2160938a72878439bad3d"><div class="ttname"><a href="namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d">llzk::tryDetectSpecifiedField</a></div><div class="ttdeci">std::optional&lt; std::reference_wrapper&lt; const Field &gt; &gt; tryDetectSpecifiedField(mlir::Operation *root)</div><div class="ttdoc">Try to detect a uniquely used field from the enclosing LLZK module.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

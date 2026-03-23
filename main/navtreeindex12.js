@@ -1,5 +1,6 @@
 var NAVTREEINDEX12 =
 {
+"backend-dialects.html#signaltype":[8,0,2,1],
 "backend-dialects.html#types-7":[8,0,2],
 "classArrayDialectLinkTests.html":[12,0,7],
 "classArrayOperationLinkTests.html":[12,0,9],
@@ -248,6 +249,5 @@ var NAVTREEINDEX12 =
 "classllzk_1_1ExpressionValue.html#a5a887a5f320e41af0c3e23f602aab7a9":[12,0,1,34,12],
 "classllzk_1_1ExpressionValue.html#a620f6d5954f09fff9c240e2c502ba5f0":[10,0,2,37,11],
 "classllzk_1_1ExpressionValue.html#a620f6d5954f09fff9c240e2c502ba5f0":[12,0,1,34,11],
-"classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65":[10,0,2,37,33],
-"classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65":[12,0,1,34,33]
+"classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65":[10,0,2,37,33]
 };

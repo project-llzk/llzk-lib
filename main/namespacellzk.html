@@ -282,8 +282,10 @@ Typedefs</h2></td></tr>
 <tr class="memdesc:a55eb9bd3756426974f8a8cfe20d1deb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback to produce an error diagnostic.  <br /></td></tr>
 <tr class="memitem:ab5453821bd84f89bfb591269a9554005" id="r_ab5453821bd84f89bfb591269a9554005"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab5453821bd84f89bfb591269a9554005">OwningEmitErrorFn</a> = std::function&lt;<a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a>()&gt;</td></tr>
 <tr class="memdesc:ab5453821bd84f89bfb591269a9554005"><td class="mdescLeft">&#160;</td><td class="mdescRight">This type is required in cases like the functions below to take ownership of the lambda so it is not destroyed upon return from the function.  <br /></td></tr>
-<tr class="memitem:afcf0832d47bace30c3d2e7d4ceb4a291" id="r_afcf0832d47bace30c3d2e7d4ceb4a291"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afcf0832d47bace30c3d2e7d4ceb4a291">FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="classllzk_1_1Field.html">Field</a>, 2&gt;</td></tr>
-<tr class="memdesc:afcf0832d47bace30c3d2e7d4ceb4a291"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a set of Fields.  <br /></td></tr>
+<tr class="memitem:a18840b85883a143d6c8297343ecfe583" id="r_a18840b85883a143d6c8297343ecfe583"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a18840b85883a143d6c8297343ecfe583">FieldRef</a> = std::reference_wrapper&lt;const <a class="el" href="classllzk_1_1Field.html">Field</a>&gt;</td></tr>
+<tr class="memdesc:a18840b85883a143d6c8297343ecfe583"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a stable reference to a known <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a>.  <br /></td></tr>
+<tr class="memitem:ace41b88b3084e2fb14bd6573034e41f2" id="r_ace41b88b3084e2fb14bd6573034e41f2"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ace41b88b3084e2fb14bd6573034e41f2">FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="#a18840b85883a143d6c8297343ecfe583">FieldRef</a>, 2&gt;</td></tr>
+<tr class="memdesc:ace41b88b3084e2fb14bd6573034e41f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typealias for a set of Fields.  <br /></td></tr>
 <tr class="memitem:a79668426b2b2e76d9dde555e6ddb3852" id="r_a79668426b2b2e76d9dde555e6ddb3852"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79668426b2b2e76d9dde555e6ddb3852">ManagedResources</a></td></tr>
 <tr class="memitem:a513acdd19d4296f6623ca75ed5eeb904" id="r_a513acdd19d4296f6623ca75ed5eeb904"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> = mlir::DenseMap&lt;std::pair&lt;mlir::SymbolRefAttr, <a class="el" href="#afc702f955fa2d6d30b19fae69930f11a">Side</a>&gt;, mlir::Attribute&gt;</td></tr>
 <tr class="memdesc:a513acdd19d4296f6623ca75ed5eeb904"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional result from type unifications.  <br /></td></tr>
@@ -583,8 +585,10 @@ Functions</h2></td></tr>
 <tr class="memitem:aa6d8949a060ab0cbc09f4670adda40b0" id="r_aa6d8949a060ab0cbc09f4670adda40b0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ab5453821bd84f89bfb591269a9554005">OwningEmitErrorFn</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa6d8949a060ab0cbc09f4670adda40b0">wrapNonNullableInFlightDiagnostic</a> (llvm::function_ref&lt; mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:a1fe63805b18ec9f9ed2841653d53a1aa" id="r_a1fe63805b18ec9f9ed2841653d53a1aa"><td class="memItemLeft" align="right" valign="top">llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1fe63805b18ec9f9ed2841653d53a1aa">addSpecifiedFields</a> (mlir::ModuleOp modOp)</td></tr>
 <tr class="memdesc:a1fe63805b18ec9f9ed2841653d53a1aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the set of available prime fields with the fields specified on the root module.  <br /></td></tr>
-<tr class="memitem:a1d0bcd0018688751afbefca0a70d9f25" id="r_a1d0bcd0018688751afbefca0a70d9f25"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d0bcd0018688751afbefca0a70d9f25">collectFields</a> (mlir::Operation *root, <a class="el" href="#afcf0832d47bace30c3d2e7d4ceb4a291">FieldSet</a> &amp;fields)</td></tr>
-<tr class="memdesc:a1d0bcd0018688751afbefca0a70d9f25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collects all the fields used in a circuit.  <br /></td></tr>
+<tr class="memitem:afcfdee46edb27b06b8bd67475a16ec37" id="r_afcfdee46edb27b06b8bd67475a16ec37"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afcfdee46edb27b06b8bd67475a16ec37">collectFields</a> (mlir::Operation *root, <a class="el" href="#ace41b88b3084e2fb14bd6573034e41f2">FieldSet</a> &amp;fields, bool silent=true)</td></tr>
+<tr class="memdesc:afcfdee46edb27b06b8bd67475a16ec37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collects all the fields used in a circuit.  <br /></td></tr>
+<tr class="memitem:ad9aa681c2fc2160938a72878439bad3d" id="r_ad9aa681c2fc2160938a72878439bad3d"><td class="memItemLeft" align="right" valign="top">std::optional&lt; std::reference_wrapper&lt; const <a class="el" href="classllzk_1_1Field.html">Field</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad9aa681c2fc2160938a72878439bad3d">tryDetectSpecifiedField</a> (mlir::Operation *root)</td></tr>
+<tr class="memdesc:ad9aa681c2fc2160938a72878439bad3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try to detect a uniquely used field from the enclosing LLZK module.  <br /></td></tr>
 <tr class="memitem:add5fbee8a55ca19fc62c9e5b8e04f380" id="r_add5fbee8a55ca19fc62c9e5b8e04f380"><td class="memTemplParams" colspan="2">template&lt;typename Func, typename... Args&gt; </td></tr>
 <tr class="memitem:add5fbee8a55ca19fc62c9e5b8e04f380 template"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#add5fbee8a55ca19fc62c9e5b8e04f380">buildStringViaCallback</a> (Func &amp;&amp;appendFn, Args &amp;&amp;...args)</td></tr>
 <tr class="memdesc:add5fbee8a55ca19fc62c9e5b8e04f380"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate a string by calling the given <span class="tt">appendFn</span> with an <span class="tt">llvm::raw_ostream &amp;</span> as the first argument followed by the additional <span class="tt">Args</span> provided (if any).  <br /></td></tr>
@@ -777,21 +781,39 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a id="afcf0832d47bace30c3d2e7d4ceb4a291" name="afcf0832d47bace30c3d2e7d4ceb4a291"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afcf0832d47bace30c3d2e7d4ceb4a291">&#9670;&#160;</a></span>FieldSet</h2>
+<a id="a18840b85883a143d6c8297343ecfe583" name="a18840b85883a143d6c8297343ecfe583"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18840b85883a143d6c8297343ecfe583">&#9670;&#160;</a></span>FieldRef</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="#afcf0832d47bace30c3d2e7d4ceb4a291">llzk::FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="classllzk_1_1Field.html">Field</a>, 2&gt;</td>
+          <td class="memname">using <a class="el" href="#a18840b85883a143d6c8297343ecfe583">llzk::FieldRef</a> = std::reference_wrapper&lt;const <a class="el" href="classllzk_1_1Field.html">Field</a>&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Typealias for a stable reference to a known <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00146">146</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+
+</div>
+</div>
+<a id="ace41b88b3084e2fb14bd6573034e41f2" name="ace41b88b3084e2fb14bd6573034e41f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace41b88b3084e2fb14bd6573034e41f2">&#9670;&#160;</a></span>FieldSet</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> = llvm::SmallSet&lt;<a class="el" href="#a18840b85883a143d6c8297343ecfe583">FieldRef</a>, 2&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Typealias for a set of Fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00144">144</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00149">149</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -2169,8 +2191,8 @@ template&lt;typename T, typename U&gt; </div>
 
 </div>
 </div>
-<a id="a1d0bcd0018688751afbefca0a70d9f25" name="a1d0bcd0018688751afbefca0a70d9f25"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1d0bcd0018688751afbefca0a70d9f25">&#9670;&#160;</a></span>collectFields()</h2>
+<a id="afcfdee46edb27b06b8bd67475a16ec37" name="afcfdee46edb27b06b8bd67475a16ec37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afcfdee46edb27b06b8bd67475a16ec37">&#9670;&#160;</a></span>collectFields()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2183,7 +2205,12 @@ template&lt;typename T, typename U&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="#afcf0832d47bace30c3d2e7d4ceb4a291">llzk::FieldSet</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>fields</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>fields</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>silent</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -2193,12 +2220,13 @@ template&lt;typename T, typename U&gt; </div>
   <table class="params">
     <tr><td class="paramname">root</td><td>Takes the operation as root and inspects any <a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> for its <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a>. </td></tr>
     <tr><td class="paramname">fields</td><td>Destination where fields are written into. </td></tr>
+    <tr><td class="paramname">silent</td><td>Does not report warnings if set. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Failure if any <a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a> does not specify a field. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00261">261</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00245">245</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
 
 </div>
 </div>
@@ -2469,7 +2497,7 @@ template&lt;typename OpTy, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00084">84</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00110">110</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -8689,6 +8717,32 @@ template&lt;&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html#l00075">75</a> of file <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html">LLZKFuseProductLoopsPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad9aa681c2fc2160938a72878439bad3d" name="ad9aa681c2fc2160938a72878439bad3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9aa681c2fc2160938a72878439bad3d">&#9670;&#160;</a></span>tryDetectSpecifiedField()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; std::reference_wrapper&lt; const <a class="el" href="classllzk_1_1Field.html">Field</a> &gt; &gt; llzk::tryDetectSpecifiedField </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>root</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Try to detect a uniquely used field from the enclosing LLZK module. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">root</td><td>Operation inside the LLZK module to inspect. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The field if the enclosing module uses exactly one unique field, otherwise <span class="tt">std::nullopt</span>. </dd></dl>
 
 </div>
 </div>
