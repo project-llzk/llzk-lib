@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=preimage})' %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 // TEST: With "cleanup=preimage", the only structs subject to removal are those with parameters
 // that had at least one "concrete" clone created. If such a struct has no remaining uses, it is
@@ -7,16 +6,14 @@
 // there are no remaining uses of `@MakeGuess<[@PEGS]>` so it is removed.
 
 module attributes {llzk.lang} {
-  poly.template @TMain {
-    struct.def @Main {
-      function.def @compute() -> !struct.type<@TMain::@Main<[]>> {
-        %self = struct.new : !struct.type<@TMain::@Main<[]>>
-        %26 = function.call @Impl::@TMakeGuess::@MakeGuess::@compute() : () -> !struct.type<@Impl::@TMakeGuess::@MakeGuess<[4]>>
-        function.return %self : !struct.type<@TMain::@Main<[]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@TMain::@Main<[]>>) {
-        function.return
-      }
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main<[]>> {
+      %self = struct.new : !struct.type<@Main<[]>>
+      %26 = function.call @Impl::@TMakeGuess::@MakeGuess::@compute() : () -> !struct.type<@Impl::@TMakeGuess::@MakeGuess<[4]>>
+      function.return %self : !struct.type<@Main<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@Main<[]>>) {
+      function.return
     }
   }
 

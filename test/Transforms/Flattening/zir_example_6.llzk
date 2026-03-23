@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 #mapDiv = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 #mapAdd = affine_map<()[s0, s1] -> (s0 + s1)>
@@ -78,4 +77,54 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK-LABEL: struct.def @Foo_10 {
+// CHECK-NEXT:    struct.member @bar : !struct.type<@Bar_10>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@Bar_10>) -> !struct.type<@Foo_10> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo_10>
+// CHECK-NEXT:      struct.writem %[[V1]][@bar] = %[[V0]] : <@Foo_10>, !struct.type<@Bar_10>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Foo_10>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo_10>, %[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Bar_10>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Bar_10 {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Bar_10> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar_10>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Bar_10>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Bar_10>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Unpack_8_2_4 {
+// CHECK-NEXT:    struct.member @f : !struct.type<@Bar_10>
+// CHECK-NEXT:    struct.member @g : !array.type<4 x !felt.type>
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Unpack_8_2_4> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Unpack_8_2_4>
+// CHECK-NEXT:      struct.writem %[[V1]][@g] = %[[V0]] : <@Unpack_8_2_4>, !array.type<4 x !felt.type>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Bar_10::@compute() : () -> !struct.type<@Bar_10>
+// CHECK-NEXT:      struct.writem %[[V1]][@f] = %[[V2]] : <@Unpack_8_2_4>, !struct.type<@Bar_10>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @Foo_10::@compute(%[[V2]]) : (!struct.type<@Bar_10>) -> !struct.type<@Foo_10>
+// CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Unpack_8_2_4>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @User1 {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@User1> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 42
+// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const 99
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = array.new %[[V0]], %[[V1]], %[[V0]], %[[V1]] : <4 x !felt.type>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = function.call @Unpack_8_2_4::@compute(%[[V2]]) : (!array.type<4 x !felt.type>) -> !struct.type<@Unpack_8_2_4>
+// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = struct.new : <@User1>
+// CHECK-NEXT:      function.return %[[V4]] : !struct.type<@User1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@User1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

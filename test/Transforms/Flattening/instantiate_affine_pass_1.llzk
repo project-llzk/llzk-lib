@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 #IdxToLen = affine_map<(i)->(2*i)>
 #Values = affine_map<(i,j)->(5*j+i)>
@@ -98,4 +97,58 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK-LABEL: struct.def @"VarArray_2_!s<@ToFelt_1>" {
+// CHECK-NEXT:    struct.member @val : !array.type<2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:    function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@ToFelt_1>>) -> !struct.type<@"VarArray_2_!s<@ToFelt_1>"> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@"VarArray_2_!s<@ToFelt_1>">, !array.type<2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@"VarArray_2_!s<@ToFelt_1>">, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@ToFelt_1>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @ToFelt_1 {
+// CHECK-NEXT:    struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt_1> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_1>
+// CHECK-NEXT:      struct.writem %[[VAL_5]][@out] = %[[VAL_4]] : <@ToFelt_1>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !struct.type<@ToFelt_1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @TestLoopWithAffineArrayStruct_2 {
+// CHECK-NEXT:    struct.member @arrs : !array.type<2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">> {llzk.pub}
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TestLoopWithAffineArrayStruct_2> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@ToFelt_1>>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_1::@compute() : () -> !struct.type<@ToFelt_1>
+// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_8]]] = %[[VAL_11]] : <2 x !struct.type<@ToFelt_1>>, !struct.type<@ToFelt_1>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @"VarArray_2_!s<@ToFelt_1>"::@compute(%[[VAL_10]]) : (!array.type<2 x !struct.type<@ToFelt_1>>) -> !struct.type<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_7]]] = %[[VAL_12]] : <2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>, !struct.type<@"VarArray_2_!s<@ToFelt_1>">
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      struct.writem %[[VAL_13]][@arrs] = %[[VAL_9]] : <@TestLoopWithAffineArrayStruct_2>, !array.type<2 x !struct.type<@"VarArray_2_!s<@ToFelt_1>">>
+// CHECK-NEXT:      function.return %[[VAL_13]] : !struct.type<@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@TestLoopWithAffineArrayStruct_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @TestLoopWithAffineArrayStruct_2::@compute() : () -> !struct.type<@TestLoopWithAffineArrayStruct_2>
+// CHECK-NEXT:      function.return %[[VAL_15]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

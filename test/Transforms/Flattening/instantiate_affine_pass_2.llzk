@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 #id = affine_map<(i)->(i)>
 #IdxToLen = affine_map<(i)->(5*i+1)>
@@ -70,4 +69,47 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+//
+// CHECK-LABEL: poly.template @"TVarArray_11_\1A" {
+// CHECK-NEXT:    poly.param @T
+// CHECK-NEXT:    struct.def @"VarArray_11_\1A" {
+// CHECK-NEXT:      struct.member @val : !array.type<11 x !poly.tvar<@T>>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<11 x !poly.tvar<@T>>) -> !struct.type<@"TVarArray_11_\1A"::@"VarArray_11_\1A"<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@"TVarArray_11_\1A"::@"VarArray_11_\1A"<[@T]>>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@"TVarArray_11_\1A"::@"VarArray_11_\1A"<[@T]>>, !array.type<11 x !poly.tvar<@T>>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@"TVarArray_11_\1A"::@"VarArray_11_\1A"<[@T]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@"TVarArray_11_\1A"::@"VarArray_11_\1A"<[@T]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<11 x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @TToFelt {
+// CHECK-NEXT:    poly.param @A
+// CHECK-NEXT:    struct.def @ToFelt {
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TToFelt::@ToFelt<[@A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@TToFelt::@ToFelt<[@A]>>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@out] = %[[VAL_5]] : <@TToFelt::@ToFelt<[@A]>>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TToFelt::@ToFelt<[@A]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TToFelt::@ToFelt<[@A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @ComponentB {
+// CHECK-NEXT:    function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@ComponentB> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <11 x !struct.type<@TToFelt::@ToFelt<[#[[$M0]]]>>>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"TVarArray_11_\1A"::@"VarArray_11_\1A"::@compute(%[[VAL_9]]) : (!array.type<11 x !struct.type<@TToFelt::@ToFelt<[#[[$M0]]]>>>) -> !struct.type<@"TVarArray_11_\1A"::@"VarArray_11_\1A"<[!struct.type<@TToFelt::@ToFelt<[#[[$M0]]]>>]>>
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@ComponentB>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentB>, %[[VAL_12:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

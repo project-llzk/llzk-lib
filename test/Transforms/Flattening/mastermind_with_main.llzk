@@ -1,5 +1,4 @@
 // RUN: llzk-opt -I %input_dir -llzk-flatten %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {

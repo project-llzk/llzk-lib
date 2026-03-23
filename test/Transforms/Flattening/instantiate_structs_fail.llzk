@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 module attributes {llzk.lang} {
   poly.template @TUnpack {

@@ -1,5 +1,4 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
-// REQUIRES: todo-update-llzk-flatten-partial
 
 // TEST: partial instantiation where 'read_const' cannot be removed
 #id = affine_map<(i)->(i)>
@@ -43,4 +42,36 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: TODO
+// CHECK: #[[$M0:.+]] = affine_map<(d0) -> (d0)>
+//
+// CHECK-LABEL: poly.template @"TZip_f_f_\1A" {
+// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    struct.def @"Zip_f_f_\1A" {
+// CHECK-NEXT:      struct.member @"$array" : !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new{(%[[VAL_1]])} : <#[[$M0]] x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@"$array"] = %[[VAL_2]] : <@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>, !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @TTop {
+// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TTop::@Top<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@TTop::@Top<[@N]>>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @"TZip_f_f_\1A"::@"Zip_f_f_\1A"::@compute() : () -> !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@TTop::@Top<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TTop::@Top<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

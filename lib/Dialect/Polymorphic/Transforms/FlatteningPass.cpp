@@ -558,33 +558,56 @@ class StructCloner {
       }
     }
 
-    // Clone the original struct and apply the new name.
+    // This list will be used to build the new remote/external type.
     SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
+    // Clone the original struct and apply the new name.
     StructDefOp newStruct = origStruct.clone();
     newStruct.setSymName(
         BuildShortTypeString::from(
             typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
         )
     );
-    // Drop struct and template name from the list that will be used to build new external type..
-    typeAtCallerSymPieces.pop_back();
+    // Drop struct name from the list. Template name is handled by cases within block below.
     typeAtCallerSymPieces.pop_back();
 
     TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
     assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
+    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
     if (remainingNames.empty()) {
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
-      // `SymbolTable::insert()` function directly so that the name will be made unique.
-      ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
-      assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+      // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
+      // Drop the old template name from the list.
+      typeAtCallerSymPieces.pop_back();
     } else {
-      // TODO: This transformation will be a bit different now. Since there are parameters
-      // remaining, create a TemplateOp with the remaining parameters to be parent of the new
-      // StructDefOp.
-      //
-      // TODO: add the new template name to `typeAtCallerSymPieces`
-      assert(false && "not yet implemented");
+      // Clone the template and set instantiated name.
+      TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
+      newTemplate.setSymName(
+          BuildShortTypeString::from(
+              typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
+          )
+      );
+      assert(newTemplate->getNumRegions() > 0 && "region exists"); // it just doesn't have a block
+      newTemplate.getBodyRegion().emplaceBlock();
+
+      // Clone preserved const param/expr ops.
+      for (Attribute name : remainingNames) {
+        FlatSymbolRefAttr nameSym = llvm::dyn_cast<FlatSymbolRefAttr>(name);
+        assert(nameSym && "expected FlatSymbolRefAttr");
+
+        Operation *symOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
+        assert(symOp && "symbol must exist");
+        newTemplate.insert(newTemplate.begin(), symOp->clone());
+      }
+
+      // Insert the struct into the template and the template into the module. Use the
+      // `SymbolTable::insert()` function so that the name will be made unique if necessary.
+      symTables.getSymbolTable(newTemplate).insert(newStruct);
+      symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+
+      // Replace the old template name in the list with the new one.
+      typeAtCallerSymPieces.back() = FlatSymbolRefAttr::get(newTemplate.getSymNameAttr());
     }
 
     // Retrieve the new type AFTER inserting since the struct name may be appended to make
