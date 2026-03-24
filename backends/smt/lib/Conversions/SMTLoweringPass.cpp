@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -137,7 +138,6 @@ public:
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-
     // Create a symbol for the signal
     std::optional<int64_t> memberIndex;
     for (auto [i, member] : llvm::enumerate(memberNames)) {
@@ -166,6 +166,40 @@ public:
     );
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, equal);
 
+    return success();
+  }
+};
+
+class MemberReadConverter : public OpConversionPattern<component::MemberReadOp> {
+  SmallVector<StringRef> memberNames;
+
+public:
+  MemberReadConverter(
+      TypeConverter &typeConverter, MLIRContext *context, ArrayRef<StringRef> memberNames
+  )
+      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, memberNames {memberNames} {}
+  using OpConversionPattern<component::MemberReadOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    // Create a symbol for the signal
+    std::optional<int64_t> memberIndex;
+    for (auto [i, member] : llvm::enumerate(memberNames)) {
+      if (member == adaptor.getMemberName()) {
+        memberIndex.emplace(i);
+        break;
+      }
+    }
+
+    if (!memberIndex.has_value()) {
+      return failure();
+    }
+
+    rewriter.replaceOpWithNewOp<smt::IntConstantOp>(
+        op, IntegerAttr::
+                get(getContext(), APSInt::get(2 * *memberIndex + 1) /* _w is 2n, _c is 2n + 1 */)
+    );
     return success();
   }
 };
@@ -214,6 +248,17 @@ class ReturnConverter : public OpConversionPattern<function::ReturnOp> {
   }
 };
 
+class ConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp> {
+  using OpConversionPattern<constrain::EmitEqualityOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(
+      constrain::EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto eq = rewriter.create<smt::EqOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs());
+    rewriter.replaceOpWithNewOp<smt::AssertOp>(op, eq.getResult());
+    return success();
+  }
+};
+
 class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
 
   void getDependentDialects(::mlir::DialectRegistry &registry) const override {
@@ -257,6 +302,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     ConversionTarget target {*context};
 
     target.addIllegalDialect<felt::FeltDialect>();
+    target.addIllegalDialect<constrain::ConstrainDialect>();
     target.addLegalDialect<smt::SMTDialect>();
     target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
     target.addLegalOp<component::CreateStructOp>();
@@ -276,10 +322,9 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     patterns.add<
         BasicConverter<felt::AddFeltOp, smt::IntAddOp>,
         BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
-        BasicConverter<felt::MulFeltOp, smt::IntMulOp>, FunctionDefConverter, ReturnConverter>(
-        typeConverter, context
-    );
-    patterns.add<MemberWriteConverter>(typeConverter, context, memberNames);
+        BasicConverter<felt::MulFeltOp, smt::IntMulOp>, FunctionDefConverter, ReturnConverter,
+        ConstrainConverter>(typeConverter, context);
+    patterns.add<MemberWriteConverter, MemberReadConverter>(typeConverter, context, memberNames);
 
     if (failed(applyPartialConversion(op, target, std::move(patterns)))) {
       return nullptr;
