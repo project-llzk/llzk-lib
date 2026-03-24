@@ -74,8 +74,8 @@ public:
   using OpConversionPattern<TemplateOp>::OpConversionPattern;
 
   static inline bool legal(TemplateOp op) {
-    return llvm::any_of(op.getBodyRegion().getOps(), [](auto &op) {
-      return llvm::isa<StructDefOp, FuncDefOp>(op);
+    return llvm::any_of(op.getBodyRegion().getOps(), [](Operation &p) {
+      return llvm::isa<StructDefOp, FuncDefOp>(p);
     });
   }
 
