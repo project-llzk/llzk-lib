@@ -196,11 +196,6 @@ struct FieldsCtx {
 
 static void handleAttribute(mlir::Attribute, FieldsCtx &);
 
-/// Fills the type switch with empty handles for the given types.
-template <typename... Types> static void doNothing(TypeSwitch<mlir::Type> &ts) {
-  (ts.Case([](Types) {}), ...);
-}
-
 static void handleType(mlir::Type type, FieldsCtx &ctx) {
   TypeSwitch<mlir::Type> ts(type);
   ts.Case([&ctx](llzk::felt::FeltType felt) {
@@ -208,8 +203,9 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
       ctx.fields.insert(felt.getField());
     } else {
       ctx.status = failure();
-      ctx.scope->emitWarning()
-          << "felt type does not declare its field. This may cause some passes to fail";
+      if (ctx.scope) {
+        ctx.scope->emitWarning() << "felt type is unspecified, which may cause some passes to fail";
+      }
     }
   })
       .Case([&ctx](llzk::array::ArrayType array) { handleType(array.getElementType(), ctx); })
@@ -225,20 +221,8 @@ static void handleType(mlir::Type type, FieldsCtx &ctx) {
       handleType(o, ctx);
     }
   });
-  // Accepted types that are no-ops.
-  doNothing<
-      // clang-format off
-      llzk::component::StructType, 
-      llzk::string::StringType,
-      mlir::IntegerType,
-      llzk::polymorphic::TypeVarType
-      // clang-format on
-      >(ts);
-  // Fail on any type we don't recognize.
-  ts.Default([&ctx](auto t) {
-    ctx.scope->emitOpError() << "unhandled type " << t
-                             << " while extracting fields from felt types";
-  });
+  // Do nothing by default for any other type
+  ts.Default([](auto) {});
 }
 
 static void handleAttribute(mlir::Attribute attr, FieldsCtx &ctx) {
@@ -258,13 +242,13 @@ static void handleAttribute(mlir::Attribute attr, FieldsCtx &ctx) {
   }).Default([](auto) {});
 }
 
-LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields) {
+LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields, bool silent) {
   if (!root) {
     return success(); // Nothing to do
   }
   LogicalResult status = success();
-  root->walk([&fields, &status](mlir::Operation *op) {
-    FieldsCtx ctx = {.fields = fields, .status = status, .scope = op};
+  root->walk([&fields, &status, silent](mlir::Operation *op) {
+    FieldsCtx ctx = {.fields = fields, .status = status, .scope = silent ? nullptr : op};
     // Crawl for types in the results,
     for (auto result : op->getOpResults()) {
       handleType(result.getType(), ctx);
@@ -284,4 +268,26 @@ LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields)
   });
 
   return status;
+}
+
+std::optional<std::reference_wrapper<const llzk::Field>>
+llzk::tryDetectSpecifiedField(Operation *root) {
+  if (!root) {
+    return std::nullopt;
+  }
+
+  ModuleOp modOp = dyn_cast<ModuleOp>(root);
+  if (!modOp) {
+    modOp = root->getParentOfType<ModuleOp>();
+  }
+
+  if (!modOp) {
+    return std::nullopt;
+  }
+
+  FieldSet fields;
+  if (failed(collectFields(modOp, fields)) || fields.size() != 1) {
+    return std::nullopt;
+  }
+  return *fields.begin();
 }

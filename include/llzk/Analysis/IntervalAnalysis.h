@@ -121,14 +121,30 @@ public:
   mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  div(const llvm::SMTSolverRef &solver, felt::DivFeltOp op, const ExpressionValue &lhs,
+  div(const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
+
+  friend ExpressionValue uintDiv(
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
+      const ExpressionValue &rhs
+  );
+
+  friend ExpressionValue sintDiv(
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
+      const ExpressionValue &rhs
+  );
 
   friend ExpressionValue
   mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
   bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  bitOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue
+  bitXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue shiftLeft(
       const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
@@ -150,19 +166,6 @@ public:
 
   friend ExpressionValue
   boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
-
-  /// @brief Computes a solver expression based on the operation, but computes a fallback
-  /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
-  /// operations.
-  /// @param solver
-  /// @param op
-  /// @param lhs
-  /// @param rhs
-  /// @return
-  friend ExpressionValue fallbackBinaryOp(
-      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
-      const ExpressionValue &rhs
-  );
 
   friend ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
@@ -258,7 +261,7 @@ class IntervalDataFlowAnalysis
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
 
-  // Map members to their symbols
+  // Map SourceRefs to their symbols.
   using SymbolMap = mlir::DenseMap<SourceRef, llvm::SMTExprRef>;
 
 public:
@@ -280,13 +283,11 @@ public:
   /// @return
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
 
-  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getMemberReadResults() const {
-    return memberReadResults;
+  const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getReadResults() const {
+    return readResults;
   }
 
-  const llvm::DenseMap<SourceRef, ExpressionValue> &getMemberWriteResults() const {
-    return memberWriteResults;
-  }
+  const llvm::DenseMap<SourceRef, ExpressionValue> &getWriteResults() const { return writeResults; }
 
 private:
   mlir::DataFlowSolver &_dataflowSolver;
@@ -296,21 +297,36 @@ private:
   bool propagateInputConstraints;
   mlir::SymbolTableCollection tables;
 
-  // Track member reads so that propagations to members can be all updated efficiently.
-  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> memberReadResults;
-  // Track member writes values. For now, we'll overapproximate this.
-  llvm::DenseMap<SourceRef, ExpressionValue> memberWriteResults;
+  // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> readResults;
+  // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
+  llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
     (void)lattice->setValue(ExpressionValue(field.get()));
   }
 
-  llvm::SMTExprRef createFeltSymbol(const SourceRef &r) const;
+  static bool isBooleanType(mlir::Type ty) {
+    if (auto intTy = llvm::dyn_cast<mlir::IntegerType>(ty)) {
+      return intTy.getWidth() == 1;
+    }
+    return false;
+  }
 
-  llvm::SMTExprRef createFeltSymbol(mlir::Value val) const;
+  Interval getDefaultIntervalForType(mlir::Type ty) const {
+    return isBooleanType(ty) ? Interval::Boolean(field.get()) : Interval::Entire(field.get());
+  }
 
-  llvm::SMTExprRef createFeltSymbol(const char *name) const;
+  llvm::SMTExprRef createSymbol(mlir::Type ty, const char *name) const;
+
+  llvm::SMTExprRef createSymbol(const SourceRef &r) const;
+
+  llvm::SMTExprRef createSymbol(mlir::Value val) const;
+
+  ExpressionValue createUnknownValue(mlir::Value val) const {
+    return ExpressionValue(createSymbol(val), getDefaultIntervalForType(val.getType()));
+  }
 
   inline bool isConstOp(mlir::Operation *op) const {
     return llvm::isa<
@@ -342,9 +358,9 @@ private:
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
         felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
-        felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
-        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
-        boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
+        mlir::arith::XOrIOp, felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp,
+        felt::XorFeltOp, felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp,
+        boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
   }
 
   ExpressionValue
@@ -375,6 +391,30 @@ private:
   }
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+
+  /// @brief Convert an array access op's indices into SourceRef path components.
+  /// Constant indices are tracked precisely, while dynamic indices are widened to
+  /// the full valid range for that array dimension.
+  std::vector<SourceRefIndex>
+  getArrayAccessIndices(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
+
+  /// @brief Build the SourceRef addressed by an array access op when its base is a
+  /// block argument or rooted SSA value.
+  mlir::FailureOr<SourceRef>
+  getArrayAccessRef(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
+
+  /// @brief Compute the best known interval for a SourceRef from writes, constants,
+  /// or an already-initialized root lattice value.
+  Interval getRefInterval(const SourceRef &ref);
+
+  /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
+  /// written value when available and otherwise pairing a fresh SSA symbol with the
+  /// SourceRef's current interval.
+  ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
+
+  /// @brief Record a write to the given SourceRef and eagerly refine any reads that
+  /// are currently tracking the same storage location.
+  void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
 
   /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
   /// if `val` has no associated SourceRefLattice.

@@ -485,7 +485,7 @@ private:
       return module->emitOpError() << "multiple fields is not supported";
     }
     const auto &selectedField = *(fields.begin());
-    return toAPSInt(selectedField.prime());
+    return toAPSInt(selectedField.get().prime());
   }
 
   void runOnOperation() override {

@@ -15,6 +15,14 @@ target_include_directories(R1CSDialectHeaders
             # Headers from LLZK tools include directory
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools/include>)
 install(TARGETS R1CSDialectHeaders EXPORT LLZKTargets)
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" "${CMAKE_CURRENT_BINARY_DIR}/"
+  TYPE INCLUDE
+  FILES_MATCHING
+  PATTERN "*.h"
+  PATTERN "*.h.inc"
+  PATTERN "*.td"
+  PATTERN CMakeFiles EXCLUDE)
 
 add_subdirectory(r1cs/Dialect/IR/)
 add_subdirectory(r1cs/Transforms/)

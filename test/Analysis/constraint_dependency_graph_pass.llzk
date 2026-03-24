@@ -266,6 +266,32 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @ArrayNewRoot {
+    function.def @compute() -> !struct.type<@ArrayNewRoot> {
+      %self = struct.new : !struct.type<@ArrayNewRoot>
+      function.return %self : !struct.type<@ArrayNewRoot>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayNewRoot>) {
+      %array = array.new : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      %fval = felt.const 7
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      constrain.eq %elem, %fval : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayNewRoot ConstraintDependencyGraph {
+// CHECK-NEXT:     { %array[1], <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayNewRoot ConstraintDependencyGraph {
+// INTRA-NEXT:     { %array[1], <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
 
   struct.def @ConstConstraints {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ConstConstraints> {
@@ -605,14 +631,17 @@ module attributes {llzk.lang} {
   include.from "FrontendLang/Zirgen/zir_example_3.llzk" as @zir
 }
 
-// COM: @zir::@B is empty since it uses an uninitialized array
+// COM: @zir::@B now tracks the empty array.new allocation site as a root in the
+// COM: interprocedural graph, but remains empty intraprocedurally.
 // CHECK-LABEL: @zir::@Head ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@A ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@$super][@$super], @A<[@N]> }
 // CHECK-NEXT: }
-// CHECK-NEXT: @zir::@B ConstraintDependencyGraph { }
+// CHECK-NEXT: @zir::@B ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@$super][@$super], %array[0] }
+// CHECK-NEXT: }
 // CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg0[@a][@$super][@$super], %arg0[@b][@$super][@$super][@$super][@$super] },
 // CHECK-NEXT:     { %arg0[@a][@$super][@$super], @A<[@N]> }
@@ -711,15 +740,139 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ExternAdder>, %a: !felt.type, %b: !felt.type) {
       %sum = struct.readm %self[@sum] : !struct.type<@ExternAdder>, !felt.type
       %c = function.call @extern_add(%a, %b) : (!felt.type, !felt.type) -> (!felt.type)
-      // We make no assumptions about what %c could be, so this constraint is
-      // effectively `%sum === {}`, so the CDG will be empty.
+      // External call results are treated as fresh roots, so the CDG should
+      // preserve the dependency on the call result without connecting it to
+      // the input arguments.
       constrain.eq %sum, %c : !felt.type
       function.return
     }
   }
 }
 
-// CHECK-LABEL: @ExternAdder ConstraintDependencyGraph { }
+// CHECK-LABEL: @ExternAdder ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@sum], <call @extern_add %[[ADD_RESULT:[0-9]+]]> }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+
+  struct.def @ExternPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPayload> {
+      %self = struct.new : !struct.type<@ExternPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ExternPayload>, !felt.type
+      function.return %self : !struct.type<@ExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+
+  struct.def @ExternMemberDependency {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternMemberDependency> {
+      %self = struct.new : !struct.type<@ExternMemberDependency>
+      function.return %self : !struct.type<@ExternMemberDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternMemberDependency>, %value: !felt.type) {
+      %expected = struct.readm %self[@value] : !struct.type<@ExternMemberDependency>, !felt.type
+      %payload = function.call @extern_wrap(%value) : (!felt.type) -> !struct.type<@ExternPayload>
+      %actual = struct.readm %payload[@value] : !struct.type<@ExternPayload>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternMemberDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@value], <call @extern_wrap %[[WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+
+  struct.def @ExternPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPayload> {
+      %self = struct.new : !struct.type<@ExternPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ExternPayload>, !felt.type
+      function.return %self : !struct.type<@ExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+
+  struct.def @ExternRepeatedMemberDependency {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@ExternRepeatedMemberDependency> {
+      %self = struct.new : !struct.type<@ExternRepeatedMemberDependency>
+      function.return %self : !struct.type<@ExternRepeatedMemberDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternRepeatedMemberDependency>, %lhs: !felt.type, %rhs: !felt.type) {
+      %expectedL = struct.readm %self[@lhs] : !struct.type<@ExternRepeatedMemberDependency>, !felt.type
+      %expectedR = struct.readm %self[@rhs] : !struct.type<@ExternRepeatedMemberDependency>, !felt.type
+      %leftPayload = function.call @extern_wrap(%lhs) : (!felt.type) -> !struct.type<@ExternPayload>
+      %rightPayload = function.call @extern_wrap(%rhs) : (!felt.type) -> !struct.type<@ExternPayload>
+      %actualL = struct.readm %leftPayload[@value] : !struct.type<@ExternPayload>, !felt.type
+      %actualR = struct.readm %rightPayload[@value] : !struct.type<@ExternPayload>, !felt.type
+      constrain.eq %expectedL, %actualL : !felt.type
+      constrain.eq %expectedR, %actualR : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternRepeatedMemberDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@lhs], <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT:     { %arg0[@rhs], <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+
+  function.def private @extern_pair(%value: !felt.type) -> (!felt.type, !felt.type) attributes {extern}
+
+  struct.def @ExternPairDependency {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPairDependency> {
+      %self = struct.new : !struct.type<@ExternPairDependency>
+      function.return %self : !struct.type<@ExternPairDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPairDependency>, %value: !felt.type) {
+      %expectedL = struct.readm %self[@lhs] : !struct.type<@ExternPairDependency>, !felt.type
+      %expectedR = struct.readm %self[@rhs] : !struct.type<@ExternPairDependency>, !felt.type
+      %actualL, %actualR = function.call @extern_pair(%value) : (!felt.type) -> (!felt.type, !felt.type)
+      constrain.eq %expectedL, %actualL : !felt.type
+      constrain.eq %expectedR, %actualR : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ExternPairDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@lhs], <call @extern_pair %[[PAIR_RESULT:[0-9]+]]#0> }
+// CHECK-NEXT:     { %arg0[@rhs], <call @extern_pair %[[PAIR_RESULT]]#1> }
+// CHECK-NEXT: }
 
 // -----
 
@@ -920,3 +1073,26 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Foo ConstraintDependencyGraph { }
+
+// -----
+
+// COM: Test nondet handling
+module attributes {llzk.lang} {
+  struct.def @NondetProp {
+    function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@NondetProp> attributes {function.allow_witness} {
+      %self = struct.new : <@NondetProp>
+      function.return %self : !struct.type<@NondetProp>
+    }
+    function.def @constrain(%arg0: !struct.type<@NondetProp>,  %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+      %nondet = llzk.nondet : !felt.type
+
+      constrain.eq %nondet, %arg1 : !felt.type
+      constrain.eq %nondet, %arg2 : !felt.type
+
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NondetProp ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, %arg2, <%nondet = llzk.nondet : !felt.type> }
+// CHECK-NEXT: }

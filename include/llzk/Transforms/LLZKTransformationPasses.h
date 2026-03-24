@@ -16,6 +16,8 @@ namespace llzk {
 
 void addRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm);
 
+std::unique_ptr<mlir::Pass> createNoOverwritesPass();
+
 std::unique_ptr<mlir::Pass> createFuseProductLoopsPass();
 
 std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass();

@@ -67,12 +67,12 @@ public:
   /// @param memberRef The member reference into the current value.
   /// @return The new value and a change result indicating if the value is different than the
   /// original value.
-  std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+  mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
   referenceMember(SymbolLookupResult<component::MemberDefOp> memberRef) const;
 
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
-  std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+  mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
   extract(const std::vector<SourceRefIndex> &indices) const;
 
 protected:
@@ -82,8 +82,10 @@ protected:
 
   /// @brief Perform a recursive transformation over all elements of this value and
   /// return a new value with the modifications.
-  virtual std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-  elementwiseTransform(llvm::function_ref<SourceRef(const SourceRef &)> transform) const;
+  virtual mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+  elementwiseTransform(
+      llvm::function_ref<mlir::FailureOr<SourceRef>(const SourceRef &)> transform
+  ) const;
 };
 
 /// A lattice for use in dense analysis.
@@ -101,8 +103,8 @@ public:
 
   /* Static utilities */
 
-  /// If val is the source of other values (i.e., a block argument from the function
-  /// args or a constant), create the base reference to the val. Otherwise,
+  /// If val is the source of other values (i.e., a block argument, an allocation-like op result,
+  /// or a constant), create the base reference to the val. Otherwise,
   /// return failure.
   /// Our lattice values must originate from somewhere.
   static mlir::FailureOr<SourceRef> getSourceRef(mlir::Value val);

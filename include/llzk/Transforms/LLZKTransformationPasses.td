@@ -116,4 +116,17 @@ def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
   let options = [];
 }
 
+def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
+  let summary = "Checks that every struct member is written exactly once";
+  let description = [{
+      This pass currently reports an error if any struct member may not be written 
+      exactly once (i.e. overwritten or left uninitialized), and does not 
+      attempt to perform any repairs (e.g. SSA-ifying overwritten struct 
+      members, or default-initializing unwritten members). This pass 
+      overapproximates conditionals, and can result in false positives.
+  }];
+  let constructor = "llzk::createNoOverwritesPass()";
+  let options = [];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
