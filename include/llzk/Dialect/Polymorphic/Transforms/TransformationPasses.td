@@ -38,10 +38,14 @@ def StructCleanupMode
   let genSpecializedAttr = 0;
 }
 
-def EmptyParamListRemovalPass : LLZKPass<"llzk-drop-empty-params"> {
-  let summary = "Convert templates with no constant parameters or expressions "
-                "into modules.";
-  let constructor = "llzk::polymorphic::createEmptyParamListRemoval()";
+def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-template"> {
+  let summary = "Remove empty templates";
+  let description = [{
+    Performs the following transformations:
+    - Convert templates with no constant parameters or expressions into modules.
+    - Remove templates with no struct or function definitions.
+  }];
+  let constructor = "llzk::polymorphic::createEmptyTemplateRemoval()";
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {

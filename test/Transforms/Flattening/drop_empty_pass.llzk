@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-drop-empty-params %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-drop-empty-template %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   poly.template @TComponent {
@@ -72,6 +72,76 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair::@Pair<[@Fst, @Snd]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
 // CHECK-NEXT:        function.call @TComponent::@Component::@constrain(%[[VAL_10]]) : (!struct.type<@TComponent::@Component>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Template with no struct or function members should be removed.
+module attributes {llzk.lang} {
+  poly.template @UselessTemplate {
+    poly.param @A
+    poly.expr @B {
+      %v = arith.constant 42 : index
+      poly.yield %v : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  }
+// -----
+
+// Template with struct member cannot be removed
+module attributes {llzk.lang} {
+  poly.template @Templ {
+    poly.expr @B {
+      %v = arith.constant 42 : index
+      poly.yield %v : index
+    }
+    struct.def @Struct {
+      function.def @compute() -> !struct.type<@Templ::@Struct> {
+        %self = struct.new : !struct.type<@Templ::@Struct>
+        function.return %self : !struct.type<@Templ::@Struct>
+      }
+      function.def @constrain(%arg0: !struct.type<@Templ::@Struct>) {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Templ {
+// CHECK-NEXT:      poly.expr @B {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Struct {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Templ::@Struct> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Templ::@Struct>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Templ::@Struct>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Templ::@Struct>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Template with function member cannot be removed
+module attributes {llzk.lang} {
+  poly.template @Templ {
+    poly.param @A
+    function.def @c(%arg0: !array.type<@A x i1>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Templ {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      function.def @c(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>) {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

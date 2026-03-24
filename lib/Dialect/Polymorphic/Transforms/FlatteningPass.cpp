@@ -1866,7 +1866,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     {
       // Preliminary step: remove empty parameter lists from structs
       OpPassManager nestedPM(ModuleOp::getOperationName());
-      nestedPM.addPass(createEmptyParamListRemoval());
+      nestedPM.addPass(createEmptyTemplateRemoval());
       if (failed(runPipeline(nestedPM, modOp))) {
         return failure();
       }

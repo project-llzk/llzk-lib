@@ -14,7 +14,7 @@
 
 namespace llzk::polymorphic {
 
-std::unique_ptr<mlir::Pass> createEmptyParamListRemoval();
+std::unique_ptr<mlir::Pass> createEmptyTemplateRemoval();
 std::unique_ptr<mlir::Pass> createFlatteningPass();
 
 #define GEN_PASS_REGISTRATION

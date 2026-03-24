@@ -35,6 +35,7 @@ added:
 
 changed:
   - "Replace constant parameters on `struct.def` with `poly.template` plus `poly.param` ops"
+  - "Rename `llzk-drop-empty-params` pass to `llzk-drop-empty-templates` and adapt it to new `poly.template` op"
   - CAPI:
     - "`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter"
     - "replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateConstParamSymbols`"
