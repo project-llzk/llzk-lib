@@ -1641,7 +1641,7 @@ struct FromKeepSet : public CleanupBase {
               });
               // Ignore struct/template parameter symbols (before doing the lookup below because it
               // would fail anyway and then cause the "failed" case to be triggered unnecessarily).
-              if (usedSymbolNode->isStructParam()) {
+              if (usedSymbolNode->isTemplateParam()) {
                 continue;
               }
               // If `usedSymbolNode` references a StructDefOp, ensure it's considered in the roots.

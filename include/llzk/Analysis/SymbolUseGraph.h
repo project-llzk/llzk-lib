@@ -74,8 +74,8 @@ public:
   /// The set of operations that use the symbol.
   const OpSet &getUserOps() const { return opsThatUseTheSymbol; }
 
-  /// Return `true` iff the symbol is a struct constant parameter name.
-  bool isStructParam() const { return isTemplateConstParam; }
+  /// Return `true` iff the symbol is a template constant parameter name.
+  bool isTemplateParam() const { return isTemplateConstParam; }
 
   /// Return true if this node has any predecessors.
   bool hasPredecessor() const {
