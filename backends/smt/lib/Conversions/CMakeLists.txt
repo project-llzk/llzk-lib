@@ -14,9 +14,8 @@ target_link_libraries(
     LLVMHeaders
     MLIRHeaders
   PRIVATE
-    LLZKBoolDialect
-    LLZKCastDialect
-    LLZKFeltDialect
+    LLZKDialect
+    SMTDialect
 )
 
 

@@ -37,6 +37,8 @@
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
 
+#include "smt/Conversions/ConversionPasses.h"
+#include "smt/Dialect/IR/SMTDialect.h"
 #include "tools/config.h"
 #include "zklean/Conversions/Passes.h"
 #include "zklean/DialectRegistration.h"
@@ -60,11 +62,9 @@ static llvm::cl::opt<bool>
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
-  llvm::setBugReportMsg(
-      "PLEASE submit a bug report to " BUG_REPORT_URL
-      " and include the crash backtrace, relevant LLZK files,"
-      " and associated run script(s).\n"
-  );
+  llvm::setBugReportMsg("PLEASE submit a bug report to " BUG_REPORT_URL
+                        " and include the crash backtrace, relevant LLZK files,"
+                        " and associated run script(s).\n");
   llvm::cl::AddExtraVersionPrinter([](llvm::raw_ostream &os) {
     os << "\nLLZK (" LLZK_URL "):\n  LLZK version " LLZK_VERSION_STRING "\n";
   });
@@ -76,6 +76,7 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
   zklean::registerAllDialects(registry);
+  registry.insert<llzk::smt::SMTDialect>();
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
@@ -96,6 +97,7 @@ int main(int argc, char **argv) {
 
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
+  llzk::smt::registerConversionPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

@@ -11,10 +11,10 @@
 
 #include <mlir/Pass/Pass.h>
 
-namespace smt {
+namespace llzk::smt {
 std::unique_ptr<mlir::Pass> createSMTLoweringPass();
 
 #define GEN_PASS_REGISTRATION
 #include "smt/Conversions/ConversionPasses.h.inc"
 
-} // namespace smt
+} // namespace llzk::smt

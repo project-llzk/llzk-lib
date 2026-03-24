@@ -11,4 +11,6 @@ target_include_directories(SMTDialectHeaders
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools/include>)
 install(TARGETS SMTDialectHeaders EXPORT LLZKTargets)
+
+add_subdirectory(smt/Dialect/IR)
 add_subdirectory(smt/Conversions)
