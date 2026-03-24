@@ -37,9 +37,9 @@
 
 module attributes {llzk.lang = "circom"} {
   poly.template @TGetSum {
-    poly.param @A
+    poly.param @A // instantiations of A are {1, 6, 11, ... 5*P+1}
 
-    struct.def @GetSum { // instantiations of A are {1, 6, 11, ... 5*P+1}
+    struct.def @GetSum {
       struct.member @out: !felt.type {llzk.pub}
       struct.member @sum: !felt.type
 

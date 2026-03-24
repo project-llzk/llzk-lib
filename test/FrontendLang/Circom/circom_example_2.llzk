@@ -30,9 +30,9 @@
 
 module attributes {llzk.lang = "circom"} {
   poly.template @TGetWeight {
-    poly.param @A
+    poly.param @A // instantiations of A are {0, 5, 10, ... 5*P}
 
-    struct.def @GetWeight { // instantiations of A are {0, 5, 10, ... 5*P}
+    struct.def @GetWeight {
       struct.member @out: !felt.type {llzk.pub}
 
       function.def @compute(%inp: !felt.type) -> !struct.type<@TGetWeight::@GetWeight<[@A]>> {
