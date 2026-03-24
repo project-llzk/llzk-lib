@@ -198,6 +198,14 @@ SmallVector<Attribute> StructDefOp::getTemplateParamOpNames() {
   }
 }
 
+SmallVector<Attribute> StructDefOp::getTemplateExprOpNames() {
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return parent.getConstNames<TemplateExprOp>();
+  } else {
+    return SmallVector<Attribute>();
+  }
+}
+
 SymbolRefAttr StructDefOp::getFullyQualifiedName() {
   auto res = getPathFromRoot(*this);
   assert(succeeded(res));

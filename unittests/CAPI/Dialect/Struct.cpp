@@ -258,6 +258,20 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_num_template_param_op_names) {
   }
 }
 
+TEST_F(StructDefTest, llzk_struct_def_op_get_template_expr_op_names) {
+  auto op = test_op();
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
+    llzkStruct_StructDefOpGetTemplateExprOpNames(op.op, (MlirAttribute *)NULL);
+  }
+}
+
+TEST_F(StructDefTest, llzk_struct_def_op_get_num_template_expr_op_names) {
+  auto op = test_op();
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
+    llzkStruct_StructDefOpGetNumTemplateExprOpNames(op.op);
+  }
+}
+
 TEST_F(StructDefTest, llzk_struct_def_op_get_fully_qualified_name) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {

@@ -153,10 +153,16 @@ def LLZK_StructDefOp
     bool hasTemplateConstParamSymbols();
 
     /// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
-    /// within the `poly.template` in the order they are defined. Otherwise, return empty. The
-    /// names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type is
-    /// used in the return type since that's usually what's needed.
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty.
+    /// The names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type
+    /// is used in the return type since that's usually what's needed.
     ::llvm::SmallVector<::mlir::Attribute> getTemplateParamOpNames();
+
+    /// If this `struct.def` is within a `poly.template`, return names of all `poly.expr`
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty.
+    /// The names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type
+    /// is used in the return type since that's usually what's needed.
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateExprOpNames();
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.

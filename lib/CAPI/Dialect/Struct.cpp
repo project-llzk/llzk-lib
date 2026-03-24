@@ -139,6 +139,19 @@ intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op) {
   );
 }
 
+void llzkStruct_StructDefOpGetTemplateExprOpNames(MlirOperation op, MlirAttribute *dst) {
+  for (auto [offset, attr] :
+       llvm::enumerate(llvm::cast<StructDefOp>(unwrap(op)).getTemplateExprOpNames())) {
+    dst[offset] = wrap(attr);
+  }
+}
+
+intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(
+      llvm::cast<StructDefOp>(unwrap(op)).getTemplateExprOpNames().size()
+  );
+}
+
 //===----------------------------------------------------------------------===//
 // MemberReadOp
 //===----------------------------------------------------------------------===//

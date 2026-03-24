@@ -110,10 +110,10 @@ MLIR_CAPI_EXPORTED const char *llzkStruct_StructDefOpGetHeaderString(
     MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t)
 );
 
-/// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
-/// within the `poly.template` in the order they are defined. Otherwise, return empty. The
-/// names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type is
-/// used in the return type since that's usually what's needed.
+/// If this `struct.def` is within a `poly.template`, add names of all `poly.param` within the
+/// `poly.template` in the order they are defined. Otherwise, do nothing. The names are added as
+/// `FlatSymbolRefAttr` but the more general `Attribute` type is used in the type since that's
+/// usually what's needed.
 ///
 /// The pointer to the attributes must have been preallocated. See
 /// `llzkStruct_StructDefOpGetNumTemplateParamOpNames` for obtaining the required size of the array.
@@ -121,6 +121,18 @@ void llzkStruct_StructDefOpGetTemplateParamOpNames(MlirOperation op, MlirAttribu
 
 /// Returns the number of `poly.param` operations defined within this template.
 intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op);
+
+/// If this `struct.def` is within a `poly.template`, add names of all `poly.expr` within the
+/// `poly.template` in the order they are defined. Otherwise, do nothing. The names are added as
+/// `FlatSymbolRefAttr` but the more general `Attribute` type is used in the type since that's
+/// usually what's needed.
+///
+/// The pointer to the attributes must have been preallocated. See
+/// `llzkStruct_StructDefOpGetNumTemplateExprOpNames` for obtaining the required size of the array.
+void llzkStruct_StructDefOpGetTemplateExprOpNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns the number of `poly.expr` operations defined within this template.
+intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op);
 
 //===----------------------------------------------------------------------===//
 // MemberReadOp
