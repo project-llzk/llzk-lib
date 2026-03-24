@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the `-llzk-drop-empty-template` pass.
+/// This file implements the `-llzk-drop-empty-templates` pass.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -30,7 +30,7 @@ namespace llzk::polymorphic {
 
 #include "SharedImpl.h"
 
-#define DEBUG_TYPE "llzk-drop-empty-template"
+#define DEBUG_TYPE "llzk-drop-empty-templates"
 
 using namespace mlir;
 using namespace llzk::array;

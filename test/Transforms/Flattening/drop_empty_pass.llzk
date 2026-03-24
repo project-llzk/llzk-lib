@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-drop-empty-template %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-drop-empty-templates %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   poly.template @TComponent {

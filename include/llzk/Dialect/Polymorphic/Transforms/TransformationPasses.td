@@ -38,7 +38,7 @@ def StructCleanupMode
   let genSpecializedAttr = 0;
 }
 
-def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-template"> {
+def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
   let summary = "Remove empty templates";
   let description = [{
     Performs the following transformations:
