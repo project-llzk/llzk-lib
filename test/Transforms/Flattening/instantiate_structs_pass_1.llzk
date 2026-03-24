@@ -260,6 +260,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
 //
 // CHECK-LABEL: module @b {
 // CHECK-LABEL:   struct.def @Component03B {
@@ -271,6 +272,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
 //
 // CHECK-LABEL: function.def @fun1(
 // CHECK-SAME:                  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@b::@Component03B>) -> !struct.type<@b::@Component03B> {
