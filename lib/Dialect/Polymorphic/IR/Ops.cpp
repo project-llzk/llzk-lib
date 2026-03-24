@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
@@ -107,20 +109,37 @@ LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult TemplateExprOp::verifyRegions() {
-  mlir::Region &region = getInitializerRegion();
+  Region &region = getInitializerRegion();
   if (!region.hasOneBlock()) {
     return emitOpError("expected initializer region with a single block");
   }
-  YieldOp yieldOp = llvm::dyn_cast<YieldOp>(region.back().getTerminator());
-  if (!yieldOp) {
+  Block &block = region.back();
+  if (!llvm::isa<YieldOp>(block.getTerminator())) {
     return emitOpError("expected initializer region to end with a '")
            << YieldOp::getOperationName() << '\'';
+  }
+  // Check or ops with side-effects that are not allowed within `poly.expr`.
+  Operation *illegalOp = nullptr;
+  auto walkRes = block.walk([&illegalOp](Operation *p) {
+    // Note: If side-effect traits are added to ops in the future, this check should
+    // be updated to check for those traits instead of specific op types.
+    if (llvm::isa<global::GlobalRefOpInterface, function::CallOp>(p)) {
+      illegalOp = p;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  if (walkRes.wasInterrupted()) {
+    assert(illegalOp); // was set in the walk above
+    return illegalOp->emitOpError().append(
+        "is not allowed within a `", TemplateExprOp::getOperationName(), "` initializer"
+    );
   }
   return success();
 }
 
 Type TemplateExprOp::getType() {
-  mlir::Region &region = getInitializerRegion();
+  Region &region = getInitializerRegion();
   assert(region.hasOneBlock() && "per `verifyRegions()`");
   YieldOp yieldOp = llvm::dyn_cast<YieldOp>(region.back().getTerminator());
   assert(yieldOp && "per `verifyRegions()`");

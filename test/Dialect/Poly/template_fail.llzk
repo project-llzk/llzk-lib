@@ -105,3 +105,66 @@ module attributes {llzk.lang} {
     }
   }
 }
+// -----
+
+module attributes {llzk.lang} {
+  global.def @b : !felt.type = 999
+
+  poly.template @T4 {
+    poly.expr @D {
+      // expected-error@+1 {{'global.write' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+      global.write @b = %c : !felt.type
+      %c = felt.const 123
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  global.def @b : !felt.type = 999
+
+  poly.template @T4 {
+    poly.expr @D {
+      // expected-error@+1 {{'global.read' op is not allowed within a `poly.expr` initializer}}
+      %c = global.read @b : !felt.type
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @c () -> ()
+
+  poly.template @T5 {
+    poly.expr @D {
+      // expected-error@+1 {{'function.call' op is not allowed within a `poly.expr` initializer}}
+      function.call @c() : () -> ()
+      %c = felt.const 123
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  poly.template @T6 {
+    poly.expr @D {
+      // expected-error@+1 {{'function.call' op is not allowed within a `poly.expr` initializer}}
+      function.call @Top::@compute() : () -> !struct.type<@Top>
+      %c = felt.const 123
+      poly.yield %c : !felt.type
+    }
+  }
+}

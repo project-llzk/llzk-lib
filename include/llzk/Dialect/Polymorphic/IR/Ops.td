@@ -178,6 +178,11 @@ def LLZK_TemplateExprOp
     Declares an expression over parameters of a `poly.template` that can be used just like
     a parameter within the function and/or struct definitions within the template.
 
+    The body of a `poly.expr` cannot contain any symbols defined via `poly.expr` to prevent
+    cyclic initialization. The body must also have no side effects to ensure it can be safely
+    duplicated if needed. This means operations such as read/write to globals or function
+    calls are not allowed in the body of a `poly.expr`.
+
     Example:
     ```llzk
     poly.template @TemplateName {
