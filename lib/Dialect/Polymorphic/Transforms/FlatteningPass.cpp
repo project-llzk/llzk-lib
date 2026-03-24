@@ -1863,13 +1863,16 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       }
     }
 
-    {
-      // Preliminary step: remove empty parameter lists from structs
-      OpPassManager nestedPM(ModuleOp::getOperationName());
-      nestedPM.addPass(createEmptyTemplateRemoval());
-      if (failed(runPipeline(nestedPM, modOp))) {
-        return failure();
-      }
+    // Pass Manager to run some standard cleanup passes that are always beneficial:
+    // - Remove templates that contain no struct or function definitions
+    // - Convert templates with no constant parameters or expressions into modules
+    OpPassManager universalCleanup(ModuleOp::getOperationName());
+    universalCleanup.addPass(createEmptyTemplateRemoval());
+
+    // Run universal cleanup as a preliminary step to satisfy the
+    // `assert(!isNullOrEmpty(paramNames))` precondition in `genClone()`.
+    if (failed(runPipeline(universalCleanup, modOp))) {
+      return failure();
     }
 
     ConversionTracker tracker;
@@ -1933,9 +1936,21 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
+    // Run user-selected cleanup first.
+    if (failed(cleanupSwitch(modOp, tracker))) {
+      return failure();
+    }
+    // Run universal cleanup again since no-param or param-only structs may exist now.
+    if (failed(runPipeline(universalCleanup, modOp))) {
+      return failure();
+    }
+    return success();
+  }
+
+  // Perform cleanup according to the 'cleanupMode' option.
+  LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
-    // Perform cleanup according to the 'cleanupMode' option.
-    switch (cleanupMode) { // NOLINT(bugprone-switch-missing-default-case)
+    switch (cleanupMode) {
     case StructCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);
@@ -1945,11 +1960,10 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     case StructCleanupMode::Preimage:
       LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
-    case StructCleanupMode::Disabled:
+    default:
       LLVM_DEBUG(llvm::dbgs() << "(disabled)\n");
       return success();
     }
-    llvm_unreachable("switch cases cover all options");
   }
 
   // Erase parameterized structs that were replaced with concrete instantiations.
