@@ -23,6 +23,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/LLZKInlineStructsPass.h"
@@ -56,6 +57,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::component;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 #define DEBUG_TYPE "llzk-inline-structs"
 
@@ -998,13 +1000,14 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         continue;
       }
       if (currentNode->isTemplateParam()) {
-        // Try to get the location of the StructDefOp to report an error.
+        // Try to get the location of the TemplateOp to report an error.
         Operation *lookupFrom = currentNode->getSymbolPathRoot().getOperation();
         SymbolRefAttr prefix = getPrefixAsSymbolRefAttr(currentNode->getSymbolPath());
-        auto res = lookupSymbolIn<StructDefOp>(tables, prefix, lookupFrom, lookupFrom, false);
+        auto res = lookupSymbolIn<TemplateOp>(tables, prefix, lookupFrom, lookupFrom, false);
         // If that lookup didn't work for some reason, report at the path root location.
         Operation *reportLoc = succeeded(res) ? res->get() : lookupFrom;
-        return reportLoc->emitError("Cannot inline structs with parameters.");
+        return reportLoc->emitError() << "Cannot inline struct within a template. Run "
+                                         "`llzk-flatten` to instantiate templated structs.";
       }
       FailureOr<FuncDefOp> currentFuncOpt = getIfStructConstrain(currentNode, tables);
       if (failed(currentFuncOpt)) {
