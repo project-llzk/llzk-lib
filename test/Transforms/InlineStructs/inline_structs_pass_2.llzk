@@ -137,44 +137,44 @@ module attributes {llzk.main = !struct.type<@TMain::@Main>, llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Pair_f_77 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Pair_f_77> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Pair_f_77>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Pair_f_77>
+// CHECK-LABEL: struct.def @TPair_f_77_Pair {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TPair_f_77_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_f_77_Pair>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@TPair_f_77_Pair>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Pair_f_77>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_f_77_Pair>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @"sub:!s<@MakeGuess_77>+dat" : !array.type<4 x !struct.type<@Pair_f_77>>
+// CHECK-NEXT:    struct.member @"sub:!s<@TMakeGuess_77_MakeGuess>+dat" : !array.type<4 x !struct.type<@TPair_f_77_Pair>>
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@TMain::@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TMain::@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V4]]] = %[[V6]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V8]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = function.call @Pair_f_77::@compute() : () -> !struct.type<@Pair_f_77>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V9]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:      struct.writem %[[V0]][@"sub:!s<@MakeGuess_77>+dat"] = %[[V5]] : <@TMain::@Main>, !array.type<4 x !struct.type<@Pair_f_77>>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V4]]] = %[[V6]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V8]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V9]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:      struct.writem %[[V0]][@"sub:!s<@TMakeGuess_77_MakeGuess>+dat"] = %[[V5]] : <@TMain::@Main>, !array.type<4 x !struct.type<@TPair_f_77_Pair>>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@TMain::@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V10:[0-9a-zA-Z_\.]+]]: !struct.type<@TMain::@Main>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"sub:!s<@MakeGuess_77>+dat"] : <@TMain::@Main>, !array.type<4 x !struct.type<@Pair_f_77>>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.len %[[V13]], %[[V11]] : <4 x !struct.type<@Pair_f_77>>
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"sub:!s<@TMakeGuess_77_MakeGuess>+dat"] : <@TMain::@Main>, !array.type<4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.len %[[V13]], %[[V11]] : <4 x !struct.type<@TPair_f_77_Pair>>
 // CHECK-NEXT:      scf.for %[[V15:[0-9a-zA-Z_\.]+]] = %[[V11]] to %[[V14]] step %[[V12]] {
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V15]]] : <4 x !struct.type<@Pair_f_77>>, !struct.type<@Pair_f_77>
-// CHECK-NEXT:        function.call @Pair_f_77::@constrain(%[[V16]]) : (!struct.type<@Pair_f_77>) -> ()
+// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V15]]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:        function.call @TPair_f_77_Pair::@constrain(%[[V16]]) : (!struct.type<@TPair_f_77_Pair>) -> ()
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }

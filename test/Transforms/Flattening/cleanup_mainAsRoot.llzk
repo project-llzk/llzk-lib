@@ -160,7 +160,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @StructsWithinNestedModule
 // CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   poly.template @THasUse {
-// CHECK:       struct.def @HasUse_b {
+// CHECK:       struct.def @THasUse_b_HasUse {
 // CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   poly.template @THasUse {
 // -----
@@ -202,7 +202,7 @@ module attributes {llzk.lang} {
 // CHECK:     global.def @a
 // CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: poly.template @THasUse {
-// CHECK:     struct.def @HasUse_f {
+// CHECK:     struct.def @THasUse_f_HasUse {
 // CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: poly.template @THasUse {
 // -----
@@ -249,7 +249,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @DefsInDifferentModule
 // CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   poly.template @THasUse {
-// CHECK:       struct.def @HasUse_f {
+// CHECK:       struct.def @THasUse_f_HasUse {
 // CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   poly.template @THasUse {
 // -----
@@ -298,13 +298,13 @@ module attributes {llzk.lang} {
 }
 // CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: poly.template @THasUse {
-// CHECK:     struct.def @HasUse_f {
+// CHECK:     struct.def @THasUse_f_HasUse {
 // CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: poly.template @THasUse {
-// CHECK:     struct.def @HasUse_b {
+// CHECK:     struct.def @THasUse_b_HasUse {
 // CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: poly.template @THasUse {
-// CHECK:     struct.def @HasUse_s {
+// CHECK:     struct.def @THasUse_s_HasUse {
 // CHECK-NOT: struct.def @NoUse {
 // CHECK-NOT: poly.template @THasUse {
 // -----
@@ -367,7 +367,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @MoreNested
 // CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   poly.template @THasUse {
-// CHECK:       struct.def @HasUse_f {
+// CHECK:       struct.def @THasUse_f_HasUse {
 // CHECK-NOT:   struct.def @NoUse {
 // CHECK-NOT:   poly.template @THasUse {
 // -----
@@ -405,7 +405,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     global.def @gvar
 // CHECK-NOT: poly.template @TComponent06 {
-// CHECK:     struct.def @Component06_4 {
+// CHECK:     struct.def @TComponent06_4_Component06 {
 // CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     struct.def @Main {
 // CHECK-NOT: poly.template @TComponent06 {

@@ -82,13 +82,13 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @Helper
 // CHECK-NOT:   poly.template @TPair {
 // CHECK-NOT:   poly.template @TZip {
-// CHECK:       struct.def @Pair_f_f {
+// CHECK:       struct.def @TPair_f_f_Pair {
 // CHECK-NOT:   poly.template @TPair {
 // CHECK-NOT:   poly.template @TZip {
-// CHECK:       struct.def @Zip_f_f_4 {
+// CHECK:       struct.def @TZip_f_f_4_Zip {
 // CHECK-NOT:   poly.template @TPair {
 // CHECK-NOT:   poly.template @TZip {
 // CHECK-LABEL: module @Impl
 // CHECK-NOT:   poly.template @TMakeGuess {
-// CHECK:       struct.def @MakeGuess_4 {
+// CHECK:       struct.def @TMakeGuess_4_MakeGuess {
 // CHECK-NOT:   poly.template @TMakeGuess {

@@ -43,30 +43,30 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ComponentB>) { function.return }
   }
 }
-// CHECK-LABEL: struct.def @ToFelt_2 {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@ToFelt_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@ToFelt_2>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@ToFelt_2>
+// CHECK-LABEL: struct.def @TToFelt_2_ToFelt {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TToFelt_2_ToFelt> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TToFelt_2_ToFelt>
+// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@TToFelt_2_ToFelt>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@TToFelt_2_ToFelt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: struct.def @ComponentA_2 {
-// CHECK-NEXT:    function.def @compute(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_2>) -> !struct.type<@ComponentA_2> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA_2>
-// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@ComponentA_2>
+// CHECK-LABEL: struct.def @TComponentA_2_ComponentA {
+// CHECK-NEXT:    function.def @compute(%[[V2:[0-9a-zA-Z_\.]+]]: !struct.type<@TToFelt_2_ToFelt>) -> !struct.type<@TComponentA_2_ComponentA> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentA_2_ComponentA>
+// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@TComponentA_2_ComponentA>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA_2>, %[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@ToFelt_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA_2_ComponentA>, %[[V5:[0-9a-zA-Z_\.]+]]: !struct.type<@TToFelt_2_ToFelt>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @ComponentB {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentB> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @ToFelt_2::@compute() : () -> !struct.type<@ToFelt_2>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @ComponentA_2::@compute(%[[V6]]) : (!struct.type<@ToFelt_2>) -> !struct.type<@ComponentA_2>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @TToFelt_2_ToFelt::@compute() : () -> !struct.type<@TToFelt_2_ToFelt>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @TComponentA_2_ComponentA::@compute(%[[V6]]) : (!struct.type<@TToFelt_2_ToFelt>) -> !struct.type<@TComponentA_2_ComponentA>
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentB>
 // CHECK-NEXT:      function.return %[[V8]] : !struct.type<@ComponentB>
 // CHECK-NEXT:    }

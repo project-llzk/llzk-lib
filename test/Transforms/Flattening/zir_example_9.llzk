@@ -199,63 +199,63 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: struct.def @Foo_4_3_7 {
+// CHECK-LABEL: struct.def @TFoo_4_3_7_Foo {
 // CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component>
 // CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Component>
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@Foo_4_3_7> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@TFoo_4_3_7_Foo> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  3
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  4
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Foo_4_3_7>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@TFoo_4_3_7_Foo>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V1]]) : (!felt.type, !felt.type) -> !struct.type<@Div>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@Foo_4_3_7>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@Foo_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@TFoo_4_3_7_Foo>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@TFoo_4_3_7_Foo>, !struct.type<@Div>
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@Foo_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@Foo_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$super"] = %[[V7]] : <@Foo_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@TFoo_4_3_7_Foo>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@TFoo_4_3_7_Foo>, !struct.type<@Component>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$super"] = %[[V7]] : <@TFoo_4_3_7_Foo>, !struct.type<@Component>
+// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@TFoo_4_3_7_Foo>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo_4_3_7>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V8:[0-9a-zA-Z_\.]+]]: !struct.type<@TFoo_4_3_7_Foo>, %[[V9:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = felt.const  4
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = felt.const  3
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp"] : <@Foo_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp"] : <@TFoo_4_3_7_Foo>, !struct.type<@Div>
 // CHECK-NEXT:      function.call @Div::@constrain(%[[V12]], %[[V10]], %[[V11]]) : (!struct.type<@Div>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp_0"] : <@Foo_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V8]][@"$temp_0"] : <@TFoo_4_3_7_Foo>, !struct.type<@Component>
 // CHECK-NEXT:      function.call @Component::@constrain(%[[V13]]) : (!struct.type<@Component>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: struct.def @Bar_4_3_7 {
+// CHECK-LABEL: struct.def @TBar_4_3_7_Bar {
 // CHECK-NEXT:    struct.member @"$super" : !struct.type<@Component>
 // CHECK-NEXT:    struct.member @"$temp_1" : !struct.type<@Component>
-// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:    struct.member @"$temp_0" : !struct.type<@TFoo_4_3_7_Foo>
 // CHECK-NEXT:    struct.member @"$temp" : !struct.type<@Div>
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@Bar_4_3_7> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !struct.type<@TBar_4_3_7_Bar> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = felt.const  3
 // CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = felt.const  4
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@Bar_4_3_7>
+// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@TBar_4_3_7_Bar>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V1]]) : (!felt.type, !felt.type) -> !struct.type<@Div>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@Bar_4_3_7>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@Bar_4_3_7>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Foo_4_3_7::@compute(%[[V0]]) : (!array.type<7 x !felt.type>) -> !struct.type<@Foo_4_3_7>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@TBar_4_3_7_Bar>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@TBar_4_3_7_Bar>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @TFoo_4_3_7_Foo::@compute(%[[V0]]) : (!array.type<7 x !felt.type>) -> !struct.type<@TFoo_4_3_7_Foo>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@TBar_4_3_7_Bar>, !struct.type<@TFoo_4_3_7_Foo>
+// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@TBar_4_3_7_Bar>, !struct.type<@TFoo_4_3_7_Foo>
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_1"] = %[[V8]] : <@Bar_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_1"] : <@Bar_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      struct.writem %[[V3]][@"$super"] = %[[V9]] : <@Bar_4_3_7>, !struct.type<@Component>
-// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@Bar_4_3_7>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$temp_1"] = %[[V8]] : <@TBar_4_3_7_Bar>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_1"] : <@TBar_4_3_7_Bar>, !struct.type<@Component>
+// CHECK-NEXT:      struct.writem %[[V3]][@"$super"] = %[[V9]] : <@TBar_4_3_7_Bar>, !struct.type<@Component>
+// CHECK-NEXT:      function.return %[[V3]] : !struct.type<@TBar_4_3_7_Bar>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V10:[0-9a-zA-Z_\.]+]]: !struct.type<@Bar_4_3_7>, %[[V11:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V10:[0-9a-zA-Z_\.]+]]: !struct.type<@TBar_4_3_7_Bar>, %[[V11:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = felt.const  4
 // CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = felt.const  3
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp"] : <@Bar_4_3_7>, !struct.type<@Div>
+// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp"] : <@TBar_4_3_7_Bar>, !struct.type<@Div>
 // CHECK-NEXT:      function.call @Div::@constrain(%[[V14]], %[[V12]], %[[V13]]) : (!struct.type<@Div>, !felt.type, !felt.type) -> ()
-// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp_0"] : <@Bar_4_3_7>, !struct.type<@Foo_4_3_7>
-// CHECK-NEXT:      function.call @Foo_4_3_7::@constrain(%[[V15]], %[[V11]]) : (!struct.type<@Foo_4_3_7>, !array.type<7 x !felt.type>) -> ()
-// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp_1"] : <@Bar_4_3_7>, !struct.type<@Component>
+// CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp_0"] : <@TBar_4_3_7_Bar>, !struct.type<@TFoo_4_3_7_Foo>
+// CHECK-NEXT:      function.call @TFoo_4_3_7_Foo::@constrain(%[[V15]], %[[V11]]) : (!struct.type<@TFoo_4_3_7_Foo>, !array.type<7 x !felt.type>) -> ()
+// CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"$temp_1"] : <@TBar_4_3_7_Bar>, !struct.type<@Component>
 // CHECK-NEXT:      function.call @Component::@constrain(%[[V16]]) : (!struct.type<@Component>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
@@ -265,7 +265,7 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops, function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new  : <7 x !felt.type>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Bar_4_3_7::@compute(%[[V1]]) : (!array.type<7 x !felt.type>) -> !struct.type<@Bar_4_3_7>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @TBar_4_3_7_Bar::@compute(%[[V1]]) : (!array.type<7 x !felt.type>) -> !struct.type<@TBar_4_3_7_Bar>
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {

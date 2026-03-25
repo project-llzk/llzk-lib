@@ -46,16 +46,16 @@ module attributes {llzk.lang} {
 //
 // CHECK-LABEL: poly.template @"TZip_f_f_\1A" {
 // CHECK-NEXT:    poly.param @N
-// CHECK-NEXT:    struct.def @"Zip_f_f_\1A" {
+// CHECK-NEXT:    struct.def @Zip {
 // CHECK-NEXT:      struct.member @"$array" : !array.type<#[[$M0]] x !felt.type>
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"TZip_f_f_\1A"::@Zip<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@"TZip_f_f_\1A"::@Zip<[@N]>>
 // CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 // CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = array.new{(%[[V1]])} : <#[[$M0]] x !felt.type>
-// CHECK-NEXT:        struct.writem %[[V0]][@"$array"] = %[[V2]] : <@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>, !array.type<#[[$M0]] x !felt.type>
-// CHECK-NEXT:        function.return %[[V0]] : !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>
+// CHECK-NEXT:        struct.writem %[[V0]][@"$array"] = %[[V2]] : <@"TZip_f_f_\1A"::@Zip<[@N]>>, !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:        function.return %[[V0]] : !struct.type<@"TZip_f_f_\1A"::@Zip<[@N]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@"TZip_f_f_\1A"::@Zip<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -67,7 +67,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Top {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TTop::@Top<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = struct.new : <@TTop::@Top<[@N]>>
-// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = function.call @"TZip_f_f_\1A"::@"Zip_f_f_\1A"::@compute() : () -> !struct.type<@"TZip_f_f_\1A"::@"Zip_f_f_\1A"<[@N]>>
+// CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = function.call @"TZip_f_f_\1A"::@Zip::@compute() : () -> !struct.type<@"TZip_f_f_\1A"::@Zip<[@N]>>
 // CHECK-NEXT:        function.return %[[V5]] : !struct.type<@TTop::@Top<[@N]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@TTop::@Top<[@N]>>) attributes {function.allow_constraint} {

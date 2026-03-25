@@ -39,14 +39,14 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Unpack_8_2_4 {
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Unpack_8_2_4> attributes {function.allow_witness} {
+// CHECK-LABEL: struct.def @TUnpack_8_2_4_Unpack {
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@TUnpack_8_2_4_Unpack> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@Unpack_8_2_4>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = struct.new : <@TUnpack_8_2_4_Unpack>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = array.read %[[V0]]{{\[}}%[[V1]]] : <4 x !felt.type>, !felt.type
-// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@Unpack_8_2_4>
+// CHECK-NEXT:      function.return %[[V2]] : !struct.type<@TUnpack_8_2_4_Unpack>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@Unpack_8_2_4>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V4:[0-9a-zA-Z_\.]+]]: !struct.type<@TUnpack_8_2_4_Unpack>, %[[V5:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -55,7 +55,7 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@User1> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = felt.const 42
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = array.new %[[V0]], %[[V0]], %[[V0]], %[[V0]] : <4 x !felt.type>
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @Unpack_8_2_4::@compute(%[[V1]]) : (!array.type<4 x !felt.type>) -> !struct.type<@Unpack_8_2_4>
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = function.call @TUnpack_8_2_4_Unpack::@compute(%[[V1]]) : (!array.type<4 x !felt.type>) -> !struct.type<@TUnpack_8_2_4_Unpack>
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@User1>
 // CHECK-NEXT:      function.return %[[V3]] : !struct.type<@User1>
 // CHECK-NEXT:    }

@@ -283,13 +283,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: struct.def @Component02_3 {
+// CHECK-LABEL: struct.def @TComponent02_3_Component02 {
 // CHECK-NEXT:    struct.member @g : !array.type<3 x !struct.type<@Component01>>
-// CHECK-NEXT:    function.def @compute(%[[V5:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) -> !struct.type<@Component02_3> attributes {function.allow_witness} {
+// CHECK-NEXT:    function.def @compute(%[[V5:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) -> !struct.type<@TComponent02_3_Component02> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02_3>
+// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent02_3_Component02>
 // CHECK-NEXT:      %[[V10:[0-9a-zA-Z_\.]+]] = array.new  : <3 x !struct.type<@Component01>>
 // CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = array.extract %[[V5]]{{\[}}%[[V8]]] : <3,2 x !felt.type>
 // CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V11]]) : (!array.type<2 x !felt.type>) -> !struct.type<@Component01>
@@ -300,14 +300,14 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[V15:[0-9a-zA-Z_\.]+]] = array.extract %[[V5]]{{\[}}%[[V6]]] : <3,2 x !felt.type>
 // CHECK-NEXT:      %[[V16:[0-9a-zA-Z_\.]+]] = function.call @Component01::@compute(%[[V15]]) : (!array.type<2 x !felt.type>) -> !struct.type<@Component01>
 // CHECK-NEXT:      array.write %[[V10]]{{\[}}%[[V6]]] = %[[V16]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
-// CHECK-NEXT:      struct.writem %[[V9]][@g] = %[[V10]] : <@Component02_3>, !array.type<3 x !struct.type<@Component01>>
-// CHECK-NEXT:      function.return %[[V9]] : !struct.type<@Component02_3>
+// CHECK-NEXT:      struct.writem %[[V9]][@g] = %[[V10]] : <@TComponent02_3_Component02>, !array.type<3 x !struct.type<@Component01>>
+// CHECK-NEXT:      function.return %[[V9]] : !struct.type<@TComponent02_3_Component02>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V17:[0-9a-zA-Z_\.]+]]: !struct.type<@Component02_3>, %[[V18:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V17:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent02_3_Component02>, %[[V18:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      %[[V19:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:      %[[V20:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[V21:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = struct.readm %[[V17]][@g] : <@Component02_3>, !array.type<3 x !struct.type<@Component01>>
+// CHECK-NEXT:      %[[V22:[0-9a-zA-Z_\.]+]] = struct.readm %[[V17]][@g] : <@TComponent02_3_Component02>, !array.type<3 x !struct.type<@Component01>>
 // CHECK-NEXT:      %[[V23:[0-9a-zA-Z_\.]+]] = array.extract %[[V18]]{{\[}}%[[V21]]] : <3,2 x !felt.type>
 // CHECK-NEXT:      %[[V24:[0-9a-zA-Z_\.]+]] = array.read %[[V22]]{{\[}}%[[V21]]] : <3 x !struct.type<@Component01>>, !struct.type<@Component01>
 // CHECK-NEXT:      function.call @Component01::@constrain(%[[V24]], %[[V23]]) : (!struct.type<@Component01>, !array.type<2 x !felt.type>) -> ()
@@ -322,16 +322,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @sub : !struct.type<@Component02_3>
+// CHECK-NEXT:    struct.member @sub : !struct.type<@TComponent02_3_Component02>
 // CHECK-NEXT:    function.def @compute(%[[V29:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V30:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = function.call @Component02_3::@compute(%[[V29]]) : (!array.type<3,2 x !felt.type>) -> !struct.type<@Component02_3>
-// CHECK-NEXT:      struct.writem %[[V30]][@sub] = %[[V31]] : <@Main>, !struct.type<@Component02_3>
+// CHECK-NEXT:      %[[V31:[0-9a-zA-Z_\.]+]] = function.call @TComponent02_3_Component02::@compute(%[[V29]]) : (!array.type<3,2 x !felt.type>) -> !struct.type<@TComponent02_3_Component02>
+// CHECK-NEXT:      struct.writem %[[V30]][@sub] = %[[V31]] : <@Main>, !struct.type<@TComponent02_3_Component02>
 // CHECK-NEXT:      function.return %[[V30]] : !struct.type<@Main>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V32:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[V33:[0-9a-zA-Z_\.]+]]: !array.type<3,2 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = struct.readm %[[V32]][@sub] : <@Main>, !struct.type<@Component02_3>
-// CHECK-NEXT:      function.call @Component02_3::@constrain(%[[V34]], %[[V33]]) : (!struct.type<@Component02_3>, !array.type<3,2 x !felt.type>) -> ()
+// CHECK-NEXT:      %[[V34:[0-9a-zA-Z_\.]+]] = struct.readm %[[V32]][@sub] : <@Main>, !struct.type<@TComponent02_3_Component02>
+// CHECK-NEXT:      function.call @TComponent02_3_Component02::@constrain(%[[V34]], %[[V33]]) : (!struct.type<@TComponent02_3_Component02>, !array.type<3,2 x !felt.type>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -1,0 +1,83 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Ensure templates with identically named structs do not cause name conflicts when instantiated.
+module attributes {llzk.lang} {
+  poly.template @T1 {
+    poly.param @C
+
+    struct.def @MyStruct {
+      function.def @compute() -> !struct.type<@T1::@MyStruct<[@C]>> {
+        %self = struct.new : !struct.type<@T1::@MyStruct<[@C]>>
+        function.return %self : !struct.type<@T1::@MyStruct<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@T1::@MyStruct<[@C]>>) { function.return }
+    }
+  }
+
+  poly.template @T2 {
+    poly.param @C
+
+    struct.def @MyStruct {
+      function.def @compute() -> !struct.type<@T2::@MyStruct<[@C]>> {
+        %self = struct.new : !struct.type<@T2::@MyStruct<[@C]>>
+        function.return %self : !struct.type<@T2::@MyStruct<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@T2::@MyStruct<[@C]>>) { function.return }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @f1 : !struct.type<@T1::@MyStruct<[43]>>
+    struct.member @f2 : !struct.type<@T2::@MyStruct<[43]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %x = function.call @T1::@MyStruct::@compute() : () -> (!struct.type<@T1::@MyStruct<[43]>>)
+      struct.writem %self[@f1] = %x : !struct.type<@Main>, !struct.type<@T1::@MyStruct<[43]>>
+      %y = function.call @T2::@MyStruct::@compute() : () -> (!struct.type<@T2::@MyStruct<[43]>>)
+      struct.writem %self[@f2] = %y : !struct.type<@Main>, !struct.type<@T2::@MyStruct<[43]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @T1_43_MyStruct {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@T1_43_MyStruct> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T1_43_MyStruct>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@T1_43_MyStruct>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T1_43_MyStruct>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @T2_43_MyStruct {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@T2_43_MyStruct> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@T2_43_MyStruct>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@T2_43_MyStruct>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@T2_43_MyStruct>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @f1 : !struct.type<@T1_43_MyStruct>
+// CHECK-NEXT:      struct.member @f2 : !struct.type<@T2_43_MyStruct>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @T1_43_MyStruct::@compute() : () -> !struct.type<@T1_43_MyStruct>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@f1] = %[[VAL_5]] : <@Main>, !struct.type<@T1_43_MyStruct>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @T2_43_MyStruct::@compute() : () -> !struct.type<@T2_43_MyStruct>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@f2] = %[[VAL_6]] : <@Main>, !struct.type<@T2_43_MyStruct>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

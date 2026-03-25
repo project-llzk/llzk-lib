@@ -560,34 +560,34 @@ class StructCloner {
 
     // This list will be used to build the new remote/external type.
     SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
-    // Clone the original struct and apply the new name.
-    StructDefOp newStruct = origStruct.clone();
-    newStruct.setSymName(
-        BuildShortTypeString::from(
-            typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
-        )
+    typeAtCallerSymPieces.pop_back(); // drop struct name
+    // Name of template with instantiated parameter values.
+    std::string templateNameWithAttrs = BuildShortTypeString::from(
+        typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
     );
-    // Drop struct name from the list. Template name is handled by cases within block below.
-    typeAtCallerSymPieces.pop_back();
 
+    // Get parent refs
     TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
     assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
-    if (remainingNames.empty()) {
+
+    // Clone the original struct.
+    StructDefOp newStruct = origStruct.clone();
+    if (remainingNames.empty()) { // FULL INSTANTIATION CASE
+      // Set name of the new struct by prepending its name with instantiated template name.
+      newStruct.setSymName(
+          (templateNameWithAttrs + mlir::Twine('_') + newStruct.getSymName()).str()
+      );
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
       // Drop the old template name from the list.
       typeAtCallerSymPieces.pop_back();
-    } else {
+    } else { // PARTIAL INSTANTIATION CASE
       // Clone the template and set instantiated name.
       TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
-      newTemplate.setSymName(
-          BuildShortTypeString::from(
-              typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
-          )
-      );
+      newTemplate.setSymName(templateNameWithAttrs);
       assert(newTemplate->getNumRegions() > 0 && "region exists"); // it just doesn't have a block
       newTemplate.getBodyRegion().emplaceBlock();
 
@@ -606,7 +606,8 @@ class StructCloner {
       symTables.getSymbolTable(newTemplate).insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
 
-      // Replace the old template name in the list with the new one.
+      // Replace the old template name in the list with the new one (get template name after
+      // symbol table insertion since it may be modified to make it unique).
       typeAtCallerSymPieces.back() = FlatSymbolRefAttr::get(newTemplate.getSymNameAttr());
     }
 
