@@ -84,28 +84,30 @@ void NewPodOp::getAsmResultNames(llvm::function_ref<void(Value, StringRef)> setN
 namespace {
 
 static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
+  // clang-format off
   llvm::TypeSwitch<Type, void>(type)
-      .Case([&mapAttrs](PodType t) {
-    for (auto record : t.getRecords()) {
-      collectMapAttrs(record.getType(), mapAttrs);
-    }
-  })
-      .Case([&mapAttrs](array::ArrayType t) {
-    for (auto a : t.getDimensionSizes()) {
-      if (auto m = llvm::dyn_cast<AffineMapAttr>(a)) {
-        mapAttrs.push_back(m);
+    .Case([&mapAttrs](PodType t) {
+      for (auto record : t.getRecords()) {
+        collectMapAttrs(record.getType(), mapAttrs);
       }
-    }
-  })
-      .Case([&mapAttrs](component::StructType t) {
-    if (ArrayAttr params = t.getParams()) {
-      for (auto param : params) {
-        if (auto m = llvm::dyn_cast<AffineMapAttr>(param)) {
+    })
+    .Case([&mapAttrs](array::ArrayType t) {
+      for (auto a : t.getDimensionSizes()) {
+        if (auto m = llvm::dyn_cast<AffineMapAttr>(a)) {
           mapAttrs.push_back(m);
         }
       }
-    }
-  }).Default([](Type) {});
+    })
+    .Case([&mapAttrs](component::StructType t) {
+      if (ArrayAttr params = t.getParams()) {
+        for (auto param : params) {
+          if (auto m = llvm::dyn_cast<AffineMapAttr>(param)) {
+            mapAttrs.push_back(m);
+          }
+        }
+      }
+    }).Default([](Type) {});
+  // clang-format on
 }
 
 /// Verifies the initialization values.
