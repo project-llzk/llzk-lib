@@ -21,6 +21,8 @@
 #include <llvm/Support/LogicalResult.h>
 #include <llvm/Support/SMTAPI.h>
 
+#include <functional>
+#include <optional>
 #include <string_view>
 
 namespace llzk {
@@ -140,13 +142,23 @@ private:
 /// @return Failure if the field attribute is malformed (i.e., is the wrong type of attribute).
 llvm::LogicalResult addSpecifiedFields(mlir::ModuleOp modOp);
 
+/// @brief Typealias for a stable reference to a known Field.
+using FieldRef = std::reference_wrapper<const Field>;
+
 /// @brief Typealias for a set of Fields.
-using FieldSet = llvm::SmallSet<Field, 2>;
+using FieldSet = llvm::SmallSet<FieldRef, 2>;
 
 /// @brief Collects all the fields used in a circuit.
 /// @param root Takes the operation as root and inspects any FeltType for its Field.
 /// @param fields Destination where fields are written into.
+/// @param silent Does not report warnings if set.
 /// @return Failure if any FeltType does not specify a field.
-mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &fields);
+mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &fields, bool silent = true);
+
+/// @brief Try to detect a uniquely used field from the enclosing LLZK module.
+/// @param root Operation inside the LLZK module to inspect.
+/// @return The field if the enclosing module uses exactly one unique field,
+/// otherwise `std::nullopt`.
+std::optional<std::reference_wrapper<const Field>> tryDetectSpecifiedField(mlir::Operation *root);
 
 } // namespace llzk
