@@ -26,6 +26,8 @@
 #include "r1cs/DialectRegistration.h"
 #include "r1cs/Transforms/TransformationPasses.h"
 
+#include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
+#include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
@@ -77,6 +79,7 @@ int main(int argc, char **argv) {
   r1cs::registerAllDialects(registry);
   zklean::registerAllDialects(registry);
   registry.insert<llzk::smt::SMTDialect>();
+  mlir::func::registerInlinerExtension(registry);
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
