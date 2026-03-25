@@ -17,7 +17,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  module @Helper{
+  module @Helper {
     poly.template @TPair {
       poly.param @Fst
       poly.param @Snd
@@ -80,15 +80,15 @@ module attributes {llzk.lang} {
 }
 // CHECK:       struct.def @Main {
 // CHECK-LABEL: module @Helper
-// CHECK-NOT:   struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NOT:   struct.def @Zip<[@Lhs, @Rhs, @N]> {
+// CHECK-NOT:   poly.template @TPair {
+// CHECK-NOT:   poly.template @TZip {
 // CHECK:       struct.def @Pair_f_f {
-// CHECK-NOT:   struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NOT:   struct.def @Zip<[@Lhs, @Rhs, @N]> {
+// CHECK-NOT:   poly.template @TPair {
+// CHECK-NOT:   poly.template @TZip {
 // CHECK:       struct.def @Zip_f_f_4 {
-// CHECK-NOT:   struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NOT:   struct.def @Zip<[@Lhs, @Rhs, @N]> {
+// CHECK-NOT:   poly.template @TPair {
+// CHECK-NOT:   poly.template @TZip {
 // CHECK-LABEL: module @Impl
-// CHECK-NOT:   struct.def @MakeGuess<[@PEGS]> {
+// CHECK-NOT:   poly.template @TMakeGuess {
 // CHECK:       struct.def @MakeGuess_4 {
-// CHECK-NOT:   struct.def @MakeGuess<[@PEGS]> {
+// CHECK-NOT:   poly.template @TMakeGuess {

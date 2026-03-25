@@ -72,15 +72,15 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @Main {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUseFromGlobal {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUseFromMain {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUseFromFreeFunc {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -114,11 +114,11 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     global.def @g
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUse {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -157,11 +157,11 @@ module attributes {llzk.lang} {
 }
 // CHECK:       global.def @a
 // CHECK-LABEL: module @StructsWithinNestedModule
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // CHECK:       struct.def @HasUse_b {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // CHECK:       struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -195,13 +195,13 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     global.def @a
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     struct.def @HasUse_f {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -243,11 +243,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @FreeFuncInModule
 // CHECK:       function.def @struct_param
 // CHECK-LABEL: module @DefsInDifferentModule
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // CHECK:       struct.def @HasUse_f {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // CHECK:       struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -291,15 +291,15 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     struct.def @HasUse_f {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     struct.def @HasUse_b {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     struct.def @HasUse_s {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -361,11 +361,11 @@ module attributes {llzk.lang} {
 // CHECK:       function.def @struct_param
 // CHECK-LABEL: module @StructModule
 // CHECK-LABEL: module @MoreNested
-// CHECK-NOT:   struct.def @@HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // CHECK:       struct.def @HasUse_f {
-// CHECK-NOT:   struct.def @@HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // CHECK:       struct.def @NoUse {
-// CHECK-NOT:   struct.def @@HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // -----
 
 module attributes {llzk.lang} {
@@ -398,13 +398,13 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     global.def @gvar
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     struct.def @Component06_4 {
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     struct.def @Main {
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
 // -----
 
 module attributes {llzk.lang} {
@@ -567,10 +567,10 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @Main {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @DirectUseFromMain {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @TransitiveUseFromMain {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
