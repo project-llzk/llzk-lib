@@ -1,3 +1,0 @@
-fixed:
-  - fix [-Werror=return-type] errors related to missing return statements in functions
-    that are expected to return a value but terminate early due to llvm_unreachable.

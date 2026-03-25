@@ -36,8 +36,8 @@ class ArrayIndexGen {
 
 public:
   ~ArrayIndexGen() = default;
-  ArrayIndexGen(ArrayIndexGen &&) = default;
-  ArrayIndexGen &operator=(ArrayIndexGen &&) = default;
+  ArrayIndexGen(ArrayIndexGen &&) noexcept = default;
+  ArrayIndexGen &operator=(ArrayIndexGen &&) noexcept = default;
   ArrayIndexGen(const ArrayIndexGen &) = delete;
   ArrayIndexGen &operator=(const ArrayIndexGen &) = delete;
 

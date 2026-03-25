@@ -30,6 +30,15 @@ def LLZK_ConstReadOp
     some restriction on the type of this value, but leaves it to a later
     type-checking pass to ensure the struct parameters are instantiated
     with types matching the uses of the parameter within the struct.
+
+    Examples:
+    ```llzk
+    // Read a `!felt.type` value from struct parameter "@A"
+    %0 = poly.read_const @A : !felt.type
+    // Read a value from struct parameter "@B" where its type is
+    // specified by struct parameter "@T"
+    %1 = poly.read_const @B : !poly.tvar<@T>
+    ```
   }];
 
   let arguments = (ins FlatSymbolRefAttr:$const_name);

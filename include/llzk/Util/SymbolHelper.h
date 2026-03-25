@@ -47,7 +47,7 @@ inline mlir::SymbolRefAttr asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAtt
 }
 
 /// Build a SymbolRefAttr from the list of pieces.
-inline mlir::SymbolRefAttr asSymbolRefAttr(std::vector<mlir::FlatSymbolRefAttr> path) {
+inline mlir::SymbolRefAttr asSymbolRefAttr(const std::vector<mlir::FlatSymbolRefAttr> &path) {
   return asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr>(path));
 }
 

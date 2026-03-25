@@ -23,12 +23,14 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
-#include "r1cs/InitAllDialects.h"
+#include "r1cs/DialectRegistration.h"
+#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Tools/mlir-opt/MlirOptMain.h>
+#include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
@@ -36,11 +38,16 @@
 #include <llvm/Support/Signals.h>
 
 #include "tools/config.h"
+#include "zklean/Conversions/Passes.h"
+#include "zklean/DialectRegistration.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
 
 #if LLZK_WITH_PCL
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/InitAllDialects.h>
 #include <pcl/Transforms/PCLTransformationPasses.h>
+
+#include "pcl-conv/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(
@@ -64,23 +71,31 @@ int main(int argc, char **argv) {
 
   // MLIR initialization
   mlir::DialectRegistry registry;
+  // registers CSE, etc
+  mlir::registerTransformsPasses();
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
+  zklean::registerAllDialects(registry);
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
 
+  llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
-  llzk::registerTransformationPassPipelines();
-  llzk::registerValidationPasses();
-
+  r1cs::registerTransformationPasses();
+  zklean::registerConversionPasses();
+  zklean::registerZKLeanPasses();
 #if LLZK_WITH_PCL
   pcl::registerTransformationPasses();
+  pcl::conversion::registerPCLTransformationPasses();
 #endif // LLZK_WITH_PCL
+
+  llzk::registerTransformationPassPipelines();
+  r1cs::registerTransformationPassPipelines();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

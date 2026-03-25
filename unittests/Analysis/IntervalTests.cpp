@@ -152,3 +152,114 @@ TEST_F(IntervalTests, BitwiseNot) {
   AssertIntervalEq(~a, one - a);
   AssertIntervalEq(notA, ~a);
 }
+
+TEST_F(IntervalTests, BitwiseOr) {
+  auto zero = Interval::Degenerate(f, f.zero());
+  auto one = Interval::Degenerate(f, f.one());
+  auto two = Interval::Degenerate(f, f.felt(2));
+  auto oneToTwo = Interval::TypeA(f, f.one(), f.felt(2));
+
+  AssertIntervalEq(Interval::Degenerate(f, f.felt(3)), one | two);
+  AssertIntervalEq(oneToTwo, oneToTwo | zero);
+  AssertIntervalEq(Interval::Entire(f), oneToTwo | one);
+}
+
+TEST_F(IntervalTests, BitwiseXor) {
+  auto zero = Interval::Degenerate(f, f.zero());
+  auto one = Interval::Degenerate(f, f.one());
+  auto two = Interval::Degenerate(f, f.felt(2));
+  auto oneToTwo = Interval::TypeA(f, f.one(), f.felt(2));
+
+  AssertIntervalEq(Interval::Degenerate(f, f.felt(3)), one ^ two);
+  AssertIntervalEq(oneToTwo, oneToTwo ^ zero);
+  AssertIntervalEq(Interval::Entire(f), oneToTwo ^ one);
+}
+
+TEST_F(IntervalTests, BoolXor) {
+  auto falseInterval = Interval::False(f);
+  auto trueInterval = Interval::True(f);
+  auto boolInterval = Interval::Boolean(f);
+
+  AssertIntervalEq(falseInterval, boolXor(trueInterval, trueInterval));
+  AssertIntervalEq(trueInterval, boolXor(trueInterval, falseInterval));
+  AssertIntervalEq(boolInterval, boolXor(boolInterval, trueInterval));
+}
+
+TEST_F(IntervalTests, UnsignedIntDiv) {
+  auto rangeTenToFifteen = Interval::TypeA(f, f.felt(10), f.felt(15));
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto five = Interval::Degenerate(f, f.felt(5));
+
+  auto res0 = unsignedIntDiv(rangeTenToFifteen, five);
+  ASSERT_TRUE(mlir::succeeded(res0));
+  AssertIntervalEq(Interval::TypeA(f, f.felt(2), f.felt(3)), *res0);
+
+  auto res1 = unsignedIntDiv(ten, rangeTenToFifteen);
+  ASSERT_TRUE(mlir::succeeded(res1));
+  AssertIntervalEq(Interval::TypeA(f, f.zero(), f.one()), *res1);
+}
+
+TEST_F(IntervalTests, UnsignedIntDivByZero) {
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto zeroToOne = Interval::TypeA(f, f.zero(), f.one());
+
+  auto res = unsignedIntDiv(ten, zeroToOne);
+  ASSERT_TRUE(mlir::failed(res));
+}
+
+TEST_F(IntervalTests, FeltDiv) {
+  auto one = Interval::Degenerate(f, f.one());
+  auto two = Interval::Degenerate(f, f.felt(2));
+  auto invTwo = Interval::Degenerate(f, f.inv(f.felt(2)));
+
+  auto res0 = feltDiv(one, two);
+  ASSERT_TRUE(mlir::succeeded(res0));
+  AssertIntervalEq(invTwo, *res0);
+}
+
+TEST_F(IntervalTests, FeltDivIntervalDivisorUnsupported) {
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto oneToTwo = Interval::TypeA(f, f.one(), f.felt(2));
+
+  auto res = feltDiv(ten, oneToTwo);
+  ASSERT_TRUE(mlir::failed(res));
+}
+
+TEST_F(IntervalTests, FeltDivByZero) {
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto zeroToOne = Interval::TypeA(f, f.zero(), f.one());
+
+  auto res = feltDiv(ten, zeroToOne);
+  ASSERT_TRUE(mlir::failed(res));
+}
+
+TEST_F(IntervalTests, SignedIntDiv) {
+  auto rangeTenToFifteen = Interval::TypeA(f, f.felt(10), f.felt(15));
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto negTen = Interval::Degenerate(f, f.reduce(-10));
+  auto negFifteenToTen = UnreducedInterval(-15, -10).reduce(f);
+
+  auto res0 = signedIntDiv(ten, rangeTenToFifteen);
+  ASSERT_TRUE(mlir::succeeded(res0));
+  AssertIntervalEq(Interval::TypeA(f, f.zero(), f.one()), *res0);
+
+  auto res1 = signedIntDiv(negTen, rangeTenToFifteen);
+  ASSERT_TRUE(mlir::succeeded(res1));
+  AssertIntervalEq(UnreducedInterval(-1, 0).reduce(f), *res1);
+
+  auto res2 = signedIntDiv(negTen, negFifteenToTen);
+  ASSERT_TRUE(mlir::succeeded(res2));
+  AssertIntervalEq(Interval::TypeA(f, f.zero(), f.one()), *res2);
+
+  auto res3 = signedIntDiv(negFifteenToTen, ten);
+  ASSERT_TRUE(mlir::succeeded(res3));
+  AssertIntervalEq(Interval::Degenerate(f, f.reduce(-1)), *res3);
+}
+
+TEST_F(IntervalTests, SignedIntDivByZero) {
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto minusOneToOne = UnreducedInterval(-1, 1).reduce(f);
+
+  auto res = signedIntDiv(ten, minusOneToOne);
+  ASSERT_TRUE(mlir::failed(res));
+}

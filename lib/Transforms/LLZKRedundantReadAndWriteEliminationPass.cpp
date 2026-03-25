@@ -87,13 +87,13 @@ public:
   }
 
   void print(raw_ostream &os) const {
-    if (auto v = std::get_if<Value>(&identifier)) {
+    if (const auto *v = std::get_if<Value>(&identifier)) {
       if (auto opres = dyn_cast<OpResult>(*v)) {
         os << '%' << opres.getResultNumber();
       } else {
         os << *v;
       }
-    } else if (auto s = std::get_if<FlatSymbolRefAttr>(&identifier)) {
+    } else if (const auto *s = std::get_if<FlatSymbolRefAttr>(&identifier)) {
       os << *s;
     } else {
       os << std::get<APInt>(identifier);
@@ -185,7 +185,7 @@ public:
 
   template <typename IdType>
   std::shared_ptr<ReferenceNode>
-  createChild(IdType id, Value storedVal, std::shared_ptr<ReferenceNode> valTree = nullptr) {
+  createChild(IdType id, Value storedVal, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     std::shared_ptr<ReferenceNode> child = create(id, storedVal);
     child->setCurrentValue(storedVal, valTree);
     children[child->identifier] = child;
@@ -222,7 +222,7 @@ public:
     return old;
   }
 
-  void setCurrentValue(Value v, std::shared_ptr<ReferenceNode> valTree = nullptr) {
+  void setCurrentValue(Value v, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     storedValue = v;
     if (valTree != nullptr) {
       // Overwrite our current set of children with new children, since we overwrote
@@ -247,7 +247,7 @@ public:
     os << ']';
     if (!children.empty()) {
       os << "{\n";
-      for (auto &[_, child] : children) {
+      for (const auto &[_, child] : children) {
         child->print(os, indent + 4);
         os << '\n';
       }
@@ -295,16 +295,16 @@ private:
 
   template <typename IdType>
   ReferenceNode(IdType id, Value initialVal)
-      : identifier(id), storedValue(initialVal), lastWrite(nullptr), children() {}
+      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr), children() {}
 };
 
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
 
 ValueMap intersect(const ValueMap &lhs, const ValueMap &rhs) {
   ValueMap res;
-  for (auto &[id, lhsValTree] : lhs) {
+  for (const auto &[id, lhsValTree] : lhs) {
     if (auto it = rhs.find(id); it != rhs.end()) {
-      auto &rhsValTree = it->second;
+      const auto &rhsValTree = it->second;
       res[id] = greatestCommonSubtree(lhsValTree, rhsValTree);
     }
   }
@@ -315,7 +315,7 @@ ValueMap intersect(const ValueMap &lhs, const ValueMap &rhs) {
 /// tracking, so that the orig state is not polluted through pointer updates.
 ValueMap cloneValueMap(const ValueMap &orig) {
   ValueMap res;
-  for (auto &[id, tree] : orig) {
+  for (const auto &[id, tree] : orig) {
     res[id] = tree->clone();
   }
   return res;
@@ -452,7 +452,7 @@ class RedundantReadAndWriteEliminationPass
     // The final state is the intersection of all possible terminal states.
     ensure(!terminalStates.empty(), "computed no states");
     auto finalState = terminalStates.front().get();
-    for (auto it = terminalStates.begin() + 1; it != terminalStates.end(); it++) {
+    for (const auto *it = terminalStates.begin() + 1; it != terminalStates.end(); it++) {
       finalState = intersect(finalState, it->get());
     }
     return finalState;
@@ -476,7 +476,7 @@ class RedundantReadAndWriteEliminationPass
         }
 
         ValueMap finalState = regionStates.front();
-        for (auto it = regionStates.begin() + 1; it != regionStates.end(); it++) {
+        for (const auto *it = regionStates.begin() + 1; it != regionStates.end(); it++) {
           finalState = intersect(finalState, *it);
         }
         state = std::move(finalState);

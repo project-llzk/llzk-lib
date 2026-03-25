@@ -60,7 +60,7 @@ ParseResult GlobalDefOp::parseGlobalInitialValue(
 }
 
 void GlobalDefOp::printGlobalInitialValue(
-    OpAsmPrinter &p, GlobalDefOp /*op*/, Attribute initialValue, TypeAttr typeAttr
+    OpAsmPrinter &p, GlobalDefOp /*op*/, Attribute initialValue, TypeAttr /*typeAttr*/
 ) {
   if (initialValue) {
     p << " = ";

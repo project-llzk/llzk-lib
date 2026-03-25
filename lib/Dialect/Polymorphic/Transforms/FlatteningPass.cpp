@@ -745,7 +745,7 @@ public:
       : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/2) {}
 
   LogicalResult matchAndRewrite(
-      MemberDefOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
+      MemberDefOp op, OpAdaptor /*adapter*/, ConversionPatternRewriter &rewriter
   ) const override {
     LLVM_DEBUG(llvm::dbgs() << "[MemberDefOpPattern] MemberDefOp: " << op << '\n');
 
@@ -1280,13 +1280,13 @@ public:
 
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the member symbol name within its parent struct.
-    FailureOr<StructDefOp> parentRes = getParentOfType<StructDefOp>(op);
-    assert(succeeded(parentRes) && "MemberDefOp parent is always StructDefOp"); // per ODS def
+    StructDefOp parentRes = getParentOfType<StructDefOp>(op);
+    assert(parentRes && "MemberDefOp parent is always StructDefOp"); // per ODS def
 
     // If the symbol is used by a MemberWriteOp with a different result type then change
     // the type of the MemberDefOp to match the MemberWriteOp result type.
     Type newType = nullptr;
-    if (auto memberUsers = llzk::getSymbolUses(op, parentRes.value())) {
+    if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
       std::optional<Location> newTypeLoc = std::nullopt;
       for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
         if (MemberWriteOp writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser())) {
@@ -1318,7 +1318,7 @@ public:
                       "' with different value types"
                   );
                   if (newTypeLoc) {
-                    diag.attachNote(*newTypeLoc).append("type written here is ", newType);
+                    diag.attachNote(newTypeLoc).append("type written here is ", newType);
                   }
                   diag.attachNote(writeOp.getLoc()).append("type written here is ", writeToType);
                 });
@@ -1741,7 +1741,7 @@ private:
     // Check if it's safe according to both the def tree and use graph.
     // Note: every symbol must have a def node but module symbols may not have a use node.
     if (collectSafeToErase(defTree.lookupNode(check))) {
-      auto useNode = useGraph.lookupNode(check);
+      const auto *useNode = useGraph.lookupNode(check);
       assert(useNode || llvm::isa<ModuleOp>(check.getOperation()));
       if (!useNode || collectSafeToErase(useNode)) {
         return true;
@@ -1906,7 +1906,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
     // Perform cleanup according to the 'cleanupMode' option.
-    switch (cleanupMode) {
+    switch (cleanupMode) { // NOLINT(bugprone-switch-missing-default-case)
     case StructCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);

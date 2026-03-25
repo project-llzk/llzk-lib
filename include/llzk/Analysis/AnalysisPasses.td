@@ -75,9 +75,13 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
   let summary = "Print interval analysis results for all LLZK structs.";
   let constructor = "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
   let options =
-      [Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
-              "The field to use for interval analysis. Supported fields: "
-              "bn128/bn254, babybear, goldilocks, mersenne31">,
+      [Option<"fieldName", "field", "std::string", /* default */ "\"\"",
+              "The field to use for interval analysis. If supplied, this "
+              "always overrides the module's detected field. If omitted, the "
+              "pass first tries to detect a single field from the enclosing "
+              "module's felt usage "
+              "and otherwise falls back to bn128. Supported fields: "
+              "bn128/bn254, babybear, goldilocks, koalabear, mersenne31">,
        Option<"propagateInputConstraints", "propagate-input-constraints",
               "bool", /* default */ "false",
               "Whether to propagate constraints on inputs from @constrain to "

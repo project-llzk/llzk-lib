@@ -1,107 +1,62 @@
 # LLZK Language Specification {#syntax}
 
-<!--
-TODO: Update this specification (https://github.com/project-llzk/llzk-lib/issues/262)
-Based on: https://www.notion.so/veridise/ZK-IR-Design-5d4e6b675c9142e9b1583bdca3c8c8a6
--->
-
-\todo This documentation is out of date and will be updated shortly.
-
 \tableofcontents
 
 ## Syntax
 
-```EBNF
+The root `module` in LLZK IR must have the `llzk.lang` attribute with an optional string that is typically used to indicate the source language. The root `module` can contain any number of `struct.def`, `function.def`, or other `module` ops. The `struct.def` op is the foundation of LLZK IR and is used to describe each component in a circuit. It can contain any number of data members, a `compute()` function that holds the witness generation code, and a `constrain()` function that holds the constraint generation code. No other functions may appear within a `struct.def`.
 
-program = program_header, { include | global_const | global_func | component } ;
-program_header = "#dialect", identifier ;
-include = "#include", ? path ? ;
-global_const = identifier, ":=", const_expr, ";" , [ annotation ] ;
-global_func = "function.def", identifier, parameters, "->", type, body ;
-component = "struct", identifier, [ struct_params ],
-						"{", fields, funcs, "}", [ annotation ] ;
-struct_params = "<", [ identifier, { "," , identifier }], ">" ;
-fields = { identifier, ":", type, "," , [ annotation ] } ;
-funcs = ( compute , constrain ) | ( constrain, compute ) ;
-compute = "function.def compute", parameters, body ;
-constrain = "function.def constrain", parameters, body ;
-parameters = "(", [ param, { "," , param }], ")" ;
-param = identifier, ":", type ;
-body = "{", { statement, ";", [ annotation ] }, "}" ;
-statement = emit | return | while | if | assign | expr_call ;
-emit = "emit", ( expr_contains | ( expr, "=", expr ) ) ;
-return = "return", expr ;
-while = "while", expr , body ;
-if = "if", expr, body, [ "else", body ] ;
-assign = lvalue, ":=", expr ;
-const_expr = expr ; (* semantics require const type *)
-expr = literal | lvalue | expr_array | expr_call | expr_ref |
-       expr_contains | expr_binop | expr_monop | expr_special ;
-expr_array = "[", list_of_expr, "]" ;
-expr_call = [ expr_call_base ], expr_call_target ;
-expr_call_base = lvalue, [ "<", const_expr, ">" ], "." ;
-expr_call_target = identifier, "(", list_of_expr, ")" ;
-expr_ref = lvalue, ".", identifier ;
-expr_contains = lvalue, "in", lvalue ;
-expr_binop = expr, binop, expr ;
-list_of_expr = [ expr, { "," , expr }] ;
-binop = binop_arith | binop_bit | binop_compare | binop_logic ;
-binop_arith = "+" | "-" | "*" | "/" | "%" ;
-binop_bit = "&" | "|" | "^" | "<<" | ">>" ;
-binop_compare = ">" | "<" | ">=" | "<=" | "==" | "!=" ;
-binop_logic = "&&" | "||" ;
-expr_monop = ( "(", expr, ")" ) | ( monop, expr ) ;
-monop = monop_arith | monop_bit | monop_logic ;
-monop_arith = "-" ;
-monop_bit = "~" ;
-monop_logic = "!" ;
-expr_special = "nondetFelt()";
-lvalue = identifier | lvalue_array ;
-lvalue_array = lvalue, "[", lvalue, "]" ;
-type = { type_modifier }, type_base ;
-type_modifier = "pub" | "const" ;
-type_base = identifier | ( type, "[", const_expr, "]" ) ;
-constant = literal | identifier ;
-identifier = letter, { letter | digit } ;  (* and symbols if needed *)
-annotation = "#", ? anything except newline ? ;
-letter = ? all capital and lowercase characters ? ;
-literal = ( digit, { digit } ) | ( "0x", hexit, { hexit } ) ;
-hexit = digit | "A" | "B" | "C" | "D" | "E" | "F"
-              | "a" | "b" | "c" | "d" | "e" | "f" ;
-digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+Here is a simple example of LLZK IR translated from the circomlib [and gate](\ref circomlib-and-gate):
 
+```mlir
+module attributes {llzk.lang = "circom"} {
+  struct.def @AND {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@AND> {
+      %self = struct.new : !struct.type<@AND>
+      %0 = felt.mul %a, %b : !felt.type, !felt.type
+      struct.writem %self[@out] = %0 : !struct.type<@AND>, !felt.type
+      function.return %self : !struct.type<@AND>
+    }
+    function.def @constrain(%self: !struct.type<@AND>, %a: !felt.type, %b: !felt.type) {
+      %0 = struct.readm %self[@out] : !struct.type<@AND>, !felt.type
+      %1 = felt.mul %a, %b : !felt.type, !felt.type
+      constrain.eq %0, %1 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
 ```
 
 ## Types
 
-- `bool`: subtype of Felt in [0,1]
-- `int`: machine integer
-- `Felt`: finite field element
-- `struct` (component): Aggregate type with named heterogeneous elements. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions.
-- `array<E>`: elements can be any type, including other array type for multi-dimensional arrays. We may need this type to have a built-in field named `len` that returns the length of the array.
-- `const<T>`: **modifier** on types to denote it’s a compile-time constant. Semantic analysis can infer `const` based on usage of literal values, etc. but it can also be specified in the IR in which case the semantic analysis must ensure it’s correct or give an error. The semantics of several syntax nodes require a `const` value, such as the `i` in `GetWeight<i>.compute()`. Global function return type can be `const` and that would allow such a function to be used in these locations.
+- `i1`: (MLIR builtin) Boolean value [0,1].
+- `index`: (MLIR builtin) Machine integer.
+- `felt.type`: Finite field element.
+- `array.type<N x E>`: Aggregate type with indexed [pseudo-homogeneous](\ref pseudo-homogeneous) elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes. Each dimension size can be specified as an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when creating arrays within a loop where the dimension size depends on the loop iteration variable).
+- `struct.type<[..]>`: Aggregate type with named heterogeneous elements corresponding to a `struct.def`. Generally correlates to components/functions in the source language. Constituent elements may be local variables, subcomponents, and/or called functions. Optionally includes a list of parameters to instantiate a templated `struct.def` where each parameter can be an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), a type used to instantiate a `poly.tvar<@N>` (see below), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when the parameter of a templated `struct.type` depends on a loop iteration variable).
+- `pod.type<..>`: Plain Old Data aggregate type with named heterogeneous elements. Unlike `struct.type`, there is no associated named declaration, the type itself specifies all constituent element types. It can be used more freely than `struct.type` since it has fewer restrictions on modifications.
+- `poly.tvar<@N>`: Placeholder type variable within a templated `struct.def` that may be instantiated with different types.
+- `string.type`: Sequence of characters.
 
-## Special Constructs
+### Pseudo-homogeneous arrays {#pseudo-homogeneous}
 
-- `nondetFelt()`: can be used as the parameter of a `constrain()` function when the expression from the source language can be elided because it cannot be used as part of a constraint. For example, expressions containing bitwise operators cannot be part of a constraint.
-- A special element can be added to a `struct` to store the return value of a component (i.e., `synthetic_return` in the examples above).
+LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantiated with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](\ref test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.
 
 ## Semantic Rules
 
-- `emit` must only appear in `constrain()` functions and `return` only in global functions.
-- `constrain()` only calls `constrain()` and `compute()` only calls `compute()`. Either can call arbitrary functions but not each other.
-- Function parameters are pass-by-value.
-- For references like `a.b`, a field named `b` must be present in the component `a`. For references like `c`, if a field named `c` is present in the current component the reference refers to that field instance, otherwise it refers to a local named `c` within that function, with type inferred from the RHS of the expression where `c` is defined.
-- Global constants cannot be modified/assigned.
+- Ops marked with the `WitnessGen` trait can only be used in functions with the `allow_witness` attribute (`compute()` within `struct.def` has this by default). Similarly, ops marked with the `ConstraintGen` trait can only be used in functions with the `allow_constraint` attribute (`constrain()` within `struct.def` has this by default).
+- Functions with the `allow_witness` attribute can only call other functions marked with `allow_witness`. Likewise for `allow_constraint`.
+- Ops marked with the `NotFieldNative` trait can only be used in functions with the `allow_non_native_field_ops` attribute. Some of these ops have known transformations to field-native operations but others do not. It is up to backend users to determine how to handle such ops appearing in `constrain()` functions (one possibility being replacing these ops with `llzk.nondet`)
 
 ## Translation Guidelines {#translation-guidelines}
 
-- The modifier `pub` can be added before the type on `compute()` and `constrain()` parameters to denote which elements of the domain are public (default is private). Likewise, it can be used on struct fields to denote which fields are part of the co-domain (i.e., public outputs).
-- The frontend translation for each source language to ZK IR should be as simple as possible since this will be repeated effort for each source language. Any transformations or optimizations on the ZK IR should be done in a shared module run on the internal representation after translation.
-- Constant integer parameters on a `struct` can be used to avoid creating multiple versions of that `struct` in the IR. A later pass can flatten the IR if needed by the client analysis. This is even where multiple dialects of the IR could be used, with a flattened dialect disallowing these parameters.
-- If loop bounds are known, `scf.for` should be used to make loop bounds explicit. However, `scf.while` is available to handle the general case if that information is not available but this should not be used in the `constrain()` function.
-- Global functions (i.e., user-defined or helper functions, located outside of `struct` definitions) are pure. There is no global state and parameters are pass-by-value (i.e., a copy is created) so there is nothing external they can modify.
-- Source line information should be handled via MLIR so frontend components must provide that information when building the MLIR AST.
+- The frontend translation for each source language to LLZK IR should be as simple as possible since this will be repeated effort for each source language. To expand support of frontend languages, we welcome proposals of new high-level syntax along with a translation of that syntax to existing LLZK syntax.
+- To promote reusable infrastructure, transformations or optimizations should be performed on the LLZK IR rather than the source language, whenever possible. We welcome PRs to LLZK-lib for reusable passes.
+- Loops can be represented with either `scf.for` or `scf.while` and the optional `llzk.loopbounds` attribute can be added to specify known iteration information.
+- Frontend translations should attach accurate source line information to operations via the `Location` whenever possible.
 - Only the outermost module should have the `llzk.lang` attribute (because the presence of that attribute is used to determine the “root” symbol table for symbol resolution).
 - All inner modules must be named because their names are used to build the fully-qualified path names for symbol references.
 - All references to functions and types must use fully-qualified paths.
+
+[circomlib-and-gate]: https://github.com/iden3/circomlib/blob/master/circuits/gates.circom#L29-L35

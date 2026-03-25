@@ -1,0 +1,37 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(cse, canonicalize)' -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>) attributes {function.allow_constraint} {
+      %0 = llzk.nondet : !felt.type
+      %1 = llzk.nondet : !felt.type
+      %c7 = felt.const 7
+      %c9 = felt.const 9
+      constrain.eq %0, %c7 : !felt.type
+      constrain.eq %1, %c9 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
+// CHECK-NEXT:        %self = struct.new : <@A>
+// CHECK-NEXT:        function.return %self : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@A>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %felt_const_9 = felt.const  9
+// CHECK-NEXT:        %felt_const_7 = felt.const  7
+// CHECK-NEXT:        %nondet = llzk.nondet : !felt.type
+// CHECK-NEXT:        %nondet_0 = llzk.nondet : !felt.type
+// CHECK-NEXT:        constrain.eq %nondet, %felt_const_7 : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %nondet_0, %felt_const_9 : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -66,29 +66,44 @@ struct OpTestGenerator : public TestGenerator {
   ///
   /// Operations require explicit destruction via mlirOperationDestroy(),
   /// so this override returns the function name rather than a comment.
-  virtual std::string genCleanup() const override { return "mlirOperationDestroy"; };
+  std::string genCleanup() const override { return "mlirOperationDestroy"; };
 
-  /// @brief Generate "Build" function test for an operation
+  /// @brief Generate "Build" function tests for an operation
   /// @param op The operation definition
-  void genBuildOpTest(const Operator &op) const {
+  void genBuildOpTests(const Operator &op) const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{1}{2}Build links properly.
-TEST_F({1}OperationLinkTests, {0}{2}_Build) {{
+/// This test ensures {0}{1}_{2}Build links properly.
+TEST_F({1}OperationLinkTests, {0}_{2}_Build) {{
   // Returns an `arith.constant` op, which will never match the {2} dialect check.
   auto testOp = createIndexOperation();
-  
+
   // This condition is always false, so the function is never actually called.
   // We only verify it compiles and links correctly.
-  if ({0}OperationIsA{1}{2}(testOp)) {{
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
     MlirOpBuilder builder = mlirOpBuilderCreate(context);
     MlirLocation location = mlirLocationUnknownGet(context);
 {3}
-    (void){0}{1}{2}Build(builder, location{4});
+    (void){0}{1}_{2}Build(builder, location{4});
     // No need to destroy builder or op since this code never runs.
   }
-  
+
   mlirOperationDestroy(testOp);
 }
+
+struct {2}BuildFuncHelper : public TestAnyBuildFuncHelper<CAPITest> {
+  virtual bool callIsA(MlirOperation op) override { return {0}OperationIsA_{1}_{2}(op); }
+  /// This method must be implemented to return a subclass of `{2}BuildFuncHelper` that
+  /// at least implements `callBuild()` to build the operation via `{0}{1}{2}Build()`.
+  /// It can override other methods of `TestAnyBuildFuncHelper` if needed.
+  static std::unique_ptr<{2}BuildFuncHelper> get();
+
+protected:
+  {2}BuildFuncHelper() = default;
+};
+/// This test ensures `{0}{1}{2}Build()` successfully builds an `Operation`
+/// of the correct type that passes verification. It relies on a manual implemenation
+/// of `{2}BuildFuncHelper::callBuild()` that calls `{0}{1}{2}Build()`.
+TEST_F(CAPITest, {2}_build_pass) { {2}BuildFuncHelper::get()->run(*this); }
 )";
 
     assert(!className.empty() && "className must be set");
@@ -108,11 +123,11 @@ TEST_F({1}OperationLinkTests, {0}{2}_Build) {{
     static constexpr char OperandGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -120,12 +135,12 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
     static constexpr char OperandSetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
-    {0}{1}{2}Set{3}(testOp, dummyValue);
+    {0}{1}_{2}Set{3}(testOp, dummyValue);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -133,21 +148,21 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}) {{
     static constexpr char VariadicOperandGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}Count(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}Count(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}At(testOp, 0);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}At(testOp, 0);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -155,13 +170,13 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
     static constexpr char VariadicOperandSetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
     auto dummyValue = mlirOperationGetResult(testOp, 0);
     MlirValue values[] = {{dummyValue};
-    {0}{1}{2}Set{3}(testOp, 1, values);
+    {0}{1}_{2}Set{3}(testOp, 1, values);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -218,11 +233,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
     static constexpr char AttributeGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Attr) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -230,11 +245,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Attr) {{
     static constexpr char AttributeSetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}Attr) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    {0}{1}{2}Set{3}(testOp, createIndexAttribute());
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    {0}{1}_{2}Set{3}(testOp, createIndexAttribute());
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -269,11 +284,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}Attr) {{
     static constexpr char ResultGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -281,21 +296,21 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}) {{
     static constexpr char VariadicResultGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}Count(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}Count(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}At(testOp, 0);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}At(testOp, 0);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -332,11 +347,11 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
     static constexpr char RegionGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Region) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
@@ -344,27 +359,27 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Region) {{
     static constexpr char VariadicRegionGetterTest[] = R"(
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}Count) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}Count(testOp);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}Count(testOp);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 
 TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
   auto testOp = createIndexOperation();
-  
-  if ({0}OperationIsA{1}{2}(testOp)) {{
-    (void){0}{1}{2}Get{3}At(testOp, 0);
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    (void){0}{1}_{2}Get{3}At(testOp, 0);
   }
-  
+
   mlirOperationDestroy(testOp);
 }
 )";
     assert(!className.empty() && "className must be set");
 
-    for (int i = 0, e = op.getNumRegions(); i < e; ++i) {
+    for (unsigned int i = 0, e = op.getNumRegions(); i < e; ++i) {
       const auto &region = op.getRegion(i);
       llvm::StringRef name = region.name;
       std::string capName = name.empty() ? llvm::formatv("Region{0}", i).str() : toPascalCase(name);
@@ -399,13 +414,13 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Get{3}At) {{
       return;
     }
 
-    this->setDialectAndClassName(&defDialect, op.getCppClassName());
+    this->setNamespaceAndClassName(defDialect, op.getCppClassName());
 
     if (GenIsA) {
       this->genIsATest();
     }
     if (GenOpBuild && !op.skipDefaultBuilders()) {
-      this->genBuildOpTest(op);
+      this->genBuildOpTests(op);
     }
     if (GenOpOperandGetters || GenOpOperandSetters) {
       this->genOperandTests(op);

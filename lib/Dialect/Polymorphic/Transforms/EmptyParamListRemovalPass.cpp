@@ -73,8 +73,9 @@ public:
     return success(hasEmptyParamList(op.getType()));
   }
 
-  void
-  rewrite(StructDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  void rewrite(
+      StructDefOp op, OpAdaptor /*adaptor*/, ConversionPatternRewriter &rewriter
+  ) const override {
     rewriter.modifyOpInPlace(op, [&op]() { op.setConstParamsAttr(nullptr); });
   }
 };

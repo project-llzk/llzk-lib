@@ -18,34 +18,21 @@
 #ifndef LLZK_C_DIALECT_LLZK_H
 #define LLZK_C_DIALECT_LLZK_H
 
-#include "llzk-c/Support.h"
-
 #include <mlir-c/IR.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/LLZK/IR/Attrs.capi.h.inc"
+#include "llzk/Dialect/LLZK/IR/Ops.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `llzk` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(LLZK, llzk);
-
-/// Creates a llzk::PublicAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPublicAttrGet(MlirContext context);
-
-/// Returns true if the attribute is a PublicAttr.
-LLZK_DECLARE_ATTR_ISA(PublicAttr);
-
-/// Creates a llzk::LoopBoundsAttr.
-MLIR_CAPI_EXPORTED MlirAttribute
-llzkLoopBoundsAttrGet(MlirContext context, int64_t lower, int64_t upper, int64_t step);
-
-/// Returns true if the attribute is a LoopBoundsAttr.
-LLZK_DECLARE_ATTR_ISA(LoopBoundsAttr);
-
-/// Returns true if the op is a NonDetOp.
-LLZK_DECLARE_OP_ISA(NonDetOp);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_LLZK_H

@@ -1,0 +1,131 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute(%a: !F, %b: !F, %c: !F) -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F, %c: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %r1 = bool.cmp eq(%a, %b) : !F, !F
+      %r2 = bool.cmp eq(%b, %c) : !F, !F
+      %r = bool.and %r1, %r2
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921 : i65>} {
+// CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
+// CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
+// CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
+// CHECK-NEXT:      %2 = pcl.and %0, %1
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!F = !felt.type<"goldilocks">
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute(%a: !F, %b: !F, %c: !F) -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F, %c: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %r1 = bool.cmp lt(%a, %b) : !F, !F
+      %r2 = bool.cmp le(%b, %c) : !F, !F
+      %r = bool.or %r1, %r2
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i65>} {
+// CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
+// CHECK-NEXT:      %0 = pcl.lt %arg0, %arg1
+// CHECK-NEXT:      %1 = pcl.le %arg1, %arg2
+// CHECK-NEXT:      %2 = pcl.or %0, %1
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!F = !felt.type<"bn254">
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %r1 = bool.cmp ge(%a, %b) : !F, !F
+      %r = bool.not %r1
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088696311157297823662689037894645226208583 : i256>} {
+// CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
+// CHECK-NEXT:      %0 = pcl.ge %arg0, %arg1
+// CHECK-NEXT:      %1 = pcl.not %0
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!F = !felt.type<"goldilocks">
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute(%a: !F, %b: !F, %c: !F) -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F, %c: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %r1 = bool.cmp eq(%a, %b) : !F, !F
+      %r2 = bool.cmp eq(%b, %c) : !F, !F
+      %r = bool.xor %r1, %r2
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i65>} {
+// CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
+// CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
+// CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
+// CHECK-NEXT:      %2 = pcl.iff %0, %1
+// CHECK-NEXT:      %3 = pcl.not %2
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!F = !felt.type<"goldilocks">
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %r1 = bool.cmp ne(%a, %b) : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i65>} {
+// CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
+// CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
+// CHECK-NEXT:      %1 = pcl.not %0
+// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

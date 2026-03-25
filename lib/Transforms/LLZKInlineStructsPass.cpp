@@ -712,7 +712,7 @@ private:
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
         SmallVector<Type> newTypes(origTypes);
-        auto it = newTypes.erase(newTypes.begin() + inputIdx);
+        auto *it = newTypes.erase(newTypes.begin() + inputIdx);
         for (auto [_, newMember] : newMembers) {
           newTypes.insert(it, newMember.getType());
           ++it;
@@ -928,9 +928,9 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
   /// "constrain" function so it must have a StructDefOp parent).
   static inline StructDefOp getParentStruct(FuncDefOp func) {
     assert(func.isStructConstrain()); // pre-condition
-    FailureOr<StructDefOp> currentNodeParentStruct = getParentOfType<StructDefOp>(func);
-    assert(succeeded(currentNodeParentStruct)); // follows from ODS definition
-    return currentNodeParentStruct.value();
+    StructDefOp currentNodeParentStruct = getParentOfType<StructDefOp>(func);
+    assert(currentNodeParentStruct); // follows from ODS definition
+    return currentNodeParentStruct;
   }
 
   /// Return 'true' iff the `maxComplexity` option is set and the given value exceeds it.

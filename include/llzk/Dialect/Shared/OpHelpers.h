@@ -14,12 +14,33 @@
 
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringRef.h>
 
 namespace llzk {
+
+/// See `LLZKSymbolTable` ODS documentation for details.
+template <typename TypeClass>
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
+class LLZKSymbolTableImplTrait
+    : public mlir::OpTrait::TraitBase<TypeClass, LLZKSymbolTableImplTrait> {
+public:
+  static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
+    // Note: the current op will be checked by the normal `SymbolTable` trait that is
+    // included in `LLZKSymbolTable`. Checking it here would cause the same error described
+    // in `LLZKSymbolTable`.
+    while ((op = op->getParentWithTrait<mlir::OpTrait::SymbolTable>())) {
+      if (mlir::failed(mlir::detail::verifySymbolTable(op))) {
+        return mlir::failure();
+      }
+    }
+    return mlir::success();
+  }
+};
 
 /// Get the operation name, like "constrain.eq" for the given OpClass.
 /// This function can be used when the compiler would complain about
@@ -42,12 +63,13 @@ template <typename OpClass> inline OpClass getSelfOrParentOfType(mlir::Operation
 }
 
 /// Return the closest surrounding parent operation that is of type 'OpClass'.
-template <typename OpClass> inline mlir::FailureOr<OpClass> getParentOfType(mlir::Operation *op) {
-  if (OpClass p = op->getParentOfType<OpClass>()) {
-    return p;
-  } else {
-    return mlir::failure();
+template <typename OpClass> inline OpClass getParentOfType(mlir::Operation *op) {
+  if (op) {
+    if (OpClass p = op->getParentOfType<OpClass>()) {
+      return p;
+    }
   }
+  return {};
 }
 
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to

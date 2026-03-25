@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.23)
 
 if (NOT DEFINED LLZK_VERSION_OVERRIDE)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GitVersion.cmake)
-  get_git_version(LLZK_VERSION "0.1.0") # default version
+  get_git_version(LLZK_VERSION)
 else()
-  message(STATUS "LLZK_VERSION_OVERRIDE specified, setting version to ${LLZK_VERSION_OVERRIDE}")
+  message(WARNING "LLZK_VERSION_OVERRIDE specified, setting version to ${LLZK_VERSION_OVERRIDE}")
   set(LLZK_VERSION "${LLZK_VERSION_OVERRIDE}")
 endif()
 
@@ -197,7 +197,14 @@ set(LLZK_MLIR_DOC_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIRECTORY}/mlir")
 set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # We need the r1cs include dir so we can pass it to mlir-tblgen
-set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/r1cs/include")
+set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/r1cs/include")
+
+# We need the zklean include dir so we can pass it to mlir-tblgen
+set(ZKLEAN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/zklean/include")
+
+if(LLZK_WITH_PCL_BOOL)
+  set(PCL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/pcl-conv/include")
+endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
@@ -217,7 +224,7 @@ install(TARGETS LLZKAllDialects EXPORT LLZKTargets)
 
 add_subdirectory(include)
 add_subdirectory(lib)
-add_subdirectory(r1cs)
+add_subdirectory(backends)
 add_subdirectory(tools)
 if(LLZK_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(python)

@@ -349,9 +349,8 @@ LogicalResult verifyParamOfType(
   // the StructDefOp that the current Operation is nested within. These are always flat references
   // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
-    FailureOr<StructDefOp> getParentRes = getParentOfType<StructDefOp>(origin);
-    if (succeeded(getParentRes)) {
-      if (getParentRes->hasParamNamed(param.getRootReference())) {
+    if (StructDefOp getParentRes = getParentOfType<StructDefOp>(origin)) {
+      if (getParentRes.hasParamNamed(param.getRootReference())) {
         return success();
       }
     }

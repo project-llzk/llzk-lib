@@ -1,0 +1,47 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!K = !felt.type<"koalabear">
+module attributes {llzk.lang} {
+  struct.def @DetectedPrime {
+    struct.member @out : !K {llzk.pub}
+
+    function.def @compute(%a: !K) -> !struct.type<@DetectedPrime> attributes {function.allow_witness} {
+      %self = struct.new : <@DetectedPrime>
+      function.return %self : !struct.type<@DetectedPrime>
+    }
+
+    function.def @constrain(%self: !struct.type<@DetectedPrime>, %a: !K) attributes {function.allow_constraint} {
+      %out = struct.readm %self[@out] : !struct.type<@DetectedPrime>, !K
+      constrain.eq %out, %a : !K, !K
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433 : i65>} {
+// CHECK-NEXT:    func.func @DetectedPrime(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      pcl.return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!B = !felt.type<"babybear">
+!K = !felt.type<"koalabear">
+// expected-error@+1{{multiple fields is not supported}}
+module attributes {llzk.lang} {
+  struct.def @AmbiguousPrime {
+    function.def @compute(%a: !B, %b: !K) -> !struct.type<@AmbiguousPrime> attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@AmbiguousPrime>
+      function.return %self : !struct.type<@AmbiguousPrime>
+    }
+
+    function.def @constrain(%self: !struct.type<@AmbiguousPrime>, %a: !B, %b: !K) attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}

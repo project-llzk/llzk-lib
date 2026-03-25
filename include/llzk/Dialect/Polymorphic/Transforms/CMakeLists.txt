@@ -9,5 +9,4 @@ mlir_tablegen(TransformationPassEnums.cpp.inc -gen-enum-defs)
 llzk_add_mlir_doc(PolymorphicTransformationPassesDocGen passes/polymorphic/TransformationPasses.md -gen-pass-doc)
 
 add_public_tablegen_target(PolymorphicTransformationIncGen)
-add_dependencies(mlir-headers PolymorphicTransformationIncGen)
 add_dependencies(LLZKDialectHeaders PolymorphicTransformationIncGen)

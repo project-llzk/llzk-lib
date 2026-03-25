@@ -72,9 +72,8 @@ void NewPodOp::build(
     OpBuilder &builder, OperationState &state, PodType result, InitializedRecords initialValues
 ) {
   buildCommon(builder, state, result, initialValues);
-  assert(std::cmp_less_equal(initialValues.size(), std::numeric_limits<int32_t>::max()));
   affineMapHelpers::buildInstantiationAttrsEmpty<NewPodOp>(
-      builder, state, static_cast<int32_t>(initialValues.size())
+      builder, state, llzk::checkedCast<int32_t>(initialValues.size())
   );
 }
 
@@ -249,8 +248,7 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
     mapOperandsGroupSizes.reserve(mapOperands.size());
     for (const auto &subRange : mapOperands) {
       allMapOperands.append(subRange.begin(), subRange.end());
-      assert(std::cmp_less_equal(subRange.size(), std::numeric_limits<int32_t>::max()));
-      mapOperandsGroupSizes.push_back(static_cast<int32_t>(subRange.size()));
+      mapOperandsGroupSizes.push_back(llzk::checkedCast<int32_t>(subRange.size()));
     }
   }
 
@@ -277,10 +275,9 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
       return failure();
     }
   }
-  assert(std::cmp_less_equal(initializedRecords.size(), std::numeric_limits<int32_t>::max()));
-  assert(std::cmp_less_equal(allMapOperands.size(), std::numeric_limits<int32_t>::max()));
   props.operandSegmentSizes = {
-      static_cast<int32_t>(initializedRecords.size()), static_cast<int32_t>(allMapOperands.size())
+      llzk::checkedCast<int32_t>(initializedRecords.size()),
+      llzk::checkedCast<int32_t>(allMapOperands.size())
   };
   props.mapOpGroupSizes = parser.getBuilder().getDenseI32ArrayAttr(mapOperandsGroupSizes);
   props.initializedRecords = parser.getBuilder().getArrayAttr(initializedRecords);

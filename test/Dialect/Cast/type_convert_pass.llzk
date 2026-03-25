@@ -22,6 +22,28 @@ function.def @i1_to_felt(%a: i1) -> !felt.type {
 //CHECK-NEXT:  }
 // -----
 
+function.def @i1_to_felt_explicit_type(%a: i1) -> !felt.type {
+  %b = cast.tofelt %a : i1, !felt.type
+  function.return %b: !felt.type
+}
+//CHECK-LABEL: function.def @i1_to_felt_explicit_type(
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1, !felt.type
+//CHECK-NEXT:    function.return %[[T0]] : !felt.type
+//CHECK-NEXT:  }
+// -----
+
+function.def @i1_to_felt_explicit_type_with_field(%a: i1) -> !felt.type<"bn128"> {
+  %b = cast.tofelt %a : i1, !felt.type<"bn128">
+  function.return %b: !felt.type<"bn128">
+}
+//CHECK-LABEL: function.def @i1_to_felt_explicit_type_with_field(
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type<"bn128"> {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1, !felt.type<"bn128">
+//CHECK-NEXT:    function.return %[[T0]] : !felt.type<"bn128">
+//CHECK-NEXT:  }
+// -----
+
 function.def @index_to_felt(%a: index) -> !felt.type {
   %b = cast.tofelt %a : index
   function.return %b: !felt.type

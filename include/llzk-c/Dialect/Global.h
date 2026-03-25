@@ -18,28 +18,20 @@
 #ifndef LLZK_C_DIALECT_GLOBAL_H
 #define LLZK_C_DIALECT_GLOBAL_H
 
-#include "llzk-c/Support.h"
-
 #include <mlir-c/IR.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/Global/IR/Ops.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `global` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Global, llzk__global);
-
-//===----------------------------------------------------------------------===//
-// GlobalDefOp
-//===----------------------------------------------------------------------===//
-
-/// Returns true if the op is a GlobalDefOp.
-LLZK_DECLARE_OP_ISA(GlobalDefOp);
-
-/// Returns true if the op defines a constant value.
-LLZK_DECLARE_OP_PREDICATE(GlobalDefOp, IsConstant);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_GLOBAL_H

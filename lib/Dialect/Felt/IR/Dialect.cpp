@@ -37,11 +37,11 @@ namespace llzk::felt {
 // it doesn't work to put it in Attrs.cpp.
 //===------------------------------------------------------------------===//
 
-mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
+mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
   mlir::Builder odsBuilder(odsParser.getContext());
   llvm::SMLoc odsLoc = odsParser.getCurrentLocation();
-  mlir::FailureOr<::mlir::StringAttr> fieldNameAttrRes;
-  mlir::FailureOr<::llvm::APInt> primeRes;
+  mlir::FailureOr<mlir::StringAttr> fieldNameAttrRes;
+  mlir::FailureOr<llvm::APInt> primeRes;
 
   // Parse literal '<'
   if (odsParser.parseLess()) {
@@ -49,11 +49,11 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   }
 
   // Parse variable 'fieldName'
-  fieldNameAttrRes = mlir::FieldParser<::mlir::StringAttr>::parse(odsParser);
-  if (::mlir::failed(fieldNameAttrRes)) {
+  fieldNameAttrRes = mlir::FieldParser<mlir::StringAttr>::parse(odsParser);
+  if (mlir::failed(fieldNameAttrRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(), "failed to parse LLZK_FieldSpecAttr parameter 'fieldName' "
-                                        "which is to be a `::mlir::StringAttr`"
+                                        "which is to be a `mlir::StringAttr`"
     );
     return {};
   }
@@ -63,11 +63,11 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type _) {
   }
 
   // Parse variable 'prime'
-  primeRes = mlir::FieldParser<::llvm::APInt>::parse(odsParser);
-  if (::mlir::failed(primeRes)) {
+  primeRes = mlir::FieldParser<llvm::APInt>::parse(odsParser);
+  if (mlir::failed(primeRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
-        "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be a `::llvm::APInt`"
+        "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be a `llvm::APInt`"
     );
     return {};
   }
@@ -123,6 +123,8 @@ auto FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Felt/IR/Types.cpp.inc"

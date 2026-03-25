@@ -20,14 +20,18 @@
 
 #include <mlir-c/IR.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/Constrain/IR/Ops.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `constrain` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Constrain, llzk__constrain);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_CONSTRAIN_H

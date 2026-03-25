@@ -40,7 +40,7 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 
 def LLZK_StructDefOp
     : StructDialectOp<
-          "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
+          "def", [HasParent<"::mlir::ModuleOp">, Symbol, LLZKSymbolTable,
                   IsolatedFromAbove, SetFuncAllowAttrs,
                   DeclareOpInterfaceMethods<SymbolUserOpInterface>,
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
@@ -139,7 +139,6 @@ def LLZK_StructDefOp
       }));
     }
 
-
     /// Gets the FuncDefOp that defines the compute function in this structure, if present, or `nullptr` otherwise.
     ::llzk::function::FuncDefOp getComputeFuncOp();
 
@@ -159,14 +158,17 @@ def LLZK_StructDefOp
     bool hasConstParamsAttr() { return getProperties().const_params != nullptr; };
 
     /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::StringAttr find);
+    bool hasParamNamed(::mlir::StringRef find);
+
+    /// Return `true` iff this StructDefOp has a parameter with the given name
+    inline bool hasParamNamed(::mlir::StringAttr find) {
+      return hasParamNamed(find.strref());
+    }
+
+    /// Return `true` iff this StructDefOp has a parameter with the given name
     inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
       return hasParamNamed(find.getRootReference());
     }
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.

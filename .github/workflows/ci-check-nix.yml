@@ -1,16 +1,15 @@
-name: Check nix
+name: Nix check
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  run:
     strategy:
       matrix:
         cmakeBuildType: [debug, release]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,3 +32,16 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
       - name: Build and check install (${{ matrix.cmakeBuildType }})
         run: nix --print-build-logs build '.#checks.x86_64-linux.llzk-installcheck-${{ matrix.cmakeBuildType }}'
+
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
+  nix-check-result:
+    needs: run
+    runs-on: ubuntu-24.04
+    if: ${{ !cancelled() }}
+    steps:
+      - name: Verify nix-check passed
+        run: |
+          if [[ "${{ needs.run.result }}" != "success" ]]; then
+            echo "nix-check failed or was cancelled"
+            exit 1
+          fi

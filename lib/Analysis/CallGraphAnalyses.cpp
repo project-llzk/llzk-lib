@@ -52,7 +52,7 @@ bool CallGraphReachabilityAnalysis::isReachable(FuncDefOp &A, FuncDefOp &B) cons
     return true;
   }
 
-  auto startNode = callGraph.get().lookupNode(A.getCallableRegion());
+  auto *startNode = callGraph.get().lookupNode(A.getCallableRegion());
   if (!startNode) {
     const char *msg = "CallGraph contains no starting node!";
     A.emitError(msg).report();

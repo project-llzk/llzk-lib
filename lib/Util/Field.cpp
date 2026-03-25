@@ -7,20 +7,32 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/Operation.h>
+
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/SlowDynamicAPInt.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/LogicalResult.h>
 
 #include <algorithm>
 #include <mutex>
 
-using namespace llvm;
+using namespace mlir;
 
 namespace llzk {
 
@@ -28,7 +40,7 @@ static DenseMap<StringRef, Field> knownFields;
 
 Field::Field(std::string_view primeStr, StringRef name) : Field(APSInt(primeStr), name) {}
 
-Field::Field(APInt prime, StringRef name) : primeName(name) {
+Field::Field(const APInt &prime, StringRef name) : primeName(name) {
   primeMod = toDynamicAPInt(prime);
   halfPrime = (primeMod + felt(1)) / felt(2);
   bitwidth = prime.getBitWidth();
@@ -45,29 +57,28 @@ FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fiel
 }
 
 LogicalResult Field::verifyFieldDefined(StringRef fieldName, EmitErrorFn errFn) {
-  if (mlir::failed(Field::tryGetField(fieldName))) {
+  if (failed(Field::tryGetField(fieldName))) {
     return errFn().append("field '", fieldName, "' is not defined");
   }
-  return mlir::success();
+  return success();
 }
 
 const Field &Field::getField(StringRef fieldName, EmitErrorFn errFn) {
   auto res = tryGetField(fieldName);
-  if (mlir::failed(res)) {
-    auto msg = "field \"" + Twine(fieldName) + "\" is unsupported";
-    if (errFn) {
-      errFn().append(msg).report();
-    } else {
-      report_fatal_error(msg);
-    }
+  if (succeeded(res)) {
+    return res.value().get();
   }
-  return res.value().get();
+  std::string msg = "field \"" + fieldName.str() + "\" is unsupported";
+  if (errFn) {
+    errFn().append(msg).report();
+  }
+  llvm::report_fatal_error(msg.c_str());
 }
 
 void Field::addField(Field &&f, EmitErrorFn errFn) {
   // Use `tryGetField()` to ensure knownFields is initialized before checking for conflicts.
   auto existing = Field::tryGetField(f.name());
-  if (mlir::succeeded(existing)) {
+  if (succeeded(existing)) {
     // Field exists and conflicts with existing definition.
     std::string msg;
     debug::Appender(msg) << "Definition of \"" << f.name()
@@ -76,7 +87,7 @@ void Field::addField(Field &&f, EmitErrorFn errFn) {
     if (errFn) {
       errFn().append(msg).report();
     } else {
-      report_fatal_error(msg.c_str());
+      llvm::report_fatal_error(msg.c_str());
     }
     return;
   }
@@ -123,30 +134,30 @@ DynamicAPInt Field::inv(const APInt &i) const {
 }
 
 // Parses Fields from the given attribute, if able.
-static LogicalResult parseFields(mlir::Attribute a) {
+static LogicalResult parseFields(Attribute a) {
   // clang-format off
   return TypeSwitch<
-             mlir::Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
-      .Case<mlir::UnitAttr>(
-          [](auto _) {
+             Attribute, FailureOr<SmallVector<std::reference_wrapper<const Field>>>>(a)
+      .Case<UnitAttr>(
+          [](auto) {
             return success();
           })
-      .Case<mlir::StringAttr>(
+      .Case<StringAttr>(
           [](auto s) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
-            auto fieldRes = Field::tryGetField(s.getValue().data());
-            if (mlir::failed(fieldRes)) {
+            auto fieldRes = Field::tryGetField(s);
+            if (failed(fieldRes)) {
               return failure();
             }
             return SmallVector<std::reference_wrapper<const Field>> {fieldRes.value()};
           })
-      .Case<mlir::ArrayAttr>(
+      .Case<ArrayAttr>(
           [](auto arr) -> FailureOr<SmallVector<std::reference_wrapper<const Field>>> {
             // An ArrayAttr may only contain inner StringAttr
             SmallVector<std::reference_wrapper<const Field>> res;
-            for (mlir::Attribute elem : arr) {
-              if (auto s = llvm::dyn_cast<mlir::StringAttr>(elem)) {
-                auto fieldRes = Field::tryGetField(s.getValue().data());
-                if (mlir::failed(fieldRes)) {
+            for (Attribute elem : arr) {
+              if (auto s = llvm::dyn_cast<StringAttr>(elem)) {
+                auto fieldRes = Field::tryGetField(s);
+                if (failed(fieldRes)) {
                   return failure();
                 }
                 res.push_back(fieldRes.value());
@@ -156,19 +167,127 @@ static LogicalResult parseFields(mlir::Attribute a) {
             }
             return res;
           })
-      .Default([](auto _) { return failure(); });
+      .Default([](auto) { return failure(); });
   // clang-format on
 }
 
-LogicalResult addSpecifiedFields(mlir::ModuleOp modOp) {
-  if (mlir::Attribute a = modOp->getAttr(FIELD_ATTR_NAME)) {
+LogicalResult addSpecifiedFields(ModuleOp modOp) {
+  if (Attribute a = modOp->getAttr(FIELD_ATTR_NAME)) {
     return parseFields(a);
   }
   // Always recurse.
-  if (mlir::ModuleOp parentMod = modOp->getParentOfType<mlir::ModuleOp>()) {
+  if (ModuleOp parentMod = modOp->getParentOfType<ModuleOp>()) {
     return addSpecifiedFields(parentMod);
   }
   return success();
 }
 
 } // namespace llzk
+
+namespace {
+
+struct FieldsCtx {
+  llzk::FieldSet &fields;
+  LogicalResult &status;
+  mlir::Operation *scope;
+};
+
+} // namespace
+
+static void handleAttribute(mlir::Attribute, FieldsCtx &);
+
+static void handleType(mlir::Type type, FieldsCtx &ctx) {
+  TypeSwitch<mlir::Type> ts(type);
+  ts.Case([&ctx](llzk::felt::FeltType felt) {
+    if (felt.hasField()) {
+      ctx.fields.insert(felt.getField());
+    } else {
+      ctx.status = failure();
+      if (ctx.scope) {
+        ctx.scope->emitWarning() << "felt type is unspecified, which may cause some passes to fail";
+      }
+    }
+  })
+      .Case([&ctx](llzk::array::ArrayType array) { handleType(array.getElementType(), ctx); })
+      .Case([&ctx](llzk::pod::PodType pod) {
+    for (auto record : pod.getRecords()) {
+      handleAttribute(record, ctx);
+    }
+  }).Case([&ctx](mlir::FunctionType funcType) {
+    for (auto i : funcType.getInputs()) {
+      handleType(i, ctx);
+    }
+    for (auto o : funcType.getResults()) {
+      handleType(o, ctx);
+    }
+  });
+  // Do nothing by default for any other type
+  ts.Default([](auto) {});
+}
+
+static void handleAttribute(mlir::Attribute attr, FieldsCtx &ctx) {
+  TypeSwitch<mlir::Attribute> ts(attr);
+  ts.Case([&ctx](mlir::TypeAttr typeAttr) { handleType(typeAttr.getValue(), ctx); })
+      .Case([&ctx](mlir::ArrayAttr arrayAttr) {
+    for (auto a : arrayAttr) {
+      handleAttribute(a, ctx);
+    }
+  })
+      .Case([&ctx](mlir::DictionaryAttr dictAttr) {
+    for (auto a : dictAttr.getValue()) {
+      handleAttribute(a.getValue(), ctx);
+    }
+  }).Case([&ctx](llzk::pod::RecordAttr recordAttr) {
+    handleType(recordAttr.getType(), ctx);
+  }).Default([](auto) {});
+}
+
+LogicalResult llzk::collectFields(mlir::Operation *root, llzk::FieldSet &fields, bool silent) {
+  if (!root) {
+    return success(); // Nothing to do
+  }
+  LogicalResult status = success();
+  root->walk([&fields, &status, silent](mlir::Operation *op) {
+    FieldsCtx ctx = {.fields = fields, .status = status, .scope = silent ? nullptr : op};
+    // Crawl for types in the results,
+    for (auto result : op->getOpResults()) {
+      handleType(result.getType(), ctx);
+    }
+    // the attributes,
+    for (auto attr : op->getAttrs()) {
+      handleAttribute(attr.getValue(), ctx);
+    }
+    // block arguments (if any)
+    for (auto &region : op->getRegions()) {
+      for (auto &block : region) {
+        for (auto &arg : block.getArguments()) {
+          handleType(arg.getType(), ctx);
+        }
+      }
+    }
+  });
+
+  return status;
+}
+
+std::optional<std::reference_wrapper<const llzk::Field>>
+llzk::tryDetectSpecifiedField(Operation *root) {
+  if (!root) {
+    return std::nullopt;
+  }
+
+  ModuleOp modOp = dyn_cast<ModuleOp>(root);
+  if (!modOp) {
+    modOp = root->getParentOfType<ModuleOp>();
+  }
+
+  if (!modOp) {
+    return std::nullopt;
+  }
+
+  FieldSet fields;
+  if (failed(collectFields(modOp, fields)) || fields.size() != 1) {
+    return std::nullopt;
+  }
+  return *fields.begin();
+}

@@ -40,7 +40,7 @@ protected:
   llzk::ModuleBuilder newEmptyExample() { return llzk::ModuleBuilder {mod.get()}; }
 
   llzk::ModuleBuilder newBasicFunctionsExample(
-      size_t numParams = 0, std::vector<std::string_view> names = {funcNameB, funcNameA}
+      size_t numParams = 0, const std::vector<std::string_view> &names = {funcNameB, funcNameA}
   ) {
     mlir::IndexType idxTy = mlir::IndexType::get(&ctx);
     llvm::SmallVector<mlir::Type> paramTypes(numParams, idxTy);

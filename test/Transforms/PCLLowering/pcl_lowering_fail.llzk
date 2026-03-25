@@ -2,7 +2,7 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-to-pcl -verify-diagnostics %s
 
 // Expect the test to fail because the ComponentA2's constrain arg is not a felt
-!F = !felt.type
+!F = !felt.type<"bn128">
 module attributes {llzk.lang} {
   struct.def @ComponentA2 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
@@ -31,10 +31,10 @@ module attributes {llzk.lang} {
 // -----
 
 // Expect the test to fail because the ComponentA1 has a non-felt member
-!F = !felt.type
+!F = !felt.type<"bn128">
 module attributes {llzk.lang} {
   struct.def @ComponentA1 {
-    // expected-error@+1 {{Member must be felt type. Found '!array.type<4,3 x !felt.type>' for member: f1}}
+    // expected-error@+1 {{Member must be felt type. Found '!array.type<4,3 x !felt.type<"bn128">>' for member: f1}}
     struct.member @f1 : !array.type<4,3 x !F>
 
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }

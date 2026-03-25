@@ -1,0 +1,3 @@
+# Python bindings use pybind11 headers that are not available to clang-tidy.
+InheritParentConfig: false
+Checks: '-*'

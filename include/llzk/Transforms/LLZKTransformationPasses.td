@@ -54,7 +54,7 @@ def UnusedDeclarationEliminationPass
 
 def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
   let summary =
-      "Lowers the degree of all polynomial equations to a specified maximum";
+      "Lower the degree of all polynomial equations to a specified maximum";
   let description = [{
     Rewrites constraint expressions into an (observationally) equivalent system where the degree of
     every polynomial is less than or equal to the specified maximum.
@@ -97,20 +97,9 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   ];
 }
 
-def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
-  let summary = "Rewrites constraints to be compatible with R1CS constraints "
-                "i.e a*b - c = 0";
-  let description = [{
-    Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
-    This pass is best used as part of the `-llzk-full-r1cs-lowering` pipeline which includes
-    a degree lowering pass and clean up passes to ensure correctness and performance.
-  }];
-  let constructor = "llzk::createR1CSLoweringPass()";
-}
-
 def ComputeConstrainToProductPass
     : LLZKPass<"llzk-compute-constrain-to-product"> {
-  let summary = "Replaces separate @compute and @constrain functions in a "
+  let summary = "Replace separate @compute and @constrain functions in a "
                 "struct with a single @product function";
   let description = summary;
   let constructor = "llzk::createComputeConstrainToProductPass()";
@@ -121,28 +110,23 @@ def ComputeConstrainToProductPass
 }
 
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary =
-      "Fuses matching witness/constraint loops in a @product function";
+  let summary = "Fuse matching witness/constraint loops in a @product function";
   let description = summary;
   let constructor = "llzk::createFuseProductLoopsPass()";
   let options = [];
 }
 
-#ifdef WITH_PCL
-def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
-  let summary = "Rewrites constraints to be compatible with PCL constraints "
-                "used by Picus";
+def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
+  let summary = "Checks that every struct member is written exactly once";
   let description = [{
-      Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
-      This pass currently expects the flattening and inlining passes to be run prior to its use.
-    }];
-  let constructor = "llzk::createPCLLoweringPass()";
-  let options = [Option<
-      "prime", "prime", "::llvm::APInt",
-      "llvm::APInt(31, 2130706433)", // KoalaBear in decimal
-      "The prime field that the constraints operate over. This "
-      "is required by PCL, and the prime must be passed in digits.">];
+      This pass currently reports an error if any struct member may not be written 
+      exactly once (i.e. overwritten or left uninitialized), and does not 
+      attempt to perform any repairs (e.g. SSA-ifying overwritten struct 
+      members, or default-initializing unwritten members). This pass 
+      overapproximates conditionals, and can result in false positives.
+  }];
+  let constructor = "llzk::createNoOverwritesPass()";
+  let options = [];
 }
-#endif // WITH_PCL
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

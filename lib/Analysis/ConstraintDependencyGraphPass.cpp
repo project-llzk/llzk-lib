@@ -52,7 +52,7 @@ protected:
     cs.setIntraprocedural(runIntraprocedural);
     auto am = getAnalysisManager();
     cs.ensureAnalysisRun(am);
-    for (auto &[s, cdg] : cs.getCurrentResults()) {
+    for (const auto &[s, cdg] : cs.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
       FailureOr<SymbolRefAttr> fullName = getPathFromTopRoot(structDef);
       ensure(

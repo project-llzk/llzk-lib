@@ -1,0 +1,61 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+// COM: Regression tests for `LLZKSymbolTable` trait.
+
+module attributes {llzk.lang} {
+  // expected-note@+1 {{see existing symbol definition here}}
+  function.def private @DuplicateFunctionName()
+  // expected-error@+1 {{redefinition of symbol named 'DuplicateFunctionName'}}
+  function.def private @DuplicateFunctionName()
+
+  struct.def @B {
+    function.def @compute() -> !struct.type<@B> {
+      %self = struct.new : !struct.type<@B>
+      function.return %self : !struct.type<@B>
+    }
+    function.def @constrain(%self: !struct.type<@B>)  { function.return }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // expected-note@+1 {{see existing symbol definition here}}
+  struct.def @DuplicateStructName {
+    function.def @compute() -> !struct.type<@DuplicateStructName> {
+      %self = struct.new : !struct.type<@DuplicateStructName>
+      function.return %self : !struct.type<@DuplicateStructName>
+    }
+    function.def @constrain(%self: !struct.type<@DuplicateStructName>)  { function.return }
+  }
+  // expected-error@+1 {{redefinition of symbol named 'DuplicateStructName'}}
+  struct.def @DuplicateStructName {
+    function.def @compute() -> !struct.type<@DuplicateStructName> {
+      %self = struct.new : !struct.type<@DuplicateStructName>
+      function.return %self : !struct.type<@DuplicateStructName>
+    }
+    function.def @constrain(%self: !struct.type<@DuplicateStructName>)  { function.return }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // expected-note@+1 {{see existing symbol definition here}}
+  module @DuplicateModuleName {
+    struct.def @B1 {
+      function.def @compute() -> !struct.type<@B1> {
+        %self = struct.new : !struct.type<@B1>
+        function.return %self : !struct.type<@B1>
+      }
+      function.def @constrain(%self: !struct.type<@B1>)  { function.return }
+    }
+  }
+  // expected-error@+1 {{redefinition of symbol named 'DuplicateModuleName'}}
+  module @DuplicateModuleName {
+    struct.def @B1 {
+      function.def @compute() -> !struct.type<@B1> {
+        %self = struct.new : !struct.type<@B1>
+        function.return %self : !struct.type<@B1>
+      }
+      function.def @constrain(%self: !struct.type<@B1>)  { function.return }
+    }
+  }
+}

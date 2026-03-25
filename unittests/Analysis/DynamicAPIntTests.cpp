@@ -16,6 +16,7 @@ using namespace llvm;
 using namespace llzk;
 using namespace std;
 
+static DynamicAPInt goldilocks = toDynamicAPInt("18446744069414584321");
 static DynamicAPInt bn254 =
     toDynamicAPInt("21888242871839275222246405745257275088696311157297823662689037894645226208583");
 
@@ -32,20 +33,61 @@ static void extendAPSInts(APSInt &a, APSInt &b) {
 struct DynamicAPIntUnaryTest : public testing::TestWithParam<DynamicAPInt> {
   static const std::vector<DynamicAPInt> &TestingValues() {
     static std::vector<DynamicAPInt> vals = {
-        DynamicAPInt(-1), DynamicAPInt(0), DynamicAPInt(1234), bn254, -1 * bn254,
+        DynamicAPInt(-1),
+        DynamicAPInt(0),
+        DynamicAPInt(1),
+        DynamicAPInt(1234),
+        DynamicAPInt(std::numeric_limits<int64_t>::min()),
+        DynamicAPInt(std::numeric_limits<int64_t>::max()),
+        DynamicAPInt(2013265921), // babybear
+        DynamicAPInt(2147483647), // mersenne31
+        DynamicAPInt(2130706433), // koalabear
+        goldilocks,
+        -1 * goldilocks,
+        bn254,
+        -1 * bn254,
     };
     return vals;
   }
 };
 
 TEST_P(DynamicAPIntUnaryTest, Conversions) {
-  DynamicAPInt p = GetParam();
+  const DynamicAPInt &p = GetParam();
   DynamicAPInt convert = toDynamicAPInt(toAPSInt(p));
   ASSERT_EQ(p, convert);
 }
 
 INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntUnaryTest, testing::ValuesIn(DynamicAPIntUnaryTest::TestingValues())
+);
+
+struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
+  static const std::vector<std::string> &TestingValues() {
+    static std::vector<std::string> vals = {
+        std::to_string(std::numeric_limits<int64_t>::min()),
+        std::to_string(std::numeric_limits<int64_t>::max()),
+        "2013265921",           // babybear
+        "2147483647",           // mersenne31
+        "2130706433",           // koalabear
+        "18446744069414584321", // goldilocks
+        "21888242871839275222246405745257275088696311157297823662689037894645226208583", // bn254
+        "0",
+    };
+    return vals;
+  }
+};
+
+TEST_P(DynamicAPIntStringTest, Strings) {
+  const std::string &p = GetParam();
+  APSInt input = APSInt(p);
+  APSInt output = toAPSInt(toDynamicAPInt(p));
+  // `toAPSInt()` always produces signed values so ensure signedness matches
+  output.setIsUnsigned(input.isUnsigned());
+  ASSERT_TRUE(APSInt::isSameValue(input, output));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntStringTest, testing::ValuesIn(DynamicAPIntStringTest::TestingValues())
 );
 
 //===----------------------------------------------------------------------===//

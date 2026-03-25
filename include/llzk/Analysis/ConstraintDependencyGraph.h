@@ -234,7 +234,7 @@ class ConstraintDependencyGraphStructAnalysis
     : public StructAnalysis<ConstraintDependencyGraph, CDGAnalysisContext> {
 public:
   using StructAnalysis::StructAnalysis;
-  virtual ~ConstraintDependencyGraphStructAnalysis() = default;
+  ~ConstraintDependencyGraphStructAnalysis() override = default;
 
   /// @brief Construct a CDG, using the module's analysis manager to query
   /// ConstraintDependencyGraph objects for nested components.
@@ -252,7 +252,7 @@ class ConstraintDependencyGraphModuleAnalysis
 
 public:
   using ModuleAnalysis::ModuleAnalysis;
-  virtual ~ConstraintDependencyGraphModuleAnalysis() = default;
+  ~ConstraintDependencyGraphModuleAnalysis() override = default;
 
   void setIntraprocedural(bool runIntraprocedural) {
     ctx = {.runIntraprocedural = runIntraprocedural};

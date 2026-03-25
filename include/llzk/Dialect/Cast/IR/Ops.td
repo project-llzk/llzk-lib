@@ -24,7 +24,11 @@ include "mlir/IR/SymbolInterfaces.td"
 class CastOp<string mnemonic, list<Trait> traits = []>
     : NaryOpBase<CastDialect, mnemonic, LLZK_FeltType.builderCall, traits>;
 
-def LLZK_IntToFeltOp : CastOp<"tofelt", [Pure]> {
+def LLZK_IntToFeltOp
+    : CastOp<
+          "tofelt", [Pure,
+                     DeclareOpInterfaceMethods<
+                         InferTypeOpInterface, ["isCompatibleReturnTypes"]>]> {
   let summary = "convert an integer into a field element";
   let description = [{
     This operation converts a supported integer type value into a field element value.
@@ -41,6 +45,12 @@ def LLZK_IntToFeltOp : CastOp<"tofelt", [Pure]> {
   let results = (outs LLZK_FeltType:$result);
   let assemblyFormat =
       [{ $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
+
+  // Children of NaryOpBase must add their extra C++ code in the extra-extra
+  // version.
+  let extraExtraClassDeclaration = [{
+    static bool isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs);
+  }];
 }
 
 def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {

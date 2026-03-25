@@ -45,6 +45,9 @@ public:
   template <typename T> SymbolLookupResultUntyped(const SymbolLookupResult<T> &other);
 
   SymbolLookupResultUntyped &operator=(const SymbolLookupResultUntyped &other) {
+    if (this == &other) {
+      return *this;
+    }
     this->op = other.op;
     this->managedResources = other.managedResources;
     this->includeSymNameStack = other.includeSymNameStack;
@@ -53,7 +56,7 @@ public:
   }
   template <typename T> SymbolLookupResultUntyped &operator=(const SymbolLookupResult<T> &other);
 
-  SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
+  SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other) noexcept
       : op(other.op), managedResources(std::move(other.managedResources)),
         includeSymNameStack(std::move(other.includeSymNameStack)),
         namespaceStack(std::move(other.namespaceStack)) {
@@ -61,7 +64,7 @@ public:
   }
   template <typename T> SymbolLookupResultUntyped(SymbolLookupResult<T> &&other);
 
-  SymbolLookupResultUntyped &operator=(SymbolLookupResultUntyped &&other) {
+  SymbolLookupResultUntyped &operator=(SymbolLookupResultUntyped &&other) noexcept {
     if (this != &other) {
       this->op = other.op;
       other.op = nullptr;

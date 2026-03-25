@@ -17,4 +17,4 @@
 
 #include "llzk/Transforms/LLZKTransformationPasses.capi.h.inc"
 
-#endif
+#endif // LLZK_C_TRANSFORMS_H

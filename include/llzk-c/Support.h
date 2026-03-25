@@ -11,8 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_C_IR_H
-#define LLZK_C_IR_H
+#ifndef LLZK_C_SUPPORT_H
+#define LLZK_C_SUPPORT_H
 
 #include "llzk-c/Builder.h" // IWYU pragma: keep
 
@@ -29,41 +29,32 @@ extern "C" {
 // Utility macros for function declarations.
 //===----------------------------------------------------------------------===//
 
-#define LLZK_BUILD_METHOD_NAME(op, suffix) llzk##op##Build##suffix
-#define LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(op, suffix, ...)                                       \
-  MLIR_CAPI_EXPORTED MlirOperation LLZK_BUILD_METHOD_NAME(op, suffix)(                             \
+#define LLZK_BUILD_METHOD_NAME(dialect, op, suffix) llzk##dialect##_##op##Build##suffix
+#define LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix, ...)                              \
+  MLIR_CAPI_EXPORTED MlirOperation LLZK_BUILD_METHOD_NAME(dialect, op, suffix)(                    \
       MlirOpBuilder builder, MlirLocation location, __VA_ARGS__                                    \
   )
 // Used for when the build method is "general" and does not have a suffix at the end.
-#define LLZK_DECLARE_OP_BUILD_METHOD(op, ...) LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(op, , __VA_ARGS__)
+#define LLZK_DECLARE_OP_BUILD_METHOD(dialect, op, ...)                                             \
+  LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(dialect, op, , __VA_ARGS__)
 
-#define LLZK_DECLARE_PREDICATE(name, ...) MLIR_CAPI_EXPORTED bool llzk##name(__VA_ARGS__)
+#define LLZK_DECLARE_OP_PREDICATE(dialect, op, name)                                               \
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##name(MlirOperation op)
+#define LLZK_DECLARE_NARY_OP_PREDICATE(dialect, op, name, ...)                                     \
+  MLIR_CAPI_EXPORTED bool llzk##dialect##_##op##name(MlirOperation op, __VA_ARGS__)
 
-#define LLZK_DECLARE_OP_PREDICATE(op, name)                                                        \
-  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation op)
-#define LLZK_DECLARE_NARY_OP_PREDICATE(op, name, ...)                                              \
-  MLIR_CAPI_EXPORTED bool llzk##op##Get##name(MlirOperation op, __VA_ARGS__)
-
-#define LLZK_DECLARE_ISA(what, root) MLIR_CAPI_EXPORTED bool llzk##root##IsA##what(Mlir##root what)
-#define LLZK_DECLARE_TYPE_ISA(what) LLZK_DECLARE_ISA(what, Type)
-#define LLZK_DECLARE_OP_ISA(what) LLZK_DECLARE_ISA(what, Operation)
-#define LLZK_DECLARE_ATTR_ISA(what) LLZK_DECLARE_ISA(what, Attribute)
-
-//===----------------------------------------------------------------------===//
-// Representation of a mlir::ValueRange.
-//===----------------------------------------------------------------------===//
-
+/// Representation of an `mlir::ValueRange`
 struct MlirValueRange {
+  /// Pointer to the first value in the range.
   MlirValue const *values;
+  /// Number of values in the range.
   intptr_t size;
 };
 typedef struct MlirValueRange MlirValueRange;
 
-//===----------------------------------------------------------------------===//
-// Symbol lookup result.
-//===----------------------------------------------------------------------===//
-
+/// Owned result of an LLZK symbol lookup.
 typedef struct LlzkSymbolLookupResult {
+  /// raw pointer to the result
   void *ptr;
 } LlzkSymbolLookupResult;
 
@@ -178,4 +169,4 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkAffineMapOperandsBuilderGetDimsPerMapAttr(
 }
 #endif
 
-#endif
+#endif // LLZK_C_SUPPORT_H

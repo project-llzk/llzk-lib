@@ -38,8 +38,8 @@ class CallGraphAnalysis {
 public:
   CallGraphAnalysis(mlir::Operation *op);
 
-  llzk::CallGraph &getCallGraph() { return *cg.get(); }
-  const llzk::CallGraph &getCallGraph() const { return *cg.get(); }
+  llzk::CallGraph &getCallGraph() { return *cg; }
+  const llzk::CallGraph &getCallGraph() const { return *cg; }
 };
 
 /// Lazily-constructed reachability analysis.

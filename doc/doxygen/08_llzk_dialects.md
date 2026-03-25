@@ -1,4 +1,4 @@
-# LLZK Dialects {#dialects}
+# LLZK IR Dialects {#dialects}
 
 \htmlonly
 
@@ -16,6 +16,7 @@
 \include{doc} build/doc/mlir/dialect/GlobalDialect.md
 \include{doc} build/doc/mlir/dialect/IncludeDialect.md
 \include{doc} build/doc/mlir/dialect/LLZKDialect.md
+\include{doc} build/doc/mlir/dialect/PODDialect.md
 \include{doc} build/doc/mlir/dialect/PolymorphicDialect.md
 \include{doc} build/doc/mlir/dialect/StringDialect.md
 \include{doc} build/doc/mlir/dialect/StructDialect.md

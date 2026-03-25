@@ -120,8 +120,16 @@ void SourceRefAnalysis::visitCallControlFlowTransfer(
     // before the call to after the call, since the external call won't invalidate
     // any of that information. It also, conservatively, makes no assumptions about
     // external calls and their computation, so CDG edges will not be computed over
-    // input arguments to external functions.
-    join(after, before);
+    // input arguments to external functions. However, the results of the external
+    // call still act like fresh allocation sites, so give them stable SourceRef roots.
+    ChangeResult updated = after->join(before);
+    for (Value result : call->getResults()) {
+      auto resultRef = SourceRefLattice::getSourceRef(result);
+      if (succeeded(resultRef)) {
+        updated |= after->setValue(result, *resultRef);
+      }
+    }
+    propagateIfChanged(after, updated);
   }
 }
 
@@ -160,28 +168,35 @@ LogicalResult SourceRefAnalysis::visitOperation(
     }
 
     const auto &ops = operandVals.at(memberRefOp.getComponent());
-    auto [memberVals, _] = ops.referenceMember(memberOpRes.value());
+    auto memberValsRes = ops.referenceMember(memberOpRes.value());
+    ensure(succeeded(memberValsRes), "could not create SourceRef child for member reference");
+    auto [memberVals, _] = *memberValsRes;
 
     res |= after->setValue(memberRefRes, memberVals);
   } else if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
     // Covers read/write/extract/insert array ops
     arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
+    auto createArrayRes = createArray.getResult();
+    const auto &elements = createArray.getElements();
+
+    // Treat uninitialized arrays as fresh roots so later array accesses can derive SourceRefs from
+    // the array.new result.
+    if (elements.empty()) {
+      res |= after->setValue(createArrayRes, SourceRef(createArray->getResult(0)));
+      propagateIfChanged(after, res);
+      LLVM_DEBUG(llvm::dbgs().indent(4) << "lattice is of size " << after->size() << '\n');
+      return success();
+    }
+
     // Create an array using the operand values, if they exist.
     // Currently, the new array must either be fully initialized or uninitialized.
     SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
-    // If the array is statically initialized, iterate through all operands and initialize the array
-    // value.
-    const auto &elements = createArray.getElements();
-    if (!elements.empty()) {
-      for (unsigned i = 0; i < elements.size(); i++) {
-        auto currentOp = elements[i];
-        auto &opVals = operandVals[currentOp];
-        (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
-      }
+    for (unsigned i = 0; i < elements.size(); i++) {
+      auto currentOp = elements[i];
+      auto &opVals = operandVals[currentOp];
+      (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
     }
-
-    auto createArrayRes = createArray.getResult();
 
     res |= after->setValue(createArrayRes, newArrayVal);
   } else if (auto structNewOp = llvm::dyn_cast<CreateStructOp>(op)) {
@@ -209,7 +224,7 @@ ChangeResult SourceRefAnalysis::fallbackOpUpdate(
   for (auto res : op->getResults()) {
     auto cur = before.getOrDefault(res);
 
-    for (auto &[_, opVal] : operandVals) {
+    for (const auto &[_, opVal] : operandVals) {
       (void)cur.update(opVal);
     }
     updated |= after->setValue(res, cur);
@@ -243,14 +258,14 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
     auto idxOperand = arrayAccessOp.getIndices()[i];
     auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-    auto &idxVals = idxIt->second;
+    const auto &idxVals = idxIt->second;
 
     // Note: we allow constant values regardless of if they are felt or index,
     // as if they were felt, there would need to be a cast to index, and if it
     // was missing, there would be a semantic check failure. So we accept either
     // so we don't have to track the cast ourselves.
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      SourceRefIndex idx(idxVals.getSingleValue().getConstantValue());
+      SourceRefIndex idx(*idxVals.getSingleValue().getConstantValue());
       indices.push_back(idx);
     } else {
       // Otherwise, assume any range is valid.
@@ -262,7 +277,9 @@ void SourceRefAnalysis::arraySubdivisionOpUpdate(
     }
   }
 
-  auto [newVals, _] = currVals.extract(indices);
+  auto newValsRes = currVals.extract(indices);
+  ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
+  auto [newVals, _] = *newValsRes;
 
   if (llvm::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read/write must produce a scalar value");
@@ -314,7 +331,7 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
     }
   }
   // Add the constants in separately.
-  for (auto &[ref, constSet] : constantSets) {
+  for (const auto &[ref, constSet] : constantSets) {
     if (constSet.empty()) {
       continue;
     }
@@ -370,7 +387,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     // aggregate the ref2Val map across operations, as some may have nested
     // regions and blocks that aren't propagated to the function terminator
     if (refLattice) {
-      for (auto &[ref, vals] : refLattice->getRef2Val()) {
+      for (const auto &[ref, vals] : refLattice->getRef2Val()) {
         ref2Val[ref].insert(vals.begin(), vals.end());
       }
     }
@@ -399,7 +416,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     SourceRefRemappings translations;
 
     ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
-    auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
+    const auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
     ensure(afterCallLattice, "could not find lattice for call operation");
 
     // Map fn parameters to args in the call op
@@ -462,11 +479,16 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   ProgramPoint *pp = solver.getProgramPointAfter(emitOp);
   const SourceRefLattice *refLattice = solver.lookupState<SourceRefLattice>(pp);
-  ensure(refLattice, "missing lattice for constrain op");
+  // We may not have a lattice for this constrain op when the constant propagation
+  // + dead code analysis has determined that this constraint op is dead code
+  // and will not be executed.
+  if (!refLattice) {
+    return;
+  }
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = refLattice->getOrDefault(operand);
-    for (auto &ref : latticeVal.foldToScalar()) {
+    for (const auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant()) {
         constUsages.push_back(ref);
       } else {
@@ -507,11 +529,13 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
             mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
         );
 
-        auto [resolvedVals, _] = vals.extract(suffix.value());
+        auto resolvedValsRes = vals.extract(suffix.value());
+        ensure(succeeded(resolvedValsRes), "could not create SourceRef child while resolving refs");
+        auto [resolvedVals, _] = *resolvedValsRes;
         auto folded = resolvedVals.foldToScalar();
         refs.insert(refs.end(), folded.begin(), folded.end());
       } else {
-        for (auto &replacement : vals.getScalarValue()) {
+        for (const auto &replacement : vals.getScalarValue()) {
           auto translated = elem.translate(prefix, replacement);
           if (mlir::succeeded(translated)) {
             refs.push_back(translated.value());
@@ -536,7 +560,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
       if (mlir::failed(member)) {
         continue;
       }
-      for (auto &ref : *member) {
+      for (const auto &ref : *member) {
         if (ref.isConstant()) {
           translatedConsts.push_back(ref);
         } else {
@@ -545,7 +569,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
       }
       // Also add the constants from the original CDG
       if (auto it = constantSets.find(*mit); it != constantSets.end()) {
-        auto &origConstSet = it->second;
+        const auto &origConstSet = it->second;
         translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
       }
     }
@@ -570,7 +594,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   }
 
   // Translate ref2Val as well
-  for (auto &[ref, vals] : ref2Val) {
+  for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
     if (succeeded(translationRes)) {
       for (const auto &translatedRef : *translationRes) {

@@ -1,11 +1,11 @@
-name: Run Tests
+name: Tests
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  run:
     strategy:
       matrix:
         compiler:
@@ -16,7 +16,6 @@ jobs:
             derivation: '.#debugClangCov'
             report: clang-report.xml
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,11 +45,11 @@ jobs:
           name: "Test results (${{ matrix.compiler.name }})"
           path: "result/artifacts/${{ matrix.compiler.report }}"
 
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
   publish-tests:
-    name: "Publish test results"
-    needs: build
+    needs: run
     runs-on: ubuntu-24.04
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -58,7 +57,8 @@ jobs:
           path: artifacts
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
         with:
           files: artifacts/**/*.xml
-          comment_mode: failures
+          comment_mode: always
+          action_fail: true
+          action_fail_on_inconclusive: true

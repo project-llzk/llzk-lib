@@ -26,18 +26,28 @@
 
 #include <stdint.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/POD/IR/Attrs.capi.h.inc"
+#include "llzk/Dialect/POD/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/POD/IR/Types.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `pod` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(POD, llzk__pod);
 
 //===----------------------------------------------------------------------===//
 // Auxiliary types
 //===----------------------------------------------------------------------===//
 
+/// Information needed to define a pod RecordAttr given a name and a value that
+/// will be stored in the record.
 typedef struct LlzkRecordValue {
+  /// Record name.
   MlirStringRef name;
+  /// Initial value for the record.
   MlirValue value;
 } LlzkRecordValue;
 
@@ -45,68 +55,44 @@ typedef struct LlzkRecordValue {
 // RecordAttr
 //===----------------------------------------------------------------------===//
 
-/// Creates a new llzk::pod::RecordAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkRecordAttrGet(MlirStringRef name, MlirType type);
-
-/// Returns true if the attribute is an llzk::pod::RecordAttr.
-LLZK_DECLARE_ATTR_ISA(RecordAttr);
-
-/// Returns the name of the record.
-MLIR_CAPI_EXPORTED MlirStringRef llzkRecordAttrGetName(MlirAttribute attr);
-
-/// Returns the name of the record as a flat symbol attribute.
-MLIR_CAPI_EXPORTED MlirAttribute llzkRecordAttrGetNameSym(MlirAttribute attr);
-
-/// Returns the type of the record.
-MLIR_CAPI_EXPORTED MlirType llzkRecordAttrGetType(MlirAttribute attr);
+/// Creates a new llzk::pod::RecordAttr using the MlirContext of the given type.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkPod_RecordAttrGetInferredContext(MlirIdentifier name, MlirType type);
 
 //===----------------------------------------------------------------------===//
 // PodType
 //===----------------------------------------------------------------------===//
 
-/// Creates an llzk::pod::PodType using a list of attributes as records.
-MLIR_CAPI_EXPORTED MlirType
-llzkPodTypeGet(MlirContext context, intptr_t nRecords, MlirAttribute const *records);
-
 /// Creates an llzk::pod::PodType using a list of values for inferring the records.
-MLIR_CAPI_EXPORTED MlirType llzkPodTypeGetFromInitialValues(
+MLIR_CAPI_EXPORTED MlirType llzkPod_PodTypeGetFromInitialValues(
     MlirContext context, intptr_t nRecords, LlzkRecordValue const *records
 );
 
-/// Returns true if the type is an llzk::pod::PodType.
-LLZK_DECLARE_TYPE_ISA(PodType);
-
-/// Returns the number of records in the struct.
-MLIR_CAPI_EXPORTED intptr_t llzkPodTypeGetNumRecords(MlirType type);
-
-/// Writes the records into the given array that must have been previously allocated with enough
-/// space.
+/// Writes the records into the given array that must have been previously allocated
+/// with enough space.
 ///
-/// See `llzkPodTypeGetNumRecords`
-MLIR_CAPI_EXPORTED void llzkPodTypeGetRecords(MlirType type, MlirAttribute *dst);
-
-/// Returns the n-th record in the struct.
-MLIR_CAPI_EXPORTED MlirAttribute llzkPodTypeGetNthRecord(MlirType type, intptr_t n);
+/// See `llzkPod_PodTypeGetRecordsCount`
+MLIR_CAPI_EXPORTED void llzkPod_PodTypeGetRecords(MlirType type, MlirAttribute *dst);
 
 /// Lookups a record type by name.
 ///
 /// If the record is not found reports an error without any location information and
 /// the returned type is NULL.
-MLIR_CAPI_EXPORTED MlirType llzkPodTypeLookupRecord(MlirType type, MlirStringRef name);
+MLIR_CAPI_EXPORTED MlirType llzkPod_PodTypeLookupRecord(MlirType type, MlirStringRef name);
 
 /// Lookups a record type by name.
 ///
 /// If the record is not found reports an error at the given location information and
 /// the returned type is NULL.
 MLIR_CAPI_EXPORTED MlirType
-llzkPodTypeLookupRecordWithinLocation(MlirType type, MlirStringRef name, MlirLocation loc);
+llzkPod_PodTypeLookupRecordWithinLocation(MlirType type, MlirStringRef name, MlirLocation loc);
 
 /// Lookups a record type by name.
 ///
 /// If the record is not found reports an error using the given operation for location information
 /// and the returned type is NULL.
 MLIR_CAPI_EXPORTED MlirType
-llzkPodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOperation op);
+llzkPod_PodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOperation op);
 
 //===----------------------------------------------------------------------===//
 // NewPodOp
@@ -116,43 +102,26 @@ llzkPodTypeLookupRecordWithinOperation(MlirType type, MlirStringRef name, MlirOp
 ///
 /// The type of the struct gets inferred from the initial values.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
+    Pod, NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
 );
 
 /// Creates a NewPodOp from a list of initialization values and a PodType.
 ///
 /// The initial values can partially initialize the struct.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
+    Pod, NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
 );
 
 /// Creates a NewPodOp with a list of initialization values, a PodType, and map operands.
 ///
 /// The initial values can partially initialize the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    NewPodOp, WithMapOperands, MlirType type, intptr_t nValues, LlzkRecordValue const *values,
+    Pod, NewPodOp, WithMapOperands, MlirType type, intptr_t nValues, LlzkRecordValue const *values,
     LlzkAffineMapOperandsBuilder mapOperands
 );
-
-/// Returns true if the op is a llzk::pod::NewPodOp.
-LLZK_DECLARE_OP_ISA(NewPodOp);
-
-//===----------------------------------------------------------------------===//
-// ReadPodOp
-//===----------------------------------------------------------------------===//
-
-/// Returns true if the op is a llzk::pod::ReadPodOp.
-LLZK_DECLARE_OP_ISA(ReadPodOp);
-
-//===----------------------------------------------------------------------===//
-// WritePodOp
-//===----------------------------------------------------------------------===//
-
-/// Returns true if the op is a llzk::pod::WritePodOp.
-LLZK_DECLARE_OP_ISA(WritePodOp);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_POD_H

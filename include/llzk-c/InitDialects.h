@@ -21,10 +21,11 @@
 extern "C" {
 #endif
 
+/// Registers all LLZK dialects in the given registry.
 MLIR_CAPI_EXPORTED void llzkRegisterAllDialects(MlirDialectRegistry registry);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_INITDIALECTS_H

@@ -20,6 +20,7 @@ jobs:
       - name: Checkout github pages branch
         uses: actions/checkout@v4
         with:
+          persist-credentials: true
           path: gh-pages
           ref: gh-pages
 
@@ -34,7 +35,8 @@ jobs:
           git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
           git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
           git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
-       # v16
+
+      # v16
       - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
         with:
           name: veridise-public
@@ -52,6 +54,19 @@ jobs:
           mkdir -p "$DEST"
           chmod +w "$DEST"
           cp -r result/html/* "$DEST"
+
+      - name: Commit updated documentation to gh-pages branch
+        if: ${{ inputs.version != '' }}
+        working-directory: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name ${{ github.actor }}
+          git config user.email ${{ github.actor }}@users.noreply.github.com
+          git add .
+          # Check for staged or unstaged changes before committing, to avoid empty commits.
+          git diff --cached --quiet && git diff --quiet || git commit -m "docs: update ${{ inputs.version }} documentation"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:gh-pages
 
       - name: Upload new artifact
         id: upload

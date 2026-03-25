@@ -19,7 +19,7 @@ void dumpSymbolTableWalk(Operation *symbolTableOp) {
   std::string output; // buffer to avoid multi-threaded mess
   llvm::raw_string_ostream oss(output);
   oss << "Dumping symbol walk (self = [" << symbolTableOp << "]): \n";
-  auto walkFn = [&](Operation *op, bool allUsesVisible) {
+  auto walkFn = [&](Operation *op, bool /*allUsesVisible*/) {
     oss << "  found op [" << op << "] " << op->getName() << " named "
         << op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()) << '\n';
   };
@@ -57,7 +57,7 @@ void dumpSymbolTables(llvm::raw_ostream &stream, SymbolTableCollection &tables) 
   for (llvm::detail::DenseMapPair<Operation *, std::unique_ptr<SymbolTable>> &p :
        *privateMemberPtr) {
     stream << "  [" << p.first << "] " << p.first->getName() << " -> " << '\n';
-    dumpSymbolTable(stream, *p.second.get(), 2);
+    dumpSymbolTable(stream, *p.second, 2);
   }
 }
 

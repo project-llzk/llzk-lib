@@ -11,6 +11,7 @@
 #define LLZK_FUNCTION_ATTRS
 
 include "llzk/Dialect/Function/IR/Dialect.td"
+include "llzk/Dialect/Function/IR/Attrs.td" // must be included to generate docs
 
 include "mlir/IR/AttrTypeBase.td"
 

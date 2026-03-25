@@ -13,12 +13,16 @@
 #include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DynamicAPInt.h>
+#include <llvm/ADT/SmallSet.h>
 #include <llvm/Support/LogicalResult.h>
 #include <llvm/Support/SMTAPI.h>
 
+#include <functional>
+#include <optional>
 #include <string_view>
 
 namespace llzk {
@@ -32,7 +36,8 @@ class Field {
 public:
   /// @brief Add a new field to the set of available prime fields.
   /// Reports an error if the field is invalid or conflicts with an existing definition.
-  inline static void addField(llvm::StringRef fieldName, llvm::APInt prime, EmitErrorFn errFn) {
+  inline static void
+  addField(llvm::StringRef fieldName, const llvm::APInt &prime, EmitErrorFn errFn) {
     return addField(Field(prime, fieldName), errFn);
   }
   inline static void
@@ -97,7 +102,7 @@ public:
   inline llvm::StringRef name() const { return primeName; }
 
   /// @brief Create a SMT solver symbol with the current field's bitwidth.
-  llvm::SMTExprRef createSymbol(llvm::SMTSolverRef solver, const char *name) const {
+  llvm::SMTExprRef createSymbol(const llvm::SMTSolverRef &solver, const char *name) const {
     return solver->mkSymbol(name, solver->getBitvectorSort(bitWidth()));
   }
 
@@ -105,9 +110,14 @@ public:
     return lhs.primeMod == rhs.primeMod;
   }
 
+  friend bool operator<(const Field &lhs, const Field &rhs) {
+    return std::tie(lhs.primeMod, lhs.primeName, lhs.bitwidth, lhs.halfPrime) <
+           std::tie(rhs.primeMod, rhs.primeName, rhs.bitwidth, rhs.halfPrime);
+  }
+
 private:
   Field(std::string_view primeStr, llvm::StringRef name);
-  Field(llvm::APInt primeInt, llvm::StringRef name);
+  Field(const llvm::APInt &primeInt, llvm::StringRef name);
 
   /// Name of the prime for debugging purposes
   llvm::StringRef primeName;
@@ -131,5 +141,24 @@ private:
 /// which may include new prime specifications.
 /// @return Failure if the field attribute is malformed (i.e., is the wrong type of attribute).
 llvm::LogicalResult addSpecifiedFields(mlir::ModuleOp modOp);
+
+/// @brief Typealias for a stable reference to a known Field.
+using FieldRef = std::reference_wrapper<const Field>;
+
+/// @brief Typealias for a set of Fields.
+using FieldSet = llvm::SmallSet<FieldRef, 2>;
+
+/// @brief Collects all the fields used in a circuit.
+/// @param root Takes the operation as root and inspects any FeltType for its Field.
+/// @param fields Destination where fields are written into.
+/// @param silent Does not report warnings if set.
+/// @return Failure if any FeltType does not specify a field.
+mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &fields, bool silent = true);
+
+/// @brief Try to detect a uniquely used field from the enclosing LLZK module.
+/// @param root Operation inside the LLZK module to inspect.
+/// @return The field if the enclosing module uses exactly one unique field,
+/// otherwise `std::nullopt`.
+std::optional<std::reference_wrapper<const Field>> tryDetectSpecifiedField(mlir::Operation *root);
 
 } // namespace llzk

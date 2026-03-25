@@ -11,6 +11,7 @@
 #define LLZK_OPS
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
+include "llzk/Dialect/LLZK/IR/Attrs.td" // must be included to generate docs
 include "llzk/Dialect/Shared/Types.td"
 
 include "mlir/IR/OpAsmInterface.td"
@@ -25,13 +26,12 @@ class LLZKDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;
 
 def LLZK_NonDetOp
-    : LLZKDialectOp<"nondet", [ConstantLike, Pure,
-                               DeclareOpInterfaceMethods<
-                                   OpAsmOpInterface, ["getAsmResultNames"]>]> {
+    : LLZKDialectOp<"nondet", [DeclareOpInterfaceMethods<
+                                  OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "uninitialized variable";
   let description = [{
     This operation produces an SSA variable of the specified type but with
-    nondeterministic value. 
+    nondeterministic value.
 
     This op can be used in `@constrain()` functions in place of expressions that
     cannot be included in constraints. It may also be generated for a frontend
@@ -44,6 +44,38 @@ def LLZK_NonDetOp
     ```llzk
     %0 = llzk.nondet : !felt.type
     ```
+
+    Note that `llzk.nondet` is not `ConstantLike` or `Pure` because different SSA
+    variables initialized with `llzk.nondet` may be constrained in different ways
+    so they cannot be treated as identical values.
+
+    Example:
+
+    ```llzk
+    %0 = llzk.nondet : !felt.type
+    %1 = llzk.nondet : !felt.type
+    %c1 = felt.const 1
+    constrain.eq %0, %c1 : !felt.type
+
+    %m = struct.readm %self[@m] : !struct.type<@S>, !felt.type
+    constrain.eq %m, %1 : !felt.type
+    ```
+
+    In the above example, `%m` is effectively unconstrained, as it is only constrained
+    to the nondet value `%1`. However, if `%0` and `%1` were treated as pure constants,
+    `%0` and `%1` could be combined, resulting in:
+
+    ```llzk
+    %0 = llzk.nondet : !felt.type
+    %c1 = felt.const 1
+    constrain.eq %0, %c1 : !felt.type
+
+    %m = struct.readm %self[@m] : !struct.type<@S>, !felt.type
+    constrain.eq %m, %0 : !felt.type
+    ```
+
+    This transformation would constrain `%m` to be exactly equal to 1, thus changing
+    the semantics of the circuit.
   }];
 
   let results = (outs AnyLLZKType:$res);

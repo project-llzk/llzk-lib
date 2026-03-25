@@ -25,6 +25,8 @@
 
 namespace llzk {
 
+#define DEBUG_TYPE "llzk-interval-analysis-pass"
+
 #define GEN_PASS_DECL_INTERVALANALYSISPRINTERPASS
 #define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
@@ -43,6 +45,8 @@ protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
+    // Suppress false positive from `clang-tidy`
+    // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
     auto modOp = llvm::dyn_cast<mlir::ModuleOp>(getOperation());
     if (!modOp) {
       constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
@@ -50,23 +54,46 @@ protected:
       return;
     }
 
-    auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
-
-    if (mlir::failed(fieldLookupRes)) {
-      std::string msg = (llvm::Twine("IntervalAnalysisPrinterPass error: unknown field \"") +
-                         fieldName.c_str() + "\" specified")
-                            .str();
-      modOp->emitError(msg).report();
-      return;
+    // Initialize to the fallback field value
+    FieldRef selectedField = Field::getField("bn128");
+    if (!fieldName.empty()) {
+      auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
+      if (mlir::failed(fieldLookupRes)) {
+        modOp->emitError()
+            .append(
+                "IntervalAnalysisPrinterPass error: unknown field \"", fieldName, "\" specified"
+            )
+            .report();
+        return;
+      }
+      selectedField = fieldLookupRes.value();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[IntervalAnalysisPrinterPass] using explicit -field override '"
+                       << selectedField.get().name() << "'\n";
+      );
+    } else if (auto detectedField = tryDetectSpecifiedField(modOp)) {
+      selectedField = detectedField.value();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[IntervalAnalysisPrinterPass] detected module field '"
+                       << selectedField.get().name() << "' from module felt usage\n";
+      );
+    } else {
+      modOp->emitWarning() << "could not detect a unique module field; falling back to '"
+                           << selectedField.get().name() << "'";
+      LLVM_DEBUG(
+          llvm::dbgs() << "[IntervalAnalysisPrinterPass] no explicit or detectable module field; "
+                          "falling back to '"
+                       << selectedField.get().name() << "'\n";
+      );
     }
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
-    mia.setField(fieldLookupRes.value());
+    mia.setField(selectedField);
     mia.setPropagateInputConstraints(propagateInputConstraints);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
-    for (auto &[s, si] : mia.getCurrentResults()) {
+    for (const auto &[s, si] : mia.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
       auto fullName = getPathFromTopRoot(structDef);
       ensure(

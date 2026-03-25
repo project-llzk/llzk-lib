@@ -46,19 +46,16 @@ def FuncDefOp
   let summary = "An operation with a name containing a single `SSACFG` region";
   let description = [{
     Operations within the function cannot implicitly capture values defined
-    outside of the function, i.e., Functions are `IsolatedFromAbove`. All
-    external references must use function arguments or attributes that establish
-    a symbolic connection (e.g. symbols referenced by name via a string
-    attribute like SymbolRefAttr). An external function declaration (used when
-    referring to a function declared in some other module) has no body. While
-    the MLIR textual form provides a nice inline syntax for function arguments,
-    they are internally represented as “block arguments” to the first block in
-    the region.
+    outside of the function, i.e., functions are `IsolatedFromAbove`. All
+    external references must use function arguments (which are passed by value)
+    or reference external members or globals by symbol name.
 
-    Only dialect attribute names may be specified in the attribute dictionaries
-    for function arguments, results, or the function itself.
+    Functions appearing within a `struct.def` have specific semantics and must
+    be named `compute`, `constrain`, or `product`. Functions appearing at the
+    module level (i.e. not within a `struct.def`) have no name restrictions and
+    their body may be elided to denote an external function declaration.
 
-    Modules and struct definitions are not allowed to be nested within functions.
+    Modules and `struct.def` ops are not allowed to be nested within functions.
 
     Example:
 
@@ -161,30 +158,22 @@ def FuncDefOp
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 
-    //===------------------------------------------------------------------===//
-    // FunctionOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by FunctionOpInterface.
     /// Returns the region on the current operation that is callable. This may
     /// return null in the case of an external callable object, e.g. an external
     /// function.
     ::mlir::Region *getCallableRegion() { return isExternal() ? nullptr : &getBody(); }
 
+    /// Required by FunctionOpInterface.
     /// Returns the argument types of this function.
     ::llvm::ArrayRef<::mlir::Type> getArgumentTypes() { return getFunctionType().getInputs(); }
 
+    /// Required by FunctionOpInterface.
     /// Returns the result types of this function.
     ::llvm::ArrayRef<::mlir::Type> getResultTypes() { return getFunctionType().getResults(); }
 
-    //===------------------------------------------------------------------===//
-    // SymbolOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by SymbolOpInterface.
     bool isDeclaration() { return isExternal(); }
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     /// Return the full name for this function from the root module, including
     /// all surrounding symbol table names (i.e., modules and structs).
@@ -365,17 +354,11 @@ def CallOp : FunctionDialectOp<
                   }]>];
 
   let extraClassDeclaration = [{
-    //===------------------------------------------------------------------===//
-    // CallOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by CallOpInterface
     ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
 
+    /// Required by CallOpInterface
     ::mlir::Operation *resolveCallable();
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     ::mlir::FunctionType getCalleeType();
 

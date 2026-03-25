@@ -61,7 +61,7 @@ template <> struct CheckAndConvert<int64_t> {
   template <typename InType> static std::optional<int64_t> from(InType index, int64_t dimSize) {
     if (auto idxVal = toI64<InType>(index)) {
       if (isInRange(*idxVal, dimSize)) {
-        return *idxVal;
+        return idxVal;
       }
     }
     return std::nullopt;

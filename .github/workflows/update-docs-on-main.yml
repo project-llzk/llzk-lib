@@ -2,10 +2,33 @@ name: Update docs on main
 on:
   push:
     branches:
-      main
+      - main
 
 jobs:
+  # Check if deploying docs for a release or not. A release commit will have a `vX.Y.Z` tag on the
+  # commit, while other commits on the main branch will not and just use 'main' as the version.
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          persist-credentials: false
+      - name: Determine version
+        id: version
+        run: |
+          echo "Tags at HEAD: $(git tag --points-at HEAD)"
+          TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          # default to 'main' if no version tag is found
+          TAG=${TAG:-main}
+          echo "Resolved version: $TAG"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+
   call-deploy-github-pages:
-    # No version specified for "latest" deployment
+    needs: get-version
     uses: ./.github/workflows/deploy-github-pages.yml
     secrets: inherit
+    with:
+      version: ${{ needs.get-version.outputs.version }}

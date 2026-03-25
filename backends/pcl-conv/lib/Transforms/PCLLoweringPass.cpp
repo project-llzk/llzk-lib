@@ -1,0 +1,536 @@
+//===-- PCLLoweringPass.cpp ------------------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2025 Veridise Inc.
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// This file implements the `-llzk-to-pcl` pass.
+///
+//===----------------------------------------------------------------------===//
+
+#include "llzk/Config/Config.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Transforms/LLZKLoweringUtils.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
+
+#include <pcl/Dialect/IR/Dialect.h>
+#include <pcl/Dialect/IR/Ops.h>
+#include <pcl/Dialect/IR/Types.h>
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/Support/LLVM.h>
+
+#include <llvm/ADT/APInt.h>
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseMapInfo.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/LogicalResult.h>
+
+#include <deque>
+#include <memory>
+
+#include "pcl-conv/Transforms/TransformationPasses.h"
+
+// Include the generated base pass class definitions.
+namespace pcl::conversion {
+#define GEN_PASS_DECL_PCLLOWERINGPASS
+#define GEN_PASS_DEF_PCLLOWERINGPASS
+#include "pcl-conv/Transforms/TransformationPasses.h.inc"
+} // namespace pcl::conversion
+
+using namespace mlir;
+using namespace llzk;
+using namespace llzk::cast;
+using namespace llzk::boolean;
+using namespace llzk::constrain;
+using namespace llzk::felt;
+using namespace llzk::function;
+using namespace llzk::component;
+
+namespace {
+
+static FailureOr<Value> lookup(Value v, llvm::DenseMap<Value, Value> &m, Operation *onError) {
+  if (auto it = m.find(v); it != m.end()) {
+    return it->second;
+  }
+  return onError->emitError("missing operand mapping");
+}
+
+static void rememberResult(Value from, Value to, llvm::DenseMap<Value, Value> &m) {
+  (void)m.try_emplace(from, to);
+}
+
+// Convert binary LLZK op to corresponding binary PCL op
+template <typename SrcBinOp, typename DstBinOp>
+static LogicalResult
+lowerBinaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mapping) {
+  auto loc = src.getLoc();
+  auto lhs = lookup(src.getLhs(), mapping, src);
+  if (failed(lhs)) {
+    return failure();
+  }
+  auto rhs = lookup(src.getRhs(), mapping, src);
+  if (failed(rhs)) {
+    return failure();
+  }
+
+  auto dst = b.create<DstBinOp>(loc, *lhs, *rhs);
+  rememberResult(src.getResult(), dst.getRes(), mapping);
+  return success();
+}
+
+// Convert unary LLZK op to corresponding unary PCL op
+template <typename SrcBinOp, typename DstBinOp>
+static LogicalResult
+lowerUnaryLike(OpBuilder &b, SrcBinOp src, llvm::DenseMap<Value, Value> &mapping) {
+  auto loc = src.getLoc();
+  auto operand = lookup(src.getOperand(), mapping, src);
+  if (failed(operand)) {
+    return failure();
+  }
+
+  auto dst = b.create<DstBinOp>(loc, *operand);
+  rememberResult(src.getResult(), dst.getRes(), mapping);
+  return success();
+}
+
+static LogicalResult lowerConstImpl(
+    OpBuilder &b, Value result, Location location, llvm::APInt &value,
+    llvm::DenseMap<Value, Value> &mapping
+) {
+  auto attr = pcl::FeltAttr::get(b.getContext(), value);
+  auto dst = b.create<pcl::ConstOp>(location, attr);
+  rememberResult(result, dst.getRes(), mapping);
+  return success();
+}
+
+static LogicalResult
+lowerConst(OpBuilder &b, FeltConstantOp cst, llvm::DenseMap<Value, Value> &mapping) {
+  auto value = cst.getValue().getValue();
+  return lowerConstImpl(b, cst.getResult(), cst->getLoc(), value, mapping);
+}
+
+static LogicalResult
+lowerConst(OpBuilder &b, mlir::arith::ConstantOp cst, llvm::DenseMap<Value, Value> &mapping) {
+  auto value = mlir::cast<mlir::IntegerAttr>(cst.getValue()).getValue();
+  return lowerConstImpl(b, cst.getResult(), cst.getLoc(), value, mapping);
+}
+
+class PCLLoweringPass : public pcl::conversion::impl::PCLLoweringPassBase<PCLLoweringPass> {
+
+private:
+  void getDependentDialects(DialectRegistry &registry) const override {
+    registry.insert<pcl::PCLDialect, func::FuncDialect>();
+  }
+
+  /// The translation only works now on LLZK structs where all the members are felts.
+  LogicalResult validateStruct(StructDefOp structDef) {
+    for (auto member : structDef.getMemberDefs()) {
+      auto memberType = member.getType();
+      if (!llvm::isa<FeltType>(memberType)) {
+        return member.emitError() << "Member must be felt type. Found " << memberType
+                                  << " for member: " << member.getName();
+      }
+    }
+    return success();
+  }
+
+  /// Emit assertions for an equality `lhs == rhs`, with fast paths when one side
+  /// is a boolean and the other side is a constant {0,1}.
+  ///
+  /// Cases handled:
+  ///   - bool == 1  → assert(bool)
+  ///   - 1 == bool  → assert(bool)
+  ///   - bool == 0  → assert(!bool)
+  ///   - 0 == bool  → assert(!bool)
+  ///   - otherwise  → assert(lhs == rhs)
+  ///
+  /// Returns success after emitting IR.
+  static LogicalResult
+  emitAssertEqOptimized(OpBuilder &b, Location loc, Value lhsVal, Value rhsVal) {
+    // --- Small helpers --------------------------------------------------------
+    auto isBool = [](Value v) { return llvm::isa<pcl::BoolType>(v.getType()); };
+
+    auto getConstAPInt = [](Value v) -> std::optional<llvm::APInt> {
+      if (auto c = llvm::dyn_cast_if_present<pcl::ConstOp>(v.getDefiningOp())) {
+        // Chain: ConstOp -> FeltAttr (or BoolAttr-as-int) -> IntegerAttr -> APInt
+        return c.getValue().getValue().getValue();
+      }
+      return std::nullopt;
+    };
+
+    auto isConstOne = [&](Value v) {
+      if (auto ap = getConstAPInt(v)) {
+        return ap->isOne();
+      }
+      return false;
+    };
+    auto isConstZero = [&](Value v) {
+      if (auto ap = getConstAPInt(v)) {
+        return ap->isZero();
+      }
+      return false;
+    };
+
+    auto emitEqAssert = [&](Value l, Value r) {
+      auto eq = b.create<pcl::CmpEqOp>(loc, l, r);
+      b.create<pcl::AssertOp>(loc, eq.getRes());
+    };
+
+    auto emitAssertTrue = [&](Value pred) { b.create<pcl::AssertOp>(loc, pred); };
+
+    auto emitAssertFalse = [&](Value pred) {
+      auto neg = b.create<pcl::NotOp>(loc, pred);
+      b.create<pcl::AssertOp>(loc, neg.getRes());
+    };
+
+    // Optimized handling of boolean patterns
+    if (isBool(lhsVal) && isConstOne(rhsVal)) {
+      // bool == 1 → assert(bool)
+      emitAssertTrue(lhsVal);
+      return success();
+    }
+    if (isBool(rhsVal) && isConstOne(lhsVal)) {
+      // 1 == bool → assert(bool)
+      emitAssertTrue(rhsVal);
+      return success();
+    }
+    if (isBool(lhsVal) && isConstZero(rhsVal)) {
+      // bool == 0 → assert(!bool)
+      emitAssertFalse(lhsVal);
+      return success();
+    }
+    if (isBool(rhsVal) && isConstZero(lhsVal)) {
+      // 0 == bool → assert(!bool)
+      emitAssertFalse(rhsVal);
+      return success();
+    }
+
+    // Fallback to assert(lhs == rhs)
+    emitEqAssert(lhsVal, rhsVal);
+    return success();
+  }
+
+  /// Lower the constraint ops to PCL ops
+  LogicalResult lowerStructToPCLBody(StructDefOp structDef, func::FuncOp dstFunc) {
+    // As we build, map llzk values to their pcl ones
+    llvm::DenseMap<Value, Value> llzkToPcl;
+    OpBuilder b(dstFunc.getBody());
+    // Map member name to PCL vars; public members are outputs, privates are intermediates
+    llvm::DenseMap<StringRef, Value> member2pclvar;
+    llvm::SmallVector<Value> outVars;
+
+    // Create a new variable name for an `llzk.nondet` op with a paranoid check
+    // that the generated name doesn't collide with any member names.
+    auto getNondetVarName = [&member2pclvar]() {
+      static unsigned id = 0;
+      std::string name;
+      llvm::raw_string_ostream os(name);
+      do {
+        name.clear();
+        os << "_nondet_internal_var__" << id;
+        id++;
+      } while (member2pclvar.contains(name));
+      return name;
+    };
+
+    auto srcFunc = structDef.getConstrainFuncOp();
+    auto srcArgs = srcFunc.getArguments().drop_front();
+    auto dstArgs = dstFunc.getArguments();
+    if (dstArgs.size() != srcArgs.size()) {
+      return srcFunc.emitError("arg count mismatch after dropping self");
+    }
+
+    // 1-1 mapping of args from constraint args to PCL args
+    for (auto [src, dst] : llvm::zip(srcArgs, dstArgs)) {
+      llzkToPcl.try_emplace(src, dst);
+    }
+    for (auto memberDef : structDef.getMemberDefs()) {
+      // Create a PCL var for each struct member. Public members are outputs in PCL
+      auto pclVar =
+          b.create<pcl::VarOp>(memberDef.getLoc(), memberDef.getName(), memberDef.hasPublicAttr());
+      member2pclvar.insert({memberDef.getName(), pclVar});
+      if (memberDef.hasPublicAttr()) {
+        outVars.push_back(pclVar);
+      }
+    }
+    if (!srcFunc.getBody().hasOneBlock()) {
+      return srcFunc.emitError(
+          "llzk-to-pcl translation assumes the constrain function body has 1 block"
+      );
+    }
+    Block &srcEntry = srcFunc.getBody().front();
+    // Translate each op. Almost 1-1 and currently only support Felt/Bool ops.
+    // TODO: Support calls, if-else, globals/lookups.
+    for (Operation &op : srcEntry) {
+      LogicalResult res = success();
+      llvm::TypeSwitch<Operation *, void>(&op)
+          .Case<FeltConstantOp>([&b, &llzkToPcl, &res](auto c) {
+        res = lowerConst(b, c, llzkToPcl);
+      })
+          .Case<mlir::arith::ConstantOp>([&b, &llzkToPcl, &res](auto c) {
+        res = lowerConst(b, c, llzkToPcl);
+      })
+          .Case<NonDetOp>([&b, &getNondetVarName, &llzkToPcl](auto n) {
+        auto varName = getNondetVarName();
+        auto pclVar = b.create<pcl::VarOp>(n.getLoc(), varName, /* public */ false);
+        rememberResult(n.getResult(), pclVar, llzkToPcl);
+      })
+          .Case<AddFeltOp>([&b, &llzkToPcl, &res](auto a) {
+        res = lowerBinaryLike<AddFeltOp, pcl::AddOp>(b, a, llzkToPcl);
+      })
+          .Case<SubFeltOp>([&b, &llzkToPcl, &res](auto s) {
+        res = lowerBinaryLike<SubFeltOp, pcl::SubOp>(b, s, llzkToPcl);
+      })
+          .Case<MulFeltOp>([&b, &llzkToPcl, &res](auto m) {
+        res = lowerBinaryLike<MulFeltOp, pcl::MulOp>(b, m, llzkToPcl);
+      })
+          .Case<NegFeltOp>([&b, &llzkToPcl, &res](auto n) {
+        res = lowerUnaryLike<NegFeltOp, pcl::NegOp>(b, n, llzkToPcl);
+      })
+          .Case<AndBoolOp>([&b, &llzkToPcl, &res](auto a) {
+        res = lowerBinaryLike<AndBoolOp, pcl::AndOp>(b, a, llzkToPcl);
+      })
+          .Case<OrBoolOp>([&b, &llzkToPcl, &res](auto o) {
+        res = lowerBinaryLike<OrBoolOp, pcl::OrOp>(b, o, llzkToPcl);
+      })
+          .Case<NotBoolOp>([&b, &llzkToPcl, &res](auto n) {
+        res = lowerUnaryLike<NotBoolOp, pcl::NotOp>(b, n, llzkToPcl);
+      })
+          .Case<XorBoolOp>([&b, &llzkToPcl, &res](auto x) {
+        // Translate xor as an iff followed by a boolean not
+        res = lowerBinaryLike<XorBoolOp, pcl::IffOp>(b, x, llzkToPcl);
+        if (failed(res)) {
+          return;
+        }
+        // Get the result from the `pcl::IffOp` to pass into `Not`
+        auto iffRes = lookup(x.getResult(), llzkToPcl, x);
+        if (failed(iffRes)) {
+          res = failure();
+          return;
+        }
+        auto loc = x.getLoc();
+        auto not_op = b.create<pcl::NotOp>(loc, *iffRes);
+        // Associate the result of the llzk-op with the result of the pcl-not
+        rememberResult(x.getResult(), not_op.getResult(), llzkToPcl);
+      })
+          .Case<IntToFeltOp>([&llzkToPcl, &res](auto m) {
+        auto arg = lookup(m.getValue(), llzkToPcl, m);
+        if (failed(arg)) {
+          res = failure();
+          return;
+        }
+        rememberResult(m.getResult(), arg.value(), llzkToPcl);
+      })
+          .Case<CmpOp>([&b, &llzkToPcl, &res](auto cmp) {
+        auto pred = cmp.getPredicate();
+        switch (pred) {
+        case FeltCmpPredicate::EQ:
+          res = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, cmp, llzkToPcl);
+          break;
+        case FeltCmpPredicate::NE: {
+          // Translate not-equals as an equality followed by a boolean not
+          auto eq = lowerBinaryLike<CmpOp, pcl::CmpEqOp>(b, cmp, llzkToPcl);
+          if (failed(eq)) {
+            res = eq;
+            break;
+          }
+          // Get the result from the `pcl::CmpEqOp` to pass into `Not`
+          auto eqRes = lookup(cmp.getResult(), llzkToPcl, cmp);
+          if (failed(eqRes)) {
+            res = failure();
+            break;
+          }
+          auto loc = cmp.getLoc();
+          auto not_op = b.create<pcl::NotOp>(loc, *eqRes);
+          // Associate the result of the llzk-op with the result of the pcl-not
+          rememberResult(cmp.getResult(), not_op.getResult(), llzkToPcl);
+          break;
+        }
+        case FeltCmpPredicate::LT:
+          res = lowerBinaryLike<CmpOp, pcl::CmpLtOp>(b, cmp, llzkToPcl);
+          break;
+        case FeltCmpPredicate::LE:
+          res = lowerBinaryLike<CmpOp, pcl::CmpLeOp>(b, cmp, llzkToPcl);
+          break;
+        case FeltCmpPredicate::GT:
+          res = lowerBinaryLike<CmpOp, pcl::CmpGtOp>(b, cmp, llzkToPcl);
+          break;
+        case FeltCmpPredicate::GE:
+          res = lowerBinaryLike<CmpOp, pcl::CmpGeOp>(b, cmp, llzkToPcl);
+          break;
+        }
+      })
+          .Case<EmitEqualityOp>([&b, &llzkToPcl, &res](auto eq) {
+        auto lhs = lookup(eq.getLhs(), llzkToPcl, eq);
+        auto rhs = lookup(eq.getRhs(), llzkToPcl, eq);
+        if (failed(lhs) || failed(rhs)) {
+          res = failure();
+          return;
+        }
+
+        Value lhsVal = *lhs, rhsVal = *rhs;
+        auto loc = eq.getLoc();
+        if (failed(emitAssertEqOptimized(b, loc, lhsVal, rhsVal))) {
+          res = failure();
+          return;
+        }
+      })
+          .Case<MemberReadOp>([&member2pclvar, &llzkToPcl, &srcFunc](auto read) {
+        // At this point every member in the struct should have a var associated with it
+        // so we should simply retrieve the var associated with the member.
+        (void)srcFunc; // to silence unused variable warning if asserts are disabled
+        assert(read.getComponent() == srcFunc.getArguments()[0]);
+        if (auto it = member2pclvar.find(read.getMemberName()); it != member2pclvar.end()) {
+          rememberResult(read.getResult(), it->getSecond(), llzkToPcl);
+        } else {
+          llvm_unreachable("Every member should have been mapped to a pcl var");
+        }
+      })
+          .Case<ReturnOp>([&b, &outVars](auto ret) {
+        // We return all the output vars we defined above.
+        b.create<pcl::ReturnOp>(
+            ret.getLoc(), (llvm::SmallVector<Value>(outVars.begin(), outVars.end()))
+        );
+      }).Default([](Operation *unknown) {
+        unknown->emitError("unsupported op in PCL lowering: ") << unknown->getName();
+      });
+      if (failed(res)) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  FailureOr<func::FuncOp> buildPCLFunc(StructDefOp structDef) {
+    SmallVector<Type> pclInputTypes, pclOutputTypes;
+    auto constrainFunc = structDef.getConstrainFuncOp();
+    auto *ctx = structDef.getContext();
+    for (auto arg : constrainFunc.getArguments().drop_front()) {
+      auto argType = arg.getType();
+      if (!llvm::isa<FeltType>(argType)) {
+        return constrainFunc.emitError()
+               << "Constrain function's args are expected to be felts. Found " << argType
+               << "for arg #: " << arg.getArgNumber();
+      }
+      pclInputTypes.push_back(pcl::FeltType::get(ctx));
+    }
+    for (auto member : structDef.getMemberDefs()) {
+      auto memberType = member.getType();
+      if (!llvm::isa<FeltType>(memberType)) {
+        return structDef.emitError() << "Member must be felt type. Found " << memberType
+                                     << " for member: " << member.getName();
+      }
+      if (member.hasPublicAttr()) {
+        pclOutputTypes.push_back(pcl::FeltType::get(ctx));
+      }
+    }
+    FunctionType fty = FunctionType::get(ctx, pclInputTypes, pclOutputTypes);
+    auto func = func::FuncOp::create(constrainFunc.getLoc(), structDef.getName(), fty);
+    func.addEntryBlock();
+    return func;
+  }
+
+  // PCL programs require a module-level attribute specifying the prime.
+  LogicalResult setPrime(ModuleOp &newMod, ModuleOp &oldMod) {
+    auto prime = selectPrime(oldMod);
+    if (failed(prime)) {
+      return failure();
+    }
+
+    // Add an extra bit to avoid the prime being represented as a negative number
+    auto newBitWidth = prime->getBitWidth() + 1;
+    auto ty = IntegerType::get(newMod.getContext(), newBitWidth);
+    auto intAttr = IntegerAttr::get(ty, prime->zext(newBitWidth));
+    newMod->setAttr("pcl.prime", pcl::PrimeAttr::get(newMod.getContext(), intAttr));
+
+    return success();
+  }
+
+  FailureOr<llvm::APSInt> selectPrime(ModuleOp &module) {
+    FieldSet fields;
+    // If the collection reports that at least one FeltType did not declare the field and
+    // the fields set is empty, then we raise an error.
+    if (failed(collectFields(module, fields)) && fields.empty()) {
+      return module->emitOpError() << "could not deduce the prime field";
+    }
+    // If the fields is empty and we reached this point it means that the IR we are about to lower
+    // does not have a single felt type (because felts without a field will make `collectFields`
+    // return failure). We return an error here since we don't have a prime to emit. In practice,
+    // this situation it's going to be unlikely.
+    if (fields.empty()) {
+      return module->emitOpError()
+             << "does not contain felt types and prime field couldn't be deduced";
+    }
+    // The pass only supports having one field for the whole circuit.
+    if (fields.size() > 1) {
+      return module->emitOpError() << "multiple fields is not supported";
+    }
+    const auto &selectedField = *(fields.begin());
+    return toAPSInt(selectedField.get().prime());
+  }
+
+  void runOnOperation() override {
+    ModuleOp moduleOp = getOperation();
+    // check PCLDialect is loaded.
+    assert(moduleOp->getContext()->getLoadedDialect<pcl::PCLDialect>() && "PCL dialect not loaded");
+    // Create the PCL module
+    auto newMod = ModuleOp::create(moduleOp.getLoc());
+    // Set the prime attribute
+    if (failed(setPrime(newMod, /*oldMod=*/moduleOp))) {
+      signalPassFailure();
+      return;
+    }
+    // Convert each struct to a PCL function
+    auto walkResult = moduleOp.walk([this, &newMod](StructDefOp structDef) -> WalkResult {
+      // 1) verify the struct can be converted to PCL
+      if (failed(validateStruct(structDef))) {
+        return WalkResult::interrupt();
+      }
+      // 2) Construct the PCL function op but with an empty body
+      FailureOr<func::FuncOp> pclFuncOp = buildPCLFunc(structDef);
+      if (failed(pclFuncOp)) {
+        return WalkResult::interrupt();
+      }
+      // 3) Fill in the PCL function body
+      newMod.getBody()->push_back(*pclFuncOp);
+      if (failed(lowerStructToPCLBody(structDef, pclFuncOp.value()))) {
+        return WalkResult::interrupt();
+      }
+
+      return WalkResult::advance();
+    });
+    if (walkResult.wasInterrupted()) {
+      signalPassFailure();
+      return;
+    }
+    // clear the original ops
+    moduleOp.getRegion().takeBody(newMod.getBodyRegion());
+    // Replace the module attributes
+    moduleOp->setAttrs(newMod->getAttrDictionary());
+    newMod.erase();
+  }
+};
+} // namespace
+
+std::unique_ptr<Pass> pcl::conversion::createPCLLoweringPass() {
+  return std::make_unique<PCLLoweringPass>();
+}

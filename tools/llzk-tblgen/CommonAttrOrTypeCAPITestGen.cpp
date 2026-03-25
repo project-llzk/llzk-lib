@@ -45,7 +45,7 @@ std::string generateDummyParamsForAttrOrTypeGet(const AttrOrTypeDef &def, bool i
         paramsStream << llvm::formatv("    auto {0}Elem = createIndexAttribute();\n", pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{0}Elem;\n", elemType, pName);
       } else {
-        paramsStream << llvm::formatv("    {0} {1}Elem = {{}};\n", elemType, pName);
+        paramsStream << llvm::formatv("    {0} {1}Elem = {{};\n", elemType, pName);
         paramsStream << llvm::formatv("    {0} *{1} = &{1}Elem;\n", elemType, pName);
       }
     } else {
