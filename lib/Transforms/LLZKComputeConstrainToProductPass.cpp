@@ -102,7 +102,6 @@ public:
     if (failed(alignStartingAt(root, tables, equivalence))) {
       signalPassFailure();
     }
-    // mod->dumpPretty();
   }
 };
 
