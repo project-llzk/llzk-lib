@@ -98,9 +98,11 @@ static void collectMapAttrs(Type type, SmallVector<AffineMapAttr> &mapAttrs) {
     }
   })
       .Case([&mapAttrs](component::StructType t) {
-    for (auto param : t.getParams()) {
-      if (auto m = llvm::dyn_cast<AffineMapAttr>(param)) {
-        mapAttrs.push_back(m);
+    if (ArrayAttr params = t.getParams()) {
+      for (auto param : params) {
+        if (auto m = llvm::dyn_cast<AffineMapAttr>(param)) {
+          mapAttrs.push_back(m);
+        }
       }
     }
   }).Default([](Type) {});
