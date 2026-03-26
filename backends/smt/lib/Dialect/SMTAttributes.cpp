@@ -7,11 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "smt/Dialect/IR/SMTAttributes.h"
-#include "smt/Dialect/IR/SMTDialect.h"
-#include "smt/Dialect/IR/SMTTypes.h"
+
+#include "llvm/ADT/TypeSwitch.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/DialectImplementation.h"
-#include "llvm/ADT/TypeSwitch.h"
+#include "smt/Dialect/IR/SMTDialect.h"
+#include "smt/Dialect/IR/SMTTypes.h"
 
 using namespace mlir;
 using namespace llzk::smt;
@@ -22,10 +23,11 @@ using namespace llzk::smt;
 
 LogicalResult BitVectorAttr::verify(
     function_ref<InFlightDiagnostic()> emitError,
-    APInt value) { // NOLINT(performance-unnecessary-value-param)
-  if (value.getBitWidth() < 1)
-    return emitError() << "bit-width must be at least 1, but got "
-                       << value.getBitWidth();
+    APInt value
+) { // NOLINT(performance-unnecessary-value-param)
+  if (value.getBitWidth() < 1) {
+    return emitError() << "bit-width must be at least 1, but got " << value.getBitWidth();
+  }
   return success();
 }
 
@@ -49,21 +51,22 @@ std::string BitVectorAttr::getValueAsString(bool prefix) const {
 
 /// Parse an SMT-LIB formatted bit-vector string.
 static FailureOr<APInt>
-parseBitVectorString(function_ref<InFlightDiagnostic()> emitError,
-                     StringRef value) {
-  if (value[0] != '#')
+parseBitVectorString(function_ref<InFlightDiagnostic()> emitError, StringRef value) {
+  if (value[0] != '#') {
     return emitError() << "expected '#'";
+  }
 
-  if (value.size() < 3)
+  if (value.size() < 3) {
     return emitError() << "expected at least one digit";
+  }
 
-  if (value[1] == 'b')
-    return APInt(value.size() - 2, std::string(value.begin() + 2, value.end()),
-                 2);
+  if (value[1] == 'b') {
+    return APInt(value.size() - 2, std::string(value.begin() + 2, value.end()), 2);
+  }
 
-  if (value[1] == 'x')
-    return APInt((value.size() - 2) * 4,
-                 std::string(value.begin() + 2, value.end()), 16);
+  if (value[1] == 'x') {
+    return APInt((value.size() - 2) * 4, std::string(value.begin() + 2, value.end()), 16);
+  }
 
   return emitError() << "expected either 'b' or 'x'";
 }
@@ -75,25 +78,25 @@ BitVectorAttr BitVectorAttr::get(MLIRContext *context, StringRef value) {
   return Base::get(context, *maybeValue);
 }
 
-BitVectorAttr
-BitVectorAttr::getChecked(function_ref<InFlightDiagnostic()> emitError,
-                          MLIRContext *context, StringRef value) {
+BitVectorAttr BitVectorAttr::getChecked(
+    function_ref<InFlightDiagnostic()> emitError, MLIRContext *context, StringRef value
+) {
   auto maybeValue = parseBitVectorString(emitError, value);
-  if (failed(maybeValue))
+  if (failed(maybeValue)) {
     return {};
+  }
 
   return Base::getChecked(emitError, context, *maybeValue);
 }
 
-BitVectorAttr BitVectorAttr::get(MLIRContext *context, uint64_t value,
-                                 unsigned width) {
+BitVectorAttr BitVectorAttr::get(MLIRContext *context, uint64_t value, unsigned width) {
   return Base::get(context, APInt(width, value));
 }
 
-BitVectorAttr
-BitVectorAttr::getChecked(function_ref<InFlightDiagnostic()> emitError,
-                          MLIRContext *context, uint64_t value,
-                          unsigned width) {
+BitVectorAttr BitVectorAttr::getChecked(
+    function_ref<InFlightDiagnostic()> emitError, MLIRContext *context, uint64_t value,
+    unsigned width
+) {
   if (width < 64 && value >= (UINT64_C(1) << width)) {
     emitError() << "value does not fit in a bit-vector of desired width";
     return {};
@@ -105,9 +108,9 @@ Attribute BitVectorAttr::parse(AsmParser &odsParser, Type odsType) {
   llvm::SMLoc loc = odsParser.getCurrentLocation();
 
   APInt val;
-  if (odsParser.parseLess() || odsParser.parseInteger(val) ||
-      odsParser.parseGreater())
+  if (odsParser.parseLess() || odsParser.parseInteger(val) || odsParser.parseGreater()) {
     return {};
+  }
 
   // Requires the use of `quantified(<attr>)` in operation assembly formats.
   if (!odsType || !llvm::isa<BitVectorType>(odsType)) {
@@ -125,11 +128,10 @@ Attribute BitVectorAttr::parse(AsmParser &odsParser, Type odsType) {
   } else if (width < val.getBitWidth()) {
     // The parser can return an unnecessarily wide result.
     // This isn't a problem, but truncating off bits is bad.
-    unsigned neededBits =
-        val.isNegative() ? val.getSignificantBits() : val.getActiveBits();
+    unsigned neededBits = val.isNegative() ? val.getSignificantBits() : val.getActiveBits();
     if (width < neededBits) {
-      odsParser.emitError(loc)
-          << "integer value out of range for given bit-vector type " << odsType;
+      odsParser.emitError(loc) << "integer value out of range for given bit-vector type "
+                               << odsType;
       return {};
     }
     val = val.trunc(width);

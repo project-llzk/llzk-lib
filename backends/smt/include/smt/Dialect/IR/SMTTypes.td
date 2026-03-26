@@ -12,7 +12,7 @@
 include "smt/Dialect/IR/SMTDialect.td"
 include "mlir/IR/AttrTypeBase.td"
 
-class SMTTypeDef<string name> : TypeDef<SMTDialect, name> { }
+class SMTTypeDef<string name> : TypeDef<SMTDialect, name> {}
 
 def BoolType : SMTTypeDef<"Bool"> {
   let mnemonic = "bool";
@@ -77,27 +77,26 @@ def SMTFuncType : SMTTypeDef<"SMTFunc"> {
     `((Bool Int) Bool)` in SMT-LIB.
   }];
 
-  let parameters = (ins
-    ArrayRefParameter<"mlir::Type", "domain types">:$domainTypes,
-    "mlir::Type":$rangeType
-  );
+  let parameters =
+      (ins ArrayRefParameter<"mlir::Type", "domain types">:$domainTypes,
+          "mlir::Type":$rangeType);
 
   // Note: We are not printing the parentheses when no domain type is present
   // because the default MLIR parser thinks it is a builtin function type
   // otherwise.
   let assemblyFormat = "`<` `(` $domainTypes `)` ` ` $rangeType `>`";
 
-  let builders = [
-    TypeBuilderWithInferredContext<(ins
-      "llvm::ArrayRef<mlir::Type>":$domainTypes,
-      "mlir::Type":$rangeType), [{
+  let builders = [TypeBuilderWithInferredContext<
+                      (ins "llvm::ArrayRef<mlir::Type>":$domainTypes,
+                          "mlir::Type":$rangeType),
+                      [{
       return $_get(rangeType.getContext(), domainTypes, rangeType);
     }]>,
-    TypeBuilderWithInferredContext<(ins "mlir::Type":$rangeType), [{
+                  TypeBuilderWithInferredContext<(ins "mlir::Type":$rangeType),
+                                                 [{
       return $_get(rangeType.getContext(),
                    llvm::ArrayRef<mlir::Type>{}, rangeType);
-    }]>
-  ];
+    }]>];
 
   let genVerifyDecl = true;
 }
@@ -114,20 +113,18 @@ def SortType : SMTTypeDef<"Sort"> {
     [SMT-LIB 2.7 standard](https://smt-lib.org/papers/smt-lib-reference-v2.7-r2025-02-05.pdf).
   }];
 
-  let parameters = (ins
-    "mlir::StringAttr":$identifier,
-    OptionalArrayRefParameter<"mlir::Type", "sort parameters">:$sortParams
-  );
+  let parameters = (ins "mlir::StringAttr":$identifier,
+      OptionalArrayRefParameter<"mlir::Type", "sort parameters">:$sortParams);
 
   let assemblyFormat = "`<` $identifier (`[` $sortParams^ `]`)? `>`";
 
-  let builders = [
-    TypeBuilder<(ins "llvm::StringRef":$identifier,
-                     "llvm::ArrayRef<mlir::Type>":$sortParams), [{
+  let builders = [TypeBuilder<(ins "llvm::StringRef":$identifier,
+                                  "llvm::ArrayRef<mlir::Type>":$sortParams),
+                              [{
       return $_get($_ctxt, mlir::StringAttr::get($_ctxt, identifier),
                            sortParams);
     }]>,
-    TypeBuilder<(ins "llvm::StringRef":$identifier), [{
+                  TypeBuilder<(ins "llvm::StringRef":$identifier), [{
       return $_get($_ctxt, mlir::StringAttr::get($_ctxt, identifier),
                     llvm::ArrayRef<mlir::Type>{});
     }]>,
@@ -136,8 +133,8 @@ def SortType : SMTTypeDef<"Sort"> {
   let genVerifyDecl = true;
 }
 
-def AnySMTType : Type<CPred<"smt::isAnySMTValueType($_self)">,
-                      "any SMT value type">;
+def AnySMTType
+    : Type<CPred<"smt::isAnySMTValueType($_self)">, "any SMT value type">;
 def AnyNonFuncSMTType : Type<CPred<"smt::isAnyNonFuncSMTValueType($_self)">,
                              "any non-function SMT value type">;
 def AnyNonSMTType : Type<Neg<AnySMTType.predicate>, "any non-smt type">;

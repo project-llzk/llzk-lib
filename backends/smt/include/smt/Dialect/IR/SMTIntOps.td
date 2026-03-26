@@ -16,13 +16,13 @@ include "mlir/IR/EnumAttr.td"
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-class SMTIntOp<string mnemonic, list<Trait> traits = []> :
-  SMTOp<"int." # mnemonic, traits>;
+class SMTIntOp<string mnemonic, list<Trait> traits = []>
+    : SMTOp<"int."#mnemonic, traits>;
 
-def IntConstantOp : SMTIntOp<"constant", [
-  Pure,
-  ConstantLike,
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+def IntConstantOp
+    : SMTIntOp<"constant", [Pure, ConstantLike,
+                            DeclareOpInterfaceMethods<
+                                OpAsmOpInterface, ["getAsmResultNames"]>,
 ]> {
   let summary = "produce a constant (infinite-precision) integer";
   let description = [{
@@ -43,7 +43,7 @@ def IntConstantOp : SMTIntOp<"constant", [
 
 class VariadicIntOp<string mnemonic> : SMTIntOp<mnemonic, [Pure, Commutative]> {
   let description = [{
-    This operation represents (infinite-precision) }] # summary # [{.
+    This operation represents (infinite-precision) }]#summary#[{.
     The semantics are equivalent to the corresponding operator described in
     the [SMT Ints theory](https://smtlib.cs.uiowa.edu/Theories/Ints.smt2) of the
     SMT-LIB 2.7 standard.
@@ -56,7 +56,7 @@ class VariadicIntOp<string mnemonic> : SMTIntOp<mnemonic, [Pure, Commutative]> {
 
 class BinaryIntOp<string mnemonic> : SMTIntOp<mnemonic, [Pure]> {
   let description = [{
-    This operation represents (infinite-precision) }] # summary # [{.
+    This operation represents (infinite-precision) }]#summary#[{.
     The semantics are equivalent to the corresponding operator described in
     the [SMT Ints theory](https://smtlib.cs.uiowa.edu/Theories/Ints.smt2) of the
     SMT-LIB 2.7 standard.
@@ -91,11 +91,10 @@ def IntPredicateLT : I64EnumAttrCase<"lt", 0>;
 def IntPredicateLE : I64EnumAttrCase<"le", 1>;
 def IntPredicateGT : I64EnumAttrCase<"gt", 2>;
 def IntPredicateGE : I64EnumAttrCase<"ge", 3>;
-let cppNamespace = "::llzk::smt" in
-def IntPredicate : I64EnumAttr<
-    "IntPredicate",
-    "smt comparison predicate for integers",
-    [IntPredicateLT, IntPredicateLE, IntPredicateGT, IntPredicateGE]>;
+let cppNamespace = "::llzk::smt" in def IntPredicate
+    : I64EnumAttr<"IntPredicate", "smt comparison predicate for integers",
+                  [IntPredicateLT, IntPredicateLE, IntPredicateGT,
+                   IntPredicateGE]>;
 
 def IntCmpOp : SMTIntOp<"cmp", [Pure]> {
   let summary = "integer comparison";

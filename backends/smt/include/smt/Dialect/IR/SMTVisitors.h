@@ -13,15 +13,14 @@
 #ifndef MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 #define MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 
-#include "smt/Dialect/IR/SMTOps.h"
 #include "llvm/ADT/TypeSwitch.h"
+#include "smt/Dialect/IR/SMTOps.h"
 
 namespace llzk {
 namespace smt {
 
 /// This helps visit SMT nodes.
-template <typename ConcreteType, typename ResultType = void,
-          typename... ExtraArgs>
+template <typename ConcreteType, typename ResultType = void, typename... ExtraArgs>
 class SMTOpVisitor {
 public:
   ResultType dispatchSMTOpVisitor(Operation *op, ExtraArgs... args) {
@@ -31,15 +30,14 @@ public:
             // Constants
             BoolConstantOp, IntConstantOp, BVConstantOp,
             // Bit-vector arithmetic
-            BVNegOp, BVAddOp, BVMulOp, BVURemOp, BVSRemOp, BVSModOp, BVShlOp,
-            BVLShrOp, BVAShrOp, BVUDivOp, BVSDivOp,
+            BVNegOp, BVAddOp, BVMulOp, BVURemOp, BVSRemOp, BVSModOp, BVShlOp, BVLShrOp, BVAShrOp,
+            BVUDivOp, BVSDivOp,
             // Bit-vector bitwise
             BVNotOp, BVAndOp, BVOrOp, BVXOrOp,
             // Other bit-vector ops
             ConcatOp, ExtractOp, RepeatOp, BVCmpOp, BV2IntOp,
             // Int arithmetic
-            IntAddOp, IntMulOp, IntSubOp, IntDivOp, IntModOp, IntCmpOp,
-            Int2BVOp,
+            IntAddOp, IntMulOp, IntSubOp, IntDivOp, IntModOp, IntCmpOp, Int2BVOp,
             // Core Ops
             EqOp, DistinctOp, IteOp,
             // Variable/symbol declaration
@@ -52,11 +50,8 @@ public:
             ArrayStoreOp, ArraySelectOp, ArrayBroadcastOp,
             // Quantifiers
             ForallOp, ExistsOp, YieldOp>([&](auto expr) -> ResultType {
-          return thisCast->visitSMTOp(expr, args...);
-        })
-        .Default([&](auto expr) -> ResultType {
-          return thisCast->visitInvalidSMTOp(op, args...);
-        });
+      return thisCast->visitSMTOp(expr, args...);
+    }).Default([&](auto expr) -> ResultType { return thisCast->visitInvalidSMTOp(op, args...); });
   }
 
   /// This callback is invoked on any non-expression operations.
@@ -67,14 +62,11 @@ public:
 
   /// This callback is invoked on any SMT operations that are not
   /// handled by the concrete visitor.
-  ResultType visitUnhandledSMTOp(Operation *op, ExtraArgs... args) {
-    return ResultType();
-  }
+  ResultType visitUnhandledSMTOp(Operation *op, ExtraArgs... args) { return ResultType(); }
 
-#define HANDLE(OPTYPE, OPKIND)                                                 \
-  ResultType visitSMTOp(OPTYPE op, ExtraArgs... args) {                        \
-    return static_cast<ConcreteType *>(this)->visit##OPKIND##SMTOp(op,         \
-                                                                   args...);   \
+#define HANDLE(OPTYPE, OPKIND)                                                                     \
+  ResultType visitSMTOp(OPTYPE op, ExtraArgs... args) {                                            \
+    return static_cast<ConcreteType *>(this)->visit##OPKIND##SMTOp(op, args...);                   \
   }
 
   // Constants
@@ -154,20 +146,18 @@ public:
 };
 
 /// This helps visit SMT types.
-template <typename ConcreteType, typename ResultType = void,
-          typename... ExtraArgs>
+template <typename ConcreteType, typename ResultType = void, typename... ExtraArgs>
 class SMTTypeVisitor {
 public:
   ResultType dispatchSMTTypeVisitor(Type type, ExtraArgs... args) {
     auto *thisCast = static_cast<ConcreteType *>(this);
     return TypeSwitch<Type, ResultType>(type)
-        .template Case<BoolType, IntType, BitVectorType, ArrayType, SMTFuncType,
-                       SortType>([&](auto expr) -> ResultType {
-          return thisCast->visitSMTType(expr, args...);
-        })
+        .template Case<BoolType, IntType, BitVectorType, ArrayType, SMTFuncType, SortType>(
+            [&](auto expr) -> ResultType { return thisCast->visitSMTType(expr, args...); }
+        )
         .Default([&](auto expr) -> ResultType {
-          return thisCast->visitInvalidSMTType(type, args...);
-        });
+      return thisCast->visitInvalidSMTType(type, args...);
+    });
   }
 
   /// This callback is invoked on any non-expression types.
@@ -175,14 +165,11 @@ public:
 
   /// This callback is invoked on any SMT type that are not
   /// handled by the concrete visitor.
-  ResultType visitUnhandledSMTType(Type type, ExtraArgs... args) {
-    return ResultType();
-  }
+  ResultType visitUnhandledSMTType(Type type, ExtraArgs... args) { return ResultType(); }
 
-#define HANDLE(TYPE, KIND)                                                     \
-  ResultType visitSMTType(TYPE op, ExtraArgs... args) {                        \
-    return static_cast<ConcreteType *>(this)->visit##KIND##SMTType(op,         \
-                                                                   args...);   \
+#define HANDLE(TYPE, KIND)                                                                         \
+  ResultType visitSMTType(TYPE op, ExtraArgs... args) {                                            \
+    return static_cast<ConcreteType *>(this)->visit##KIND##SMTType(op, args...);                   \
   }
 
   HANDLE(BoolType, Unhandled);

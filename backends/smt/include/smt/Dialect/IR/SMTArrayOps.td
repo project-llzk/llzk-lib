@@ -14,16 +14,17 @@ include "smt/Dialect/IR/SMTAttributes.td"
 include "smt/Dialect/IR/SMTTypes.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-class SMTArrayOp<string mnemonic, list<Trait> traits = []> :
-  SMTOp<"array." # mnemonic, traits>;
+class SMTArrayOp<string mnemonic, list<Trait> traits = []>
+    : SMTOp<"array."#mnemonic, traits>;
 
-def ArrayStoreOp : SMTArrayOp<"store", [
-  Pure,
-  TypesMatchWith<"summary", "array", "index", 
-                 "cast<ArrayType>($_self).getDomainType()">,
-  TypesMatchWith<"summary", "array", "value",
-                 "cast<ArrayType>($_self).getRangeType()">,
-  AllTypesMatch<["array", "result"]>,
+def ArrayStoreOp
+    : SMTArrayOp<
+          "store", [Pure,
+                    TypesMatchWith<"summary", "array", "index",
+                                   "cast<ArrayType>($_self).getDomainType()">,
+                    TypesMatchWith<"summary", "array", "value",
+                                   "cast<ArrayType>($_self).getRangeType()">,
+                    AllTypesMatch<["array", "result"]>,
 ]> {
   let summary = "stores a value at a given index and returns the new array";
   let description = [{
@@ -42,12 +43,13 @@ def ArrayStoreOp : SMTArrayOp<"store", [
   }];
 }
 
-def ArraySelectOp : SMTArrayOp<"select", [
-  Pure,
-  TypesMatchWith<"summary", "array", "index",
-                 "cast<ArrayType>($_self).getDomainType()">,
-  TypesMatchWith<"summary", "array", "result",
-                 "cast<ArrayType>($_self).getRangeType()">,
+def ArraySelectOp
+    : SMTArrayOp<
+          "select", [Pure,
+                     TypesMatchWith<"summary", "array", "index",
+                                    "cast<ArrayType>($_self).getDomainType()">,
+                     TypesMatchWith<"summary", "array", "result",
+                                    "cast<ArrayType>($_self).getRangeType()">,
 ]> {
   let summary = "get the value stored in the array at the given index";
   let description = [{
@@ -65,10 +67,11 @@ def ArraySelectOp : SMTArrayOp<"select", [
   }];
 }
 
-def ArrayBroadcastOp : SMTArrayOp<"broadcast", [
-  Pure,
-  TypesMatchWith<"summary", "result", "value",
-                 "cast<ArrayType>($_self).getRangeType()">,
+def ArrayBroadcastOp
+    : SMTArrayOp<"broadcast", [Pure,
+                               TypesMatchWith<
+                                   "summary", "result", "value",
+                                   "cast<ArrayType>($_self).getRangeType()">,
 ]> {
   let summary = "construct an array with the given value stored at every index";
   let description = [{

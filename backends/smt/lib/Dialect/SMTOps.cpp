@@ -7,9 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "smt/Dialect/IR/SMTOps.h"
+
+#include "llvm/ADT/APSInt.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/OpImplementation.h"
-#include "llvm/ADT/APSInt.h"
 
 using namespace mlir;
 using namespace llzk::smt;
@@ -20,21 +21,18 @@ using namespace mlir;
 //===----------------------------------------------------------------------===//
 
 LogicalResult BVConstantOp::inferReturnTypes(
-    mlir::MLIRContext *context, std::optional<mlir::Location> location,
-    ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes,
-    ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions,
-    ::llvm::SmallVectorImpl<::mlir::Type> &inferredReturnTypes) {
-  inferredReturnTypes.push_back(
-      properties.as<Properties *>()->getValue().getType());
+    mlir::MLIRContext *context, std::optional<mlir::Location> location, ::mlir::ValueRange operands,
+    ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties,
+    ::mlir::RegionRange regions, ::llvm::SmallVectorImpl<::mlir::Type> &inferredReturnTypes
+) {
+  inferredReturnTypes.push_back(properties.as<Properties *>()->getValue().getType());
   return success();
 }
 
-void BVConstantOp::getAsmResultNames(
-    function_ref<void(Value, StringRef)> setNameFn) {
+void BVConstantOp::getAsmResultNames(function_ref<void(Value, StringRef)> setNameFn) {
   SmallVector<char, 128> specialNameBuffer;
   llvm::raw_svector_ostream specialName(specialNameBuffer);
-  specialName << "c" << getValue().getValue() << "_bv"
-              << getValue().getValue().getBitWidth();
+  specialName << "c" << getValue().getValue() << "_bv" << getValue().getValue().getBitWidth();
   setNameFn(getResult(), specialName.str());
 }
 
@@ -47,8 +45,7 @@ OpFoldResult BVConstantOp::fold(FoldAdaptor adaptor) {
 // DeclareFunOp
 //===----------------------------------------------------------------------===//
 
-void DeclareFunOp::getAsmResultNames(
-    function_ref<void(Value, StringRef)> setNameFn) {
+void DeclareFunOp::getAsmResultNames(function_ref<void(Value, StringRef)> setNameFn) {
   setNameFn(getResult(), getNamePrefix().has_value() ? *getNamePrefix() : "");
 }
 
@@ -57,11 +54,12 @@ void DeclareFunOp::getAsmResultNames(
 //===----------------------------------------------------------------------===//
 
 LogicalResult SolverOp::verifyRegions() {
-  if (getBody()->getTerminator()->getOperands().getTypes() != getResultTypes())
+  if (getBody()->getTerminator()->getOperands().getTypes() != getResultTypes()) {
     return emitOpError() << "types of yielded values must match return values";
-  if (getBody()->getArgumentTypes() != getInputs().getTypes())
-    return emitOpError()
-           << "block argument types must match the types of the 'inputs'";
+  }
+  if (getBody()->getArgumentTypes() != getInputs().getTypes()) {
+    return emitOpError() << "block argument types must match the types of the 'inputs'";
+  }
 
   return success();
 }
@@ -71,18 +69,18 @@ LogicalResult SolverOp::verifyRegions() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult CheckOp::verifyRegions() {
-  if (getSatRegion().front().getTerminator()->getOperands().getTypes() !=
-      getResultTypes())
+  if (getSatRegion().front().getTerminator()->getOperands().getTypes() != getResultTypes()) {
     return emitOpError() << "types of yielded values in 'sat' region must "
                             "match return values";
-  if (getUnknownRegion().front().getTerminator()->getOperands().getTypes() !=
-      getResultTypes())
+  }
+  if (getUnknownRegion().front().getTerminator()->getOperands().getTypes() != getResultTypes()) {
     return emitOpError() << "types of yielded values in 'unknown' region must "
                             "match return values";
-  if (getUnsatRegion().front().getTerminator()->getOperands().getTypes() !=
-      getResultTypes())
+  }
+  if (getUnsatRegion().front().getTerminator()->getOperands().getTypes() != getResultTypes()) {
     return emitOpError() << "types of yielded values in 'unsat' region must "
                             "match return values";
+  }
 
   return success();
 }
@@ -92,21 +90,22 @@ LogicalResult CheckOp::verifyRegions() {
 //===----------------------------------------------------------------------===//
 
 static LogicalResult
-parseSameOperandTypeVariadicToBoolOp(OpAsmParser &parser,
-                                     OperationState &result) {
+parseSameOperandTypeVariadicToBoolOp(OpAsmParser &parser, OperationState &result) {
   SmallVector<OpAsmParser::UnresolvedOperand, 4> inputs;
   SMLoc loc = parser.getCurrentLocation();
   Type type;
 
-  if (parser.parseOperandList(inputs) ||
-      parser.parseOptionalAttrDict(result.attributes) || parser.parseColon() ||
-      parser.parseType(type))
+  if (parser.parseOperandList(inputs) || parser.parseOptionalAttrDict(result.attributes) ||
+      parser.parseColon() || parser.parseType(type)) {
     return failure();
+  }
 
   result.addTypes(BoolType::get(parser.getContext()));
-  if (parser.resolveOperands(inputs, SmallVector<Type>(inputs.size(), type),
-                             loc, result.operands))
+  if (parser.resolveOperands(
+          inputs, SmallVector<Type>(inputs.size(), type), loc, result.operands
+      )) {
     return failure();
+  }
 
   return success();
 }
@@ -122,9 +121,9 @@ void EqOp::print(OpAsmPrinter &printer) {
 }
 
 LogicalResult EqOp::verify() {
-  if (getInputs().size() < 2)
-    return emitOpError() << "'inputs' must have at least size 2, but got "
-                         << getInputs().size();
+  if (getInputs().size() < 2) {
+    return emitOpError() << "'inputs' must have at least size 2, but got " << getInputs().size();
+  }
 
   return success();
 }
@@ -144,9 +143,9 @@ void DistinctOp::print(OpAsmPrinter &printer) {
 }
 
 LogicalResult DistinctOp::verify() {
-  if (getInputs().size() < 2)
-    return emitOpError() << "'inputs' must have at least size 2, but got "
-                         << getInputs().size();
+  if (getInputs().size() < 2) {
+    return emitOpError() << "'inputs' must have at least size 2, but got " << getInputs().size();
+  }
 
   return success();
 }
@@ -158,12 +157,14 @@ LogicalResult DistinctOp::verify() {
 LogicalResult ExtractOp::verify() {
   unsigned rangeWidth = getType().getWidth();
   unsigned inputWidth = cast<BitVectorType>(getInput().getType()).getWidth();
-  if (getLowBit() + rangeWidth > inputWidth)
-    return emitOpError("range to be extracted is too big, expected range "
-                       "starting at index ")
-           << getLowBit() << " of length " << rangeWidth
-           << " requires input width of at least " << (getLowBit() + rangeWidth)
-           << ", but the input width is only " << inputWidth;
+  if (getLowBit() + rangeWidth > inputWidth) {
+    return emitOpError(
+               "range to be extracted is too big, expected range "
+               "starting at index "
+           )
+           << getLowBit() << " of length " << rangeWidth << " requires input width of at least "
+           << (getLowBit() + rangeWidth) << ", but the input width is only " << inputWidth;
+  }
   return success();
 }
 
@@ -174,10 +175,14 @@ LogicalResult ExtractOp::verify() {
 LogicalResult ConcatOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> location, ValueRange operands,
     DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  inferredReturnTypes.push_back(BitVectorType::get(
-      context, cast<BitVectorType>(operands[0].getType()).getWidth() +
-                   cast<BitVectorType>(operands[1].getType()).getWidth()));
+    SmallVectorImpl<Type> &inferredReturnTypes
+) {
+  inferredReturnTypes.push_back(
+      BitVectorType::get(
+          context, cast<BitVectorType>(operands[0].getType()).getWidth() +
+                       cast<BitVectorType>(operands[1].getType()).getWidth()
+      )
+  );
   return success();
 }
 
@@ -188,9 +193,10 @@ LogicalResult ConcatOp::inferReturnTypes(
 LogicalResult RepeatOp::verify() {
   unsigned inputWidth = cast<BitVectorType>(getInput().getType()).getWidth();
   unsigned resultWidth = getType().getWidth();
-  if (resultWidth % inputWidth != 0)
+  if (resultWidth % inputWidth != 0) {
     return emitOpError() << "result bit-vector width must be a multiple of the "
                             "input bit-vector width";
+  }
 
   return success();
 }
@@ -201,8 +207,7 @@ unsigned RepeatOp::getCount() {
   return resultWidth / inputWidth;
 }
 
-void RepeatOp::build(OpBuilder &builder, OperationState &state, unsigned count,
-                     Value input) {
+void RepeatOp::build(OpBuilder &builder, OperationState &state, unsigned count, Value input) {
   unsigned inputWidth = cast<BitVectorType>(input.getType()).getWidth();
   Type resultTy = BitVectorType::get(builder.getContext(), inputWidth * count);
   build(builder, state, resultTy, input);
@@ -214,44 +219,48 @@ ParseResult RepeatOp::parse(OpAsmParser &parser, OperationState &result) {
   llvm::SMLoc countLoc = parser.getCurrentLocation();
 
   APInt count;
-  if (parser.parseInteger(count) || parser.parseKeyword("times"))
+  if (parser.parseInteger(count) || parser.parseKeyword("times")) {
     return failure();
+  }
 
-  if (count.isNonPositive())
+  if (count.isNonPositive()) {
     return parser.emitError(countLoc) << "integer must be positive";
+  }
 
   llvm::SMLoc inputLoc = parser.getCurrentLocation();
-  if (parser.parseOperand(input) ||
-      parser.parseOptionalAttrDict(result.attributes) || parser.parseColon() ||
-      parser.parseType(inputType))
+  if (parser.parseOperand(input) || parser.parseOptionalAttrDict(result.attributes) ||
+      parser.parseColon() || parser.parseType(inputType)) {
     return failure();
+  }
 
-  if (parser.resolveOperand(input, inputType, result.operands))
+  if (parser.resolveOperand(input, inputType, result.operands)) {
     return failure();
+  }
 
   auto bvInputTy = dyn_cast<BitVectorType>(inputType);
-  if (!bvInputTy)
+  if (!bvInputTy) {
     return parser.emitError(inputLoc) << "input must have bit-vector type";
+  }
 
   // Make sure no assertions can trigger and no silent overflows can happen
   // Bit-width is stored as 'int64_t' parameter in 'BitVectorType'
   const unsigned maxBw = 63;
-  if (count.getActiveBits() > maxBw)
-    return parser.emitError(countLoc)
-           << "integer must fit into " << maxBw << " bits";
+  if (count.getActiveBits() > maxBw) {
+    return parser.emitError(countLoc) << "integer must fit into " << maxBw << " bits";
+  }
 
   // Store multiplication in an APInt twice the size to not have any overflow
   // and check if it can be truncated to 'maxBw' bits without cutting of
   // important bits.
   APInt resultBw = bvInputTy.getWidth() * count.zext(2 * maxBw);
-  if (resultBw.getActiveBits() > maxBw)
+  if (resultBw.getActiveBits() > maxBw) {
     return parser.emitError(countLoc)
            << "result bit-width (provided integer times bit-width of the input "
               "type) must fit into "
            << maxBw << " bits";
+  }
 
-  Type resultTy =
-      BitVectorType::get(parser.getContext(), resultBw.getZExtValue());
+  Type resultTy = BitVectorType::get(parser.getContext(), resultBw.getZExtValue());
   result.addTypes(resultTy);
   return success();
 }
@@ -266,8 +275,7 @@ void RepeatOp::print(OpAsmPrinter &printer) {
 // BoolConstantOp
 //===----------------------------------------------------------------------===//
 
-void BoolConstantOp::getAsmResultNames(
-    function_ref<void(Value, StringRef)> setNameFn) {
+void BoolConstantOp::getAsmResultNames(function_ref<void(Value, StringRef)> setNameFn) {
   setNameFn(getResult(), getValue() ? "true" : "false");
 }
 
@@ -280,8 +288,7 @@ OpFoldResult BoolConstantOp::fold(FoldAdaptor adaptor) {
 // IntConstantOp
 //===----------------------------------------------------------------------===//
 
-void IntConstantOp::getAsmResultNames(
-    function_ref<void(Value, StringRef)> setNameFn) {
+void IntConstantOp::getAsmResultNames(function_ref<void(Value, StringRef)> setNameFn) {
   SmallVector<char, 32> specialNameBuffer;
   llvm::raw_svector_ostream specialName(specialNameBuffer);
   specialName << "c" << getValue();
@@ -295,19 +302,22 @@ OpFoldResult IntConstantOp::fold(FoldAdaptor adaptor) {
 
 void IntConstantOp::print(OpAsmPrinter &p) {
   p << " " << getValue();
-  p.printOptionalAttrDict((*this)->getAttrs(), /*elidedAttrs=*/{"value"});
+  p.printOptionalAttrDict((*this)->getAttrs(), /*elidedAttrs=*/ {"value"});
 }
 
 ParseResult IntConstantOp::parse(OpAsmParser &parser, OperationState &result) {
   APInt value;
-  if (parser.parseInteger(value))
+  if (parser.parseInteger(value)) {
     return failure();
+  }
 
   result.getOrAddProperties<Properties>().setValue(
-      IntegerAttr::get(parser.getContext(), APSInt(value)));
+      IntegerAttr::get(parser.getContext(), APSInt(value))
+  );
 
-  if (parser.parseOptionalAttrDict(result.attributes))
+  if (parser.parseOptionalAttrDict(result.attributes)) {
     return failure();
+  }
 
   result.addTypes(smt::IntType::get(parser.getContext()));
   return success();
@@ -317,41 +327,40 @@ ParseResult IntConstantOp::parse(OpAsmParser &parser, OperationState &result) {
 // ForallOp
 //===----------------------------------------------------------------------===//
 
-template <typename QuantifierOp>
-static LogicalResult verifyQuantifierRegions(QuantifierOp op) {
-  if (op.getBoundVarNames() &&
-      op.getBody().getNumArguments() != op.getBoundVarNames()->size())
-    return op.emitOpError(
-        "number of bound variable names must match number of block arguments");
-  if (!llvm::all_of(op.getBody().getArgumentTypes(), isAnyNonFuncSMTValueType))
-    return op.emitOpError()
-           << "bound variables must by any non-function SMT value";
+template <typename QuantifierOp> static LogicalResult verifyQuantifierRegions(QuantifierOp op) {
+  if (op.getBoundVarNames() && op.getBody().getNumArguments() != op.getBoundVarNames()->size()) {
+    return op.emitOpError("number of bound variable names must match number of block arguments");
+  }
+  if (!llvm::all_of(op.getBody().getArgumentTypes(), isAnyNonFuncSMTValueType)) {
+    return op.emitOpError() << "bound variables must by any non-function SMT value";
+  }
 
-  if (op.getBody().front().getTerminator()->getNumOperands() != 1)
+  if (op.getBody().front().getTerminator()->getNumOperands() != 1) {
     return op.emitOpError("must have exactly one yielded value");
-  if (!isa<BoolType>(
-          op.getBody().front().getTerminator()->getOperand(0).getType()))
+  }
+  if (!isa<BoolType>(op.getBody().front().getTerminator()->getOperand(0).getType())) {
     return op.emitOpError("yielded value must be of '!smt.bool' type");
+  }
 
   for (auto regionWithIndex : llvm::enumerate(op.getPatterns())) {
     unsigned i = regionWithIndex.index();
     Region &region = regionWithIndex.value();
 
-    if (op.getBody().getArgumentTypes() != region.getArgumentTypes())
-      return op.emitOpError()
-             << "block argument number and types of the 'body' "
-                "and 'patterns' region #"
-             << i << " must match";
-    if (region.front().getTerminator()->getNumOperands() < 1)
+    if (op.getBody().getArgumentTypes() != region.getArgumentTypes()) {
+      return op.emitOpError() << "block argument number and types of the 'body' "
+                                 "and 'patterns' region #"
+                              << i << " must match";
+    }
+    if (region.front().getTerminator()->getNumOperands() < 1) {
       return op.emitOpError() << "'patterns' region #" << i
                               << " must have at least one yielded value";
+    }
 
     // All operations in the 'patterns' region must be SMT operations.
     auto result = region.walk([&](Operation *childOp) {
       if (!isa<SMTDialect>(childOp->getDialect())) {
         auto diag = op.emitOpError()
-                    << "the 'patterns' region #" << i
-                    << " may only contain SMT dialect operations";
+                    << "the 'patterns' region #" << i << " may only contain SMT dialect operations";
         diag.attachNote(childOp->getLoc()) << "first non-SMT operation here";
         return WalkResult::interrupt();
       }
@@ -368,8 +377,9 @@ static LogicalResult verifyQuantifierRegions(QuantifierOp op) {
 
       return WalkResult::advance();
     });
-    if (result.wasInterrupted())
+    if (result.wasInterrupted()) {
       return failure();
+    }
   }
 
   return success();
@@ -380,19 +390,22 @@ static void buildQuantifier(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange boundVarTypes,
     function_ref<Value(OpBuilder &, Location, ValueRange)> bodyBuilder,
     std::optional<ArrayRef<StringRef>> boundVarNames,
-    function_ref<ValueRange(OpBuilder &, Location, ValueRange)> patternBuilder,
-    uint32_t weight, bool noPattern) {
+    function_ref<ValueRange(OpBuilder &, Location, ValueRange)> patternBuilder, uint32_t weight,
+    bool noPattern
+) {
   odsState.addTypes(BoolType::get(odsBuilder.getContext()));
-  if (weight != 0)
+  if (weight != 0) {
     odsState.getOrAddProperties<Properties>().weight =
         odsBuilder.getIntegerAttr(odsBuilder.getIntegerType(32), weight);
-  if (noPattern)
-    odsState.getOrAddProperties<Properties>().noPattern =
-        odsBuilder.getUnitAttr();
+  }
+  if (noPattern) {
+    odsState.getOrAddProperties<Properties>().noPattern = odsBuilder.getUnitAttr();
+  }
   if (boundVarNames.has_value()) {
     SmallVector<Attribute> boundVarNamesList;
-    for (StringRef str : *boundVarNames)
+    for (StringRef str : *boundVarNames) {
       boundVarNamesList.emplace_back(odsBuilder.getStringAttr(str));
+    }
     odsState.getOrAddProperties<Properties>().boundVarNames =
         odsBuilder.getArrayAttr(boundVarNamesList);
   }
@@ -401,10 +414,9 @@ static void buildQuantifier(
     Region *region = odsState.addRegion();
     Block *block = odsBuilder.createBlock(region);
     block->addArguments(
-        boundVarTypes,
-        SmallVector<Location>(boundVarTypes.size(), odsState.location));
-    Value returnVal =
-        bodyBuilder(odsBuilder, odsState.location, block->getArguments());
+        boundVarTypes, SmallVector<Location>(boundVarTypes.size(), odsState.location)
+    );
+    Value returnVal = bodyBuilder(odsBuilder, odsState.location, block->getArguments());
     odsBuilder.create<llzk::smt::YieldOp>(odsState.location, returnVal);
   }
   if (patternBuilder) {
@@ -412,34 +424,35 @@ static void buildQuantifier(
     OpBuilder::InsertionGuard guard(odsBuilder);
     Block *block = odsBuilder.createBlock(region);
     block->addArguments(
-        boundVarTypes,
-        SmallVector<Location>(boundVarTypes.size(), odsState.location));
-    ValueRange returnVals =
-        patternBuilder(odsBuilder, odsState.location, block->getArguments());
+        boundVarTypes, SmallVector<Location>(boundVarTypes.size(), odsState.location)
+    );
+    ValueRange returnVals = patternBuilder(odsBuilder, odsState.location, block->getArguments());
     odsBuilder.create<llzk::smt::YieldOp>(odsState.location, returnVals);
   }
 }
 
 LogicalResult ForallOp::verify() {
-  if (!getPatterns().empty() && getNoPattern())
+  if (!getPatterns().empty() && getNoPattern()) {
     return emitOpError() << "patterns and the no_pattern attribute must not be "
                             "specified at the same time";
+  }
 
   return success();
 }
 
-LogicalResult ForallOp::verifyRegions() {
-  return verifyQuantifierRegions(*this);
-}
+LogicalResult ForallOp::verifyRegions() { return verifyQuantifierRegions(*this); }
 
 void ForallOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange boundVarTypes,
     function_ref<Value(OpBuilder &, Location, ValueRange)> bodyBuilder,
     std::optional<ArrayRef<StringRef>> boundVarNames,
-    function_ref<ValueRange(OpBuilder &, Location, ValueRange)> patternBuilder,
-    uint32_t weight, bool noPattern) {
-  buildQuantifier<Properties>(odsBuilder, odsState, boundVarTypes, bodyBuilder,
-                              boundVarNames, patternBuilder, weight, noPattern);
+    function_ref<ValueRange(OpBuilder &, Location, ValueRange)> patternBuilder, uint32_t weight,
+    bool noPattern
+) {
+  buildQuantifier<Properties>(
+      odsBuilder, odsState, boundVarTypes, bodyBuilder, boundVarNames, patternBuilder, weight,
+      noPattern
+  );
 }
 
 //===----------------------------------------------------------------------===//
@@ -447,25 +460,27 @@ void ForallOp::build(
 //===----------------------------------------------------------------------===//
 
 LogicalResult ExistsOp::verify() {
-  if (!getPatterns().empty() && getNoPattern())
+  if (!getPatterns().empty() && getNoPattern()) {
     return emitOpError() << "patterns and the no_pattern attribute must not be "
                             "specified at the same time";
+  }
 
   return success();
 }
 
-LogicalResult ExistsOp::verifyRegions() {
-  return verifyQuantifierRegions(*this);
-}
+LogicalResult ExistsOp::verifyRegions() { return verifyQuantifierRegions(*this); }
 
 void ExistsOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange boundVarTypes,
     function_ref<Value(OpBuilder &, Location, ValueRange)> bodyBuilder,
     std::optional<ArrayRef<StringRef>> boundVarNames,
-    function_ref<ValueRange(OpBuilder &, Location, ValueRange)> patternBuilder,
-    uint32_t weight, bool noPattern) {
-  buildQuantifier<Properties>(odsBuilder, odsState, boundVarTypes, bodyBuilder,
-                              boundVarNames, patternBuilder, weight, noPattern);
+    function_ref<ValueRange(OpBuilder &, Location, ValueRange)> patternBuilder, uint32_t weight,
+    bool noPattern
+) {
+  buildQuantifier<Properties>(
+      odsBuilder, odsState, boundVarTypes, bodyBuilder, boundVarNames, patternBuilder, weight,
+      noPattern
+  );
 }
 
 #define GET_OP_CLASSES

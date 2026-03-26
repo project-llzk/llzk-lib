@@ -14,7 +14,6 @@
 #include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Interfaces/InferTypeOpInterface.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
-
 #include "smt/Dialect/IR/SMTAttributes.h"
 #include "smt/Dialect/IR/SMTDialect.h"
 #include "smt/Dialect/IR/SMTTypes.h"

@@ -18,12 +18,12 @@ include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/ControlFlowInterfaces.td"
 
-class SMTOp<string mnemonic, list<Trait> traits = []> :
-  Op<SMTDialect, mnemonic, traits>;
+class SMTOp<string mnemonic, list<Trait> traits = []>
+    : Op<SMTDialect, mnemonic, traits>;
 
-def DeclareFunOp : SMTOp<"declare_fun", [
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>
-]> {
+def DeclareFunOp
+    : SMTOp<"declare_fun", [DeclareOpInterfaceMethods<
+                               OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "declare a symbolic value of a given sort";
   let description = [{
     This operation declares a symbolic value just as the `declare-const` and
@@ -66,17 +66,15 @@ def DeclareFunOp : SMTOp<"declare_fun", [
     ($namePrefix^)? attr-dict `:` qualified(type($result))
   }];
 
-  let builders = [
-    OpBuilder<(ins "mlir::Type":$type), [{
+  let builders = [OpBuilder<(ins "mlir::Type":$type), [{
       build($_builder, $_state, type, nullptr);
-    }]>
-  ];
+    }]>];
 }
 
-def BoolConstantOp : SMTOp<"constant", [
-  Pure,
-  ConstantLike,
-  DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
+def BoolConstantOp
+    : SMTOp<"constant", [Pure, ConstantLike,
+                         DeclareOpInterfaceMethods<
+                             OpAsmOpInterface, ["getAsmResultNames"]>,
 ]> {
   let summary = "Produce a constant boolean";
   let description = [{
@@ -92,9 +90,8 @@ def BoolConstantOp : SMTOp<"constant", [
   let hasFolder = true;
 }
 
-def SolverOp : SMTOp<"solver", [
-  IsolatedFromAbove,
-  SingleBlockImplicitTerminator<"smt::YieldOp">,
+def SolverOp : SMTOp<"solver", [IsolatedFromAbove,
+                                SingleBlockImplicitTerminator<"smt::YieldOp">,
 ]> {
   let summary = "create a solver instance within a lifespan";
   let description = [{
@@ -145,9 +142,7 @@ def SolverOp : SMTOp<"solver", [
   let hasRegionVerifier = true;
 }
 
-def SetLogicOp : SMTOp<"set_logic", [
-  HasParent<"smt::SolverOp">,
-]> {
+def SetLogicOp : SMTOp<"set_logic", [HasParent<"smt::SolverOp">, ]> {
   let summary = "set the logic for the SMT solver";
   let arguments = (ins StrAttr:$logic);
   let assemblyFormat = "$logic attr-dict";
@@ -176,9 +171,8 @@ def PopOp : SMTOp<"pop", []> {
   let assemblyFormat = "$count attr-dict";
 }
 
-def CheckOp : SMTOp<"check", [
-  NoRegionArguments,
-  SingleBlockImplicitTerminator<"smt::YieldOp">,
+def CheckOp : SMTOp<"check", [NoRegionArguments,
+                              SingleBlockImplicitTerminator<"smt::YieldOp">,
 ]> {
   let summary = "check if the current set of assertions is satisfiable";
   let description = [{
@@ -204,8 +198,7 @@ def CheckOp : SMTOp<"check", [
   }];
 
   let regions = (region SizedRegion<1>:$satRegion,
-                        SizedRegion<1>:$unknownRegion,
-                        SizedRegion<1>:$unsatRegion);
+      SizedRegion<1>:$unknownRegion, SizedRegion<1>:$unsatRegion);
   let results = (outs Variadic<AnyType>:$results);
 
   let assemblyFormat = [{
@@ -216,12 +209,9 @@ def CheckOp : SMTOp<"check", [
   let hasRegionVerifier = true;
 }
 
-def YieldOp : SMTOp<"yield", [
-  Pure,
-  Terminator,
-  ReturnLike,
-  ParentOneOf<["smt::SolverOp", "smt::CheckOp",
-               "smt::ForallOp", "smt::ExistsOp"]>,
+def YieldOp : SMTOp<"yield", [Pure, Terminator, ReturnLike,
+                              ParentOneOf<["smt::SolverOp", "smt::CheckOp",
+                                           "smt::ForallOp", "smt::ExistsOp"]>,
 ]> {
   let summary = "terminator operation for various regions of SMT operations";
   let arguments = (ins Variadic<AnyType>:$values);
@@ -231,13 +221,14 @@ def YieldOp : SMTOp<"yield", [
   }]>];
 }
 
-def ApplyFuncOp : SMTOp<"apply_func", [
-  Pure,
-  TypesMatchWith<"summary", "func", "result",
-                 "cast<SMTFuncType>($_self).getRangeType()">,
-  RangedTypesMatchWith<"summary", "func", "args",
-                       "cast<SMTFuncType>($_self).getDomainTypes()">
-]> {
+def ApplyFuncOp
+    : SMTOp<"apply_func", [Pure,
+                           TypesMatchWith<
+                               "summary", "func", "result",
+                               "cast<SMTFuncType>($_self).getRangeType()">,
+                           RangedTypesMatchWith<
+                               "summary", "func", "args",
+                               "cast<SMTFuncType>($_self).getDomainTypes()">]> {
   let summary = "apply a function";
   let description = [{
     This operation performs a function application as described in the
@@ -245,8 +236,7 @@ def ApplyFuncOp : SMTOp<"apply_func", [
     It is part of the language itself rather than a theory or logic.
   }];
 
-  let arguments = (ins SMTFuncType:$func,
-                       Variadic<AnyNonFuncSMTType>:$args);
+  let arguments = (ins SMTFuncType:$func, Variadic<AnyNonFuncSMTType>:$args);
   let results = (outs AnyNonFuncSMTType:$result);
 
   let assemblyFormat = [{
@@ -273,11 +263,9 @@ def EqOp : SMTOp<"eq", [Pure, SameTypeOperands]> {
   let arguments = (ins Variadic<AnyNonFuncSMTType>:$inputs);
   let results = (outs BoolType:$result);
 
-  let builders = [
-    OpBuilder<(ins "mlir::Value":$lhs, "mlir::Value":$rhs), [{
+  let builders = [OpBuilder<(ins "mlir::Value":$lhs, "mlir::Value":$rhs), [{
       build($_builder, $_state, mlir::ValueRange{lhs, rhs});
-    }]>
-  ];
+    }]>];
 
   let hasCustomAssemblyFormat = true;
   let hasVerifier = true;
@@ -314,20 +302,17 @@ def DistinctOp : SMTOp<"distinct", [Pure, SameTypeOperands]> {
   let arguments = (ins Variadic<AnyNonFuncSMTType>:$inputs);
   let results = (outs BoolType:$result);
 
-  let builders = [
-    OpBuilder<(ins "mlir::Value":$lhs, "mlir::Value":$rhs), [{
+  let builders = [OpBuilder<(ins "mlir::Value":$lhs, "mlir::Value":$rhs), [{
       build($_builder, $_state, mlir::ValueRange{lhs, rhs});
-    }]>
-  ];
+    }]>];
 
   let hasCustomAssemblyFormat = true;
   let hasVerifier = true;
 }
 
-def IteOp : SMTOp<"ite", [
-  Pure,
-  AllTypesMatch<["thenValue", "elseValue", "result"]>
-]> {
+def IteOp
+    : SMTOp<"ite", [Pure,
+                    AllTypesMatch<["thenValue", "elseValue", "result"]>]> {
   let summary = "an if-then-else function";
   let description = [{
     This operation returns its second operand or its third operand depending on
@@ -337,9 +322,8 @@ def IteOp : SMTOp<"ite", [
     2.7 standard.
   }];
 
-  let arguments = (ins BoolType:$cond,
-                       AnySMTType:$thenValue,
-                       AnySMTType:$elseValue);
+  let arguments = (ins BoolType:$cond, AnySMTType:$thenValue,
+      AnySMTType:$elseValue);
   let results = (outs AnySMTType:$result);
 
   let assemblyFormat = [{
@@ -363,8 +347,8 @@ def NotOp : SMTOp<"not", [Pure]> {
 
 class VariadicBoolOp<string mnemonic, string desc> : SMTOp<mnemonic, [Pure]> {
   let summary = desc;
-  let description = "This operation performs " # desc # [{.
-    The semantics are equivalent to the '}] # mnemonic # [{' operator in the
+  let description = "This operation performs "#desc#[{.
+    The semantics are equivalent to the '}]#mnemonic#[{' operator in the
     [Core theory](https://smtlib.cs.uiowa.edu/Theories/Core.smt2).
     of the SMT-LIB Standard 2.7.
 
@@ -377,15 +361,13 @@ class VariadicBoolOp<string mnemonic, string desc> : SMTOp<mnemonic, [Pure]> {
   let results = (outs BoolType:$result);
   let assemblyFormat = "$inputs attr-dict";
 
-  let builders = [
-    OpBuilder<(ins "mlir::Value":$lhs, "mlir::Value":$rhs), [{
+  let builders = [OpBuilder<(ins "mlir::Value":$lhs, "mlir::Value":$rhs), [{
       build($_builder, $_state, mlir::ValueRange{lhs, rhs});
-    }]>
-  ];
+    }]>];
 }
 
 def AndOp : VariadicBoolOp<"and", "a boolean conjunction">;
-def OrOp  : VariadicBoolOp<"or", "a boolean disjunction">;
+def OrOp : VariadicBoolOp<"or", "a boolean disjunction">;
 def XOrOp : VariadicBoolOp<"xor", "a boolean exclusive OR">;
 
 def ImpliesOp : SMTOp<"implies", [Pure]> {
@@ -402,13 +384,12 @@ def ImpliesOp : SMTOp<"implies", [Pure]> {
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
 }
 
-class QuantifierOp<string mnemonic> : SMTOp<mnemonic, [
-  RecursivelySpeculatable,
-  RecursiveMemoryEffects,
-  SingleBlockImplicitTerminator<"smt::YieldOp">,
+class QuantifierOp<string mnemonic>
+    : SMTOp<mnemonic, [RecursivelySpeculatable, RecursiveMemoryEffects,
+                       SingleBlockImplicitTerminator<"smt::YieldOp">,
 ]> {
   let description = [{
-    This operation represents the }] # summary # [{ as described in the
+    This operation represents the }]#summary#[{ as described in the
     [SMT-LIB 2.7 standard](https://smt-lib.org/papers/smt-lib-reference-v2.7-r2025-02-05.pdf).
     It is part of the language itself rather than a theory or logic.
 
@@ -442,22 +423,20 @@ class QuantifierOp<string mnemonic> : SMTOp<mnemonic, [
   }];
 
   let arguments = (ins DefaultValuedAttr<I32Attr, "0">:$weight,
-                       UnitAttr:$noPattern,
-                       OptionalAttr<StrArrayAttr>:$boundVarNames);
+      UnitAttr:$noPattern, OptionalAttr<StrArrayAttr>:$boundVarNames);
   let regions = (region SizedRegion<1>:$body,
-                        VariadicRegion<SizedRegion<1>>:$patterns);
+      VariadicRegion<SizedRegion<1>>:$patterns);
   let results = (outs BoolType:$result);
 
-  let builders = [
-    OpBuilder<(ins
-      "mlir::TypeRange":$boundVarTypes,
-      "llvm::function_ref<mlir::Value(mlir::OpBuilder &, mlir::Location, mlir::ValueRange)>":$bodyBuilder,
-      CArg<"std::optional<llvm::ArrayRef<mlir::StringRef>>", "std::nullopt">:$boundVarNames,
-      CArg<"llvm::function_ref<mlir::ValueRange(mlir::OpBuilder &, mlir::Location, mlir::ValueRange)>",
+  let builders = [OpBuilder<(ins "mlir::TypeRange":$boundVarTypes,
+      "llvm::function_ref<mlir::Value(mlir::OpBuilder &, mlir::Location, "
+      "mlir::ValueRange)>":$bodyBuilder,
+      CArg<"std::optional<llvm::ArrayRef<mlir::StringRef>>",
+           "std::nullopt">:$boundVarNames,
+      CArg<"llvm::function_ref<mlir::ValueRange(mlir::OpBuilder &, "
+           "mlir::Location, mlir::ValueRange)>",
            "{}">:$patternBuilder,
-      CArg<"uint32_t", "0">:$weight,
-      CArg<"bool", "false">:$noPattern)>
-  ];
+      CArg<"uint32_t", "0">:$weight, CArg<"bool", "false">:$noPattern)>];
   let skipDefaultBuilders = true;
 
   let assemblyFormat = [{
