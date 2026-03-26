@@ -30,6 +30,7 @@
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -40,6 +41,7 @@
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <algorithm>
+#include <utility>
 
 #include "smt/Conversions/ConversionPasses.h"
 #include "smt/Dialect/IR/SMTDialect.h"
@@ -54,6 +56,7 @@ namespace smt {
 
 using namespace mlir;
 
+using SignalSymbols = DenseMap<StringRef, std::pair<Value, Value>>;
 class LLZKToSMTTypeConverter : public TypeConverter {
 public:
   LLZKToSMTTypeConverter(MLIRContext *ctx) {
@@ -72,12 +75,6 @@ static inline bool containsFelt(Type type) {
       .Case<array::ArrayType>([](array::ArrayType type) {
     return containsFelt(type.getElementType());
   }).Default([](auto) { return false; });
-}
-
-static inline SmallVector<StringRef> memberNames(component::StructDefOp structDef) {
-  return llvm::map_to_vector(structDef.getMemberDefs(), [](component::MemberDefOp memberDef) {
-    return memberDef.getSymName();
-  });
 }
 
 // Define OpConversions
@@ -127,42 +124,33 @@ class FunctionDefConverter : public OpConversionPattern<function::FuncDefOp> {
 
 class MemberWriteConverter : public OpConversionPattern<component::MemberWriteOp> {
 
-  SmallVector<StringRef> memberNames;
+  SignalSymbols symbols;
+  APSInt prime;
 
 public:
   MemberWriteConverter(
-      TypeConverter &typeConverter, MLIRContext *context, ArrayRef<StringRef> memberNames
+      TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &symbols, APSInt prime
   )
-      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, memberNames {memberNames} {}
+      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, symbols {symbols},
+        prime {std::move(prime)} {}
   using OpConversionPattern<component::MemberWriteOp>::OpConversionPattern;
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    // Create a symbol for the signal
-    std::optional<int64_t> memberIndex;
-    for (auto [i, member] : llvm::enumerate(memberNames)) {
-      if (member == adaptor.getMemberName()) {
-        memberIndex.emplace(i);
-        break;
-      }
-    }
 
-    if (!memberIndex.has_value()) {
+    auto it = symbols.find(adaptor.getMemberName());
+    if (it == symbols.end()) {
       return failure();
     }
 
-    auto signalSym = rewriter.create<smt::IntConstantOp>(
-        op.getLoc(),
-        IntegerAttr::get(getContext(), APSInt::get(2 * *memberIndex) /* _w is 2n, _c is 2n + 1 */)
-    );
+    auto [_, witness] = it->second;
+    auto mod =
+        rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
 
     // TODO: How do I get the field modulus
     auto equal = rewriter.create<smt::EqOp>(
-        op->getLoc(),
-        rewriter.create<smt::IntModOp>(op->getLoc(), signalSym.getResult(), signalSym.getResult())
-            .getResult(),
-        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getVal(), signalSym.getResult())
-            .getResult()
+        op->getLoc(), rewriter.create<smt::IntModOp>(op->getLoc(), witness, mod).getResult(),
+        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getVal(), mod).getResult()
     );
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, equal);
 
@@ -171,35 +159,28 @@ public:
 };
 
 class MemberReadConverter : public OpConversionPattern<component::MemberReadOp> {
-  SmallVector<StringRef> memberNames;
+  SignalSymbols symbols;
 
 public:
   MemberReadConverter(
-      TypeConverter &typeConverter, MLIRContext *context, ArrayRef<StringRef> memberNames
+      TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &symbols
   )
-      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, memberNames {memberNames} {}
+      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, symbols {symbols} {}
   using OpConversionPattern<component::MemberReadOp>::OpConversionPattern;
 
   LogicalResult matchAndRewrite(
       component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    // Create a symbol for the signal
-    std::optional<int64_t> memberIndex;
-    for (auto [i, member] : llvm::enumerate(memberNames)) {
-      if (member == adaptor.getMemberName()) {
-        memberIndex.emplace(i);
-        break;
-      }
-    }
 
-    if (!memberIndex.has_value()) {
+    // Create a symbol for the signal
+    auto it = symbols.find(adaptor.getMemberName());
+    if (it == symbols.end()) {
       return failure();
     }
 
-    rewriter.replaceOpWithNewOp<smt::IntConstantOp>(
-        op, IntegerAttr::
-                get(getContext(), APSInt::get(2 * *memberIndex + 1) /* _w is 2n, _c is 2n + 1 */)
-    );
+    auto [constrain, witness] = it->second;
+    rewriter.replaceOp(op, constrain.getDefiningOp());
+
     return success();
   }
 };
@@ -290,7 +271,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
   }
 
   // Convert the body and signature of a @product function to SMT
-  Operation *convertBodies(Operation *op, ArrayRef<StringRef> memberNames) {
+  Operation *convertBodies(Operation *op, const SignalSymbols &signalSymbols, APSInt prime) {
     if (op == nullptr) {
       return op;
     }
@@ -324,7 +305,8 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
         BasicConverter<felt::MulFeltOp, smt::IntMulOp>, FunctionDefConverter, ReturnConverter,
         ConstrainConverter>(typeConverter, context);
-    patterns.add<MemberWriteConverter, MemberReadConverter>(typeConverter, context, memberNames);
+    patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
+    patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
 
     if (failed(applyPartialConversion(op, target, std::move(patterns)))) {
       return nullptr;
@@ -345,8 +327,41 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
 
   void runOnOperation() override {
     ModuleOp mod = getOperation();
-    mod.walk([this](component::StructDefOp structDef) {
-      auto *result = convertFunction(convertBodies(structDef, memberNames(structDef)));
+    FieldSet fields;
+
+    if (failed(collectFields(mod, fields))) {
+      // TODO: take input as an argument
+      return signalPassFailure();
+    }
+
+    if (fields.size() > 1) {
+      mod.emitError() << "multiple fields unsupported";
+      return signalPassFailure();
+    }
+
+    const auto &selectedField = *(fields.begin());
+    auto prime = toAPSInt(selectedField.get().prime());
+
+    mod.walk([this, prime](component::StructDefOp structDef) {
+      // Start by adding declare-funcs for each signal
+      IRRewriter rewriter {&getContext()};
+      rewriter.setInsertionPointToStart(&structDef.getProductFuncOp().getFunctionBody().front());
+
+      SignalSymbols signalSymbols;
+
+      for (auto memberDef : structDef.getMemberDefs()) {
+        auto constraintSym = rewriter.create<smt::DeclareFunOp>(
+            structDef.getProductFuncOp()->getLoc(), smt::IntType::get(&getContext()),
+            StringAttr::get(&getContext(), memberDef.getSymName() + "_c")
+        );
+        auto witnessSym = rewriter.create<smt::DeclareFunOp>(
+            structDef.getProductFuncOp()->getLoc(), smt::IntType::get(&getContext()),
+            StringAttr::get(&getContext(), memberDef.getSymName() + "_w")
+        );
+        signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
+      }
+
+      auto *result = convertFunction(convertBodies(structDef, signalSymbols, prime));
       if (result == nullptr) {
         signalPassFailure();
         return WalkResult::interrupt();
