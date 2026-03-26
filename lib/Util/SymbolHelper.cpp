@@ -173,9 +173,11 @@ public:
       return buildPathFromRootToStruct(parentStruct, std::move(path));
     } else if (ModuleOp parentMod = llvm::dyn_cast_if_present<ModuleOp>(parent)) {
       return buildPathFromRootToAnyOp(parentMod, std::move(path));
+    } else if (TemplateOp parentTemplate = llvm::dyn_cast_if_present<TemplateOp>(parent)) {
+      return buildPathFromRootToAnyOp(parentTemplate, std::move(path));
     } else {
       // This is an error in the compiler itself. In current implementation,
-      //  FuncDefOp must have either StructDefOp or ModuleOp as its parent.
+      //  FuncDefOp must have module, struct, or template as its parent.
       return current->emitError().append("orphaned '", FuncDefOp::getOperationName(), '\'');
     }
   }
