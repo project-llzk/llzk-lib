@@ -72,8 +72,8 @@ public:
 static inline bool containsFelt(Type type) {
   return TypeSwitch<Type, bool>(type)
       .Case<felt::FeltType>([](auto) { return true; })
-      .Case<array::ArrayType>([](array::ArrayType type) {
-    return containsFelt(type.getElementType());
+      .Case<array::ArrayType>([](array::ArrayType arrayType) {
+    return containsFelt(arrayType.getElementType());
   }).Default([](auto) { return false; });
 }
 
@@ -129,10 +129,11 @@ class MemberWriteConverter : public OpConversionPattern<component::MemberWriteOp
 
 public:
   MemberWriteConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &symbols, APSInt prime
+      TypeConverter &_typeConverter, MLIRContext *context, const SignalSymbols &_symbols,
+      APSInt _prime
   )
-      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, symbols {symbols},
-        prime {std::move(prime)} {}
+      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, symbols {_symbols},
+        prime {std::move(_prime)} {}
   using OpConversionPattern<component::MemberWriteOp>::OpConversionPattern;
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -163,9 +164,9 @@ class MemberReadConverter : public OpConversionPattern<component::MemberReadOp> 
 
 public:
   MemberReadConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &symbols
+      TypeConverter &_typeConverter, MLIRContext *context, const SignalSymbols &_symbols
   )
-      : OpConversionPattern {typeConverter, context, /*benefit=*/2}, symbols {symbols} {}
+      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, symbols {_symbols} {}
   using OpConversionPattern<component::MemberReadOp>::OpConversionPattern;
 
   LogicalResult matchAndRewrite(
@@ -287,8 +288,8 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     target.addLegalDialect<smt::SMTDialect>();
     target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
     target.addLegalOp<component::CreateStructOp>();
-    target.addDynamicallyLegalOp<function::ReturnOp>([](function::ReturnOp op) {
-      return llvm::none_of(op.getOperandTypes(), [](Type type) {
+    target.addDynamicallyLegalOp<function::ReturnOp>([](function::ReturnOp returnOp) {
+      return llvm::none_of(returnOp.getOperandTypes(), [](Type type) {
         return isa<component::StructType>(type);
       });
     });
