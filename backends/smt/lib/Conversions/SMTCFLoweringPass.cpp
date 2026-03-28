@@ -34,8 +34,6 @@ namespace smt {
 
 using namespace mlir;
 
-namespace {
-
 class SMTCFLoweringPass : public smt::impl::SMTCFLoweringPassBase<SMTCFLoweringPass> {
 public:
   LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
@@ -68,7 +66,13 @@ public:
     }
 
     rewriter.setInsertionPoint(ifOp);
-    auto notCondition = rewriter.create<smt::NotOp>(ifOp.getLoc(), condition).getResult();
+    Value notCondition;
+    if (auto notOp = dyn_cast<smt::NotOp>(condition.getDefiningOp())) {
+      // Don't generate (not (not x))
+      notCondition = notOp.getInput();
+    } else {
+      notCondition = rewriter.create<smt::NotOp>(ifOp.getLoc(), condition).getResult();
+    }
 
     for (auto assertion : elseAssertions) {
       rewriter.setInsertionPoint(assertion);
@@ -79,6 +83,7 @@ public:
 
     return success();
   }
+
   LogicalResult processYieldedResults(scf::IfOp, RewriterBase &) { return failure(); }
   void runOnOperation() override {
     ModuleOp mod = getOperation();
@@ -90,8 +95,6 @@ public:
     });
   }
 };
-
-} // namespace
 
 namespace smt {
 
