@@ -37,6 +37,7 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/Transforms/DialectConversion.h>
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -287,40 +288,17 @@ class SCFIfConverter : public OpConversionPattern<scf::IfOp> {
       return getTypeConverter()->convertType(t);
     });
 
-    auto convertedIf =
-        rewriter.create<scf::IfOp>(op.getLoc(), convertedResultTypes, adaptor.getCondition());
+    auto convertedIf = rewriter.create<scf::IfOp>(
+        op.getLoc(), convertedResultTypes, adaptor.getCondition(),
+        /*addThenBlock=*/false, /*addElseBlock=*/false
+    );
 
-    IRMapping mapping;
-    auto remapRegionCaptures = [&](Region &region) -> LogicalResult {
-      llvm::SmallDenseSet<Value> capturedValues;
-      region.walk([&](Operation *nestedOp) {
-        for (Value operand : nestedOp->getOperands()) {
-          Region *parentRegion = operand.getParentRegion();
-          if (parentRegion == nullptr || !parentRegion->isAncestor(&region)) {
-            capturedValues.insert(operand);
-          }
-        }
-      });
-
-      for (Value value : capturedValues) {
-        Value remappedValue = rewriter.getRemappedValue(value);
-        if (!remappedValue) {
-          return failure();
-        }
-        mapping.map(value, remappedValue);
-      }
-      return success();
-    };
-
-    if (failed(remapRegionCaptures(op.getThenRegion())) ||
-        failed(remapRegionCaptures(op.getElseRegion()))) {
-      return failure();
-    }
-
-    op.getThenRegion().cloneInto(&convertedIf.getThenRegion(), mapping);
-    if (op.elseBlock() != nullptr) {
-      op.getElseRegion().cloneInto(&convertedIf.getElseRegion(), mapping);
-    }
+    rewriter.inlineRegionBefore(
+        op.getThenRegion(), convertedIf.getThenRegion(), convertedIf.getThenRegion().end()
+    );
+    rewriter.inlineRegionBefore(
+        op.getElseRegion(), convertedIf.getElseRegion(), convertedIf.getElseRegion().end()
+    );
     rewriter.replaceOp(op, convertedIf);
     return success();
   }
@@ -331,6 +309,7 @@ class YieldConverter : public OpConversionPattern<scf::YieldOp> {
   LogicalResult matchAndRewrite(
       scf::YieldOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    // Make sure we're yielding the type-converted results so the scf.if's can have the right type
     rewriter.replaceOpWithNewOp<scf::YieldOp>(op, adaptor.getResults());
     return success();
   }
@@ -393,6 +372,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     target.addIllegalDialect<felt::FeltDialect>();
     target.addIllegalDialect<constrain::ConstrainDialect>();
     target.addLegalDialect<smt::SMTDialect>();
+    target.addLegalOp<UnrealizedConversionCastOp>();
     target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
     // target.addIllegalOp<boolean::CmpOp>();
     target.addLegalOp<component::CreateStructOp>();
@@ -411,18 +391,8 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     target.addDynamicallyLegalOp<scf::YieldOp>([](scf::YieldOp yieldOp) {
       return llvm::none_of(yieldOp.getOperandTypes(), containsFelt);
     });
-    target.addDynamicallyLegalOp<scf::IfOp>([&target](scf::IfOp ifOp) {
-      bool signatureLegal = llvm::none_of(ifOp.getResultTypes(), containsFelt);
-      auto regionLegal = [&target](Region &region) {
-        return !region.walk([&target](Operation *nestedOp) {
-          if (!target.isLegal(nestedOp)) {
-            return WalkResult::interrupt();
-          }
-          return WalkResult::advance();
-        }).wasInterrupted();
-      };
-      return signatureLegal && regionLegal(ifOp.getThenRegion()) &&
-             regionLegal(ifOp.getElseRegion());
+    target.addDynamicallyLegalOp<scf::IfOp>([](scf::IfOp ifOp) {
+      return llvm::none_of(ifOp.getResultTypes(), containsFelt);
     });
 
     patterns.add<
@@ -431,8 +401,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
         BasicConverter<felt::DivFeltOp, smt::IntDivOp>,
         BasicConverter<felt::NegFeltOp, smt::IntNegOp>, FeltConstConverter, BoolCmpConverter,
-        FunctionDefConverter, ReturnConverter, ConstrainConverter, SCFIfConverter,
-        YieldConverter>(
+        FunctionDefConverter, ReturnConverter, ConstrainConverter, SCFIfConverter, YieldConverter>(
         typeConverter, context
     );
     patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
