@@ -13,6 +13,7 @@
 
 namespace llzk::smt {
 std::unique_ptr<mlir::Pass> createSMTLoweringPass();
+std::unique_ptr<mlir::Pass> createSMTCFLoweringPass();
 
 #define GEN_PASS_REGISTRATION
 #include "smt/Conversions/ConversionPasses.h.inc"

@@ -14,6 +14,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Bool/IR/Enums.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
@@ -50,6 +51,7 @@
 
 namespace llzk {
 namespace smt {
+#define GEN_PASS_DECL_SMTLOWERINGPASS
 #define GEN_PASS_DEF_SMTLOWERINGPASS
 #include "smt/Conversions/ConversionPasses.h.inc"
 } // namespace smt
@@ -70,9 +72,10 @@ public:
 };
 
 static inline bool containsFelt(Type type) {
-  return TypeSwitch<Type, bool>(type)
-      .Case<felt::FeltType>([](auto) { return true; })
-      .Case<array::ArrayType>([](array::ArrayType arrayType) {
+  return isa<component::StructType>(type) ||
+         TypeSwitch<Type, bool>(type)
+             .Case<felt::FeltType>([](auto) { return true; })
+             .Case<array::ArrayType>([](array::ArrayType arrayType) {
     return containsFelt(arrayType.getElementType());
   }).Default([](auto) { return false; });
 }
@@ -101,8 +104,7 @@ class FunctionDefConverter : public OpConversionPattern<function::FuncDefOp> {
     });
     SmallVector<Type> convertedResultTypes = llvm::map_to_vector(
         llvm::filter_to_vector(
-            op.getResultTypes(),
-            [](Type t) { return !static_cast<bool>(dyn_cast<component::StructType>(t)); }
+            op.getResultTypes(), [](Type t) { return !isa<component::StructType>(t); }
         ),
         [this](Type t) { return getTypeConverter()->convertType(t); }
     );
@@ -241,6 +243,111 @@ class ConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp>
   }
 };
 
+class BoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
+  using OpConversionPattern<boolean::CmpOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(
+      boolean::CmpOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    switch (adaptor.getPredicate()) {
+    case boolean::FeltCmpPredicate::EQ:
+      rewriter.replaceOpWithNewOp<smt::EqOp>(op, adaptor.getLhs(), adaptor.getRhs());
+      return success();
+    case boolean::FeltCmpPredicate::NE:
+      rewriter.replaceOpWithNewOp<smt::NotOp>(
+          op,
+          rewriter.create<smt::EqOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs()).getResult()
+      );
+      return success();
+    default: {
+      DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
+          {boolean::FeltCmpPredicate::GE, smt::IntPredicate::ge},
+          {boolean::FeltCmpPredicate::GT, smt::IntPredicate::gt},
+          {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
+          {boolean::FeltCmpPredicate::LT, smt::IntPredicate::lt}
+      };
+      rewriter.replaceOpWithNewOp<smt::IntCmpOp>(
+          op, predicateComparator[adaptor.getPredicate()], adaptor.getLhs(), adaptor.getRhs()
+      );
+      break;
+    }
+    }
+    return success();
+  }
+};
+
+class SCFIfConverter : public OpConversionPattern<scf::IfOp> {
+  using OpConversionPattern<scf::IfOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(
+      scf::IfOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    // Not doing anything interesting here, just convert the result types. A later pass will handle
+    // the rest
+    SmallVector<Type> convertedResultTypes =
+        llvm::map_to_vector(op.getResultTypes(), [this](Type t) {
+      return getTypeConverter()->convertType(t);
+    });
+
+    auto convertedIf =
+        rewriter.create<scf::IfOp>(op.getLoc(), convertedResultTypes, adaptor.getCondition());
+
+    IRMapping mapping;
+    auto remapRegionCaptures = [&](Region &region) -> LogicalResult {
+      llvm::SmallDenseSet<Value> capturedValues;
+      region.walk([&](Operation *nestedOp) {
+        for (Value operand : nestedOp->getOperands()) {
+          Region *parentRegion = operand.getParentRegion();
+          if (parentRegion == nullptr || !parentRegion->isAncestor(&region)) {
+            capturedValues.insert(operand);
+          }
+        }
+      });
+
+      for (Value value : capturedValues) {
+        Value remappedValue = rewriter.getRemappedValue(value);
+        if (!remappedValue) {
+          return failure();
+        }
+        mapping.map(value, remappedValue);
+      }
+      return success();
+    };
+
+    if (failed(remapRegionCaptures(op.getThenRegion())) ||
+        failed(remapRegionCaptures(op.getElseRegion()))) {
+      return failure();
+    }
+
+    op.getThenRegion().cloneInto(&convertedIf.getThenRegion(), mapping);
+    if (op.elseBlock() != nullptr) {
+      op.getElseRegion().cloneInto(&convertedIf.getElseRegion(), mapping);
+    }
+    rewriter.replaceOp(op, convertedIf);
+    return success();
+  }
+};
+
+class YieldConverter : public OpConversionPattern<scf::YieldOp> {
+  using OpConversionPattern<scf::YieldOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(
+      scf::YieldOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    rewriter.replaceOpWithNewOp<scf::YieldOp>(op, adaptor.getResults());
+    return success();
+  }
+};
+
+class FeltConstConverter : public OpConversionPattern<felt::FeltConstantOp> {
+  using OpConversionPattern<felt::FeltConstantOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(
+      felt::FeltConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    rewriter.replaceOpWithNewOp<smt::IntConstantOp>(
+        op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
+    );
+    return success();
+  }
+};
+
 class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
 
   void getDependentDialects(::mlir::DialectRegistry &registry) const override {
@@ -287,6 +394,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     target.addIllegalDialect<constrain::ConstrainDialect>();
     target.addLegalDialect<smt::SMTDialect>();
     target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
+    // target.addIllegalOp<boolean::CmpOp>();
     target.addLegalOp<component::CreateStructOp>();
     target.addDynamicallyLegalOp<function::ReturnOp>([](function::ReturnOp returnOp) {
       return llvm::none_of(returnOp.getOperandTypes(), [](Type type) {
@@ -295,21 +403,44 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     });
 
     target.addDynamicallyLegalOp<function::FuncDefOp>([](function::FuncDefOp funcOp) {
-      bool signatureLegal = !llvm::any_of(funcOp.getArgumentTypes(), containsFelt) &&
-                            !llvm::any_of(funcOp.getResultTypes(), containsFelt);
+      bool signatureLegal = llvm::none_of(funcOp.getArgumentTypes(), containsFelt) &&
+                            llvm::none_of(funcOp.getResultTypes(), containsFelt);
 
       return signatureLegal;
+    });
+    target.addDynamicallyLegalOp<scf::YieldOp>([](scf::YieldOp yieldOp) {
+      return llvm::none_of(yieldOp.getOperandTypes(), containsFelt);
+    });
+    target.addDynamicallyLegalOp<scf::IfOp>([&target](scf::IfOp ifOp) {
+      bool signatureLegal = llvm::none_of(ifOp.getResultTypes(), containsFelt);
+      auto regionLegal = [&target](Region &region) {
+        return !region.walk([&target](Operation *nestedOp) {
+          if (!target.isLegal(nestedOp)) {
+            return WalkResult::interrupt();
+          }
+          return WalkResult::advance();
+        }).wasInterrupted();
+      };
+      return signatureLegal && regionLegal(ifOp.getThenRegion()) &&
+             regionLegal(ifOp.getElseRegion());
     });
 
     patterns.add<
         BasicConverter<felt::AddFeltOp, smt::IntAddOp>,
         BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
-        BasicConverter<felt::MulFeltOp, smt::IntMulOp>, FunctionDefConverter, ReturnConverter,
-        ConstrainConverter>(typeConverter, context);
+        BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
+        BasicConverter<felt::DivFeltOp, smt::IntDivOp>,
+        BasicConverter<felt::NegFeltOp, smt::IntNegOp>, FeltConstConverter, BoolCmpConverter,
+        FunctionDefConverter, ReturnConverter, ConstrainConverter, SCFIfConverter,
+        YieldConverter>(
+        typeConverter, context
+    );
     patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
     patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
 
-    if (failed(applyPartialConversion(op, target, std::move(patterns)))) {
+    ConversionConfig config;
+    config.buildMaterializations = false;
+    if (failed(applyPartialConversion(op, target, std::move(patterns), config))) {
       return nullptr;
     }
 
@@ -328,10 +459,22 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
 
   void runOnOperation() override {
     ModuleOp mod = getOperation();
-    FieldSet fields;
 
-    if (failed(collectFields(mod, fields))) {
-      // TODO: take input as an argument
+    FieldSet fields;
+    if (!fieldName.empty()) {
+      auto fieldLookupResult = Field::tryGetField(fieldName);
+      if (failed(fieldLookupResult)) {
+        mod.emitError() << "unknown field \"" << fieldName << "\"";
+        return signalPassFailure();
+      }
+      fields.insert(fieldLookupResult.value());
+    }
+
+    // Ignore failure; if we found no fields that will be handled later
+    (void)collectFields(mod, fields);
+
+    if (fields.empty()) {
+      mod.emitError() << "no prime field specified; could not deduce";
       return signalPassFailure();
     }
 
@@ -340,7 +483,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
       return signalPassFailure();
     }
 
-    const auto &selectedField = *(fields.begin());
+    auto selectedField = *(fields.begin());
     auto prime = toAPSInt(selectedField.get().prime());
 
     mod.walk([this, prime](component::StructDefOp structDef) {
@@ -369,6 +512,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
       }
       return WalkResult::advance();
     });
+    mod->dumpPretty();
   }
 };
 

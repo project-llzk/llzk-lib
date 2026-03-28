@@ -81,6 +81,15 @@ def IntAbsOp : SMTIntOp<"abs", [Pure]> {
   let assemblyFormat = "$input attr-dict";
 }
 
+def IntNegOp : SMTIntOp<"neg", [Pure]> {
+  let summary = "the negation of an Int";
+  let description =
+      "This operation represents unary negation for the `Int` sort.";
+  let arguments = (ins IntType:$input);
+  let results = (outs IntType:$result);
+  let assemblyFormat = "$input attr-dict";
+}
+
 def IntAddOp : VariadicIntOp<"add"> { let summary = "integer addition"; }
 def IntMulOp : VariadicIntOp<"mul"> { let summary = "integer multiplication"; }
 def IntSubOp : BinaryIntOp<"sub"> { let summary = "integer subtraction"; }

@@ -23,6 +23,19 @@ def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
     "part of the -llzk-to-smt pass pipeline."
   }];
   let constructor = "smt::createSMTLoweringPass()";
+  let options = [Option<"fieldName", "field", "std::string",
+                        /* default */ "\"\"",
+                        "Prime field name to use for SMT lowering. "
+                        "If omitted, the pass auto-detects it.">];
+}
+
+def SMTCFLoweringPass : LLZKPass<"llzk-to-smt-cf"> {
+  let summary = "Lowers control-flow LLZK ops to SMTLIB";
+  let description = [{
+    Skeleton pass for LLZK-to-SMT control-flow lowering.
+    This pass is currently a registered no-op.
+  }];
+  let constructor = "smt::createSMTCFLoweringPass()";
 }
 
 #endif // SMT_CONVERSIONPASSES_TD

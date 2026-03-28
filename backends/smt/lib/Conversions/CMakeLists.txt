@@ -1,6 +1,6 @@
 add_library(SMTConversions)
 
-target_sources(SMTConversions PRIVATE SMTLoweringPass.cpp)
+target_sources(SMTConversions PRIVATE SMTLoweringPass.cpp SMTCFLoweringPass.cpp)
 
 target_link_libraries(
   SMTConversions
