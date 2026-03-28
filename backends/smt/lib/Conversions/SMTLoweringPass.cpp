@@ -480,7 +480,6 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
       }
       return WalkResult::advance();
     });
-    mod->dumpPretty();
   }
 };
 
