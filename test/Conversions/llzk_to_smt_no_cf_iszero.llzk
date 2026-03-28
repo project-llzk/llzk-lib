@@ -1,0 +1,71 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=IsZero_0' --llzk-to-smt-no-cf='field=babybear' %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@IsZero_0<[]>>} {
+  struct.def @IsZero_0<[]> {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @inv : !felt.type
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@IsZero_0<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@IsZero_0<[]>>
+      %felt_const_0 = felt.const  0
+      %0 = bool.cmp ne(%arg0, %felt_const_0)
+      %1 = scf.if %0 -> (!felt.type) {
+        %felt_const_1_0 = felt.const  1
+        %5 = felt.div %felt_const_1_0, %arg0 : !felt.type, !felt.type
+        struct.writem %self[@inv] = %5 : <@IsZero_0<[]>>, !felt.type
+        scf.yield %5 : !felt.type
+      } else {
+        %felt_const_0_0 = felt.const  0
+        struct.writem %self[@inv] = %felt_const_0_0 : <@IsZero_0<[]>>, !felt.type
+        scf.yield %felt_const_0_0 : !felt.type
+      }
+      %2 = felt.neg %arg0 : !felt.type
+      %3 = felt.mul %2, %1 : !felt.type, !felt.type
+      %felt_const_1 = felt.const  1
+      %4 = felt.add %3, %felt_const_1 : !felt.type, !felt.type
+      struct.writem %self[@out] = %4 : <@IsZero_0<[]>>, !felt.type
+      function.return %self : !struct.type<@IsZero_0<[]>>
+    }
+    function.def @constrain(%arg0: !struct.type<@IsZero_0<[]>>, %arg1: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %0 = struct.readm %arg0[@out] : <@IsZero_0<[]>>, !felt.type
+      %1 = struct.readm %arg0[@inv] : <@IsZero_0<[]>>, !felt.type
+      %felt_const_0 = felt.const  0
+      %2 = bool.cmp ne(%arg1, %felt_const_0)
+      scf.if %2 {
+      } else {
+      }
+      %3 = felt.neg %arg1 : !felt.type
+      %4 = felt.mul %3, %1 : !felt.type, !felt.type
+      %felt_const_1 = felt.const  1
+      %5 = felt.add %4, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %0, %5 : !felt.type, !felt.type
+      %6 = felt.mul %arg1, %0 : !felt.type, !felt.type
+      %felt_const_0_0 = felt.const  0
+      constrain.eq %6, %felt_const_0_0 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@IsZero_0<[]>>} {
+// CHECK: func.func @smt_IsZero_0(%[[IN:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK-DAG: %[[OUTC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
+// CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// CHECK-DAG: %[[INVC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv_c" : !smt.int
+// CHECK-DAG: %[[INVW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv_w" : !smt.int
+// CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[ISZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[IN]], %[[ZERO]] : !smt.int
+// CHECK: %[[NONZERO:[0-9a-zA-Z_\.]+]] = smt.not %[[ISZERO]]
+// CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[NONZERO]] : !smt.bool to i1
+// CHECK: %[[INV:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!smt.int) {
+// CHECK:   %[[ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
+// CHECK:   %[[DIV:[0-9a-zA-Z_\.]+]] = smt.int.div %[[ONE]], %[[IN]]
+// CHECK:   smt.assert
+// CHECK:   scf.yield %[[DIV]] : !smt.int
+// CHECK: } else {
+// CHECK:   %[[ZERO2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK:   smt.assert
+// CHECK:   scf.yield %[[ZERO2]] : !smt.int
+// CHECK: }
+// CHECK: smt.assert
+// CHECK: smt.assert
+// CHECK: smt.assert
