@@ -374,7 +374,6 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     target.addLegalDialect<smt::SMTDialect>();
     target.addLegalOp<UnrealizedConversionCastOp>();
     target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
-    // target.addIllegalOp<boolean::CmpOp>();
     target.addLegalOp<component::CreateStructOp>();
     target.addDynamicallyLegalOp<function::ReturnOp>([](function::ReturnOp returnOp) {
       return llvm::none_of(returnOp.getOperandTypes(), [](Type type) {

@@ -15,12 +15,12 @@ include "llzk/Pass/PassBase.td"
 def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
   let summary = "Lowers non-control flow LLZK ops to SMTLIB";
   let description = [{
-    "Lowers felt and array operations to their equivalents in "
-    "the theory of integers and arrays, and generates "
-    "assertions for struct member writes and constraints. This "
-    "pass preserves control flow, and should be used in "
-    "conjuction with the -llzk-to-smt-cf-to-imp pass, or as "
-    "part of the -llzk-to-smt pass pipeline."
+    Lowers felt and array operations to their equivalents in 
+    the theory of integers and arrays, and generates 
+    assertions for struct member writes and constraints. This 
+    pass preserves control flow, and should be used in 
+    conjuction with the -llzk-to-smt-cf pass, or as 
+    part of the -llzk-to-smt pass pipeline.
   }];
   let constructor = "smt::createSMTLoweringPass()";
   let options = [Option<"fieldName", "field", "std::string",
@@ -32,8 +32,11 @@ def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
 def SMTCFLoweringPass : LLZKPass<"llzk-to-smt-cf"> {
   let summary = "Lowers control-flow LLZK ops to SMTLIB";
   let description = [{
-    Skeleton pass for LLZK-to-SMT control-flow lowering.
-    This pass is currently a registered no-op.
+    Lowers scf.if by putting branching conditions into the 
+    antecedents of implications inside asserts, and guarding 
+    yielded values with smt.ite. This pass should come after 
+    the -llzk-to-smt-no-cf pass, or be used as part of the 
+    -llzk-to-smt pass pipeline.
   }];
   let constructor = "smt::createSMTCFLoweringPass()";
 }

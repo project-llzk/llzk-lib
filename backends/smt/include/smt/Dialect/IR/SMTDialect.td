@@ -9,7 +9,7 @@
 #ifndef MLIR_DIALECT_SMT_IR_SMTDIALECT_TD
 #define MLIR_DIALECT_SMT_IR_SMTDIALECT_TD
 
-include "smt/Dialect/IR/DialectBase.td"
+include "mlir/IR/DialectBase.td"
 
 def SMTDialect : Dialect {
   let name = "smt";
