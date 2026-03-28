@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=A' --llzk-to-smt-no-cf='field=babybear' %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=A' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
 
 !F = !felt.type<"babybear">
 

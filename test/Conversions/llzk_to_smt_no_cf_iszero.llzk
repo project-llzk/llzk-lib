@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=IsZero_0' --llzk-to-smt-no-cf='field=babybear' %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=IsZero_0' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@IsZero_0<[]>>} {
   struct.def @IsZero_0<[]> {
