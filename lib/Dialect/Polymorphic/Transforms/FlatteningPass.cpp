@@ -1034,8 +1034,8 @@ public:
     auto applyBodyConversions = [&](FuncDefOp newFunc) -> LogicalResult {
       FuncInstTypeConverter tyConv(paramNameToConcrete);
       ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
-      target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp op) {
-        return !tyConv.containsParam(op.getConstNameAttr());
+      target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp p) {
+        return !tyConv.containsParam(p.getConstNameAttr());
       });
       RewritePatternSet bodyPatterns = newGeneralRewritePatternSet(tyConv, ctx, target);
       bodyPatterns.add<ClonedFuncConstReadOpPattern>(tyConv, ctx, tyConv.getParamMap());
