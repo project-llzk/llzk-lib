@@ -58,9 +58,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@IsZero_0<[]>>} {
 // CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[NONZERO]] : !smt.bool to i1
 // CHECK: %[[INV:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!smt.int) {
 // CHECK:   %[[ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
-// CHECK:   %[[DIV:[0-9a-zA-Z_\.]+]] = smt.int.div %[[ONE]], %[[IN]]
+// CHECK:   %[[INVIN:[0-9a-zA-Z_\.]+]] = smt.apply_func %{{[0-9a-zA-Z_\.]+}}(%[[IN]]) : !smt.func<(!smt.int) !smt.int>
+// CHECK:   %[[MUL:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[ONE]], %[[INVIN]]
 // CHECK:   smt.assert
-// CHECK:   scf.yield %[[DIV]] : !smt.int
+// CHECK:   scf.yield %[[MUL]] : !smt.int
 // CHECK: } else {
 // CHECK:   %[[ZERO2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
 // CHECK:   smt.assert
