@@ -23,6 +23,8 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 
+#include <utility>
+
 #include "smt/Conversions/ConversionPasses.h"
 #include "smt/Dialect/IR/SMTOps.h"
 
@@ -35,14 +37,33 @@ namespace smt {
 using namespace mlir;
 
 class SMTCFLoweringPass : public smt::impl::SMTCFLoweringPassBase<SMTCFLoweringPass> {
-public:
-  LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
-    // The condition of the ifOp might be an `unrealized_conversion_cast` from some !smt.bool
-    // to an i1, so we need to see through that
+  // The condition of the ifOp might be an `unrealized_conversion_cast` from some !smt.bool
+  // to an i1, so we need to see through that
+  Value getCondition(scf::IfOp ifOp) {
     Value condition = ifOp.getCondition();
     while (auto op = dyn_cast<mlir::UnrealizedConversionCastOp>(condition.getDefiningOp())) {
       condition = op.getOperand(0);
     }
+    return condition;
+  }
+  IRMapping flatten(scf::IfOp ifOp, RewriterBase &rewriter) {
+    IRMapping mapping;
+
+    rewriter.setInsertionPoint(ifOp);
+    for (auto &op : ifOp.getThenRegion().front().without_terminator()) {
+      rewriter.clone(op, mapping);
+    }
+    if (!ifOp.getElseRegion().empty()) {
+      for (auto &op : ifOp.getElseRegion().front().without_terminator()) {
+        rewriter.clone(op, mapping);
+      }
+    }
+    return mapping;
+  }
+
+public:
+  LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
+    Value condition = getCondition(ifOp);
 
     SmallVector<smt::AssertOp> thenAssertions, elseAssertions;
     ifOp.getThenRegion().walk([&](smt::AssertOp op) { thenAssertions.push_back(op); });
@@ -84,12 +105,50 @@ public:
     return success();
   }
 
-  LogicalResult processYieldedResults(scf::IfOp, RewriterBase &) { return failure(); }
+  LogicalResult processYieldedResults(scf::IfOp ifOp, RewriterBase &rewriter) {
+
+    if (ifOp->getNumResults() == 0) {
+      flatten(ifOp, rewriter);
+      ifOp.erase();
+      return success();
+    }
+
+    auto *thenBlock = &ifOp.getThenRegion().front();
+    auto *elseBlock = &ifOp.getElseRegion().front();
+
+    rewriter.setInsertionPoint(ifOp);
+
+    SmallVector<std::pair<Value, Value>> yieldedValues;
+    for (auto [v1, v2] : llvm::zip(
+             thenBlock->getTerminator()->getOperands(), elseBlock->getTerminator()->getOperands()
+         )) {
+      yieldedValues.push_back({v1, v2});
+    }
+
+    auto mapping = flatten(ifOp, rewriter);
+
+    SmallVector<Value> muxedValues;
+    for (auto [v1, v2] : yieldedValues) {
+      auto iteOp = rewriter.create<smt::IteOp>(
+          ifOp.getLoc(), getCondition(ifOp), mapping.lookupOrDefault(v1),
+          mapping.lookupOrDefault(v2)
+      );
+      muxedValues.push_back(iteOp.getResult());
+    }
+
+    rewriter.replaceAllOpUsesWith(ifOp, muxedValues);
+    ifOp.erase();
+
+    return success();
+  }
   void runOnOperation() override {
     ModuleOp mod = getOperation();
     IRRewriter rewriter {&getContext()};
     mod.walk([this, &rewriter](scf::IfOp ifOp) {
       if (failed(processContainedAsserts(ifOp, rewriter))) {
+        signalPassFailure();
+      }
+      if (failed(processYieldedResults(ifOp, rewriter))) {
         signalPassFailure();
       }
     });
