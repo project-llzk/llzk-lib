@@ -1,0 +1,259 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Test instantiation of templates with function member.
+module attributes {llzk.lang} {
+  poly.template @template_f1 {
+    poly.param @N
+
+    function.def @f(%inp: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      %c0 = arith.constant 0 : index
+      %2 = array.extract %inp[%c0, %c0] : !array.type<8,5,@N x !felt.type>
+      function.return %2 : !array.type<@N x !felt.type>
+    }
+  }
+
+  poly.template @template_f2 {
+    poly.param @N
+
+    function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
+      %3 = poly.read_const @N : !felt.type
+      %4 = felt.add %2, %3 : !felt.type
+      function.return %4 : !felt.type
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<8,5,9 x !felt.type>, %y: !array.type<8,12 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @template_f1::@f(%z) : (!array.type<8,5,9 x !felt.type>) -> (!array.type<9 x !felt.type>)
+      function.call @template_f2::@f(%y) : (!array.type<8,12 x !felt.type>) -> (!felt.type)
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,5,9 x !felt.type>, %y: !array.type<8,12 x !felt.type>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: function.def @template_f1_9_f(
+// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type> {
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5,9 x !felt.type>
+// CHECK-NEXT:    function.return %[[VAL_2]] : !array.type<9 x !felt.type>
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @template_f2_12_f(
+// CHECK-SAME:  %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.const 12
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]], %[[VAL_7]]] : <8,12 x !felt.type>, !felt.type
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_8]], %[[VAL_9]] : !felt.type
+// CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @template_f1_9_f(%[[VAL_12]]) : (!array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type>
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @template_f2_12_f(%[[VAL_13]]) : (!array.type<8,12 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_14]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Test transitive instantiation of functions. Also different instantiations of the same function.
+module attributes {llzk.lang} {
+  poly.template @template_g1 {
+    poly.param @N
+
+    function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
+      function.return %2 : !felt.type
+    }
+  }
+
+  poly.template @template_g2 {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // Not a common use case to call a more-specific template but it is possible.
+      %2 = function.call @template_g1::@f(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %2 : !poly.tvar<@T>
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%y: !array.type<8,12 x !felt.type>, %z: !array.type<8,9 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @template_g1::@f(%y) : (!array.type<8,12 x !felt.type>) -> !felt.type
+      function.call @template_g2::@f(%z) : (!array.type<8,9 x !felt.type>) -> !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %y: !array.type<8,12 x !felt.type>, %z: !array.type<8,9 x !felt.type>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: function.def @template_g1_12_f(
+// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,12 x !felt.type>, !felt.type
+// CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @template_g1_9_f(
+// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,9 x !felt.type>, !felt.type
+// CHECK-NEXT:    function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @template_g2_8_9_f_f(
+// CHECK-SAME:  %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @template_g1_9_f(%[[VAL_9]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @template_g1_12_f(%[[VAL_13]]) : (!array.type<8,12 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @template_g2_8_9_f_f(%[[VAL_14]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_15]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @template_h1 {
+    poly.param @A : index
+    poly.param @B : index
+
+    function.def @f(%inp: !array.type<@A,@B x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %r = array.read %inp[%c0, %c0] : !array.type<@A,@B x !felt.type>, !felt.type
+      function.return %r : !felt.type
+    }
+  }
+
+  poly.template @template_h2 {
+    poly.param @N : index
+
+    function.def @g(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %r = function.call @template_h1::@f(%inp) : (!array.type<8,@N x !felt.type>) -> !felt.type
+      function.return %r : !felt.type
+    }
+  }
+}
+// CHECK-LABEL: poly.template @"template_h1_8_\1A" {
+// CHECK-NEXT:    poly.param @B : index
+// CHECK-NEXT:    function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,@B x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @template_h2 {
+// CHECK-NEXT:    poly.param @N : index
+// CHECK-NEXT:    function.def @g(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @"template_h1_8_\1A"::@f(%[[VAL_6]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Similar to previous but there is eventually a concrete instantiation of intermediate partial instantiations.
+// No cleanup runs in this test so the partials are left in the output IR.
+module attributes {llzk.lang} {
+  poly.template @template_k1 {
+    poly.param @A : index
+    poly.param @B : index
+
+    function.def @f(%inp: !array.type<@A,@B x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %r = array.read %inp[%c0, %c0] : !array.type<@A,@B x !felt.type>, !felt.type
+      function.return %r : !felt.type
+    }
+  }
+
+  poly.template @template_k2 {
+    poly.param @N : index
+
+    function.def @g(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %r = function.call @template_k1::@f(%inp) : (!array.type<8,@N x !felt.type>) -> !felt.type
+      function.return %r : !felt.type
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<8,5 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @template_k2::@g(%z) : (!array.type<8,5 x !felt.type>) -> !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,5 x !felt.type>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: function.def @template_k1_8_5_f(
+// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5 x !felt.type>, !felt.type
+// CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @"template_k1_8_\1A" {
+// CHECK-NEXT:    poly.param @B : index
+// CHECK-NEXT:    function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,@B x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @template_k1 {
+// CHECK-NEXT:    poly.param @A : index
+// CHECK-NEXT:    poly.param @B : index
+// CHECK-NEXT:    function.def @f(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<@A,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]], %[[VAL_7]]] : <@A,@B x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_8]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @template_k2_5_g(
+// CHECK-SAME:  %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @template_k1_8_5_f(%[[VAL_9]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
+// CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @template_k2 {
+// CHECK-NEXT:    poly.param @N : index
+// CHECK-NEXT:    function.def @g(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @"template_k1_8_\1A"::@f(%[[VAL_11]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_12]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @template_k2_5_g(%[[VAL_13]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_14]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

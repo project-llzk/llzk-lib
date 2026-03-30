@@ -1,0 +1,38 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// Tests: attempt to instantiate with incompatible types via `poly.tvar`
+module attributes {llzk.lang} {
+  poly.template @template_g1 {
+    poly.param @N
+
+    // expected-note@+1 {{target function declared here}}
+    function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
+      function.return %2 : !felt.type
+    }
+  }
+
+  poly.template @template_g2 {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // expected-error@+1 {{target function type does not unify with callee type: '(!array.type<8,9 x i1>) -> i1'}}
+      %2 = function.call @template_g1::@f(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %2 : !poly.tvar<@T>
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @template_g2::@f(%z) : (!array.type<8,9 x i1>) -> i1
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,9 x i1>) {
+      function.return
+    }
+  }
+}
