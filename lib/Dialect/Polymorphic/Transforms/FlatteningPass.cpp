@@ -1104,8 +1104,7 @@ public:
         Block &newTemplateBody = newTemplate.getBodyRegion().front();
         for (Attribute name : remainingNames) {
           FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
-          Operation *paramOp =
-              symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
+          Operation *paramOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
           assert(paramOp && "symbol must exist");
           newTemplateBody.push_back(paramOp->clone());
         }
@@ -1131,9 +1130,8 @@ public:
         );
       } else {
         LLVM_DEBUG(
-            llvm::dbgs()
-            << "[InstantiateFuncAtCallOp]   reusing partial instantiation template: "
-            << newTemplate.getSymName() << '\n'
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]   reusing partial instantiation template: "
+                         << newTemplate.getSymName() << '\n'
         );
       }
       // Callee: replace old template name with new template name, keep the function name.
