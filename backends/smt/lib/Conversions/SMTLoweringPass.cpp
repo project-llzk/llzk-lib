@@ -151,7 +151,6 @@ public:
     auto mod =
         rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
 
-    // TODO: How do I get the field modulus
     auto equal = rewriter.create<smt::EqOp>(
         op->getLoc(), rewriter.create<smt::IntModOp>(op->getLoc(), witness, mod).getResult(),
         rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getVal(), mod).getResult()
@@ -234,11 +233,23 @@ class ReturnConverter : public OpConversionPattern<function::ReturnOp> {
 };
 
 class ConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp> {
-  using OpConversionPattern<constrain::EmitEqualityOp>::OpConversionPattern;
+  APSInt prime;
+
+public:
+  ConstrainConverter(TypeConverter &_typeConverter, MLIRContext *context, APSInt _prime)
+      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, prime {std::move(_prime)} {}
+
   LogicalResult matchAndRewrite(
       constrain::EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto eq = rewriter.create<smt::EqOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs());
+    auto mod =
+        rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
+
+    auto eq = rewriter.create<smt::EqOp>(
+        op->getLoc(),
+        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod).getResult(),
+        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getRhs(), mod).getResult()
+    );
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, eq.getResult());
     return success();
   }
@@ -400,9 +411,10 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
         BasicConverter<felt::DivFeltOp, smt::IntDivOp>,
         BasicConverter<felt::NegFeltOp, smt::IntNegOp>, FeltConstConverter, BoolCmpConverter,
-        FunctionDefConverter, ReturnConverter, ConstrainConverter, SCFIfConverter, YieldConverter>(
+        FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter>(
         typeConverter, context
     );
+    patterns.add<ConstrainConverter>(typeConverter, context, prime);
     patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
     patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
 
