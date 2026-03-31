@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -558,6 +559,13 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
                             "structs with columns, but has type "
                          << getType();
+  }
+  return success();
+}
+
+LogicalResult MemberDefOp::verify() {
+  if (getSignal() && isa<StructType>(getType())) {
+    return emitOpError() << "with type " << getType() << " cannot have the signal attribute";
   }
   return success();
 }

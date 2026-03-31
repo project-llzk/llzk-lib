@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 // Adapted from mlir/include/mlir/Dialect/Func/IR/FuncOps.td
@@ -79,18 +80,22 @@ def LLZK_StructDefOp
       This component has additional restrictions:
       1. The parameter types of its functions (besides the required "self" parameter) can
          only be `!felt.type` or `!array.type<.. x !felt.type>`.
-      2. The members marked as public (i.e., with the `{llzk.pub}` attribute) represent
+      2. The members marked as public signals (i.e., with the `{llzk.pub, signal}` attributes) represent
          the public outputs of the overall circuit.
+      3. The inputs represent the input signals of the circuit, even though they are not marked with
+         the `{signal}` attribute (as the `{signal}` attribute is not used on function arguments).
 
       Example of a `Main` component:
 
       ```llzk
       struct.def @Main {
-        member @out : !felt.type {llzk.pub} // public output
+        member @out : !felt.type {llzk.pub, signal} // public output signal
         member @intermediate : !felt.type
+        // %p is a private input signal
         function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
           // ...
         }
+        // %self is not a signal, but again, %p is a private input signal
         function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
           // ...
         }
@@ -207,6 +212,14 @@ def LLZK_MemberDefOp
       table offsets using the `readm` and `writem` operations.
     - Members marked with the `{signal}` attribute are constraint variables that
       are stored in the witness; non-signal values are intermediate expressions.
+
+    Further restrictions on the `signal` attribute:
+    - It is only used on struct members, since they represent storage locations.
+      It is not used to mark struct inputs, as struct may be passed signal or non-signal
+      (i.e., intermediate expression) values.
+    - Struct types may not be marked as signals, as this would create ambiguity
+      with the subcomponent's own signal declarations. All other types may be
+      marked as signals.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type,
@@ -237,6 +250,8 @@ def LLZK_MemberDefOp
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
     void setPublicAttr(bool newValue = true);
   }];
+
+  let hasVerifier = 1;
 }
 
 class MemberRefOpBase<string mnemonic, list<Trait> traits = []>

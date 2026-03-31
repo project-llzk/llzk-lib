@@ -512,3 +512,31 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+module attributes {llzk.lang} {
+  struct.def @Foo {
+    function.def @compute() -> !struct.type<@Foo> {
+      %self = struct.new : !struct.type<@Foo>
+      function.return %self : !struct.type<@Foo>
+    }
+
+    function.def @constrain(%self: !struct.type<@Foo>) {
+      function.return
+    }
+  }
+
+  struct.def @InvalidSignalType {
+    // expected-error@+1 {{'struct.member' op with type '!struct.type<@Foo>' cannot have the signal attribute}}
+    struct.member @foo : !struct.type<@Foo> {signal}
+
+    function.def @compute() -> !struct.type<@InvalidSignalType> {
+      %self = struct.new : !struct.type<@InvalidSignalType>
+      function.return %self : !struct.type<@InvalidSignalType>
+    }
+
+    function.def @constrain(%self: !struct.type<@InvalidSignalType>) {
+      function.return
+    }
+  }
+}
