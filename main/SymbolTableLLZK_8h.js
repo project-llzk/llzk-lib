@@ -2,6 +2,10 @@ var SymbolTableLLZK_8h =
 [
     [ "llzk::getSymbolName", "namespacellzk.html#a3d8de77a26a8e9454e2506ec5beb7e4f", null ],
     [ "llzk::getSymbolName", "namespacellzk.html#a2967ef6a1e31b18da9d1edef010c125f", null ],
+    [ "llzk::getSymbolsUsedIn", "namespacellzk.html#a434bd89b78e15ac8d5de7e831f47e6e5", null ],
+    [ "llzk::getSymbolsUsedIn", "namespacellzk.html#a295b6105c3e9acc0c603fae11c21c062", null ],
+    [ "llzk::getSymbolsUsedIn", "namespacellzk.html#ad860c35cc89005a27938ae05070f91d2", null ],
+    [ "llzk::getSymbolsUsedIn", "namespacellzk.html#a4f402b32cdab5d3d0ef21d008b936774", null ],
     [ "llzk::getSymbolUses", "namespacellzk.html#a35bc716bfaa428c4b22ab9ab898fbb78", null ],
     [ "llzk::getSymbolUses", "namespacellzk.html#a28fa086b90da39a27cdcc26d1f321ab7", null ],
     [ "llzk::getSymbolUses", "namespacellzk.html#a464b708db85135bb8016c68ff07a8994", null ],
