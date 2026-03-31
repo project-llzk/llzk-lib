@@ -599,15 +599,15 @@ LogicalResult checkSelfTypeUnknownTarget(
   return success();
 }
 
-/// Precondition: the CallOp callee references a parameter of the CallOp's parent struct. This
-/// creates a restriction that the referenced parameter must be instantiated with a StructType.
-/// Hence, the call must target a function within a struct, not a global function, so the callee
-/// name must be `compute`, `constrain`, or `product`, nothing else.
-/// Normally, full verification of the `compute` and `constrain` callees is done via
-/// KnownTargetVerifier, which checks that input and output types of the caller match the callee,
-/// plus verifyFuncTypeCompute() when the callee is `compute` or verifyFuncTypeConstrain() when
-/// the callee is `constrain`. Those checks can take place after all parameterized structs are
-/// instantiated (and thus the call target is known). For now, only minimal checks can be done.
+/// Precondition: The CallOp callee root symbol ref is a parameter of the CallOp's parent template.
+/// This creates a restriction that the referenced template parameter must be instantiated with a
+/// StructType. Hence, the call must target a function within a struct (i.e. not a free function),
+/// so the callee name must be `compute`, `constrain`, or `product`, nothing else. Normally, full
+/// verification of the `compute` and `constrain` callees is done via KnownTargetVerifier, which
+/// checks that input and output types of the caller match the callee, plus verifyFuncTypeCompute()
+/// when the callee is `compute` or verifyFuncTypeConstrain() when the callee is `constrain`. Those
+/// checks can take place after all parameterized structs are instantiated (and thus the call target
+/// is known). For now, only minimal checks can be done.
 struct UnknownTargetVerifier : public CallOpVerifier {
   UnknownTargetVerifier(CallOp *c, SymbolRefAttr callee)
       : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {}
@@ -756,7 +756,7 @@ bool calleeIsStructFunctionImpl(
       // If the name ref within the StructType matches the `callee` prefix (i.e., sans the function
       // name itself), then the `callee` target must be within a StructDefOp because validation
       // checks elsewhere ensure that every StructType references a StructDefOp (i.e., the `callee`
-      // function is not simply a global function nested within a ModuleOp)
+      // function is not simply a free function nested within a ModuleOp)
       return t.getNameRef() == getPrefixAsSymbolRefAttr(callee);
     }
   }

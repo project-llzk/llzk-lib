@@ -261,30 +261,30 @@ module attributes {llzk.lang} {
 //CHECK-NEXT:   }
 
 // -----
-// Ensure verifyStructTargetMatch() is not too restrictive; it will not prevent a global function call
+// Ensure verifyTargetAttributes() is not too restrictive; it will not prevent a global function call
 module attributes {llzk.lang} {
   module @S {
     function.def @global_fun() -> () { function.return }
   }
-  struct.def @verifyStructTargetMatch_is_not_too_restrictive {
-    function.def @compute() -> !struct.type<@verifyStructTargetMatch_is_not_too_restrictive> {
-      %self = struct.new : !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>
+  struct.def @verifyTargetAttributes_is_not_too_restrictive {
+    function.def @compute() -> !struct.type<@verifyTargetAttributes_is_not_too_restrictive> {
+      %self = struct.new : !struct.type<@verifyTargetAttributes_is_not_too_restrictive>
       function.call @S::@global_fun() : () -> ()
-      function.return %self : !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>
+      function.return %self : !struct.type<@verifyTargetAttributes_is_not_too_restrictive>
     }
 
-    function.def @constrain(%self: !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>) {
+    function.def @constrain(%self: !struct.type<@verifyTargetAttributes_is_not_too_restrictive>) {
       function.return
     }
   }
 }
-//CHECK-LABEL: struct.def @verifyStructTargetMatch_is_not_too_restrictive {
-//CHECK-NEXT:    function.def @compute() -> !struct.type<@verifyStructTargetMatch_is_not_too_restrictive> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@verifyStructTargetMatch_is_not_too_restrictive>
+//CHECK-LABEL: struct.def @verifyTargetAttributes_is_not_too_restrictive {
+//CHECK-NEXT:    function.def @compute() -> !struct.type<@verifyTargetAttributes_is_not_too_restrictive> attributes {function.allow_witness} {
+//CHECK-NEXT:      %[[VAL_0:.*]] = struct.new : <@verifyTargetAttributes_is_not_too_restrictive>
 //CHECK-NEXT:      function.call @S::@global_fun() : () -> ()
-//CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>
+//CHECK-NEXT:      function.return %[[VAL_0]] : !struct.type<@verifyTargetAttributes_is_not_too_restrictive>
 //CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@verifyStructTargetMatch_is_not_too_restrictive>) attributes {function.allow_constraint} {
+//CHECK-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@verifyTargetAttributes_is_not_too_restrictive>) attributes {function.allow_constraint} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
