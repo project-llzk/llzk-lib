@@ -26,7 +26,7 @@
 #include <utility>
 
 #include "smt/Conversions/ConversionPasses.h"
-#include "smt/Dialect/IR/SMTOps.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
 
 namespace llzk {
 namespace smt {

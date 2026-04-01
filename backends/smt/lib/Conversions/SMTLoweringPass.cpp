@@ -46,9 +46,9 @@
 #include <utility>
 
 #include "smt/Conversions/ConversionPasses.h"
-#include "smt/Dialect/IR/SMTDialect.h"
-#include "smt/Dialect/IR/SMTOps.h"
-#include "smt/Dialect/IR/SMTTypes.h"
+#include "llzk/Dialect/SMT/IR/SMTDialect.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
+#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 
 namespace llzk {
 namespace smt {

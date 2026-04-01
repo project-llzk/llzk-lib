@@ -40,7 +40,6 @@
 #include <llvm/Support/Signals.h>
 
 #include "smt/Conversions/ConversionPasses.h"
-#include "smt/Dialect/IR/SMTDialect.h"
 #include "tools/config.h"
 #include "zklean/Conversions/Passes.h"
 #include "zklean/DialectRegistration.h"
@@ -80,7 +79,6 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
   zklean::registerAllDialects(registry);
-  registry.insert<llzk::smt::SMTDialect>();
   mlir::func::registerInlinerExtension(registry);
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
