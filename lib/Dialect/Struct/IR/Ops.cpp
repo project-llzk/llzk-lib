@@ -220,14 +220,17 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
+inline bool isValidMainSignalType(Type pType) {
+  if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
+    return llvm::isa<FeltType>(arrayParamTy.getElementType());
+  }
+  return llvm::isa<FeltType>(pType);
+}
+
 inline LogicalResult
 checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> appendSelfType) {
-  if (llvm::isa<FeltType>(pType)) {
+  if (isValidMainSignalType(pType)) {
     return success();
-  } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    if (llvm::isa<FeltType>(arrayParamTy.getElementType())) {
-      return success();
-    }
   }
 
   std::string message = buildStringViaCallback([&inFunc, appendSelfType](llvm::raw_ostream &ss) {
@@ -240,6 +243,19 @@ checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> a
     ss << '!' << ArrayType::name << "<.. x !" << FeltType::name << ">}";
   });
   return inFunc.emitError(message);
+}
+
+inline LogicalResult checkMainFuncOutputSignalType(Type pType, StructDefOp structOp) {
+  if (isValidMainSignalType(pType)) {
+    return success();
+  }
+
+  std::string message = buildStringViaCallback([](llvm::raw_ostream &ss) {
+    ss << "main entry component output signals must be one of: {";
+    ss << '!' << FeltType::name << ", ";
+    ss << '!' << ArrayType::name << "<.. x !" << FeltType::name << ">}";
+  });
+  return structOp.emitError(message);
 }
 
 inline LogicalResult verifyStructComputeConstrain(
@@ -322,7 +338,8 @@ LogicalResult StructDefOp::verifyRegions() {
     Region &bodyRegion = getBodyRegion();
     if (!bodyRegion.empty()) {
       for (Operation &op : bodyRegion.front()) {
-        if (!llvm::isa<MemberDefOp>(op)) {
+        auto member = llvm::dyn_cast<MemberDefOp>(op);
+        if (!member) {
           if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
             if (funcDef.nameIsCompute()) {
               if (foundCompute) {
@@ -354,6 +371,12 @@ LogicalResult StructDefOp::verifyRegions() {
                    << MemberDefOp::getOperationName() << '\'' << " and '"
                    << FuncDefOp::getOperationName() << "' operations are permitted";
           }
+        }
+        // Also check if the member complies with output signal restrictions
+        else if (isMainComponent() && member.hasPublicAttr() &&
+                 failed(checkMainFuncOutputSignalType(member.getType(), *this))) {
+          // checkMainFuncOutputSignalType already emits a sufficient error message
+          return failure();
         }
       }
     }

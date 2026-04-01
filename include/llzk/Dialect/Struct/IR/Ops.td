@@ -77,27 +77,31 @@ def LLZK_StructDefOp
       LLZK IR program expresses the main entry point of the circuit as a concrete instantiation
       of a specific struct. For example, `llzk.main = !struct.type<@Top<[52,12]>>` or
       `llzk.main = !struct.type<@Main<[i1, !felt.type, 256]>>`.
-      This component has additional restrictions:
+      This struct has additional restrictions:
       1. The parameter types of its functions (besides the required "self" parameter) can
          only be `!felt.type` or `!array.type<.. x !felt.type>`.
-      2. The members marked as public signals (i.e., with the `{llzk.pub, signal}` attributes) represent
-         the public outputs of the overall circuit.
-      3. The inputs represent the input signals of the circuit, even though they are not marked with
+      2. All inputs to the main struct are signals, even though they are not marked with
          the `{signal}` attribute (as the `{signal}` attribute is not used on function arguments).
+         Input signals may be public (given the `{llzk.pub}` attribute) or private (by default).
+      3. All public members of the main struct are also signals (representing public output signals),
+         and can also only be `!felt.type` or `!array.type<.. x !felt.type>`.
 
       Example of a `Main` component:
 
       ```llzk
-      struct.def @Main {
-        member @out : !felt.type {llzk.pub, signal} // public output signal
-        member @intermediate : !felt.type
-        // %p is a private input signal
-        function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
-          // ...
-        }
-        // %self is not a signal, but again, %p is a private input signal
-        function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
-          // ...
+      module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+        struct.def @Main {
+          member @out : !felt.type {llzk.pub, signal} // public output signal
+          member @out2 : !felt.type {llzk.pub} // also a public output signal, implicitly
+          member @intermediate : !struct.type<@OtherStruct> // an intermediate value, not a signal, can be any LLZK type
+          // %p is a private input signal
+          function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
+            // ...
+          }
+          // %self is not a signal, but again, %p is a private input signal
+          function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
+            // ...
+          }
         }
       }
       ```
