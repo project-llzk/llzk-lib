@@ -156,6 +156,42 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
   );
 }
 
+TEST_F(OpTests, testCallNoAffine_InvalidTemplateParam) {
+  auto [modBldr, tmplBldr] = newTemplateFunctionsExample(1);
+
+  auto funcA = tmplBldr->getFreeFunc(funcNameA);
+  ASSERT_TRUE(succeeded(funcA));
+  auto funcB = tmplBldr->getFreeFunc(funcNameB);
+  ASSERT_TRUE(succeeded(funcB));
+
+  // create an 256-bit IntegerAttr with larger value than IndexType can hold
+  APInt bigValue = APInt::getMaxValue(256);
+  IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 256), bigValue);
+
+  OpBuilder bldr(funcA->getBody());
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {bldr.getIndexType()}, funcB->getFullyQualifiedName(), ValueRange {},
+      ArrayRef<Attribute> {a}
+  );
+  // module attributes {llzk.lang} {
+  //   poly.template @ExampleTemplate {
+  //     poly.param @T0
+  //     function.def @FuncA() -> index {
+  //       %0 = call @FuncB<[-1 : i256]>() : () -> index
+  //     }
+  //     function.def @FuncB() -> index {
+  //     }
+  //   }
+  // }
+  EXPECT_DEATH(
+      {
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
+      },
+      "'function.call' op value is too large for `index` type: -1"
+  );
+}
+
 //===------------------------------------------------------------------===//
 // CallOp::build(..., TypeRange, SymbolRefAttr, ArrayRef<ValueRange>,
 //                    ArrayRef<int32_t>, ValueRange = {})

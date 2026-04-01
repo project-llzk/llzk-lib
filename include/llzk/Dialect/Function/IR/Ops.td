@@ -301,6 +301,11 @@ def CallOp : FunctionDialectOp<
       SymbolRefAttr:$callee,
       // List of arguments to call the target function.
       Variadic<AnyLLZKType>:$argOperands,
+      // List of parameters to instantiate all `poly.param` symbols when the
+      // callee is a free function inside a `poly.template` region. If all
+      // `poly.param` symbols are used within the function signature, this can
+      // be elided. Otherwise, it is required to instantiate the function.
+      OptionalAttr<ArrayAttr>:$templateParams,
       // List of AffineMap operand groups where each group provides the
       // arguments to instantiate the next (left-to-right) AffineMap used as a
       // struct parameter in the result StructType.
@@ -314,7 +319,9 @@ def CallOp : FunctionDialectOp<
   let results = (outs Variadic<AnyLLZKType>);
 
   let assemblyFormat = [{
-    $callee `(` $argOperands `)`
+    $callee
+    ( `<` custom<TemplateParams>($templateParams)^ `>` )?
+    `` `(` $argOperands `)`
     ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
     `:` functional-type($argOperands, results)
     custom<AttrDictWithWarnings>(attr-dict, prop-dict)
@@ -333,42 +340,56 @@ def CallOp : FunctionDialectOp<
   let builders =
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
-           CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
+           CArg<"::mlir::ValueRange", "{}">:$argOperands,
+           CArg<"::llvm::ArrayRef<::mlir::Attribute>", "{}">:$templateParams)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
            "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
            "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
-           CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
+           CArg<"::mlir::ValueRange", "{}">:$argOperands,
+           CArg<"::llvm::ArrayRef<::mlir::Attribute>", "{}">:$templateParams)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                      "::mlir::SymbolRefAttr":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, resultTypes, callee, mapOperands,
-                          $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                          $_builder.getDenseI32ArrayAttr(numDimsPerMap),
+                          argOperands, templateParams);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, callee.getResultTypes(),
-                          callee.getFullyQualifiedName(false), argOperands);
+                          callee.getFullyQualifiedName(false),
+                          argOperands, templateParams);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, callee.getResultTypes(),
-                          callee.getFullyQualifiedName(false), mapOperands, numDimsPerMap, argOperands);
+                          callee.getFullyQualifiedName(false), mapOperands, numDimsPerMap,
+                          argOperands, templateParams);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, callee, mapOperands,
-                          $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                          $_builder.getDenseI32ArrayAttr(numDimsPerMap),
+                          argOperands, templateParams);
                   }]>];
 
   let extraClassDeclaration = [{

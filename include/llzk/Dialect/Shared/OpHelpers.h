@@ -9,8 +9,11 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/ErrorHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
@@ -153,6 +156,35 @@ inline void printAttrDictWithWarnings(
     typename mlir::PropertiesSelector<ConcreteOp>::type state
 ) {
   return affineMapHelpers::printAttrDictWithWarnings(printer, op, extraAttrs, state);
+}
+
+inline mlir::ParseResult parseTemplateParams(mlir::AsmParser &parser, mlir::ArrayAttr &value) {
+  auto parseResult = mlir::FieldParser<mlir::ArrayAttr>::parse(parser);
+  if (mlir::failed(parseResult)) {
+    return parser.emitError(parser.getCurrentLocation(), "failed to parse template parameters");
+  }
+  auto emitError = [&parser] {
+    return llzk::InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
+  };
+  mlir::FailureOr<mlir::SmallVector<mlir::Attribute>> res =
+      forceIntAttrTypes(parseResult->getValue(), emitError);
+  if (mlir::failed(res)) {
+    return mlir::failure();
+  }
+  value = parser.getBuilder().getArrayAttr(*res);
+  return mlir::success();
+}
+
+// 2 parameter version used by types
+inline void printTemplateParams(mlir::AsmPrinter &printer, mlir::ArrayAttr value) {
+  printer << '[';
+  printAttrs(printer, value.getValue(), ", ");
+  printer << ']';
+}
+
+// 3 parameter version used by ops
+inline void printTemplateParams(mlir::AsmPrinter &printer, void *, mlir::ArrayAttr value) {
+  printTemplateParams(printer, value);
 }
 
 } // namespace llzk

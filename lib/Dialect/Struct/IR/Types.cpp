@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
@@ -16,28 +15,6 @@ using namespace mlir;
 using namespace llzk::polymorphic;
 
 namespace llzk::component {
-
-ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
-  auto parseResult = FieldParser<ArrayAttr>::parse(parser);
-  if (failed(parseResult)) {
-    return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
-  }
-  auto emitError = [&parser] {
-    return InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
-  };
-  FailureOr<SmallVector<Attribute>> res = forceIntAttrTypes(parseResult->getValue(), emitError);
-  if (failed(res)) {
-    return failure();
-  }
-  value = parser.getBuilder().getArrayAttr(*res);
-  return success();
-}
-
-void printStructParams(AsmPrinter &printer, ArrayAttr value) {
-  printer << '[';
-  printAttrs(printer, value.getValue(), ", ");
-  printer << ']';
-}
 
 LogicalResult StructType::verify(
     function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr /*nameRef*/, ArrayAttr params

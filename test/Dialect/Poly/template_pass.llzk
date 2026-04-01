@@ -71,8 +71,8 @@ module attributes {llzk.lang} {
   }
 
   function.def @test_func(%y: !array.type<10,5 x !felt.type>, %z: !array.type<10,5,5 x !felt.type>) {
-    function.call @template_f::@f(%z) : (!array.type<10,5,5 x !felt.type>) -> (!array.type<5 x !felt.type>)
-    function.call @template_f::@f(%y) : (!array.type<10,5 x !felt.type>) -> (!felt.type)
+    function.call @template_f::@f<[!array.type<10,5,5 x !felt.type>, !array.type<5 x !felt.type>, 10, 5]>(%z) : (!array.type<10,5,5 x !felt.type>) -> (!array.type<5 x !felt.type>)
+    function.call @template_f::@f<[!array.type<10,5 x !felt.type>, !felt.type, 10, 5]>(%y) : (!array.type<10,5 x !felt.type>) -> (!felt.type)
     function.return
   }
 }
@@ -90,8 +90,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @test_func(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type>) {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @template_f::@f(%[[VAL_5]]) : (!array.type<10,5,5 x !felt.type>) -> !array.type<5 x !felt.type>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_f::@f(%[[VAL_4]]) : (!array.type<10,5 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @template_f::@f<[!array.type<10,5,5 x !felt.type>, !array.type<5 x !felt.type>, 10, 5]>
+// CHECK-SAME:                                   (%[[VAL_5]]) : (!array.type<10,5,5 x !felt.type>) -> !array.type<5 x !felt.type>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_f::@f<[!array.type<10,5 x !felt.type>, !felt.type, 10, 5]>
+// CHECK-SAME:                                   (%[[VAL_4]]) : (!array.type<10,5 x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

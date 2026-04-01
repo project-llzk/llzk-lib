@@ -1,0 +1,330 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @CallKnownTemplateGlobal {
+    function.def @compute() -> !struct.type<@CallKnownTemplateGlobal> {
+      %self = struct.new : !struct.type<@CallKnownTemplateGlobal>
+      %0 = function.call @GlobalFunc::@id<[89]>() : () -> index
+      function.return %self : !struct.type<@CallKnownTemplateGlobal>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallKnownTemplateGlobal>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      function.def @id() -> index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @CallKnownTemplateGlobal {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallKnownTemplateGlobal> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@CallKnownTemplateGlobal>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[89]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@CallKnownTemplateGlobal>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@CallKnownTemplateGlobal>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : i1
+
+    function.def @id() -> i1 {
+      %a = poly.read_const @A : i1
+      function.return %a : i1
+    }
+  }
+
+  struct.def @ParamTypeBool {
+    function.def @compute() -> !struct.type<@ParamTypeBool> {
+      %self = struct.new : !struct.type<@ParamTypeBool>
+      %0 = function.call @GlobalFunc::@id<[true]>() : () -> i1
+      function.return %self : !struct.type<@ParamTypeBool>
+    }
+
+    function.def @constrain(%self: !struct.type<@ParamTypeBool>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : i1
+// CHECK-NEXT:      function.def @id() -> i1 {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : i1
+// CHECK-NEXT:        function.return %[[VAL_0]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ParamTypeBool {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeBool> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeBool>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[1]>() : () -> i1
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeBool>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeBool>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : index
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @ParamTypeIndex {
+    function.def @compute() -> !struct.type<@ParamTypeIndex> {
+      %self = struct.new : !struct.type<@ParamTypeIndex>
+      %0 = function.call @GlobalFunc::@id<[23]>() : () -> index
+      function.return %self : !struct.type<@ParamTypeIndex>
+    }
+
+    function.def @constrain(%self: !struct.type<@ParamTypeIndex>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      function.def @id() -> index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ParamTypeIndex {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeIndex> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeIndex>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[23]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeIndex>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeIndex>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !felt.type
+
+    function.def @id() -> !felt.type {
+      %a = poly.read_const @A : !felt.type
+      function.return %a : !felt.type
+    }
+  }
+
+  struct.def @ParamTypeFeltA {
+    function.def @compute() -> !struct.type<@ParamTypeFeltA> {
+      %self = struct.new : !struct.type<@ParamTypeFeltA>
+      %0 = function.call @GlobalFunc::@id<[#felt<const 35>]>() : () -> !felt.type
+      function.return %self : !struct.type<@ParamTypeFeltA>
+    }
+
+    function.def @constrain(%self: !struct.type<@ParamTypeFeltA>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : !felt.type
+// CHECK-NEXT:      function.def @id() -> !felt.type {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ParamTypeFeltA {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeFeltA> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeFeltA>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[#felt<const 35>]>() : () -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeFeltA>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeFeltA>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !felt.type
+
+    function.def @id() -> !felt.type {
+      %a = poly.read_const @A : !felt.type
+      function.return %a : !felt.type
+    }
+  }
+
+  struct.def @ParamTypeFeltB {
+    function.def @compute() -> !struct.type<@ParamTypeFeltB> {
+      %self = struct.new : !struct.type<@ParamTypeFeltB>
+      %0 = function.call @GlobalFunc::@id<[189]>() : () -> !felt.type
+      function.return %self : !struct.type<@ParamTypeFeltB>
+    }
+
+    function.def @constrain(%self: !struct.type<@ParamTypeFeltB>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : !felt.type
+// CHECK-NEXT:      function.def @id() -> !felt.type {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ParamTypeFeltB {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeFeltB> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeFeltB>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[189]>() : () -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeFeltB>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeFeltB>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !felt.type
+
+    function.def @id() -> !felt.type {
+      %a = poly.read_const @A : !felt.type
+      function.return %a : !felt.type
+    }
+  }
+
+  struct.def @ParamTypeFeltC {
+    function.def @compute() -> !struct.type<@ParamTypeFeltC> {
+      %self = struct.new : !struct.type<@ParamTypeFeltC>
+      %0 = function.call @GlobalFunc::@id<[true]>() : () -> !felt.type
+      function.return %self : !struct.type<@ParamTypeFeltC>
+    }
+
+    function.def @constrain(%self: !struct.type<@ParamTypeFeltC>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : !felt.type
+// CHECK-NEXT:      function.def @id() -> !felt.type {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !felt.type
+// CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ParamTypeFeltC {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeFeltC> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeFeltC>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[1]>() : () -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeFeltC>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeFeltC>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !poly.tvar<@A>
+
+    function.def @id() -> !poly.tvar<@A> {
+      %a = poly.read_const @A : !poly.tvar<@A>
+      function.return %a : !poly.tvar<@A>
+    }
+  }
+
+  struct.def @ParamTypeTVar {
+    function.def @compute() -> !struct.type<@ParamTypeTVar> {
+      %self = struct.new : !struct.type<@ParamTypeTVar>
+      %0 = function.call @GlobalFunc::@id<[!felt.type]>() : () -> !felt.type
+      function.return %self : !struct.type<@ParamTypeTVar>
+    }
+
+    function.def @constrain(%self: !struct.type<@ParamTypeTVar>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : !poly.tvar<@A>
+// CHECK-NEXT:      function.def @id() -> !poly.tvar<@A> {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : !poly.tvar<@A>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !poly.tvar<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ParamTypeTVar {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeTVar> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeTVar>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[!felt.type]>() : () -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeTVar>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeTVar>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : i1
+
+    function.def @id() -> i1 {
+      %a = poly.read_const @A : i1
+      function.return %a : i1
+    }
+  }
+
+  struct.def @WrongParamTypeA {
+    function.def @compute() -> !struct.type<@WrongParamTypeA> {
+      %self = struct.new : !struct.type<@WrongParamTypeA>
+      // Note: Using a value larger than 1 bit is allowed here but, just like struct type instantiation,
+      // flattening pass treats 0 as false and any other value as true (but give a warning if it's not 1).
+      %0 = function.call @GlobalFunc::@id<[98]>() : () -> i1
+      function.return %self : !struct.type<@WrongParamTypeA>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongParamTypeA>) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @GlobalFunc {
+// CHECK-NEXT:      poly.param @A : i1
+// CHECK-NEXT:      function.def @id() -> i1 {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : i1
+// CHECK-NEXT:        function.return %[[VAL_0]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @WrongParamTypeA {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@WrongParamTypeA> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@WrongParamTypeA>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[98]>() : () -> i1
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@WrongParamTypeA>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@WrongParamTypeA>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -19,10 +19,3 @@
 // Include TableGen'd declarations
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/Struct/IR/Types.h.inc"
-
-namespace llzk::component {
-
-mlir::ParseResult parseStructParams(mlir::AsmParser &parser, mlir::ArrayAttr &value);
-void printStructParams(mlir::AsmPrinter &printer, mlir::ArrayAttr value);
-
-} // namespace llzk::component

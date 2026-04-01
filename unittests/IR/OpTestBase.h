@@ -40,18 +40,42 @@ protected:
 
   llzk::ModuleBuilder newEmptyExample() { return llzk::ModuleBuilder {mod.get()}; }
 
-  llzk::ModuleBuilder newBasicFunctionsExample(
-      size_t numParams = 0, const std::vector<std::string_view> &names = {funcNameB, funcNameA}
+  template <typename Derived>
+  void insertFreeFuncsWithIndexArgs(
+      llzk::ModuleLikeBuilder<Derived> &bldr, size_t numArgs,
+      const std::vector<std::string_view> &names
   ) {
     mlir::IndexType idxTy = mlir::IndexType::get(&ctx);
-    llvm::SmallVector<mlir::Type> paramTypes(numParams, idxTy);
+    llvm::SmallVector<mlir::Type> argTypes(numArgs, idxTy);
     mlir::FunctionType fTy =
-        mlir::FunctionType::get(&ctx, mlir::TypeRange(paramTypes), mlir::TypeRange {idxTy});
-    llzk::ModuleBuilder llzkBldr(mod.get());
+        mlir::FunctionType::get(&ctx, mlir::TypeRange(argTypes), mlir::TypeRange {idxTy});
     for (std::string_view n : names) {
-      llzkBldr.insertFreeFunc(n, fTy);
+      bldr.insertFreeFunc(n, fTy);
     }
-    return llzkBldr;
+  }
+
+  // Create 2 free functions with index-type arguments.
+  llzk::ModuleBuilder newBasicFunctionsExample(
+      size_t numArgs = 0, const std::vector<std::string_view> &names = {funcNameB, funcNameA}
+  ) {
+    llzk::ModuleBuilder modBldr(mod.get());
+    insertFreeFuncsWithIndexArgs(modBldr, numArgs, names);
+    return modBldr;
+  }
+
+  // Functions are nested in the template `templateName`. Returns both the ModuleBuilder (which
+  // must stay alive to keep the TemplateBuilder valid) and a pointer to the TemplateBuilder.
+  std::pair<llzk::ModuleBuilder, llzk::TemplateBuilder *> newTemplateFunctionsExample(
+      unsigned numParams, size_t numArgs = 0,
+      const std::vector<std::string_view> &names = {funcNameB, funcNameA}
+  ) {
+    llzk::ModuleBuilder modBldr(mod.get());
+    // Note: `numParams==0` creates TemplateOp with no TemplateParamOp
+    auto r = modBldr.insertTemplate(templateName, numParams).getTemplate(templateName);
+    assert(mlir::succeeded(r));
+    llzk::TemplateBuilder *tmplBldr = r.value();
+    insertFreeFuncsWithIndexArgs(*tmplBldr, numArgs, names);
+    return {std::move(modBldr), tmplBldr};
   }
 
   // Create 2 structs with compute and constrain functions.
