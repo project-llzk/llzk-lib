@@ -766,16 +766,19 @@ builtin.module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @unknown_call_target<[@S]> {
-    function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> {
-      %self = struct.new : !struct.type<@unknown_call_target<[@S]>>
-      function.return %self : !struct.type<@unknown_call_target<[@S]>>
-    }
+  poly.template @TU {
+    poly.param @S
+    struct.def @unknown_call_target {
+      function.def @compute() -> !struct.type<@TU::@unknown_call_target<[@S]>> {
+        %self = struct.new : !struct.type<@TU::@unknown_call_target<[@S]>>
+        function.return %self : !struct.type<@TU::@unknown_call_target<[@S]>>
+      }
 
-    function.def @constrain(%self: !struct.type<@unknown_call_target<[@S]>>) {
-      // expected-error@+1 {{expected parameterized callee to target a struct function (i.e. "@product", "@compute", or "@constrain")}}
-      function.call @S::@global_fun() : () -> ()
-      function.return
+      function.def @constrain(%self: !struct.type<@TU::@unknown_call_target<[@S]>>) {
+        // expected-error@+1 {{expected parameterized callee to target a struct function (i.e. "@product", "@compute", or "@constrain")}}
+        function.call @S::@global_fun() : () -> ()
+        function.return
+      }
     }
   }
 }
