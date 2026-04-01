@@ -288,34 +288,3 @@ module attributes {llzk.lang} {
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }
-
-// -----
-// COM: Allowed because the unknown target has no attributes, so does not specify
-// COM: allows constraints or allows witness.
-module attributes {llzk.lang} {
-  // function.def @global_fun() -> () { function.return }
-  struct.def @unknown_call_target<[@S]> {
-    function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> {
-      %self = struct.new : !struct.type<@unknown_call_target<[@S]>>
-      function.return %self : !struct.type<@unknown_call_target<[@S]>>
-    }
-
-    function.def @constrain(%self: !struct.type<@unknown_call_target<[@S]>>) {
-      function.call @S::@global_fun() : () -> ()
-      function.return
-    }
-  }
-}
-
-//CHECK-LABEL: module attributes {llzk.lang} {
-//CHECK-NEXT:   struct.def @unknown_call_target<[@S]> {
-//CHECK-NEXT:     function.def @compute() -> !struct.type<@unknown_call_target<[@S]>> attributes {function.allow_witness} {
-//CHECK-NEXT:       %self = struct.new : <@unknown_call_target<[@S]>>
-//CHECK-NEXT:       function.return %self : !struct.type<@unknown_call_target<[@S]>>
-//CHECK-NEXT:     }
-//CHECK-NEXT:     function.def @constrain(%arg0: !struct.type<@unknown_call_target<[@S]>>) attributes {function.allow_constraint} {
-//CHECK-NEXT:       function.call @S::@global_fun() : () -> ()
-//CHECK-NEXT:       function.return
-//CHECK-NEXT:     }
-//CHECK-NEXT:   }
-//CHECK-NEXT: }

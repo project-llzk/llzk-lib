@@ -437,7 +437,8 @@ void CallOp::build(
 namespace {
 
 struct CallOpVerifier {
-  CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(fnNameToKind(tgtName)) {}
+  CallOpVerifier(CallOp *c, FunctionKind tgtFuncKind) : callOp(c), tgtKind(tgtFuncKind) {}
+  CallOpVerifier(CallOp *c, StringRef tgtName) : CallOpVerifier(c, fnNameToKind(tgtName)) {}
   virtual ~CallOpVerifier() = default;
 
   LogicalResult verify() {
@@ -609,8 +610,8 @@ LogicalResult checkSelfTypeUnknownTarget(
 /// the callee is `constrain`. Those checks can take place after all parameterized structs are
 /// instantiated (and thus the call target is known). For now, only minimal checks can be done.
 struct UnknownTargetVerifier : public CallOpVerifier {
-  UnknownTargetVerifier(CallOp *c, SymbolRefAttr callee)
-      : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {
+  UnknownTargetVerifier(CallOp *c, FunctionKind tgtKind, SymbolRefAttr callee)
+      : CallOpVerifier(c, tgtKind), calleeAttr(callee) {
     assert(
         tgtKind == FunctionKind::StructCompute || tgtKind == FunctionKind::StructConstrain ||
         tgtKind == FunctionKind::StructProduct
@@ -732,7 +733,15 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (calleeAttr.getNestedReferences().size() == 1) {
     if (StructDefOp parent = getParentOfType<StructDefOp>(*this)) {
       if (parent.hasParamNamed(calleeAttr.getRootReference())) {
-        return UnknownTargetVerifier(this, calleeAttr).verify();
+        FunctionKind tgtKind = fnNameToKind(calleeAttr.getLeafReference().getValue());
+        if (tgtKind != FunctionKind::Free) {
+          return UnknownTargetVerifier(this, tgtKind, calleeAttr).verify();
+        }
+        return this->emitError("expected parameterized callee to target a struct function")
+            .append(
+                " (i.e. \"@", FUNC_NAME_PRODUCT, "\", \"@", FUNC_NAME_COMPUTE, "\", or \"@",
+                FUNC_NAME_CONSTRAIN, "\")"
+            );
       }
     }
   }
