@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/Constants.h"
@@ -25,6 +26,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 #include <optional>
 
@@ -40,6 +42,7 @@ using namespace llzk::felt;
 using namespace llzk::array;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::pod;
 
 namespace llzk::component {
 
@@ -586,8 +589,26 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   return success();
 }
 
+namespace {
+
+bool isFeltOrSimpleFeltAggregate(Type ty) {
+  return TypeSwitch<Type, bool>(ty)
+      .Case<FeltType>([](auto) { return true; })
+      .Case<ArrayType>([](auto arrTy) { return llvm::isa<FeltType>(arrTy.getElementType()); })
+      .Case<PodType>([](auto podTy) {
+    for (auto record : podTy.getRecords()) {
+      if (isFeltOrSimpleFeltAggregate(record.getType())) {
+        return true;
+      }
+    }
+    return false;
+  }).Default([](auto) { return false; });
+}
+
+} // namespace
+
 LogicalResult MemberDefOp::verify() {
-  if (getSignal() && isa<StructType>(getType())) {
+  if (getSignal() && !isFeltOrSimpleFeltAggregate(getType())) {
     return emitOpError() << "with type " << getType() << " cannot have the signal attribute";
   }
   return success();

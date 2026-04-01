@@ -221,9 +221,8 @@ def LLZK_MemberDefOp
     - It is only used on struct members, since they represent storage locations.
       It is not used to mark struct inputs, as struct may be passed signal or non-signal
       (i.e., intermediate expression) values.
-    - Struct type members may not be marked as signals, as this would create ambiguity
-      with the subcomponent's own signal declarations. All other member types may be
-      marked as signals.
+    - Only !felt.type or simple aggregates of !felt.type (i.e., !array.type and !pod.type)
+      may be marked as signals.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type,
