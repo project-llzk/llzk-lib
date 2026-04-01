@@ -610,7 +610,12 @@ LogicalResult checkSelfTypeUnknownTarget(
 /// instantiated (and thus the call target is known). For now, only minimal checks can be done.
 struct UnknownTargetVerifier : public CallOpVerifier {
   UnknownTargetVerifier(CallOp *c, SymbolRefAttr callee)
-      : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {}
+      : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {
+    assert(
+        tgtKind == FunctionKind::StructCompute || tgtKind == FunctionKind::StructConstrain ||
+        tgtKind == FunctionKind::StructProduct
+    ); // pre-condition mentioned above
+  }
 
   LogicalResult verifyTargetAttributes() override {
     // Based on the precondition of this verifier, the target must be either a
