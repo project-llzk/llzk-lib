@@ -879,7 +879,7 @@ $(function(){initNavTree('Function_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>      <span class="comment">// If the name ref within the StructType matches the `callee` prefix (i.e., sans the function</span></div>
 <div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>      <span class="comment">// name itself), then the `callee` target must be within a StructDefOp because validation</span></div>
 <div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>      <span class="comment">// checks elsewhere ensure that every StructType references a StructDefOp (i.e., the `callee`</span></div>
-<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>      <span class="comment">// function is not simply a global function nested within a ModuleOp)</span></div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>      <span class="comment">// function is not simply a free function nested within a ModuleOp)</span></div>
 <div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>      <span class="keywordflow">return</span> t.getNameRef() == <a class="code hl_function" href="namespacellzk.html#a0cc045d4128ed47c170ca4c017bf02f0">getPrefixAsSymbolRefAttr</a>(callee);</div>
 <div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>    }</div>
 <div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>  }</div>
