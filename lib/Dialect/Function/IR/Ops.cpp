@@ -610,11 +610,11 @@ LogicalResult checkSelfTypeUnknownTarget(
 /// the callee is `constrain`. Those checks can take place after all parameterized structs are
 /// instantiated (and thus the call target is known). For now, only minimal checks can be done.
 struct UnknownTargetVerifier : public CallOpVerifier {
-  UnknownTargetVerifier(CallOp *c, FunctionKind tgtKind, SymbolRefAttr callee)
-      : CallOpVerifier(c, tgtKind), calleeAttr(callee) {
+  UnknownTargetVerifier(CallOp *c, FunctionKind tgtFuncKind, SymbolRefAttr callee)
+      : CallOpVerifier(c, tgtFuncKind), calleeAttr(callee) {
     assert(
-        tgtKind == FunctionKind::StructCompute || tgtKind == FunctionKind::StructConstrain ||
-        tgtKind == FunctionKind::StructProduct
+        tgtFuncKind == FunctionKind::StructCompute ||
+        tgtFuncKind == FunctionKind::StructConstrain || tgtFuncKind == FunctionKind::StructProduct
     ); // pre-condition mentioned above
   }
 
