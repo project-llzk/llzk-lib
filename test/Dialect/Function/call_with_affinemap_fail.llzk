@@ -1,6 +1,5 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -verify-diagnostics %s
 
-// -----
 module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 

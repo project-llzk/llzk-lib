@@ -437,7 +437,8 @@ void CallOp::build(
 namespace {
 
 struct CallOpVerifier {
-  CallOpVerifier(CallOp *c, StringRef tgtName) : callOp(c), tgtKind(fnNameToKind(tgtName)) {}
+  CallOpVerifier(CallOp *c, FunctionKind tgtFuncKind) : callOp(c), tgtKind(tgtFuncKind) {}
+  CallOpVerifier(CallOp *c, StringRef tgtName) : CallOpVerifier(c, fnNameToKind(tgtName)) {}
   virtual ~CallOpVerifier() = default;
 
   LogicalResult verify() {
@@ -599,18 +600,23 @@ LogicalResult checkSelfTypeUnknownTarget(
   return success();
 }
 
-/// Precondition: the CallOp callee references a parameter of the CallOp's parent struct. This
-/// creates a restriction that the referenced parameter must be instantiated with a StructType.
-/// Hence, the call must target a function within a struct, not a global function, so the callee
-/// name must be `compute`, `constrain`, or `product`, nothing else.
-/// Normally, full verification of the `compute` and `constrain` callees is done via
-/// KnownTargetVerifier, which checks that input and output types of the caller match the callee,
-/// plus verifyFuncTypeCompute() when the callee is `compute` or verifyFuncTypeConstrain() when
-/// the callee is `constrain`. Those checks can take place after all parameterized structs are
-/// instantiated (and thus the call target is known). For now, only minimal checks can be done.
+/// Precondition: The CallOp callee root symbol ref is a parameter of the CallOp's parent template.
+/// This creates a restriction that the referenced template parameter must be instantiated with a
+/// StructType. Hence, the call must target a function within a struct (i.e. not a free function),
+/// so the callee name must be `compute`, `constrain`, or `product`, nothing else. Normally, full
+/// verification of the `compute` and `constrain` callees is done via KnownTargetVerifier, which
+/// checks that input and output types of the caller match the callee, plus verifyFuncTypeCompute()
+/// when the callee is `compute` or verifyFuncTypeConstrain() when the callee is `constrain`. Those
+/// checks can take place after all parameterized structs are instantiated (and thus the call target
+/// is known). For now, only minimal checks can be done.
 struct UnknownTargetVerifier : public CallOpVerifier {
-  UnknownTargetVerifier(CallOp *c, SymbolRefAttr callee)
-      : CallOpVerifier(c, callee.getLeafReference().getValue()), calleeAttr(callee) {}
+  UnknownTargetVerifier(CallOp *c, FunctionKind tgtFuncKind, SymbolRefAttr callee)
+      : CallOpVerifier(c, tgtFuncKind), calleeAttr(callee) {
+    assert(
+        tgtFuncKind == FunctionKind::StructCompute ||
+        tgtFuncKind == FunctionKind::StructConstrain || tgtFuncKind == FunctionKind::StructProduct
+    ); // pre-condition mentioned above
+  }
 
   LogicalResult verifyTargetAttributes() override {
     // Based on the precondition of this verifier, the target must be either a
@@ -727,7 +733,15 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (calleeAttr.getNestedReferences().size() == 1) {
     if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
       if (parent.hasConstNamed<TemplateParamOp>(calleeAttr.getRootReference())) {
-        return UnknownTargetVerifier(this, calleeAttr).verify();
+        FunctionKind tgtKind = fnNameToKind(calleeAttr.getLeafReference().getValue());
+        if (tgtKind != FunctionKind::Free) {
+          return UnknownTargetVerifier(this, tgtKind, calleeAttr).verify();
+        }
+        return this->emitError("expected parameterized callee to target a struct function")
+            .append(
+                " (i.e. \"@", FUNC_NAME_PRODUCT, "\", \"@", FUNC_NAME_COMPUTE, "\", or \"@",
+                FUNC_NAME_CONSTRAIN, "\")"
+            );
       }
     }
   }
@@ -756,7 +770,7 @@ bool calleeIsStructFunctionImpl(
       // If the name ref within the StructType matches the `callee` prefix (i.e., sans the function
       // name itself), then the `callee` target must be within a StructDefOp because validation
       // checks elsewhere ensure that every StructType references a StructDefOp (i.e., the `callee`
-      // function is not simply a global function nested within a ModuleOp)
+      // function is not simply a free function nested within a ModuleOp)
       return t.getNameRef() == getPrefixAsSymbolRefAttr(callee);
     }
   }

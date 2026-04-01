@@ -296,7 +296,10 @@ def CallOp : FunctionDialectOp<
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
-  let arguments = (ins SymbolRefAttr:$callee,
+  let arguments = (ins
+      // Call target function reference.
+      SymbolRefAttr:$callee,
+      // List of arguments to call the target function.
       Variadic<AnyLLZKType>:$argOperands,
       // List of AffineMap operand groups where each group provides the
       // arguments to instantiate the next (left-to-right) AffineMap used as a
@@ -309,6 +312,20 @@ def CallOp : FunctionDialectOp<
       // Denotes the size of each variadic group in '$mapOperands'.
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
+
+  let assemblyFormat = [{
+    $callee `(` $argOperands `)`
+    ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
+    `:` functional-type($argOperands, results)
+    custom<AttrDictWithWarnings>(attr-dict, prop-dict)
+  }];
+
+  // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
+  // call `verifyAffineMapInstantiations()`. However, in this op that check must
+  // happen within `verifySymbolUses()` instead because the target FuncDefOp
+  // must be resolved to determine if a target function named
+  // "compute"/"constrain" is defined within a StructDefOp or within a ModuleOp
+  // because the verification differs for those cases.
 
   // Define builders manually so inference of operand layout attributes is not
   // circumvented.
@@ -408,20 +425,6 @@ def CallOp : FunctionDialectOp<
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
     static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
   }];
-
-  let assemblyFormat = [{
-    $callee `(` $argOperands `)`
-    ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
-    `:` functional-type($argOperands, results)
-    custom<AttrDictWithWarnings>(attr-dict, prop-dict)
-  }];
-
-  // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
-  // call `verifyAffineMapInstantiations()`. However, in this op that check must
-  // happen within `verifySymbolUses()` instead because the target FuncDefOp
-  // must be resolved to determine if a target function named
-  // "compute"/"constrain" is defined within a StructDefOp or within a ModuleOp
-  // because the verification differs for those cases.
 }
 
 #endif // LLZK_FUNC_OPS

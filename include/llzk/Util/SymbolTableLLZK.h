@@ -16,6 +16,8 @@
 
 #include <mlir/IR/SymbolTable.h>
 
+#include <llvm/ADT/DenseSet.h>
+
 namespace llzk {
 
 /// Get an iterator range for all of the uses, for any symbol, that are nested
@@ -37,6 +39,20 @@ std::optional<mlir::SymbolTable::UseRange>
 getSymbolUses(mlir::StringAttr symbol, mlir::Region *from);
 std::optional<mlir::SymbolTable::UseRange>
 getSymbolUses(mlir::Operation *symbol, mlir::Region *from);
+
+/// Add all symbols used within the given Type to the provided set.
+void getSymbolsUsedIn(mlir::Type t, llvm::SmallDenseSet<mlir::SymbolRefAttr> &symbolsUsed);
+
+/// Add all symbols used within the given Types to the provided set.
+void getSymbolsUsedIn(
+    mlir::ArrayRef<mlir::Type> types, llvm::SmallDenseSet<mlir::SymbolRefAttr> &symbolsUsed
+);
+
+/// Get all symbols used within the given Type.
+llvm::SmallDenseSet<mlir::SymbolRefAttr> getSymbolsUsedIn(mlir::Type t);
+
+/// Get all symbols used within the given Types.
+llvm::SmallDenseSet<mlir::SymbolRefAttr> getSymbolsUsedIn(mlir::ArrayRef<mlir::Type> types);
 
 /// Return if the given symbol is known to have no uses that are nested
 /// within the given operation 'from'. This does not traverse into any nested
