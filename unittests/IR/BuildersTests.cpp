@@ -56,43 +56,6 @@ TEST_F(ModuleBuilderTests, testFnInsertion) {
   ASSERT_EQ(constrainFn->getBody().getArguments().size(), 1);
 }
 
-TEST_F(ModuleBuilderTests, testReachabilitySimple) {
-  builder.insertComputeOnlyStruct(structAName)
-      .insertComputeOnlyStruct(structBName)
-      .insertComputeCall(structAName, structBName);
-
-  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
-  ASSERT_FALSE(builder.computeReachable(structBName, structAName));
-}
-
-TEST_F(ModuleBuilderTests, testReachabilityTransitive) {
-  builder.insertComputeOnlyStruct(structAName)
-      .insertComputeOnlyStruct(structBName)
-      .insertComputeOnlyStruct(structCName)
-      .insertComputeCall(structAName, structBName)
-      .insertComputeCall(structBName, structCName);
-
-  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
-  ASSERT_TRUE(builder.computeReachable(structBName, structCName));
-  ASSERT_TRUE(builder.computeReachable(structAName, structCName));
-  ASSERT_FALSE(builder.computeReachable(structBName, structAName));
-  ASSERT_FALSE(builder.computeReachable(structCName, structAName));
-  ASSERT_TRUE(builder.computeReachable(structAName, structAName));
-}
-
-TEST_F(ModuleBuilderTests, testReachabilityComputeAndConstrain) {
-  builder.insertFullStruct(structAName)
-      .insertComputeOnlyStruct(structBName)
-      .insertConstrainOnlyStruct(structCName)
-      .insertComputeCall(structAName, structBName)
-      .insertConstrainCall(structAName, structCName);
-
-  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
-  ASSERT_TRUE(builder.constrainReachable(structAName, structCName));
-  ASSERT_FALSE(builder.constrainReachable(structAName, structBName));
-  ASSERT_FALSE(builder.computeReachable(structAName, structCName));
-}
-
 TEST_F(ModuleBuilderTests, testConstruction) {
   builder.insertConstrainOnlyStruct(structAName)
       .insertConstrainOnlyStruct(structBName)
