@@ -91,11 +91,9 @@ public:
               .append("unnamed '", ModuleOp::getOperationName(), "' here");
         }
       } else if (TemplateOp t = llvm::dyn_cast_if_present<TemplateOp>(check)) {
-        if (StringAttr name = t.getSymNameAttr()) {
-          path.push_back(FlatSymbolRefAttr::get(name));
-        } else {
-          llvm_unreachable("TemplateOp must have a name");
-        }
+        StringAttr name = t.getSymNameAttr();
+        assert(name && "per ODS");
+        path.push_back(FlatSymbolRefAttr::get(name));
       }
     } while ((check = check->getParentOp()));
 

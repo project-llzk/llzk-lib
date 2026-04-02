@@ -75,37 +75,33 @@ LogicalResult TemplateExprOp::verifySymbolUses(SymbolTableCollection &tables) {
   // This prevents cyclic definitions of `TemplateExprOp`. Searches all symbol uses within
   // this op and also within any nested symbol tables.
   Operation *thisOp = this->getOperation();
-  if (TemplateOp parentTemplate = getParentOfType<TemplateOp>(thisOp)) {
-    LogicalResult errorState = success();
-    auto checkUses = [this, &parentTemplate, &errorState](Operation *symTableOp, bool) {
-      if (auto uses = llzk::getSymbolUses(symTableOp)) {
-        for (SymbolTable::SymbolUse use : uses.value()) {
-          // Only need to check flat refs since `TemplateExprOp` refs must be flat
-          auto usedSym = llvm::dyn_cast<FlatSymbolRefAttr>(use.getSymbolRef());
-          if (usedSym && parentTemplate.hasConstNamed<TemplateExprOp>(usedSym)) {
-            InFlightDiagnostic diag = this->emitOpError().append(
-                "initialization cannot use a symbol defined by another `",
-                TemplateExprOp::getOperationName(), "` within this template"
-            );
-            diag.attachNote(use.getUser()->getLoc()).append("symbol ", usedSym, " used here");
-            auto def = parentTemplate.getConstNamed<TemplateExprOp>(usedSym);
-            diag.attachNote(def.getLoc()).append("defined here");
-            errorState = diag; // transformation to LogicalResult reports the error
-            return;
-          }
+  TemplateOp parentTemplate = getParentOfType<TemplateOp>(thisOp);
+  assert(parentTemplate && "per ODS");
+  LogicalResult errorState = success();
+  auto checkUses = [this, &parentTemplate, &errorState](Operation *symTableOp, bool) {
+    if (auto uses = llzk::getSymbolUses(symTableOp)) {
+      for (SymbolTable::SymbolUse use : uses.value()) {
+        // Only need to check flat refs since `TemplateExprOp` refs must be flat
+        auto usedSym = llvm::dyn_cast<FlatSymbolRefAttr>(use.getSymbolRef());
+        if (usedSym && parentTemplate.hasConstNamed<TemplateExprOp>(usedSym)) {
+          InFlightDiagnostic diag = this->emitOpError().append(
+              "initialization cannot use a symbol defined by another `",
+              TemplateExprOp::getOperationName(), "` within this template"
+          );
+          diag.attachNote(use.getUser()->getLoc()).append("symbol ", usedSym, " used here");
+          auto def = parentTemplate.getConstNamed<TemplateExprOp>(usedSym);
+          diag.attachNote(def.getLoc()).append("defined here");
+          errorState = diag; // transformation to LogicalResult reports the error
+          return;
         }
       }
-    };
-    checkUses(thisOp, true);
-    if (failed(errorState)) {
-      return errorState;
     }
+  };
+  checkUses(thisOp, true);
+  if (succeeded(errorState)) {
     SymbolTable::walkSymbolTables(thisOp, /*allSymUsesVisible=*/true, checkUses);
-    if (failed(errorState)) {
-      return errorState;
-    }
   }
-  return success();
+  return errorState;
 }
 
 LogicalResult TemplateExprOp::verifyRegions() {
