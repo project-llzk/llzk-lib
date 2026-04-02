@@ -37,7 +37,7 @@ protected:
   }
 };
 
-TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getRootModule(), nullptr); }
+TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getModule(), nullptr); }
 
 TEST_F(ModuleBuilderTests, testStructDefInsertion) {
   builder.insertEmptyStruct(structAName);
@@ -63,7 +63,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
       .insertConstrainCall(structAName, structBName);
 
   size_t numStructs = 0;
-  for (auto s : builder.getRootModule().getOps<llzk::component::StructDefOp>()) {
+  for (auto s : builder.getModule().getOps<llzk::component::StructDefOp>()) {
     numStructs++;
     size_t numFn = 0;
     for (auto fn : s.getOps<llzk::function::FuncDefOp>()) {

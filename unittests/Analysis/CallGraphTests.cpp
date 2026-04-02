@@ -39,13 +39,13 @@ protected:
 TEST_F(CallGraphTests, constructorTest) {
   builder.insertFullStruct(structAName);
 
-  ASSERT_NO_THROW(mlir::CallGraph(builder.getRootModule()));
+  ASSERT_NO_THROW(mlir::CallGraph(builder.getModule()));
 }
 
 TEST_F(CallGraphTests, printTest) {
   builder.insertFullStruct(structAName);
 
-  llzk::CallGraph cgraph(builder.getRootModule());
+  llzk::CallGraph cgraph(builder.getModule());
 
   ASSERT_FALSE(buildStringViaPrint(cgraph).empty());
 }
@@ -53,7 +53,7 @@ TEST_F(CallGraphTests, printTest) {
 TEST_F(CallGraphTests, numFnTest) {
   builder.insertFullStruct(structAName);
 
-  llzk::CallGraph cgraph(builder.getRootModule());
+  llzk::CallGraph cgraph(builder.getModule());
 
   ASSERT_EQ(cgraph.size(), 2);
 }
@@ -74,9 +74,9 @@ TEST_F(CallGraphTests, reachabilityTest) {
        cCons = builder.getConstrainFn(structCName);
   ASSERT_TRUE(mlir::succeeded(aCons) && mlir::succeeded(bCons) && mlir::succeeded(cCons));
 
-  mlir::ModuleAnalysisManager mam(builder.getRootModule(), nullptr);
+  mlir::ModuleAnalysisManager mam(builder.getModule(), nullptr);
   mlir::AnalysisManager am = mam;
-  llzk::CallGraphReachabilityAnalysis cgra(builder.getRootModule().getOperation(), am);
+  llzk::CallGraphReachabilityAnalysis cgra(builder.getModule().getOperation(), am);
 
   ASSERT_TRUE(cgra.isReachable(*aComp, *bComp));
   ASSERT_TRUE(cgra.isReachable(*bComp, *cComp));
@@ -92,7 +92,7 @@ TEST_F(CallGraphTests, reachabilityTest) {
 TEST_F(CallGraphTests, analysisConstructor) {
   builder.insertFullStruct(structAName);
 
-  ASSERT_NO_THROW(llzk::CallGraphAnalysis(builder.getRootModule()));
+  ASSERT_NO_THROW(llzk::CallGraphAnalysis(builder.getModule()));
 }
 
 TEST_F(CallGraphTests, analysisConstructorBadArg) {
@@ -119,9 +119,8 @@ TEST_F(CallGraphTests, lookupInSymbolTest) {
   ASSERT_EQ(computeOp, *computeFn);
 
   // nested
-  computeOp = mlir::SymbolTable::lookupSymbolIn(
-      builder.getRootModule(), computeFn->getFullyQualifiedName()
-  );
+  computeOp =
+      mlir::SymbolTable::lookupSymbolIn(builder.getModule(), computeFn->getFullyQualifiedName());
   ASSERT_EQ(computeOp, *computeFn);
 }
 
@@ -141,11 +140,11 @@ TEST_F(CallGraphTests, lookupInSymbolFQNTest) {
   // You should be able to find B::@compute in the overall module
   ASSERT_EQ(
       *computeFn,
-      mlir::SymbolTable::lookupSymbolIn(builder.getRootModule(), computeFn->getFullyQualifiedName())
+      mlir::SymbolTable::lookupSymbolIn(builder.getModule(), computeFn->getFullyQualifiedName())
   );
 
   auto bSym = mlir::SymbolTable(*b);
-  auto modSym = mlir::SymbolTable(builder.getRootModule());
+  auto modSym = mlir::SymbolTable(builder.getModule());
 
   // You should be able to find B::@compute in B, but we can't with built-in symbol tables
   ASSERT_EQ(nullptr, mlir::SymbolTable::lookupSymbolIn(*b, computeFn->getFullyQualifiedName()));

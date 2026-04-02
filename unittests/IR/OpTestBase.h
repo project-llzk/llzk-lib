@@ -22,6 +22,7 @@ protected:
   static constexpr auto funcNameB = "FuncB";
   static constexpr auto structNameA = "StructA";
   static constexpr auto structNameB = "StructB";
+  static constexpr auto templateName = "ExampleTemplate";
 
   mlir::OwningOpRef<mlir::ModuleOp> mod;
 
@@ -53,11 +54,24 @@ protected:
     return llzkBldr;
   }
 
-  llzk::ModuleBuilder newStructExample(int numStructParams = -1) {
-    llzk::ModuleBuilder llzkBldr(mod.get());
-    llzkBldr.insertFullStruct(structNameA, numStructParams)
-        .insertFullStruct(structNameB, numStructParams);
-    return llzkBldr;
+  // Create 2 structs with compute and constrain functions.
+  llzk::ModuleBuilder newStructExample() {
+    llzk::ModuleBuilder modBldr(mod.get());
+    modBldr.insertFullStruct(structNameA).insertFullStruct(structNameB);
+    return modBldr;
+  }
+
+  // Structs are nested in the template `templateName`. Returns both the ModuleBuilder (which
+  // must stay alive to keep the TemplateBuilder valid) and a pointer to the TemplateBuilder.
+  std::pair<llzk::ModuleBuilder, llzk::TemplateBuilder *>
+  newTemplateStructExample(unsigned numParams) {
+    llzk::ModuleBuilder modBldr(mod.get());
+    // Note: `numParams==0` creates TemplateOp with no TemplateParamOp
+    auto r = modBldr.insertTemplate(templateName, numParams).getTemplate(templateName);
+    assert(mlir::succeeded(r));
+    llzk::TemplateBuilder *tmplBldr = r.value();
+    tmplBldr->insertFullStruct(structNameA).insertFullStruct(structNameB);
+    return {std::move(modBldr), tmplBldr};
   }
 };
 

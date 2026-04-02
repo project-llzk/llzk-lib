@@ -119,13 +119,19 @@ public:
     auto newModule = this->cppNewModuleAndSetInsertionPoint(builder, location);
     llzk::ModuleBuilder cppBldr(newModule.get());
     const auto *name = "TestStruct";
+    mlir::FailureOr<llzk::function::FuncDefOp> res = mlir::failure();
     if (kind == llzk::function::FunctionKind::StructProduct) {
-      cppBldr.insertProductStruct(name);
+      res = cppBldr.insertProductStruct(name).getProductFn(name);
     } else {
       cppBldr.insertFullStruct(name);
+      if (kind == llzk::function::FunctionKind::StructCompute) {
+        res = cppBldr.getComputeFn(name);
+      } else {
+        res = cppBldr.getConstrainFn(name);
+      }
     }
-    llzk::function::FuncDefOp fDef = cppBldr.getFunc(kind, name).value();
-    unwrap(builder)->setInsertionPointToStart(&fDef.getBody().emplaceBlock());
+    assert(mlir::succeeded(res) && "failed to build proper struct function");
+    unwrap(builder)->setInsertionPointToStart(&res.value().getBody().emplaceBlock());
     return newModule;
   }
 
