@@ -718,7 +718,7 @@ private:
 
 LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   // First, verify symbol resolution in all input and output types.
-  if (failed(verifyTypeResolution(tables, *this, getCalleeType()))) {
+  if (failed(verifyTypeResolution(tables, *this, getTypeSignature()))) {
     return failure(); // verifyTypeResolution() already emits a sufficient error message
   }
 
@@ -756,8 +756,17 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
 }
 
-FunctionType CallOp::getCalleeType() {
+FunctionType CallOp::getTypeSignature() {
   return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
+}
+
+FailureOr<UnificationMap> CallOp::unifyTypeSignature(FunctionType other) {
+  UnificationMap unifications;
+  if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
+    return unifications;
+  } else {
+    return failure();
+  }
 }
 
 namespace {

@@ -28,6 +28,9 @@ class StructType;
 namespace array {
 class ArrayType;
 } // namespace array
+namespace pod {
+class PodType;
+} // namespace pod
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
@@ -183,42 +186,56 @@ uint64_t computeEmitEqCardinality(mlir::Type type);
 using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
 
 /// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
-/// are equivalent or could be equivalent after full instantiation of struct parameters.
+/// are equivalent or could be equivalent after full instantiation of template parameters.
 bool typeParamsUnify(
     const mlir::ArrayRef<mlir::Attribute> &lhsParams,
     const mlir::ArrayRef<mlir::Attribute> &rhsParams, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
-/// are equivalent or could be equivalent after full instantiation of struct parameters.
+/// are equivalent or could be equivalent after full instantiation of template parameters.
 bool typeParamsUnify(
     const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams,
     UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
-/// instantiation of struct parameters.
+/// instantiation of template parameters.
 bool arrayTypesUnify(
     array::ArrayType lhs, array::ArrayType rhs,
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
-/// instantiation of struct parameters.
+/// instantiation of template parameters.
 bool structTypesUnify(
     component::StructType lhs, component::StructType rhs,
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
+/// Return `true` iff the two PodType instances are equivalent or could be equivalent after full
+/// instantiation of template parameters.
+bool podTypesUnify(
+    pod::PodType lhs, pod::PodType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
+);
+
+/// Return `true` iff the two FunctionType instances are equivalent or could be equivalent after
+/// full instantiation of template parameters.
+bool functionTypesUnify(
+    mlir::FunctionType lhs, mlir::FunctionType rhs,
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
+);
+
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
-/// instantiation of struct parameters (if applicable within the given types).
+/// instantiation of template parameters (if applicable within the given types).
 bool typesUnify(
     mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
-/// full instantiation of struct parameters (if applicable within the given types).
+/// full instantiation of template parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>
 inline bool typeListsUnify(
     Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},

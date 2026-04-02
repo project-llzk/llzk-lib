@@ -377,7 +377,15 @@ def CallOp : FunctionDialectOp<
     /// Required by CallOpInterface
     ::mlir::Operation *resolveCallable();
 
-    ::mlir::FunctionType getCalleeType();
+    /// Return the FunctionType inferred from the arg operands and result types of this CallOp.
+    /// This is not necessarily the same as the callee's FunctionType but should unify with it
+    /// or else IR verification will fail.
+    ::mlir::FunctionType getTypeSignature();
+
+    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
+    /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
+    /// unifications that were made. Otherwise, return failure.
+    ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
 
     /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
     /// does not check if the callee function is located within a StructDefOp).

@@ -609,6 +609,27 @@ struct UnifierImpl {
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
         overrideSuccess(nullptr) {}
 
+  UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
+    this->affineToIntTracker = tracker;
+    return *this;
+  }
+
+  UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
+    this->overrideSuccess = overrides;
+    return *this;
+  }
+
+  /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
+  /// full instantiation of template parameters (if applicable within the given types).
+  template <typename Iter1, typename Iter2> bool typeListsUnify(Iter1 lhs, Iter2 rhs) {
+    return (lhs.size() == rhs.size()) &&
+           std::equal(lhs.begin(), lhs.end(), rhs.begin(), [this](Type a, Type b) {
+      return this->typesUnify(a, b);
+    });
+  }
+
+  /// Return `true` iff the two Attribute lists containing StructType or ArrayType parameters
+  /// are equivalent or could be equivalent after full instantiation of struct parameters.
   bool typeParamsUnify(
       const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
       bool unifyDynamicSize = false
@@ -618,16 +639,6 @@ struct UnifierImpl {
     };
     return (lhsParams.size() == rhsParams.size()) &&
            std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), pred);
-  }
-
-  UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
-    this->affineToIntTracker = tracker;
-    return *this;
-  }
-
-  UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
-    this->overrideSuccess = overrides;
-    return *this;
   }
 
   /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
@@ -695,6 +706,11 @@ struct UnifierImpl {
     });
   }
 
+  bool functionTypesUnify(FunctionType lhs, FunctionType rhs) {
+    return typeListsUnify(lhs.getInputs(), rhs.getInputs()) &&
+           typeListsUnify(lhs.getResults(), rhs.getResults());
+  }
+
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
       return true;
@@ -719,6 +735,9 @@ struct UnifierImpl {
     }
     if (llvm::isa<PodType>(lhs) && llvm::isa<PodType>(rhs)) {
       return podTypesUnify(llvm::cast<PodType>(lhs), llvm::cast<PodType>(rhs));
+    }
+    if (llvm::isa<FunctionType>(lhs) && llvm::isa<FunctionType>(rhs)) {
+      return functionTypesUnify(llvm::cast<FunctionType>(lhs), llvm::cast<FunctionType>(rhs));
     }
     return false;
   }
@@ -883,6 +902,19 @@ bool structTypesUnify(
     UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).structTypesUnify(lhs, rhs);
+}
+
+bool podTypesUnify(
+    PodType lhs, PodType rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
+) {
+  return UnifierImpl(unifications, rhsReversePrefix).podTypesUnify(lhs, rhs);
+}
+
+bool functionTypesUnify(
+    FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix,
+    UnificationMap *unifications
+) {
+  return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
 }
 
 bool typesUnify(
