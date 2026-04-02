@@ -9,7 +9,6 @@
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Shared/Builders.h"
-#include "llzk/Util/SymbolHelper.h"
 
 #include <llvm/Support/ErrorHandling.h>
 
@@ -199,7 +198,6 @@ ModuleBuilder::insertComputeCall(StructDefOp caller, StructDefOp callee, Locatio
 
   OpBuilder builder(callerFn.getBody());
   builder.create<CallOp>(callLoc, calleeFn);
-  updateComputeReachability(caller, callee);
   return *this;
 }
 
@@ -241,7 +239,6 @@ ModuleBuilder &ModuleBuilder::insertConstrainCall(
         callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}
     );
   }
-  updateConstrainReachability(caller, callee);
   return *this;
 }
 
@@ -273,18 +270,6 @@ ModuleBuilder::insertFreeCall(FuncDefOp caller, std::string_view callee, Locatio
   OpBuilder builder(caller.getBody());
   builder.create<CallOp>(callLoc, calleeFn);
   return *this;
-}
-
-bool ModuleBuilder::computeReachable(std::string_view caller, std::string_view callee) {
-  ensureStructExists(caller);
-  ensureStructExists(callee);
-  return computeReachable(structMap.at(caller), structMap.at(callee));
-}
-
-bool ModuleBuilder::constrainReachable(std::string_view caller, std::string_view callee) {
-  ensureStructExists(caller);
-  ensureStructExists(callee);
-  return constrainReachable(structMap.at(caller), structMap.at(callee));
 }
 
 } // namespace llzk

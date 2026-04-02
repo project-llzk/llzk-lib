@@ -10,14 +10,11 @@
 #pragma once
 
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/MLIRContext.h>
 
-#include <llvm/ADT/DenseMap.h>
-#include <llvm/ADT/DenseSet.h>
-
-#include <deque>
 #include <unordered_map>
 
 namespace llzk {
@@ -247,36 +244,9 @@ public:
     return mlir::failure();
   }
 
-  /* Helper functions */
-
-  /**
-   * Returns if the callee compute function is reachable by the caller by construction.
-   */
-  inline bool computeReachable(component::StructDefOp caller, component::StructDefOp callee) {
-    return isReachable(computeNodes, caller, callee);
-  }
-  bool computeReachable(std::string_view caller, std::string_view callee);
-
-  /**
-   * Returns if the callee compute function is reachable by the caller by construction.
-   */
-  inline bool constrainReachable(component::StructDefOp caller, component::StructDefOp callee) {
-    return isReachable(constrainNodes, caller, callee);
-  }
-  bool constrainReachable(std::string_view caller, std::string_view callee);
-
 private:
   mlir::MLIRContext *context;
   mlir::ModuleOp rootModule;
-
-  struct CallNode {
-    mlir::DenseMap<component::StructDefOp, CallNode *> callees;
-  };
-
-  using Def2NodeMap = mlir::DenseMap<component::StructDefOp, CallNode>;
-  using StructDefSet = mlir::DenseSet<component::StructDefOp>;
-
-  Def2NodeMap computeNodes, constrainNodes;
 
   std::unordered_map<std::string_view, function::FuncDefOp> freeFuncMap;
   std::unordered_map<std::string_view, component::StructDefOp> structMap;
@@ -333,43 +303,6 @@ private:
   /// reporting a fatal error otherwise.
   /// @param structName
   void ensureProductFnExists(std::string_view structName);
-
-  void updateComputeReachability(component::StructDefOp caller, component::StructDefOp callee) {
-    updateReachability(computeNodes, caller, callee);
-  }
-
-  void updateConstrainReachability(component::StructDefOp caller, component::StructDefOp callee) {
-    updateReachability(constrainNodes, caller, callee);
-  }
-
-  void
-  updateReachability(Def2NodeMap &m, component::StructDefOp caller, component::StructDefOp callee) {
-    auto &callerNode = m[caller];
-    auto &calleeNode = m[callee];
-    callerNode.callees[callee] = &calleeNode;
-  }
-
-  bool isReachable(Def2NodeMap &m, component::StructDefOp caller, component::StructDefOp callee) {
-    StructDefSet visited;
-    std::deque<component::StructDefOp> frontier;
-    frontier.push_back(caller);
-
-    while (!frontier.empty()) {
-      auto s = frontier.front();
-      frontier.pop_front();
-      if (!visited.insert(s).second) {
-        continue;
-      }
-
-      if (s == callee) {
-        return true;
-      }
-      for (auto &[calleeStruct, _] : m[s].callees) {
-        frontier.push_back(calleeStruct);
-      }
-    }
-    return false;
-  }
 };
 
 } // namespace llzk
