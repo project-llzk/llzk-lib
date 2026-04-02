@@ -300,7 +300,7 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
       return llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
     }
     void doOtherChecks(MlirOperation op) override {
-      auto out_type = llzkFunction_CallOpGetCalleeType(op);
+      auto out_type = llzkFunction_CallOpGetTypeSignature(op);
       EXPECT_TRUE(mlirTypeEqual(this->func_type, out_type));
     }
   } helper;

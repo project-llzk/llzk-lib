@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -21,6 +22,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {
 protected:
@@ -51,6 +53,53 @@ TEST_F(TypeHelperTests, test_structTypesUnify) {
   StructType b = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {i2});
   // `false` because StructType does not allow `kDynamic`
   ASSERT_FALSE(structTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_podTypesUnify_Pass) {
+  IndexType tyIndex = IndexType::get(&ctx);
+  auto r1 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), tyIndex);
+  auto r2 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), tyIndex);
+  PodType a = PodType::get(&ctx, ArrayRef {r1});
+  PodType b = PodType::get(&ctx, ArrayRef {r2});
+  ASSERT_TRUE(podTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_podTypesUnify_Name_Fail) {
+  IndexType tyIndex = IndexType::get(&ctx);
+  auto r1 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), tyIndex);
+  auto r2 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "q"), tyIndex);
+  PodType a = PodType::get(&ctx, ArrayRef {r1});
+  PodType b = PodType::get(&ctx, ArrayRef {r2});
+  ASSERT_FALSE(podTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_podTypesUnify_Type_Fail) {
+  auto r1 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), IndexType::get(&ctx));
+  auto r2 = RecordAttr::get(&ctx, StringAttr::get(&ctx, "r"), IntegerType::get(&ctx, 8));
+  PodType a = PodType::get(&ctx, ArrayRef {r1});
+  PodType b = PodType::get(&ctx, ArrayRef {r2});
+  ASSERT_FALSE(podTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnify_Pass) {
+  IndexType tyIndex = IndexType::get(&ctx);
+  FunctionType a = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
+  FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
+  ASSERT_TRUE(functionTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnify_Input_Fail) {
+  IndexType tyIndex = IndexType::get(&ctx);
+  FunctionType a = FunctionType::get(&ctx, {IntegerType::get(&ctx, 8)}, {tyIndex});
+  FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
+  ASSERT_FALSE(functionTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
+  IndexType tyIndex = IndexType::get(&ctx);
+  FunctionType a = FunctionType::get(&ctx, {tyIndex}, {IntegerType::get(&ctx, 8)});
+  FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
+  ASSERT_FALSE(functionTypesUnify(a, b));
 }
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {
