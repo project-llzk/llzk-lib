@@ -170,7 +170,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a28587bffa85b988d60bc23de08232bc3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by CallOpInterface.  <br /></td></tr>
 <tr class="memitem:a5cceeb579cdaec9e746e2a3b4b1c18ce" id="r_a5cceeb579cdaec9e746e2a3b4b1c18ce"><td class="memItemLeft" align="right" valign="top">::mlir::Operation *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5cceeb579cdaec9e746e2a3b4b1c18ce">resolveCallable</a> ()</td></tr>
 <tr class="memdesc:a5cceeb579cdaec9e746e2a3b4b1c18ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by CallOpInterface.  <br /></td></tr>
-<tr class="memitem:a19ae25e186740a84dadea2d8e0e54d6d" id="r_a19ae25e186740a84dadea2d8e0e54d6d"><td class="memItemLeft" align="right" valign="top">::mlir::FunctionType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a19ae25e186740a84dadea2d8e0e54d6d">getCalleeType</a> ()</td></tr>
+<tr class="memitem:a7f7db82b06a9a70efbf9564c6f236313" id="r_a7f7db82b06a9a70efbf9564c6f236313"><td class="memItemLeft" align="right" valign="top">::mlir::FunctionType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7f7db82b06a9a70efbf9564c6f236313">getTypeSignature</a> ()</td></tr>
+<tr class="memdesc:a7f7db82b06a9a70efbf9564c6f236313"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the FunctionType inferred from the arg operands and result types of this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>.  <br /></td></tr>
+<tr class="memitem:abe4806dec167be58bd22bd53dc85d550" id="r_abe4806dec167be58bd22bd53dc85d550"><td class="memItemLeft" align="right" valign="top">::mlir::FailureOr&lt; <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abe4806dec167be58bd22bd53dc85d550">unifyTypeSignature</a> (::mlir::FunctionType other)</td></tr>
+<tr class="memdesc:abe4806dec167be58bd22bd53dc85d550"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt type unfication between the inferred FunctionType from this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> (as LHS) and the given FunctionType (as RHS).  <br /></td></tr>
 <tr class="memitem:a8034dd675e6ac66b71fbe02910ea02ab" id="r_a8034dd675e6ac66b71fbe02910ea02ab"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8034dd675e6ac66b71fbe02910ea02ab">calleeIsCompute</a> ()</td></tr>
 <tr class="memdesc:a8034dd675e6ac66b71fbe02910ea02ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_COMPUTE</span> (this does not check if the callee function is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>).  <br /></td></tr>
 <tr class="memitem:a05145e02179c2adcd1a7a600fb52a905" id="r_a05145e02179c2adcd1a7a600fb52a905"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a05145e02179c2adcd1a7a600fb52a905">calleeContainsWitnessGen</a> ()</td></tr>
@@ -612,7 +615,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function can contain witness generation code (this does not check if the callee function is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>) </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00341">341</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00349">349</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -641,7 +644,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_COMPUTE</span> (this does not check if the callee function is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00335">335</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00343">343</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -670,7 +673,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> (this does not check if the callee function is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00348">348</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00356">356</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -691,7 +694,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_COMPUTE</span> within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00782">782</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00791">791</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -712,7 +715,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00788">788</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00797">797</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -833,7 +836,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the callee of this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00822">822</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00831">831</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -954,26 +957,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Resolve and return the target <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> for this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00804">804</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a19ae25e186740a84dadea2d8e0e54d6d" name="a19ae25e186740a84dadea2d8e0e54d6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a19ae25e186740a84dadea2d8e0e54d6d">&#9670;&#160;</a></span>getCalleeType()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">FunctionType llzk::function::CallOp::getCalleeType </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00759">759</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00813">813</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1481,7 +1465,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the return value) from the callee function (which must be named <span class="tt">FUNC_NAME_COMPUTE</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00794">794</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00803">803</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1503,7 +1487,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the callee function (which must be named <span class="tt">FUNC_NAME_CONSTRAIN</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00799">799</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00808">808</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1524,7 +1508,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Assuming the callee is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00811">811</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00820">820</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1545,7 +1529,29 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Assuming the callee contains witness generation code, return the single <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00816">816</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00825">825</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a7f7db82b06a9a70efbf9564c6f236313" name="a7f7db82b06a9a70efbf9564c6f236313"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f7db82b06a9a70efbf9564c6f236313">&#9670;&#160;</a></span>getTypeSignature()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">FunctionType llzk::function::CallOp::getTypeSignature </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the FunctionType inferred from the arg operands and result types of this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>. </p>
+<p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00759">759</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1714,7 +1720,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by CallOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00848">848</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00857">857</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1735,7 +1741,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by CallOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00838">838</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00847">847</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1783,7 +1789,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the callee for this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00825">825</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00834">834</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2004,7 +2010,29 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Allocate consecutive storage of the ValueRange instances in the parameter so it can be passed to the builders as an <span class="tt">ArrayRef&lt;ValueRange&gt;</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00829">829</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00838">838</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="abe4806dec167be58bd22bd53dc85d550" name="abe4806dec167be58bd22bd53dc85d550"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe4806dec167be58bd22bd53dc85d550">&#9670;&#160;</a></span>unifyTypeSignature()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">FailureOr&lt; <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &gt; llzk::function::CallOp::unifyTypeSignature </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>other</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Attempt type unfication between the inferred FunctionType from this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> (as LHS) and the given FunctionType (as RHS). </p>
+<p>If successful, return a <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a> containing the unifications that were made. Otherwise, return failure. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00763">763</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

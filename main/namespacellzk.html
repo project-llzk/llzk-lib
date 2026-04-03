@@ -442,6 +442,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a65be8a8027f956741851720ef5047350"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters.  <br /></td></tr>
 <tr class="memitem:a9bdd2635c665c9a009596b32ceeeafec" id="r_a9bdd2635c665c9a009596b32ceeeafec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9bdd2635c665c9a009596b32ceeeafec">arrayTypesUnify</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> lhs, <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:a449db750fee6d61e2ec3aa36a969d483" id="r_a449db750fee6d61e2ec3aa36a969d483"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a449db750fee6d61e2ec3aa36a969d483">structTypesUnify</a> (<a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> lhs, <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
+<tr class="memitem:a5ebb9644ae9afb3d88ae5a5ea4a15ef0" id="r_a5ebb9644ae9afb3d88ae5a5ea4a15ef0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5ebb9644ae9afb3d88ae5a5ea4a15ef0">podTypesUnify</a> (<a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> lhs, <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
+<tr class="memitem:acaf3a6e4759cdd42fbf5df6c43ed2e40" id="r_acaf3a6e4759cdd42fbf5df6c43ed2e40"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acaf3a6e4759cdd42fbf5df6c43ed2e40">functionTypesUnify</a> (FunctionType lhs, FunctionType rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:abc5c6fc1f85b22d1d6e46755e5da1626" id="r_abc5c6fc1f85b22d1d6e46755e5da1626"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a> (Type lhs, Type rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:ac69242a61e4e25958e9c6e8fa0f8549e" id="r_ac69242a61e4e25958e9c6e8fa0f8549e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a> (Type oldTy, Type newTy, llvm::function_ref&lt; bool(Type oldTy, Type newTy)&gt; knownOldToNew)</td></tr>
 <tr class="memitem:a4347ca404454b983d3c978e268aca917" id="r_a4347ca404454b983d3c978e268aca917"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; IntegerAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4347ca404454b983d3c978e268aca917">forceIntType</a> (IntegerAttr attr, <a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
@@ -709,18 +711,22 @@ Functions</h2></td></tr>
 <tr class="memitem:a01267bf6363cdd14607bb650e8c2f435" id="r_a01267bf6363cdd14607bb650e8c2f435"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a01267bf6363cdd14607bb650e8c2f435">computeEmitEqCardinality</a> (mlir::Type type)</td></tr>
 <tr class="memdesc:a01267bf6363cdd14607bb650e8c2f435"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the cardinality (i.e.  <br /></td></tr>
 <tr class="memitem:aef957f901953e0f4c184c26c8993a6cb" id="r_aef957f901953e0f4c184c26c8993a6cb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aef957f901953e0f4c184c26c8993a6cb">typeParamsUnify</a> (const mlir::ArrayRef&lt; mlir::Attribute &gt; &amp;lhsParams, const mlir::ArrayRef&lt; mlir::Attribute &gt; &amp;rhsParams, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
-<tr class="memdesc:aef957f901953e0f4c184c26c8993a6cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two ArrayRef instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters.  <br /></td></tr>
+<tr class="memdesc:aef957f901953e0f4c184c26c8993a6cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two ArrayRef instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
 <tr class="memitem:a655150473b4f06abf31999e50667dcf1" id="r_a655150473b4f06abf31999e50667dcf1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a655150473b4f06abf31999e50667dcf1">typeParamsUnify</a> (const mlir::ArrayAttr &amp;lhsParams, const mlir::ArrayAttr &amp;rhsParams, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
-<tr class="memdesc:a655150473b4f06abf31999e50667dcf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters.  <br /></td></tr>
+<tr class="memdesc:a655150473b4f06abf31999e50667dcf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
 <tr class="memitem:a5920231c88c6c04af215312177a62a68" id="r_a5920231c88c6c04af215312177a62a68"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5920231c88c6c04af215312177a62a68">arrayTypesUnify</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> lhs, <a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
-<tr class="memdesc:a5920231c88c6c04af215312177a62a68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> instances are equivalent or could be equivalent after full instantiation of struct parameters.  <br /></td></tr>
+<tr class="memdesc:a5920231c88c6c04af215312177a62a68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> instances are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
 <tr class="memitem:a69963a95b5969b71622293ca51f74103" id="r_a69963a95b5969b71622293ca51f74103"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a69963a95b5969b71622293ca51f74103">structTypesUnify</a> (<a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> lhs, <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
-<tr class="memdesc:a69963a95b5969b71622293ca51f74103"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> instances are equivalent or could be equivalent after full instantiation of struct parameters.  <br /></td></tr>
+<tr class="memdesc:a69963a95b5969b71622293ca51f74103"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> instances are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
+<tr class="memitem:a8ef40e513bbc28e319dc57cb51892ab5" id="r_a8ef40e513bbc28e319dc57cb51892ab5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8ef40e513bbc28e319dc57cb51892ab5">podTypesUnify</a> (<a class="el" href="classllzk_1_1pod_1_1PodType.html">pod::PodType</a> lhs, <a class="el" href="classllzk_1_1pod_1_1PodType.html">pod::PodType</a> rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
+<tr class="memdesc:a8ef40e513bbc28e319dc57cb51892ab5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> instances are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
+<tr class="memitem:a7f9e5ec8059996c90a89f6de02767394" id="r_a7f9e5ec8059996c90a89f6de02767394"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7f9e5ec8059996c90a89f6de02767394">functionTypesUnify</a> (mlir::FunctionType lhs, mlir::FunctionType rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
+<tr class="memdesc:a7f9e5ec8059996c90a89f6de02767394"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two FunctionType instances are equivalent or could be equivalent after full instantiation of template parameters.  <br /></td></tr>
 <tr class="memitem:a8a7476f05c4dce2ef7554e0ba1c3d567" id="r_a8a7476f05c4dce2ef7554e0ba1c3d567"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8a7476f05c4dce2ef7554e0ba1c3d567">typesUnify</a> (mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
-<tr class="memdesc:a8a7476f05c4dce2ef7554e0ba1c3d567"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two Type instances are equivalent or could be equivalent after full instantiation of struct parameters (if applicable within the given types).  <br /></td></tr>
+<tr class="memdesc:a8a7476f05c4dce2ef7554e0ba1c3d567"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types).  <br /></td></tr>
 <tr class="memitem:a290cbd8f2848b2ab447a3b296adf6830" id="r_a290cbd8f2848b2ab447a3b296adf6830"><td class="memTemplParams" colspan="2">template&lt;typename Iter1, typename Iter2&gt; </td></tr>
 <tr class="memitem:a290cbd8f2848b2ab447a3b296adf6830 template"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a290cbd8f2848b2ab447a3b296adf6830">typeListsUnify</a> (Iter1 lhs, Iter2 rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
-<tr class="memdesc:a290cbd8f2848b2ab447a3b296adf6830"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two lists of Type instances are equivalent or could be equivalent after full instantiation of struct parameters (if applicable within the given types).  <br /></td></tr>
+<tr class="memdesc:a290cbd8f2848b2ab447a3b296adf6830"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the two lists of Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types).  <br /></td></tr>
 <tr class="memitem:a440d077c5fc53dbf3a2ca32b9b82d4bf" id="r_a440d077c5fc53dbf3a2ca32b9b82d4bf"><td class="memTemplParams" colspan="2">template&lt;typename Iter1, typename Iter2&gt; </td></tr>
 <tr class="memitem:a440d077c5fc53dbf3a2ca32b9b82d4bf template"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a440d077c5fc53dbf3a2ca32b9b82d4bf">singletonTypeListsUnify</a> (Iter1 lhs, Iter2 rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications=nullptr)</td></tr>
 <tr class="memitem:a1799d8cc9b704df606b1a99172014065" id="r_a1799d8cc9b704df606b1a99172014065"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1799d8cc9b704df606b1a99172014065">isMoreConcreteUnification</a> (mlir::Type oldTy, mlir::Type newTy, llvm::function_ref&lt; bool(mlir::Type oldTy, mlir::Type newTy)&gt; knownOldToNew=nullptr)</td></tr>
@@ -926,7 +932,7 @@ Variables</h2></td></tr>
 <p>Maps <span class="tt">SymbolRefAttr</span> appearing in one type to the associated <span class="tt">Attribute</span> from the other type at the same nested position. The <span class="tt"><a class="el" href="#afc702f955fa2d6d30b19fae69930f11a">Side</a></span> enum in the key indicates which input expression the <span class="tt">SymbolRefAttr</span> is from. Additionally, if a conflict is found (i.e., multiple Occurrences of a specific <span class="tt">SymbolRefAttr</span> on the same side map to different Attributes from the other side). The mapped value will be <span class="tt">nullptr</span>.</p>
 <p>This map is used by the <span class="tt">llzk-flatten</span> pass to replace struct parameter <span class="tt">SymbolRefAttr</span> with static concrete values to produce the flattened versions of structs. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00183">183</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00186">186</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -986,7 +992,7 @@ Variables</h2></td></tr>
 <tr><td class="fieldname"><a id="afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3" name="afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3"></a>TOMB&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00122">122</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00125">125</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1467,7 +1473,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> instances are equivalent or could be equivalent after full instantiation of struct parameters. </p>
+<p>Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> instances are equivalent or could be equivalent after full instantiation of template parameters. </p>
 
 </div>
 </div>
@@ -1500,7 +1506,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00875">875</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00894">894</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -1519,7 +1525,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00998">998</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01030">1030</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -2162,7 +2168,7 @@ template&lt;typename T, typename U&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00111">111</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00114">114</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -2940,7 +2946,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00932">932</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00964">964</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -2986,7 +2992,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00940">940</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00972">972</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -3032,7 +3038,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00916">916</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00948">948</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -3083,6 +3089,72 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00034">34</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="acaf3a6e4759cdd42fbf5df6c43ed2e40" name="acaf3a6e4759cdd42fbf5df6c43ed2e40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acaf3a6e4759cdd42fbf5df6c43ed2e40">&#9670;&#160;</a></span>functionTypesUnify() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::functionTypesUnify </td>
+          <td>(</td>
+          <td class="paramtype">FunctionType</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FunctionType</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayRef&lt; StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00913">913</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a7f9e5ec8059996c90a89f6de02767394" name="a7f9e5ec8059996c90a89f6de02767394"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f9e5ec8059996c90a89f6de02767394">&#9670;&#160;</a></span>functionTypesUnify() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::functionTypesUnify </td>
+          <td>(</td>
+          <td class="paramtype">mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::FunctionType</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ArrayRef&lt; llvm::StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt">true</span> iff the two FunctionType instances are equivalent or could be equivalent after full instantiation of template parameters. </p>
 
 </div>
 </div>
@@ -3206,7 +3278,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00257">257</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00274">274</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -3389,7 +3461,7 @@ template&lt;typename TypeClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00253">253</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00270">270</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4749,7 +4821,7 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00894">894</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00926">926</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -6470,6 +6542,72 @@ template&lt;unsigned N&gt; </div>
 
 </div>
 </div>
+<a id="a8ef40e513bbc28e319dc57cb51892ab5" name="a8ef40e513bbc28e319dc57cb51892ab5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ef40e513bbc28e319dc57cb51892ab5">&#9670;&#160;</a></span>podTypesUnify() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::podTypesUnify </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1pod_1_1PodType.html">pod::PodType</a></td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1pod_1_1PodType.html">pod::PodType</a></td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ArrayRef&lt; llvm::StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> instances are equivalent or could be equivalent after full instantiation of template parameters. </p>
+
+</div>
+</div>
+<a id="a5ebb9644ae9afb3d88ae5a5ea4a15ef0" name="a5ebb9644ae9afb3d88ae5a5ea4a15ef0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ebb9644ae9afb3d88ae5a5ea4a15ef0">&#9670;&#160;</a></span>podTypesUnify() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::podTypesUnify </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a></td>          <td class="paramname"><span class="paramname"><em>lhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a></td>          <td class="paramname"><span class="paramname"><em>rhs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayRef&lt; StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>rhsReversePrefix</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00907">907</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+
+</div>
+</div>
 <a id="aafb94145f42dd37435e37c9ce4b805a2" name="aafb94145f42dd37435e37c9ce4b805a2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aafb94145f42dd37435e37c9ce4b805a2">&#9670;&#160;</a></span>printAttrDictWithWarnings()</h2>
 
@@ -8062,7 +8200,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00141">141</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00144">144</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8220,7 +8358,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00234">234</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00251">251</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8351,7 +8489,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> instances are equivalent or could be equivalent after full instantiation of struct parameters. </p>
+<p>Return <span class="tt">true</span> iff the two <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> instances are equivalent or could be equivalent after full instantiation of template parameters. </p>
 
 </div>
 </div>
@@ -8384,7 +8522,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00881">881</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00900">900</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -8877,9 +9015,9 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Return <span class="tt">true</span> iff the two lists of Type instances are equivalent or could be equivalent after full instantiation of struct parameters (if applicable within the given types). </p>
+<p>Return <span class="tt">true</span> iff the two lists of Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types). </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00223">223</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00240">240</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8909,7 +9047,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00869">869</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00888">888</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -8937,7 +9075,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00860">860</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00879">879</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -8965,7 +9103,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters. </p>
+<p>Return <span class="tt">true</span> iff the two ArrayAttr instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of template parameters. </p>
 
 </div>
 </div>
@@ -8993,7 +9131,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Return <span class="tt">true</span> iff the two ArrayRef instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of struct parameters. </p>
+<p>Return <span class="tt">true</span> iff the two ArrayRef instances containing <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> or <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> parameters are equivalent or could be equivalent after full instantiation of template parameters. </p>
 
 </div>
 </div>
@@ -9026,7 +9164,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Return <span class="tt">true</span> iff the two Type instances are equivalent or could be equivalent after full instantiation of struct parameters (if applicable within the given types). </p>
+<p>Return <span class="tt">true</span> iff the two Type instances are equivalent or could be equivalent after full instantiation of template parameters (if applicable within the given types). </p>
 
 </div>
 </div>
@@ -9059,7 +9197,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00888">888</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00920">920</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9141,7 +9279,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00967">967</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00999">999</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9187,7 +9325,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00989">989</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01021">1021</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9266,7 +9404,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00994">994</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01026">1026</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9289,7 +9427,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00952">952</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00984">984</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9467,7 +9605,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00985">985</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01017">1017</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9602,7 +9740,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01050">1050</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01082">1082</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9633,7 +9771,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 <p>Determine if the <span class="tt">subArrayType</span> is a valid subarray of <span class="tt">arrayType</span>. </p>
 <p><span class="tt">arrayType</span> must be an array of dimension N and <span class="tt">subArrayType</span> must be an array of dimension M, where N &gt; M &gt;= 1. For example, &lt;3,7 x int&gt; is a valid subarray of &lt;5,3,7 x int&gt;, but &lt;8 x int&gt; is not an neither is &lt;3,7 x string&gt;. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01010">1010</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01042">1042</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>

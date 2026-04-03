@@ -157,10 +157,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a56ac731538de18d0802908951d8f57d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assuming the callee is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single StructType result.  <br /></td></tr>
 <tr class="memitem:a1a80e7b710b895d909f76cbeb21e4750" id="r_a1a80e7b710b895d909f76cbeb21e4750"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1a80e7b710b895d909f76cbeb21e4750">llzkFunction_CallOpCalleeIsStructConstrain</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a1a80e7b710b895d909f76cbeb21e4750"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> within a StructDefOp.  <br /></td></tr>
-<tr class="memitem:a4b99de5fb8f5459386619cb259d0467c" id="r_a4b99de5fb8f5459386619cb259d0467c"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4b99de5fb8f5459386619cb259d0467c">llzkFunction_CallOpGetCalleeType</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a4b99de5fb8f5459386619cb259d0467c"><td class="mdescLeft">&#160;</td><td class="mdescRight">getCalleeType  <br /></td></tr>
 <tr class="memitem:a887f98c869539b2107423eadc888c20d" id="r_a887f98c869539b2107423eadc888c20d"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a887f98c869539b2107423eadc888c20d">llzkFunction_CallOpGetSelfValueFromConstrain</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a887f98c869539b2107423eadc888c20d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the "self" value (i.e.  <br /></td></tr>
+<tr class="memitem:ad48963062e346f50240c6207c68ad7be" id="r_ad48963062e346f50240c6207c68ad7be"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad48963062e346f50240c6207c68ad7be">llzkFunction_CallOpGetTypeSignature</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ad48963062e346f50240c6207c68ad7be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the FunctionType inferred from the arg operands and result types of this CallOp.  <br /></td></tr>
 <tr class="memitem:a241967cea25659ab98a57157656ec4ff" id="r_a241967cea25659ab98a57157656ec4ff"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a241967cea25659ab98a57157656ec4ff">llzkFunction_CallOpCalleeIsCompute</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a241967cea25659ab98a57157656ec4ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_COMPUTE</span> (this does not check if the callee function is located within a StructDefOp).  <br /></td></tr>
 <tr class="memitem:af8ac981b4d0361dfea568176b83d9dc5" id="r_af8ac981b4d0361dfea568176b83d9dc5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af8ac981b4d0361dfea568176b83d9dc5">llzkFunction_CallOpCalleeIsConstrain</a> (MlirOperation inp)</td></tr>
@@ -417,27 +417,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a4b99de5fb8f5459386619cb259d0467c" name="a4b99de5fb8f5459386619cb259d0467c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b99de5fb8f5459386619cb259d0467c">&#9670;&#160;</a></span>llzkFunction_CallOpGetCalleeType()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">MlirType llzkFunction_CallOpGetCalleeType </td>
-          <td>(</td>
-          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>getCalleeType </p>
-
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00155">155</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
-
-</div>
-</div>
 <a id="ac83fa0774141f0744c00e9416cd06a39" name="ac83fa0774141f0744c00e9416cd06a39"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac83fa0774141f0744c00e9416cd06a39">&#9670;&#160;</a></span>llzkFunction_CallOpGetMapOperandsAt()</h2>
 
@@ -612,7 +591,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the callee function (which must be named <span class="tt">FUNC_NAME_CONSTRAIN</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00159">159</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00155">155</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -655,6 +634,28 @@ Functions</h2></td></tr>
 <p>Assuming the callee contains witness generation code, return the single StructType result. </p>
 
 <p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00179">179</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ad48963062e346f50240c6207c68ad7be" name="ad48963062e346f50240c6207c68ad7be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad48963062e346f50240c6207c68ad7be">&#9670;&#160;</a></span>llzkFunction_CallOpGetTypeSignature()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirType llzkFunction_CallOpGetTypeSignature </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the FunctionType inferred from the arg operands and result types of this CallOp. </p>
+<p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00159">159</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

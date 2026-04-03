@@ -1,5 +1,7 @@
 var NAVTREEINDEX44 =
 {
+"dialects.html#boolassert-llzkbooleanassertop":[7,1,0,1],
+"dialects.html#boolcmp-llzkbooleancmpop":[7,1,0,2],
 "dialects.html#boolnot-llzkbooleannotboolop":[7,1,0,3],
 "dialects.html#boolor-llzkbooleanorboolop":[7,1,0,4],
 "dialects.html#boolxor-llzkbooleanxorboolop":[7,1,0,5],
@@ -247,7 +249,5 @@ var NAVTREEINDEX44 =
 "dir_862d3276083eaac55caed79b9120bf29.html":[13,0,3,5],
 "dir_8824517f61f65466f9470639a7e8c03b.html":[13,0,0,0,0,1],
 "dir_883023a15d723b0933e4f4f9a739d0aa.html":[13,0,0,0,0,0],
-"dir_88e4fadc66d206f3fe4f6e934cf1f040.html":[13,0,0,0,0,2,10,0],
-"dir_89f7804ef5f027346da5933205091d05.html":[13,0,2,0,2,6],
-"dir_8c19de2196b4b9037b2ef87455b6f2bd.html":[13,0,2,0,4]
+"dir_88e4fadc66d206f3fe4f6e934cf1f040.html":[13,0,0,0,0,2,10,0]
 };
