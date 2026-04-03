@@ -81,6 +81,21 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
+static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&diagnostics) {
+  DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
+  for (Diagnostic &diag : diagnostics) {
+    // Update any notes referencing an UnknownLoc to use the CallOp location.
+    for (Diagnostic &note : diag.getNotes()) {
+      assert(note.getNotes().empty() && "notes cannot have notes attached");
+      if (llvm::isa<UnknownLoc>(note.getLocation())) {
+        note = std::move(Diagnostic(caller.getLoc(), note.getSeverity()).append(note.str()));
+      }
+    }
+    // Report. Based on InFlightDiagnostic::report().
+    engine.emit(std::move(diag));
+  }
+}
+
 class ConversionTracker {
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified;
@@ -138,26 +153,14 @@ public:
 
   void reportDelayedDiagnostics(StructType newType, CallOp caller) {
     auto res = delayedDiagnostics.find(newType);
-    if (res == delayedDiagnostics.end()) {
-      return;
-    }
+    if (res != delayedDiagnostics.end()) {
+      ::reportDelayedDiagnostics(caller, std::move(res->second));
 
-    DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
-    for (Diagnostic &diag : res->second) {
-      // Update any notes referencing an UnknownLoc to use the CallOp location.
-      for (Diagnostic &note : diag.getNotes()) {
-        assert(note.getNotes().empty() && "notes cannot have notes attached");
-        if (llvm::isa<UnknownLoc>(note.getLocation())) {
-          note = std::move(Diagnostic(caller.getLoc(), note.getSeverity()).append(note.str()));
-        }
-      }
-      // Report. Based on InFlightDiagnostic::report().
-      engine.emit(std::move(diag));
+      // Emitting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
+      // Unfortunately, this means if the key StructType is the result of instantiation at multiple
+      // `compute()` calls it will only be reported at one of those locations, not all.
+      delayedDiagnostics.erase(newType);
     }
-    // Emitting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
-    // Unfortunately, this means if the key StructType is the result of instantiation at multiple
-    // `compute()` calls it will only be reported at one of those locations, not all.
-    delayedDiagnostics.erase(newType);
   }
 
   SmallVector<Diagnostic> &delayedDiagnosticSet(StructType newType) {
@@ -207,6 +210,120 @@ public:
       return this->isLegalConversion(std::get<0>(oldThenNew), std::get<1>(oldThenNew), patName);
     }
     );
+  }
+};
+
+template <typename Impl, typename Op, typename... HandledAttrs>
+class SymbolUserHelper : public OpConversionPattern<Op> {
+private:
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
+
+  SymbolUserHelper(
+      TypeConverter &converter, MLIRContext *ctx, unsigned benefit,
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
+  )
+      : OpConversionPattern<Op>(converter, ctx, benefit),
+        paramNameToValue(paramNameToInstantiatedValue) {}
+
+public:
+  using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
+
+  virtual Attribute getNameAttr(Op) const = 0;
+
+  virtual LogicalResult handleDefaultRewrite(
+      Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
+  ) const {
+    return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
+  }
+
+  LogicalResult
+  matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
+    auto res = this->paramNameToValue.find(getNameAttr(op));
+    if (res == this->paramNameToValue.end()) {
+      LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] no instantiation for " << op << '\n');
+      return failure();
+    }
+    llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
+    llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
+
+    ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
+      return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
+    }))),
+     ...);
+
+    return TS.Default([&](Attribute a) {
+      return handleDefaultRewrite(res->first, op, adaptor, rewriter, a);
+    });
+  }
+  friend Impl;
+};
+
+class ClonedBodyConstReadOpPattern
+    : public SymbolUserHelper<
+          ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
+  SmallVector<Diagnostic> &diagnostics;
+
+  using super =
+      SymbolUserHelper<ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
+
+public:
+  ClonedBodyConstReadOpPattern(
+      TypeConverter &converter, MLIRContext *ctx,
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
+      SmallVector<Diagnostic> &instantiationDiagnostics
+  )
+      // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
+      // instead of the GeneralTypeReplacePattern<ConstReadOp> from newGeneralRewritePatternSet().
+      : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue),
+        diagnostics(instantiationDiagnostics) {}
+
+  Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
+
+  LogicalResult handleRewrite(
+      Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
+  ) const {
+    APInt attrValue = a.getValue();
+    Type origResTy = op.getType();
+    if (llvm::isa<FeltType>(origResTy)) {
+      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, FeltConstAttr::get(getContext(), attrValue));
+      return success();
+    }
+
+    if (llvm::isa<IndexType>(origResTy)) {
+      replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
+      return success();
+    }
+
+    if (origResTy.isSignlessInteger(1)) {
+      // Treat 0 as false and any other value as true (but give a warning if it's not 1)
+      if (attrValue.isZero()) {
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
+        return success();
+      }
+      if (!attrValue.isOne()) {
+        Location opLoc = op.getLoc();
+        Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
+        diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
+        if (getContext()->shouldPrintOpOnDiagnostic()) {
+          diag.attachNote(opLoc) << "see current operation: " << *op;
+        }
+        diag.attachNote(UnknownLoc::get(getContext()))
+            << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \"" << sym
+            << "\" for this call";
+        diagnostics.push_back(std::move(diag));
+      }
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
+      return success();
+    }
+    return op->emitOpError().append("unexpected result type ", origResTy);
+  }
+
+  LogicalResult handleRewrite(
+      Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
+  ) const {
+    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    return success();
   }
 };
 
@@ -336,122 +453,6 @@ class StructCloner {
         }
         return inputTy;
       });
-    }
-  };
-
-  template <typename Impl, typename Op, typename... HandledAttrs>
-  class SymbolUserHelper : public OpConversionPattern<Op> {
-  private:
-    const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-    SymbolUserHelper(
-        TypeConverter &converter, MLIRContext *ctx, unsigned Benefit,
-        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
-    )
-        : OpConversionPattern<Op>(converter, ctx, Benefit),
-          paramNameToValue(paramNameToInstantiatedValue) {}
-
-  public:
-    using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
-
-    virtual Attribute getNameAttr(Op) const = 0;
-
-    virtual LogicalResult handleDefaultRewrite(
-        Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
-    ) const {
-      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
-    }
-
-    LogicalResult
-    matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-      LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
-      auto res = this->paramNameToValue.find(getNameAttr(op));
-      if (res == this->paramNameToValue.end()) {
-        LLVM_DEBUG(llvm::dbgs() << "[StructCloner] no instantiation for " << op << '\n');
-        return failure();
-      }
-      llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
-      llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
-
-      ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
-        return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
-      }))),
-       ...);
-
-      return TS.Default([&](Attribute a) {
-        return handleDefaultRewrite(res->first, op, adaptor, rewriter, a);
-      });
-    }
-    friend Impl;
-  };
-
-  class ClonedStructConstReadOpPattern
-      : public SymbolUserHelper<
-            ClonedStructConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
-    SmallVector<Diagnostic> &diagnostics;
-
-    using super =
-        SymbolUserHelper<ClonedStructConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
-
-  public:
-    ClonedStructConstReadOpPattern(
-        TypeConverter &converter, MLIRContext *ctx,
-        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
-        SmallVector<Diagnostic> &instantiationDiagnostics
-    )
-        // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-        // instead of the GeneralTypeReplacePattern<ConstReadOp> from newGeneralRewritePatternSet().
-        : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue),
-          diagnostics(instantiationDiagnostics) {}
-
-    Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
-
-    LogicalResult handleRewrite(
-        Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
-    ) const {
-      APInt attrValue = a.getValue();
-      Type origResTy = op.getType();
-      if (llvm::isa<FeltType>(origResTy)) {
-        replaceOpWithNewOp<FeltConstantOp>(
-            rewriter, op, FeltConstAttr::get(getContext(), attrValue)
-        );
-        return success();
-      }
-
-      if (llvm::isa<IndexType>(origResTy)) {
-        replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-        return success();
-      }
-
-      if (origResTy.isSignlessInteger(1)) {
-        // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-        if (attrValue.isZero()) {
-          replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
-          return success();
-        }
-        if (!attrValue.isOne()) {
-          Location opLoc = op.getLoc();
-          Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
-          diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
-          if (getContext()->shouldPrintOpOnDiagnostic()) {
-            diag.attachNote(opLoc) << "see current operation: " << *op;
-          }
-          diag.attachNote(UnknownLoc::get(getContext()))
-              << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \""
-              << sym << "\" for this call";
-          diagnostics.push_back(std::move(diag));
-        }
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
-        return success();
-      }
-      return op->emitOpError().append("unexpected result type ", origResTy);
-    }
-
-    LogicalResult handleRewrite(
-        Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
-    ) const {
-      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
-      return success();
     }
   };
 
@@ -636,11 +637,11 @@ class StructCloner {
         newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
     target.addDynamicallyLegalOp<ConstReadOp>([&paramNameToConcrete](ConstReadOp op) {
       // Legal if it's not in the map of concrete attribute instantiations
-      return paramNameToConcrete.find(op.getConstNameAttr()) == paramNameToConcrete.end();
+      return !paramNameToConcrete.contains(op.getConstNameAttr());
     });
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
-    patterns.add<ClonedStructConstReadOpPattern>(
+    patterns.add<ClonedBodyConstReadOpPattern>(
         tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
     );
     patterns.add<ClonedStructMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
@@ -894,53 +895,6 @@ public:
   const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
 };
 
-/// Replaces a ConstReadOp that reads a fully-instantiated template parameter with the
-/// corresponding concrete constant value.
-class ClonedFuncConstReadOpPattern : public OpConversionPattern<ConstReadOp> {
-  const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-public:
-  ClonedFuncConstReadOpPattern(
-      TypeConverter &converter, MLIRContext *ctx,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
-  )
-      : OpConversionPattern<ConstReadOp>(converter, ctx, /*benefit=*/2),
-        paramNameToValue(paramNameToConcrete) {}
-
-  LogicalResult
-  matchAndRewrite(ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto it = paramNameToValue.find(op.getConstNameAttr());
-    if (it == paramNameToValue.end()) {
-      return failure();
-    }
-    Type origResTy = op.getType();
-    Attribute val = it->second;
-    if (IntegerAttr intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
-      APInt attrValue = intAttr.getValue();
-      if (llvm::isa<FeltType>(origResTy)) {
-        replaceOpWithNewOp<FeltConstantOp>(
-            rewriter, op, FeltConstAttr::get(getContext(), attrValue)
-        );
-        return success();
-      }
-      if (llvm::isa<IndexType>(origResTy)) {
-        replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-        return success();
-      }
-      if (origResTy.isSignlessInteger(1)) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, !attrValue.isZero(), origResTy);
-        return success();
-      }
-      return op->emitOpError().append("unexpected result type ", origResTy);
-    }
-    if (FeltConstAttr feltAttr = llvm::dyn_cast<FeltConstAttr>(val)) {
-      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, feltAttr);
-      return success();
-    }
-    return failure();
-  }
-};
-
 class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
@@ -1035,11 +989,22 @@ public:
       FuncInstTypeConverter tyConv(paramNameToConcrete);
       ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
       target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp p) {
+        // Legal if it's not in the map of concrete attribute instantiations
         return !tyConv.containsParam(p.getConstNameAttr());
       });
+      SmallVector<Diagnostic> delayedDiagnostics;
       RewritePatternSet bodyPatterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-      bodyPatterns.add<ClonedFuncConstReadOpPattern>(tyConv, ctx, tyConv.getParamMap());
-      return applyFullConversion(newFunc, target, std::move(bodyPatterns));
+      bodyPatterns.add<ClonedBodyConstReadOpPattern>(
+          tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
+      );
+      if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
+        return failure();
+      }
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]   instantiated clone: " << newFunc << '\n'
+      );
+      ::reportDelayedDiagnostics(op, std::move(delayedDiagnostics));
+      return success();
     };
 
     SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
