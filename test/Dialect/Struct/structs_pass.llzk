@@ -630,3 +630,30 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+module attributes {llzk.lang} {
+  struct.def @PodSignal {
+    struct.member @foo : !pod.type<[@a: !array.type<2 x !pod.type<[@x : !array.type<3 x !felt.type>]>>, @b: !pod.type<[@x : !array.type<1,2,3 x !felt.type>]>]> {signal}
+
+    function.def @compute() -> !struct.type<@PodSignal> {
+      %self = struct.new : !struct.type<@PodSignal>
+      function.return %self : !struct.type<@PodSignal>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodSignal>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @PodSignal {
+// CHECK-NEXT:    struct.member @foo : !pod.type<[@a: !array.type<2 x !pod.type<[@x: !array.type<3 x !felt.type>]>>, @b: !pod.type<[@x: !array.type<1,2,3 x !felt.type>]>]> {signal}
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@PodSignal> attributes {function.allow_witness} {
+// CHECK-NEXT:      %self = struct.new : <@PodSignal>
+// CHECK-NEXT:      function.return %self : !struct.type<@PodSignal>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%arg0: !struct.type<@PodSignal>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
