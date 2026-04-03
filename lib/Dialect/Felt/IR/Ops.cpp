@@ -180,7 +180,7 @@ OpFoldResult PowFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult DivFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data || data->rhsVal == DynamicAPInt(0)) {
+  if (!data || data->rhsVal == 0) {
     return {};
   }
   return buildFoldResult(
@@ -191,7 +191,7 @@ OpFoldResult DivFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult UnsignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data || data->rhsVal == DynamicAPInt(0)) {
+  if (!data || data->rhsVal == 0) {
     return {};
   }
   // Both values are non-negative field elements; standard integer division
@@ -205,7 +205,7 @@ OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
     return {};
   }
   DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
-  if (sRhs == DynamicAPInt(0)) {
+  if (sRhs == 0) {
     return {};
   }
   DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
@@ -217,7 +217,7 @@ OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult UnsignedModFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data || data->rhsVal == DynamicAPInt(0)) {
+  if (!data || data->rhsVal == 0) {
     return {};
   }
   // Both non-negative, so % gives the correct unsigned remainder in [0, rhs) < prime.
@@ -230,7 +230,7 @@ OpFoldResult SignedModFeltOp::fold(FoldAdaptor adaptor) {
     return {};
   }
   DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
-  if (sRhs == DynamicAPInt(0)) {
+  if (sRhs == 0) {
     return {};
   }
   DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
@@ -305,7 +305,7 @@ OpFoldResult NegFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult InvFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetUnaryFoldData(adaptor.getOperand());
-  if (!data || data->val == DynamicAPInt(0)) {
+  if (!data || data->val == 0) {
     return {};
   }
   return buildFoldResult(getContext(), data->field->inv(data->val), *data->field, data->fieldName);

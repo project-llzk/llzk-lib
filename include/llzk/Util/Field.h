@@ -98,9 +98,9 @@ public:
   llvm::DynamicAPInt reduce(const llvm::APInt &i) const;
 
   /// Converts a canonical field element to its signed integer representation:
-  ///   signed_int(f) = f         if f < field.half()
-  ///   signed_int(f) = f - p     if f >= field.half()
-  /// (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)
+  ///   toSigned(f) = f         if f < field.half()
+  ///   toSigned(f) = f - p     if f >= field.half()
+  ///   (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)
   llvm::DynamicAPInt toSigned(const llvm::DynamicAPInt &i) const;
 
   inline unsigned bitWidth() const { return bitwidth; }
