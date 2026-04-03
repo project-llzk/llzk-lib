@@ -28,20 +28,13 @@
 #include "llzk/Dialect/Felt/IR/Ops.cpp.inc"
 
 using namespace mlir;
+using namespace llzk;
 
 //===------------------------------------------------------------------===//
 // Constant folding helpers
 //===------------------------------------------------------------------===//
 
 namespace {
-
-/// Converts a FeltConstAttr APInt (stored as unsigned bits) to DynamicAPInt.
-/// We must pass isUnsigned=true; the default APSInt(APInt) ctor is signed,
-/// which would misinterpret large field elements (e.g. BN254 values near p-1
-/// that have bit 253 set) as negative.
-static llvm::DynamicAPInt feltValToDynamic(const llvm::APInt &apint) {
-  return llzk::toDynamicAPInt(llvm::APSInt(apint, /*isUnsigned=*/true));
-}
 
 /// Converts a reduced DynamicAPInt (non-negative, fits in `bitWidth` bits)
 /// back to an APInt for use in a FeltConstAttr.
@@ -57,20 +50,20 @@ static llvm::APInt apintFromField(const llvm::DynamicAPInt &val, unsigned bitWid
 ///   signed_int(f) = f         if f < field.half()
 ///   signed_int(f) = f - p     if f >= field.half()
 /// (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)
-static llvm::DynamicAPInt toSignedField(const llvm::DynamicAPInt &f, const llzk::Field &field) {
+static llvm::DynamicAPInt toSignedField(const llvm::DynamicAPInt &f, const Field &field) {
   return f < field.half() ? f : f - field.prime();
 }
 
 struct BinaryFoldData {
   llvm::DynamicAPInt lhsVal, rhsVal;
   llvm::StringRef fieldName;
-  const llzk::Field *field; // stable pointer into the static knownFields map
+  const Field *field; // stable pointer into the static knownFields map
 };
 
 struct UnaryFoldData {
   llvm::DynamicAPInt val;
   llvm::StringRef fieldName;
-  const llzk::Field *field;
+  const Field *field;
 };
 
 /// Returns fold inputs for a binary felt op, or nullopt if folding should not
@@ -80,8 +73,8 @@ struct UnaryFoldData {
 ///   - the two field names differ.
 static std::optional<BinaryFoldData>
 tryGetBinaryFoldData(mlir::Attribute lhsAttr, mlir::Attribute rhsAttr) {
-  auto lhs = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(lhsAttr);
-  auto rhs = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(rhsAttr);
+  auto lhs = llvm::dyn_cast_or_null<felt::FeltConstAttr>(lhsAttr);
+  auto rhs = llvm::dyn_cast_or_null<felt::FeltConstAttr>(rhsAttr);
   if (!lhs || !rhs) {
     return std::nullopt;
   }
@@ -92,20 +85,20 @@ tryGetBinaryFoldData(mlir::Attribute lhsAttr, mlir::Attribute rhsAttr) {
     return std::nullopt;
   }
 
-  auto fieldRes = llzk::Field::tryGetField(lhsFieldName.getValue());
+  auto fieldRes = Field::tryGetField(lhsFieldName.getValue());
   if (failed(fieldRes)) {
     return std::nullopt;
   }
 
   return BinaryFoldData {
-      feltValToDynamic(lhs.getValue()), feltValToDynamic(rhs.getValue()), lhsFieldName.getValue(),
+      toDynamicAPInt(lhs.getValue()), toDynamicAPInt(rhs.getValue()), lhsFieldName.getValue(),
       &fieldRes.value().get()
   };
 }
 
 /// Same guard logic for unary felt ops.
 static std::optional<UnaryFoldData> tryGetUnaryFoldData(mlir::Attribute operandAttr) {
-  auto operand = llvm::dyn_cast_or_null<llzk::felt::FeltConstAttr>(operandAttr);
+  auto operand = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operandAttr);
   if (!operand) {
     return std::nullopt;
   }
@@ -115,22 +108,22 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(mlir::Attribute operandA
     return std::nullopt;
   }
 
-  auto fieldRes = llzk::Field::tryGetField(fieldNameAttr.getValue());
+  auto fieldRes = Field::tryGetField(fieldNameAttr.getValue());
   if (failed(fieldRes)) {
     return std::nullopt;
   }
 
   return UnaryFoldData {
-      feltValToDynamic(operand.getValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
+      toDynamicAPInt(operand.getValue()), fieldNameAttr.getValue(), &fieldRes.value().get()
   };
 }
 
 /// Builds a FeltConstAttr carrying the reduced result value.
-static llzk::felt::FeltConstAttr buildFoldResult(
-    mlir::MLIRContext *ctx, const llvm::DynamicAPInt &val, const llzk::Field &field,
+static felt::FeltConstAttr buildFoldResult(
+    mlir::MLIRContext *ctx, const llvm::DynamicAPInt &val, const Field &field,
     llvm::StringRef fieldName
 ) {
-  return llzk::felt::FeltConstAttr::get(ctx, apintFromField(val, field.bitWidth()), fieldName);
+  return felt::FeltConstAttr::get(ctx, apintFromField(val, field.bitWidth()), fieldName);
 }
 
 } // namespace
