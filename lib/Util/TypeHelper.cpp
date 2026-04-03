@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
@@ -296,10 +297,12 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 
 // Parameters in the StructType must be one of the following:
 //  - Integer constants
+//  - Field element constants
 //  - SymbolRef (flat ref for struct params, non-flat for global constants from another module)
 //  - Type
 //  - AffineMap (for array of non-homogeneous structs)
-using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
+using StructParamTypes =
+    TypeList<IntegerAttr, FeltConstAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
   struct ColumnCheckData {

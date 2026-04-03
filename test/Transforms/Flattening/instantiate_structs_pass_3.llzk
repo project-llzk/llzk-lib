@@ -160,3 +160,40 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @NeedsTemplateParam {
+    poly.param @A
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %0 = function.call @NeedsTemplateParam::@id<[89]>() : () -> index
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+// CHECK-LABEL: function.def @NeedsTemplateParam_89_id() -> index {
+// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:    function.return %[[VAL_0]] : index
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @NeedsTemplateParam_89_id() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

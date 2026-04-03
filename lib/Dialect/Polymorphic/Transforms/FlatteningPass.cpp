@@ -921,43 +921,97 @@ public:
       return failure(); // nothing to do if not parameterized
     }
     LLVM_DEBUG(
-        llvm::dbgs() << "[InstantiateFuncAtCallOp]   target function in template "
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  target function in template "
                      << parentTemplate.getSymName() << '\n'
     );
 
-    // Perform type unification with tracking to determine the instantiated type(s)
-    UnificationMap unifications;
-    bool unifies = typeListsUnify(
-        callTgt.getArgumentTypes(), op.getArgOperands().getTypes(), {}, &unifications
-    );
-    unifies |= typeListsUnify(callTgt.getResultTypes(), op.getResultTypes(), {}, &unifications);
-    if (!unifies) {
+    // Perform type unification with tracking to infer the instantiated type(s). Even though
+    // `CallOp` verification already checked that caller and callee types unify, the progress of
+    // instantiation so far may have brought together a chain of calls across templates where each
+    // individual unification check passed due to permissive type variables and/or symbols in the
+    // middle but the overall chain does not unify. Hence, this unification may fail and should
+    // produce a meaningful error message if it does.
+    // See: `test/Transforms/Flattening/instantiate_funcs_fail.llzk`
+    FailureOr<UnificationMap> unifyResult = op.unifyTypeSignature(callTgt.getFunctionType());
+    if (failed(unifyResult)) {
       return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-        diag.append("target function type does not unify with callee type: ")
-            .append(
-                FunctionType::get(
-                    op.getContext(), op.getArgOperands().getTypes(), op.getResultTypes()
-                )
-            )
+        diag.append("target function type does not unify with call type ")
+            .append(op.getTypeSignature())
             .attachNote(callTgt.getLoc())
             .append("target function declared here");
       });
     }
-    LLVM_DEBUG({
-      llvm::dbgs() << "[InstantiateFuncAtCallOp] unifications of types: "
-                   << debug::toStringList(unifications) << '\n';
-    });
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  unifications of types: "
+                     << debug::toStringList(unifyResult.value()) << '\n'
+    );
 
-    // Map template parameter symbols to the concrete value at the call site.
+    // Maps template parameter symbols to the instantiation value at the call site.
     DenseMap<Attribute, Attribute> paramNameToConcrete;
-    for (auto &[key, val] : unifications) {
-      auto &[symRef, side] = key;
-      if (side == Side::LHS && isConcreteAttr(val)) {
-        paramNameToConcrete[symRef] = val;
+    // If template instantiation list is given, must use that. Otherwise, infer.
+    auto realParams = parentTemplate.getConstOps<TemplateParamOp>();
+    ArrayAttr callParams = op.getTemplateParamsAttr();
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  TemplateParamsAttr: " << callParams << '\n'
+    );
+    if (isNullOrEmpty(callParams)) {
+      for (auto paramOp : realParams) {
+        auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+        auto it = unifyResult->find({paramName, Side::RHS});
+        if (it == unifyResult->end()) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': not found\n"
+          );
+          continue;
+        }
+        Attribute inferredVal = it->second;
+        if (!isConcreteAttr(inferredVal)) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': not concrete, " << inferredVal << '\n'
+          );
+          continue;
+        }
+        // Ensure it's a valid value for the optional type restriction on the TemplateParamOp
+        if (failed(op.verifyTemplateParamCompatibility(inferredVal, paramOp))) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': incompatible with specified param type. MUST FAIL!\n"
+          );
+          return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+            diag.append("inferred value for parameter '")
+                .append(paramName)
+                .append("' is incompatible with specified param type")
+                .attachNote(paramOp.getLoc())
+                .append("template parameter declared here");
+          });
+        }
+        paramNameToConcrete[paramName] = inferredVal;
+      }
+    } else {
+      // As stated earlier, need to run the verification checks again to ensure the
+      // instantiation is valid, except for the size check becuase that cannot change.
+      assert((callParams.size() == llvm::range_size(realParams)) && "per CallOpVerifier");
+      if (failed(op.verifyTemplateParamCompatibility(realParams))) {
+        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+          diag.append("incompatible with specified param type(s)");
+        });
+      }
+      if (failed(op.verifyTemplateParamsMatchInferred(realParams, unifyResult.value()))) {
+        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+          diag.append("incompatible with inferred param value(s)");
+        });
+      }
+      // Add the mappings
+      for (auto [paramOp, attr] : llvm::zip_equal(realParams, callParams.getValue())) {
+        auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+        paramNameToConcrete[paramName] = attr;
       }
     }
+
     if (paramNameToConcrete.empty()) {
-      LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp]   skip: no concrete params\n");
+      LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp]  skip: no concrete params\n");
       return failure();
     }
 
@@ -984,7 +1038,11 @@ public:
         parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix
     );
 
-    // Helper lambda: build the FuncInstTypeConverter and apply it to a cloned function.
+    // Helper lambda to:
+    // 1. build the FuncInstTypeConverter and apply it to a cloned function
+    // 2. verify CallOp in the converted function are valid for their respective targets
+    //    and emit a more helpful error at this point rather than discovering it later
+    //    when verifying the entire module.
     auto applyBodyConversions = [&](FuncDefOp newFunc) -> LogicalResult {
       FuncInstTypeConverter tyConv(paramNameToConcrete);
       ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
@@ -1004,13 +1062,17 @@ public:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]   instantiated clone: " << newFunc << '\n'
       );
       ::reportDelayedDiagnostics(op, std::move(delayedDiagnostics));
-      return success();
+
+      // Verify CallOp match targets
+      SymbolTableCollection tables;
+      WalkResult res = newFunc.walk([&tables](CallOp nestedCall) {
+        return WalkResult(nestedCall.verifySymbolUses(tables));
+      });
+      return failure(res.wasInterrupted());
     };
 
     SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
     assert(symPieces.size() >= 2 && "callee must include at least template and function names");
-    SymbolRefAttr newCalleeAttr;
-
     if (remainingNames.empty()) {
       // FULL INSTANTIATION: place the cloned function directly in the parent module.
       // New function name encodes all parameter values, e.g., "TemplateName_8_12_funcName".
@@ -1024,7 +1086,7 @@ public:
         symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
         actualNewFuncName = newFunc.getSymName();
         LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   cloned function (full): "
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
                          << actualNewFuncName << '\n'
         );
         if (failed(applyBodyConversions(newFunc))) {
@@ -1033,11 +1095,13 @@ public:
                            << actualNewFuncName << '\n'
           );
           newFunc->erase();
-          return failure();
+          return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+            diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+          });
         }
       } else {
         LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   reusing full instantiation: "
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
                          << actualNewFuncName << '\n'
         );
       }
@@ -1047,7 +1111,6 @@ public:
       symPieces.pop_back(); // remove original function name
       symPieces.pop_back(); // remove template name
       symPieces.push_back(FlatSymbolRefAttr::get(StringAttr::get(ctx, actualNewFuncName)));
-      newCalleeAttr = asSymbolRefAttr(symPieces);
     } else {
       // PARTIAL INSTANTIATION: place the cloned function in a new partially-instantiated
       // TemplateOp that retains only the non-concrete parameters.
@@ -1077,12 +1140,15 @@ public:
         // Clone and partially convert the function (concretize only the concrete params).
         FuncDefOp newFunc = callTgt.clone();
         if (failed(applyBodyConversions(newFunc))) {
+          StringRef newFuncName = newFunc.getSymName();
           LLVM_DEBUG(
-              llvm::dbgs()
-              << "[InstantiateFuncAtCallOp]   body conversion failed during partial instantiation\n"
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
+                           << newFuncName << '\n'
           );
           newTemplate->erase();
-          return failure();
+          return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+            diag.append("failure while creating instantiated function '", newFuncName, '\'');
+          });
         }
 
         // Insert the function into the new template, then the template into the module. Use the
@@ -1090,12 +1156,12 @@ public:
         symTables.getSymbolTable(newTemplate).insert(newFunc);
         symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
         LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   created partial instantiation template: "
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
                          << newTemplate.getSymName() << '\n'
         );
       } else {
         LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   reusing partial instantiation template: "
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
                          << newTemplate.getSymName() << '\n'
         );
       }
@@ -1106,16 +1172,20 @@ public:
       symPieces.pop_back(); // remove original template name
       symPieces.push_back(FlatSymbolRefAttr::get(newTemplate.getSymNameAttr()));
       symPieces.push_back(FlatSymbolRefAttr::get(callTgt.getSymNameAttr()));
-      newCalleeAttr = asSymbolRefAttr(symPieces);
     }
 
-    LLVM_DEBUG({
-      llvm::dbgs() << "[InstantiateFuncAtCallOp] updating callee from " << op.getCalleeAttr()
-                   << " to " << newCalleeAttr << '\n';
-    });
-
     // Update the CallOp to point to the instantiated function and mark the module as modified.
-    rewriter.modifyOpInPlace(op, [&]() { op.setCalleeAttr(newCalleeAttr); });
+    rewriter.modifyOpInPlace(op, [&op, &symPieces]() {
+      // Update callee attribute.
+      SymbolRefAttr newCalleeAttr = asSymbolRefAttr(symPieces);
+      LLVM_DEBUG({
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  updating callee from " << op.getCalleeAttr()
+                     << " to " << newCalleeAttr << '\n';
+      });
+      op.setCalleeAttr(newCalleeAttr);
+      // Also drop template param list. If it was present, it was fully used (no partial case).
+      op.setTemplateParamsAttr(nullptr);
+    });
     tracker_.updateModifiedFlag(true);
     return success();
   }
@@ -1317,8 +1387,7 @@ public:
 
     ArrayType newResultType = ArrayType::get(oldResultType.getElementType(), out.paramsOfStructTy);
     if (newResultType == oldResultType) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     // ASSERT: folding only preserves the original Attribute or converts affine to integer
     assert(tracker_.isLegalConversion(oldResultType, newResultType, "InstantiateAtCreateArrayOp"));
@@ -1395,8 +1464,7 @@ public:
     StructType newRetTy = StructType::get(oldRetTy.getNameRef(), out.paramsOfStructTy);
     LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute]   newRetTy: " << newRetTy << '\n');
     if (newRetTy == oldRetTy) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     // The `newRetTy` is computed via instantiateViaTargetType() which can only preserve the
     // original Attribute or convert to a concrete attribute via the unification process. Thus, if
@@ -1676,8 +1744,7 @@ public:
       }
     }
     if (!newType || newType == op.getType()) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateMemberDefTypeFromWrite")) {
       return failure();
@@ -1722,8 +1789,7 @@ public:
       return failure();
     }
     if (op->getResultTypes() == inferredResultTypes) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.areLegalConversions(
             op->getResultTypes(), inferredResultTypes, "UpdateInferredResultTypes"
@@ -1763,8 +1829,7 @@ public:
 
     FunctionType oldFuncTy = op.getFunctionType();
     if (oldFuncTy.getResults() == tyFromReturnOp) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.areLegalConversions(
             oldFuncTy.getResults(), tyFromReturnOp, "UpdateFuncTypeFromReturn"
@@ -1806,8 +1871,7 @@ public:
       return failure();
     }
     if (op.getResultTypes() == targetFunc.getFunctionType().getResults()) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.areLegalConversions(
             op.getResultTypes(), targetFunc.getFunctionType().getResults(),

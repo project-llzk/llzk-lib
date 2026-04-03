@@ -453,6 +453,35 @@ def CallOp : FunctionDialectOp<
     /// Allocate consecutive storage of the ValueRange instances in the parameter
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
     static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
+
+    /// Check type compatibility of the given template parameter value from this `CallOp` against
+    /// the declared type on the given `TemplateParamOp` (if any).
+    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
+    );
+
+    /// Check type compatibility of each template parameter value provided in this `CallOp` against
+    /// the declared type on each `TemplateParamOp` (if any).
+    ///
+    /// Pre-condition assertions:
+    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
+    );
+
+    /// Verify that each template parameter value provided in this `CallOp` is consistent with
+    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
+    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
+    /// the target function type signature.
+    ///
+    /// Pre-condition assertions:
+    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
+        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
+        const UnificationMap &unifications
+    );
   }];
 }
 

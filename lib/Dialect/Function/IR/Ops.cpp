@@ -457,6 +457,72 @@ void CallOp::build(
   addTemplateParams(odsBuilder, props, templateParams);
 }
 
+LogicalResult
+CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplateParamOp targetParam) {
+  if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
+    // Note: `declaredType` is restricted by `isValidConstReadType()`
+    bool compatible = false;
+    if (llvm::isa<TypeVarType>(*declaredType)) {
+      compatible = llvm::isa<TypeAttr>(paramFromCallOp);
+    } else if (llvm::isa<FeltType>(*declaredType)) {
+      compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromCallOp) &&
+                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromCallOp).getType());
+    } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
+      // Note: Just like struct type instantiation, there is no restriction on passing a
+      // larger value to an `i1`. The flattening pass will treat 0 as false and any other
+      // value as true (but give a warning if it's not 1).
+      compatible = llvm::isa<IntegerAttr>(paramFromCallOp) &&
+                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromCallOp).getType());
+    } else {
+      llvm_unreachable("inconsistent with `isValidConstReadType()`");
+    }
+    if (!compatible) {
+      // Tested in call_with_template_params_fail.llzk
+      return this->emitOpError().append(
+          "instantiation value '", paramFromCallOp, "' is not compatible with parameter \"@",
+          targetParam.getName(), "\" type restriction ", *declaredType
+      );
+    }
+  }
+  return success();
+}
+
+LogicalResult CallOp::verifyTemplateParamCompatibility(
+    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs
+) {
+  ArrayAttr callParams = this->getTemplateParamsAttr();
+  assert(!isNullOrEmpty(callParams) && "pre-condition");
+  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
+
+  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
+    if (failed(verifyTemplateParamCompatibility(attr, paramOp))) {
+      return failure();
+    }
+  }
+  return success();
+}
+
+LogicalResult CallOp::verifyTemplateParamsMatchInferred(
+    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs,
+    const UnificationMap &unifications
+) {
+  ArrayAttr callParams = this->getTemplateParamsAttr();
+  assert(!isNullOrEmpty(callParams) && "pre-condition");
+  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
+
+  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
+    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
+    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
+      // Tested in call_with_template_params_fail.llzk
+      return this->emitOpError().append(
+          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
+          "\" conflicts with value '", it->second, "' inferred from function type signature"
+      );
+    }
+  }
+  return success();
+}
+
 namespace {
 
 struct CallOpVerifier {
@@ -600,13 +666,10 @@ struct KnownTargetVerifier : public CallOpVerifier {
       }
 
       // Ensure `forceIntAttrTypes()` was successful on the CallOp's template parameters.
-      {
-        auto emitError = [this] {
-          return llzk::InFlightDiagnosticWrapper(this->callOp->emitOpError());
-        };
-        if (failed(llzk::forceIntAttrTypes(callParams.getValue(), emitError))) {
-          return failure();
-        }
+      if (failed(llzk::forceIntAttrTypes(callParams.getValue(), [this] {
+        return llzk::InFlightDiagnosticWrapper(this->callOp->emitOpError());
+      }))) {
+        return failure();
       }
 
       // The instantiation list is present. Check it has exactly one entry per template param.
@@ -620,52 +683,15 @@ struct KnownTargetVerifier : public CallOpVerifier {
       }
 
       // Check type compatibility of each provided value with the declared parameter type (if any).
-      for (auto [attr, paramOp] : llvm::zip(callParams.getValue(), realParams)) {
-        if (std::optional<Type> declaredType = paramOp.getTypeOpt()) {
-          // Note: `declaredType` is restricted by `isValidConstReadType()`
-          bool compatible = false;
-          if (llvm::isa<TypeVarType>(*declaredType)) {
-            compatible = llvm::isa<TypeAttr>(attr);
-          } else if (llvm::isa<FeltType>(*declaredType)) {
-            compatible = llvm::isa<FeltConstAttr, IntegerAttr>(attr) &&
-                         isValidConstReadType(llvm::cast<TypedAttr>(attr).getType());
-          } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
-            // Note: Just like struct type instantiation, there is no restriction on passing a
-            // larger value to an `i1`. The flattening pass will treat 0 as false and any other
-            // value as true (but give a warning if it's not 1).
-            compatible = llvm::isa<IntegerAttr>(attr) &&
-                         isValidConstReadType(llvm::cast<TypedAttr>(attr).getType());
-          } else {
-            llvm_unreachable("inconsistent with `isValidConstReadType()`");
-          }
-          if (!compatible) {
-            // Tested in call_with_template_params_fail.llzk
-            return callOp->emitOpError().append(
-                "instantiation value '", attr, "' is not compatible with parameter \"@",
-                paramOp.getName(), "\" type restriction ", *declaredType
-            );
-          }
-        }
+      if (failed(callOp->verifyTemplateParamCompatibility(realParams))) {
+        return failure();
       }
 
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
-      UnificationMap unifications;
-      typeListsUnify(tgtType.getInputs(), callOp->getArgOperands().getTypes(), {}, &unifications);
-      typeListsUnify(tgtType.getResults(), callOp->getResultTypes(), {}, &unifications);
-
-      for (auto [attr, paramOp] : llvm::zip_equal(callParams.getValue(), realParams)) {
-        auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::LHS});
-        if (it != unifications.end() /*&& it->second != nullptr*/ && it->second != attr) {
-          // Tested in call_with_template_params_fail.llzk
-          return callOp->emitOpError().append(
-              "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-              "\" conflicts with value '", it->second, "' inferred from function type signature"
-          );
-        }
-      }
-
-      return success();
+      FailureOr<UnificationMap> unifyResult = callOp->unifyTypeSignature(tgtType);
+      assert(succeeded(unifyResult) && "already checked by `verifyInputs()` and `verifyOutputs()`");
+      return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
     } else {
       // Non-template functions cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();
