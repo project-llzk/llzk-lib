@@ -36,16 +36,6 @@ using namespace llzk;
 
 namespace {
 
-/// Converts a reduced DynamicAPInt (non-negative, fits in `bitWidth` bits)
-/// back to an APInt for use in a FeltConstAttr.
-/// We use bitWidth+1 so that all field values in [0, p) — which satisfy
-/// val < 2^bitWidth — have a clear sign bit and print as positive decimals.
-static llvm::APInt apintFromField(const llvm::DynamicAPInt &val, unsigned bitWidth) {
-  llvm::SmallString<64> str;
-  llvm::raw_svector_ostream(str) << val;
-  return llvm::APInt(bitWidth + 1, str, 10);
-}
-
 /// Converts a canonical field element to its signed integer representation:
 ///   signed_int(f) = f         if f < field.half()
 ///   signed_int(f) = f - p     if f >= field.half()
@@ -123,7 +113,7 @@ static felt::FeltConstAttr buildFoldResult(
     mlir::MLIRContext *ctx, const llvm::DynamicAPInt &val, const Field &field,
     llvm::StringRef fieldName
 ) {
-  return felt::FeltConstAttr::get(ctx, apintFromField(val, field.bitWidth()), fieldName);
+  return felt::FeltConstAttr::get(ctx, toAPInt(val, field.bitWidth()), fieldName);
 }
 
 } // namespace

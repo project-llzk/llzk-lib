@@ -11,6 +11,7 @@
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/SmallString.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <limits>
@@ -133,6 +134,12 @@ APSInt toAPSInt(const DynamicAPInt &i) {
   res.setIsSigned(true);
 
   return res;
+}
+
+APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
+  SmallString<64> str;
+  raw_svector_ostream(str) << val;
+  return APInt(bitWidth + 1, str, 10);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
