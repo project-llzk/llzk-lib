@@ -1784,14 +1784,14 @@ public:
 };
 
 /// Update CallOp result type based on the updated return type from the target FuncDefOp.
-/// This only applies to global (i.e., non-struct) functions because the functions within structs
+/// This only applies to free (i.e., non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
-class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
+class UpdateFreeFuncCallOpTypes final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateGlobalCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateFreeFuncCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
@@ -1811,12 +1811,12 @@ public:
     }
     if (!tracker_.areLegalConversions(
             op.getResultTypes(), targetFunc.getFunctionType().getResults(),
-            "UpdateGlobalCallOpTypes"
+            "UpdateFreeFuncCallOpTypes"
         )) {
       return failure();
     }
 
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFreeFuncCallOpTypes] replaced " << op);
     CallOp newOp = replaceOpWithNewOp<CallOp>(rewriter, op, targetFunc, op.getArgOperands());
     (void)newOp; // tell compiler it's intentionally unused in release builds
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
@@ -1884,7 +1884,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       //  benefit = 6
       UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
       //  benefit = 3
-      UpdateGlobalCallOpTypes,      // CallOp, targeting non-struct functions
+      UpdateFreeFuncCallOpTypes,    // CallOp, targeting non-struct functions
       UpdateFuncTypeFromReturn,     // FuncDefOp
       UpdateNewArrayElemFromWrite,  // CreateArrayOp
       UpdateArrayElemFromArrRead,   // ReadArrayOp
