@@ -1006,6 +1006,13 @@ public:
       // Add the mappings
       for (auto [paramOp, attr] : llvm::zip_equal(realParams, callParams.getValue())) {
         auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+        if (!isConcreteAttr(attr)) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': not concrete, " << attr << '\n'
+          );
+          continue;
+        }
         paramNameToConcrete[paramName] = attr;
       }
     }
