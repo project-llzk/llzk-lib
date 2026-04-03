@@ -36,14 +36,6 @@ namespace llzk::felt {
 
 namespace {
 
-/// Converts a canonical field element to its signed integer representation:
-///   signed_int(f) = f         if f < field.half()
-///   signed_int(f) = f - p     if f >= field.half()
-/// (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)
-static DynamicAPInt toSignedField(const DynamicAPInt &f, const Field &field) {
-  return f < field.half() ? f : f - field.prime();
-}
-
 struct BinaryFoldData {
   DynamicAPInt lhsVal, rhsVal;
   StringRef fieldName;
@@ -212,8 +204,8 @@ OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
-  DynamicAPInt sLhs = toSignedField(data->lhsVal, *data->field);
-  DynamicAPInt sRhs = toSignedField(data->rhsVal, *data->field);
+  DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
+  DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
   if (sRhs == DynamicAPInt(0)) {
     return {};
   }
@@ -237,8 +229,8 @@ OpFoldResult SignedModFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
-  DynamicAPInt sLhs = toSignedField(data->lhsVal, *data->field);
-  DynamicAPInt sRhs = toSignedField(data->rhsVal, *data->field);
+  DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
+  DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
   if (sRhs == DynamicAPInt(0)) {
     return {};
   }
