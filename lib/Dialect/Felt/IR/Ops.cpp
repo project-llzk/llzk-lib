@@ -284,9 +284,14 @@ OpFoldResult ShrFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
+  // Any shift `amount >= bitwidth` will yield zero.
+  const Field *field = data->field;
+  if (data->rhsVal >= DynamicAPInt(field->bitWidth())) {
+    return buildFoldResult(getContext(), DynamicAPInt(0), *field, data->fieldName);
+  }
   // Right-shifting a non-negative value always yields a value in [0, lhs] < prime;
   // no modular reduction required.
-  return buildFoldResult(getContext(), data->lhsVal >> data->rhsVal, *data->field, data->fieldName);
+  return buildFoldResult(getContext(), data->lhsVal >> data->rhsVal, *field, data->fieldName);
 }
 
 //===------------------------------------------------------------------===//

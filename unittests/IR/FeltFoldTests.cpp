@@ -318,6 +318,16 @@ TEST_F(BabyBearFoldTest, Shr) {
   expectValue(foldBinary<ShrFeltOp>(babyBearConst(16), babyBearConst(2)), 4);
 }
 
+TEST_F(BabyBearFoldTest, Shr30) {
+  // BB_PRIME >> 30 = 1 (only highest bit remains, all others shifted out)
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(30)), 1);
+}
+
+TEST_F(BabyBearFoldTest, Shr31) {
+  // BB_PRIME >> 31 = 0 (shifts all bits out since BB_PRIME is 31 bits)
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(BB_PRIME), babyBearConst(31)), 0);
+}
+
 //===------------------------------------------------------------------===//
 // felt.bit_not
 //===------------------------------------------------------------------===//
