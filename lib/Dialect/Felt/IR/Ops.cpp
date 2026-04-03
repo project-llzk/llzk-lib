@@ -133,26 +133,6 @@ static llzk::felt::FeltConstAttr buildFoldResult(
   return llzk::felt::FeltConstAttr::get(ctx, apintFromField(val, field.bitWidth()), fieldName);
 }
 
-/// General modular exponentiation (square-and-multiply) for felt.pow.
-/// Note: modExp() in DynamicAPIntHelper.h asserts (base*result)%mod==1, so
-/// it is only valid for computing multiplicative inverses — not general powers.
-static llvm::DynamicAPInt modPow(
-    const llvm::DynamicAPInt &base, const llvm::DynamicAPInt &exp, const llvm::DynamicAPInt &mod
-) {
-  llvm::DynamicAPInt result(1);
-  llvm::DynamicAPInt b = base % mod;
-  llvm::DynamicAPInt e = exp;
-  const llvm::DynamicAPInt two(2);
-  while (e != llvm::DynamicAPInt(0)) {
-    if (e % two != llvm::DynamicAPInt(0)) {
-      result = (result * b) % mod;
-    }
-    b = (b * b) % mod;
-    e = e / two;
-  }
-  return result;
-}
-
 } // namespace
 
 namespace llzk::felt {
@@ -223,7 +203,7 @@ OpFoldResult PowFeltOp::fold(FoldAdaptor adaptor) {
     return {};
   }
   return buildFoldResult(
-      getContext(), modPow(data->lhsVal, data->rhsVal, data->field->prime()), *data->field,
+      getContext(), modExp(data->lhsVal, data->rhsVal, data->field->prime()), *data->field,
       data->fieldName
   );
 }

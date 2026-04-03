@@ -149,7 +149,6 @@ DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const Dyn
     b = (b * b) % mod;
     e = e >> one;
   }
-  assert((base * result) % mod == 1 && "inverse is incorrect");
   return result;
 }
 
@@ -157,7 +156,9 @@ llvm::DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p)
   assert(f != 0 && "0 has no inverse");
   // Fermat: f^(p-2) mod p
   DynamicAPInt exp = p - 2;
-  return modExp(f, exp, p);
+  DynamicAPInt result = modExp(f, exp, p);
+  assert((f * result) % p == 1 && "inverse is incorrect");
+  return result;
 }
 
 } // namespace llzk
