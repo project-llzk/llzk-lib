@@ -164,12 +164,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3e28424d40b47d5c78842275b43ad94d" id="r_a3e28424d40b47d5c78842275b43ad94d"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3e28424d40b47d5c78842275b43ad94d">getProductFn</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> op) const</td></tr>
 <tr class="memitem:a7ebc05fe2ce8a82ef942bb9961ac2bfc" id="r_a7ebc05fe2ce8a82ef942bb9961ac2bfc"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7ebc05fe2ce8a82ef942bb9961ac2bfc">getFreeFunc</a> (std::string_view funcName) const</td></tr>
 <tr class="memitem:a3474849f161c52cb9f5e319459a0ee2d" id="r_a3474849f161c52cb9f5e319459a0ee2d"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3474849f161c52cb9f5e319459a0ee2d">getFunc</a> (<a class="el" href="namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9">function::FunctionKind</a> kind, std::string_view name) const</td></tr>
-<tr class="memitem:a79278104ec7a2c6b2f3a51f5132807d7" id="r_a79278104ec7a2c6b2f3a51f5132807d7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79278104ec7a2c6b2f3a51f5132807d7">computeReachable</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> caller, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> callee)</td></tr>
-<tr class="memdesc:a79278104ec7a2c6b2f3a51f5132807d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns if the callee compute function is reachable by the caller by construction.  <br /></td></tr>
-<tr class="memitem:a133798c8bd6297f4455576195722b2ad" id="r_a133798c8bd6297f4455576195722b2ad"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a133798c8bd6297f4455576195722b2ad">computeReachable</a> (std::string_view caller, std::string_view callee)</td></tr>
-<tr class="memitem:a45591062f4cb47c80f364176e7795c34" id="r_a45591062f4cb47c80f364176e7795c34"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a45591062f4cb47c80f364176e7795c34">constrainReachable</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> caller, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> callee)</td></tr>
-<tr class="memdesc:a45591062f4cb47c80f364176e7795c34"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns if the callee compute function is reachable by the caller by construction.  <br /></td></tr>
-<tr class="memitem:a0e6f31a6c341064fce3eb7416455b147" id="r_a0e6f31a6c341064fce3eb7416455b147"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0e6f31a6c341064fce3eb7416455b147">constrainReachable</a> (std::string_view caller, std::string_view callee)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -184,7 +178,7 @@ Static Public Member Functions</h2></td></tr>
 <div class="textblock"><p>Builds out a LLZK-compliant module and provides utilities for populating that module. </p>
 <p>This class is designed to be used by front-ends looking to generate LLZK IR programmatically and is also a useful unit testing facility. TODO: this is a WIP, flesh this class out as needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00041">41</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00038">38</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a0b2d7032252d0166c85c3c156754866b" name="a0b2d7032252d0166c85c3c156754866b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0b2d7032252d0166c85c3c156754866b">&#9670;&#160;</a></span>ModuleBuilder()</h2>
@@ -209,7 +203,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00043">43</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00040">40</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -244,7 +238,7 @@ Static Public Member Functions</h2></td></tr>
 <p>compute returns the type of the struct that defines it. </p>
 <p>Since this is for testing, we accept no arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00122">122</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00121">121</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
 
 </div>
 </div>
@@ -277,7 +271,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>constrain accepts the struct type as the first argument. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00145">145</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00144">144</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
 
 </div>
 </div>
@@ -311,119 +305,7 @@ Static Public Member Functions</h2></td></tr>
 <p>product returns the type of the struct that defines it. </p>
 <p>Since this is for testing, we accept no arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00168">168</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a79278104ec7a2c6b2f3a51f5132807d7" name="a79278104ec7a2c6b2f3a51f5132807d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79278104ec7a2c6b2f3a51f5132807d7">&#9670;&#160;</a></span>computeReachable() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool llzk::ModuleBuilder::computeReachable </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a></td>          <td class="paramname"><span class="paramname"><em>caller</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a></td>          <td class="paramname"><span class="paramname"><em>callee</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Returns if the callee compute function is reachable by the caller by construction. </p>
-
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00255">255</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
-
-</div>
-</div>
-<a id="a133798c8bd6297f4455576195722b2ad" name="a133798c8bd6297f4455576195722b2ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a133798c8bd6297f4455576195722b2ad">&#9670;&#160;</a></span>computeReachable() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool llzk::ModuleBuilder::computeReachable </td>
-          <td>(</td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>caller</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>callee</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00278">278</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a45591062f4cb47c80f364176e7795c34" name="a45591062f4cb47c80f364176e7795c34"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a45591062f4cb47c80f364176e7795c34">&#9670;&#160;</a></span>constrainReachable() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool llzk::ModuleBuilder::constrainReachable </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a></td>          <td class="paramname"><span class="paramname"><em>caller</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a></td>          <td class="paramname"><span class="paramname"><em>callee</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Returns if the callee compute function is reachable by the caller by construction. </p>
-
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00263">263</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
-
-</div>
-</div>
-<a id="a0e6f31a6c341064fce3eb7416455b147" name="a0e6f31a6c341064fce3eb7416455b147"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e6f31a6c341064fce3eb7416455b147">&#9670;&#160;</a></span>constrainReachable() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool llzk::ModuleBuilder::constrainReachable </td>
-          <td>(</td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>caller</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>callee</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00284">284</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8cpp_source.html#l00167">167</a> of file <a class="el" href="Builders_8cpp_source.html">Builders.cpp</a>.</p>
 
 </div>
 </div>
@@ -450,7 +332,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00204">204</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00201">201</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -477,7 +359,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00198">198</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00195">195</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -504,7 +386,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00214">214</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00211">211</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -531,7 +413,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00208">208</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00205">205</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -558,7 +440,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00228">228</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00225">225</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -589,7 +471,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00236">236</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00233">233</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -616,7 +498,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00224">224</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00221">221</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -643,7 +525,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00218">218</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00215">215</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -672,7 +554,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Get the top-level LLZK module. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00189">189</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00186">186</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -699,7 +581,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00191">191</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00188">188</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -726,7 +608,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00047">47</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00044">44</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -786,7 +668,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00152">152</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00149">149</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -860,7 +742,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00117">117</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00114">114</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -908,7 +790,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00063">63</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00060">60</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -944,7 +826,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00055">55</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00052">52</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1013,7 +895,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00170">170</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00167">167</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1092,7 +974,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00127">127</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00124">124</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1140,7 +1022,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00076">76</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00073">73</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1176,7 +1058,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00068">68</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00065">65</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1207,7 +1089,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00051">51</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00048">48</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1264,7 +1146,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00182">182</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00179">179</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1321,7 +1203,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00176">176</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00173">173</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1380,7 +1262,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Inserts a struct with both compute and constrain functions. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00092">92</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00089">89</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1426,7 +1308,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00081">81</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00078">78</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1474,7 +1356,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00138">138</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00135">135</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1522,7 +1404,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00105">105</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00102">102</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -1558,7 +1440,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00097">97</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00094">94</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
