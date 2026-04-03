@@ -15,10 +15,8 @@
 
 #include <mlir/IR/Builders.h>
 
-#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/SmallString.h>
-#include <llvm/Support/raw_ostream.h>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Felt/IR/OpInterfaces.cpp.inc"
@@ -30,6 +28,8 @@
 using namespace mlir;
 using namespace llzk;
 
+namespace llzk::felt {
+
 //===------------------------------------------------------------------===//
 // Constant folding helpers
 //===------------------------------------------------------------------===//
@@ -40,19 +40,19 @@ namespace {
 ///   signed_int(f) = f         if f < field.half()
 ///   signed_int(f) = f - p     if f >= field.half()
 /// (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)
-static llvm::DynamicAPInt toSignedField(const llvm::DynamicAPInt &f, const Field &field) {
+static DynamicAPInt toSignedField(const DynamicAPInt &f, const Field &field) {
   return f < field.half() ? f : f - field.prime();
 }
 
 struct BinaryFoldData {
-  llvm::DynamicAPInt lhsVal, rhsVal;
-  llvm::StringRef fieldName;
-  const Field *field; // stable pointer into the static knownFields map
+  DynamicAPInt lhsVal, rhsVal;
+  StringRef fieldName;
+  const Field *field;
 };
 
 struct UnaryFoldData {
-  llvm::DynamicAPInt val;
-  llvm::StringRef fieldName;
+  DynamicAPInt val;
+  StringRef fieldName;
   const Field *field;
 };
 
@@ -61,16 +61,15 @@ struct UnaryFoldData {
 ///   - either operand constant attribute is absent (non-constant operand), or
 ///   - either field name is unspecified (null StringAttr), or
 ///   - the two field names differ.
-static std::optional<BinaryFoldData>
-tryGetBinaryFoldData(mlir::Attribute lhsAttr, mlir::Attribute rhsAttr) {
-  auto lhs = llvm::dyn_cast_or_null<felt::FeltConstAttr>(lhsAttr);
-  auto rhs = llvm::dyn_cast_or_null<felt::FeltConstAttr>(rhsAttr);
+static std::optional<BinaryFoldData> tryGetBinaryFoldData(Attribute lhsAttr, Attribute rhsAttr) {
+  auto lhs = llvm::dyn_cast_or_null<FeltConstAttr>(lhsAttr);
+  auto rhs = llvm::dyn_cast_or_null<FeltConstAttr>(rhsAttr);
   if (!lhs || !rhs) {
     return std::nullopt;
   }
 
-  mlir::StringAttr lhsFieldName = lhs.getFieldName();
-  mlir::StringAttr rhsFieldName = rhs.getFieldName();
+  StringAttr lhsFieldName = lhs.getFieldName();
+  StringAttr rhsFieldName = rhs.getFieldName();
   if (!lhsFieldName || !rhsFieldName || lhsFieldName != rhsFieldName) {
     return std::nullopt;
   }
@@ -87,13 +86,13 @@ tryGetBinaryFoldData(mlir::Attribute lhsAttr, mlir::Attribute rhsAttr) {
 }
 
 /// Same guard logic for unary felt ops.
-static std::optional<UnaryFoldData> tryGetUnaryFoldData(mlir::Attribute operandAttr) {
-  auto operand = llvm::dyn_cast_or_null<felt::FeltConstAttr>(operandAttr);
+static std::optional<UnaryFoldData> tryGetUnaryFoldData(Attribute operandAttr) {
+  auto operand = llvm::dyn_cast_or_null<FeltConstAttr>(operandAttr);
   if (!operand) {
     return std::nullopt;
   }
 
-  mlir::StringAttr fieldNameAttr = operand.getFieldName();
+  StringAttr fieldNameAttr = operand.getFieldName();
   if (!fieldNameAttr) {
     return std::nullopt;
   }
@@ -109,16 +108,13 @@ static std::optional<UnaryFoldData> tryGetUnaryFoldData(mlir::Attribute operandA
 }
 
 /// Builds a FeltConstAttr carrying the reduced result value.
-static felt::FeltConstAttr buildFoldResult(
-    mlir::MLIRContext *ctx, const llvm::DynamicAPInt &val, const Field &field,
-    llvm::StringRef fieldName
+static FeltConstAttr buildFoldResult(
+    MLIRContext *ctx, const DynamicAPInt &val, const Field &field, StringRef fieldName
 ) {
-  return felt::FeltConstAttr::get(ctx, toAPInt(val, field.bitWidth()), fieldName);
+  return FeltConstAttr::get(ctx, toAPInt(val, field.bitWidth()), fieldName);
 }
 
 } // namespace
-
-namespace llzk::felt {
 
 //===------------------------------------------------------------------===//
 // FeltConstantOp
@@ -126,8 +122,7 @@ namespace llzk::felt {
 
 void FeltConstantOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
   SmallString<32> buf;
-  llvm::raw_svector_ostream os(buf);
-  os << "felt_const_";
+  llvm::raw_svector_ostream(buf) << "felt_const_";
   getValue().getValue().toStringUnsigned(buf);
   setNameFn(getResult(), buf);
 }
@@ -193,7 +188,7 @@ OpFoldResult PowFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult DivFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data || data->rhsVal == llvm::DynamicAPInt(0)) {
+  if (!data || data->rhsVal == DynamicAPInt(0)) {
     return {};
   }
   return buildFoldResult(
@@ -204,7 +199,7 @@ OpFoldResult DivFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult UnsignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data || data->rhsVal == llvm::DynamicAPInt(0)) {
+  if (!data || data->rhsVal == DynamicAPInt(0)) {
     return {};
   }
   // Both values are non-negative field elements; standard integer division
@@ -217,9 +212,9 @@ OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
-  llvm::DynamicAPInt sLhs = toSignedField(data->lhsVal, *data->field);
-  llvm::DynamicAPInt sRhs = toSignedField(data->rhsVal, *data->field);
-  if (sRhs == llvm::DynamicAPInt(0)) {
+  DynamicAPInt sLhs = toSignedField(data->lhsVal, *data->field);
+  DynamicAPInt sRhs = toSignedField(data->rhsVal, *data->field);
+  if (sRhs == DynamicAPInt(0)) {
     return {};
   }
   // DynamicAPInt / truncates toward zero (same as C++ signed int division).
@@ -230,7 +225,7 @@ OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult UnsignedModFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data || data->rhsVal == llvm::DynamicAPInt(0)) {
+  if (!data || data->rhsVal == DynamicAPInt(0)) {
     return {};
   }
   // Both non-negative, so % gives the correct unsigned remainder in [0, rhs) < prime.
@@ -242,9 +237,9 @@ OpFoldResult SignedModFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
-  llvm::DynamicAPInt sLhs = toSignedField(data->lhsVal, *data->field);
-  llvm::DynamicAPInt sRhs = toSignedField(data->rhsVal, *data->field);
-  if (sRhs == llvm::DynamicAPInt(0)) {
+  DynamicAPInt sLhs = toSignedField(data->lhsVal, *data->field);
+  DynamicAPInt sRhs = toSignedField(data->rhsVal, *data->field);
+  if (sRhs == DynamicAPInt(0)) {
     return {};
   }
   return buildFoldResult(
@@ -318,7 +313,7 @@ OpFoldResult NegFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult InvFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetUnaryFoldData(adaptor.getOperand());
-  if (!data || data->val == llvm::DynamicAPInt(0)) {
+  if (!data || data->val == DynamicAPInt(0)) {
     return {};
   }
   return buildFoldResult(getContext(), data->field->inv(data->val), *data->field, data->fieldName);
@@ -332,9 +327,8 @@ OpFoldResult NotFeltOp::fold(FoldAdaptor adaptor) {
   // One's complement at field.bitWidth() bits: maxMask = 2^bitWidth - 1,
   // result = reduce(maxMask ^ val).  The operator<< here is llzk::operator<<
   // on DynamicAPInt (defined in DynamicAPIntHelper.h).
-  llvm::DynamicAPInt maxMask =
-      (llvm::DynamicAPInt(1) << llvm::DynamicAPInt(data->field->bitWidth())) -
-      llvm::DynamicAPInt(1);
+  DynamicAPInt maxMask =
+      (DynamicAPInt(1) << DynamicAPInt(data->field->bitWidth())) - DynamicAPInt(1);
   return buildFoldResult(
       getContext(), data->field->reduce(maxMask ^ data->val), *data->field, data->fieldName
   );
