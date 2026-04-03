@@ -557,3 +557,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+module attributes {llzk.lang} {
+  struct.def @InvalidSignalType {
+    // expected-error@+1 {{'struct.member' op with type '!pod.type<[@a: !felt.type, @b: index]>' cannot have the signal attribute}}
+    struct.member @foo : !pod.type<[@a: !felt.type, @b: index]> {signal}
+
+    function.def @compute() -> !struct.type<@InvalidSignalType> {
+      %self = struct.new : !struct.type<@InvalidSignalType>
+      function.return %self : !struct.type<@InvalidSignalType>
+    }
+
+    function.def @constrain(%self: !struct.type<@InvalidSignalType>) {
+      function.return
+    }
+  }
+}
