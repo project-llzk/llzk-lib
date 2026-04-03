@@ -1061,4 +1061,25 @@ verifySubArrayOrElementType(EmitErrorFn emitError, ArrayType arrayType, Type sub
   return success();
 }
 
+bool isFeltOrSimpleFeltAggregate(Type ty) {
+  return TypeSwitch<Type, bool>(ty)
+      .Case<FeltType>([](auto) { return true; })
+      .Case<ArrayType>([](auto arrTy) { return llvm::isa<FeltType>(arrTy.getElementType()); })
+      .Case<PodType>([](auto podTy) {
+    for (auto record : podTy.getRecords()) {
+      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
+        return false;
+      }
+    }
+    return true;
+  }).Default([](auto) { return false; });
+}
+
+bool isValidMainSignalType(Type pType) {
+  if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
+    return llvm::isa<FeltType>(arrayParamTy.getElementType());
+  }
+  return llvm::isa<FeltType>(pType);
+}
+
 } // namespace llzk

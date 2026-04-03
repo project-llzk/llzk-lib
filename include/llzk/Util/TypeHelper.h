@@ -302,4 +302,14 @@ mlir::LogicalResult verifySubArrayOrElementType(
     EmitErrorFn emitError, array::ArrayType arrayType, mlir::Type subArrayOrElemType
 );
 
+/// Return true of the given type is a `FeltType` or a "simple" aggregate composed
+/// only of `FeltType` (i.e., `ArrayType` with `FeltType` elements or `PodType` with
+/// only `FeltType` records).
+bool isFeltOrSimpleFeltAggregate(mlir::Type ty);
+
+/// Return true if the given type is valid for signals (input arguments or outputs)
+/// of the main entry struct. Only plain `FeltType`s and `ArrayType`s with `FeltType` elements
+/// are allowed.
+bool isValidMainSignalType(mlir::Type pType);
+
 } // namespace llzk

@@ -223,13 +223,6 @@ LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline bool isValidMainSignalType(Type pType) {
-  if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    return llvm::isa<FeltType>(arrayParamTy.getElementType());
-  }
-  return llvm::isa<FeltType>(pType);
-}
-
 inline LogicalResult
 checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> appendSelfType) {
   if (isValidMainSignalType(pType)) {
@@ -588,24 +581,6 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
   return success();
 }
-
-namespace {
-
-bool isFeltOrSimpleFeltAggregate(Type ty) {
-  return TypeSwitch<Type, bool>(ty)
-      .Case<FeltType>([](auto) { return true; })
-      .Case<ArrayType>([](auto arrTy) { return llvm::isa<FeltType>(arrTy.getElementType()); })
-      .Case<PodType>([](auto podTy) {
-    for (auto record : podTy.getRecords()) {
-      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
-        return false;
-      }
-    }
-    return true;
-  }).Default([](auto) { return false; });
-}
-
-} // namespace
 
 LogicalResult MemberDefOp::verify() {
   if (getSignal() && !isFeltOrSimpleFeltAggregate(getType())) {
