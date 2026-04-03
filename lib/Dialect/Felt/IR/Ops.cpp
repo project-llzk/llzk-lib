@@ -204,15 +204,15 @@ OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
-  DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
-  if (sRhs == 0) {
+  const Field *field = data->field;
+  DynamicAPInt rhs = data->rhsVal;
+  if (rhs == 0 || rhs == field->prime()) {
     return {};
   }
-  DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
+  DynamicAPInt sRhs = field->toSigned(rhs);
+  DynamicAPInt sLhs = field->toSigned(data->lhsVal);
   // DynamicAPInt / truncates toward zero (same as C++ signed int division).
-  return buildFoldResult(
-      getContext(), data->field->reduce(sLhs / sRhs), *data->field, data->fieldName
-  );
+  return buildFoldResult(getContext(), field->reduce(sLhs / sRhs), *field, data->fieldName);
 }
 
 OpFoldResult UnsignedModFeltOp::fold(FoldAdaptor adaptor) {
@@ -229,14 +229,14 @@ OpFoldResult SignedModFeltOp::fold(FoldAdaptor adaptor) {
   if (!data) {
     return {};
   }
-  DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
-  if (sRhs == 0) {
+  const Field *field = data->field;
+  DynamicAPInt rhs = data->rhsVal;
+  if (rhs == 0 || rhs == field->prime()) {
     return {};
   }
-  DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
-  return buildFoldResult(
-      getContext(), data->field->reduce(sLhs % sRhs), *data->field, data->fieldName
-  );
+  DynamicAPInt sRhs = field->toSigned(rhs);
+  DynamicAPInt sLhs = field->toSigned(data->lhsVal);
+  return buildFoldResult(getContext(), field->reduce(sLhs % sRhs), *field, data->fieldName);
 }
 
 OpFoldResult AndFeltOp::fold(FoldAdaptor adaptor) {
