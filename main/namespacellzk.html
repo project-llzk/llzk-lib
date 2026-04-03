@@ -458,6 +458,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a08df12f463a5c92276e07622d3decdf5" id="r_a08df12f463a5c92276e07622d3decdf5"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a08df12f463a5c92276e07622d3decdf5">verifySubArrayType</a> (<a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> arrayType, <a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> subArrayType)</td></tr>
 <tr class="memdesc:a08df12f463a5c92276e07622d3decdf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine if the <span class="tt">subArrayType</span> is a valid subarray of <span class="tt">arrayType</span>.  <br /></td></tr>
 <tr class="memitem:a4df2215e7a4250ae90d766ca527a5af3" id="r_a4df2215e7a4250ae90d766ca527a5af3"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4df2215e7a4250ae90d766ca527a5af3">verifySubArrayOrElementType</a> (<a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> arrayType, Type subArrayOrElemType)</td></tr>
+<tr class="memitem:a4a2ab06a3956dbf1490063c357bf10c7" id="r_a4a2ab06a3956dbf1490063c357bf10c7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a> (Type ty)</td></tr>
+<tr class="memitem:a4fa2606f37aa2ff8d905d847d3756ac7" id="r_a4fa2606f37aa2ff8d905d847d3756ac7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4fa2606f37aa2ff8d905d847d3756ac7">isValidMainSignalType</a> (Type pType)</td></tr>
 <tr class="memitem:a9e37c6f9f1b5779c100b03e6b3871826" id="r_a9e37c6f9f1b5779c100b03e6b3871826"><td class="memItemLeft" align="right" valign="top">::llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a> (<a class="el" href="#ac64174fed27e22bfcf57e4332be0b8f2">OutputStream</a> val)</td></tr>
 <tr class="memitem:a46fcc59822ccf934d7d4801ae59bfa6c" id="r_a46fcc59822ccf934d7d4801ae59bfa6c"><td class="memItemLeft" align="right" valign="top">::std::optional&lt; <a class="el" href="#ac64174fed27e22bfcf57e4332be0b8f2">OutputStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a46fcc59822ccf934d7d4801ae59bfa6c">symbolizeOutputStream</a> (::llvm::StringRef str)</td></tr>
 <tr class="memitem:a365be55c2c1a6154f1abc6b3d07a862f" id="r_a365be55c2c1a6154f1abc6b3d07a862f"><td class="memItemLeft" align="right" valign="top">::std::optional&lt; <a class="el" href="#ac64174fed27e22bfcf57e4332be0b8f2">OutputStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a365be55c2c1a6154f1abc6b3d07a862f">symbolizeOutputStream</a> (uint32_t value)</td></tr>
@@ -753,6 +755,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a28b6fbe238c9f2d2f1874f246ecb4b06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify that the <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> is valid.  <br /></td></tr>
 <tr class="memitem:ae482cbbde81b792a442b8b4355efd9a6" id="r_ae482cbbde81b792a442b8b4355efd9a6"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae482cbbde81b792a442b8b4355efd9a6">verifySubArrayOrElementType</a> (<a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> arrayType, mlir::Type subArrayOrElemType)</td></tr>
 <tr class="memdesc:ae482cbbde81b792a442b8b4355efd9a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine if the <span class="tt">subArrayOrElemType</span> is either a valid subarray of <span class="tt">arrayType</span> (see <span class="tt">verifySubArrayType</span>), or if <span class="tt">subArrayOrElemType</span> matches the element type of <span class="tt">arrayType</span>.  <br /></td></tr>
+<tr class="memitem:a874d45e73577b58a7de9f25eda1f6a25" id="r_a874d45e73577b58a7de9f25eda1f6a25"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a874d45e73577b58a7de9f25eda1f6a25">isFeltOrSimpleFeltAggregate</a> (mlir::Type ty)</td></tr>
+<tr class="memdesc:a874d45e73577b58a7de9f25eda1f6a25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true if the given type is a <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> or a "simple" aggregate (i.e., <span class="tt"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a></span> or <span class="tt"><a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a></span>, not <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a></span>) composed only of <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> or nested <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> aggregates.  <br /></td></tr>
+<tr class="memitem:a6ef60a80e532b7fc351de57caffd785f" id="r_a6ef60a80e532b7fc351de57caffd785f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6ef60a80e532b7fc351de57caffd785f">isValidMainSignalType</a> (mlir::Type pType)</td></tr>
+<tr class="memdesc:a6ef60a80e532b7fc351de57caffd785f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true if the given type is valid for signals (input arguments or outputs) of the main entry struct.  <br /></td></tr>
 <tr class="memitem:a3666b12bca88746f2512866f0969309c" id="r_a3666b12bca88746f2512866f0969309c"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3666b12bca88746f2512866f0969309c">createMemberWriteValidatorPass</a> ()</td></tr>
 <tr class="memitem:ae755193e70bb273ecf737815a22efaf5" id="r_ae755193e70bb273ecf737815a22efaf5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae755193e70bb273ecf737815a22efaf5">registerMemberWriteValidatorPass</a> ()</td></tr>
 <tr class="memitem:af1f956fcfceaa22a82a5e68531938a7d" id="r_af1f956fcfceaa22a82a5e68531938a7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af1f956fcfceaa22a82a5e68531938a7d">registerMemberWriteValidatorPassPass</a> ()</td></tr>
@@ -4743,6 +4749,44 @@ template&lt;typename GraphT&gt; </div>
 
 </div>
 </div>
+<a id="a874d45e73577b58a7de9f25eda1f6a25" name="a874d45e73577b58a7de9f25eda1f6a25"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a874d45e73577b58a7de9f25eda1f6a25">&#9670;&#160;</a></span>isFeltOrSimpleFeltAggregate() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::isFeltOrSimpleFeltAggregate </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>ty</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return true if the given type is a <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> or a "simple" aggregate (i.e., <span class="tt"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a></span> or <span class="tt"><a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a></span>, not <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a></span>) composed only of <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> or nested <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> aggregates. </p>
+
+</div>
+</div>
+<a id="a4a2ab06a3956dbf1490063c357bf10c7" name="a4a2ab06a3956dbf1490063c357bf10c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a2ab06a3956dbf1490063c357bf10c7">&#9670;&#160;</a></span>isFeltOrSimpleFeltAggregate() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::isFeltOrSimpleFeltAggregate </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>ty</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01096">1096</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+
+</div>
+</div>
 <a id="afb284386fff71ad94c74a27f050076b8" name="afb284386fff71ad94c74a27f050076b8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afb284386fff71ad94c74a27f050076b8">&#9670;&#160;</a></span>isLocationLess()</h2>
 
@@ -5149,6 +5193,45 @@ template&lt;OpComparable Op&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00533">533</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a6ef60a80e532b7fc351de57caffd785f" name="a6ef60a80e532b7fc351de57caffd785f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ef60a80e532b7fc351de57caffd785f">&#9670;&#160;</a></span>isValidMainSignalType() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::isValidMainSignalType </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>pType</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return true if the given type is valid for signals (input arguments or outputs) of the main entry struct. </p>
+<p>Only plain <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span>s and <span class="tt"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a></span>s with <span class="tt"><a class="el" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a></span> elements are allowed. </p>
+
+</div>
+</div>
+<a id="a4fa2606f37aa2ff8d905d847d3756ac7" name="a4fa2606f37aa2ff8d905d847d3756ac7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4fa2606f37aa2ff8d905d847d3756ac7">&#9670;&#160;</a></span>isValidMainSignalType() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::isValidMainSignalType </td>
+          <td>(</td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>pType</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l01112">1112</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>

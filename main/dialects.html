@@ -2863,19 +2863,25 @@ Operations</h2>
 <div class="line">    return</div>
 <div class="line">  }</div>
 <div class="line">}</div>
-</div><!-- fragment --><p>The optional <span class="tt">llzk.main = !struct.type&lt;...&gt;</span> attribute on the top-level module in an LLZK IR program expresses the main entry point of the circuit as a concrete instantiation of a specific struct. For example, <span class="tt">llzk.main = !struct.type&lt;@Top&lt;[52,12]&gt;&gt;</span> or <span class="tt">llzk.main = !struct.type&lt;@Main&lt;[i1, !felt.type, 256]&gt;&gt;</span>. This component has additional restrictions:</p><ol type="1">
+</div><!-- fragment --><p>The optional <span class="tt">llzk.main = !struct.type&lt;...&gt;</span> attribute on the top-level module in an LLZK IR program expresses the main entry point of the circuit as a concrete instantiation of a specific struct. For example, <span class="tt">llzk.main = !struct.type&lt;@Top&lt;[52,12]&gt;&gt;</span> or <span class="tt">llzk.main = !struct.type&lt;@Main&lt;[i1, !felt.type, 256]&gt;&gt;</span>. This struct has additional restrictions:</p><ol type="1">
 <li>The parameter types of its functions (besides the required "self" parameter) can only be <span class="tt">!felt.type</span> or <span class="tt">!array.type&lt;.. x !felt.type&gt;</span>.</li>
-<li>The members marked as public (i.e., with the <span class="tt">{llzk.pub}</span> attribute) represent the public outputs of the overall circuit.</li>
+<li>All inputs to the main struct are signals, even though they are not marked with the <span class="tt">{signal}</span> attribute (as the <span class="tt">{signal}</span> attribute is not used on function arguments). Input signals may be public (given the <span class="tt">{llzk.pub}</span> attribute) or private (by default).</li>
+<li>All public members of the main struct are also signals (representing public output signals), and can also only be <span class="tt">!felt.type</span> or <span class="tt">!array.type&lt;.. x !felt.type&gt;</span>.</li>
 </ol>
 <p>Example of a <span class="tt">Main</span> component:</p>
-<div class="fragment"><div class="line">struct.def @Main {</div>
-<div class="line">  member @out : !felt.type {llzk.pub} // public output</div>
-<div class="line">  member @intermediate : !felt.type</div>
-<div class="line">  function.def @compute(%p: !felt.type) -&gt; !struct.type&lt;@Main&gt; {</div>
-<div class="line">    // ...</div>
-<div class="line">  }</div>
-<div class="line">  function.def @constrain(%self: !struct.type&lt;@Main&gt;, %p: !felt.type) {</div>
-<div class="line">    // ...</div>
+<div class="fragment"><div class="line">module attributes {llzk.main = !struct.type&lt;@Main&gt;, llzk.lang} {</div>
+<div class="line">  struct.def @Main {</div>
+<div class="line">    member @out : !felt.type {llzk.pub, signal} // public output signal</div>
+<div class="line">    member @out2 : !felt.type {llzk.pub} // also a public output signal, implicitly</div>
+<div class="line">    member @intermediate : !struct.type&lt;@OtherStruct&gt; // an intermediate value, not a signal, can be any LLZK type</div>
+<div class="line">    // %p is a private input signal</div>
+<div class="line">    function.def @compute(%p: !felt.type) -&gt; !struct.type&lt;@Main&gt; {</div>
+<div class="line">      // ...</div>
+<div class="line">    }</div>
+<div class="line">    // %self is not a signal, but again, %p is a private input signal</div>
+<div class="line">    function.def @constrain(%self: !struct.type&lt;@Main&gt;, %p: !felt.type) {</div>
+<div class="line">      // ...</div>
+<div class="line">    }</div>
 <div class="line">  }</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>Traits: <span class="tt">HasOnlyGraphRegion</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp&gt;</span>, <span class="tt">IsolatedFromAbove</span>, <span class="tt">LLZKSymbolTableImplTrait</span>, <span class="tt">NoRegionArguments</span>, <span class="tt">NoTerminator</span>, <span class="tt">SetFuncAllowAttrs</span>, <span class="tt">SingleBlock</span>, <span class="tt">SymbolTable</span></p>
@@ -2907,6 +2913,10 @@ Attributes:</h4>
 <li>Members marked with the <span class="tt">{llzk.pub}</span> attribute are considered public and represent outputs of their defining struct/component.</li>
 <li>Members marked with the <span class="tt">{column}</span> attribute can be read/written with table offsets using the <span class="tt">readm</span> and <span class="tt">writem</span> operations.</li>
 <li>Members marked with the <span class="tt">{signal}</span> attribute are constraint variables that are stored in the witness; non-signal values are intermediate expressions.</li>
+</ul>
+<p>Further restrictions on the <span class="tt">signal</span> attribute:</p><ul>
+<li>It is only used on struct members, since they represent storage locations. It is not used to mark struct inputs, as struct may be passed signal or non-signal (i.e., intermediate expression) values.</li>
+<li>Only !felt.type or simple aggregates of !felt.type (i.e., !array.type and !pod.type) may be marked as signals.</li>
 </ul>
 <p>Traits: <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>&gt;</span></p>
 <p>Interfaces: <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>

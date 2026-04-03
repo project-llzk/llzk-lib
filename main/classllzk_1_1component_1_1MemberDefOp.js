@@ -34,6 +34,7 @@ var classllzk_1_1component_1_1MemberDefOp =
     [ "setSymNameAttr", "classllzk_1_1component_1_1MemberDefOp.html#a0424babe2c0efda5e97e7d19969da47e", null ],
     [ "setType", "classllzk_1_1component_1_1MemberDefOp.html#ace0e789fee8d948031431dfa12d97314", null ],
     [ "setTypeAttr", "classllzk_1_1component_1_1MemberDefOp.html#a8a612c0017cff554e5136c230852e542", null ],
+    [ "verify", "classllzk_1_1component_1_1MemberDefOp.html#ad8c9fd675c6d13e18f10e4535df56aa0", null ],
     [ "verifyInvariants", "classllzk_1_1component_1_1MemberDefOp.html#a3c4d3dab3533ae11192ccfbdf48132ce", null ],
     [ "verifyInvariantsImpl", "classllzk_1_1component_1_1MemberDefOp.html#a82201f270b993e95f0303b300ec95716", null ],
     [ "verifySymbolUses", "classllzk_1_1component_1_1MemberDefOp.html#acb0890bb2dbc1d90a1ceb44079682645", null ],
