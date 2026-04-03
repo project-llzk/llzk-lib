@@ -28,6 +28,8 @@
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"
 
+using namespace mlir;
+
 namespace llzk::felt {
 
 //===------------------------------------------------------------------===//
@@ -37,11 +39,11 @@ namespace llzk::felt {
 // it doesn't work to put it in Attrs.cpp.
 //===------------------------------------------------------------------===//
 
-mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
-  mlir::Builder odsBuilder(odsParser.getContext());
+Attribute FieldSpecAttr::parse(AsmParser &odsParser, Type) {
+  Builder odsBuilder(odsParser.getContext());
   llvm::SMLoc odsLoc = odsParser.getCurrentLocation();
-  mlir::FailureOr<mlir::StringAttr> fieldNameAttrRes;
-  mlir::FailureOr<llvm::APInt> primeRes;
+  FailureOr<StringAttr> fieldNameAttrRes;
+  FailureOr<llvm::APInt> primeRes;
 
   // Parse literal '<'
   if (odsParser.parseLess()) {
@@ -49,11 +51,11 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
   }
 
   // Parse variable 'fieldName'
-  fieldNameAttrRes = mlir::FieldParser<mlir::StringAttr>::parse(odsParser);
-  if (mlir::failed(fieldNameAttrRes)) {
+  fieldNameAttrRes = FieldParser<StringAttr>::parse(odsParser);
+  if (failed(fieldNameAttrRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(), "failed to parse LLZK_FieldSpecAttr parameter 'fieldName' "
-                                        "which is to be a `mlir::StringAttr`"
+                                        "which is to be a `StringAttr`"
     );
     return {};
   }
@@ -63,8 +65,8 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
   }
 
   // Parse variable 'prime'
-  primeRes = mlir::FieldParser<llvm::APInt>::parse(odsParser);
-  if (mlir::failed(primeRes)) {
+  primeRes = FieldParser<llvm::APInt>::parse(odsParser);
+  if (failed(primeRes)) {
     odsParser.emitError(
         odsParser.getCurrentLocation(),
         "failed to parse LLZK_FieldSpecAttr parameter 'prime' which is to be a `llvm::APInt`"
@@ -75,8 +77,8 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
   if (odsParser.parseGreater()) {
     return {};
   }
-  assert(mlir::succeeded(fieldNameAttrRes));
-  assert(mlir::succeeded(primeRes));
+  assert(succeeded(fieldNameAttrRes));
+  assert(succeeded(primeRes));
 
   // Custom logic: cache the field, reporting an error if there's a conflict
   auto errFn = [&odsParser]() {
@@ -85,12 +87,12 @@ mlir::Attribute FieldSpecAttr::parse(mlir::AsmParser &odsParser, mlir::Type) {
   Field::addField(fieldNameAttrRes.value(), primeRes.value(), errFn);
 
   return odsParser.getChecked<FieldSpecAttr>(
-      odsLoc, odsParser.getContext(), mlir::StringAttr(*fieldNameAttrRes), llvm::APInt(*primeRes)
+      odsLoc, odsParser.getContext(), StringAttr(*fieldNameAttrRes), llvm::APInt(*primeRes)
   );
 }
 
-void FieldSpecAttr::print(mlir::AsmPrinter &odsPrinter) const {
-  mlir::Builder odsBuilder(getContext());
+void FieldSpecAttr::print(AsmPrinter &odsPrinter) const {
+  Builder odsBuilder(getContext());
   odsPrinter << "<";
   odsPrinter.printStrippedAttrOrType(getFieldName());
   odsPrinter << ", ";
@@ -105,16 +107,24 @@ void FieldSpecAttr::print(mlir::AsmPrinter &odsPrinter) const {
 const Field &FeltType::getField() const { return Field::getField(getFieldName().getValue()); }
 
 llvm::LogicalResult
-FeltType::verify(llvm::function_ref<mlir::InFlightDiagnostic()> errFn, mlir::StringAttr fieldName) {
+FeltType::verify(llvm::function_ref<InFlightDiagnostic()> errFn, StringAttr fieldName) {
   return fieldName ? Field::verifyFieldDefined(
                          fieldName.getValue(), wrapNonNullableInFlightDiagnostic(errFn)
                      )
-                   : mlir::success();
+                   : success();
 }
 
 //===------------------------------------------------------------------===//
 // FeltDialect
 //===------------------------------------------------------------------===//
+
+Operation *
+FeltDialect::materializeConstant(OpBuilder &builder, Attribute value, Type, Location loc) {
+  if (auto attr = llvm::dyn_cast<FeltConstAttr>(value)) {
+    return builder.create<FeltConstantOp>(loc, attr);
+  }
+  return nullptr;
+}
 
 auto FeltDialect::initialize() -> void {
   // clang-format off

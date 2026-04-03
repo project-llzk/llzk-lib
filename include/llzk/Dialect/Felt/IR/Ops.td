@@ -37,6 +37,7 @@ class FeltDialectBinaryOp<string mnemonic, list<Trait> traits = []>
   // Allow any type to avoid building default felt for the result type, we
   // employ our own inference below.
   let results = (outs AnyLLZKType:$result);
+  let hasFolder = 1;
 
   let extraClassDefinition = [{
     ::llvm::LogicalResult $cppClass::inferReturnTypes(
@@ -61,6 +62,7 @@ class FeltDialectUnaryOp<string mnemonic, list<Trait> traits = []>
   // Allow any type to avoid building default felt for the result type, we
   // employ our own inference below.
   let results = (outs AnyLLZKType:$result);
+  let hasFolder = 1;
 
   let extraClassDefinition = [{
     ::llvm::LogicalResult $cppClass::inferReturnTypes(
