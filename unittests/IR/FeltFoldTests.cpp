@@ -200,6 +200,10 @@ TEST_F(FeltFoldTest, SintDivNegativeDividend) {
   );
 }
 
+TEST_F(FeltFoldTest, SintDivByPrime) {
+  expectValue(foldBinary<SignedIntDivFeltOp>(babyBearConst(89735), babyBearConst(BB_PRIME)), 0);
+}
+
 TEST_F(FeltFoldTest, SintDivByZeroNoFold) {
   expectNoFold(foldBinary<SignedIntDivFeltOp>(babyBearConst(5), babyBearConst(0)));
 }
@@ -233,6 +237,10 @@ TEST_F(FeltFoldTest, SmodNegativeDividend) {
   expectValue(
       foldBinary<SignedModFeltOp>(babyBearConst(BB_PRIME - 7), babyBearConst(2)), BB_PRIME - 1
   );
+}
+
+TEST_F(FeltFoldTest, SmodByPrime) {
+  expectValue(foldBinary<SignedModFeltOp>(babyBearConst(1865), babyBearConst(BB_PRIME)), 1865);
 }
 
 TEST_F(FeltFoldTest, SmodByZeroNoFold) {

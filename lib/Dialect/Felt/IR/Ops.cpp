@@ -201,13 +201,10 @@ OpFoldResult UnsignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult SignedIntDivFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data) {
+  if (!data || data->rhsVal == 0) {
     return {};
   }
   DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
-  if (sRhs == 0) {
-    return {};
-  }
   DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
   // DynamicAPInt / truncates toward zero (same as C++ signed int division).
   return buildFoldResult(
@@ -226,13 +223,10 @@ OpFoldResult UnsignedModFeltOp::fold(FoldAdaptor adaptor) {
 
 OpFoldResult SignedModFeltOp::fold(FoldAdaptor adaptor) {
   auto data = tryGetBinaryFoldData(adaptor.getLhs(), adaptor.getRhs());
-  if (!data) {
+  if (!data || data->rhsVal == 0) {
     return {};
   }
   DynamicAPInt sRhs = data->field->toSigned(data->rhsVal);
-  if (sRhs == 0) {
-    return {};
-  }
   DynamicAPInt sLhs = data->field->toSigned(data->lhsVal);
   return buildFoldResult(
       getContext(), data->field->reduce(sLhs % sRhs), *data->field, data->fieldName
