@@ -32,16 +32,19 @@ using namespace llzk::felt;
 
 class FeltFoldTest : public LLZKTest {
 protected:
-  // babybear: p = 2013265921, bitWidth = 32, half = (p+1)/2 = 1006632961
+  /// bitwidth large enough to hold babybear prime (which is 31 bits) with optional sign bit.
+  static constexpr unsigned BITWIDTH = 32;
+  /// babybear: p = 2013265921, half = (p+1)/2 = 1006632961
   static constexpr uint64_t BB_PRIME = 2013265921ULL;
-  static constexpr unsigned BB_BITS = 32;
   static constexpr StringLiteral BB_FIELD = "babybear";
 
-  FeltConstAttr bbConst(uint64_t val) {
-    return FeltConstAttr::get(&ctx, APInt(BB_BITS, val), BB_FIELD);
+  FeltConstAttr babyBearConst(uint64_t val) {
+    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val), BB_FIELD);
   }
 
-  FeltConstAttr noFieldConst(uint64_t val) { return FeltConstAttr::get(&ctx, APInt(BB_BITS, val)); }
+  FeltConstAttr unspecifiedConst(uint64_t val) {
+    return FeltConstAttr::get(&ctx, APInt(BITWIDTH, val));
+  }
 
   /// Insert two `felt.const` ops into a detached block, build a binary op on
   /// them, call fold with the constant attributes, and return the folded
@@ -95,41 +98,47 @@ protected:
 // felt.add
 //===------------------------------------------------------------------===//
 
-TEST_F(FeltFoldTest, AddSimple) { expectValue(foldBinary<AddFeltOp>(bbConst(5), bbConst(7)), 12); }
+TEST_F(FeltFoldTest, AddSimple) {
+  expectValue(foldBinary<AddFeltOp>(babyBearConst(5), babyBearConst(7)), 12);
+}
 
 TEST_F(FeltFoldTest, AddWrapAround) {
   // (p-1) + 2 = p+1 ≡ 1 (mod p)
-  expectValue(foldBinary<AddFeltOp>(bbConst(BB_PRIME - 1), bbConst(2)), 1);
+  expectValue(foldBinary<AddFeltOp>(babyBearConst(BB_PRIME - 1), babyBearConst(2)), 1);
 }
 
 TEST_F(FeltFoldTest, AddNoFoldUnspecified) {
-  expectNoFold(foldBinary<AddFeltOp>(noFieldConst(5), noFieldConst(7)));
+  expectNoFold(foldBinary<AddFeltOp>(unspecifiedConst(5), unspecifiedConst(7)));
 }
 
 //===------------------------------------------------------------------===//
 // felt.sub
 //===------------------------------------------------------------------===//
 
-TEST_F(FeltFoldTest, SubSimple) { expectValue(foldBinary<SubFeltOp>(bbConst(10), bbConst(7)), 3); }
+TEST_F(FeltFoldTest, SubSimple) {
+  expectValue(foldBinary<SubFeltOp>(babyBearConst(10), babyBearConst(7)), 3);
+}
 
 TEST_F(FeltFoldTest, SubWrapAround) {
   // 3 - 10 = -7 ≡ p-7 = 2013265914 (mod p)
-  expectValue(foldBinary<SubFeltOp>(bbConst(3), bbConst(10)), BB_PRIME - 7);
+  expectValue(foldBinary<SubFeltOp>(babyBearConst(3), babyBearConst(10)), BB_PRIME - 7);
 }
 
 TEST_F(FeltFoldTest, SubNoFoldUnspecified) {
-  expectNoFold(foldBinary<SubFeltOp>(noFieldConst(10), noFieldConst(3)));
+  expectNoFold(foldBinary<SubFeltOp>(unspecifiedConst(10), unspecifiedConst(3)));
 }
 
 //===------------------------------------------------------------------===//
 // felt.mul
 //===------------------------------------------------------------------===//
 
-TEST_F(FeltFoldTest, MulSimple) { expectValue(foldBinary<MulFeltOp>(bbConst(6), bbConst(7)), 42); }
+TEST_F(FeltFoldTest, MulSimple) {
+  expectValue(foldBinary<MulFeltOp>(babyBearConst(6), babyBearConst(7)), 42);
+}
 
 TEST_F(FeltFoldTest, MulWrapAround) {
   // half(p) * 2 = (p+1)/2 * 2 = p+1 ≡ 1 (mod p)
-  expectValue(foldBinary<MulFeltOp>(bbConst(1006632961), bbConst(2)), 1);
+  expectValue(foldBinary<MulFeltOp>(babyBearConst(1006632961), babyBearConst(2)), 1);
 }
 
 //===------------------------------------------------------------------===//
@@ -137,12 +146,12 @@ TEST_F(FeltFoldTest, MulWrapAround) {
 //===------------------------------------------------------------------===//
 
 TEST_F(FeltFoldTest, PowSimple) {
-  expectValue(foldBinary<PowFeltOp>(bbConst(2), bbConst(10)), 1024);
+  expectValue(foldBinary<PowFeltOp>(babyBearConst(2), babyBearConst(10)), 1024);
 }
 
 TEST_F(FeltFoldTest, PowByZero) {
   // Any value to the power 0 = 1
-  expectValue(foldBinary<PowFeltOp>(bbConst(7), bbConst(0)), 1);
+  expectValue(foldBinary<PowFeltOp>(babyBearConst(7), babyBearConst(0)), 1);
 }
 
 //===------------------------------------------------------------------===//
@@ -151,11 +160,11 @@ TEST_F(FeltFoldTest, PowByZero) {
 
 TEST_F(FeltFoldTest, DivSimple) {
   // 6 / 2 = 6 * inv(2) mod p = 6 * 1006632961 mod p = 3
-  expectValue(foldBinary<DivFeltOp>(bbConst(6), bbConst(2)), 3);
+  expectValue(foldBinary<DivFeltOp>(babyBearConst(6), babyBearConst(2)), 3);
 }
 
 TEST_F(FeltFoldTest, DivByZeroNoFold) {
-  expectNoFold(foldBinary<DivFeltOp>(bbConst(5), bbConst(0)));
+  expectNoFold(foldBinary<DivFeltOp>(babyBearConst(5), babyBearConst(0)));
 }
 
 //===------------------------------------------------------------------===//
@@ -164,15 +173,15 @@ TEST_F(FeltFoldTest, DivByZeroNoFold) {
 
 TEST_F(FeltFoldTest, UintDivSimple) {
   // 7 / 2 = 3 (truncating unsigned)
-  expectValue(foldBinary<UnsignedIntDivFeltOp>(bbConst(7), bbConst(2)), 3);
+  expectValue(foldBinary<UnsignedIntDivFeltOp>(babyBearConst(7), babyBearConst(2)), 3);
 }
 
 TEST_F(FeltFoldTest, UintDivExact) {
-  expectValue(foldBinary<UnsignedIntDivFeltOp>(bbConst(12), bbConst(4)), 3);
+  expectValue(foldBinary<UnsignedIntDivFeltOp>(babyBearConst(12), babyBearConst(4)), 3);
 }
 
 TEST_F(FeltFoldTest, UintDivByZeroNoFold) {
-  expectNoFold(foldBinary<UnsignedIntDivFeltOp>(bbConst(5), bbConst(0)));
+  expectNoFold(foldBinary<UnsignedIntDivFeltOp>(babyBearConst(5), babyBearConst(0)));
 }
 
 //===------------------------------------------------------------------===//
@@ -181,16 +190,18 @@ TEST_F(FeltFoldTest, UintDivByZeroNoFold) {
 
 TEST_F(FeltFoldTest, SintDivPositive) {
   // Both positive: 7 / 2 = 3
-  expectValue(foldBinary<SignedIntDivFeltOp>(bbConst(7), bbConst(2)), 3);
+  expectValue(foldBinary<SignedIntDivFeltOp>(babyBearConst(7), babyBearConst(2)), 3);
 }
 
 TEST_F(FeltFoldTest, SintDivNegativeDividend) {
   // (p-7) is signed -7; -7 / 2 = -3 (truncate); reduce(-3) = p-3 = 2013265918
-  expectValue(foldBinary<SignedIntDivFeltOp>(bbConst(BB_PRIME - 7), bbConst(2)), BB_PRIME - 3);
+  expectValue(
+      foldBinary<SignedIntDivFeltOp>(babyBearConst(BB_PRIME - 7), babyBearConst(2)), BB_PRIME - 3
+  );
 }
 
 TEST_F(FeltFoldTest, SintDivByZeroNoFold) {
-  expectNoFold(foldBinary<SignedIntDivFeltOp>(bbConst(5), bbConst(0)));
+  expectNoFold(foldBinary<SignedIntDivFeltOp>(babyBearConst(5), babyBearConst(0)));
 }
 
 //===------------------------------------------------------------------===//
@@ -198,15 +209,15 @@ TEST_F(FeltFoldTest, SintDivByZeroNoFold) {
 //===------------------------------------------------------------------===//
 
 TEST_F(FeltFoldTest, UmodSimple) {
-  expectValue(foldBinary<UnsignedModFeltOp>(bbConst(7), bbConst(2)), 1);
+  expectValue(foldBinary<UnsignedModFeltOp>(babyBearConst(7), babyBearConst(2)), 1);
 }
 
 TEST_F(FeltFoldTest, UmodExact) {
-  expectValue(foldBinary<UnsignedModFeltOp>(bbConst(12), bbConst(4)), 0);
+  expectValue(foldBinary<UnsignedModFeltOp>(babyBearConst(12), babyBearConst(4)), 0);
 }
 
 TEST_F(FeltFoldTest, UmodByZeroNoFold) {
-  expectNoFold(foldBinary<UnsignedModFeltOp>(bbConst(5), bbConst(0)));
+  expectNoFold(foldBinary<UnsignedModFeltOp>(babyBearConst(5), babyBearConst(0)));
 }
 
 //===------------------------------------------------------------------===//
@@ -214,16 +225,18 @@ TEST_F(FeltFoldTest, UmodByZeroNoFold) {
 //===------------------------------------------------------------------===//
 
 TEST_F(FeltFoldTest, SmodPositive) {
-  expectValue(foldBinary<SignedModFeltOp>(bbConst(7), bbConst(2)), 1);
+  expectValue(foldBinary<SignedModFeltOp>(babyBearConst(7), babyBearConst(2)), 1);
 }
 
 TEST_F(FeltFoldTest, SmodNegativeDividend) {
   // (p-7) is signed -7; -7 % 2 = -1 (truncating); reduce(-1) = p-1 = 2013265920
-  expectValue(foldBinary<SignedModFeltOp>(bbConst(BB_PRIME - 7), bbConst(2)), BB_PRIME - 1);
+  expectValue(
+      foldBinary<SignedModFeltOp>(babyBearConst(BB_PRIME - 7), babyBearConst(2)), BB_PRIME - 1
+  );
 }
 
 TEST_F(FeltFoldTest, SmodByZeroNoFold) {
-  expectNoFold(foldBinary<SignedModFeltOp>(bbConst(5), bbConst(0)));
+  expectNoFold(foldBinary<SignedModFeltOp>(babyBearConst(5), babyBearConst(0)));
 }
 
 //===------------------------------------------------------------------===//
@@ -232,27 +245,31 @@ TEST_F(FeltFoldTest, SmodByZeroNoFold) {
 
 TEST_F(FeltFoldTest, NegSimple) {
   // neg 5 = p - 5 = 2013265916
-  expectValue(foldUnary<NegFeltOp>(bbConst(5)), BB_PRIME - 5);
+  expectValue(foldUnary<NegFeltOp>(babyBearConst(5)), BB_PRIME - 5);
 }
 
-TEST_F(FeltFoldTest, NegZero) { expectValue(foldUnary<NegFeltOp>(bbConst(0)), 0); }
+TEST_F(FeltFoldTest, NegZero) { expectValue(foldUnary<NegFeltOp>(babyBearConst(0)), 0); }
 
-TEST_F(FeltFoldTest, NegNoFoldUnspecified) { expectNoFold(foldUnary<NegFeltOp>(noFieldConst(5))); }
+TEST_F(FeltFoldTest, NegNoFoldUnspecified) {
+  expectNoFold(foldUnary<NegFeltOp>(unspecifiedConst(5)));
+}
 
 //===------------------------------------------------------------------===//
 // felt.inv
 //===------------------------------------------------------------------===//
 
-TEST_F(FeltFoldTest, InvOne) { expectValue(foldUnary<InvFeltOp>(bbConst(1)), 1); }
+TEST_F(FeltFoldTest, InvOne) { expectValue(foldUnary<InvFeltOp>(babyBearConst(1)), 1); }
 
 TEST_F(FeltFoldTest, InvTwo) {
   // inv(2) = (p+1)/2 = 1006632961 in babybear
-  expectValue(foldUnary<InvFeltOp>(bbConst(2)), 1006632961);
+  expectValue(foldUnary<InvFeltOp>(babyBearConst(2)), 1006632961);
 }
 
-TEST_F(FeltFoldTest, InvZeroNoFold) { expectNoFold(foldUnary<InvFeltOp>(bbConst(0))); }
+TEST_F(FeltFoldTest, InvZeroNoFold) { expectNoFold(foldUnary<InvFeltOp>(babyBearConst(0))); }
 
-TEST_F(FeltFoldTest, InvNoFoldUnspecified) { expectNoFold(foldUnary<InvFeltOp>(noFieldConst(2))); }
+TEST_F(FeltFoldTest, InvNoFoldUnspecified) {
+  expectNoFold(foldUnary<InvFeltOp>(unspecifiedConst(2)));
+}
 
 //===------------------------------------------------------------------===//
 // felt.bit_and / felt.bit_or / felt.bit_xor
@@ -260,17 +277,17 @@ TEST_F(FeltFoldTest, InvNoFoldUnspecified) { expectNoFold(foldUnary<InvFeltOp>(n
 
 TEST_F(FeltFoldTest, BitAnd) {
   // 0b110 & 0b011 = 0b010 = 2
-  expectValue(foldBinary<AndFeltOp>(bbConst(6), bbConst(3)), 2);
+  expectValue(foldBinary<AndFeltOp>(babyBearConst(6), babyBearConst(3)), 2);
 }
 
 TEST_F(FeltFoldTest, BitOr) {
   // 0b110 | 0b011 = 0b111 = 7
-  expectValue(foldBinary<OrFeltOp>(bbConst(6), bbConst(3)), 7);
+  expectValue(foldBinary<OrFeltOp>(babyBearConst(6), babyBearConst(3)), 7);
 }
 
 TEST_F(FeltFoldTest, BitXor) {
   // 0b110 ^ 0b011 = 0b101 = 5
-  expectValue(foldBinary<XorFeltOp>(bbConst(6), bbConst(3)), 5);
+  expectValue(foldBinary<XorFeltOp>(babyBearConst(6), babyBearConst(3)), 5);
 }
 
 //===------------------------------------------------------------------===//
@@ -279,18 +296,18 @@ TEST_F(FeltFoldTest, BitXor) {
 
 TEST_F(FeltFoldTest, Shl) {
   // 1 << 4 = 16
-  expectValue(foldBinary<ShlFeltOp>(bbConst(1), bbConst(4)), 16);
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(4)), 16);
 }
 
 TEST_F(FeltFoldTest, ShlWrap) {
   // Shift that wraps: 1 << 31 = 2147483648; reduce mod p
   // 2147483648 mod 2013265921 = 134217727
-  expectValue(foldBinary<ShlFeltOp>(bbConst(1), bbConst(31)), 2147483648ULL % BB_PRIME);
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(31)), 2147483648ULL % BB_PRIME);
 }
 
 TEST_F(FeltFoldTest, Shr) {
   // 16 >> 2 = 4
-  expectValue(foldBinary<ShrFeltOp>(bbConst(16), bbConst(2)), 4);
+  expectValue(foldBinary<ShrFeltOp>(babyBearConst(16), babyBearConst(2)), 4);
 }
 
 //===------------------------------------------------------------------===//
@@ -299,9 +316,9 @@ TEST_F(FeltFoldTest, Shr) {
 
 TEST_F(FeltFoldTest, BitNotZero) {
   // ~0 at bitWidth=31: reduce(2^31 - 1) = 2147483647 - p = 134217726
-  expectValue(foldUnary<NotFeltOp>(bbConst(0)), 134217726);
+  expectValue(foldUnary<NotFeltOp>(babyBearConst(0)), 134217726);
 }
 
 TEST_F(FeltFoldTest, BitNotNoFoldUnspecified) {
-  expectNoFold(foldUnary<NotFeltOp>(noFieldConst(0)));
+  expectNoFold(foldUnary<NotFeltOp>(unspecifiedConst(0)));
 }

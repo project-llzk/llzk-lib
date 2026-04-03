@@ -1,7 +1,7 @@
 // RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(canonicalize)' %s | FileCheck --enable-var-scope %s
 
 // Constant folding for felt arithmetic ops.
-// All tests use "babybear" (p = 2013265921, bitWidth = 32).
+// All tests use "babybear" (p = 2013265921).
 // Folding only applies when both operands carry the same, specified field name.
 
 //===------------------------------------------------------------------===//
