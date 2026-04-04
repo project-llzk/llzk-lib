@@ -307,10 +307,22 @@ TEST_F(BabyBearFoldTest, Shl) {
   expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(4)), 16);
 }
 
-TEST_F(BabyBearFoldTest, ShlWrap) {
+TEST_F(BabyBearFoldTest, Shl31) {
   // Shift that wraps: 1 << 31 = 2147483648; reduce mod p
   // 2147483648 mod 2013265921 = 134217727
-  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(31)), 2147483648ULL % BB_PRIME);
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(31)), 134217727ULL);
+}
+
+TEST_F(BabyBearFoldTest, Shl32) {
+  // Shift that wraps: 1 << 32 = 4294967296; reduce mod p
+  // 4294967296 mod 2013265921 = 268435454
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(32)), 268435454ULL);
+}
+
+TEST_F(BabyBearFoldTest, Shl33) {
+  // Shift that wraps: 1 << 33 = 8589934592; reduce mod p
+  // 8589934592 mod 2013265921 = 536870908
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(33)), 536870908ULL);
 }
 
 TEST_F(BabyBearFoldTest, Shr) {
