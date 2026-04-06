@@ -95,3 +95,7 @@ MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
 MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx) {
   return wrap(FeltType::get(unwrap(ctx)));
 }
+
+MlirType llzkFelt_FeltTypeGetFromRef(MlirContext context, MlirStringRef fieldName) {
+  return wrap(FeltType::get(unwrap(context), unwrap(fieldName)));
+}

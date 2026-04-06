@@ -46,14 +46,16 @@ def LLZK_FeltType : TypeDef<FeltDialect, "Felt"> {
   let assemblyFormat = "(`<` $fieldName^ `>`)?";
 
   // Default when omitted: felt.type with no fieldName
-  let builderCall = "::llzk::felt::FeltType::get($_builder.getContext(), "
-                    "::mlir::StringAttr())";
+  let builderCall = "::llzk::felt::FeltType::get($_builder.getContext())";
+
+  let builders = [
+      // Like the default builder but with null for the optional field name.
+      AttrBuilder<(ins), [{ return $_get(context, ::mlir::StringAttr()); }]>,
+      AttrBuilder<
+          (ins "::llvm::StringRef":$fieldName),
+          [{ return $_get(context, ::mlir::StringAttr::get(context, fieldName)); }]>];
 
   let extraClassDeclaration = [{
-    static ::llzk::felt::FeltType get(::mlir::MLIRContext *context) {
-      return ::llzk::felt::FeltType::get(context, ::mlir::StringAttr());
-    }
-
     bool hasField() const {
       auto name = getFieldName();
       return name && !name.empty();

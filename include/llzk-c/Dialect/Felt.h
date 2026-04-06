@@ -97,6 +97,10 @@ MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
 /// Creates a llzk::felt::FeltType with an unspecified field.
 MLIR_CAPI_EXPORTED MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext context);
 
+/// Create a llzk::felt::FeltType Type with the given parameters.
+MLIR_CAPI_EXPORTED MlirType
+llzkFelt_FeltTypeGetFromRef(MlirContext context, MlirStringRef fieldName);
+
 #ifdef __cplusplus
 }
 #endif

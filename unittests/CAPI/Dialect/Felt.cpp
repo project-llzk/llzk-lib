@@ -129,6 +129,12 @@ TEST_F(CAPITest, llzk_felt_type_get_with_field) {
   EXPECT_NE(type.ptr, (void *)NULL);
 }
 
+TEST_F(CAPITest, llzk_felt_type_get_with_field_ref) {
+  auto fieldName = MlirStringRef {.data = "bn128", .length = 5};
+  auto type = llzkFelt_FeltTypeGetFromRef(context, fieldName);
+  EXPECT_NE(type.ptr, (void *)NULL);
+}
+
 TEST_F(CAPITest, llzk_type_is_a_felt_type_pass) {
   auto type = llzkFelt_FeltTypeGetUnspecified(context);
   EXPECT_TRUE(llzkTypeIsA_Felt_FeltType(type));
