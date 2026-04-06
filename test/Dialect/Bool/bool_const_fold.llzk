@@ -16,7 +16,7 @@ function.def @fold_and_tt() -> i1 attributes {function.allow_non_native_field_op
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_and_tt
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -29,7 +29,7 @@ function.def @fold_and_tf() -> i1 attributes {function.allow_non_native_field_op
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_and_tf
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -42,7 +42,7 @@ function.def @fold_and_ff() -> i1 attributes {function.allow_non_native_field_op
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_and_ff
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -59,7 +59,7 @@ function.def @fold_or_tt() -> i1 attributes {function.allow_non_native_field_ops
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_or_tt
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -72,7 +72,7 @@ function.def @fold_or_tf() -> i1 attributes {function.allow_non_native_field_ops
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_or_tf
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -85,7 +85,7 @@ function.def @fold_or_ff() -> i1 attributes {function.allow_non_native_field_ops
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_or_ff
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -102,7 +102,7 @@ function.def @fold_xor_tt() -> i1 attributes {function.allow_non_native_field_op
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_xor_tt
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -115,7 +115,7 @@ function.def @fold_xor_tf() -> i1 attributes {function.allow_non_native_field_op
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_xor_tf
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -128,7 +128,7 @@ function.def @fold_xor_ff() -> i1 attributes {function.allow_non_native_field_op
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_xor_ff
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -144,7 +144,7 @@ function.def @fold_not_true() -> i1 attributes {function.allow_non_native_field_
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_not_true
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -156,7 +156,7 @@ function.def @fold_not_false() -> i1 attributes {function.allow_non_native_field
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_not_false
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -173,7 +173,7 @@ function.def @fold_cmp_eq_same() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_eq_same
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -186,7 +186,7 @@ function.def @fold_cmp_eq_diff() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_eq_diff
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -199,7 +199,7 @@ function.def @fold_cmp_ne_diff() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_ne_diff
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -212,7 +212,7 @@ function.def @fold_cmp_ne_same() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_ne_same
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -229,7 +229,7 @@ function.def @fold_cmp_lt_true() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_lt_true
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -242,7 +242,7 @@ function.def @fold_cmp_lt_false() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_lt_false
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -255,7 +255,7 @@ function.def @fold_cmp_le_equal() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_le_equal
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -268,7 +268,7 @@ function.def @fold_cmp_le_less() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_le_less
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -281,7 +281,7 @@ function.def @fold_cmp_gt_true() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_gt_true
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -294,7 +294,7 @@ function.def @fold_cmp_gt_false() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_gt_false
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -307,7 +307,7 @@ function.def @fold_cmp_ge_equal() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_ge_equal
-// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
@@ -320,7 +320,7 @@ function.def @fold_cmp_ge_false() -> i1 {
   function.return %r : i1
 }
 // CHECK-LABEL: function.def @fold_cmp_ge_false
-// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = arith.constant false
 // CHECK-NEXT:    function.return %[[C]]
 
 // -----
