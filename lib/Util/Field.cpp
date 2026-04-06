@@ -127,6 +127,8 @@ DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
 
 DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(i)); }
 
+DynamicAPInt Field::toSigned(const DynamicAPInt &i) const { return i < half() ? i : i - prime(); }
+
 DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i, prime()); }
 
 DynamicAPInt Field::inv(const APInt &i) const {

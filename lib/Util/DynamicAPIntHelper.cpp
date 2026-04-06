@@ -11,6 +11,7 @@
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/SmallString.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <limits>
@@ -122,9 +123,8 @@ APSInt toAPSInt(const DynamicAPInt &i) {
   // Else, convert to string and parse back as an APSInt.
   // This may not be the most efficient implementation, but it is the cleanest
   // due to the lack of direct conversions between DynamicAPInt and APInts.
-  std::string repr;
-  llvm::raw_string_ostream ss(repr);
-  ss << i;
+  SmallString<64> repr;
+  raw_svector_ostream(repr) << i;
 
   APSInt res(repr);
   // For consistency, we add a bit and mark these as signed integers, since
@@ -133,6 +133,12 @@ APSInt toAPSInt(const DynamicAPInt &i) {
   res.setIsSigned(true);
 
   return res;
+}
+
+APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
+  SmallString<64> str;
+  raw_svector_ostream(str) << val;
+  return APInt(bitWidth + 1, str, 10);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
@@ -149,15 +155,16 @@ DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const Dyn
     b = (b * b) % mod;
     e = e >> one;
   }
-  assert((base * result) % mod == 1 && "inverse is incorrect");
   return result;
 }
 
-llvm::DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p) {
+DynamicAPInt modInversePrime(const DynamicAPInt &f, const DynamicAPInt &p) {
   assert(f != 0 && "0 has no inverse");
   // Fermat: f^(p-2) mod p
   DynamicAPInt exp = p - 2;
-  return modExp(f, exp, p);
+  DynamicAPInt result = modExp(f, exp, p);
+  assert((f * result) % p == 1 && "inverse is incorrect");
+  return result;
 }
 
 } // namespace llzk

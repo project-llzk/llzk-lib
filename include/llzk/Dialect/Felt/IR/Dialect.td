@@ -20,6 +20,7 @@ def FeltDialect : Dialect {
 
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
+  let hasConstantMaterializer = 1;
 }
 
 #endif // LLZK_FELT_DIALECT
