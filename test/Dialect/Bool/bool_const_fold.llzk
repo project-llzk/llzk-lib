@@ -1,0 +1,348 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(canonicalize)' %s | FileCheck --enable-var-scope %s
+
+// Test constant folding for bool dialect ops.
+// All bool.and/or/xor/not and bool.cmp ops with constant operands should fold
+// to arith.constant ops.
+
+//===----------------------------------------------------------------------===//
+// bool.and
+//===----------------------------------------------------------------------===//
+
+// fold_and_tt: true AND true = true
+function.def @fold_and_tt() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t1 = arith.constant 1 : i1
+  %t2 = arith.constant 1 : i1
+  %r = bool.and %t1, %t2
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_and_tt
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_and_tf: true AND false = false
+function.def @fold_and_tf() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t = arith.constant 1 : i1
+  %f = arith.constant 0 : i1
+  %r = bool.and %t, %f
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_and_tf
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_and_ff: false AND false = false
+function.def @fold_and_ff() -> i1 attributes {function.allow_non_native_field_ops} {
+  %f1 = arith.constant 0 : i1
+  %f2 = arith.constant 0 : i1
+  %r = bool.and %f1, %f2
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_and_ff
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// bool.or
+//===----------------------------------------------------------------------===//
+
+// fold_or_tt: true OR true = true
+function.def @fold_or_tt() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t1 = arith.constant 1 : i1
+  %t2 = arith.constant 1 : i1
+  %r = bool.or %t1, %t2
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_or_tt
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_or_tf: true OR false = true
+function.def @fold_or_tf() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t = arith.constant 1 : i1
+  %f = arith.constant 0 : i1
+  %r = bool.or %t, %f
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_or_tf
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_or_ff: false OR false = false
+function.def @fold_or_ff() -> i1 attributes {function.allow_non_native_field_ops} {
+  %f1 = arith.constant 0 : i1
+  %f2 = arith.constant 0 : i1
+  %r = bool.or %f1, %f2
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_or_ff
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// bool.xor
+//===----------------------------------------------------------------------===//
+
+// fold_xor_tt: true XOR true = false
+function.def @fold_xor_tt() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t1 = arith.constant 1 : i1
+  %t2 = arith.constant 1 : i1
+  %r = bool.xor %t1, %t2
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_xor_tt
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_xor_tf: true XOR false = true
+function.def @fold_xor_tf() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t = arith.constant 1 : i1
+  %f = arith.constant 0 : i1
+  %r = bool.xor %t, %f
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_xor_tf
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_xor_ff: false XOR false = false
+function.def @fold_xor_ff() -> i1 attributes {function.allow_non_native_field_ops} {
+  %f1 = arith.constant 0 : i1
+  %f2 = arith.constant 0 : i1
+  %r = bool.xor %f1, %f2
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_xor_ff
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// bool.not
+//===----------------------------------------------------------------------===//
+
+// fold_not_true: NOT true = false
+function.def @fold_not_true() -> i1 attributes {function.allow_non_native_field_ops} {
+  %t = arith.constant 1 : i1
+  %r = bool.not %t
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_not_true
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_not_false: NOT false = true
+function.def @fold_not_false() -> i1 attributes {function.allow_non_native_field_ops} {
+  %f = arith.constant 0 : i1
+  %r = bool.not %f
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_not_false
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// bool.cmp — equality/inequality
+//===----------------------------------------------------------------------===//
+
+// fold_cmp_eq_same: 5 == 5 = true (babybear)
+function.def @fold_cmp_eq_same() -> i1 {
+  %a = felt.const 5 <"babybear">
+  %b = felt.const 5 <"babybear">
+  %r = bool.cmp eq(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_eq_same
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_eq_diff: 3 == 7 = false (babybear)
+function.def @fold_cmp_eq_diff() -> i1 {
+  %a = felt.const 3 <"babybear">
+  %b = felt.const 7 <"babybear">
+  %r = bool.cmp eq(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_eq_diff
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_ne_diff: 3 != 7 = true (babybear)
+function.def @fold_cmp_ne_diff() -> i1 {
+  %a = felt.const 3 <"babybear">
+  %b = felt.const 7 <"babybear">
+  %r = bool.cmp ne(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_ne_diff
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_ne_same: 5 != 5 = false (babybear)
+function.def @fold_cmp_ne_same() -> i1 {
+  %a = felt.const 5 <"babybear">
+  %b = felt.const 5 <"babybear">
+  %r = bool.cmp ne(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_ne_same
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// bool.cmp — ordering
+//===----------------------------------------------------------------------===//
+
+// fold_cmp_lt_true: 3 < 7 = true (babybear)
+function.def @fold_cmp_lt_true() -> i1 {
+  %a = felt.const 3 <"babybear">
+  %b = felt.const 7 <"babybear">
+  %r = bool.cmp lt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_lt_true
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_lt_false: 7 < 3 = false (babybear)
+function.def @fold_cmp_lt_false() -> i1 {
+  %a = felt.const 7 <"babybear">
+  %b = felt.const 3 <"babybear">
+  %r = bool.cmp lt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_lt_false
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_le_equal: 5 <= 5 = true (babybear)
+function.def @fold_cmp_le_equal() -> i1 {
+  %a = felt.const 5 <"babybear">
+  %b = felt.const 5 <"babybear">
+  %r = bool.cmp le(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_le_equal
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_le_less: 3 <= 7 = true (babybear)
+function.def @fold_cmp_le_less() -> i1 {
+  %a = felt.const 3 <"babybear">
+  %b = felt.const 7 <"babybear">
+  %r = bool.cmp le(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_le_less
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_gt_true: 7 > 3 = true (babybear)
+function.def @fold_cmp_gt_true() -> i1 {
+  %a = felt.const 7 <"babybear">
+  %b = felt.const 3 <"babybear">
+  %r = bool.cmp gt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_gt_true
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_gt_false: 3 > 7 = false (babybear)
+function.def @fold_cmp_gt_false() -> i1 {
+  %a = felt.const 3 <"babybear">
+  %b = felt.const 7 <"babybear">
+  %r = bool.cmp gt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_gt_false
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_ge_equal: 5 >= 5 = true (babybear)
+function.def @fold_cmp_ge_equal() -> i1 {
+  %a = felt.const 5 <"babybear">
+  %b = felt.const 5 <"babybear">
+  %r = bool.cmp ge(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_ge_equal
+// CHECK-NEXT:    %[[C:.+]] = arith.constant true
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+// fold_cmp_ge_false: 3 >= 7 = false (babybear)
+function.def @fold_cmp_ge_false() -> i1 {
+  %a = felt.const 3 <"babybear">
+  %b = felt.const 7 <"babybear">
+  %r = bool.cmp ge(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @fold_cmp_ge_false
+// CHECK-NEXT:    %[[C:.+]] = arith.constant false
+// CHECK-NEXT:    function.return %[[C]]
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// No-fold cases (non-constant operands)
+//===----------------------------------------------------------------------===//
+
+// no_fold_and: non-constant operands should not be folded
+function.def @no_fold_and(%a: i1, %b: i1) -> i1 attributes {function.allow_non_native_field_ops} {
+  %r = bool.and %a, %b
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @no_fold_and
+// CHECK:         bool.and
+
+// -----
+
+// no_fold_cmp: non-constant operands should not be folded
+function.def @no_fold_cmp(%a: !felt.type<"babybear">, %b: !felt.type<"babybear">) -> i1 {
+  %r = bool.cmp eq(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
+  function.return %r : i1
+}
+// CHECK-LABEL: function.def @no_fold_cmp
+// CHECK:         bool.cmp

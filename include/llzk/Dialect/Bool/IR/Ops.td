@@ -30,10 +30,14 @@ class BoolDialectOp<string mnemonic, list<Trait> traits = []>
 
 class BoolBinaryOpBase<string mnemonic, Type resultType,
                        list<Trait> traits = []>
-    : BinaryOpBase<BoolDialect, mnemonic, resultType, traits>;
+    : BinaryOpBase<BoolDialect, mnemonic, resultType, traits> {
+  let hasFolder = 1;
+}
 
 class BoolUnaryOpBase<string mnemonic, Type resultType, list<Trait> traits = []>
-    : UnaryOpBase<BoolDialect, mnemonic, resultType, traits>;
+    : UnaryOpBase<BoolDialect, mnemonic, resultType, traits> {
+  let hasFolder = 1;
+}
 
 //===------------------------------------------------------------------===//
 // Boolean operators
@@ -158,6 +162,7 @@ def LLZK_CmpOp
   let results = (outs I1:$result);
   let assemblyFormat =
       [{ `` $predicate `(` $lhs `,` $rhs `)` `` custom<InferredOrParsedType>(type($lhs), "true") `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict }];
+  let hasFolder = 1;
 }
 
 #endif // LLZK_BOOLEAN_OPS
