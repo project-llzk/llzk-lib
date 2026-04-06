@@ -28,6 +28,9 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/SMT/IR/SMTDialect.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
+#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -46,9 +49,6 @@
 #include <utility>
 
 #include "smt/Conversions/ConversionPasses.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 
 namespace llzk {
 namespace smt {
@@ -72,12 +72,12 @@ public:
   }
 };
 
-static inline bool containsFelt(Type type) {
+static inline bool containsFeltOrStruct(Type type) {
   return isa<component::StructType>(type) ||
          TypeSwitch<Type, bool>(type)
              .Case<felt::FeltType>([](auto) { return true; })
              .Case<array::ArrayType>([](array::ArrayType arrayType) {
-    return containsFelt(arrayType.getElementType());
+    return containsFeltOrStruct(arrayType.getElementType());
   }).Default([](auto) { return false; });
 }
 
@@ -288,7 +288,7 @@ class BoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
       );
       return success();
     default: {
-      DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
+      static DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
           {boolean::FeltCmpPredicate::GE, smt::IntPredicate::ge},
           {boolean::FeltCmpPredicate::GT, smt::IntPredicate::gt},
           {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
@@ -411,16 +411,16 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     });
 
     target.addDynamicallyLegalOp<function::FuncDefOp>([](function::FuncDefOp funcOp) {
-      bool signatureLegal = llvm::none_of(funcOp.getArgumentTypes(), containsFelt) &&
-                            llvm::none_of(funcOp.getResultTypes(), containsFelt);
+      bool signatureLegal = llvm::none_of(funcOp.getArgumentTypes(), containsFeltOrStruct) &&
+                            llvm::none_of(funcOp.getResultTypes(), containsFeltOrStruct);
 
       return signatureLegal;
     });
     target.addDynamicallyLegalOp<scf::YieldOp>([](scf::YieldOp yieldOp) {
-      return llvm::none_of(yieldOp.getOperandTypes(), containsFelt);
+      return llvm::none_of(yieldOp.getOperandTypes(), containsFeltOrStruct);
     });
     target.addDynamicallyLegalOp<scf::IfOp>([](scf::IfOp ifOp) {
-      return llvm::none_of(ifOp.getResultTypes(), containsFelt);
+      return llvm::none_of(ifOp.getResultTypes(), containsFeltOrStruct);
     });
 
     patterns.add<
