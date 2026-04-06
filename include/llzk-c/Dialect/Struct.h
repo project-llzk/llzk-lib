@@ -117,10 +117,11 @@ MLIR_CAPI_EXPORTED const char *llzkStruct_StructDefOpGetHeaderString(
 ///
 /// The pointer to the attributes must have been preallocated. See
 /// `llzkStruct_StructDefOpGetNumTemplateParamOpNames` for obtaining the required size of the array.
-void llzkStruct_StructDefOpGetTemplateParamOpNames(MlirOperation op, MlirAttribute *dst);
+MLIR_CAPI_EXPORTED void
+llzkStruct_StructDefOpGetTemplateParamOpNames(MlirOperation op, MlirAttribute *dst);
 
 /// Returns the number of `poly.param` operations defined within this template.
-intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op);
 
 /// If this `struct.def` is within a `poly.template`, add names of all `poly.expr` within the
 /// `poly.template` in the order they are defined. Otherwise, do nothing. The names are added as
@@ -129,10 +130,11 @@ intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op);
 ///
 /// The pointer to the attributes must have been preallocated. See
 /// `llzkStruct_StructDefOpGetNumTemplateExprOpNames` for obtaining the required size of the array.
-void llzkStruct_StructDefOpGetTemplateExprOpNames(MlirOperation op, MlirAttribute *dst);
+MLIR_CAPI_EXPORTED void
+llzkStruct_StructDefOpGetTemplateExprOpNames(MlirOperation op, MlirAttribute *dst);
 
 /// Returns the number of `poly.expr` operations defined within this template.
-intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op);
 
 //===----------------------------------------------------------------------===//
 // MemberReadOp
