@@ -57,9 +57,11 @@ def LLZK_FeltConstAttr
       }]>];
 
   let extraClassDeclaration = [{
-    ::mlir::Type getType() const;
+    FeltType getType() const;
 
     operator ::llvm::APInt() const;
+
+    static FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value, FeltType fieldType);
   }];
 
   let genVerifyDecl = 1;

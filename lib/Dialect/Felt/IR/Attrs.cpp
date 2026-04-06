@@ -25,10 +25,16 @@ LogicalResult FeltConstAttr::verify(
                    : success();
 }
 
-Type FeltConstAttr::getType() const {
+FeltType FeltConstAttr::getType() const {
   return FeltType::get(this->getContext(), this->getFieldName());
 }
 
 FeltConstAttr::operator APInt() const { return getValue(); }
+
+FeltConstAttr FeltConstAttr::get(MLIRContext *context, APInt value, FeltType type) {
+  // TODO: this attr should be updated to store the FeltType directly, but for now we can just
+  // reconstruct it from the field name as needed.
+  return FeltConstAttr::get(context, value, type.hasField() ? type.getFieldName() : StringAttr());
+}
 
 } // namespace llzk::felt

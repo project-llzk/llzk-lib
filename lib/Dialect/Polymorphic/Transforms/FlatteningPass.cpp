@@ -285,8 +285,10 @@ public:
   ) const {
     APInt attrValue = a.getValue();
     Type origResTy = op.getType();
-    if (llvm::isa<FeltType>(origResTy)) {
-      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, FeltConstAttr::get(getContext(), attrValue));
+    if (FeltType ty = llvm::dyn_cast<FeltType>(origResTy)) {
+      replaceOpWithNewOp<FeltConstantOp>(
+          rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)
+      );
       return success();
     }
 
@@ -364,6 +366,90 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
     return !isDynamic(intAttr);
   }
   return false;
+}
+
+/// Attempt to evaluate the concrete result of a single `TemplateExprOp` expression given
+/// the currently-known concrete param values in `paramNameToConcrete`. Returns the result
+/// attribute if all referenced params are concrete and all operations in the body can be
+/// constant-folded; otherwise returns `std::nullopt`.
+static std::optional<Attribute>
+evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+  // Map from SSA value in the expr body to its concrete Attribute.
+  DenseMap<Value, Attribute> valueMap;
+  for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
+    if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
+      auto it = valueMap.find(yieldOp.getVal());
+      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+    }
+
+    if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
+      auto it = paramNameToConcrete.find(constReadOp.getConstNameAttr());
+      if (it == paramNameToConcrete.end()) {
+        return std::nullopt; // a referenced param is not concrete
+      }
+      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
+      // a `FeltConstAttr`.
+      Attribute val = it->second;
+      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
+        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
+          val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
+        }
+      }
+      valueMap[constReadOp.getResult()] = val;
+      continue;
+    }
+
+    // Gather constant attributes for all operands.
+    SmallVector<Attribute> operandAttrs;
+    operandAttrs.reserve(bodyOp.getNumOperands());
+    for (Value operand : bodyOp.getOperands()) {
+      auto it = valueMap.find(operand);
+      if (it == valueMap.end()) {
+        return std::nullopt; // operand not known as a constant
+      }
+      operandAttrs.push_back(it->second);
+    }
+
+    // Try constant folding.
+    SmallVector<OpFoldResult> foldResults;
+    if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
+        foldResults.size() == bodyOp.getNumResults()) {
+      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
+        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
+          valueMap[result] = a;
+        } else {
+          return std::nullopt;
+        }
+      }
+    }
+  }
+  return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
+}
+
+/// Evaluate all `TemplateExprOp`s in `templateOp` that can be computed from the currently-known
+/// concrete param values in `paramNameToConcrete`, and add their results to the map.
+/// Exprs whose operands are not all concrete are silently skipped (partial instantiation).
+static void
+evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+  LLVM_DEBUG(
+      llvm::dbgs() << "[evaluateTemplateExprs] before: " << debug::toStringList(paramNameToConcrete)
+                   << '\n'
+  );
+  for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
+    std::optional<Attribute> result = evaluateExpr(exprOp, paramNameToConcrete);
+    if (result.has_value()) {
+      auto exprNameAttr = FlatSymbolRefAttr::get(exprOp.getSymNameAttr());
+      paramNameToConcrete.try_emplace(exprNameAttr, *result);
+      LLVM_DEBUG(
+          llvm::dbgs() << "[evaluateTemplateExprs] expr @" << exprOp.getSymName()
+                       << " evaluated to " << *result << '\n'
+      );
+    }
+  }
+  LLVM_DEBUG(
+      llvm::dbgs() << "[evaluateTemplateExprs] after: " << debug::toStringList(paramNameToConcrete)
+                   << '\n'
+  );
 }
 
 namespace Step1A_InstantiateStructs {
@@ -573,6 +659,10 @@ class StructCloner {
     assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+
+    // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
+    // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
+    evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
 
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
@@ -1021,6 +1111,10 @@ public:
       LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp]  skip: no concrete params\n");
       return failure();
     }
+
+    // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
+    // map so ClonedFuncConstReadOpPattern can replace uses of those symbols too.
+    evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
 
     // Classify each template parameter as concrete (to be inlined) or remaining (to be preserved).
     SmallVector<Attribute> remainingNames;

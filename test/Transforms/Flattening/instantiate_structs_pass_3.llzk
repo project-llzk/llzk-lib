@@ -197,3 +197,214 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TemplateA {
+    poly.param @A : !felt.type<"goldilocks">
+    poly.param @B : !felt.type<"goldilocks">
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type<"goldilocks">
+      %b = poly.read_const @B : !felt.type<"goldilocks">
+      %c = felt.add %a, %b : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+      poly.yield %c : !felt.type<"goldilocks">
+    }
+
+    struct.def @StructA {
+      struct.member @f1 : !felt.type<"goldilocks">
+      function.def @compute() -> !struct.type<@TemplateA::@StructA<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TemplateA::@StructA<[@A, @B]>>
+        %c = poly.read_const @C : !felt.type<"goldilocks">
+        struct.writem %self[@f1] = %c : !struct.type<@TemplateA::@StructA<[@A, @B]>>, !felt.type<"goldilocks">
+        function.return %self : !struct.type<@TemplateA::@StructA<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TemplateA::@StructA<[@A, @B]>>)   {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @f1 : !struct.type<@TemplateA::@StructA<[56, 9]>>
+    struct.member @f2 : !struct.type<@TemplateA::@StructA<[8, 25]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %x = function.call @TemplateA::@StructA::@compute() : () -> (!struct.type<@TemplateA::@StructA<[56, 9]>>)
+      struct.writem %self[@f1] = %x : !struct.type<@Main>, !struct.type<@TemplateA::@StructA<[56, 9]>>
+      %y = function.call @TemplateA::@StructA::@compute() : () -> (!struct.type<@TemplateA::@StructA<[8, 25]>>)
+      struct.writem %self[@f2] = %y : !struct.type<@Main>, !struct.type<@TemplateA::@StructA<[8, 25]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @TemplateA_56_9_StructA {
+// CHECK-NEXT:    struct.member @f1 : !felt.type<"goldilocks">
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TemplateA_56_9_StructA> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  65
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TemplateA_56_9_StructA>
+// CHECK-NEXT:      struct.writem %[[VAL_1]][@f1] = %[[VAL_0]] : <@TemplateA_56_9_StructA>, !felt.type<"goldilocks">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TemplateA_56_9_StructA>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TemplateA_56_9_StructA>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @TemplateA_8_25_StructA {
+// CHECK-NEXT:    struct.member @f1 : !felt.type<"goldilocks">
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TemplateA_8_25_StructA> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  33
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@TemplateA_8_25_StructA>
+// CHECK-NEXT:      struct.writem %[[VAL_4]][@f1] = %[[VAL_3]] : <@TemplateA_8_25_StructA>, !felt.type<"goldilocks">
+// CHECK-NEXT:      function.return %[[VAL_4]] : !struct.type<@TemplateA_8_25_StructA>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TemplateA_8_25_StructA>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    struct.member @f1 : !struct.type<@TemplateA_56_9_StructA>
+// CHECK-NEXT:    struct.member @f2 : !struct.type<@TemplateA_8_25_StructA>
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TemplateA_56_9_StructA::@compute() : () -> !struct.type<@TemplateA_56_9_StructA>
+// CHECK-NEXT:      struct.writem %[[VAL_4]][@f1] = %[[VAL_5]] : <@Main>, !struct.type<@TemplateA_56_9_StructA>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TemplateA_8_25_StructA::@compute() : () -> !struct.type<@TemplateA_8_25_StructA>
+// CHECK-NEXT:      struct.writem %[[VAL_4]][@f2] = %[[VAL_6]] : <@Main>, !struct.type<@TemplateA_8_25_StructA>
+// CHECK-NEXT:      function.return %[[VAL_4]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TemplateB {
+    poly.param @A : !felt.type<"bn254">
+    poly.param @B : !felt.type<"bn254">
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type<"bn254">
+      %b = poly.read_const @B : !felt.type<"bn254">
+      %c = felt.add %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+      poly.yield %c : !felt.type<"bn254">
+    }
+    poly.expr @D {
+      %a = poly.read_const @A : !felt.type<"bn254">
+      %b = poly.read_const @B : !felt.type<"bn254">
+      %d = felt.mul %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+      poly.yield %d : !felt.type<"bn254">
+    }
+
+    struct.def @StructB {
+      struct.member @sum : !felt.type<"bn254">
+      struct.member @prod : !felt.type<"bn254">
+      function.def @compute() -> !struct.type<@TemplateB::@StructB<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TemplateB::@StructB<[@A, @B]>>
+        %c = poly.read_const @C : !felt.type<"bn254">
+        %d = poly.read_const @D : !felt.type<"bn254">
+        struct.writem %self[@sum] = %c : !struct.type<@TemplateB::@StructB<[@A, @B]>>, !felt.type<"bn254">
+        struct.writem %self[@prod] = %d : !struct.type<@TemplateB::@StructB<[@A, @B]>>, !felt.type<"bn254">
+        function.return %self : !struct.type<@TemplateB::@StructB<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TemplateB::@StructB<[@A, @B]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @f1 : !struct.type<@TemplateB::@StructB<[4, 3]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %x = function.call @TemplateB::@StructB::@compute() : () -> (!struct.type<@TemplateB::@StructB<[4, 3]>>)
+      struct.writem %self[@f1] = %x : !struct.type<@Main>, !struct.type<@TemplateB::@StructB<[4, 3]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TemplateB_4_3_StructB {
+// CHECK-NEXT:      struct.member @sum : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @prod : !felt.type<"bn254">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TemplateB_4_3_StructB> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  12
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  7
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TemplateB_4_3_StructB>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@sum] = %[[VAL_1]] : <@TemplateB_4_3_StructB>, !felt.type<"bn254">
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@prod] = %[[VAL_0]] : <@TemplateB_4_3_StructB>, !felt.type<"bn254">
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TemplateB_4_3_StructB>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TemplateB_4_3_StructB>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @f1 : !struct.type<@TemplateB_4_3_StructB>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TemplateB_4_3_StructB::@compute() : () -> !struct.type<@TemplateB_4_3_StructB>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@f1] = %[[VAL_5]] : <@Main>, !struct.type<@TemplateB_4_3_StructB>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @template_expr_A {
+    poly.param @N : index
+    poly.expr @M {
+      %n = poly.read_const @N : index
+      %c2 = arith.constant 2 : index
+      %m = arith.muli %n, %c2 : index
+      poly.yield %m : index
+    }
+
+    function.def @f(%inp: !array.type<@N x !felt.type>) -> index {
+      %m = poly.read_const @M : index
+      function.return %m : index
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<5 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @template_expr_A::@f(%z) : (!array.type<5 x !felt.type>) -> index
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<5 x !felt.type>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: function.def @template_expr_A_5_f(
+// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) -> index {
+// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
+// CHECK-NEXT:    function.return %[[VAL_1]] : index
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @template_expr_A_5_f(%[[VAL_8]]) : (!array.type<5 x !felt.type>) -> index
+// CHECK-NEXT:      function.return %[[VAL_9]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<5 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
