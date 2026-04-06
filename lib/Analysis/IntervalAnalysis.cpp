@@ -1390,12 +1390,16 @@ LogicalResult StructIntervals::computeIntervals(
       }
     }
 
-    // Iterate over members that were touched by the analysis
+    // Aggregate all read intervals for a ref. A single ref may be read at multiple program
+    // points with different precision, so picking an arbitrary lattice from the DenseSet is
+    // nondeterministic. Joining preserves the overapproximation regardless of iteration order.
     for (const auto &[ref, lattices] : ctx.intervalDFA->getReadResults()) {
-      // All lattices should have the same value, so we can get the front.
       if (!lattices.empty() && searchSet.erase(ref)) {
-        const IntervalAnalysisLattice *lattice = *lattices.begin();
-        memberRanges[ref] = lattice->getValue().getScalarValue().getInterval();
+        Interval joinedInterval = Interval::Empty(ctx.getField());
+        for (const IntervalAnalysisLattice *lattice : lattices) {
+          joinedInterval = joinedInterval.join(lattice->getValue().getScalarValue().getInterval());
+        }
+        memberRanges[ref] = joinedInterval;
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
       }
     }

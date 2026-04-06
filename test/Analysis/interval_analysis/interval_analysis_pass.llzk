@@ -131,6 +131,33 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @JoinedReadIntervals {
+    struct.member @x : !felt.type
+
+    function.def @compute() -> !struct.type<@JoinedReadIntervals> {
+      %self = struct.new : !struct.type<@JoinedReadIntervals>
+      function.return %self : !struct.type<@JoinedReadIntervals>
+    }
+
+    function.def @constrain(%self: !struct.type<@JoinedReadIntervals>) {
+      %x_before = struct.readm %self[@x] : !struct.type<@JoinedReadIntervals>, !felt.type
+      %ten = felt.const 10
+      %lt10 = bool.cmp lt(%x_before, %ten)
+      bool.assert %lt10
+
+      %x_after = struct.readm %self[@x] : !struct.type<@JoinedReadIntervals>, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @JoinedReadIntervals StructIntervals {
+// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 9 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TDiv {
     struct.def @Div {
       struct.member @"$super" : !felt.type
