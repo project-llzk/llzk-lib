@@ -346,11 +346,17 @@ var annotated_dup =
           [ "EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback" ],
           [ "GeneralTypeReplacePattern", "classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html", "classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern" ],
           [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
+          [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
+          [ "TemplateOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase" ],
+          [ "TemplateParamOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase" ],
+          [ "TemplateSymbolBindingOpInterfaceInterfaceTraits", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits.html", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits" ],
+          [ "TemplateSymbolBindingOpInterfaceTrait", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceTrait.html", null ],
           [ "TypeVarTypeStorage", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage" ],
-          [ "UnifiableCastOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase" ]
+          [ "UnifiableCastOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase" ],
+          [ "YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase" ]
         ] ],
         [ "impl", "namespacellzk_1_1polymorphic_1_1impl.html", [
-          [ "EmptyParamListRemovalPassBase", "classllzk_1_1polymorphic_1_1impl_1_1EmptyParamListRemovalPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1EmptyParamListRemovalPassBase" ],
+          [ "EmptyTemplateRemovalPassBase", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase" ],
           [ "FlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase" ]
         ] ],
         [ "ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", "classllzk_1_1polymorphic_1_1ApplyMapOp" ],
@@ -361,10 +367,23 @@ var annotated_dup =
         [ "ConstReadOpGenericAdaptor", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor" ],
         [ "FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", "structllzk_1_1polymorphic_1_1FlatteningPassOptions" ],
         [ "PolymorphicDialect", "classllzk_1_1polymorphic_1_1PolymorphicDialect.html", "classllzk_1_1polymorphic_1_1PolymorphicDialect" ],
+        [ "TemplateExprOp", "classllzk_1_1polymorphic_1_1TemplateExprOp.html", "classllzk_1_1polymorphic_1_1TemplateExprOp" ],
+        [ "TemplateExprOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor" ],
+        [ "TemplateExprOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor" ],
+        [ "TemplateOp", "classllzk_1_1polymorphic_1_1TemplateOp.html", "classllzk_1_1polymorphic_1_1TemplateOp" ],
+        [ "TemplateOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateOpAdaptor" ],
+        [ "TemplateOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor" ],
+        [ "TemplateParamOp", "classllzk_1_1polymorphic_1_1TemplateParamOp.html", "classllzk_1_1polymorphic_1_1TemplateParamOp" ],
+        [ "TemplateParamOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateParamOpAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateParamOpAdaptor" ],
+        [ "TemplateParamOpGenericAdaptor", "classllzk_1_1polymorphic_1_1TemplateParamOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1TemplateParamOpGenericAdaptor" ],
+        [ "TemplateSymbolBindingOpInterface", "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html", "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface" ],
         [ "TypeVarType", "classllzk_1_1polymorphic_1_1TypeVarType.html", "classllzk_1_1polymorphic_1_1TypeVarType" ],
         [ "UnifiableCastOp", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html", "classllzk_1_1polymorphic_1_1UnifiableCastOp" ],
         [ "UnifiableCastOpAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOpAdaptor.html", "classllzk_1_1polymorphic_1_1UnifiableCastOpAdaptor" ],
-        [ "UnifiableCastOpGenericAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor" ]
+        [ "UnifiableCastOpGenericAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor" ],
+        [ "YieldOp", "classllzk_1_1polymorphic_1_1YieldOp.html", "classllzk_1_1polymorphic_1_1YieldOp" ],
+        [ "YieldOpAdaptor", "classllzk_1_1polymorphic_1_1YieldOpAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpAdaptor" ],
+        [ "YieldOpGenericAdaptor", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor" ]
       ] ],
       [ "string", "namespacellzk_1_1string.html", [
         [ "detail", "namespacellzk_1_1string_1_1detail.html", [
@@ -377,6 +396,7 @@ var annotated_dup =
         [ "StringType", "classllzk_1_1string_1_1StringType.html", null ]
       ] ],
       [ "AuxAssignment", "structllzk_1_1AuxAssignment.html", "structllzk_1_1AuxAssignment" ],
+      [ "BaseBuilder", "classllzk_1_1BaseBuilder.html", "classllzk_1_1BaseBuilder" ],
       [ "BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
       [ "CallGraph", "classllzk_1_1CallGraph.html", "classllzk_1_1CallGraph" ],
       [ "CallGraphAnalysis", "classllzk_1_1CallGraphAnalysis.html", "classllzk_1_1CallGraphAnalysis" ],
@@ -425,6 +445,7 @@ var annotated_dup =
       [ "ModuleAnalysis", "classllzk_1_1ModuleAnalysis.html", "classllzk_1_1ModuleAnalysis" ],
       [ "ModuleBuilder", "classllzk_1_1ModuleBuilder.html", "classllzk_1_1ModuleBuilder" ],
       [ "ModuleIntervalAnalysis", "classllzk_1_1ModuleIntervalAnalysis.html", "classllzk_1_1ModuleIntervalAnalysis" ],
+      [ "ModuleLikeBuilder", "classllzk_1_1ModuleLikeBuilder.html", "classllzk_1_1ModuleLikeBuilder" ],
       [ "NamedOpLocationLess", "structllzk_1_1NamedOpLocationLess.html", "structllzk_1_1NamedOpLocationLess" ],
       [ "NoContext", "structllzk_1_1NoContext.html", null ],
       [ "NonDetOp", "classllzk_1_1NonDetOp.html", "classllzk_1_1NonDetOp" ],
@@ -458,6 +479,7 @@ var annotated_dup =
       [ "SymbolUseGraphNode", "classllzk_1_1SymbolUseGraphNode.html", "classllzk_1_1SymbolUseGraphNode" ],
       [ "SymbolUseGraphPass", "classllzk_1_1SymbolUseGraphPass.html", "classllzk_1_1SymbolUseGraphPass" ],
       [ "SymbolUseGraphPrinterPassOptions", "structllzk_1_1SymbolUseGraphPrinterPassOptions.html", "structllzk_1_1SymbolUseGraphPrinterPassOptions" ],
+      [ "TemplateBuilder", "classllzk_1_1TemplateBuilder.html", "classllzk_1_1TemplateBuilder" ],
       [ "UnreducedInterval", "classllzk_1_1UnreducedInterval.html", "classllzk_1_1UnreducedInterval" ],
       [ "UnusedDeclarationEliminationPassOptions", "structllzk_1_1UnusedDeclarationEliminationPassOptions.html", "structllzk_1_1UnusedDeclarationEliminationPassOptions" ],
       [ "ValueLess", "structllzk_1_1ValueLess.html", "structllzk_1_1ValueLess" ],
@@ -576,6 +598,9 @@ var annotated_dup =
     [ "StructOperationLinkTests", "classStructOperationLinkTests.html", null ],
     [ "StructTypeLinkTests", "classStructTypeLinkTests.html", null ],
     [ "SubFeltOpBuildFuncHelper", "structSubFeltOpBuildFuncHelper.html", "structSubFeltOpBuildFuncHelper" ],
+    [ "TemplateExprOpBuildFuncHelper", "structTemplateExprOpBuildFuncHelper.html", "structTemplateExprOpBuildFuncHelper" ],
+    [ "TemplateOpBuildFuncHelper", "structTemplateOpBuildFuncHelper.html", "structTemplateOpBuildFuncHelper" ],
+    [ "TemplateParamOpBuildFuncHelper", "structTemplateParamOpBuildFuncHelper.html", "structTemplateParamOpBuildFuncHelper" ],
     [ "TestGenerator", "structTestGenerator.html", "structTestGenerator" ],
     [ "UnifiableCastOpBuildFuncHelper", "structUnifiableCastOpBuildFuncHelper.html", "structUnifiableCastOpBuildFuncHelper" ],
     [ "UnsignedIntDivFeltOpBuildFuncHelper", "structUnsignedIntDivFeltOpBuildFuncHelper.html", "structUnsignedIntDivFeltOpBuildFuncHelper" ],
@@ -583,5 +608,6 @@ var annotated_dup =
     [ "WriteArrayOpBuildFuncHelper", "structWriteArrayOpBuildFuncHelper.html", "structWriteArrayOpBuildFuncHelper" ],
     [ "WritePodOpBuildFuncHelper", "structWritePodOpBuildFuncHelper.html", "structWritePodOpBuildFuncHelper" ],
     [ "XorBoolOpBuildFuncHelper", "structXorBoolOpBuildFuncHelper.html", "structXorBoolOpBuildFuncHelper" ],
-    [ "XorFeltOpBuildFuncHelper", "structXorFeltOpBuildFuncHelper.html", "structXorFeltOpBuildFuncHelper" ]
+    [ "XorFeltOpBuildFuncHelper", "structXorFeltOpBuildFuncHelper.html", "structXorFeltOpBuildFuncHelper" ],
+    [ "YieldOpBuildFuncHelper", "structYieldOpBuildFuncHelper.html", "structYieldOpBuildFuncHelper" ]
 ];

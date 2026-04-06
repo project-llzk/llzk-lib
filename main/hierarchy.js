@@ -61,6 +61,15 @@ var hierarchy =
       [ "llzk::boolean::AssertOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::AuxAssignment", "structllzk_1_1AuxAssignment.html", null ],
+    [ "llzk::BaseBuilder", "classllzk_1_1BaseBuilder.html", [
+      [ "llzk::ModuleLikeBuilder< ModuleBuilder >", "classllzk_1_1ModuleLikeBuilder.html", [
+        [ "llzk::ModuleBuilder", "classllzk_1_1ModuleBuilder.html", null ]
+      ] ],
+      [ "llzk::ModuleLikeBuilder< TemplateBuilder >", "classllzk_1_1ModuleLikeBuilder.html", [
+        [ "llzk::TemplateBuilder", "classllzk_1_1TemplateBuilder.html", null ]
+      ] ],
+      [ "llzk::ModuleLikeBuilder< Derived >", "classllzk_1_1ModuleLikeBuilder.html", null ]
+    ] ],
     [ "basic_parser", null, [
       [ "llvm::cl::parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", null ]
     ] ],
@@ -171,6 +180,13 @@ var hierarchy =
       ] ],
       [ "llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
       [ "llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
+    [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::Concept", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1Model.html", null ]
     ] ],
     [ "llzk::ConstantCapture", "structllzk_1_1ConstantCapture.html", null ],
     [ "llzk::ConstraintDependencyGraph", "classllzk_1_1ConstraintDependencyGraph.html", null ],
@@ -449,7 +465,6 @@ var hierarchy =
     [ "llzk::ModuleAnalysis< StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis >", "classllzk_1_1ModuleAnalysis.html", [
       [ "llzk::ModuleIntervalAnalysis", "classllzk_1_1ModuleIntervalAnalysis.html", null ]
     ] ],
-    [ "llzk::ModuleBuilder", "classllzk_1_1ModuleBuilder.html", null ],
     [ "llzk::felt::detail::MulFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1MulFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::MulFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::MulFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html", [
@@ -547,7 +562,11 @@ var hierarchy =
       [ "llzk::pod::WritePodOp", "classllzk_1_1pod_1_1WritePodOp.html", null ],
       [ "llzk::polymorphic::ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", null ],
       [ "llzk::polymorphic::ConstReadOp", "classllzk_1_1polymorphic_1_1ConstReadOp.html", null ],
+      [ "llzk::polymorphic::TemplateExprOp", "classllzk_1_1polymorphic_1_1TemplateExprOp.html", null ],
+      [ "llzk::polymorphic::TemplateOp", "classllzk_1_1polymorphic_1_1TemplateOp.html", null ],
+      [ "llzk::polymorphic::TemplateParamOp", "classllzk_1_1polymorphic_1_1TemplateParamOp.html", null ],
       [ "llzk::polymorphic::UnifiableCastOp", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html", null ],
+      [ "llzk::polymorphic::YieldOp", "classllzk_1_1polymorphic_1_1YieldOp.html", null ],
       [ "llzk::string::LitStringOp", "classllzk_1_1string_1_1LitStringOp.html", null ]
     ] ],
     [ "mlir::OpConversionPattern", null, [
@@ -604,7 +623,7 @@ var hierarchy =
       [ "llzk::impl::SymbolUseGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", null ],
       [ "llzk::impl::UnusedDeclarationEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", null ],
       [ "llzk::include::impl::InlineIncludesPassBase< DerivedT >", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html", null ],
-      [ "llzk::polymorphic::impl::EmptyParamListRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyParamListRemovalPassBase.html", null ],
+      [ "llzk::polymorphic::impl::EmptyTemplateRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", null ],
       [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ]
     ] ],
     [ "OpGeneratorData", "structOpGeneratorData.html", [
@@ -618,7 +637,8 @@ var hierarchy =
       [ "llzk::component::MemberRefOpInterface", "classllzk_1_1component_1_1MemberRefOpInterface.html", null ],
       [ "llzk::constrain::ConstraintOpInterface", "classllzk_1_1constrain_1_1ConstraintOpInterface.html", null ],
       [ "llzk::felt::FeltBinaryOpInterface", "classllzk_1_1felt_1_1FeltBinaryOpInterface.html", null ],
-      [ "llzk::global::GlobalRefOpInterface", "classllzk_1_1global_1_1GlobalRefOpInterface.html", null ]
+      [ "llzk::global::GlobalRefOpInterface", "classllzk_1_1global_1_1GlobalRefOpInterface.html", null ],
+      [ "llzk::polymorphic::TemplateSymbolBindingOpInterface", "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html", null ]
     ] ],
     [ "llzk::OpLocationLess< Op >", "structllzk_1_1OpLocationLess.html", null ],
     [ "llzk::boolean::detail::OrBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1OrBoolOpGenericAdaptorBase.html", [
@@ -667,6 +687,9 @@ var hierarchy =
     [ "llzk::pod::detail::WritePodOpGenericAdaptorBase::Properties", "structllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::polymorphic::detail::ApplyMapOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::polymorphic::detail::ConstReadOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::polymorphic::detail::TemplateExprOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::polymorphic::detail::TemplateOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::polymorphic::detail::TemplateParamOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::string::detail::LitStringOpGenericAdaptorBase::Properties", "structllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llvm::raw_ostream", null, [
       [ "llzk::filtered_raw_ostream", "classllzk_1_1filtered__raw__ostream.html", null ]
@@ -754,6 +777,28 @@ var hierarchy =
     [ "llzk::SymbolUseGraph", "classllzk_1_1SymbolUseGraph.html", null ],
     [ "llzk::SymbolUseGraphNode", "classllzk_1_1SymbolUseGraphNode.html", null ],
     [ "llzk::SymbolUseGraphPrinterPassOptions", "structllzk_1_1SymbolUseGraphPrinterPassOptions.html", null ],
+    [ "llzk::polymorphic::detail::TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", [
+      [ "llzk::polymorphic::TemplateExprOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", null ],
+      [ "llzk::polymorphic::TemplateExprOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", [
+        [ "llzk::polymorphic::TemplateExprOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateExprOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::polymorphic::TemplateExprOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1TemplateExprOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::polymorphic::detail::TemplateOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html", [
+      [ "llzk::polymorphic::TemplateOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html", null ],
+      [ "llzk::polymorphic::TemplateOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html", [
+        [ "llzk::polymorphic::TemplateOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::polymorphic::TemplateOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::polymorphic::detail::TemplateParamOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase.html", [
+      [ "llzk::polymorphic::TemplateParamOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1TemplateParamOpGenericAdaptor.html", null ],
+      [ "llzk::polymorphic::TemplateParamOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1TemplateParamOpGenericAdaptor.html", [
+        [ "llzk::polymorphic::TemplateParamOpAdaptor", "classllzk_1_1polymorphic_1_1TemplateParamOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::polymorphic::TemplateParamOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1TemplateParamOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits.html", null ],
     [ "TestAnyBuildFuncHelper", null, [
       [ "AddFeltOpBuildFuncHelper", "structAddFeltOpBuildFuncHelper.html", null ],
       [ "AndBoolOpBuildFuncHelper", "structAndBoolOpBuildFuncHelper.html", null ],
@@ -796,13 +841,17 @@ var hierarchy =
       [ "SignedModFeltOpBuildFuncHelper", "structSignedModFeltOpBuildFuncHelper.html", null ],
       [ "StructDefOpBuildFuncHelper", "structStructDefOpBuildFuncHelper.html", null ],
       [ "SubFeltOpBuildFuncHelper", "structSubFeltOpBuildFuncHelper.html", null ],
+      [ "TemplateExprOpBuildFuncHelper", "structTemplateExprOpBuildFuncHelper.html", null ],
+      [ "TemplateOpBuildFuncHelper", "structTemplateOpBuildFuncHelper.html", null ],
+      [ "TemplateParamOpBuildFuncHelper", "structTemplateParamOpBuildFuncHelper.html", null ],
       [ "UnifiableCastOpBuildFuncHelper", "structUnifiableCastOpBuildFuncHelper.html", null ],
       [ "UnsignedIntDivFeltOpBuildFuncHelper", "structUnsignedIntDivFeltOpBuildFuncHelper.html", null ],
       [ "UnsignedModFeltOpBuildFuncHelper", "structUnsignedModFeltOpBuildFuncHelper.html", null ],
       [ "WriteArrayOpBuildFuncHelper", "structWriteArrayOpBuildFuncHelper.html", null ],
       [ "WritePodOpBuildFuncHelper", "structWritePodOpBuildFuncHelper.html", null ],
       [ "XorBoolOpBuildFuncHelper", "structXorBoolOpBuildFuncHelper.html", null ],
-      [ "XorFeltOpBuildFuncHelper", "structXorFeltOpBuildFuncHelper.html", null ]
+      [ "XorFeltOpBuildFuncHelper", "structXorFeltOpBuildFuncHelper.html", null ],
+      [ "YieldOpBuildFuncHelper", "structYieldOpBuildFuncHelper.html", null ]
     ] ],
     [ "mlir::OpInterface::Trait", null, [
       [ "llzk::array::detail::ArrayAccessOpInterfaceTrait< ConcreteOp >", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceTrait.html", [
@@ -822,6 +871,9 @@ var hierarchy =
       ] ],
       [ "llzk::global::detail::GlobalRefOpInterfaceTrait< ConcreteOp >", "structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceTrait.html", [
         [ "llzk::global::GlobalRefOpInterface::Trait< ConcreteOp >", "structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceTrait< ConcreteOp >", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceTrait.html", [
+        [ "llzk::polymorphic::TemplateSymbolBindingOpInterface::Trait< ConcreteOp >", "structllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface_1_1Trait.html", null ]
       ] ]
     ] ],
     [ "mlir::OpTrait::TraitBase", null, [
@@ -904,5 +956,12 @@ var hierarchy =
         [ "llzk::felt::XorFeltOpAdaptor", "classllzk_1_1felt_1_1XorFeltOpAdaptor.html", null ]
       ] ],
       [ "llzk::felt::XorFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1XorFeltOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::polymorphic::detail::YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", [
+      [ "llzk::polymorphic::YieldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", null ],
+      [ "llzk::polymorphic::YieldOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", [
+        [ "llzk::polymorphic::YieldOpAdaptor", "classllzk_1_1polymorphic_1_1YieldOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::polymorphic::YieldOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", null ]
     ] ]
 ];

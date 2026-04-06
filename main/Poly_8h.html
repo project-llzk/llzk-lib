@@ -138,6 +138,22 @@ Functions</h2></td></tr>
 <tr class="memdesc:a16ba7da40203719345662c9cd2378187"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1polymorphic_1_1TypeVarType.html">llzk::polymorphic::TypeVarType</a>.  <br /></td></tr>
 <tr class="memitem:a2358a49d8a014671cc5a4cd0587322c4" id="r_a2358a49d8a014671cc5a4cd0587322c4"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2358a49d8a014671cc5a4cd0587322c4">llzkPoly_TypeVarTypeGetFromAttr</a> (MlirAttribute value)</td></tr>
 <tr class="memdesc:a2358a49d8a014671cc5a4cd0587322c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1polymorphic_1_1TypeVarType.html">llzk::polymorphic::TypeVarType</a> from either a StringAttr or a FlatSymbolRefAttr.  <br /></td></tr>
+<tr class="memitem:a860cca82f9c8c5c3a6d52595c237e631" id="r_a860cca82f9c8c5c3a6d52595c237e631"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a860cca82f9c8c5c3a6d52595c237e631">llzkPoly_TemplateOpHasConstParamOps</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a860cca82f9c8c5c3a6d52595c237e631"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the TemplateOp has any TemplateParamOp children.  <br /></td></tr>
+<tr class="memitem:ad76cdfd7db9fcd20a374c2f4f6723863" id="r_ad76cdfd7db9fcd20a374c2f4f6723863"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad76cdfd7db9fcd20a374c2f4f6723863">llzkPoly_TemplateOpNumConstParamOps</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:ad76cdfd7db9fcd20a374c2f4f6723863"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of TemplateParamOp children in the TemplateOp.  <br /></td></tr>
+<tr class="memitem:a97c1eff1c9c3e80e171d459f61f02df3" id="r_a97c1eff1c9c3e80e171d459f61f02df3"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a97c1eff1c9c3e80e171d459f61f02df3">llzkPoly_TemplateOpGetConstParamNames</a> (MlirOperation op, MlirAttribute *dst)</td></tr>
+<tr class="memdesc:a97c1eff1c9c3e80e171d459f61f02df3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes into the destination buffer the names of all TemplateParamOp children as FlatSymbolRefAttr attributes, in definition order.  <br /></td></tr>
+<tr class="memitem:a8efa4645b4ecf736e589b6feb9cda8d8" id="r_a8efa4645b4ecf736e589b6feb9cda8d8"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8efa4645b4ecf736e589b6feb9cda8d8">llzkPoly_TemplateOpHasConstParamNamed</a> (MlirOperation op, MlirStringRef find)</td></tr>
+<tr class="memdesc:a8efa4645b4ecf736e589b6feb9cda8d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the TemplateOp has a TemplateParamOp with the given name.  <br /></td></tr>
+<tr class="memitem:addc3675f0634f5afb06040b1c0a80291" id="r_addc3675f0634f5afb06040b1c0a80291"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#addc3675f0634f5afb06040b1c0a80291">llzkPoly_TemplateOpHasConstExprOps</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:addc3675f0634f5afb06040b1c0a80291"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the TemplateOp has any TemplateExprOp children.  <br /></td></tr>
+<tr class="memitem:a43e1b6771c0ce79f7210d11c889b2ea3" id="r_a43e1b6771c0ce79f7210d11c889b2ea3"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a43e1b6771c0ce79f7210d11c889b2ea3">llzkPoly_TemplateOpNumConstExprOps</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a43e1b6771c0ce79f7210d11c889b2ea3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of TemplateExprOp children in the TemplateOp.  <br /></td></tr>
+<tr class="memitem:a80fdde0d183897bf317deace1a5daaaf" id="r_a80fdde0d183897bf317deace1a5daaaf"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a80fdde0d183897bf317deace1a5daaaf">llzkPoly_TemplateOpGetConstExprNames</a> (MlirOperation op, MlirAttribute *dst)</td></tr>
+<tr class="memdesc:a80fdde0d183897bf317deace1a5daaaf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes into the destination buffer the names of all TemplateExprOp children as FlatSymbolRefAttr attributes, in definition order.  <br /></td></tr>
+<tr class="memitem:ac1702ea805d8ef20ade3db229b1db0a3" id="r_ac1702ea805d8ef20ade3db229b1db0a3"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac1702ea805d8ef20ade3db229b1db0a3">llzkPoly_TemplateOpHasConstExprNamed</a> (MlirOperation op, MlirStringRef find)</td></tr>
+<tr class="memdesc:ac1702ea805d8ef20ade3db229b1db0a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the TemplateOp has a TemplateExprOp with the given name.  <br /></td></tr>
 <tr class="memitem:a1006c53be1db92eade177c3fa67a7c59" id="r_a1006c53be1db92eade177c3fa67a7c59"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1006c53be1db92eade177c3fa67a7c59">LLZK_DECLARE_OP_BUILD_METHOD</a> (Poly, ApplyMapOp, MlirAttribute affineMapAttr, <a class="el" href="structMlirValueRange.html">MlirValueRange</a> operands)</td></tr>
 <tr class="memdesc:a1006c53be1db92eade177c3fa67a7c59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an ApplyMapOp with the given attribute that has to be of type AffineMapAttr.  <br /></td></tr>
 <tr class="memitem:a43d36d65077b349aa3caf90eecbd4ec6" id="r_a43d36d65077b349aa3caf90eecbd4ec6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a43d36d65077b349aa3caf90eecbd4ec6">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Poly, ApplyMapOp, WithAffineMap, MlirAffineMap affineMap, <a class="el" href="structMlirValueRange.html">MlirValueRange</a> operands)</td></tr>
@@ -285,7 +301,7 @@ Functions</h2></td></tr>
 <p>Writes into the destination buffer the operands that correspond to dimensions in the affine map. </p>
 <p>The buffer needs to be preallocated first with the necessary amount and the caller is responsible of its lifetime. See <span class="tt">llzkPoly_ApplyMapOpGetNumDimOperands</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00119">119</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00163">163</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -306,7 +322,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of operands that correspond to dimensions in the affine map. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00112">112</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00156">156</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -327,7 +343,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of operands that correspond to symbols in the affine map. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00124">124</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00168">168</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -353,7 +369,193 @@ Functions</h2></td></tr>
 <p>Writes into the destination buffer the operands that correspond to symbols in the affine map. </p>
 <p>The buffer needs to be preallocated first with the necessary amount and the caller is responsible of its lifetime. See <span class="tt">llzkPoly_ApplyMapOpGetNumSymbolOperands</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00131">131</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00175">175</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a80fdde0d183897bf317deace1a5daaaf" name="a80fdde0d183897bf317deace1a5daaaf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a80fdde0d183897bf317deace1a5daaaf">&#9670;&#160;</a></span>llzkPoly_TemplateOpGetConstExprNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpGetConstExprNames </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute *</td>          <td class="paramname"><span class="paramname"><em>dst</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Writes into the destination buffer the names of all TemplateExprOp children as FlatSymbolRefAttr attributes, in definition order. </p>
+<p>The buffer must be preallocated and the caller is responsible for its lifetime. See <span class="tt">llzkPoly_TemplateOpNumConstExprOps</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00095">95</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a97c1eff1c9c3e80e171d459f61f02df3" name="a97c1eff1c9c3e80e171d459f61f02df3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97c1eff1c9c3e80e171d459f61f02df3">&#9670;&#160;</a></span>llzkPoly_TemplateOpGetConstParamNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpGetConstParamNames </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute *</td>          <td class="paramname"><span class="paramname"><em>dst</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Writes into the destination buffer the names of all TemplateParamOp children as FlatSymbolRefAttr attributes, in definition order. </p>
+<p>The buffer must be preallocated and the caller is responsible for its lifetime. See <span class="tt">llzkPoly_TemplateOpNumConstParamOps</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00079">79</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac1702ea805d8ef20ade3db229b1db0a3" name="ac1702ea805d8ef20ade3db229b1db0a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac1702ea805d8ef20ade3db229b1db0a3">&#9670;&#160;</a></span>llzkPoly_TemplateOpHasConstExprNamed()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstExprNamed </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>find</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the TemplateOp has a TemplateExprOp with the given name. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00099">99</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="addc3675f0634f5afb06040b1c0a80291" name="addc3675f0634f5afb06040b1c0a80291"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#addc3675f0634f5afb06040b1c0a80291">&#9670;&#160;</a></span>llzkPoly_TemplateOpHasConstExprOps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstExprOps </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the TemplateOp has any TemplateExprOp children. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00087">87</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a8efa4645b4ecf736e589b6feb9cda8d8" name="a8efa4645b4ecf736e589b6feb9cda8d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8efa4645b4ecf736e589b6feb9cda8d8">&#9670;&#160;</a></span>llzkPoly_TemplateOpHasConstParamNamed()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamNamed </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>find</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the TemplateOp has a TemplateParamOp with the given name. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00083">83</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a860cca82f9c8c5c3a6d52595c237e631" name="a860cca82f9c8c5c3a6d52595c237e631"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a860cca82f9c8c5c3a6d52595c237e631">&#9670;&#160;</a></span>llzkPoly_TemplateOpHasConstParamOps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamOps </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the TemplateOp has any TemplateParamOp children. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00071">71</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a43e1b6771c0ce79f7210d11c889b2ea3" name="a43e1b6771c0ce79f7210d11c889b2ea3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a43e1b6771c0ce79f7210d11c889b2ea3">&#9670;&#160;</a></span>llzkPoly_TemplateOpNumConstExprOps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED intptr_t llzkPoly_TemplateOpNumConstExprOps </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of TemplateExprOp children in the TemplateOp. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00091">91</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad76cdfd7db9fcd20a374c2f4f6723863" name="ad76cdfd7db9fcd20a374c2f4f6723863"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad76cdfd7db9fcd20a374c2f4f6723863">&#9670;&#160;</a></span>llzkPoly_TemplateOpNumConstParamOps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED intptr_t llzkPoly_TemplateOpNumConstParamOps </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of TemplateParamOp children in the TemplateOp. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00075">75</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>

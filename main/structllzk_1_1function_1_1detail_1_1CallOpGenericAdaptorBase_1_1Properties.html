@@ -118,6 +118,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:ae55fff3a498c3a194db2b8b83f859203" id="r_ae55fff3a498c3a194db2b8b83f859203"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae55fff3a498c3a194db2b8b83f859203">calleeTy</a> = ::mlir::SymbolRefAttr</td></tr>
 <tr class="memitem:ae4976bccbe5c41bd62ce6c822007ad2f" id="r_ae4976bccbe5c41bd62ce6c822007ad2f"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae4976bccbe5c41bd62ce6c822007ad2f">mapOpGroupSizesTy</a> = ::mlir::DenseI32ArrayAttr</td></tr>
 <tr class="memitem:a12480cf20a884a5fe4f4c26cf6cd2a94" id="r_a12480cf20a884a5fe4f4c26cf6cd2a94"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12480cf20a884a5fe4f4c26cf6cd2a94">numDimsPerMapTy</a> = ::mlir::DenseI32ArrayAttr</td></tr>
+<tr class="memitem:aac098cfac17cb20afa6fb4537eb22164" id="r_aac098cfac17cb20afa6fb4537eb22164"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aac098cfac17cb20afa6fb4537eb22164">templateParamsTy</a> = ::mlir::ArrayAttr</td></tr>
 <tr class="memitem:adc9584228519e6e8c7d2f618ac5a70d2" id="r_adc9584228519e6e8c7d2f618ac5a70d2"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adc9584228519e6e8c7d2f618ac5a70d2">operandSegmentSizesTy</a> = std::array&lt;int32_t, 2&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -128,6 +129,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad078e88d8b8816d572c4035a89d1bd30" id="r_ad078e88d8b8816d572c4035a89d1bd30"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad078e88d8b8816d572c4035a89d1bd30">setMapOpGroupSizes</a> (const ::mlir::DenseI32ArrayAttr &amp;propValue)</td></tr>
 <tr class="memitem:aa4556348d4d9f5b8d0e0735e01463fc9" id="r_aa4556348d4d9f5b8d0e0735e01463fc9"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4556348d4d9f5b8d0e0735e01463fc9">getNumDimsPerMap</a> ()</td></tr>
 <tr class="memitem:aaf2ba9b4df0613c4d592d7c8cd73560d" id="r_aaf2ba9b4df0613c4d592d7c8cd73560d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf2ba9b4df0613c4d592d7c8cd73560d">setNumDimsPerMap</a> (const ::mlir::DenseI32ArrayAttr &amp;propValue)</td></tr>
+<tr class="memitem:a0616f043bf754cf3ff36a32526d16e7f" id="r_a0616f043bf754cf3ff36a32526d16e7f"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0616f043bf754cf3ff36a32526d16e7f">getTemplateParams</a> ()</td></tr>
+<tr class="memitem:a533a985e44bfdb38a0e503cb2a3d1264" id="r_a533a985e44bfdb38a0e503cb2a3d1264"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a533a985e44bfdb38a0e503cb2a3d1264">setTemplateParams</a> (const ::mlir::ArrayAttr &amp;propValue)</td></tr>
 <tr class="memitem:afe9c65ccd1eb12893aad9b0187bdd34f" id="r_afe9c65ccd1eb12893aad9b0187bdd34f"><td class="memItemLeft" align="right" valign="top">::llvm::ArrayRef&lt; int32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afe9c65ccd1eb12893aad9b0187bdd34f">getOperandSegmentSizes</a> () const</td></tr>
 <tr class="memitem:a6aee8c311fd50ff63783945b8f6b92dd" id="r_a6aee8c311fd50ff63783945b8f6b92dd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6aee8c311fd50ff63783945b8f6b92dd">setOperandSegmentSizes</a> (::llvm::ArrayRef&lt; int32_t &gt; propValue)</td></tr>
 <tr class="memitem:a2e8d9650b4decca9fba958933c3c19e2" id="r_a2e8d9650b4decca9fba958933c3c19e2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2e8d9650b4decca9fba958933c3c19e2">operator==</a> (const <a class="el" href="structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;rhs) const</td></tr>
@@ -138,6 +141,7 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a2b733c0338c2f77d80c232c2203c08b3" id="r_a2b733c0338c2f77d80c232c2203c08b3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ae55fff3a498c3a194db2b8b83f859203">calleeTy</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2b733c0338c2f77d80c232c2203c08b3">callee</a></td></tr>
 <tr class="memitem:a6a9f6ecd56b9fe87de5c2037606592b9" id="r_a6a9f6ecd56b9fe87de5c2037606592b9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ae4976bccbe5c41bd62ce6c822007ad2f">mapOpGroupSizesTy</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6a9f6ecd56b9fe87de5c2037606592b9">mapOpGroupSizes</a></td></tr>
 <tr class="memitem:a4c3f8855239cf7b48a743b4ae39937bb" id="r_a4c3f8855239cf7b48a743b4ae39937bb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#a12480cf20a884a5fe4f4c26cf6cd2a94">numDimsPerMapTy</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4c3f8855239cf7b48a743b4ae39937bb">numDimsPerMap</a></td></tr>
+<tr class="memitem:ab24f663f4ea5e95f1a3f61eaa1caa925" id="r_ab24f663f4ea5e95f1a3f61eaa1caa925"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#aac098cfac17cb20afa6fb4537eb22164">templateParamsTy</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab24f663f4ea5e95f1a3f61eaa1caa925">templateParams</a></td></tr>
 <tr class="memitem:a33d3f247debd3965aeae02473c367c61" id="r_a33d3f247debd3965aeae02473c367c61"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#adc9584228519e6e8c7d2f618ac5a70d2">operandSegmentSizesTy</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a33d3f247debd3965aeae02473c367c61">operandSegmentSizes</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
@@ -200,6 +204,22 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">using <a class="el" href="#adc9584228519e6e8c7d2f618ac5a70d2">llzk::function::detail::CallOpGenericAdaptorBase::Properties::operandSegmentSizesTy</a> = std::array&lt;int32_t, 2&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00079">79</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="aac098cfac17cb20afa6fb4537eb22164" name="aac098cfac17cb20afa6fb4537eb22164"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac098cfac17cb20afa6fb4537eb22164">&#9670;&#160;</a></span>templateParamsTy</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#aac098cfac17cb20afa6fb4537eb22164">llzk::function::detail::CallOpGenericAdaptorBase::Properties::templateParamsTy</a> = ::mlir::ArrayAttr</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -313,7 +333,34 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00071">71</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00081">81</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a0616f043bf754cf3ff36a32526d16e7f" name="a0616f043bf754cf3ff36a32526d16e7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0616f043bf754cf3ff36a32526d16e7f">&#9670;&#160;</a></span>getTemplateParams()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto llzk::function::detail::CallOpGenericAdaptorBase::Properties::getTemplateParams </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00072">72</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -340,7 +387,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00087">87</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00098">98</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -367,7 +414,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00079">79</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00089">89</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -475,7 +522,34 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00075">75</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00085">85</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a533a985e44bfdb38a0e503cb2a3d1264" name="a533a985e44bfdb38a0e503cb2a3d1264"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a533a985e44bfdb38a0e503cb2a3d1264">&#9670;&#160;</a></span>setTemplateParams()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::function::detail::CallOpGenericAdaptorBase::Properties::setTemplateParams </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::ArrayAttr &amp;</td>          <td class="paramname"><span class="paramname"><em>propValue</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00076">76</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -536,6 +610,22 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="#adc9584228519e6e8c7d2f618ac5a70d2">operandSegmentSizesTy</a> llzk::function::detail::CallOpGenericAdaptorBase::Properties::operandSegmentSizes</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00080">80</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab24f663f4ea5e95f1a3f61eaa1caa925" name="ab24f663f4ea5e95f1a3f61eaa1caa925"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab24f663f4ea5e95f1a3f61eaa1caa925">&#9670;&#160;</a></span>templateParams</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#aac098cfac17cb20afa6fb4537eb22164">templateParamsTy</a> llzk::function::detail::CallOpGenericAdaptorBase::Properties::templateParams</td>
         </tr>
       </table>
 </div><div class="memdoc">

@@ -13,7 +13,7 @@ var searchData=
   ['dialects_10',['Dialects',['../backend-dialects.html',1,'Backend Dialects'],['../dialects.html',1,'LLZK IR Dialects'],['../overview.html#llzk-ir-dialects',1,'LLZK IR Dialects']]],
   ['div_20_3a_3allzk_3a_3afelt_3a_3adivfeltop_11',['&lt;span class=&quot;tt&quot;&gt;felt.div&lt;/span&gt; (llzk::felt::DivFeltOp)',['../dialects.html#feltdiv-llzkfeltdivfeltop',1,'']]],
   ['documentation_12',['LLZK Pass Documentation',['../tools.html#passes',1,'']]],
-  ['drop_20empty_20params_13',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-params&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-params',1,'']]],
+  ['drop_20empty_20templates_13',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
   ['duplicate_20op_20elim_14',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-op-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'']]],
   ['duplicate_20read_20write_20elim_15',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'']]]
 ];

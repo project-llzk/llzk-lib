@@ -126,301 +126,450 @@ $(function(){initNavTree('Builders_8cpp_source.html','',''); });
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">using namespace </span>mlir;</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1component.html">component</a>;</div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">function</a>;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="foldopen" id="foldopen00021" data-start="{" data-end="}">
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6af91aaab3f72bcd8df881498175c3ac">   21</a></span>OwningOpRef&lt;ModuleOp&gt; <a class="code hl_function" href="namespacellzk.html#a6af91aaab3f72bcd8df881498175c3ac">createLLZKModule</a>(MLIRContext * <span class="comment">/*context*/</span>, Location loc) {</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <span class="keyword">auto</span> <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a> = ModuleOp::create(loc);</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <a class="code hl_function" href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">addLangAttrForLLZKDialect</a>(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>}</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">polymorphic</a>;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="foldopen" id="foldopen00022" data-start="{" data-end="}">
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6af91aaab3f72bcd8df881498175c3ac">   22</a></span>OwningOpRef&lt;ModuleOp&gt; <a class="code hl_function" href="namespacellzk.html#a6af91aaab3f72bcd8df881498175c3ac">createLLZKModule</a>(MLIRContext * <span class="comment">/*context*/</span>, Location loc) {</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keyword">auto</span> <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a> = ModuleOp::create(loc);</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  <a class="code hl_function" href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">addLangAttrForLLZKDialect</a>(<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>);</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>}</div>
 </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="foldopen" id="foldopen00027" data-start="{" data-end="}">
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">   27</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">addLangAttrForLLZKDialect</a>(ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  MLIRContext *ctx = <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.getContext();</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> *dialect = ctx-&gt;getOrLoadDialect&lt;<a class="code hl_class" href="classllzk_1_1LLZKDialect.html">LLZKDialect</a>&gt;()) {</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>-&gt;setAttr(<a class="code hl_variable" href="namespacellzk.html#a1b66c1ee1b386cb29f255332f586e96d">LANG_ATTR_NAME</a>, StringAttr::get(ctx, dialect-&gt;getNamespace()));</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;Could not load LLZK dialect!&quot;</span>);</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  }</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="}">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">   28</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">addLangAttrForLLZKDialect</a>(ModuleOp <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  MLIRContext *ctx = <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.getContext();</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> *dialect = ctx-&gt;getOrLoadDialect&lt;<a class="code hl_class" href="classllzk_1_1LLZKDialect.html">LLZKDialect</a>&gt;()) {</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>-&gt;setAttr(<a class="code hl_variable" href="namespacellzk.html#a1b66c1ee1b386cb29f255332f586e96d">LANG_ATTR_NAME</a>, StringAttr::get(ctx, dialect-&gt;getNamespace()));</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;Could not load LLZK dialect!&quot;</span>);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  }</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>}</div>
 </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="comment">/* ModuleBuilder */</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchFreeFunc(std::string_view funcName) {</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">if</span> (freeFuncMap.find(funcName) != freeFuncMap.end()) {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;global function &quot;</span> + Twine(funcName) + <span class="stringliteral">&quot; already exists!&quot;</span>);</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>}</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keywordtype">void</span> ModuleBuilder::ensureFreeFnExists(std::string_view funcName) {</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordflow">if</span> (freeFuncMap.find(funcName) == freeFuncMap.end()) {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;global function &quot;</span> + Twine(funcName) + <span class="stringliteral">&quot; does not exist!&quot;</span>);</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  }</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>}</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchStruct(std::string_view structName) {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">if</span> (structMap.find(structName) != structMap.end()) {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already exists!&quot;</span>);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>}</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keywordtype">void</span> ModuleBuilder::ensureStructExists(std::string_view structName) {</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordflow">if</span> (structMap.find(structName) == structMap.end()) {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; does not exist!&quot;</span>);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>}</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchComputeFn(std::string_view structName) {</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordflow">if</span> (computeFnMap.find(structName) != computeFnMap.end()) {</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already has a compute function!&quot;</span>);</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  }</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="keywordtype">void</span> ModuleBuilder::ensureComputeFnExists(std::string_view structName) {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">if</span> (computeFnMap.find(structName) == computeFnMap.end()) {</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; has no compute function!&quot;</span>);</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  }</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="comment">/* ModuleLikeBuilder */</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00040" data-start="{" data-end="}">
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a452912ab7b4a84d152b850ef27d57641">   40</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a452912ab7b4a84d152b850ef27d57641">ModuleLikeBuilder&lt;Derived&gt;::ensureNoSuchFreeFunc</a>(std::string_view funcName) {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615">freeFuncMap</a>.find(funcName) != <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615">freeFuncMap</a>.end()) {</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;global function &quot;</span> + Twine(funcName) + <span class="stringliteral">&quot; already exists!&quot;</span>);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>}</div>
+</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00047" data-start="{" data-end="}">
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a87e3989679560dc4df40c96798d0a24c">   47</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a87e3989679560dc4df40c96798d0a24c">ModuleLikeBuilder&lt;Derived&gt;::ensureFreeFnExists</a>(std::string_view funcName) {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615">freeFuncMap</a>.find(funcName) == <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615">freeFuncMap</a>.end()) {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;global function &quot;</span> + Twine(funcName) + <span class="stringliteral">&quot; does not exist!&quot;</span>);</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  }</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>}</div>
+</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00054" data-start="{" data-end="}">
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ade6198426cae372f6bd0e5d3f91c3e54">   54</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#ade6198426cae372f6bd0e5d3f91c3e54">ModuleLikeBuilder&lt;Derived&gt;::ensureNoSuchStruct</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad8ad2cdace16d85d9c3ac0321355d2af">structMap</a>.find(structName) != <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad8ad2cdace16d85d9c3ac0321355d2af">structMap</a>.end()) {</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already exists!&quot;</span>);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  }</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
+</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00061" data-start="{" data-end="}">
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a452912ab7b4a84d152b850ef27d57641">   61</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a9da5e3cd829f4d7ea91077c07c68ade4">ModuleLikeBuilder&lt;Derived&gt;::ensureStructExists</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad8ad2cdace16d85d9c3ac0321355d2af">structMap</a>.find(structName) == <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad8ad2cdace16d85d9c3ac0321355d2af">structMap</a>.end()) {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; does not exist!&quot;</span>);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>}</div>
+<div class="foldopen" id="foldopen00066" data-start="{" data-end="}">
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a87e3989679560dc4df40c96798d0a24c">   66</a></span> </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00068" data-start="{" data-end="}">
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ac798a14f5713585156c8051cc72cab53">   68</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#ac798a14f5713585156c8051cc72cab53">ModuleLikeBuilder&lt;Derived&gt;::ensureNoSuchComputeFn</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad76bbf3e368da3ba8306beb6066e0de6">computeFnMap</a>.find(structName) != <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad76bbf3e368da3ba8306beb6066e0de6">computeFnMap</a>.end()) {</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already has a compute function!&quot;</span>);</div>
+<div class="foldopen" id="foldopen00071" data-start="{" data-end="}">
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ade6198426cae372f6bd0e5d3f91c3e54">   71</a></span>  }</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>}</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchConstrainFn(std::string_view structName) {</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordflow">if</span> (constrainFnMap.find(structName) != constrainFnMap.end()) {</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already has a constrain function!&quot;</span>);</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  }</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>}</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span><span class="keywordtype">void</span> ModuleBuilder::ensureConstrainFnExists(std::string_view structName) {</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">if</span> (constrainFnMap.find(structName) == constrainFnMap.end()) {</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; has no constrain function!&quot;</span>);</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  }</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>}</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchProductFn(std::string_view structName) {</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="keywordflow">if</span> (productFnMap.find(structName) != productFnMap.end()) {</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already has a product function!&quot;</span>);</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  }</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>}</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="keywordtype">void</span> ModuleBuilder::ensureProductFnExists(std::string_view structName) {</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordflow">if</span> (productFnMap.find(structName) == productFnMap.end()) {</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; has no product function!&quot;</span>);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  }</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>}</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span><a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#ac8879ac8e393af6870d8bef5378e4fb3">ModuleBuilder::insertEmptyStruct</a>(std::string_view structName, Location loc, <span class="keywordtype">int</span> numStructParams) {</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  ensureNoSuchStruct(structName);</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()-&gt;begin());</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="keyword">auto</span> structNameAttr = StringAttr::get(context, structName);</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  ArrayAttr structParams = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">if</span> (numStructParams &gt;= 0) {</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    SmallVector&lt;Attribute&gt; paramNames;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; numStructParams; ++i) {</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>      paramNames.push_back(FlatSymbolRefAttr::get(context, <span class="stringliteral">&quot;T&quot;</span> + std::to_string(i)));</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    }</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    structParams = opBuilder.getArrayAttr(paramNames);</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  }</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keyword">auto</span> structDef = opBuilder.create&lt;StructDefOp&gt;(loc, structNameAttr, structParams);</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="comment">// populate the initial region</span></div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keyword">auto</span> &amp;region = structDef.getRegion();</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  (void)region.emplaceBlock();</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  structMap[structName] = structDef;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="foldopen" id="foldopen00121" data-start="{" data-end="}">
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleBuilder.html#aed2c8380b661718b525314b0a1074718">  121</a></span><a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#aed2c8380b661718b525314b0a1074718">ModuleBuilder::buildComputeFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  MLIRContext *context = op.getContext();</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  OpBuilder opBuilder(op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">auto</span> fnOp = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>      loc, StringAttr::get(context, <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>),</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      FunctionType::get(context, {}, {op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>()})</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  );</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  fnOp.setAllowWitnessAttr();</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  fnOp.addEntryBlock();</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keywordflow">return</span> fnOp;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>}</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00075" data-start="{" data-end="}">
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#acc35dba118b24d3f0ec787fd42c14481">   75</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#acc35dba118b24d3f0ec787fd42c14481">ModuleLikeBuilder&lt;Derived&gt;::ensureComputeFnExists</a>(std::string_view structName) {</div>
+<div class="foldopen" id="foldopen00076" data-start="{" data-end="}">
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a9da5e3cd829f4d7ea91077c07c68ade4">   76</a></span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad76bbf3e368da3ba8306beb6066e0de6">computeFnMap</a>.find(structName) == <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#ad76bbf3e368da3ba8306beb6066e0de6">computeFnMap</a>.end()) {</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; has no compute function!&quot;</span>);</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  }</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>}</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="foldopen" id="foldopen00081" data-start="{" data-end="}">
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ac798a14f5713585156c8051cc72cab53">   81</a></span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00082" data-start="{" data-end="}">
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a9f785c316cdd9a83e0dd4c84bdda4ae6">   82</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a9f785c316cdd9a83e0dd4c84bdda4ae6">ModuleLikeBuilder&lt;Derived&gt;::ensureNoSuchConstrainFn</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">constrainFnMap</a>.find(structName) != <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">constrainFnMap</a>.end()) {</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already has a constrain function!&quot;</span>);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  }</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#acc35dba118b24d3f0ec787fd42c14481">   86</a></span>}</div>
 </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#aa3de74361371b72142ad5683bbb9c6e3">ModuleBuilder::insertComputeFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  ensureNoSuchComputeFn(op.getName());</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  computeFnMap[op.getName()] = <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#aed2c8380b661718b525314b0a1074718">buildComputeFn</a>(op, loc);</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>}</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span> </div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>ModuleBuilder &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#aa3de74361371b72142ad5683bbb9c6e3">ModuleBuilder::insertComputeFn</a>(std::string_view structName, Location loc) {</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  ensureStructExists(structName);</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#aa3de74361371b72142ad5683bbb9c6e3">insertComputeFn</a>(structMap.at(structName), loc);</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>}</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span> </div>
-<div class="foldopen" id="foldopen00144" data-start="{" data-end="}">
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleBuilder.html#a9652d3fc955deb721832cc0ce10979ca">  144</a></span><a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a9652d3fc955deb721832cc0ce10979ca">ModuleBuilder::buildConstrainFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  MLIRContext *context = op.getContext();</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  OpBuilder opBuilder(op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <span class="keyword">auto</span> fnOp = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>      loc, StringAttr::get(context, <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>),</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>      FunctionType::get(context, {op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>()}, {})</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  );</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  fnOp.setAllowConstraintAttr();</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  fnOp.addEntryBlock();</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="keywordflow">return</span> fnOp;</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>}</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00089" data-start="{" data-end="}">
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969">   89</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969">ModuleLikeBuilder&lt;Derived&gt;::ensureConstrainFnExists</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">constrainFnMap</a>.find(structName) == <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">constrainFnMap</a>.end()) {</div>
+<div class="foldopen" id="foldopen00091" data-start="{" data-end="}">
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a9f785c316cdd9a83e0dd4c84bdda4ae6">   91</a></span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; has no constrain function!&quot;</span>);</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  }</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>}</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00096" data-start="{" data-end="}">
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969">   96</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a966dbbb8352071675be41defb53b6f6e">ModuleLikeBuilder&lt;Derived&gt;::ensureNoSuchProductFn</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a1bf61b66d0d1203679379388cb14be12">productFnMap</a>.find(structName) != <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a1bf61b66d0d1203679379388cb14be12">productFnMap</a>.end()) {</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; already has a product function!&quot;</span>);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  }</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>}</div>
+<div class="foldopen" id="foldopen00101" data-start="{" data-end="}">
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a966dbbb8352071675be41defb53b6f6e">  101</a></span> </div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00103" data-start="{" data-end="}">
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a86175aec0c93c30e0668fe09fad9e55a">  103</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a86175aec0c93c30e0668fe09fad9e55a">ModuleLikeBuilder&lt;Derived&gt;::ensureProductFnExists</a>(std::string_view structName) {</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordflow">if</span> (<a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a1bf61b66d0d1203679379388cb14be12">productFnMap</a>.find(structName) == <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a1bf61b66d0d1203679379388cb14be12">productFnMap</a>.end()) {</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;struct &quot;</span> + Twine(structName) + <span class="stringliteral">&quot; has no product function!&quot;</span>);</div>
+<div class="foldopen" id="foldopen00106" data-start="{" data-end="}">
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a86175aec0c93c30e0668fe09fad9e55a">  106</a></span>  }</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
 </div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#af0f6e299497e2810b504140ab1b9a2b0">ModuleBuilder::insertConstrainFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  ensureNoSuchConstrainFn(op.getName());</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  constrainFnMap[op.getName()] = <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a9652d3fc955deb721832cc0ce10979ca">buildConstrainFn</a>(op, loc);</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>}</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>ModuleBuilder &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#af0f6e299497e2810b504140ab1b9a2b0">ModuleBuilder::insertConstrainFn</a>(std::string_view structName, Location loc) {</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  ensureStructExists(structName);</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#af0f6e299497e2810b504140ab1b9a2b0">insertConstrainFn</a>(structMap.at(structName), loc);</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>}</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
-<div class="foldopen" id="foldopen00167" data-start="{" data-end="}">
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleBuilder.html#a839158b66d9baa16256692469829ed0b">  167</a></span><a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a839158b66d9baa16256692469829ed0b">ModuleBuilder::buildProductFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  MLIRContext *context = op.getContext();</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  OpBuilder opBuilder(op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  <span class="keyword">auto</span> fnOp = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>      loc, StringAttr::get(context, <a class="code hl_variable" href="namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8">FUNC_NAME_PRODUCT</a>),</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      FunctionType::get(context, {}, {op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>()})</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  );</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  fnOp.setAllowWitnessAttr();</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  fnOp.setAllowConstraintAttr();</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  fnOp.addEntryBlock();</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  <span class="keywordflow">return</span> fnOp;</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>}</div>
 </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span> </div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a38f6f43ae0c4e1b61965a98273c0d962">ModuleBuilder::insertProductFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  ensureNoSuchProductFn(op.getName());</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  productFnMap[op.getName()] = <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a839158b66d9baa16256692469829ed0b">buildProductFn</a>(op, loc);</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>}</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>ModuleBuilder &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a38f6f43ae0c4e1b61965a98273c0d962">ModuleBuilder::insertProductFn</a>(std::string_view structName, Location loc) {</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  ensureStructExists(structName);</div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a38f6f43ae0c4e1b61965a98273c0d962">insertProductFn</a>(structMap.at(structName), loc);</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>}</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span><a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a9d8d02674df37d3bdf1837393c15b7db">ModuleBuilder::insertComputeCall</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> caller, <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> callee, Location callLoc) {</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  ensureComputeFnExists(caller.getName());</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  ensureComputeFnExists(callee.getName());</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="keyword">auto</span> callerFn = computeFnMap.at(caller.getName());</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  <span class="keyword">auto</span> calleeFn = computeFnMap.at(callee.getName());</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span> </div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  OpBuilder builder(callerFn.getBody());</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  builder.create&lt;CallOp&gt;(callLoc, calleeFn);</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>}</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a9d8d02674df37d3bdf1837393c15b7db">ModuleBuilder::insertComputeCall</a>(</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    std::string_view caller, std::string_view callee, Location callLoc</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>) {</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  ensureStructExists(caller);</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  ensureStructExists(callee);</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a9d8d02674df37d3bdf1837393c15b7db">insertComputeCall</a>(structMap.at(caller), structMap.at(callee), callLoc);</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>}</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a0e1d68664f0279d780e4b09db0678be8">ModuleBuilder::insertConstrainCall</a>(</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> caller, <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> callee, Location callLoc, Location memberDefLoc</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>) {</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  ensureConstrainFnExists(caller.getName());</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  ensureConstrainFnExists(callee.getName());</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span> </div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  FuncDefOp callerFn = constrainFnMap.at(caller.getName());</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>  FuncDefOp calleeFn = constrainFnMap.at(callee.getName());</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  StructType calleeTy = callee.getType();</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  <span class="keywordtype">size_t</span> numOps = caller.getBody()-&gt;getOperations().size();</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="keyword">auto</span> memberName = StringAttr::get(context, callee.getName().str() + std::to_string(numOps));</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a65f25a7aa08e2f111c35ae06a53b0b6e">ModuleLikeBuilder&lt;Derived&gt;::insertEmptyStruct</a>(std::string_view structName, Location loc) {</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  ensureNoSuchStruct(structName);</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  OpBuilder opBuilder(this-&gt;getBodyRegion());</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keyword">auto</span> structDef = opBuilder.create&lt;StructDefOp&gt;(loc, StringAttr::get(context, structName));</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="comment">// populate the initial region</span></div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  (void)structDef.getRegion().emplaceBlock();</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  structMap[structName] = structDef;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>}</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00123" data-start="{" data-end="}">
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a662ca9558417f86c99caf386e9f9d214">  123</a></span><a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a662ca9558417f86c99caf386e9f9d214">ModuleLikeBuilder&lt;Derived&gt;::buildComputeFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  MLIRContext *<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a> = op.getContext();</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  OpBuilder opBuilder(op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keyword">auto</span> fnOp = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      loc, StringAttr::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, <a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>),</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      FunctionType::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, {}, {op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>()})</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  );</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  fnOp.setAllowWitnessAttr();</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  fnOp.addEntryBlock();</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keywordflow">return</span> fnOp;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>}</div>
+</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a0c39142c750359a539e4c79699bc7abd">ModuleLikeBuilder&lt;Derived&gt;::insertComputeFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  ensureNoSuchComputeFn(op.getName());</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  computeFnMap[op.getName()] = buildComputeFn(op, loc);</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>}</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span> </div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a0c39142c750359a539e4c79699bc7abd">ModuleLikeBuilder&lt;Derived&gt;::insertComputeFn</a>(std::string_view structName, Location loc) {</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  ensureStructExists(structName);</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keywordflow">return</span> insertComputeFn(structMap.at(structName), loc);</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>}</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00149" data-start="{" data-end="}">
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ad5ad4eeb7028a02268875d4cbff443b8">  149</a></span><a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#ad5ad4eeb7028a02268875d4cbff443b8">ModuleLikeBuilder&lt;Derived&gt;::buildConstrainFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  MLIRContext *<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a> = op.getContext();</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  OpBuilder opBuilder(op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keyword">auto</span> fnOp = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>      loc, StringAttr::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>),</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>      FunctionType::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, {op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>()}, {})</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  );</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  fnOp.setAllowConstraintAttr();</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  fnOp.addEntryBlock();</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="keywordflow">return</span> fnOp;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>}</div>
+</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a88eaeb924e1447b6a8cd3629ff89b8b9">ModuleLikeBuilder&lt;Derived&gt;::insertConstrainFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  ensureNoSuchConstrainFn(op.getName());</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  constrainFnMap[op.getName()] = buildConstrainFn(op, loc);</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>}</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a88eaeb924e1447b6a8cd3629ff89b8b9">ModuleLikeBuilder&lt;Derived&gt;::insertConstrainFn</a>(std::string_view structName, Location loc) {</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  ensureStructExists(structName);</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordflow">return</span> insertConstrainFn(structMap.at(structName), loc);</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>}</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="foldopen" id="foldopen00175" data-start="{" data-end="}">
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ae8f45168cdbc662c8eb8fd0490088164">  175</a></span><a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#ae8f45168cdbc662c8eb8fd0490088164">ModuleLikeBuilder&lt;Derived&gt;::buildProductFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  MLIRContext *<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a> = op.getContext();</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  OpBuilder opBuilder(op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keyword">auto</span> fnOp = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      loc, StringAttr::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, <a class="code hl_variable" href="namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8">FUNC_NAME_PRODUCT</a>),</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>      FunctionType::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, {}, {op.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>()})</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  );</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  fnOp.setAllowWitnessAttr();</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  fnOp.setAllowConstraintAttr();</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  fnOp.addEntryBlock();</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  <span class="keywordflow">return</span> fnOp;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>}</div>
+</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a886b10b6a68c0a2f6a081d954e2cd00d">ModuleLikeBuilder&lt;Derived&gt;::insertProductFn</a>(<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> op, Location loc) {</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  ensureNoSuchProductFn(op.getName());</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  productFnMap[op.getName()] = buildProductFn(op, loc);</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>}</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span> </div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a886b10b6a68c0a2f6a081d954e2cd00d">ModuleLikeBuilder&lt;Derived&gt;::insertProductFn</a>(std::string_view structName, Location loc) {</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  ensureStructExists(structName);</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="keywordflow">return</span> insertProductFn(structMap.at(structName), loc);</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>}</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a7a703014851a3d2d70a1a54395983b02">ModuleLikeBuilder&lt;Derived&gt;::insertComputeCall</a>(</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> caller, <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> callee, Location callLoc</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>) {</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  ensureComputeFnExists(caller.getName());</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  ensureComputeFnExists(callee.getName());</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  <span class="keyword">auto</span> callerFn = computeFnMap.at(caller.getName());</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <span class="keyword">auto</span> calleeFn = computeFnMap.at(callee.getName());</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  OpBuilder builder(callerFn.getBody());</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  builder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(callLoc, calleeFn);</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>}</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a7a703014851a3d2d70a1a54395983b02">ModuleLikeBuilder&lt;Derived&gt;::insertComputeCall</a>(</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    std::string_view caller, std::string_view callee, Location callLoc</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>) {</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  ensureStructExists(caller);</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  ensureStructExists(callee);</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  <span class="keywordflow">return</span> insertComputeCall(structMap.at(caller), structMap.at(callee), callLoc);</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>}</div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span> </div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  <span class="comment">// Insert the member declaration op</span></div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  {</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>    OpBuilder builder(caller.getBodyRegion());</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>    builder.create&lt;MemberDefOp&gt;(memberDefLoc, memberName, calleeTy);</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  }</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span> </div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  <span class="comment">// Insert the constrain function ops</span></div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  {</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    OpBuilder builder(callerFn.getBody());</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span> </div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>    <span class="keyword">auto</span> member = builder.create&lt;MemberReadOp&gt;(</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>        callLoc, calleeTy, callerFn.getSelfValueFromConstrain(), memberName</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    );</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    builder.create&lt;CallOp&gt;(</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>        callLoc, TypeRange {}, calleeFn.getFullyQualifiedName(), ValueRange {member}</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    );</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  }</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>}</div>
+<div class="foldopen" id="foldopen00225" data-start="{" data-end="}">
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#a662ca9558417f86c99caf386e9f9d214">  225</a></span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a155b25e468cb0cacfac99abddba2dfac">ModuleLikeBuilder&lt;Derived&gt;::insertConstrainCall</a>(</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>    <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> caller, <a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> callee, Location callLoc, Location memberDefLoc</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>) {</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969">ensureConstrainFnExists</a>(caller.getName());</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  <a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969">ensureConstrainFnExists</a>(callee.getName());</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> callerFn = <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">constrainFnMap</a>.at(caller.getName());</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> calleeFn = <a class="code hl_variable" href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">constrainFnMap</a>.at(callee.getName());</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> calleeTy = callee.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">getType</a>();</div>
+<div class="foldopen" id="foldopen00235" data-start="{" data-end="}">
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ad5ad4eeb7028a02268875d4cbff443b8">  235</a></span> </div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  <span class="keywordtype">size_t</span> numOps = caller.getBody()-&gt;getOperations().size();</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keyword">auto</span> memberName = StringAttr::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, callee.getName().str() + std::to_string(numOps));</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span> </div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  <span class="comment">// Insert the member declaration op</span></div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  {</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    OpBuilder builder(caller.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">getBodyRegion</a>());</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    builder.create&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&gt;(memberDefLoc, memberName, calleeTy);</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  }</div>
 <div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a0e1d68664f0279d780e4b09db0678be8">ModuleBuilder::insertConstrainCall</a>(</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    std::string_view caller, std::string_view callee, Location callLoc, Location memberDefLoc</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>) {</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  ensureStructExists(caller);</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  ensureStructExists(callee);</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a0e1d68664f0279d780e4b09db0678be8">insertConstrainCall</a>(structMap.at(caller), structMap.at(callee), callLoc, memberDefLoc);</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>}</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span><a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#ae799e28b93e803dfb94ff05ef261ffbf">ModuleBuilder::insertFreeFunc</a>(std::string_view funcName, FunctionType type, Location loc) {</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  ensureNoSuchFreeFunc(funcName);</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  OpBuilder opBuilder(rootModule.getBody(), rootModule.getBody()-&gt;begin());</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  <span class="keyword">auto</span> funcDef = opBuilder.create&lt;FuncDefOp&gt;(loc, funcName, type);</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>  (void)funcDef.addEntryBlock();</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  freeFuncMap[funcName] = funcDef;</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>}</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span><a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a6a7ab40e02a20fe5d8ee2648da016b31">ModuleBuilder::insertFreeCall</a>(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> caller, std::string_view callee, Location callLoc) {</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  ensureFreeFnExists(callee);</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  FuncDefOp calleeFn = freeFuncMap.at(callee);</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  OpBuilder builder(caller.getBody());</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  builder.create&lt;CallOp&gt;(callLoc, calleeFn);</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>}</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  <span class="comment">// Insert the constrain function ops</span></div>
+<div class="foldopen" id="foldopen00246" data-start="{" data-end="}">
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno"><a class="line" href="classllzk_1_1ModuleLikeBuilder.html#ae8f45168cdbc662c8eb8fd0490088164">  246</a></span>  {</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    OpBuilder builder(callerFn.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">getBody</a>());</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span> </div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    <span class="keyword">auto</span> member = builder.create&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a>&gt;(</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>        callLoc, calleeTy, callerFn.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a42e42484a422941fa7cd557b93978749">getSelfValueFromConstrain</a>(), memberName</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    );</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    builder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>        callLoc, TypeRange {}, calleeFn.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ad1b8b5a39d86f7ddb4329a0a94563b37">getFullyQualifiedName</a>(), ValueRange {member}</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    );</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  }</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>}</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#a155b25e468cb0cacfac99abddba2dfac">ModuleLikeBuilder&lt;Derived&gt;::insertConstrainCall</a>(</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    std::string_view caller, std::string_view callee, Location callLoc, Location memberDefLoc</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>) {</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  ensureStructExists(caller);</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  ensureStructExists(callee);</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  <span class="keywordflow">return</span> insertConstrainCall(structMap.at(caller), structMap.at(callee), callLoc, memberDefLoc);</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>}</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#ade0fbcafe3bafd6c9c46464512bb5eae">ModuleLikeBuilder&lt;Derived&gt;::insertFreeFunc</a>(</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    std::string_view funcName, FunctionType type, Location loc</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>) {</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  ensureNoSuchFreeFunc(funcName);</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  OpBuilder opBuilder(this-&gt;getBodyRegion());</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  <span class="keyword">auto</span> funcDef = opBuilder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;(loc, funcName, type);</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  (void)funcDef.addEntryBlock();</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  freeFuncMap[funcName] = funcDef;</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>}</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Derived&gt;</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>Derived &amp;<a class="code hl_function" href="classllzk_1_1ModuleLikeBuilder.html#ab9e966a50584f3f402c680d80fc95420">ModuleLikeBuilder&lt;Derived&gt;::insertFreeCall</a>(</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> caller, std::string_view callee, Location callLoc</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>) {</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  ensureFreeFnExists(callee);</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> calleeFn = freeFuncMap.at(callee);</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span> </div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  OpBuilder builder(caller.getBody());</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>  builder.create&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(callLoc, calleeFn);</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>Derived &amp;<span class="keyword">&gt;</span>(*this);</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>}</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span><span class="comment">/* ModuleBuilder */</span></div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchTemplate(std::string_view templateName) {</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  <span class="keywordflow">if</span> (templateMap.find(templateName) != templateMap.end()) {</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;template &quot;</span> + Twine(templateName) + <span class="stringliteral">&quot; already exists!&quot;</span>);</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  }</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>}</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span> </div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span><span class="keywordtype">void</span> ModuleBuilder::ensureTemplateExists(std::string_view templateName) {</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  <span class="keywordflow">if</span> (templateMap.find(templateName) == templateMap.end()) {</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;template &quot;</span> + Twine(templateName) + <span class="stringliteral">&quot; does not exist!&quot;</span>);</div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  }</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>}</div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span><a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#a6429a7a1b4e7fea0653bfe449e40b307">ModuleBuilder::insertTemplate</a>(std::string_view templateName, Location loc, <span class="keywordtype">unsigned</span> numParams) {</div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  ensureNoSuchTemplate(templateName);</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span> </div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  OpBuilder opBuilder(myModule.getBodyRegion());</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  <span class="keyword">auto</span> templateDef = opBuilder.create&lt;TemplateOp&gt;(loc, StringAttr::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, templateName));</div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  opBuilder.setInsertionPointToStart(&amp;templateDef.getBodyRegion().emplaceBlock());</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>  <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; numParams; ++i) {</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    opBuilder.create&lt;TemplateParamOp&gt;(</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>        loc, StringAttr::get(<a class="code hl_variable" href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">context</a>, <span class="charliteral">&#39;T&#39;</span> + std::to_string(i)), TypeAttr()</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    );</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  }</div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  <span class="keyword">auto</span> key = templateDef.getName();</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>  templateMap.emplace(key, std::make_unique&lt;TemplateBuilder&gt;(templateDef));</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span> </div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>}</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span> </div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span><span class="keywordtype">void</span> ModuleBuilder::ensureNoSuchNestedModule(std::string_view moduleName) {</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  <span class="keywordflow">if</span> (nestedModuleMap.find(moduleName) != nestedModuleMap.end()) {</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;nested module &quot;</span> + Twine(moduleName) + <span class="stringliteral">&quot; already exists!&quot;</span>);</div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>  }</div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>}</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span> </div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span><span class="keywordtype">void</span> ModuleBuilder::ensureNestedModuleExists(std::string_view moduleName) {</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>  <span class="keywordflow">if</span> (nestedModuleMap.find(moduleName) == nestedModuleMap.end()) {</div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>    llvm::report_fatal_error(<span class="stringliteral">&quot;nested module &quot;</span> + Twine(moduleName) + <span class="stringliteral">&quot; does not exist!&quot;</span>);</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  }</div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>}</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span> </div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span><a class="code hl_class" href="classllzk_1_1ModuleBuilder.html">ModuleBuilder</a> &amp;<a class="code hl_function" href="classllzk_1_1ModuleBuilder.html#aabcc04f7b1f0d6ef5eff49a18796bd62">ModuleBuilder::insertNestedModule</a>(std::string_view moduleName, Location loc) {</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>  ensureNoSuchNestedModule(moduleName);</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  OpBuilder opBuilder(myModule.getBodyRegion());</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  <span class="keyword">auto</span> nestedMod = opBuilder.create&lt;ModuleOp&gt;(loc);</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  nestedMod.setSymName(moduleName);</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span> </div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>  <span class="keyword">auto</span> key = *nestedMod.getSymName();</div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>  nestedModuleMap.emplace(key, std::make_unique&lt;ModuleBuilder&gt;(nestedMod));</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span> </div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>}</div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span> </div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span><span class="comment">/* Explicit template instantiations */</span></div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span> </div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span><span class="keyword">template</span> <span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1ModuleLikeBuilder.html">ModuleLikeBuilder&lt;ModuleBuilder&gt;</a>;</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span><span class="keyword">template</span> <span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1ModuleLikeBuilder.html">ModuleLikeBuilder&lt;TemplateBuilder&gt;</a>;</div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span> </div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>} <span class="comment">// namespace llzk</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 <div class="ttc" id="aBuilders_8h_html"><div class="ttname"><a href="Builders_8h.html">Builders.h</a></div></div>
 <div class="ttc" id="aLLZK_2IR_2Dialect_8h_html"><div class="ttname"><a href="LLZK_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
+<div class="ttc" id="aclassllzk_1_1BaseBuilder_html_a608502422fff23740a9d322142ce8c1e"><div class="ttname"><a href="classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e">llzk::BaseBuilder::context</a></div><div class="ttdeci">mlir::MLIRContext * context</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00037">Builders.h:37</a></div></div>
 <div class="ttc" id="aclassllzk_1_1LLZKDialect_html"><div class="ttname"><a href="classllzk_1_1LLZKDialect.html">llzk::LLZKDialect</a></div><div class="ttdef"><b>Definition</b> <a href="LLZK_2IR_2Dialect_8h_8inc_source.html#l00012">Dialect.h.inc:12</a></div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html">llzk::ModuleBuilder</a></div><div class="ttdoc">Builds out a LLZK-compliant module and provides utilities for populating that module.</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00038">Builders.h:38</a></div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a0e1d68664f0279d780e4b09db0678be8"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a0e1d68664f0279d780e4b09db0678be8">llzk::ModuleBuilder::insertConstrainCall</a></div><div class="ttdeci">ModuleBuilder &amp; insertConstrainCall(component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc, mlir::Location memberDefLoc)</div><div class="ttdoc">To call a constraint function, you must:</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a38f6f43ae0c4e1b61965a98273c0d962"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a38f6f43ae0c4e1b61965a98273c0d962">llzk::ModuleBuilder::insertProductFn</a></div><div class="ttdeci">ModuleBuilder &amp; insertProductFn(component::StructDefOp op, mlir::Location loc)</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a6a7ab40e02a20fe5d8ee2648da016b31"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a6a7ab40e02a20fe5d8ee2648da016b31">llzk::ModuleBuilder::insertFreeCall</a></div><div class="ttdeci">ModuleBuilder &amp; insertFreeCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc)</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a839158b66d9baa16256692469829ed0b"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a839158b66d9baa16256692469829ed0b">llzk::ModuleBuilder::buildProductFn</a></div><div class="ttdeci">static function::FuncDefOp buildProductFn(component::StructDefOp op, mlir::Location loc)</div><div class="ttdoc">product returns the type of the struct that defines it.</div><div class="ttdef"><b>Definition</b> <a href="#l00167">Builders.cpp:167</a></div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a9652d3fc955deb721832cc0ce10979ca"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a9652d3fc955deb721832cc0ce10979ca">llzk::ModuleBuilder::buildConstrainFn</a></div><div class="ttdeci">static function::FuncDefOp buildConstrainFn(component::StructDefOp op, mlir::Location loc)</div><div class="ttdoc">constrain accepts the struct type as the first argument.</div><div class="ttdef"><b>Definition</b> <a href="#l00144">Builders.cpp:144</a></div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a9d8d02674df37d3bdf1837393c15b7db"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a9d8d02674df37d3bdf1837393c15b7db">llzk::ModuleBuilder::insertComputeCall</a></div><div class="ttdeci">ModuleBuilder &amp; insertComputeCall(component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc)</div><div class="ttdoc">Only requirement for compute is the call itself.</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_aa3de74361371b72142ad5683bbb9c6e3"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#aa3de74361371b72142ad5683bbb9c6e3">llzk::ModuleBuilder::insertComputeFn</a></div><div class="ttdeci">ModuleBuilder &amp; insertComputeFn(component::StructDefOp op, mlir::Location loc)</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_ac8879ac8e393af6870d8bef5378e4fb3"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#ac8879ac8e393af6870d8bef5378e4fb3">llzk::ModuleBuilder::insertEmptyStruct</a></div><div class="ttdeci">ModuleBuilder &amp; insertEmptyStruct(std::string_view structName, mlir::Location loc, int numStructParams=-1)</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_ae799e28b93e803dfb94ff05ef261ffbf"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#ae799e28b93e803dfb94ff05ef261ffbf">llzk::ModuleBuilder::insertFreeFunc</a></div><div class="ttdeci">ModuleBuilder &amp; insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc)</div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_aed2c8380b661718b525314b0a1074718"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#aed2c8380b661718b525314b0a1074718">llzk::ModuleBuilder::buildComputeFn</a></div><div class="ttdeci">static function::FuncDefOp buildComputeFn(component::StructDefOp op, mlir::Location loc)</div><div class="ttdoc">compute returns the type of the struct that defines it.</div><div class="ttdef"><b>Definition</b> <a href="#l00121">Builders.cpp:121</a></div></div>
-<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_af0f6e299497e2810b504140ab1b9a2b0"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#af0f6e299497e2810b504140ab1b9a2b0">llzk::ModuleBuilder::insertConstrainFn</a></div><div class="ttdeci">ModuleBuilder &amp; insertConstrainFn(component::StructDefOp op, mlir::Location loc)</div></div>
-<div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01160">Ops.h.inc:1160</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html">llzk::ModuleBuilder</a></div><div class="ttdoc">Builds out a LLZK-compliant module and provides utilities for populating that module.</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00323">Builders.h:323</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_a6429a7a1b4e7fea0653bfe449e40b307"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#a6429a7a1b4e7fea0653bfe449e40b307">llzk::ModuleBuilder::insertTemplate</a></div><div class="ttdeci">ModuleBuilder &amp; insertTemplate(std::string_view templateName, mlir::Location loc, unsigned numParams=0)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleBuilder_html_aabcc04f7b1f0d6ef5eff49a18796bd62"><div class="ttname"><a href="classllzk_1_1ModuleBuilder.html#aabcc04f7b1f0d6ef5eff49a18796bd62">llzk::ModuleBuilder::insertNestedModule</a></div><div class="ttdeci">ModuleBuilder &amp; insertNestedModule(std::string_view moduleName, mlir::Location loc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html">llzk::ModuleLikeBuilder</a></div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00045">Builders.h:45</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a0c39142c750359a539e4c79699bc7abd"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a0c39142c750359a539e4c79699bc7abd">llzk::ModuleLikeBuilder::insertComputeFn</a></div><div class="ttdeci">Derived &amp; insertComputeFn(component::StructDefOp op, mlir::Location loc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a155b25e468cb0cacfac99abddba2dfac"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a155b25e468cb0cacfac99abddba2dfac">llzk::ModuleLikeBuilder::insertConstrainCall</a></div><div class="ttdeci">Derived &amp; insertConstrainCall(component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc, mlir::Location memberDefLoc)</div><div class="ttdoc">To call a constraint function, you must:</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a1bf61b66d0d1203679379388cb14be12"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a1bf61b66d0d1203679379388cb14be12">llzk::ModuleLikeBuilder&lt; ModuleBuilder &gt;::productFnMap</a></div><div class="ttdeci">std::unordered_map&lt; std::string_view, function::FuncDefOp &gt; productFnMap</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00056">Builders.h:56</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a452912ab7b4a84d152b850ef27d57641"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a452912ab7b4a84d152b850ef27d57641">llzk::ModuleLikeBuilder::ensureNoSuchFreeFunc</a></div><div class="ttdeci">void ensureNoSuchFreeFunc(std::string_view funcName)</div><div class="ttdoc">Ensure that a global function with the given funcName has not been added, reporting a fatal error oth...</div><div class="ttdef"><b>Definition</b> <a href="#l00040">Builders.cpp:40</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a5011e426ac713687578a79bf797c35f3"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3">llzk::ModuleLikeBuilder::constrainFnMap</a></div><div class="ttdeci">std::unordered_map&lt; std::string_view, function::FuncDefOp &gt; constrainFnMap</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00054">Builders.h:54</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a65f25a7aa08e2f111c35ae06a53b0b6e"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a65f25a7aa08e2f111c35ae06a53b0b6e">llzk::ModuleLikeBuilder::insertEmptyStruct</a></div><div class="ttdeci">Derived &amp; insertEmptyStruct(std::string_view structName, mlir::Location loc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a662ca9558417f86c99caf386e9f9d214"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a662ca9558417f86c99caf386e9f9d214">llzk::ModuleLikeBuilder::buildComputeFn</a></div><div class="ttdeci">static function::FuncDefOp buildComputeFn(component::StructDefOp op, mlir::Location loc)</div><div class="ttdoc">compute returns the type of the struct that defines it.</div><div class="ttdef"><b>Definition</b> <a href="#l00123">Builders.cpp:123</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a7a703014851a3d2d70a1a54395983b02"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a7a703014851a3d2d70a1a54395983b02">llzk::ModuleLikeBuilder::insertComputeCall</a></div><div class="ttdeci">Derived &amp; insertComputeCall(component::StructDefOp caller, component::StructDefOp callee, mlir::Location callLoc)</div><div class="ttdoc">Only requirement for compute is the call itself.</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a86175aec0c93c30e0668fe09fad9e55a"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a86175aec0c93c30e0668fe09fad9e55a">llzk::ModuleLikeBuilder::ensureProductFnExists</a></div><div class="ttdeci">void ensureProductFnExists(std::string_view structName)</div><div class="ttdoc">Ensure that the given struct has a product function, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00103">Builders.cpp:103</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a87e3989679560dc4df40c96798d0a24c"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a87e3989679560dc4df40c96798d0a24c">llzk::ModuleLikeBuilder::ensureFreeFnExists</a></div><div class="ttdeci">void ensureFreeFnExists(std::string_view funcName)</div><div class="ttdoc">Ensure that a global function with the given funcName has been added, reporting a fatal error otherwi...</div><div class="ttdef"><b>Definition</b> <a href="#l00047">Builders.cpp:47</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a886b10b6a68c0a2f6a081d954e2cd00d"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a886b10b6a68c0a2f6a081d954e2cd00d">llzk::ModuleLikeBuilder::insertProductFn</a></div><div class="ttdeci">Derived &amp; insertProductFn(component::StructDefOp op, mlir::Location loc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a88eaeb924e1447b6a8cd3629ff89b8b9"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a88eaeb924e1447b6a8cd3629ff89b8b9">llzk::ModuleLikeBuilder::insertConstrainFn</a></div><div class="ttdeci">Derived &amp; insertConstrainFn(component::StructDefOp op, mlir::Location loc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a966dbbb8352071675be41defb53b6f6e"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a966dbbb8352071675be41defb53b6f6e">llzk::ModuleLikeBuilder::ensureNoSuchProductFn</a></div><div class="ttdeci">void ensureNoSuchProductFn(std::string_view structName)</div><div class="ttdoc">Ensure that the given struct does not have a product function, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00096">Builders.cpp:96</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a9da5e3cd829f4d7ea91077c07c68ade4"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a9da5e3cd829f4d7ea91077c07c68ade4">llzk::ModuleLikeBuilder::ensureStructExists</a></div><div class="ttdeci">void ensureStructExists(std::string_view structName)</div><div class="ttdoc">Ensure that a struct with the given structName exists, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00061">Builders.cpp:61</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_a9f785c316cdd9a83e0dd4c84bdda4ae6"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#a9f785c316cdd9a83e0dd4c84bdda4ae6">llzk::ModuleLikeBuilder::ensureNoSuchConstrainFn</a></div><div class="ttdeci">void ensureNoSuchConstrainFn(std::string_view structName)</div><div class="ttdoc">Ensure that the given struct does not have a constrain function, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00082">Builders.cpp:82</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ab9e966a50584f3f402c680d80fc95420"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ab9e966a50584f3f402c680d80fc95420">llzk::ModuleLikeBuilder::insertFreeCall</a></div><div class="ttdeci">Derived &amp; insertFreeCall(function::FuncDefOp caller, std::string_view callee, mlir::Location callLoc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ac5134bbd8c410df080a9b5d99fe90615"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615">llzk::ModuleLikeBuilder::freeFuncMap</a></div><div class="ttdeci">std::unordered_map&lt; std::string_view, function::FuncDefOp &gt; freeFuncMap</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00048">Builders.h:48</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ac798a14f5713585156c8051cc72cab53"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ac798a14f5713585156c8051cc72cab53">llzk::ModuleLikeBuilder::ensureNoSuchComputeFn</a></div><div class="ttdeci">void ensureNoSuchComputeFn(std::string_view structName)</div><div class="ttdoc">Ensure that the given struct does not have a compute function, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00068">Builders.cpp:68</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_acc35dba118b24d3f0ec787fd42c14481"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#acc35dba118b24d3f0ec787fd42c14481">llzk::ModuleLikeBuilder::ensureComputeFnExists</a></div><div class="ttdeci">void ensureComputeFnExists(std::string_view structName)</div><div class="ttdoc">Ensure that the given struct has a compute function, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00075">Builders.cpp:75</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_acee0b9c0fc61c7e2bcdbb8b73661a969"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969">llzk::ModuleLikeBuilder::ensureConstrainFnExists</a></div><div class="ttdeci">void ensureConstrainFnExists(std::string_view structName)</div><div class="ttdoc">Ensure that the given struct has a constrain function, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00089">Builders.cpp:89</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ad5ad4eeb7028a02268875d4cbff443b8"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ad5ad4eeb7028a02268875d4cbff443b8">llzk::ModuleLikeBuilder::buildConstrainFn</a></div><div class="ttdeci">static function::FuncDefOp buildConstrainFn(component::StructDefOp op, mlir::Location loc)</div><div class="ttdoc">constrain accepts the struct type as the first argument.</div><div class="ttdef"><b>Definition</b> <a href="#l00149">Builders.cpp:149</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ad76bbf3e368da3ba8306beb6066e0de6"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ad76bbf3e368da3ba8306beb6066e0de6">llzk::ModuleLikeBuilder::computeFnMap</a></div><div class="ttdeci">std::unordered_map&lt; std::string_view, function::FuncDefOp &gt; computeFnMap</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00052">Builders.h:52</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ad8ad2cdace16d85d9c3ac0321355d2af"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ad8ad2cdace16d85d9c3ac0321355d2af">llzk::ModuleLikeBuilder::structMap</a></div><div class="ttdeci">std::unordered_map&lt; std::string_view, component::StructDefOp &gt; structMap</div><div class="ttdef"><b>Definition</b> <a href="Builders_8h_source.html#l00050">Builders.h:50</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ade0fbcafe3bafd6c9c46464512bb5eae"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ade0fbcafe3bafd6c9c46464512bb5eae">llzk::ModuleLikeBuilder::insertFreeFunc</a></div><div class="ttdeci">Derived &amp; insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc)</div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ade6198426cae372f6bd0e5d3f91c3e54"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ade6198426cae372f6bd0e5d3f91c3e54">llzk::ModuleLikeBuilder::ensureNoSuchStruct</a></div><div class="ttdeci">void ensureNoSuchStruct(std::string_view structName)</div><div class="ttdoc">Ensure that a struct with the given structName has not been added, reporting a fatal error otherwise.</div><div class="ttdef"><b>Definition</b> <a href="#l00054">Builders.cpp:54</a></div></div>
+<div class="ttc" id="aclassllzk_1_1ModuleLikeBuilder_html_ae8f45168cdbc662c8eb8fd0490088164"><div class="ttname"><a href="classllzk_1_1ModuleLikeBuilder.html#ae8f45168cdbc662c8eb8fd0490088164">llzk::ModuleLikeBuilder::buildProductFn</a></div><div class="ttdeci">static function::FuncDefOp buildProductFn(component::StructDefOp op, mlir::Location loc)</div><div class="ttdoc">product returns the type of the struct that defines it.</div><div class="ttdef"><b>Definition</b> <a href="#l00175">Builders.cpp:175</a></div></div>
+<div class="ttc" id="aclassllzk_1_1component_1_1MemberDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1MemberDefOp.html">llzk::component::MemberDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l00307">Ops.h.inc:307</a></div></div>
+<div class="ttc" id="aclassllzk_1_1component_1_1MemberReadOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1MemberReadOp.html">llzk::component::MemberReadOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l00631">Ops.h.inc:631</a></div></div>
+<div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01143">Ops.h.inc:1143</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_a2fe7b83cd6fb6399ccf5555008ae596b"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#a2fe7b83cd6fb6399ccf5555008ae596b">llzk::component::StructDefOp::getType</a></div><div class="ttdeci">StructType getType(::std::optional&lt;::mlir::ArrayAttr &gt; constParams={})</div><div class="ttdoc">Gets the StructType representing this struct.</div></div>
-<div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_a3b1175ef6fee7599ee0165d7d8853b8a"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">llzk::component::StructDefOp::getBodyRegion</a></div><div class="ttdeci">::mlir::Region &amp; getBodyRegion()</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01214">Ops.h.inc:1214</a></div></div>
-<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00551">Ops.h.inc:551</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_source.html#l00047">Ops.cpp:47</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1function_html"><div class="ttname"><a href="namespacellzk_1_1function.html">llzk::function</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00040">Ops.cpp:40</a></div></div>
+<div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_a3b1175ef6fee7599ee0165d7d8853b8a"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#a3b1175ef6fee7599ee0165d7d8853b8a">llzk::component::StructDefOp::getBodyRegion</a></div><div class="ttdeci">::mlir::Region &amp; getBodyRegion()</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01189">Ops.h.inc:1189</a></div></div>
+<div class="ttc" id="aclassllzk_1_1component_1_1StructType_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructType.html">llzk::component::StructType</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Types_8h_8inc_source.html#l00023">Types.h.inc:23</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1CallOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00201">Ops.h.inc:201</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00620">Ops.h.inc:620</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a42e42484a422941fa7cd557b93978749"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a42e42484a422941fa7cd557b93978749">llzk::function::FuncDefOp::getSelfValueFromConstrain</a></div><div class="ttdeci">::mlir::Value getSelfValueFromConstrain()</div><div class="ttdoc">Return the &quot;self&quot; value (i.e.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00379">Ops.cpp:379</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ad1b8b5a39d86f7ddb4329a0a94563b37"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ad1b8b5a39d86f7ddb4329a0a94563b37">llzk::function::FuncDefOp::getFullyQualifiedName</a></div><div class="ttdeci">::mlir::SymbolRefAttr getFullyQualifiedName(bool requireParent=true)</div><div class="ttdoc">Return the full name for this function from the root module, including all surrounding symbol table n...</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00350">Ops.cpp:350</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ae71c6dc38ab6cf2859fc1bd6cbb380ac"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">llzk::function::FuncDefOp::getBody</a></div><div class="ttdeci">::mlir::Region &amp; getBody()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00690">Ops.h.inc:690</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_source.html#l00050">Ops.cpp:50</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1function_html"><div class="ttname"><a href="namespacellzk_1_1function.html">llzk::function</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00046">Ops.cpp:46</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00029">Ops.cpp:29</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a078ca0039bbcd069858d9c9141c015d0"><div class="ttname"><a href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">llzk::FUNC_NAME_COMPUTE</a></div><div class="ttdeci">constexpr char FUNC_NAME_COMPUTE[]</div><div class="ttdoc">Symbol name for the witness generation (and resp.</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00016">Constants.h:16</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a17efa635db7bf7658f865515aefd0cce"><div class="ttname"><a href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">llzk::mod</a></div><div class="ttdeci">ExpressionValue mod(const llvm::SMTSolverRef &amp;solver, const ExpressionValue &amp;lhs, const ExpressionValue &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8cpp_source.html#l00215">IntervalAnalysis.cpp:215</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a1b66c1ee1b386cb29f255332f586e96d"><div class="ttname"><a href="namespacellzk.html#a1b66c1ee1b386cb29f255332f586e96d">llzk::LANG_ATTR_NAME</a></div><div class="ttdeci">constexpr char LANG_ATTR_NAME[]</div><div class="ttdoc">Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the root module and s...</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00023">Constants.h:23</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a353b99dc283d18cdecb549edcb8d096f"><div class="ttname"><a href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">llzk::FUNC_NAME_CONSTRAIN</a></div><div class="ttdeci">constexpr char FUNC_NAME_CONSTRAIN[]</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00017">Constants.h:17</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5da07f5e9e63bb1a19430087a83082a8"><div class="ttname"><a href="namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8">llzk::FUNC_NAME_PRODUCT</a></div><div class="ttdeci">constexpr char FUNC_NAME_PRODUCT[]</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00018">Constants.h:18</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a6af91aaab3f72bcd8df881498175c3ac"><div class="ttname"><a href="namespacellzk.html#a6af91aaab3f72bcd8df881498175c3ac">llzk::createLLZKModule</a></div><div class="ttdeci">OwningOpRef&lt; ModuleOp &gt; createLLZKModule(MLIRContext *, Location loc)</div><div class="ttdef"><b>Definition</b> <a href="#l00021">Builders.cpp:21</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ad8079cba340b7e8ca05e0fd88b364334"><div class="ttname"><a href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">llzk::addLangAttrForLLZKDialect</a></div><div class="ttdeci">void addLangAttrForLLZKDialect(ModuleOp mod)</div><div class="ttdef"><b>Definition</b> <a href="#l00027">Builders.cpp:27</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a6af91aaab3f72bcd8df881498175c3ac"><div class="ttname"><a href="namespacellzk.html#a6af91aaab3f72bcd8df881498175c3ac">llzk::createLLZKModule</a></div><div class="ttdeci">OwningOpRef&lt; ModuleOp &gt; createLLZKModule(MLIRContext *, Location loc)</div><div class="ttdef"><b>Definition</b> <a href="#l00022">Builders.cpp:22</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ad8079cba340b7e8ca05e0fd88b364334"><div class="ttname"><a href="namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334">llzk::addLangAttrForLLZKDialect</a></div><div class="ttdeci">void addLangAttrForLLZKDialect(ModuleOp mod)</div><div class="ttdef"><b>Definition</b> <a href="#l00028">Builders.cpp:28</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

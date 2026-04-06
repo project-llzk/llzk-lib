@@ -5,8 +5,6 @@ var classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase =
     [ "StructDefOpGenericAdaptorBase", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#a9280e310a7de39feee6ff30768f2909a", null ],
     [ "getAttributes", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#ad25b1cbb46702467f5959f6699206aa0", null ],
     [ "getBodyRegion", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#aaf0c35223eea3dbca18b2eaeb8e4d15a", null ],
-    [ "getConstParams", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#a3d383a4f98e0418afcc42c4b6b2d7806", null ],
-    [ "getConstParamsAttr", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#a95c4dfa785fafe1c4e265ed3a3b612c2", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#ac1159ce03616c26da91a60782c62514c", null ],
     [ "getProperties", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#afe5af857854a46d9b6f9367ab74242f0", null ],
     [ "getRegions", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html#a20ec7f3f9dc7070a8f8bd44c8c6daeef", null ],

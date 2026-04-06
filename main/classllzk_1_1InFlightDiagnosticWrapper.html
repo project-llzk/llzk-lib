@@ -106,6 +106,7 @@ $(function(){initNavTree('classllzk_1_1InFlightDiagnosticWrapper.html','','class
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="classllzk_1_1InFlightDiagnosticWrapper-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::InFlightDiagnosticWrapper Class Reference</div></div>
 </div><!--header-->
@@ -155,6 +156,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae85cb109d112b2363582f69f1b62aed7" id="r_ae85cb109d112b2363582f69f1b62aed7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae85cb109d112b2363582f69f1b62aed7">InFlightDiagnosticWrapper</a> (const <a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a> &amp;)=delete</td></tr>
 <tr class="memitem:afa7dc44d669dddb2d5cc54729e49619f" id="r_afa7dc44d669dddb2d5cc54729e49619f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa7dc44d669dddb2d5cc54729e49619f">operator=</a> (<a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a> &amp;&amp;)=delete</td></tr>
 <tr class="memitem:a0997b9a49106bdfb861545a0cc819460" id="r_a0997b9a49106bdfb861545a0cc819460"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0997b9a49106bdfb861545a0cc819460">operator=</a> (const <a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a> &amp;)=delete</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a9338e0dd916309c6d687ce0530e26d30" id="r_a9338e0dd916309c6d687ce0530e26d30"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9338e0dd916309c6d687ce0530e26d30">createSilent</a> (mlir::MLIRContext *ctx)</td></tr>
+<tr class="memdesc:a9338e0dd916309c6d687ce0530e26d30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a silent diagnostic that does nothing when appended to or reported.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Wrapper around InFlightDiagnostic that can either be a regular InFlightDiagnostic or a special version that asserts false after reporting the diagnostic. </p>
@@ -327,7 +333,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Abandons this diagnostic so that it will no longer be reported. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00112">112</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00119">119</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -358,7 +364,7 @@ template&lt;typename... Args&gt; </div>
 
 <p>Append arguments to the diagnostic. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00083">83</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00090">90</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -389,7 +395,7 @@ template&lt;typename... Args&gt; </div>
 
 <p>Append arguments to the diagnostic. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00088">88</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00095">95</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -418,7 +424,36 @@ template&lt;typename... Args&gt; </div>
 
 <p>Attaches a note to this diagnostic. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00093">93</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00100">100</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a9338e0dd916309c6d687ce0530e26d30" name="a9338e0dd916309c6d687ce0530e26d30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9338e0dd916309c6d687ce0530e26d30">&#9670;&#160;</a></span>createSilent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a> llzk::InFlightDiagnosticWrapper::createSilent </td>
+          <td>(</td>
+          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Construct a silent diagnostic that does nothing when appended to or reported. </p>
+
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00074">74</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -447,7 +482,7 @@ template&lt;typename... Args&gt; </div>
 
 <p>Returns the underlying diagnostic or nullptr if this diagnostic isn't active. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00100">100</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00107">107</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -479,7 +514,7 @@ template&lt;typename T&gt; </div>
 <p>Allow an inflight diagnostic to be converted to FailureOr&lt;T&gt;. </p>
 <p>Always results in 'failure' because this cast cannot possibly return an object of 'T'. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00128">128</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00135">135</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -508,7 +543,7 @@ template&lt;typename T&gt; </div>
 
 <p>Allow an inflight diagnostic to be converted to 'failure', otherwise 'success' if this is an empty diagnostic. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00118">118</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00125">125</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -537,7 +572,7 @@ template&lt;typename T&gt; </div>
 
 <p>Allow an inflight diagnostic to be converted to 'failure', otherwise 'success' if this is an empty diagnostic. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00124">124</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00131">131</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -568,7 +603,7 @@ template&lt;typename Arg&gt; </div>
 
 <p>Stream operator for new diagnostic arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00074">74</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00081">81</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -599,7 +634,7 @@ template&lt;typename Arg&gt; </div>
 
 <p>Stream operator for new diagnostic arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00078">78</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00085">85</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>
@@ -678,7 +713,7 @@ template&lt;typename Arg&gt; </div>
 
 <p>Reports the diagnostic to the engine. </p>
 
-<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00107">107</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00114">114</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
 
 </div>
 </div>

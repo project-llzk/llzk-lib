@@ -120,15 +120,43 @@ $(function(){initNavTree('Polymorphic_2IR_2Ops_8h_source.html','',''); });
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Dialect_8h.html">llzk/Dialect/Polymorphic/IR/Dialect.h</a>&quot;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Types_8h.html">llzk/Dialect/Polymorphic/IR/Types.h</a>&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;mlir/Dialect/Affine/IR/AffineValueMap.h&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="Polymorphic_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d">   18</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h_8inc.html">llzk/Dialect/Polymorphic/IR/Ops.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="OpHelpers_8h.html">llzk/Dialect/Shared/OpHelpers.h</a>&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;mlir/Dialect/Affine/IR/AffineValueMap.h&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mlir/Interfaces/ControlFlowInterfaces.h&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;mlir/Interfaces/InferTypeOpInterface.h&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2OpInterfaces_8h_8inc.html">llzk/Dialect/Polymorphic/IR/OpInterfaces.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a> {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpT&gt;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html">   26</a></span><span class="keyword">concept </span><a class="code hl_concept" href="conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html">TemplateSymbolBindingOp</a> =</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    std::is_same_v&lt;OpT, TemplateSymbolBindingOpInterface&gt; ||</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    std::is_base_of_v&lt;TemplateSymbolBindingOpInterface::Trait&lt;OpT&gt;, OpT&gt;;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>}</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="Polymorphic_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d">   32</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h_8inc.html">llzk/Dialect/Polymorphic/IR/Ops.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a> {</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed">   38</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562">isInTemplate</a>(mlir::Operation *op);</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ae1ebee7870d5849df2129690ed3fd0ed">   42</a></span>mlir::FailureOr&lt;TemplateOp&gt; <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#acc78f558f10c87ee61ca2699793ebbb1">verifyInTemplate</a>(mlir::Operation *op);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>} <span class="comment">// namespace llzk::polymorphic</span></div>
+<div class="ttc" id="aOpHelpers_8h_html"><div class="ttname"><a href="OpHelpers_8h.html">OpHelpers.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Dialect_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
+<div class="ttc" id="aPolymorphic_2IR_2OpInterfaces_8h_8inc_html"><div class="ttname"><a href="Polymorphic_2IR_2OpInterfaces_8h_8inc.html">OpInterfaces.h.inc</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_8inc_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h_8inc.html">Ops.h.inc</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Types_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Types_8h.html">Types.h</a></div></div>
+<div class="ttc" id="aconceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp_html"><div class="ttname"><a href="conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html">llzk::polymorphic::TemplateSymbolBindingOp</a></div><div class="ttdef"><b>Definition</b> <a href="#l00026">Ops.h:26</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00029">Ops.cpp:29</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_ab5469bc7217002d28ae18f0742d7f562"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562">llzk::polymorphic::isInTemplate</a></div><div class="ttdeci">bool isInTemplate(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00031">Ops.cpp:31</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_acc78f558f10c87ee61ca2699793ebbb1"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#acc78f558f10c87ee61ca2699793ebbb1">llzk::polymorphic::verifyInTemplate</a></div><div class="ttdeci">FailureOr&lt; TemplateOp &gt; verifyInTemplate(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00033">Ops.cpp:33</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

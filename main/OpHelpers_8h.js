@@ -9,7 +9,10 @@ var OpHelpers_8h =
     [ "llzk::parseAttrDictWithWarnings", "namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a", null ],
     [ "llzk::parseDimAndSymbolList", "namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b", null ],
     [ "llzk::parseMultiDimAndSymbolList", "namespacellzk.html#acb80626795a01a586c626bb1cb366a6d", null ],
+    [ "llzk::parseTemplateParams", "namespacellzk.html#ac26809b0165de690450423f29240339b", null ],
     [ "llzk::printAttrDictWithWarnings", "namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2", null ],
     [ "llzk::printDimAndSymbolList", "namespacellzk.html#a467753751f4011cd7f8e3e628748b92c", null ],
-    [ "llzk::printMultiDimAndSymbolList", "namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8", null ]
+    [ "llzk::printMultiDimAndSymbolList", "namespacellzk.html#aa9eb2d93ae702c8d8e1d2164e77f52e8", null ],
+    [ "llzk::printTemplateParams", "namespacellzk.html#a28bea81a49cf839e3359ecd4980bc375", null ],
+    [ "llzk::printTemplateParams", "namespacellzk.html#a1b94afdbbfc3d9cbb416cae2df62e1f0", null ]
 ];

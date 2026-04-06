@@ -34,6 +34,7 @@ var searchData=
   ['notfeltopgenericadaptorbase_31',['NotFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1NotFeltOpGenericAdaptorBase.html#a59d27198c26d666bddaab65994436a15',1,'llzk::felt::detail::NotFeltOpGenericAdaptorBase::NotFeltOpGenericAdaptorBase(::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})'],['../classllzk_1_1felt_1_1detail_1_1NotFeltOpGenericAdaptorBase.html#aeff9aa51d43fd20799203ae2ffa787b3',1,'llzk::felt::detail::NotFeltOpGenericAdaptorBase::NotFeltOpGenericAdaptorBase(::mlir::Operation *op)']]],
   ['notop_32',['notOp',['../namespacellzk.html#aebb77a8bf5d05c1fa010e41374f8de17',1,'llzk']]],
   ['numchildren_33',['numChildren',['../classllzk_1_1SymbolDefTreeNode.html#a2ed290f16189ac46d064c453438e17c1',1,'llzk::SymbolDefTreeNode']]],
-  ['numpredecessors_34',['numPredecessors',['../classllzk_1_1SymbolUseGraphNode.html#a333fe7c7b7473e7d19387a6f79ee64fd',1,'llzk::SymbolUseGraphNode']]],
-  ['numsuccessors_35',['numSuccessors',['../classllzk_1_1SymbolUseGraphNode.html#a0b661d0b5f872866ba6ffbf21bef3a16',1,'llzk::SymbolUseGraphNode']]]
+  ['numconstops_34',['numConstOps',['../classllzk_1_1polymorphic_1_1TemplateOp.html#ab486a0d8cc2bd09838798c4a970de4ff',1,'llzk::polymorphic::TemplateOp']]],
+  ['numpredecessors_35',['numPredecessors',['../classllzk_1_1SymbolUseGraphNode.html#a333fe7c7b7473e7d19387a6f79ee64fd',1,'llzk::SymbolUseGraphNode']]],
+  ['numsuccessors_36',['numSuccessors',['../classllzk_1_1SymbolUseGraphNode.html#a0b661d0b5f872866ba6ffbf21bef3a16',1,'llzk::SymbolUseGraphNode']]]
 ];

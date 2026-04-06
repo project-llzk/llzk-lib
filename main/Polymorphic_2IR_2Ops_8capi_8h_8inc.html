@@ -156,6 +156,40 @@ Functions</h2></td></tr>
 <tr class="memdesc:a84e6d2a83b3d9f3300a65385be6e2da4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set ConstName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">llzk::polymorphic::ConstReadOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a7d782a4215dae9324fc300ff966741cd" id="r_a7d782a4215dae9324fc300ff966741cd"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7d782a4215dae9324fc300ff966741cd">llzkPoly_ConstReadOpGetVal</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:a7d782a4215dae9324fc300ff966741cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Val result from <a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">llzk::polymorphic::ConstReadOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:adf22b506c4cda2401c53715cbdeb0e68" id="r_adf22b506c4cda2401c53715cbdeb0e68"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adf22b506c4cda2401c53715cbdeb0e68">llzkPoly_TemplateExprOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirIdentifier sym_name)</td></tr>
+<tr class="memdesc:adf22b506c4cda2401c53715cbdeb0e68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ad2b83323385ca61d8af965dcfbd50600" id="r_ad2b83323385ca61d8af965dcfbd50600"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad2b83323385ca61d8af965dcfbd50600">llzkOperationIsA_Poly_TemplateExprOp</a> (MlirOperation)</td></tr>
+<tr class="memdesc:ad2b83323385ca61d8af965dcfbd50600"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a>.  <br /></td></tr>
+<tr class="memitem:a0a652365fc84be2b3efd477bd68a3c99" id="r_a0a652365fc84be2b3efd477bd68a3c99"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0a652365fc84be2b3efd477bd68a3c99">llzkPoly_TemplateExprOpGetSymName</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a0a652365fc84be2b3efd477bd68a3c99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get SymName attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a21219fd0f58d93da3724f56c695d983c" id="r_a21219fd0f58d93da3724f56c695d983c"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a21219fd0f58d93da3724f56c695d983c">llzkPoly_TemplateExprOpSetSymName</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:a21219fd0f58d93da3724f56c695d983c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set SymName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a8c17d2b163e886e8825b409c49dce650" id="r_a8c17d2b163e886e8825b409c49dce650"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirRegion&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8c17d2b163e886e8825b409c49dce650">llzkPoly_TemplateExprOpGetInitializerRegion</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a8c17d2b163e886e8825b409c49dce650"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get InitializerRegion region from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a6cdbfadd33293b248eb293fbf3169e62" id="r_a6cdbfadd33293b248eb293fbf3169e62"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6cdbfadd33293b248eb293fbf3169e62">llzkPoly_TemplateExprOpGetType</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a6cdbfadd33293b248eb293fbf3169e62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type of the <span class="tt">poly.yield</span> op in the initializer region.  <br /></td></tr>
+<tr class="memitem:a66cf34b8a40af526e2b3e2dc1a538820" id="r_a66cf34b8a40af526e2b3e2dc1a538820"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66cf34b8a40af526e2b3e2dc1a538820">llzkPoly_TemplateOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirIdentifier sym_name)</td></tr>
+<tr class="memdesc:a66cf34b8a40af526e2b3e2dc1a538820"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a9e4698087d34bec5519daa8aa00aa777" id="r_a9e4698087d34bec5519daa8aa00aa777"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9e4698087d34bec5519daa8aa00aa777">llzkOperationIsA_Poly_TemplateOp</a> (MlirOperation)</td></tr>
+<tr class="memdesc:a9e4698087d34bec5519daa8aa00aa777"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>.  <br /></td></tr>
+<tr class="memitem:af2011971a94201df85d25f992f60f897" id="r_af2011971a94201df85d25f992f60f897"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af2011971a94201df85d25f992f60f897">llzkPoly_TemplateOpGetSymName</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:af2011971a94201df85d25f992f60f897"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get SymName attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a493b0bc7987de8d42e224b74d24b4325" id="r_a493b0bc7987de8d42e224b74d24b4325"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a493b0bc7987de8d42e224b74d24b4325">llzkPoly_TemplateOpSetSymName</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:a493b0bc7987de8d42e224b74d24b4325"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set SymName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a9acdf279078c7ffbdeef9e5a29452afc" id="r_a9acdf279078c7ffbdeef9e5a29452afc"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirRegion&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9acdf279078c7ffbdeef9e5a29452afc">llzkPoly_TemplateOpGetBodyRegion</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a9acdf279078c7ffbdeef9e5a29452afc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get BodyRegion region from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:aa5dae8a79bfcefb3762bbb19bb6dabf7" id="r_aa5dae8a79bfcefb3762bbb19bb6dabf7"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa5dae8a79bfcefb3762bbb19bb6dabf7">llzkPoly_TemplateParamOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirIdentifier sym_name, MlirAttribute type_opt)</td></tr>
+<tr class="memdesc:aa5dae8a79bfcefb3762bbb19bb6dabf7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a93ab27a75f8e800ca41ccbc80aef8520" id="r_a93ab27a75f8e800ca41ccbc80aef8520"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a93ab27a75f8e800ca41ccbc80aef8520">llzkOperationIsA_Poly_TemplateParamOp</a> (MlirOperation)</td></tr>
+<tr class="memdesc:a93ab27a75f8e800ca41ccbc80aef8520"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a>.  <br /></td></tr>
+<tr class="memitem:afa252c068800f4df8329151ac11af84e" id="r_afa252c068800f4df8329151ac11af84e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa252c068800f4df8329151ac11af84e">llzkPoly_TemplateParamOpGetSymName</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:afa252c068800f4df8329151ac11af84e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get SymName attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ac108789380da16264a3252c516aa5794" id="r_ac108789380da16264a3252c516aa5794"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac108789380da16264a3252c516aa5794">llzkPoly_TemplateParamOpSetSymName</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:ac108789380da16264a3252c516aa5794"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set SymName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a551c470f9e20243bc05a94396dbab80f" id="r_a551c470f9e20243bc05a94396dbab80f"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a551c470f9e20243bc05a94396dbab80f">llzkPoly_TemplateParamOpGetTypeOpt</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a551c470f9e20243bc05a94396dbab80f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get TypeOpt attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ad937ba339e11f55cbd45c4efadd77526" id="r_ad937ba339e11f55cbd45c4efadd77526"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad937ba339e11f55cbd45c4efadd77526">llzkPoly_TemplateParamOpSetTypeOpt</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:ad937ba339e11f55cbd45c4efadd77526"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set TypeOpt attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:abb9b53c18434d432d2fad5fb044a4c14" id="r_abb9b53c18434d432d2fad5fb044a4c14"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abb9b53c18434d432d2fad5fb044a4c14">llzkPoly_UnifiableCastOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirType resultType, MlirValue input)</td></tr>
 <tr class="memdesc:abb9b53c18434d432d2fad5fb044a4c14"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:aaaf6ee191b06b77c2473c3635b8a1b89" id="r_aaaf6ee191b06b77c2473c3635b8a1b89"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaaf6ee191b06b77c2473c3635b8a1b89">llzkOperationIsA_Poly_UnifiableCastOp</a> (MlirOperation)</td></tr>
@@ -166,6 +200,14 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8f20ba085247d7a382402d95a6d6026e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Input operand of <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:adcf85c3472eb6b8dc86b2794550074c4" id="r_adcf85c3472eb6b8dc86b2794550074c4"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adcf85c3472eb6b8dc86b2794550074c4">llzkPoly_UnifiableCastOpGetResult</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:adcf85c3472eb6b8dc86b2794550074c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Result result from <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:af662c91d925a6999ba8d4dd454654f8f" id="r_af662c91d925a6999ba8d4dd454654f8f"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af662c91d925a6999ba8d4dd454654f8f">llzkPoly_YieldOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue val)</td></tr>
+<tr class="memdesc:af662c91d925a6999ba8d4dd454654f8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a8c6f34a2adf05802caa210056e099452" id="r_a8c6f34a2adf05802caa210056e099452"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8c6f34a2adf05802caa210056e099452">llzkOperationIsA_Poly_YieldOp</a> (MlirOperation)</td></tr>
+<tr class="memdesc:a8c6f34a2adf05802caa210056e099452"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a>.  <br /></td></tr>
+<tr class="memitem:a123d87a89c141c78cf7e129a304dc409" id="r_a123d87a89c141c78cf7e129a304dc409"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a123d87a89c141c78cf7e129a304dc409">llzkPoly_YieldOpGetVal</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a123d87a89c141c78cf7e129a304dc409"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Val operand from <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:aac89b15af9f6d23d02f1382fdbd296dd" id="r_aac89b15af9f6d23d02f1382fdbd296dd"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aac89b15af9f6d23d02f1382fdbd296dd">llzkPoly_YieldOpSetVal</a> (MlirOperation op, MlirValue value)</td></tr>
+<tr class="memdesc:aac89b15af9f6d23d02f1382fdbd296dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Val operand of <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a> Operation.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a6cc8b78dcac8bee96143e2813aceb47b" name="a6cc8b78dcac8bee96143e2813aceb47b"></a>
@@ -210,6 +252,69 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ad2b83323385ca61d8af965dcfbd50600" name="ad2b83323385ca61d8af965dcfbd50600"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2b83323385ca61d8af965dcfbd50600">&#9670;&#160;</a></span>llzkOperationIsA_Poly_TemplateExprOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkOperationIsA_Poly_TemplateExprOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00128">128</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9e4698087d34bec5519daa8aa00aa777" name="a9e4698087d34bec5519daa8aa00aa777"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e4698087d34bec5519daa8aa00aa777">&#9670;&#160;</a></span>llzkOperationIsA_Poly_TemplateOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkOperationIsA_Poly_TemplateOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00163">163</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a93ab27a75f8e800ca41ccbc80aef8520" name="a93ab27a75f8e800ca41ccbc80aef8520"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93ab27a75f8e800ca41ccbc80aef8520">&#9670;&#160;</a></span>llzkOperationIsA_Poly_TemplateParamOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkOperationIsA_Poly_TemplateParamOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00194">194</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="aaaf6ee191b06b77c2473c3635b8a1b89" name="aaaf6ee191b06b77c2473c3635b8a1b89"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aaaf6ee191b06b77c2473c3635b8a1b89">&#9670;&#160;</a></span>llzkOperationIsA_Poly_UnifiableCastOp()</h2>
 
@@ -227,7 +332,28 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00121">121</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00222">222</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8c6f34a2adf05802caa210056e099452" name="a8c6f34a2adf05802caa210056e099452"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c6f34a2adf05802caa210056e099452">&#9670;&#160;</a></span>llzkOperationIsA_Poly_YieldOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkOperationIsA_Poly_YieldOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00245">245</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -543,6 +669,348 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="adf22b506c4cda2401c53715cbdeb0e68" name="adf22b506c4cda2401c53715cbdeb0e68"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf22b506c4cda2401c53715cbdeb0e68">&#9670;&#160;</a></span>llzkPoly_TemplateExprOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirOperation llzkPoly_TemplateExprOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>sym_name</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00113">113</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a8c17d2b163e886e8825b409c49dce650" name="a8c17d2b163e886e8825b409c49dce650"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c17d2b163e886e8825b409c49dce650">&#9670;&#160;</a></span>llzkPoly_TemplateExprOpGetInitializerRegion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirRegion llzkPoly_TemplateExprOpGetInitializerRegion </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get InitializerRegion region from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00140">140</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a0a652365fc84be2b3efd477bd68a3c99" name="a0a652365fc84be2b3efd477bd68a3c99"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0a652365fc84be2b3efd477bd68a3c99">&#9670;&#160;</a></span>llzkPoly_TemplateExprOpGetSymName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkPoly_TemplateExprOpGetSymName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get SymName attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00132">132</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a6cdbfadd33293b248eb293fbf3169e62" name="a6cdbfadd33293b248eb293fbf3169e62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6cdbfadd33293b248eb293fbf3169e62">&#9670;&#160;</a></span>llzkPoly_TemplateExprOpGetType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirType llzkPoly_TemplateExprOpGetType </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the type of the <span class="tt">poly.yield</span> op in the initializer region. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00144">144</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a21219fd0f58d93da3724f56c695d983c" name="a21219fd0f58d93da3724f56c695d983c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21219fd0f58d93da3724f56c695d983c">&#9670;&#160;</a></span>llzkPoly_TemplateExprOpSetSymName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_TemplateExprOpSetSymName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set SymName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00136">136</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a66cf34b8a40af526e2b3e2dc1a538820" name="a66cf34b8a40af526e2b3e2dc1a538820"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66cf34b8a40af526e2b3e2dc1a538820">&#9670;&#160;</a></span>llzkPoly_TemplateOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirOperation llzkPoly_TemplateOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>sym_name</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00148">148</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9acdf279078c7ffbdeef9e5a29452afc" name="a9acdf279078c7ffbdeef9e5a29452afc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9acdf279078c7ffbdeef9e5a29452afc">&#9670;&#160;</a></span>llzkPoly_TemplateOpGetBodyRegion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirRegion llzkPoly_TemplateOpGetBodyRegion </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get BodyRegion region from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00175">175</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af2011971a94201df85d25f992f60f897" name="af2011971a94201df85d25f992f60f897"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af2011971a94201df85d25f992f60f897">&#9670;&#160;</a></span>llzkPoly_TemplateOpGetSymName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkPoly_TemplateOpGetSymName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get SymName attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00167">167</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a493b0bc7987de8d42e224b74d24b4325" name="a493b0bc7987de8d42e224b74d24b4325"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a493b0bc7987de8d42e224b74d24b4325">&#9670;&#160;</a></span>llzkPoly_TemplateOpSetSymName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpSetSymName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set SymName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00171">171</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa5dae8a79bfcefb3762bbb19bb6dabf7" name="aa5dae8a79bfcefb3762bbb19bb6dabf7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa5dae8a79bfcefb3762bbb19bb6dabf7">&#9670;&#160;</a></span>llzkPoly_TemplateParamOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirOperation llzkPoly_TemplateParamOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>sym_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>type_opt</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00179">179</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="afa252c068800f4df8329151ac11af84e" name="afa252c068800f4df8329151ac11af84e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa252c068800f4df8329151ac11af84e">&#9670;&#160;</a></span>llzkPoly_TemplateParamOpGetSymName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkPoly_TemplateParamOpGetSymName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get SymName attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00198">198</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a551c470f9e20243bc05a94396dbab80f" name="a551c470f9e20243bc05a94396dbab80f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a551c470f9e20243bc05a94396dbab80f">&#9670;&#160;</a></span>llzkPoly_TemplateParamOpGetTypeOpt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkPoly_TemplateParamOpGetTypeOpt </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get TypeOpt attribute from <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00206">206</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac108789380da16264a3252c516aa5794" name="ac108789380da16264a3252c516aa5794"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac108789380da16264a3252c516aa5794">&#9670;&#160;</a></span>llzkPoly_TemplateParamOpSetSymName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_TemplateParamOpSetSymName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set SymName attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00202">202</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ad937ba339e11f55cbd45c4efadd77526" name="ad937ba339e11f55cbd45c4efadd77526"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad937ba339e11f55cbd45c4efadd77526">&#9670;&#160;</a></span>llzkPoly_TemplateParamOpSetTypeOpt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_TemplateParamOpSetTypeOpt </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set TypeOpt attribute of <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00210">210</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="abb9b53c18434d432d2fad5fb044a4c14" name="abb9b53c18434d432d2fad5fb044a4c14"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abb9b53c18434d432d2fad5fb044a4c14">&#9670;&#160;</a></span>llzkPoly_UnifiableCastOpBuild()</h2>
 
@@ -574,7 +1042,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00113">113</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00214">214</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -595,7 +1063,7 @@ Functions</h2></td></tr>
 
 <p>Get Input operand from <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00125">125</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00226">226</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -616,7 +1084,7 @@ Functions</h2></td></tr>
 
 <p>Get Result result from <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00133">133</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00234">234</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -641,7 +1109,83 @@ Functions</h2></td></tr>
 
 <p>Set Input operand of <a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00129">129</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00230">230</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af662c91d925a6999ba8d4dd454654f8f" name="af662c91d925a6999ba8d4dd454654f8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af662c91d925a6999ba8d4dd454654f8f">&#9670;&#160;</a></span>llzkPoly_YieldOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirOperation llzkPoly_YieldOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>val</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00238">238</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a123d87a89c141c78cf7e129a304dc409" name="a123d87a89c141c78cf7e129a304dc409"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a123d87a89c141c78cf7e129a304dc409">&#9670;&#160;</a></span>llzkPoly_YieldOpGetVal()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirValue llzkPoly_YieldOpGetVal </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Val operand from <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00249">249</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aac89b15af9f6d23d02f1382fdbd296dd" name="aac89b15af9f6d23d02f1382fdbd296dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac89b15af9f6d23d02f1382fdbd296dd">&#9670;&#160;</a></span>llzkPoly_YieldOpSetVal()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkPoly_YieldOpSetVal </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set Val operand of <a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html#l00253">253</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

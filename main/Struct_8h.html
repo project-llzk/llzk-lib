@@ -155,51 +155,24 @@ Functions</h2></td></tr>
 <tr class="memdesc:a5e46c6267b1e58938cc733e41f216397"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of MemberDefOp operations defined in this struct.  <br /></td></tr>
 <tr class="memitem:aee41a56c08c5ff3a89fc6fa0f675c04a" id="r_aee41a56c08c5ff3a89fc6fa0f675c04a"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aee41a56c08c5ff3a89fc6fa0f675c04a">llzkStruct_StructDefOpGetHeaderString</a> (MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t))</td></tr>
 <tr class="memdesc:aee41a56c08c5ff3a89fc6fa0f675c04a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the header string of the struct.  <br /></td></tr>
-<tr class="memitem:a962bef8aa4e6b3829945d337dcf4c5ff" id="r_a962bef8aa4e6b3829945d337dcf4c5ff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a962bef8aa4e6b3829945d337dcf4c5ff">LLZK_DECLARE_NARY_OP_PREDICATE</a> (Struct, StructDefOp, HasParamName, MlirStringRef name)</td></tr>
-<tr class="memdesc:a962bef8aa4e6b3829945d337dcf4c5ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the struct has a parameter that has the given name.  <br /></td></tr>
+<tr class="memitem:a2a9231cdad17123a97c8c0fc09b244c8" id="r_a2a9231cdad17123a97c8c0fc09b244c8"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2a9231cdad17123a97c8c0fc09b244c8">llzkStruct_StructDefOpGetTemplateParamOpNames</a> (MlirOperation op, MlirAttribute *dst)</td></tr>
+<tr class="memdesc:a2a9231cdad17123a97c8c0fc09b244c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this <span class="tt">struct.def</span> is within a <span class="tt">poly.template</span>, add names of all <span class="tt">poly.param</span> within the <span class="tt">poly.template</span> in the order they are defined.  <br /></td></tr>
+<tr class="memitem:a92372cd2c558d849dc0cc0820299e40a" id="r_a92372cd2c558d849dc0cc0820299e40a"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a92372cd2c558d849dc0cc0820299e40a">llzkStruct_StructDefOpGetNumTemplateParamOpNames</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a92372cd2c558d849dc0cc0820299e40a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of <span class="tt">poly.param</span> operations defined within this template.  <br /></td></tr>
+<tr class="memitem:a8d3e4fed747a9445a4a41d38e03d4d7f" id="r_a8d3e4fed747a9445a4a41d38e03d4d7f"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8d3e4fed747a9445a4a41d38e03d4d7f">llzkStruct_StructDefOpGetTemplateExprOpNames</a> (MlirOperation op, MlirAttribute *dst)</td></tr>
+<tr class="memdesc:a8d3e4fed747a9445a4a41d38e03d4d7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this <span class="tt">struct.def</span> is within a <span class="tt">poly.template</span>, add names of all <span class="tt">poly.expr</span> within the <span class="tt">poly.template</span> in the order they are defined.  <br /></td></tr>
+<tr class="memitem:a71ddd91fb47e8f6fc0d01c435b448d65" id="r_a71ddd91fb47e8f6fc0d01c435b448d65"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71ddd91fb47e8f6fc0d01c435b448d65">llzkStruct_StructDefOpGetNumTemplateExprOpNames</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a71ddd91fb47e8f6fc0d01c435b448d65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of <span class="tt">poly.expr</span> operations defined within this template.  <br /></td></tr>
 <tr class="memitem:ae34fdb570bd9a2d0205f9e2a242e1ea7" id="r_ae34fdb570bd9a2d0205f9e2a242e1ea7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae34fdb570bd9a2d0205f9e2a242e1ea7">LLZK_DECLARE_OP_BUILD_METHOD</a> (Struct, MemberReadOp, MlirType type, MlirValue component, MlirIdentifier memberName)</td></tr>
 <tr class="memdesc:ae34fdb570bd9a2d0205f9e2a242e1ea7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp.  <br /></td></tr>
 <tr class="memitem:a7c8afd2e02e44179744303166a353976" id="r_a7c8afd2e02e44179744303166a353976"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c8afd2e02e44179744303166a353976">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberReadOp, WithAffineMapDistance, MlirType type, MlirValue component, MlirIdentifier memberName, MlirAffineMap affineMap, <a class="el" href="structMlirValueRange.html">MlirValueRange</a> mapOperands)</td></tr>
 <tr class="memdesc:a7c8afd2e02e44179744303166a353976"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp to a column offset by the given distance affine map.  <br /></td></tr>
-<tr class="memitem:a17337f9e331850d2ed61d092076007b0" id="r_a17337f9e331850d2ed61d092076007b0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a17337f9e331850d2ed61d092076007b0">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component, MlirIdentifier memberName, MlirStringRef paramName)</td></tr>
-<tr class="memdesc:a17337f9e331850d2ed61d092076007b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant parameter in the struct.  <br /></td></tr>
+<tr class="memitem:ae7088fdafbf7573f6a0f875e811428c5" id="r_ae7088fdafbf7573f6a0f875e811428c5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae7088fdafbf7573f6a0f875e811428c5">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberReadOp, WithTemplateSymbolDistance, MlirType type, MlirValue component, MlirIdentifier memberName, MlirStringRef paramName)</td></tr>
+<tr class="memdesc:ae7088fdafbf7573f6a0f875e811428c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant parameter in the struct.  <br /></td></tr>
 <tr class="memitem:a94828f96fe8e21b2ffcdc241cfc84a0c" id="r_a94828f96fe8e21b2ffcdc241cfc84a0c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a94828f96fe8e21b2ffcdc241cfc84a0c">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberReadOp, WithLiteralDistance, MlirType type, MlirValue component, MlirIdentifier memberName, int64_t distance)</td></tr>
 <tr class="memdesc:a94828f96fe8e21b2ffcdc241cfc84a0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp to a column offset by the given distance defined by an integer value.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="a962bef8aa4e6b3829945d337dcf4c5ff" name="a962bef8aa4e6b3829945d337dcf4c5ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a962bef8aa4e6b3829945d337dcf4c5ff">&#9670;&#160;</a></span>LLZK_DECLARE_NARY_OP_PREDICATE()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">LLZK_DECLARE_NARY_OP_PREDICATE </td>
-          <td>(</td>
-          <td class="paramtype">Struct</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">StructDefOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">HasParamName</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Returns true if the struct has a parameter that has the given name. </p>
-
-</div>
-</div>
 <a id="ae34fdb570bd9a2d0205f9e2a242e1ea7" name="ae34fdb570bd9a2d0205f9e2a242e1ea7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae34fdb570bd9a2d0205f9e2a242e1ea7">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD()</h2>
 
@@ -292,56 +265,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a17337f9e331850d2ed61d092076007b0" name="a17337f9e331850d2ed61d092076007b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a17337f9e331850d2ed61d092076007b0">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
-          <td>(</td>
-          <td class="paramtype">Struct</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MemberReadOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">WithConstParamDistance</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>memberName</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>paramName</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant parameter in the struct. </p>
-
-</div>
-</div>
 <a id="a94828f96fe8e21b2ffcdc241cfc84a0c" name="a94828f96fe8e21b2ffcdc241cfc84a0c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a94828f96fe8e21b2ffcdc241cfc84a0c">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a94828f96fe8e21b2ffcdc241cfc84a0c">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -385,6 +310,54 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a MemberReadOp to a column offset by the given distance defined by an integer value. </p>
+
+</div>
+</div>
+<a id="ae7088fdafbf7573f6a0f875e811428c5" name="ae7088fdafbf7573f6a0f875e811428c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7088fdafbf7573f6a0f875e811428c5">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Struct</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MemberReadOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithTemplateSymbolDistance</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>component</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>memberName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>paramName</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant parameter in the struct. </p>
 
 </div>
 </div>
@@ -484,6 +457,102 @@ Functions</h2></td></tr>
 <p>Returns the number of MemberDefOp operations defined in this struct. </p>
 
 <p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00114">114</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a71ddd91fb47e8f6fc0d01c435b448d65" name="a71ddd91fb47e8f6fc0d01c435b448d65"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a71ddd91fb47e8f6fc0d01c435b448d65">&#9670;&#160;</a></span>llzkStruct_StructDefOpGetNumTemplateExprOpNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of <span class="tt">poly.expr</span> operations defined within this template. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00149">149</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a92372cd2c558d849dc0cc0820299e40a" name="a92372cd2c558d849dc0cc0820299e40a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a92372cd2c558d849dc0cc0820299e40a">&#9670;&#160;</a></span>llzkStruct_StructDefOpGetNumTemplateParamOpNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the number of <span class="tt">poly.param</span> operations defined within this template. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00136">136</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a8d3e4fed747a9445a4a41d38e03d4d7f" name="a8d3e4fed747a9445a4a41d38e03d4d7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d3e4fed747a9445a4a41d38e03d4d7f">&#9670;&#160;</a></span>llzkStruct_StructDefOpGetTemplateExprOpNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkStruct_StructDefOpGetTemplateExprOpNames </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute *</td>          <td class="paramname"><span class="paramname"><em>dst</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If this <span class="tt">struct.def</span> is within a <span class="tt">poly.template</span>, add names of all <span class="tt">poly.expr</span> within the <span class="tt">poly.template</span> in the order they are defined. </p>
+<p>Otherwise, do nothing. The names are added as <span class="tt">FlatSymbolRefAttr</span> but the more general <span class="tt">Attribute</span> type is used in the type since that's usually what's needed.</p>
+<p>The pointer to the attributes must have been preallocated. See <span class="tt">llzkStruct_StructDefOpGetNumTemplateExprOpNames</span> for obtaining the required size of the array. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00142">142</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a2a9231cdad17123a97c8c0fc09b244c8" name="a2a9231cdad17123a97c8c0fc09b244c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a9231cdad17123a97c8c0fc09b244c8">&#9670;&#160;</a></span>llzkStruct_StructDefOpGetTemplateParamOpNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkStruct_StructDefOpGetTemplateParamOpNames </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute *</td>          <td class="paramname"><span class="paramname"><em>dst</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If this <span class="tt">struct.def</span> is within a <span class="tt">poly.template</span>, add names of all <span class="tt">poly.param</span> within the <span class="tt">poly.template</span> in the order they are defined. </p>
+<p>Otherwise, do nothing. The names are added as <span class="tt">FlatSymbolRefAttr</span> but the more general <span class="tt">Attribute</span> type is used in the type since that's usually what's needed.</p>
+<p>The pointer to the attributes must have been preallocated. See <span class="tt">llzkStruct_StructDefOpGetNumTemplateParamOpNames</span> for obtaining the required size of the array. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00129">129</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
 
 </div>
 </div>

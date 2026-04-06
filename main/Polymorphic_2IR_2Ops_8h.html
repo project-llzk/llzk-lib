@@ -105,30 +105,53 @@ $(function(){initNavTree('Polymorphic_2IR_2Ops_8h.html','',''); });
 
 <div class="header">
   <div class="summary">
-<a href="#define-members">Macros</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#concepts">Concepts</a> &#124;
+<a href="#define-members">Macros</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">Ops.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Polymorphic_2IR_2Dialect_8h_source.html">llzk/Dialect/Polymorphic/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Types_8h_source.html">llzk/Dialect/Polymorphic/IR/Types.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="OpHelpers_8h_source.html">llzk/Dialect/Shared/OpHelpers.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Affine/IR/AffineValueMap.h&gt;</code><br />
+<code>#include &lt;mlir/Interfaces/ControlFlowInterfaces.h&gt;</code><br />
+<code>#include &lt;mlir/Interfaces/InferTypeOpInterface.h&gt;</code><br />
+<code>#include &quot;<a class="el" href="Polymorphic_2IR_2OpInterfaces_8h_8inc_source.html">llzk/Dialect/Polymorphic/IR/OpInterfaces.h.inc</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">llzk/Dialect/Polymorphic/IR/Ops.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Ops.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2IR_2Ops_8h__incl.svg" width="779" height="334"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2IR_2Ops_8h__incl.svg" width="3194" height="410"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2IR_2Ops_8h__dep__incl.svg" width="1892" height="536"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2IR_2Ops_8h__dep__incl.svg" width="7076" height="739"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Polymorphic_2IR_2Ops_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
+<tr class="memitem:llzk_3A_3Apolymorphic" id="r_llzk_3A_3Apolymorphic"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-concepts" class="groupheader"><a id="concepts" name="concepts"></a>
+Concepts</h2></td></tr>
+<tr class="memitem:llzk_3A_3Apolymorphic_3A_3ATemplateSymbolBindingOp" id="r_llzk_3A_3Apolymorphic_3A_3ATemplateSymbolBindingOp"><td class="memItemLeft" align="right" valign="top">concept &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html">llzk::polymorphic::TemplateSymbolBindingOp</a></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a52c883a38e577b8b12282ff70c95a16d" id="r_a52c883a38e577b8b12282ff70c95a16d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a52c883a38e577b8b12282ff70c95a16d">GET_OP_CLASSES</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:abfc0e81b570f916984553856b44142ed" id="r_abfc0e81b570f916984553856b44142ed"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed">llzk::polymorphic::isInTemplate</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:abfc0e81b570f916984553856b44142ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true iff the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>.  <br /></td></tr>
+<tr class="memitem:ae1ebee7870d5849df2129690ed3fd0ed" id="r_ae1ebee7870d5849df2129690ed3fd0ed"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ae1ebee7870d5849df2129690ed3fd0ed">llzk::polymorphic::verifyInTemplate</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:ae1ebee7870d5849df2129690ed3fd0ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">If the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>, return a success result containing that <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>.  <br /></td></tr>
 </table>
 <a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a52c883a38e577b8b12282ff70c95a16d" name="a52c883a38e577b8b12282ff70c95a16d"></a>
@@ -143,7 +166,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html#l00018">18</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html#l00032">32</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>

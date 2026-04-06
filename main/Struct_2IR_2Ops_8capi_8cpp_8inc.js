@@ -38,10 +38,9 @@ var Struct_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkStruct_MemberWriteOpSetComponent", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a70a5dec05bd8f9450aa4e5758fec6c14", null ],
     [ "llzkStruct_MemberWriteOpSetMemberName", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#ab11f3960067d3aff2c03dd145f84434c", null ],
     [ "llzkStruct_MemberWriteOpSetVal", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a3d8b20ec2933ee4b2ed92c7ceade563b", null ],
-    [ "llzkStruct_StructDefOpBuild", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a947fb476cb3859b1ad3c1cb78be22840", null ],
+    [ "llzkStruct_StructDefOpBuild", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a2a6f29c5a508d82a8d81c86727388b21", null ],
     [ "llzkStruct_StructDefOpGetBodyRegion", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a0a5063f094e3d9e1d409dca29578b65d", null ],
     [ "llzkStruct_StructDefOpGetComputeFuncOp", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#aee348e53c511365bf9f33727fe3adfd0", null ],
-    [ "llzkStruct_StructDefOpGetConstParams", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#acd29dfb1c2899aee1371133848045f81", null ],
     [ "llzkStruct_StructDefOpGetConstrainFuncOp", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a306f9af09b53328bb761eedcce19f34b", null ],
     [ "llzkStruct_StructDefOpGetFullyQualifiedName", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#aef5d095795d2f48a728b8b081d74f8d6", null ],
     [ "llzkStruct_StructDefOpGetMemberDef", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#ad0225c0c771454bb40fff683a0459a2f", null ],
@@ -49,9 +48,8 @@ var Struct_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkStruct_StructDefOpGetSymName", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a7c61ffa71849e0e9ef143281731fe2dd", null ],
     [ "llzkStruct_StructDefOpHasColumns", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#ab83b8d57894bd4d4a1f995ccf7e976e2", null ],
     [ "llzkStruct_StructDefOpHasComputeConstrain", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a3a0dceee4a7d067d93ed3c04f9a0c024", null ],
-    [ "llzkStruct_StructDefOpHasConstParamsAttr", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a7ec62b9c97ce265b03d67fb37866979c", null ],
     [ "llzkStruct_StructDefOpHasSignals", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a83e83ec66595a4e4931e340ff62a698d", null ],
+    [ "llzkStruct_StructDefOpHasTemplateSymbolBindings", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a821a06b537cf9fef8a33df5d0d36b379", null ],
     [ "llzkStruct_StructDefOpIsMainComponent", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#ac0f36c99c9b71f5f1d8f128f0b16f817", null ],
-    [ "llzkStruct_StructDefOpSetConstParams", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a889a4dc22d84a10a432631f830731ad5", null ],
     [ "llzkStruct_StructDefOpSetSymName", "Struct_2IR_2Ops_8capi_8cpp_8inc.html#ac6994fd7ec94dbf759acbd2d6ff890ab", null ]
 ];

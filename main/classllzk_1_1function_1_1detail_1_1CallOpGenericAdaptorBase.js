@@ -12,6 +12,8 @@ var classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase =
     [ "getNumDimsPerMapAttr", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a535daf198c581ee7b0973c3e60161984", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a8356158c614c152940e3ba6fee2ce1fc", null ],
     [ "getProperties", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#ac6ea78808b707dab23d80aa9873aa797", null ],
+    [ "getTemplateParams", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a49c05a012f2f09cbade19d4f86570086", null ],
+    [ "getTemplateParamsAttr", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#ae2d1f7e38bf7c195f802f2f02dcd5078", null ],
     [ "odsAttrs", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a0e763bd8ba28ff2a088f246775de2928", null ],
     [ "odsOpName", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#a6be83d14b16aaaf67b31da9d2c07e9e7", null ],
     [ "odsRegions", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#ac658de4dce09993da93e10230c8d6235", null ],

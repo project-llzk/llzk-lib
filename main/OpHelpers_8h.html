@@ -111,8 +111,11 @@ $(function(){initNavTree('OpHelpers_8h.html','',''); });
   <div class="headertitle"><div class="title">OpHelpers.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="AffineHelper_8h_source.html">llzk/Util/AffineHelper.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="AttributeHelper_8h_source.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="AffineHelper_8h_source.html">llzk/Util/AffineHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="llzk_2Util_2Constants_8h_source.html">llzk/Util/Constants.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="ErrorHelper_8h_source.html">llzk/Util/ErrorHelper.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/OpImplementation.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
 <code>#include &lt;mlir/IR/SymbolTable.h&gt;</code><br />
@@ -122,12 +125,12 @@ $(function(){initNavTree('OpHelpers_8h.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for OpHelpers.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpHelpers_8h__incl.svg" width="1570" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpHelpers_8h__incl.svg" width="2892" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpHelpers_8h__dep__incl.svg" width="6376" height="612"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpHelpers_8h__dep__incl.svg" width="7172" height="722"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="OpHelpers_8h_source.html">Go to the source code of this file.</a></p>
@@ -163,6 +166,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a6f3fe746926910eac20e7c7eeee63e3a" id="r_a6f3fe746926910eac20e7c7eeee63e3a"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a6f3fe746926910eac20e7c7eeee63e3a">llzk::parseAttrDictWithWarnings</a> (mlir::OpAsmParser &amp;parser, mlir::NamedAttrList &amp;extraAttrs, mlir::OperationState &amp;state)</td></tr>
 <tr class="memitem:aafb94145f42dd37435e37c9ce4b805a2" id="r_aafb94145f42dd37435e37c9ce4b805a2"><td class="memTemplParams" colspan="2">template&lt;typename ConcreteOp&gt; </td></tr>
 <tr class="memitem:aafb94145f42dd37435e37c9ce4b805a2 template"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#aafb94145f42dd37435e37c9ce4b805a2">llzk::printAttrDictWithWarnings</a> (mlir::OpAsmPrinter &amp;printer, ConcreteOp op, mlir::DictionaryAttr extraAttrs, typename mlir::PropertiesSelector&lt; ConcreteOp &gt;::type state)</td></tr>
+<tr class="memitem:ac26809b0165de690450423f29240339b" id="r_ac26809b0165de690450423f29240339b"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ac26809b0165de690450423f29240339b">llzk::parseTemplateParams</a> (mlir::AsmParser &amp;parser, mlir::ArrayAttr &amp;value)</td></tr>
+<tr class="memitem:a28bea81a49cf839e3359ecd4980bc375" id="r_a28bea81a49cf839e3359ecd4980bc375"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a28bea81a49cf839e3359ecd4980bc375">llzk::printTemplateParams</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayAttr value)</td></tr>
+<tr class="memitem:a1b94afdbbfc3d9cbb416cae2df62e1f0" id="r_a1b94afdbbfc3d9cbb416cae2df62e1f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a1b94afdbbfc3d9cbb416cae2df62e1f0">llzk::printTemplateParams</a> (mlir::AsmPrinter &amp;printer, void *, mlir::ArrayAttr value)</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

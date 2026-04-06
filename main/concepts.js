@@ -8,6 +8,9 @@ var concepts =
         [ "ScalarLatticeValue", "conceptllzk_1_1dataflow_1_1ScalarLatticeValue.html", null ]
       ] ],
       [ "debug", "namespacellzk_1_1debug.html", null ],
+      [ "polymorphic", "namespacellzk_1_1polymorphic.html", [
+        [ "TemplateSymbolBindingOp", "conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html", null ]
+      ] ],
       [ "ContextType", "conceptllzk_1_1ContextType.html", null ],
       [ "StructAnalysisType", "conceptllzk_1_1StructAnalysisType.html", null ],
       [ "OpComparable", "conceptllzk_1_1OpComparable.html", null ],

@@ -149,6 +149,7 @@ $(function(){initNavTree('FlatteningPass_8cpp.html','',''); });
 <code>#include &lt;mlir/Support/LogicalResult.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/DialectConversion.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/GreedyPatternRewriteDriver.h&gt;</code><br />
+<code>#include &lt;mlir/Transforms/WalkPatternRewriteDriver.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/APInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DepthFirstIterator.h&gt;</code><br />
@@ -161,7 +162,7 @@ $(function(){initNavTree('FlatteningPass_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for FlatteningPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="FlatteningPass_8cpp__incl.svg" width="5363" height="502"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="FlatteningPass_8cpp__incl.svg" width="5298" height="519"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="FlatteningPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -176,7 +177,8 @@ Namespaces</h2></td></tr>
 <tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic" id="r_llzk_3A_3Apolymorphic"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Aimpl" id="r_llzk_3A_3Apolymorphic_3A_3Aimpl"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1impl.html">llzk::polymorphic::impl</a></td></tr>
-<tr class="memitem:Step1_5FInstantiateStructs" id="r_Step1_5FInstantiateStructs"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceStep1__InstantiateStructs.html">Step1_InstantiateStructs</a></td></tr>
+<tr class="memitem:Step1A_5FInstantiateStructs" id="r_Step1A_5FInstantiateStructs"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceStep1A__InstantiateStructs.html">Step1A_InstantiateStructs</a></td></tr>
+<tr class="memitem:Step1B_5FInstantiateFunctions" id="r_Step1B_5FInstantiateFunctions"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceStep1B__InstantiateFunctions.html">Step1B_InstantiateFunctions</a></td></tr>
 <tr class="memitem:Step2_5FUnroll" id="r_Step2_5FUnroll"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceStep2__Unroll.html">Step2_Unroll</a></td></tr>
 <tr class="memitem:Step3_5FInstantiateAffineMaps" id="r_Step3_5FInstantiateAffineMaps"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceStep3__InstantiateAffineMaps.html">Step3_InstantiateAffineMaps</a></td></tr>
 <tr class="memitem:Step4_5FPropagateTypes" id="r_Step4_5FPropagateTypes"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceStep4__PropagateTypes.html">Step4_PropagateTypes</a></td></tr>
@@ -205,7 +207,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00069">69</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00070">70</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -221,7 +223,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00062">62</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00063">63</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -237,7 +239,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00063">63</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00064">64</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>

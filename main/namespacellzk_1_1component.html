@@ -149,8 +149,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a7c0add78dbee2949bf32c4018ca6c019" id="r_a7c0add78dbee2949bf32c4018ca6c019"><td class="memItemLeft" align="right" valign="top">InFlightDiagnostic&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c0add78dbee2949bf32c4018ca6c019">genCompareErr</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expected, Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a8c211e6cb7a97e4702d2f47c90b5021c" id="r_a8c211e6cb7a97e4702d2f47c90b5021c"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8c211e6cb7a97e4702d2f47c90b5021c">checkSelfType</a> (SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, Type actualType, Operation *origin, const char *aspect)</td></tr>
 <tr class="memdesc:a8c211e6cb7a97e4702d2f47c90b5021c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifies that the given <span class="tt">actualType</span> matches the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> given (i.e., for the "self" type parameter and return of the struct functions).  <br /></td></tr>
-<tr class="memitem:af8cdc6ae837bbd0b5d5cf485ac87499e" id="r_af8cdc6ae837bbd0b5d5cf485ac87499e"><td class="memItemLeft" align="right" valign="top">ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af8cdc6ae837bbd0b5d5cf485ac87499e">parseStructParams</a> (AsmParser &amp;parser, ArrayAttr &amp;value)</td></tr>
-<tr class="memitem:a585f7935bf73a88cbc13f5beacfd6c08" id="r_a585f7935bf73a88cbc13f5beacfd6c08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a585f7935bf73a88cbc13f5beacfd6c08">printStructParams</a> (AsmPrinter &amp;printer, ArrayAttr value)</td></tr>
 <tr class="memitem:a814f1e66493212b02ead85446adb172e" id="r_a814f1e66493212b02ead85446adb172e"><td class="memItemLeft" align="right" valign="top">mlir::InFlightDiagnostic&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a814f1e66493212b02ead85446adb172e">genCompareErr</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expected, mlir::Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a275b6e87c8fda84b470c5da478fc1203" id="r_a275b6e87c8fda84b470c5da478fc1203"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a275b6e87c8fda84b470c5da478fc1203">checkSelfType</a> (mlir::SymbolTableCollection &amp;symbolTable, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, mlir::Type actualType, mlir::Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a66d1e367322861867313e5456b20aac0" id="r_a66d1e367322861867313e5456b20aac0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66d1e367322861867313e5456b20aac0">isInStruct</a> (mlir::Operation *op)</td></tr>
@@ -162,8 +160,6 @@ Functions</h2></td></tr>
 <tr class="memitem:ac9dfdd995d5452e941a71128bbb97d89" id="r_ac9dfdd995d5452e941a71128bbb97d89"><td class="memTemplParams" colspan="2">template&lt;char const * FuncName, unsigned PrefixLen&gt; </td></tr>
 <tr class="memitem:ac9dfdd995d5452e941a71128bbb97d89 template"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac9dfdd995d5452e941a71128bbb97d89">verifyInStructFunctionNamed</a> (mlir::Operation *op, llvm::function_ref&lt; llvm::SmallString&lt; PrefixLen &gt;()&gt; prefix)</td></tr>
 <tr class="memdesc:ac9dfdd995d5452e941a71128bbb97d89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the given Operation is contained within a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given name that is itself contained within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>, producing an error if not.  <br /></td></tr>
-<tr class="memitem:a5162a5ff05aa18a726a0038cd6657798" id="r_a5162a5ff05aa18a726a0038cd6657798"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5162a5ff05aa18a726a0038cd6657798">parseStructParams</a> (mlir::AsmParser &amp;parser, mlir::ArrayAttr &amp;value)</td></tr>
-<tr class="memitem:a8211ce93f1181ab18dc2a6b008e02a6e" id="r_a8211ce93f1181ab18dc2a6b008e02a6e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8211ce93f1181ab18dc2a6b008e02a6e">printStructParams</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayAttr value)</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a275b6e87c8fda84b470c5da478fc1203" name="a275b6e87c8fda84b470c5da478fc1203"></a>
@@ -238,7 +234,7 @@ Functions</h2></td></tr>
 
 <p>Verifies that the given <span class="tt">actualType</span> matches the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> given (i.e., for the "self" type parameter and return of the struct functions). </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00113">113</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00116">116</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -292,7 +288,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00091">91</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00094">94</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -330,7 +326,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00049">49</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00052">52</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -376,95 +372,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00059">59</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
-
-</div>
-</div>
-<a id="af8cdc6ae837bbd0b5d5cf485ac87499e" name="af8cdc6ae837bbd0b5d5cf485ac87499e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af8cdc6ae837bbd0b5d5cf485ac87499e">&#9670;&#160;</a></span>parseStructParams() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ParseResult llzk::component::parseStructParams </td>
-          <td>(</td>
-          <td class="paramtype">AsmParser &amp;</td>          <td class="paramname"><span class="paramname"><em>parser</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">ArrayAttr &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Types_8cpp_source.html#l00018">18</a> of file <a class="el" href="Struct_2IR_2Types_8cpp_source.html">Types.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a5162a5ff05aa18a726a0038cd6657798" name="a5162a5ff05aa18a726a0038cd6657798"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5162a5ff05aa18a726a0038cd6657798">&#9670;&#160;</a></span>parseStructParams() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mlir::ParseResult llzk::component::parseStructParams </td>
-          <td>(</td>
-          <td class="paramtype">mlir::AsmParser &amp;</td>          <td class="paramname"><span class="paramname"><em>parser</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mlir::ArrayAttr &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a585f7935bf73a88cbc13f5beacfd6c08" name="a585f7935bf73a88cbc13f5beacfd6c08"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a585f7935bf73a88cbc13f5beacfd6c08">&#9670;&#160;</a></span>printStructParams() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void llzk::component::printStructParams </td>
-          <td>(</td>
-          <td class="paramtype">AsmPrinter &amp;</td>          <td class="paramname"><span class="paramname"><em>printer</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Types_8cpp_source.html#l00034">34</a> of file <a class="el" href="Struct_2IR_2Types_8cpp_source.html">Types.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a8211ce93f1181ab18dc2a6b008e02a6e" name="a8211ce93f1181ab18dc2a6b008e02a6e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8211ce93f1181ab18dc2a6b008e02a6e">&#9670;&#160;</a></span>printStructParams() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void llzk::component::printStructParams </td>
-          <td>(</td>
-          <td class="paramtype">mlir::AsmPrinter &amp;</td>          <td class="paramname"><span class="paramname"><em>printer</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mlir::ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00062">62</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -503,7 +411,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00051">51</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00054">54</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -530,7 +438,7 @@ template&lt;char const * FuncName, unsigned PrefixLen&gt; </div>
 
 <p>Checks if the given Operation is contained within a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given name that is itself contained within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>, producing an error if not. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_source.html#l00070">70</a> of file <a class="el" href="Struct_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_source.html#l00071">71</a> of file <a class="el" href="Struct_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>

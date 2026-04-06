@@ -17,7 +17,7 @@ var searchData=
   ['gen_5fpass_5fdef_5fcallgraphsccsprinterpass_14',['GEN_PASS_DEF_CALLGRAPHSCCSPRINTERPASS',['../CallGraphPasses_8cpp.html#a956397ea931d4608b93bb9575a95a8d5',1,'CallGraphPasses.cpp']]],
   ['gen_5fpass_5fdef_5fcomputeconstraintoproductpass_15',['GEN_PASS_DEF_COMPUTECONSTRAINTOPRODUCTPASS',['../LLZKComputeConstrainToProductPass_8cpp.html#a96a10eb3c00fe951ab5762c9285fb9ac',1,'LLZKComputeConstrainToProductPass.cpp']]],
   ['gen_5fpass_5fdef_5fconstraintdependencygraphprinterpass_16',['GEN_PASS_DEF_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS',['../ConstraintDependencyGraphPass_8cpp.html#a64eabc389e7566ac06d41aa31703f751',1,'ConstraintDependencyGraphPass.cpp']]],
-  ['gen_5fpass_5fdef_5femptyparamlistremovalpass_17',['GEN_PASS_DEF_EMPTYPARAMLISTREMOVALPASS',['../EmptyParamListRemovalPass_8cpp.html#ab181226aefd517527710720ebc29584c',1,'EmptyParamListRemovalPass.cpp']]],
+  ['gen_5fpass_5fdef_5femptytemplateremovalpass_17',['GEN_PASS_DEF_EMPTYTEMPLATEREMOVALPASS',['../EmptyTemplateRemovalPass_8cpp.html#a4c4c4b73ef795d708fdc35bbb197564b',1,'EmptyTemplateRemovalPass.cpp']]],
   ['gen_5fpass_5fdef_5fenforcenomemberoverwritepass_18',['GEN_PASS_DEF_ENFORCENOMEMBEROVERWRITEPASS',['../LLZKEnforceNoOverwritePass_8cpp.html#a9adf4a6933231ce3cf9f460d42555251',1,'LLZKEnforceNoOverwritePass.cpp']]],
   ['gen_5fpass_5fdef_5fflatteningpass_19',['GEN_PASS_DEF_FLATTENINGPASS',['../FlatteningPass_8cpp.html#a8128ced75fb47a156c26e9ef993b6814',1,'FlatteningPass.cpp']]],
   ['gen_5fpass_5fdef_5ffuseproductloopspass_20',['GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS',['../LLZKFuseProductLoopsPass_8cpp.html#ae6e1b8548be250259dc380d03e2ebd75',1,'LLZKFuseProductLoopsPass.cpp']]],

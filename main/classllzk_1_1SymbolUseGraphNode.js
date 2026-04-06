@@ -7,7 +7,7 @@ var classllzk_1_1SymbolUseGraphNode =
     [ "hasPredecessor", "classllzk_1_1SymbolUseGraphNode.html#a5c44a964376df20232444d22b3a4a638", null ],
     [ "hasSuccessor", "classllzk_1_1SymbolUseGraphNode.html#a1b1087a96c4e50ce0b9b8960aa89aafb", null ],
     [ "isRealNode", "classllzk_1_1SymbolUseGraphNode.html#a1a525aee077424832a631e6acba2c156", null ],
-    [ "isStructParam", "classllzk_1_1SymbolUseGraphNode.html#a5b23c7e738f028b9c6cdd577e8efd14b", null ],
+    [ "isTemplateSymbolBinding", "classllzk_1_1SymbolUseGraphNode.html#a78893b7d76804dc3b1f12995d7c73be9", null ],
     [ "lookupSymbol", "classllzk_1_1SymbolUseGraphNode.html#a19e2f41a7da92b930e758b3240512229", null ],
     [ "numPredecessors", "classllzk_1_1SymbolUseGraphNode.html#a333fe7c7b7473e7d19387a6f79ee64fd", null ],
     [ "numSuccessors", "classllzk_1_1SymbolUseGraphNode.html#a0b661d0b5f872866ba6ffbf21bef3a16", null ],

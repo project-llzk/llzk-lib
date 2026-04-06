@@ -828,13 +828,37 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#polyread_const-llzkpolymorphicconstreadop"><span class="tt">poly.read_const</span> (<a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">llzk::polymorphic::ConstReadOp</a>) </a>
+            <a href="#polyexpr-llzkpolymorphictemplateexprop"><span class="tt">poly.expr</span> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a>) </a>
             <ul>
               <li class="level4">
                 <a href="#attributes-18">Attributes: </a>
               </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#polyparam-llzkpolymorphictemplateparamop"><span class="tt">poly.param</span> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">llzk::polymorphic::TemplateParamOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#attributes-19">Attributes: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#polyread_const-llzkpolymorphicconstreadop"><span class="tt">poly.read_const</span> (<a class="el" href="classllzk_1_1polymorphic_1_1ConstReadOp.html">llzk::polymorphic::ConstReadOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#attributes-20">Attributes: </a>
+              </li>
               <li class="level4">
                 <a href="#results-35">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#polytemplate-llzkpolymorphictemplateop"><span class="tt">poly.template</span> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#attributes-21">Attributes: </a>
               </li>
             </ul>
           </li>
@@ -846,6 +870,14 @@ $(function(){initNavTree('dialects.html','',''); });
               </li>
               <li class="level4">
                 <a href="#results-36">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#polyyield-llzkpolymorphicyieldop"><span class="tt">poly.yield</span> (<a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-41">Operands: </a>
               </li>
             </ul>
           </li>
@@ -876,7 +908,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#stringnew-llzkstringlitstringop"><span class="tt">string.new</span> (<a class="el" href="classllzk_1_1string_1_1LitStringOp.html">llzk::string::LitStringOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#attributes-19">Attributes: </a>
+                <a href="#attributes-22">Attributes: </a>
               </li>
               <li class="level4">
                 <a href="#results-37">Results: </a>
@@ -905,7 +937,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#structdef-llzkcomponentstructdefop"><span class="tt">struct.def</span> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#attributes-20">Attributes: </a>
+                <a href="#attributes-23">Attributes: </a>
               </li>
             </ul>
           </li>
@@ -913,7 +945,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#structmember-llzkcomponentmemberdefop"><span class="tt">struct.member</span> (<a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">llzk::component::MemberDefOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#attributes-21">Attributes: </a>
+                <a href="#attributes-24">Attributes: </a>
               </li>
             </ul>
           </li>
@@ -929,10 +961,10 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#structreadm-llzkcomponentmemberreadop"><span class="tt">struct.readm</span> (<a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">llzk::component::MemberReadOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#attributes-22">Attributes: </a>
+                <a href="#attributes-25">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-41">Operands: </a>
+                <a href="#operands-42">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-39">Results: </a>
@@ -943,10 +975,10 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#structwritem-llzkcomponentmemberwriteop"><span class="tt">struct.writem</span> (<a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">llzk::component::MemberWriteOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#attributes-23">Attributes: </a>
+                <a href="#attributes-26">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-42">Operands: </a>
+                <a href="#operands-43">Operands: </a>
               </li>
             </ul>
           </li>
@@ -2206,7 +2238,9 @@ Operations</h2>
 <span class="tt">function.call</span> (::llzk::function::CallOp)</h3>
 <p><em>Call operation</em></p>
 <p>Syntax:</p>
-<div class="fragment"><div class="line">operation ::= `function.call` $callee `(` $argOperands `)`</div>
+<div class="fragment"><div class="line">operation ::= `function.call` $callee</div>
+<div class="line">              ( `&lt;` custom&lt;TemplateParams&gt;($templateParams)^ `&gt;` )?</div>
+<div class="line">              `` `(` $argOperands `)`</div>
 <div class="line">              ( `{` custom&lt;MultiDimAndSymbolList&gt;($mapOperands, $numDimsPerMap)^ `}` )?</div>
 <div class="line">              `:` functional-type($argOperands, results)</div>
 <div class="line">              custom&lt;AttrDictWithWarnings&gt;(attr-dict, prop-dict)</div>
@@ -2230,6 +2264,8 @@ Attributes:</h4>
 <th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
 <tr>
 <td><code>callee</code></td><td>::mlir::SymbolRefAttr</td><td>symbol reference attribute</td></tr>
+<tr>
+<td><code>templateParams</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
 <tr>
 <td><code>numDimsPerMap</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
 <tr>
@@ -2274,7 +2310,7 @@ Results:</h4>
 <div class="line">  function.def @compute(%a: !felt.type) { return }</div>
 <div class="line">  function.def @constrain(%a: !felt.type) { return }</div>
 <div class="line">}</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AffineScope</span>, <span class="tt">AutomaticAllocationScope</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>&gt;</span>, <span class="tt">IsolatedFromAbove</span></p>
+</div><!-- fragment --><p>Traits: <span class="tt">AffineScope</span>, <span class="tt">AutomaticAllocationScope</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>&gt;</span>, <span class="tt">IsolatedFromAbove</span></p>
 <p>Interfaces: <span class="tt">CallableOpInterface</span>, <span class="tt">FunctionOpInterface</span>, <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-7"></a>
 Attributes:</h4>
@@ -2694,7 +2730,7 @@ Operations</h2>
 <div class="line">%1 = poly.applymap(%s, %t) #map10</div>
 </div><!-- fragment --><p>Inline example: </p><div class="fragment"><div class="line">%2 = poly.applymap(%42)[%n] affine_map&lt;(i)[s0] -&gt; (i+s0)&gt;</div>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
+<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-17"></a>
 Attributes:</h4>
@@ -2722,6 +2758,53 @@ Results:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter">&laquo;unnamed&raquo;  </td><td class="markdownTableBodyNone">index  </td></tr>
 </table>
+<h3 class="doxsection"><a class="anchor" id="polyexpr-llzkpolymorphictemplateexprop"></a>
+<span class="tt">poly.expr</span> (::llzk::polymorphic::TemplateExprOp)</h3>
+<p><em>Declares a named expression in a polymorphic template</em></p>
+<p>Syntax:</p>
+<div class="fragment"><div class="line">operation ::= `poly.expr` $sym_name $initializerRegion attr-dict</div>
+</div><!-- fragment --><p>Declares an expression over parameters of a <span class="tt">poly.template</span> that can be used just like a parameter within the function and/or struct definitions within the template.</p>
+<p>The body of a <span class="tt">poly.expr</span> cannot contain any symbols defined via <span class="tt">poly.expr</span> to prevent cyclic initialization. The body must also have no side effects to ensure it can be safely duplicated if needed. This means operations such as read/write to globals or function calls are not allowed in the body of a <span class="tt">poly.expr</span>.</p>
+<p>Example: </p><div class="fragment"><div class="line">poly.template @TemplateName {</div>
+<div class="line">  poly.expr @ExprName {</div>
+<div class="line">    %0 = some_op %param1, %param2 : (!felt.type, !felt.type) -&gt; !felt.type</div>
+<div class="line">    poly.yield %0 : !felt.type</div>
+<div class="line">  }</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Traits: <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>&gt;</span>, <span class="tt">IsolatedFromAbove</span>, <span class="tt">NoRegionArguments</span>, <span class="tt">SingleBlock</span></p>
+<p>Interfaces: <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span>, <span class="tt">TemplateSymbolBindingOpInterface</span></p>
+<h4 class="doxsection"><a class="anchor" id="attributes-18"></a>
+Attributes:</h4>
+<table class="doxtable">
+<tr>
+<th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr>
+<td><code>sym_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
+</table>
+<h3 class="doxsection"><a class="anchor" id="polyparam-llzkpolymorphictemplateparamop"></a>
+<span class="tt">poly.param</span> (::llzk::polymorphic::TemplateParamOp)</h3>
+<p><em>Declares a parameter of a polymorphic template</em></p>
+<p>Syntax:</p>
+<div class="fragment"><div class="line">operation ::= `poly.param` $sym_name (`:` $type_opt^)? attr-dict</div>
+</div><!-- fragment --><p>Declares a parameter of a <span class="tt">poly.template</span> that can be used by the function and/or struct definitions within the template. Each parameter can have an optional type restriction.</p>
+<p>Example: </p><div class="fragment"><div class="line">poly.template @TemplateName {</div>
+<div class="line">  poly.param @N</div>
+<div class="line">  poly.param @F : !felt.type</div>
+<div class="line">  // To restrict a parameter to accept only a type, use `!poly.tvar` with the parameter&#39;s own name.</div>
+<div class="line">  poly.param @T : !poly.tvar&lt;@T&gt;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Traits: <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>&gt;</span></p>
+<p>Interfaces: <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span>, <span class="tt">TemplateSymbolBindingOpInterface</span></p>
+<h4 class="doxsection"><a class="anchor" id="attributes-19"></a>
+Attributes:</h4>
+<table class="doxtable">
+<tr>
+<th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr>
+<td><code>sym_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
+<tr>
+<td><code>type_opt</code></td><td>::mlir::TypeAttr</td><td>type attribute of integral, felt, or typevar type</td></tr>
+</table>
 <h3 class="doxsection"><a class="anchor" id="polyread_const-llzkpolymorphicconstreadop"></a>
 <span class="tt">poly.read_const</span> (::llzk::polymorphic::ConstReadOp)</h3>
 <p><em>Read value of a struct parameter</em></p>
@@ -2734,7 +2817,7 @@ Results:</h4>
 <div class="line">// specified by struct parameter &quot;@T&quot;</div>
 <div class="line">%1 = poly.read_const @B : !poly.tvar&lt;@T&gt;</div>
 </div><!-- fragment --><p>Interfaces: <span class="tt">SymbolUserOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="attributes-18"></a>
+<h4 class="doxsection"><a class="anchor" id="attributes-20"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
@@ -2749,6 +2832,40 @@ Results:</h4>
 <th class="markdownTableHeadCenter">Result  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">val</span>  </td><td class="markdownTableBodyNone">integral, felt, or typevar type  </td></tr>
+</table>
+<h3 class="doxsection"><a class="anchor" id="polytemplate-llzkpolymorphictemplateop"></a>
+<span class="tt">poly.template</span> (::llzk::polymorphic::TemplateOp)</h3>
+<p><em>Defines polymorphic functions or structs</em></p>
+<p>Syntax:</p>
+<div class="fragment"><div class="line">operation ::= `poly.template` $sym_name $bodyRegion attr-dict</div>
+</div><!-- fragment --><p>The <span class="tt">poly.template</span> allows defining polymorphic templated functions and structs. The body contains the definitions of the template's parameters along with the function and/or struct definitions that utilize those parameters in their bodies.</p>
+<p>Example: </p><div class="fragment"><div class="line">poly.template @TemplateName {</div>
+<div class="line">  poly.param @N</div>
+<div class="line">  poly.param @T</div>
+<div class="line"> </div>
+<div class="line">  function.def @f(%inp: !array.type&lt;8,5,@N x !felt.type&gt;) -&gt; !array.type&lt;@N x !felt.type&gt; {</div>
+<div class="line">    // function header and body can use parameters @N and @T</div>
+<div class="line">  }</div>
+<div class="line"> </div>
+<div class="line">  struct.def @StructName {</div>
+<div class="line">    function.def @compute() -&gt; !struct.type&lt;@TemplateName::@StructName&gt; {</div>
+<div class="line">      ...</div>
+<div class="line">    }</div>
+<div class="line">    function.def @constrain(%self: !struct.type&lt;@TemplateName::@StructName&gt;) {</div>
+<div class="line">      ...</div>
+<div class="line">    }</div>
+<div class="line">  }</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>The order of <span class="tt">poly.param</span> definitions in the template body determines the order that template parameters must be listed in the parameter list of a <span class="tt">struct.type</span> refering to a struct nested within the template. In the example above, the type of <span class="tt">@StructName</span> is <span class="tt">!struct.type&lt;@TemplateName::@StructName&lt;[@N, @T]&gt;&gt;</span>.</p>
+<p>Traits: <span class="tt">HasParent&lt;::mlir::ModuleOp&gt;</span>, <span class="tt">IsolatedFromAbove</span>, <span class="tt">LLZKSymbolTableImplTrait</span>, <span class="tt">NoRegionArguments</span>, <span class="tt">NoTerminator</span>, <span class="tt">SingleBlock</span>, <span class="tt">SymbolTable</span></p>
+<p>Interfaces: <span class="tt">Symbol</span></p>
+<h4 class="doxsection"><a class="anchor" id="attributes-21"></a>
+Attributes:</h4>
+<table class="doxtable">
+<tr>
+<th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr>
+<td><code>sym_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="polyunifiable_cast-llzkpolymorphicunifiablecastop"></a>
 <span class="tt">poly.unifiable_cast</span> (::llzk::polymorphic::UnifiableCastOp)</h3>
@@ -2778,6 +2895,23 @@ Results:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">result</span>  </td><td class="markdownTableBodyNone">a valid LLZK type  </td></tr>
 </table>
+<h3 class="doxsection"><a class="anchor" id="polyyield-llzkpolymorphicyieldop"></a>
+<span class="tt">poly.yield</span> (::llzk::polymorphic::YieldOp)</h3>
+<p><em>Expr initialization yield and termination operation</em></p>
+<p>Syntax:</p>
+<div class="fragment"><div class="line">operation ::= `poly.yield` $val `:` type($val) attr-dict</div>
+</div><!-- fragment --><p>This operation yields an SSA value from a <span class="tt">poly.expr</span> initialization region and terminates the region.</p>
+<p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a>&gt;</span>, <span class="tt">ReturnLike</span>, <span class="tt">Terminator</span></p>
+<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">RegionBranchTerminatorOpInterface</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+<h4 class="doxsection"><a class="anchor" id="operands-41"></a>
+Operands:</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter">Operand  </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyCenter"><span class="tt">val</span>  </td><td class="markdownTableBodyNone">integral, felt, or typevar type  </td></tr>
+</table>
 <h2 class="doxsection"><a class="anchor" id="types-4"></a>
 Types</h2>
 <h3 class="doxsection"><a class="anchor" id="typevartype"></a>
@@ -2789,9 +2923,12 @@ TypeVarType</h3>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>This type serves as a placeholder for a type that is instantiated via a parameter of the struct.</p>
 <p>For example, we can define a struct that holds a size-2 array where the type of the elements in the array is specified by a parameter of the struct and instantiated with a specific type at the uses of the struct.</p>
-<div class="fragment"><div class="line">struct.def @A&lt;[@Ty]&gt; {</div>
-<div class="line">  member @x : !array.type&lt;2 x !poly.tvar&lt;@Ty&gt;&gt;</div>
-<div class="line">  ...</div>
+<div class="fragment"><div class="line">poly.template @TA {</div>
+<div class="line">  poly.param @Ty</div>
+<div class="line">  struct.def @A {</div>
+<div class="line">    member @x : !array.type&lt;2 x !poly.tvar&lt;@Ty&gt;&gt;</div>
+<div class="line">    ...</div>
+<div class="line">  }</div>
 <div class="line">}</div>
 </div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="parameters-8"></a>
 Parameters:</h4>
@@ -2814,7 +2951,7 @@ Operations</h2>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">ConstantLike</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="attributes-19"></a>
+<h4 class="doxsection"><a class="anchor" id="attributes-22"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
@@ -2845,7 +2982,7 @@ Operations</h2>
 <span class="tt">struct.def</span> (::llzk::component::StructDefOp)</h3>
 <p><em>Circuit component definition</em></p>
 <p>Syntax:</p>
-<div class="fragment"><div class="line">operation ::= `struct.def` $sym_name (`&lt;` $const_params^ `&gt;`)? $bodyRegion attr-dict</div>
+<div class="fragment"><div class="line">operation ::= `struct.def` $sym_name $bodyRegion attr-dict</div>
 </div><!-- fragment --><p>This operation describes a component in a circuit. It can contain any number of members that hold inputs, outputs, intermediate values, and subcomponents of the defined component. It also contains a <span class="tt">compute()</span> function that holds the witness generation code for the component and a <span class="tt">constrain()</span> function that holds that constraint generation code for the component.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">struct.def @ComponentA {</div>
@@ -2884,17 +3021,15 @@ Operations</h2>
 <div class="line">    }</div>
 <div class="line">  }</div>
 <div class="line">}</div>
-</div><!-- fragment --><p>Traits: <span class="tt">HasOnlyGraphRegion</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp&gt;</span>, <span class="tt">IsolatedFromAbove</span>, <span class="tt">LLZKSymbolTableImplTrait</span>, <span class="tt">NoRegionArguments</span>, <span class="tt">NoTerminator</span>, <span class="tt">SetFuncAllowAttrs</span>, <span class="tt">SingleBlock</span>, <span class="tt">SymbolTable</span></p>
-<p>Interfaces: <span class="tt">RegionKindInterface</span>, <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>
-<h4 class="doxsection"><a class="anchor" id="attributes-20"></a>
+</div><!-- fragment --><p>Traits: <span class="tt">HasOnlyGraphRegion</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>&gt;</span>, <span class="tt">IsolatedFromAbove</span>, <span class="tt">LLZKSymbolTableImplTrait</span>, <span class="tt">NoRegionArguments</span>, <span class="tt">NoTerminator</span>, <span class="tt">SetFuncAllowAttrs</span>, <span class="tt">SingleBlock</span>, <span class="tt">SymbolTable</span></p>
+<p>Interfaces: <span class="tt">RegionKindInterface</span>, <span class="tt">Symbol</span></p>
+<h4 class="doxsection"><a class="anchor" id="attributes-23"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
 <th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
 <tr>
 <td><code>sym_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
-<tr>
-<td><code>const_params</code></td><td>::mlir::ArrayAttr</td><td>flat symbol ref array attribute</td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="structmember-llzkcomponentmemberdefop"></a>
 <span class="tt">struct.member</span> (::llzk::component::MemberDefOp)</h3>
@@ -2920,7 +3055,7 @@ Attributes:</h4>
 </ul>
 <p>Traits: <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>&gt;</span></p>
 <p>Interfaces: <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>
-<h4 class="doxsection"><a class="anchor" id="attributes-21"></a>
+<h4 class="doxsection"><a class="anchor" id="attributes-24"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
@@ -2965,7 +3100,7 @@ Results:</h4>
 <p>The value can be read from the signals table, in which case it can be offset by a constant value. A negative value represents reading a value backwards and a positive value represents reading a value forward. Only members marked as columns can be read in this manner.</p>
 <p>Traits: <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
 <p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="attributes-22"></a>
+<h4 class="doxsection"><a class="anchor" id="attributes-25"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
@@ -2979,7 +3114,7 @@ Attributes:</h4>
 <tr>
 <td><code>mapOpGroupSizes</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-41"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-42"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3006,7 +3141,7 @@ Results:</h4>
 <p>A struct can write its own members. However, writing members of other components is not allowed.</p>
 <p>Traits: <span class="tt">WitnessGen</span></p>
 <p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="attributes-23"></a>
+<h4 class="doxsection"><a class="anchor" id="attributes-26"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
@@ -3014,7 +3149,7 @@ Attributes:</h4>
 <tr>
 <td><code>member_name</code></td><td>::mlir::FlatSymbolRefAttr</td><td>flat symbol reference attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-42"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-43"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">

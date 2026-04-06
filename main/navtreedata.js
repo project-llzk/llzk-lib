@@ -83,7 +83,7 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-array-to-scalar</span>", "tools.html#autotoc_md-llzk-array-to-scalar", null ]
           ] ],
           [ "'polymorphic' Dialect Transformation Passes", "tools.html#polymorphic-dialect-transformation-passes", [
-            [ "<span class=\"tt\">-llzk-drop-empty-params</span>", "tools.html#autotoc_md-llzk-drop-empty-params", null ],
+            [ "<span class=\"tt\">-llzk-drop-empty-templates</span>", "tools.html#autotoc_md-llzk-drop-empty-templates", null ],
             [ "<span class=\"tt\">-llzk-flatten</span>", "tools.html#autotoc_md-llzk-flatten", [
               [ "Options", "tools.html#options-9", null ]
             ] ]
@@ -383,13 +383,25 @@ var NAVTREE =
             [ "Operands:", "dialects.html#operands-39", null ],
             [ "Results:", "dialects.html#results-34", null ]
           ] ],
+          [ "<span class=\"tt\">poly.expr</span> (llzk::polymorphic::TemplateExprOp)", "dialects.html#polyexpr-llzkpolymorphictemplateexprop", [
+            [ "Attributes:", "dialects.html#attributes-18", null ]
+          ] ],
+          [ "<span class=\"tt\">poly.param</span> (llzk::polymorphic::TemplateParamOp)", "dialects.html#polyparam-llzkpolymorphictemplateparamop", [
+            [ "Attributes:", "dialects.html#attributes-19", null ]
+          ] ],
           [ "<span class=\"tt\">poly.read_const</span> (llzk::polymorphic::ConstReadOp)", "dialects.html#polyread_const-llzkpolymorphicconstreadop", [
-            [ "Attributes:", "dialects.html#attributes-18", null ],
+            [ "Attributes:", "dialects.html#attributes-20", null ],
             [ "Results:", "dialects.html#results-35", null ]
+          ] ],
+          [ "<span class=\"tt\">poly.template</span> (llzk::polymorphic::TemplateOp)", "dialects.html#polytemplate-llzkpolymorphictemplateop", [
+            [ "Attributes:", "dialects.html#attributes-21", null ]
           ] ],
           [ "<span class=\"tt\">poly.unifiable_cast</span> (llzk::polymorphic::UnifiableCastOp)", "dialects.html#polyunifiable_cast-llzkpolymorphicunifiablecastop", [
             [ "Operands:", "dialects.html#operands-40", null ],
             [ "Results:", "dialects.html#results-36", null ]
+          ] ],
+          [ "<span class=\"tt\">poly.yield</span> (llzk::polymorphic::YieldOp)", "dialects.html#polyyield-llzkpolymorphicyieldop", [
+            [ "Operands:", "dialects.html#operands-41", null ]
           ] ]
         ] ],
         [ "Types", "dialects.html#types-4", [
@@ -401,7 +413,7 @@ var NAVTREE =
       [ "'string' Dialect", "dialects.html#string-dialect", [
         [ "Operations", "dialects.html#operations-11", [
           [ "<span class=\"tt\">string.new</span> (llzk::string::LitStringOp)", "dialects.html#stringnew-llzkstringlitstringop", [
-            [ "Attributes:", "dialects.html#attributes-19", null ],
+            [ "Attributes:", "dialects.html#attributes-22", null ],
             [ "Results:", "dialects.html#results-37", null ]
           ] ]
         ] ],
@@ -412,22 +424,22 @@ var NAVTREE =
       [ "'struct' Dialect", "dialects.html#struct-dialect", [
         [ "Operations", "dialects.html#operations-12", [
           [ "<span class=\"tt\">struct.def</span> (llzk::component::StructDefOp)", "dialects.html#structdef-llzkcomponentstructdefop", [
-            [ "Attributes:", "dialects.html#attributes-20", null ]
+            [ "Attributes:", "dialects.html#attributes-23", null ]
           ] ],
           [ "<span class=\"tt\">struct.member</span> (llzk::component::MemberDefOp)", "dialects.html#structmember-llzkcomponentmemberdefop", [
-            [ "Attributes:", "dialects.html#attributes-21", null ]
+            [ "Attributes:", "dialects.html#attributes-24", null ]
           ] ],
           [ "<span class=\"tt\">struct.new</span> (llzk::component::CreateStructOp)", "dialects.html#structnew-llzkcomponentcreatestructop", [
             [ "Results:", "dialects.html#results-38", null ]
           ] ],
           [ "<span class=\"tt\">struct.readm</span> (llzk::component::MemberReadOp)", "dialects.html#structreadm-llzkcomponentmemberreadop", [
-            [ "Attributes:", "dialects.html#attributes-22", null ],
-            [ "Operands:", "dialects.html#operands-41", null ],
+            [ "Attributes:", "dialects.html#attributes-25", null ],
+            [ "Operands:", "dialects.html#operands-42", null ],
             [ "Results:", "dialects.html#results-39", null ]
           ] ],
           [ "<span class=\"tt\">struct.writem</span> (llzk::component::MemberWriteOp)", "dialects.html#structwritem-llzkcomponentmemberwriteop", [
-            [ "Attributes:", "dialects.html#attributes-23", null ],
-            [ "Operands:", "dialects.html#operands-42", null ]
+            [ "Attributes:", "dialects.html#attributes-26", null ],
+            [ "Operands:", "dialects.html#operands-43", null ]
           ] ]
         ] ],
         [ "Types", "dialects.html#types-6", [
@@ -441,38 +453,38 @@ var NAVTREE =
       [ "'r1cs' Dialect", "backend-dialects.html#r1cs-dialect", [
         [ "Operations", "backend-dialects.html#operations-13", [
           [ "<span class=\"tt\">r1cs.add</span> (r1cs::AddOp)", "backend-dialects.html#r1csadd-r1csaddop", [
-            [ "Operands:", "backend-dialects.html#operands-43", null ],
+            [ "Operands:", "backend-dialects.html#operands-44", null ],
             [ "Results:", "backend-dialects.html#results-40", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.circuit</span> (r1cs::CircuitDefOp)", "backend-dialects.html#r1cscircuit-r1cscircuitdefop", [
-            [ "Attributes:", "backend-dialects.html#attributes-24", null ]
+            [ "Attributes:", "backend-dialects.html#attributes-27", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.const</span> (r1cs::ConstOp)", "backend-dialects.html#r1csconst-r1csconstop", [
-            [ "Attributes:", "backend-dialects.html#attributes-25", null ],
+            [ "Attributes:", "backend-dialects.html#attributes-28", null ],
             [ "Results:", "backend-dialects.html#results-41", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.constrain</span> (r1cs::ConstrainOp)", "backend-dialects.html#r1csconstrain-r1csconstrainop", [
-            [ "Operands:", "backend-dialects.html#operands-44", null ]
+            [ "Operands:", "backend-dialects.html#operands-45", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.def</span> (r1cs::SignalDefOp)", "backend-dialects.html#r1csdef-r1cssignaldefop", [
-            [ "Attributes:", "backend-dialects.html#attributes-26", null ],
+            [ "Attributes:", "backend-dialects.html#attributes-29", null ],
             [ "Results:", "backend-dialects.html#results-42", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.mul_const</span> (r1cs::MulConstOp)", "backend-dialects.html#r1csmul_const-r1csmulconstop", [
-            [ "Attributes:", "backend-dialects.html#attributes-27", null ],
-            [ "Operands:", "backend-dialects.html#operands-45", null ],
+            [ "Attributes:", "backend-dialects.html#attributes-30", null ],
+            [ "Operands:", "backend-dialects.html#operands-46", null ],
             [ "Results:", "backend-dialects.html#results-43", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.neg</span> (r1cs::NegOp)", "backend-dialects.html#r1csneg-r1csnegop", [
-            [ "Operands:", "backend-dialects.html#operands-46", null ],
+            [ "Operands:", "backend-dialects.html#operands-47", null ],
             [ "Results:", "backend-dialects.html#results-44", null ]
           ] ],
           [ "<span class=\"tt\">r1cs.to_linear</span> (r1cs::ToLinearOp)", "backend-dialects.html#r1csto_linear-r1cstolinearop", [
-            [ "Operands:", "backend-dialects.html#operands-47", null ],
+            [ "Operands:", "backend-dialects.html#operands-48", null ],
             [ "Results:", "backend-dialects.html#results-45", null ]
           ] ]
         ] ],
-        [ "Attributes", "backend-dialects.html#attributes-28", [
+        [ "Attributes", "backend-dialects.html#attributes-31", [
           [ "FeltAttr", "backend-dialects.html#feltattr", [
             [ "Parameters:", "backend-dialects.html#parameters-10", null ]
           ] ],
@@ -532,54 +544,57 @@ var NAVTREEINDEX =
 "Constrain_2IR_2Ops_8capi_8cpp_8inc.html#aa83eabd1cb524d8be7969f92c49a4870",
 "Felt_2IR_2Ops_8capi_8cpp_8inc.html#a9fbdd152585648fbbb02440f809b3c4f",
 "Felt_2IR_2Ops_8capi_8test_8cpp_8inc.html#a89b9d6ac06e21c6efa4f82310cb75783",
-"Function_2IR_2Ops_8capi_8h_8inc.html#a1ad9f2565fce3b901f82db791b796043",
-"Global_2IR_2Ops_8h.html",
-"LLZK_2IR_2Attrs_8capi_8h_8inc.html#a616ed95f160bb71abd57c869f62d50c4",
-"POD_2IR_2Ops_8cpp.html",
-"SourceRefLattice_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d",
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a63fbdd302109ffb617003b21bf76e3ee",
-"backend-dialects.html#signaltype",
-"classllzk_1_1ExpressionValue.html#a6b75cc20a9f12488c2af5c1632c0ed65",
-"classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aae976faae1fbc21b48e962a5024d7dff3",
-"classllzk_1_1NonDetOp.html#a7c3f1780bea1b6d4af061f3ce6b56f15",
-"classllzk_1_1SourceRefLattice.html#a3aa497adaeabbbf5c32e954249d6d776",
-"classllzk_1_1SymbolUseGraph.html#a1d108465a51644111a5b53307679d50b",
-"classllzk_1_1array_1_1ArrayLengthOp.html#afb4448e4f992a3c4a4d747135aeaf47a",
-"classllzk_1_1array_1_1ExtractArrayOpGenericAdaptor.html#a7c784c03b57a49c3691113de502c4e15",
-"classllzk_1_1array_1_1WriteArrayOpAdaptor.html#aac47cb2e36c33d57023a3b8e7fe4478d",
-"classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor.html#a677198e9c68ea375bf1c12efeae2f5c2",
-"classllzk_1_1boolean_1_1NotBoolOpGenericAdaptor.html#a9d173449f953fa777b36f8298983aeeb",
-"classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase.html#aa0fa837432b904cd8e5f55c080c9cbb6",
-"classllzk_1_1component_1_1MemberDefOp.html#a2994740401a835e4e9a890c4365e539d",
-"classllzk_1_1component_1_1MemberWriteOp.html#a21decc943010cd07b49671d03e2969a9",
-"classllzk_1_1component_1_1detail_1_1CreateStructOpGenericAdaptorBase.html#af7530d2214c366ebde218eaea979b724",
-"classllzk_1_1constrain_1_1EmitEqualityOp.html#ac6359e81696302e0f6332e57c77c95d2",
-"classllzk_1_1felt_1_1AddFeltOpAdaptor.html#a0194dc15a27926201c64071039be587f",
-"classllzk_1_1felt_1_1FeltConstantOpGenericAdaptor.html#a3482dd4cfd223c28e58143fee3b60af8",
-"classllzk_1_1felt_1_1NotFeltOp.html#a25daed2a6f7b9a018832d94081023287",
-"classllzk_1_1felt_1_1ShlFeltOpAdaptor.html#ac91a875f414a27b18cb425d376748fb1",
-"classllzk_1_1felt_1_1SubFeltOp.html#a5b2754f970273f7f7ae192d82695cd83",
-"classllzk_1_1felt_1_1XorFeltOpAdaptor.html#ab2a584dba73ab6a6be8697b008dd1c4a",
-"classllzk_1_1felt_1_1detail_1_1SignedIntDivFeltOpGenericAdaptorBase.html#a986b9a0d40bea701a3137b8c90e1f4c2",
-"classllzk_1_1function_1_1FuncDefOp.html#a28ba9e4fc63a987e84a9c5c2edebcfc3",
-"classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html#ac658de4dce09993da93e10230c8d6235",
-"classllzk_1_1global_1_1GlobalRefOpInterface.html",
-"classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html#a39e8657ae4f54e75e332b4e0e56dea96",
-"classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#ae528f34591a042c7af2cf9e19bc901d3",
-"classllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase.html#a411d1e0bd12c087bfc2cdc0bd6394c60",
-"classllzk_1_1pod_1_1ReadPodOpGenericAdaptor.html#a05d10ac647372d2e01a3b53b95572631",
-"classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor.html#a26dd6cd183bdd98d6bdc6a7fc32ff5be",
-"classllzk_1_1polymorphic_1_1detail_1_1CreateArrayOpClassReplacePattern.html",
-"contribution-guide.html#make-changes",
-"dir_303a645775d7c586afea5555a77293cf.html",
-"llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c",
-"namespacellzk.html#a6982559aa99cea04c0cf47ee38166ce2",
-"namespacellzk_1_1array.html#a608683adb2db2b27afd796d5539d407c",
-"structAttrOrTypeTestGenerator.html#ab2bf6842518e7302cc97842c5a53d940",
-"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a20621aefb1d2c00057fd71d7fcf46cf7",
-"structllzk_1_1PredecessorPrinterPassOptions.html#ab90aeb53740b01372d8a5956a6054c08",
-"structllzk_1_1component_1_1detail_1_1MemberWriteOpGenericAdaptorBase_1_1Properties.html#a06ded30bc0d42b54ebbafbf861e8346b",
-"structllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html#a0c9dfdb13f750dab7962d90ad2bd6eeb"
+"Function_2IR_2Ops_8capi_8h_8inc.html#a152f1ad703bd4d27409f2d54bb73c41a",
+"Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html",
+"LLZK_2IR_2Attrs_8capi_8cpp_8inc_source.html",
+"POD_2IR_2Ops_8capi_8test_8cpp_8inc.html#acbb55d09d3de48f117c07989cd8ec4c5",
+"Polymorphic_2IR_2Ops_8capi_8test_8cpp_8inc.html#a6acbcc68bccd7ff39d9944adc3592055",
+"Struct_2IR_2Ops_8capi_8cpp_8inc.html#ac0f36c99c9b71f5f1d8f128f0b16f817",
+"TransformationPassEnums_8cpp.html",
+"classllzk_1_1CallGraphReachabilityAnalysis.html#a9ed72535ac0564b70cb8b00ccecf1377",
+"classllzk_1_1InFlightDiagnosticWrapper.html#aca622bcf133ce35e08504853a6dd67a9",
+"classllzk_1_1ModuleBuilder.html#a6429a7a1b4e7fea0653bfe449e40b307",
+"classllzk_1_1SourceRef.html#a3586b3715b8dddd6dae28a5bc9a0f464",
+"classllzk_1_1SymbolDefTree.html",
+"classllzk_1_1UnreducedInterval.html#a6812fca806618af19a06573ad2f9813f",
+"classllzk_1_1array_1_1CreateArrayOp.html#a57e69705861e43e238b1702bb2fce400",
+"classllzk_1_1array_1_1ReadArrayOp.html#a0362daf72c79fdf358e63c8c7a58f4d0",
+"classllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase.html#adfbe47492234aa2f77ca5054ed18439f",
+"classllzk_1_1boolean_1_1BoolDialect.html",
+"classllzk_1_1boolean_1_1XorBoolOp.html#a75ecce1a99e444e13578a64008e1b277",
+"classllzk_1_1cast_1_1IntToFeltOp.html#a931abb4b43819fb9ea7aa15e7a9dc6b4",
+"classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html#a64fbfff51c2ea0900e3f07f4f4b551fe",
+"classllzk_1_1component_1_1StructDefOp.html#a26f0834eef8efdad44b20af8cc85cdb6",
+"classllzk_1_1component_1_1detail_1_1MemberWriteOpGenericAdaptorBase.html#ad4fb3782502cf26249d04671c050159a",
+"classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a5c4ac037f8b243f110ee5f6d748eb2c6",
+"classllzk_1_1felt_1_1DivFeltOp.html#a2d537878dfe1bcb1acea254d9118daa7",
+"classllzk_1_1felt_1_1MulFeltOp.html#a440560c28e4ef6b45da3701d36acfc35",
+"classllzk_1_1felt_1_1OrFeltOpGenericAdaptor.html#a3f9309fe86fb70a319e4ec6fbe969c18",
+"classllzk_1_1felt_1_1SignedIntDivFeltOp.html#a80bd2878d11a83c2e4df7073d5150f04",
+"classllzk_1_1felt_1_1UnsignedIntDivFeltOpGenericAdaptor.html",
+"classllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase.html#ac84d7f86cb5f84102174b1853eb1f7f8",
+"classllzk_1_1function_1_1CallOp.html#a24030779e4a8e6924b9abe465dbeecdb",
+"classllzk_1_1function_1_1FuncDefOp.html#aef41970554c7403fbc2854dbeca85a11",
+"classllzk_1_1global_1_1GlobalDefOp.html#a56caa58d4885b819463a58b1979161d9",
+"classllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase.html#a19b7d4e32b0c4a18cb1109bd85e41642",
+"classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#ab2949773940d85c508eb215ed48aace8",
+"classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#a20307de498e8b3fa055f41dc32eabfbe",
+"classllzk_1_1pod_1_1NewPodOp.html#a986ee484d4826edf26fd71659827eb6a",
+"classllzk_1_1pod_1_1WritePodOpGenericAdaptor.html#ac5898749f3a70c7266fd7f4c91451fe1",
+"classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html",
+"classllzk_1_1polymorphic_1_1TemplateParamOp.html#aefb05fd4da5a538d7c773230afb965f1",
+"classllzk_1_1polymorphic_1_1detail_1_1CallOpClassReplacePattern.html",
+"classllzk_1_1string_1_1LitStringOp.html#a33fa1f92ba2b692c3c7b95a38b7583a4",
+"dialects.html#operands-18",
+"dir_efa1308536135b3baa6e905f7a83b3e7.html",
+"namespacellzk.html#a016f3b59595b34b00f2b01667467aa06",
+"namespacellzk.html#aab965ef5ca57582a4dc91a0effe1b200",
+"namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9ab24ce0cd392a5b0b8dedc66c25213594",
+"structHeaderGenerator.html#adda6cb28d56591e986424cb87a1ee0e0",
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1CallGraph_01_5_01_4.html#af3cd4f24d15c4d84fd485c5ccbfc6694",
+"structllzk_1_1array_1_1detail_1_1ArrayTypeStorage.html#a18f614102ee55ac9fb9044125de1affc",
+"structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html",
+"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#afef6a60827a5d62b13a1a06106fbf767"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

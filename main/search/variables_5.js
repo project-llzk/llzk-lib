@@ -7,10 +7,11 @@ var searchData=
   ['filemgr_4',['fileMgr',['../structClangLexerContext_1_1Impl.html#a8929882c1f7a083ef1ee4172eccb4533',1,'ClangLexerContext::Impl']]],
   ['form_5',['form',['../LICENSE_8txt.html#a6e0514323d9a0facf91cd3f62e135858',1,'LICENSE.txt']]],
   ['free_6',['free',['../LICENSE_8txt.html#a7296b4cc5177445b437670e7a1559321',1,'LICENSE.txt']]],
-  ['from_7',['from',['../LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2',1,'LICENSE.txt']]],
-  ['func_5fname_5fcompute_8',['FUNC_NAME_COMPUTE',['../namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0',1,'llzk']]],
-  ['func_5fname_5fconstrain_9',['FUNC_NAME_CONSTRAIN',['../namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f',1,'llzk']]],
-  ['func_5fname_5fproduct_10',['FUNC_NAME_PRODUCT',['../namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8',1,'llzk']]],
-  ['function_5ftype_11',['function_type',['../structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c',1,'llzk::function::detail::FuncDefOpGenericAdaptorBase::Properties']]],
-  ['functionprefix_12',['FunctionPrefix',['../CommonCAPIGen_8h.html#a792dfd7adc8b654aa7931bdd44af83da',1,'CommonCAPIGen.h']]]
+  ['freefuncmap_7',['freeFuncMap',['../classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615',1,'llzk::ModuleLikeBuilder']]],
+  ['from_8',['from',['../LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2',1,'LICENSE.txt']]],
+  ['func_5fname_5fcompute_9',['FUNC_NAME_COMPUTE',['../namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0',1,'llzk']]],
+  ['func_5fname_5fconstrain_10',['FUNC_NAME_CONSTRAIN',['../namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f',1,'llzk']]],
+  ['func_5fname_5fproduct_11',['FUNC_NAME_PRODUCT',['../namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8',1,'llzk']]],
+  ['function_5ftype_12',['function_type',['../structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c',1,'llzk::function::detail::FuncDefOpGenericAdaptorBase::Properties']]],
+  ['functionprefix_13',['FunctionPrefix',['../CommonCAPIGen_8h.html#a792dfd7adc8b654aa7931bdd44af83da',1,'CommonCAPIGen.h']]]
 ];

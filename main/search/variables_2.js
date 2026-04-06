@@ -7,9 +7,11 @@ var searchData=
   ['code_4',['code',['../LICENSE_8txt.html#a99101f1111e3615a81e34012de5a239b',1,'LICENSE.txt']]],
   ['column_5',['column',['../structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a768ae66330b8eb5178aa9d29272d3ce4',1,'llzk::component::detail::MemberDefOpGenericAdaptorBase::Properties']]],
   ['computedvalue_6',['computedValue',['../structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3',1,'llzk::AuxAssignment']]],
-  ['conditions_7',['conditions',['../LICENSE_8txt.html#a1ad91ee7eb3d92d6c76f97dbad84b012',1,'LICENSE.txt']]],
-  ['const_5fname_8',['const_name',['../structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a8aab5a3770da8f533b48a95bd1387c4f',1,'llzk::polymorphic::detail::ConstReadOpGenericAdaptorBase::Properties']]],
-  ['const_5fparams_9',['const_params',['../structllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase_1_1Properties.html#a8ce0f96aa45c95898267b8f9e09dd1b8',1,'llzk::component::detail::StructDefOpGenericAdaptorBase::Properties']]],
+  ['computefnmap_7',['computeFnMap',['../classllzk_1_1ModuleLikeBuilder.html#ad76bbf3e368da3ba8306beb6066e0de6',1,'llzk::ModuleLikeBuilder']]],
+  ['conditions_8',['conditions',['../LICENSE_8txt.html#a1ad91ee7eb3d92d6c76f97dbad84b012',1,'LICENSE.txt']]],
+  ['const_5fname_9',['const_name',['../structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a8aab5a3770da8f533b48a95bd1387c4f',1,'llzk::polymorphic::detail::ConstReadOpGenericAdaptorBase::Properties']]],
   ['constant_10',['constant',['../structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#aa1c686eeeec7d994c4b9885e1f6217e8',1,'llzk::global::detail::GlobalDefOpGenericAdaptorBase::Properties']]],
-  ['copyright_11',['copyright',['../LICENSE_8txt.html#a57f6ea84cb044ebe0704c5e3aa48e9ad',1,'LICENSE.txt']]]
+  ['constrainfnmap_11',['constrainFnMap',['../classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3',1,'llzk::ModuleLikeBuilder']]],
+  ['context_12',['context',['../classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e',1,'llzk::BaseBuilder']]],
+  ['copyright_13',['copyright',['../LICENSE_8txt.html#a57f6ea84cb044ebe0704c5e3aa48e9ad',1,'LICENSE.txt']]]
 ];

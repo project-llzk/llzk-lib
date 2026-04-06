@@ -238,7 +238,7 @@ $(function(){initNavTree('tools.html','',''); });
             <a href="#polymorphic-dialect-transformation-passes">'polymorphic' Dialect Transformation Passes </a>
             <ul>
               <li class="level4">
-                <a href="#autotoc_md-llzk-drop-empty-params"><span class="tt">-llzk-drop-empty-params</span> </a>
+                <a href="#autotoc_md-llzk-drop-empty-templates"><span class="tt">-llzk-drop-empty-templates</span> </a>
               </li>
               <li class="level4">
                 <a href="#autotoc_md-llzk-flatten"><span class="tt">-llzk-flatten</span> </a>
@@ -384,9 +384,13 @@ Options</h5>
 <p>Replace known-shape arrays with the proper number of scalar values  </p>
 <h3 class="doxsection"><a class="anchor" id="polymorphic-dialect-transformation-passes"></a>
 'polymorphic' Dialect Transformation Passes</h3>
-<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-drop-empty-params"></a>
-<span class="tt">-llzk-drop-empty-params</span></h4>
-<p><em>Remove empty struct parameter lists</em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-drop-empty-templates"></a>
+<span class="tt">-llzk-drop-empty-templates</span></h4>
+<p><em>Remove empty templates</em></p>
+<p>Performs the following transformations:</p><ul>
+<li>Convert templates with no constant parameters or expressions into modules.</li>
+<li>Remove templates with no struct or function definitions. </li>
+</ul>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-flatten"></a>
 <span class="tt">-llzk-flatten</span></h4>
 <p><em>Flatten structs and unroll loops</em></p>
@@ -398,7 +402,7 @@ Options</h5>
 <h5 class="doxsection"><a class="anchor" id="options-9"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
-<div class="line">-cleanup  : Specifies the extent to which unused parameterized structs are removed during the flattening pass.</div>
+<div class="line">-cleanup  : Specifies the extent to which unused parameterized structs (i.e. structs within a `poly.template`) are removed during the flattening pass.</div>
 </div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
 Validation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-validate-member-writes"></a>

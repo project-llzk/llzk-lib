@@ -8,7 +8,7 @@ var searchData=
   ['llzk_20array_20to_20scalar_5',['&lt;span class=&quot;tt&quot;&gt;-llzk-array-to-scalar&lt;/span&gt;',['../tools.html#autotoc_md-llzk-array-to-scalar',1,'']]],
   ['llzk_20compute_20constrain_20to_20product_6',['&lt;span class=&quot;tt&quot;&gt;-llzk-compute-constrain-to-product&lt;/span&gt;',['../tools.html#autotoc_md-llzk-compute-constrain-to-product',1,'']]],
   ['llzk_20dialect_7',['&apos;llzk&apos; Dialect',['../dialects.html#llzk-dialect',1,'']]],
-  ['llzk_20drop_20empty_20params_8',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-params&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-params',1,'']]],
+  ['llzk_20drop_20empty_20templates_8',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
   ['llzk_20duplicate_20op_20elim_9',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-op-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'']]],
   ['llzk_20duplicate_20read_20write_20elim_10',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'']]],
   ['llzk_20enforce_20no_20overwrite_11',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
