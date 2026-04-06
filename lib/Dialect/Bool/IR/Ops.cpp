@@ -113,6 +113,24 @@ OpFoldResult NotBoolOp::fold(FoldAdaptor adaptor) {
 // CmpOp
 //===------------------------------------------------------------------===//
 
+inline static bool eval(FeltCmpPredicate pred, const llvm::APInt &lval, const llvm::APInt &rval) {
+  switch (pred) {
+  case FeltCmpPredicate::EQ:
+    return lval == rval;
+  case FeltCmpPredicate::NE:
+    return lval != rval;
+  case FeltCmpPredicate::LT:
+    return lval.ult(rval);
+  case FeltCmpPredicate::LE:
+    return lval.ule(rval);
+  case FeltCmpPredicate::GT:
+    return lval.ugt(rval);
+  case FeltCmpPredicate::GE:
+    return lval.uge(rval);
+  }
+  llvm_unreachable("invalid FeltCmpPredicate");
+}
+
 OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getLhs());
   auto rhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getRhs());
@@ -130,29 +148,7 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   if (rval.getBitWidth() < w) {
     rval = rval.zext(w);
   }
-
-  bool result;
-  switch (getPredicate()) {
-  case FeltCmpPredicate::EQ:
-    result = lval == rval;
-    break;
-  case FeltCmpPredicate::NE:
-    result = lval != rval;
-    break;
-  case FeltCmpPredicate::LT:
-    result = lval.ult(rval);
-    break;
-  case FeltCmpPredicate::LE:
-    result = lval.ule(rval);
-    break;
-  case FeltCmpPredicate::GT:
-    result = lval.ugt(rval);
-    break;
-  case FeltCmpPredicate::GE:
-    result = lval.uge(rval);
-    break;
-  }
-  return makeBoolAttr(getContext(), result);
+  return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
 }
 
 } // namespace llzk::boolean
