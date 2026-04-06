@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <llzk/Dialect/Struct/IR/Ops.h>
+#include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
