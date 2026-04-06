@@ -144,6 +144,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aeae7ea5acf360f2aa49e40a078c0019b" id="r_aeae7ea5acf360f2aa49e40a078c0019b"><td class="memItemLeft" align="right" valign="top">::mlir::TypedValue&lt;::mlir::IntegerType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeae7ea5acf360f2aa49e40a078c0019b">getResult</a> ()</td></tr>
 <tr class="memitem:af3d17a2a30550015b614919457bf4d18" id="r_af3d17a2a30550015b614919457bf4d18"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af3d17a2a30550015b614919457bf4d18">verifyInvariantsImpl</a> ()</td></tr>
 <tr class="memitem:a4a8415273517acc53034fbfa00c3c5d7" id="r_a4a8415273517acc53034fbfa00c3c5d7"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4a8415273517acc53034fbfa00c3c5d7">verifyInvariants</a> ()</td></tr>
+<tr class="memitem:a1557d70b5f4981b83a711ac79c97bce4" id="r_a1557d70b5f4981b83a711ac79c97bce4"><td class="memItemLeft" align="right" valign="top">::mlir::OpFoldResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1557d70b5f4981b83a711ac79c97bce4">fold</a> (<a class="el" href="#a6f6b7728ff3621017d5eb2f158be4ddf">FoldAdaptor</a> adaptor)</td></tr>
 <tr class="memitem:a7111a8e6824a6c220786deea2b7c36d3" id="r_a7111a8e6824a6c220786deea2b7c36d3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7111a8e6824a6c220786deea2b7c36d3">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 <tr class="memitem:a42a2c3c96436253eda0b947c07c08fe3" id="r_a42a2c3c96436253eda0b947c07c08fe3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a42a2c3c96436253eda0b947c07c08fe3">getEffects</a> (::llvm::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect &gt; &gt; &amp;effects)</td></tr>
 </table><table class="memberdecls">
@@ -430,6 +431,25 @@ template&lt;typename RangeT&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html#l00143">143</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a1557d70b5f4981b83a711ac79c97bce4" name="a1557d70b5f4981b83a711ac79c97bce4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1557d70b5f4981b83a711ac79c97bce4">&#9670;&#160;</a></span>fold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">OpFoldResult llzk::boolean::AndBoolOp::fold </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#a6f6b7728ff3621017d5eb2f158be4ddf">FoldAdaptor</a></td>          <td class="paramname"><span class="paramname"><em>adaptor</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_source.html#l00065">65</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -895,6 +915,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>build/include/llzk/Dialect/Bool/IR/<a class="el" href="Bool_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a></li>
+<li>lib/Dialect/Bool/IR/<a class="el" href="Bool_2IR_2Ops_8cpp_source.html">Ops.cpp</a></li>
 <li>build/include/llzk/Dialect/Bool/IR/<a class="el" href="Bool_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a></li>
 </ul>
 </div><!-- contents -->

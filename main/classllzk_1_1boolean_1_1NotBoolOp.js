@@ -3,6 +3,7 @@ var classllzk_1_1boolean_1_1NotBoolOp =
     [ "Adaptor", "classllzk_1_1boolean_1_1NotBoolOp.html#a06369ffdd5bff5796f46c83e6de3afb9", null ],
     [ "FoldAdaptor", "classllzk_1_1boolean_1_1NotBoolOp.html#a0960d5dc5b68e86a57a8a58f64d96bbe", null ],
     [ "GenericAdaptor", "classllzk_1_1boolean_1_1NotBoolOp.html#abab0e866c1eb2de02eea1b779ba00f39", null ],
+    [ "fold", "classllzk_1_1boolean_1_1NotBoolOp.html#ac0d963126f85f0157dfe60e71db3a961", null ],
     [ "getAttributeNames", "classllzk_1_1boolean_1_1NotBoolOp.html#a9217a73d26669b6fb48fa507f92bbfaa", null ],
     [ "getEffects", "classllzk_1_1boolean_1_1NotBoolOp.html#a8a11d9922289aa1a13d7eba4950586ee", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1boolean_1_1NotBoolOp.html#afd8cacbebbcc4fa26aac2116707c16ba", null ],

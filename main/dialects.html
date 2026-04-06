@@ -1339,7 +1339,9 @@ Operands:</h4>
 <span class="tt">bool.cmp</span> (::llzk::boolean::CmpOp)</h3>
 <p><em>Compare field element values</em></p>
 <p>Syntax:</p>
-<div class="fragment"><div class="line">operation ::= `bool.cmp` `` $predicate `(` $lhs `,` $rhs `)` `` custom&lt;InferredOrParsedType&gt;(type($lhs), &quot;true&quot;) `` custom&lt;InferredOrParsedType&gt;(type($rhs), &quot;false&quot;) attr-dict</div>
+<div class="fragment"><div class="line">operation ::= `bool.cmp` `` $predicate `(` $lhs `,` $rhs `)`</div>
+<div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($lhs), &quot;true&quot;)</div>
+<div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($rhs), &quot;false&quot;) attr-dict</div>
 </div><!-- fragment --><p>This operation takes two field element values and compares them according to the comparison predicate and returns an <span class="tt">i1</span>. The following comparisons are supported:</p>
 <ul>
 <li><span class="tt">eq</span>: equal</li>

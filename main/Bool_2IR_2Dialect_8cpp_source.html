@@ -121,35 +121,53 @@ $(function(){initNavTree('Bool_2IR_2Dialect_8cpp_source.html','',''); });
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Types_8h.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="Versioning_8h.html">llzk/Dialect/LLZK/IR/Versioning.h</a>&quot;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;mlir/IR/DialectImplementation.h&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;llvm/ADT/TypeSwitch.h&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="comment">// TableGen&#39;d implementation files</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Dialect_8cpp_8inc.html">llzk/Dialect/Bool/IR/Dialect.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">// Need a complete declaration of storage classes for below</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="Bool_2IR_2Dialect_8cpp.html#a2491ed70a2ad4f52db3cda183c0f649c">   23</a></span><span class="preprocessor">#define GET_ATTRDEF_CLASSES</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;mlir/IR/Builders.h&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinAttributes.h&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinTypes.h&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;mlir/IR/DialectImplementation.h&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;llvm/ADT/TypeSwitch.h&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">// TableGen&#39;d implementation files</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Dialect_8cpp_8inc.html">llzk/Dialect/Bool/IR/Dialect.cpp.inc</a>&quot;</span></div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// BoolDialect</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">// Need a complete declaration of storage classes for below</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="Bool_2IR_2Dialect_8cpp.html#a2491ed70a2ad4f52db3cda183c0f649c">   27</a></span><span class="preprocessor">#define GET_ATTRDEF_CLASSES</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">auto</span> llzk::boolean::BoolDialect::initialize() -&gt; <span class="keywordtype">void</span> {</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  addOperations&lt;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">    #define GET_OP_LIST</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Bool/IR/Ops.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  &gt;();</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  addAttributes&lt;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  &gt;();</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;BoolDialect&gt;&gt;();</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>}</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// BoolDialect</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
+<div class="foldopen" id="foldopen00034" data-start="{" data-end="}">
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="classllzk_1_1boolean_1_1BoolDialect.html#a392311ecf8650cb7326af8e22946e70f">   34</a></span>mlir::Operation *<a class="code hl_function" href="classllzk_1_1boolean_1_1BoolDialect.html#a392311ecf8650cb7326af8e22946e70f">llzk::boolean::BoolDialect::materializeConstant</a>(</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    mlir::OpBuilder &amp;builder, mlir::Attribute value, mlir::Type type, mlir::Location loc</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>) {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="comment">// Materialize i1 constants (results of folded bool and cmp ops) as</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="comment">// arith.constant ops, which is already used alongside this dialect.</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">if</span> (llvm::isa&lt;mlir::IntegerAttr&gt;(value) &amp;&amp; llvm::isa&lt;mlir::IntegerType&gt;(type) &amp;&amp;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>      llvm::cast&lt;mlir::IntegerType&gt;(type).isInteger(1)) {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="keywordflow">return</span> builder.create&lt;mlir::arith::ConstantOp&gt;(loc, llvm::cast&lt;mlir::IntegerAttr&gt;(value));</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  }</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>}</div>
+</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">auto</span> llzk::boolean::BoolDialect::initialize() -&gt; <span class="keywordtype">void</span> {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  addOperations&lt;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="preprocessor">    #define GET_OP_LIST</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Bool/IR/Ops.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  &gt;();</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  addAttributes&lt;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  &gt;();</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;BoolDialect&gt;&gt;();</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>}</div>
 <div class="ttc" id="aBool_2IR_2Attrs_8cpp_8inc_html"><div class="ttname"><a href="Bool_2IR_2Attrs_8cpp_8inc.html">Attrs.cpp.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8cpp_8inc_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8cpp_8inc.html">Dialect.cpp.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8h_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
@@ -157,6 +175,7 @@ $(function(){initNavTree('Bool_2IR_2Dialect_8cpp_source.html','',''); });
 <div class="ttc" id="aBool_2IR_2Ops_8h_html"><div class="ttname"><a href="Bool_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Types_8h_html"><div class="ttname"><a href="Felt_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aVersioning_8h_html"><div class="ttname"><a href="Versioning_8h.html">Versioning.h</a></div></div>
+<div class="ttc" id="aclassllzk_1_1boolean_1_1BoolDialect_html_a392311ecf8650cb7326af8e22946e70f"><div class="ttname"><a href="classllzk_1_1boolean_1_1BoolDialect.html#a392311ecf8650cb7326af8e22946e70f">llzk::boolean::BoolDialect::materializeConstant</a></div><div class="ttdeci">::mlir::Operation * materializeConstant(::mlir::OpBuilder &amp;builder, ::mlir::Attribute value, ::mlir::Type type, ::mlir::Location loc) override</div><div class="ttdoc">Materialize a single constant operation from a given attribute value with the desired resultant type.</div><div class="ttdef"><b>Definition</b> <a href="#l00034">Dialect.cpp:34</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

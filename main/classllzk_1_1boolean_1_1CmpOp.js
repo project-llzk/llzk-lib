@@ -4,6 +4,7 @@ var classllzk_1_1boolean_1_1CmpOp =
     [ "FoldAdaptor", "classllzk_1_1boolean_1_1CmpOp.html#a577cb142e096d697087ee06404725450", null ],
     [ "GenericAdaptor", "classllzk_1_1boolean_1_1CmpOp.html#aaee770d8b6e49f8debf25c097cbbf6bc", null ],
     [ "Properties", "classllzk_1_1boolean_1_1CmpOp.html#ab3f396a8b0f242e309350e44044791f3", null ],
+    [ "fold", "classllzk_1_1boolean_1_1CmpOp.html#ae5506e8406fe4bd8069b8bd3f97ce933", null ],
     [ "getAttributeNames", "classllzk_1_1boolean_1_1CmpOp.html#a89c8de254015cb62be7c290ec5f1d2d1", null ],
     [ "getEffects", "classllzk_1_1boolean_1_1CmpOp.html#a085bc27e15fecbde84b23e56fef15071", null ],
     [ "getLhs", "classllzk_1_1boolean_1_1CmpOp.html#a1ecf4338bf6f9cf7a0de720cd64fe69b", null ],
