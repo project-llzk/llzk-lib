@@ -3,6 +3,7 @@ var classllzk_1_1felt_1_1UnsignedModFeltOp =
     [ "Adaptor", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#a8e7598186157bb96176681c23dc0c4b4", null ],
     [ "FoldAdaptor", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#aa2edd5d270c21558d958988ae8df3eb6", null ],
     [ "GenericAdaptor", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#a39eb4355bc5baf31b40df6e64aba6b2d", null ],
+    [ "fold", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#a3a0eabe61eb5840d2a98ed8d915d6a72", null ],
     [ "getAttributeNames", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#aed46d0a1f7662d65e1e00c49fa1a27b0", null ],
     [ "getEffects", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#a13d45c970ce86062b7716f9013d0556c", null ],
     [ "getLhs", "classllzk_1_1felt_1_1UnsignedModFeltOp.html#aaa2647b8ee0980f53fab0dcb1aeacc28", null ],

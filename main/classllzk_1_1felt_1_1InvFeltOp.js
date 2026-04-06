@@ -3,6 +3,7 @@ var classllzk_1_1felt_1_1InvFeltOp =
     [ "Adaptor", "classllzk_1_1felt_1_1InvFeltOp.html#a088e6a8e6ae90f6fa676bcf499b3f7b8", null ],
     [ "FoldAdaptor", "classllzk_1_1felt_1_1InvFeltOp.html#a9488e95206f2349a000cc3421dd99a58", null ],
     [ "GenericAdaptor", "classllzk_1_1felt_1_1InvFeltOp.html#a97d824c4d4f50fa0abe5a1a9ba1f83b2", null ],
+    [ "fold", "classllzk_1_1felt_1_1InvFeltOp.html#a73993c46745435f17e59712da6f5ec7a", null ],
     [ "getAttributeNames", "classllzk_1_1felt_1_1InvFeltOp.html#ab5953bed9cc70783aea24c2bc67dee1e", null ],
     [ "getEffects", "classllzk_1_1felt_1_1InvFeltOp.html#aea380461f8c8424242800aac96c74ceb", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1felt_1_1InvFeltOp.html#a674de6223a3ee04c790c8164ef2915a5", null ],

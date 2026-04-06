@@ -143,6 +143,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a4b004a9fbedd042fe568bda6a9455bfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns i mod p and reduces the result into the appropriate bitwidth.  <br /></td></tr>
 <tr class="memitem:a66d63632e3e7b0acbe24930914aa2eff" id="r_a66d63632e3e7b0acbe24930914aa2eff"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66d63632e3e7b0acbe24930914aa2eff">reduce</a> (int i) const</td></tr>
 <tr class="memitem:a70940b8886993bdff31e6b82db1b7ebb" id="r_a70940b8886993bdff31e6b82db1b7ebb"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a70940b8886993bdff31e6b82db1b7ebb">reduce</a> (const llvm::APInt &amp;i) const</td></tr>
+<tr class="memitem:a39381adb038ecf28cf28c97737c61cc1" id="r_a39381adb038ecf28cf28c97737c61cc1"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39381adb038ecf28cf28c97737c61cc1">toSigned</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
+<tr class="memdesc:a39381adb038ecf28cf28c97737c61cc1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a canonical field element to its signed integer representation: toSigned(f) = f if f &lt; field.half() toSigned(f) = f - p if f &gt;= field.half() (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)  <br /></td></tr>
 <tr class="memitem:a81da197fd28bcd670656ff4dd0929728" id="r_a81da197fd28bcd670656ff4dd0929728"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a81da197fd28bcd670656ff4dd0929728">bitWidth</a> () const</td></tr>
 <tr class="memitem:a53c22d58ec6540d875295016d1816067" id="r_a53c22d58ec6540d875295016d1816067"><td class="memItemLeft" align="right" valign="top">llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a53c22d58ec6540d875295016d1816067">name</a> () const</td></tr>
 <tr class="memitem:aa1b5ece317011cd347f3c5fb1b52addd" id="r_aa1b5ece317011cd347f3c5fb1b52addd"><td class="memItemLeft" align="right" valign="top">llvm::SMTExprRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa1b5ece317011cd347f3c5fb1b52addd">createSymbol</a> (const llvm::SMTSolverRef &amp;solver, const char *<a class="el" href="#a53c22d58ec6540d875295016d1816067">name</a>) const</td></tr>
@@ -348,7 +350,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00100">100</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00106">106</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -381,7 +383,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 <p>Create a SMT solver symbol with the current field's bitwidth. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00105">105</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00111">111</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -595,7 +597,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00102">102</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00108">108</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -746,6 +748,27 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 </div>
 </div>
+<a id="a39381adb038ecf28cf28c97737c61cc1" name="a39381adb038ecf28cf28c97737c61cc1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39381adb038ecf28cf28c97737c61cc1">&#9670;&#160;</a></span>toSigned()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">DynamicAPInt llzk::Field::toSigned </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::DynamicAPInt &amp;</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Converts a canonical field element to its signed integer representation: toSigned(f) = f if f &lt; field.half() toSigned(f) = f - p if f &gt;= field.half() (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p) </p>
+
+<p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00130">130</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a1ccf00c3886c63cef1ab39286fc73c07" name="a1ccf00c3886c63cef1ab39286fc73c07"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1ccf00c3886c63cef1ab39286fc73c07">&#9670;&#160;</a></span>tryGetField()</h2>
 
@@ -871,7 +894,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00113">113</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00119">119</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -902,7 +925,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00109">109</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00115">115</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>

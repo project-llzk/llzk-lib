@@ -240,174 +240,176 @@ $(function(){initNavTree('Field_8cpp_source.html','',''); });
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>DynamicAPInt Field::reduce(<span class="keyword">const</span> APInt &amp;i)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> reduce(<a class="code hl_function" href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">toDynamicAPInt</a>(i)); }</div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>DynamicAPInt Field::inv(<span class="keyword">const</span> DynamicAPInt &amp;i)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a0316d55f010d8beb8d657a4073d00da0">modInversePrime</a>(i, prime()); }</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno"><a class="line" href="classllzk_1_1Field.html#a39381adb038ecf28cf28c97737c61cc1">  130</a></span>DynamicAPInt <a class="code hl_function" href="classllzk_1_1Field.html#a39381adb038ecf28cf28c97737c61cc1">Field::toSigned</a>(<span class="keyword">const</span> DynamicAPInt &amp;i)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> i &lt; <a class="code hl_function" href="classllzk_1_1Field.html#a0ba190165250763577ea685828a52d98">half</a>() ? i : i - <a class="code hl_function" href="classllzk_1_1Field.html#a47ec17bc79f0c5b89ef340db23ed76a7">prime</a>(); }</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>DynamicAPInt Field::inv(<span class="keyword">const</span> APInt &amp;i)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a0316d55f010d8beb8d657a4073d00da0">modInversePrime</a>(<a class="code hl_function" href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">toDynamicAPInt</a>(i), prime());</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>}</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span><span class="comment">// Parses Fields from the given attribute, if able.</span></div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span><span class="keyword">static</span> LogicalResult parseFields(Attribute a) {</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordflow">return</span> TypeSwitch&lt;</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>             Attribute, FailureOr&lt;SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt;&gt;&gt;(a)</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>      .Case&lt;UnitAttr&gt;(</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>          [](<span class="keyword">auto</span>) {</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>            <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>          })</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>      .Case&lt;StringAttr&gt;(</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>          [](<span class="keyword">auto</span> s) -&gt; FailureOr&lt;SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt;&gt; {</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>            <span class="keyword">auto</span> fieldRes = Field::tryGetField(s);</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>            <span class="keywordflow">if</span> (failed(fieldRes)) {</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>              <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>            }</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>            <span class="keywordflow">return</span> SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt; {fieldRes.value()};</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>          })</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>      .Case&lt;ArrayAttr&gt;(</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>          [](<span class="keyword">auto</span> arr) -&gt; FailureOr&lt;SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt;&gt; {</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>            <span class="comment">// An ArrayAttr may only contain inner StringAttr</span></div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>            SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt; res;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>            <span class="keywordflow">for</span> (Attribute elem : arr) {</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>              <span class="keywordflow">if</span> (<span class="keyword">auto</span> s = llvm::dyn_cast&lt;StringAttr&gt;(elem)) {</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>                <span class="keyword">auto</span> fieldRes = Field::tryGetField(s);</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>                <span class="keywordflow">if</span> (failed(fieldRes)) {</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>                  <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>                }</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>                res.push_back(fieldRes.value());</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>              } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>                <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>              }</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>            }</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>            <span class="keywordflow">return</span> res;</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>          })</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>      .Default([](<span class="keyword">auto</span>) { <span class="keywordflow">return</span> failure(); });</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>}</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
-<div class="foldopen" id="foldopen00174" data-start="{" data-end="}">
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno"><a class="line" href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">  174</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">addSpecifiedFields</a>(ModuleOp modOp) {</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  <span class="keywordflow">if</span> (Attribute a = modOp-&gt;getAttr(<a class="code hl_variable" href="namespacellzk.html#adbaddece4688a926984736b45c0376c6">FIELD_ATTR_NAME</a>)) {</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    <span class="keywordflow">return</span> parseFields(a);</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  }</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="comment">// Always recurse.</span></div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keywordflow">if</span> (ModuleOp parentMod = modOp-&gt;getParentOfType&lt;ModuleOp&gt;()) {</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">addSpecifiedFields</a>(parentMod);</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  }</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>}</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>DynamicAPInt <a class="code hl_function" href="classllzk_1_1Field.html#a7e120e6674063d384f3528bb9c13e263">Field::inv</a>(<span class="keyword">const</span> DynamicAPInt &amp;i)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">modInversePrime</a>(i, prime()); }</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>DynamicAPInt Field::inv(<span class="keyword">const</span> APInt &amp;i)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keywordflow">return</span> modInversePrime(toDynamicAPInt(i), prime());</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>}</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span><span class="comment">// Parses Fields from the given attribute, if able.</span></div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span><span class="keyword">static</span> LogicalResult parseFields(Attribute a) {</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <span class="keywordflow">return</span> TypeSwitch&lt;</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>             Attribute, FailureOr&lt;SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt;&gt;&gt;(a)</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>      .Case&lt;UnitAttr&gt;(</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>          [](<span class="keyword">auto</span>) {</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>            <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>          })</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>      .Case&lt;StringAttr&gt;(</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>          [](<span class="keyword">auto</span> s) -&gt; FailureOr&lt;SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt;&gt; {</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>            <span class="keyword">auto</span> fieldRes = Field::tryGetField(s);</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>            <span class="keywordflow">if</span> (failed(fieldRes)) {</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>              <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>            }</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>            <span class="keywordflow">return</span> SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt; {fieldRes.value()};</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>          })</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>      .Case&lt;ArrayAttr&gt;(</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>          [](<span class="keyword">auto</span> arr) -&gt; FailureOr&lt;SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt;&gt; {</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>            <span class="comment">// An ArrayAttr may only contain inner StringAttr</span></div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>            SmallVector&lt;std::reference_wrapper&lt;const Field&gt;&gt; res;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>            <span class="keywordflow">for</span> (Attribute elem : arr) {</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>              <span class="keywordflow">if</span> (<span class="keyword">auto</span> s = llvm::dyn_cast&lt;StringAttr&gt;(elem)) {</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>                <span class="keyword">auto</span> fieldRes = Field::tryGetField(s);</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>                <span class="keywordflow">if</span> (failed(fieldRes)) {</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>                  <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>                }</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>                res.push_back(fieldRes.value());</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>              } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>                <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>              }</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>            }</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>            <span class="keywordflow">return</span> res;</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>          })</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      .Default([](<span class="keyword">auto</span>) { <span class="keywordflow">return</span> failure(); });</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>}</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
+<div class="foldopen" id="foldopen00176" data-start="{" data-end="}">
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno"><a class="line" href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">  176</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">addSpecifiedFields</a>(ModuleOp modOp) {</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  <span class="keywordflow">if</span> (Attribute a = modOp-&gt;getAttr(<a class="code hl_variable" href="namespacellzk.html#adbaddece4688a926984736b45c0376c6">FIELD_ATTR_NAME</a>)) {</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    <span class="keywordflow">return</span> parseFields(a);</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  }</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  <span class="comment">// Always recurse.</span></div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  <span class="keywordflow">if</span> (ModuleOp parentMod = modOp-&gt;getParentOfType&lt;ModuleOp&gt;()) {</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">addSpecifiedFields</a>(parentMod);</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  }</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>}</div>
 </div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>} <span class="comment">// namespace llzk</span></div>
 <div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>} <span class="comment">// namespace llzk</span></div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span><span class="keyword">struct </span>FieldsCtx {</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <a class="code hl_typedef" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> &amp;fields;</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  LogicalResult &amp;status;</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  mlir::Operation *scope;</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>};</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span> </div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span><span class="keyword">struct </span>FieldsCtx {</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <a class="code hl_typedef" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> &amp;fields;</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  LogicalResult &amp;status;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  mlir::Operation *scope;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>};</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span><span class="keyword">static</span> <span class="keywordtype">void</span> handleAttribute(mlir::Attribute, FieldsCtx &amp;);</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>} <span class="comment">// namespace</span></div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span> </div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span><span class="keyword">static</span> <span class="keywordtype">void</span> handleType(mlir::Type type, FieldsCtx &amp;ctx) {</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  TypeSwitch&lt;mlir::Type&gt; ts(type);</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  ts.Case([&amp;ctx](<a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> felt) {</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    <span class="keywordflow">if</span> (felt.<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#ae8c6b7303e8daa54120f316f41ac73d2">hasField</a>()) {</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>      ctx.fields.insert(felt.<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">getField</a>());</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>      ctx.status = failure();</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>      <span class="keywordflow">if</span> (ctx.scope) {</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>        ctx.scope-&gt;emitWarning() &lt;&lt; <span class="stringliteral">&quot;felt type is unspecified, which may cause some passes to fail&quot;</span>;</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>      }</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    }</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  })</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>      .Case([&amp;ctx](<a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> array) { handleType(array.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(), ctx); })</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>      .Case([&amp;ctx](<a class="code hl_class" href="classllzk_1_1pod_1_1PodType.html">llzk::pod::PodType</a> pod) {</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : pod.<a class="code hl_function" href="classllzk_1_1pod_1_1PodType.html#acfd4313b3e24d3c31a87d35d78f35c6f">getRecords</a>()) {</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>      handleAttribute(record, ctx);</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    }</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  }).Case([&amp;ctx](mlir::FunctionType funcType) {</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> i : funcType.getInputs()) {</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>      handleType(i, ctx);</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    }</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> o : funcType.getResults()) {</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>      handleType(o, ctx);</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    }</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  });</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  <span class="comment">// Do nothing by default for any other type</span></div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  ts.Default([](<span class="keyword">auto</span>) {});</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>}</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span> </div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span><span class="keyword">static</span> <span class="keywordtype">void</span> handleAttribute(mlir::Attribute attr, FieldsCtx &amp;ctx) {</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  TypeSwitch&lt;mlir::Attribute&gt; ts(attr);</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  ts.Case([&amp;ctx](mlir::TypeAttr typeAttr) { handleType(typeAttr.getValue(), ctx); })</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>      .Case([&amp;ctx](mlir::ArrayAttr arrayAttr) {</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> a : arrayAttr) {</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>      handleAttribute(a, ctx);</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>    }</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  })</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>      .Case([&amp;ctx](mlir::DictionaryAttr dictAttr) {</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> a : dictAttr.getValue()) {</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>      handleAttribute(a.getValue(), ctx);</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    }</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  }).Case([&amp;ctx](llzk::pod::RecordAttr recordAttr) {</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    handleType(recordAttr.getType(), ctx);</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  }).Default([](<span class="keyword">auto</span>) {});</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>}</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
-<div class="foldopen" id="foldopen00245" data-start="{" data-end="}">
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno"><a class="line" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">  245</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">llzk::collectFields</a>(mlir::Operation *root, <a class="code hl_typedef" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> &amp;fields, <span class="keywordtype">bool</span> silent) {</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  <span class="keywordflow">if</span> (!root) {</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    <span class="keywordflow">return</span> success(); <span class="comment">// Nothing to do</span></div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  }</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  LogicalResult status = success();</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  root-&gt;walk([&amp;fields, &amp;status, silent](mlir::Operation *op) {</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    FieldsCtx ctx = {.fields = fields, .status = status, .scope = silent ? nullptr : op};</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    <span class="comment">// Crawl for types in the results,</span></div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> result : op-&gt;getOpResults()) {</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>      handleType(result.getType(), ctx);</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    }</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    <span class="comment">// the attributes,</span></div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> attr : op-&gt;getAttrs()) {</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>      handleAttribute(attr.getValue(), ctx);</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    }</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    <span class="comment">// block arguments (if any)</span></div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;region : op-&gt;getRegions()) {</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;block : region) {</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;arg : block.getArguments()) {</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>          handleType(arg.getType(), ctx);</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>        }</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>      }</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    }</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  });</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  <span class="keywordflow">return</span> status;</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>}</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span><span class="keyword">static</span> <span class="keywordtype">void</span> handleAttribute(mlir::Attribute, FieldsCtx &amp;);</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span><span class="keyword">static</span> <span class="keywordtype">void</span> handleType(mlir::Type type, FieldsCtx &amp;ctx) {</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  TypeSwitch&lt;mlir::Type&gt; ts(type);</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  ts.Case([&amp;ctx](<a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a> felt) {</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    <span class="keywordflow">if</span> (felt.<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#ae8c6b7303e8daa54120f316f41ac73d2">hasField</a>()) {</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>      ctx.fields.insert(felt.<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">getField</a>());</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>      ctx.status = failure();</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>      <span class="keywordflow">if</span> (ctx.scope) {</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>        ctx.scope-&gt;emitWarning() &lt;&lt; <span class="stringliteral">&quot;felt type is unspecified, which may cause some passes to fail&quot;</span>;</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>      }</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>    }</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  })</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>      .Case([&amp;ctx](<a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> array) { handleType(array.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(), ctx); })</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>      .Case([&amp;ctx](<a class="code hl_class" href="classllzk_1_1pod_1_1PodType.html">llzk::pod::PodType</a> pod) {</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : pod.<a class="code hl_function" href="classllzk_1_1pod_1_1PodType.html#acfd4313b3e24d3c31a87d35d78f35c6f">getRecords</a>()) {</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>      handleAttribute(record, ctx);</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    }</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  }).Case([&amp;ctx](mlir::FunctionType funcType) {</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> i : funcType.getInputs()) {</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>      handleType(i, ctx);</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    }</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> o : funcType.getResults()) {</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>      handleType(o, ctx);</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>    }</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  });</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  <span class="comment">// Do nothing by default for any other type</span></div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  ts.Default([](<span class="keyword">auto</span>) {});</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>}</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span> </div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span><span class="keyword">static</span> <span class="keywordtype">void</span> handleAttribute(mlir::Attribute attr, FieldsCtx &amp;ctx) {</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  TypeSwitch&lt;mlir::Attribute&gt; ts(attr);</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  ts.Case([&amp;ctx](mlir::TypeAttr typeAttr) { handleType(typeAttr.getValue(), ctx); })</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>      .Case([&amp;ctx](mlir::ArrayAttr arrayAttr) {</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> a : arrayAttr) {</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>      handleAttribute(a, ctx);</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    }</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  })</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>      .Case([&amp;ctx](mlir::DictionaryAttr dictAttr) {</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> a : dictAttr.getValue()) {</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>      handleAttribute(a.getValue(), ctx);</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    }</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  }).Case([&amp;ctx](llzk::pod::RecordAttr recordAttr) {</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>    handleType(recordAttr.getType(), ctx);</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  }).Default([](<span class="keyword">auto</span>) {});</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>}</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span> </div>
+<div class="foldopen" id="foldopen00247" data-start="{" data-end="}">
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno"><a class="line" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">  247</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">llzk::collectFields</a>(mlir::Operation *root, <a class="code hl_typedef" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a> &amp;fields, <span class="keywordtype">bool</span> silent) {</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <span class="keywordflow">if</span> (!root) {</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    <span class="keywordflow">return</span> success(); <span class="comment">// Nothing to do</span></div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  }</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  LogicalResult status = success();</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  root-&gt;walk([&amp;fields, &amp;status, silent](mlir::Operation *op) {</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    FieldsCtx ctx = {.fields = fields, .status = status, .scope = silent ? nullptr : op};</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="comment">// Crawl for types in the results,</span></div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> result : op-&gt;getOpResults()) {</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      handleType(result.getType(), ctx);</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    }</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    <span class="comment">// the attributes,</span></div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> attr : op-&gt;getAttrs()) {</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>      handleAttribute(attr.getValue(), ctx);</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    }</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    <span class="comment">// block arguments (if any)</span></div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;region : op-&gt;getRegions()) {</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;block : region) {</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;arg : block.getArguments()) {</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>          handleType(arg.getType(), ctx);</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>        }</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>      }</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    }</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  });</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span> </div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  <span class="keywordflow">return</span> status;</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>}</div>
 </div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>std::optional&lt;std::reference_wrapper&lt;const llzk::Field&gt;&gt;</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span><a class="code hl_function" href="namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d">llzk::tryDetectSpecifiedField</a>(Operation *root) {</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  <span class="keywordflow">if</span> (!root) {</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  }</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  ModuleOp modOp = dyn_cast&lt;ModuleOp&gt;(root);</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  <span class="keywordflow">if</span> (!modOp) {</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    modOp = root-&gt;getParentOfType&lt;ModuleOp&gt;();</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  }</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  <span class="keywordflow">if</span> (!modOp) {</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  }</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  <a class="code hl_typedef" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">FieldSet</a> fields;</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">collectFields</a>(modOp, fields)) || fields.size() != 1) {</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>    <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  }</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  <span class="keywordflow">return</span> *fields.begin();</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>}</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>std::optional&lt;std::reference_wrapper&lt;const llzk::Field&gt;&gt;</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span><a class="code hl_function" href="namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d">llzk::tryDetectSpecifiedField</a>(Operation *root) {</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  <span class="keywordflow">if</span> (!root) {</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  }</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  ModuleOp modOp = dyn_cast&lt;ModuleOp&gt;(root);</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  <span class="keywordflow">if</span> (!modOp) {</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    modOp = root-&gt;getParentOfType&lt;ModuleOp&gt;();</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  }</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  <span class="keywordflow">if</span> (!modOp) {</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  }</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span> </div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>  <a class="code hl_typedef" href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">FieldSet</a> fields;</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">collectFields</a>(modOp, fields)) || fields.size() != 1) {</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  }</div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  <span class="keywordflow">return</span> *fields.begin();</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>}</div>
 <div class="ttc" id="aArray_2IR_2Types_8h_html"><div class="ttname"><a href="Array_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aDebug_8h_html"><div class="ttname"><a href="Debug_8h.html">Debug.h</a></div></div>
 <div class="ttc" id="aDynamicAPIntHelper_8h_html"><div class="ttname"><a href="DynamicAPIntHelper_8h.html">DynamicAPIntHelper.h</a></div><div class="ttdoc">This file implements helper methods for constructing DynamicAPInts.</div></div>
@@ -419,27 +421,31 @@ $(function(){initNavTree('Field_8cpp_source.html','',''); });
 <div class="ttc" id="aString_2IR_2Types_8h_html"><div class="ttname"><a href="String_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Types_8h_html"><div class="ttname"><a href="Struct_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html"><div class="ttname"><a href="classllzk_1_1Field.html">llzk::Field</a></div><div class="ttdoc">Information about the prime finite field used for the interval analysis.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00035">Field.h:35</a></div></div>
+<div class="ttc" id="aclassllzk_1_1Field_html_a0ba190165250763577ea685828a52d98"><div class="ttname"><a href="classllzk_1_1Field.html#a0ba190165250763577ea685828a52d98">llzk::Field::half</a></div><div class="ttdeci">llvm::DynamicAPInt half() const</div><div class="ttdoc">Returns p / 2.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00074">Field.h:74</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_a1ccf00c3886c63cef1ab39286fc73c07"><div class="ttname"><a href="classllzk_1_1Field.html#a1ccf00c3886c63cef1ab39286fc73c07">llzk::Field::tryGetField</a></div><div class="ttdeci">static llvm::FailureOr&lt; std::reference_wrapper&lt; const Field &gt; &gt; tryGetField(llvm::StringRef fieldName)</div><div class="ttdoc">Get a Field from a given field name string, or failure if the field is not defined.</div><div class="ttdef"><b>Definition</b> <a href="#l00049">Field.cpp:49</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_a2abf8d65ff6ae1f4778cec3b164b5d08"><div class="ttname"><a href="classllzk_1_1Field.html#a2abf8d65ff6ae1f4778cec3b164b5d08">llzk::Field::Field</a></div><div class="ttdeci">Field()=delete</div></div>
+<div class="ttc" id="aclassllzk_1_1Field_html_a39381adb038ecf28cf28c97737c61cc1"><div class="ttname"><a href="classllzk_1_1Field.html#a39381adb038ecf28cf28c97737c61cc1">llzk::Field::toSigned</a></div><div class="ttdeci">llvm::DynamicAPInt toSigned(const llvm::DynamicAPInt &amp;i) const</div><div class="ttdoc">Converts a canonical field element to its signed integer representation: toSigned(f) = f if f &lt; field...</div><div class="ttdef"><b>Definition</b> <a href="#l00130">Field.cpp:130</a></div></div>
+<div class="ttc" id="aclassllzk_1_1Field_html_a47ec17bc79f0c5b89ef340db23ed76a7"><div class="ttname"><a href="classllzk_1_1Field.html#a47ec17bc79f0c5b89ef340db23ed76a7">llzk::Field::prime</a></div><div class="ttdeci">llvm::DynamicAPInt prime() const</div><div class="ttdoc">For the prime field p, returns p.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00071">Field.h:71</a></div></div>
+<div class="ttc" id="aclassllzk_1_1Field_html_a7e120e6674063d384f3528bb9c13e263"><div class="ttname"><a href="classllzk_1_1Field.html#a7e120e6674063d384f3528bb9c13e263">llzk::Field::inv</a></div><div class="ttdeci">llvm::DynamicAPInt inv(const llvm::DynamicAPInt &amp;i) const</div><div class="ttdoc">Returns the multiplicative inverse of i in prime field p.</div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_ad3c4c2d4c639559756f71ed461792791"><div class="ttname"><a href="classllzk_1_1Field.html#ad3c4c2d4c639559756f71ed461792791">llzk::Field::verifyFieldDefined</a></div><div class="ttdeci">static llvm::LogicalResult verifyFieldDefined(llvm::StringRef fieldName, EmitErrorFn errFn)</div><div class="ttdoc">Search for a field with the given name, reporting an error if the field is not found.</div><div class="ttdef"><b>Definition</b> <a href="#l00059">Field.cpp:59</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_ae2df03a056e5ffabd26768c63cd5a1bf"><div class="ttname"><a href="classllzk_1_1Field.html#ae2df03a056e5ffabd26768c63cd5a1bf">llzk::Field::getField</a></div><div class="ttdeci">static const Field &amp; getField(llvm::StringRef fieldName, EmitErrorFn errFn)</div><div class="ttdoc">Get a Field from a given field name string.</div></div>
 <div class="ttc" id="aclassllzk_1_1array_1_1ArrayType_html"><div class="ttname"><a href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Types_8h_8inc_source.html#l00023">Types.h.inc:23</a></div></div>
 <div class="ttc" id="aclassllzk_1_1array_1_1ArrayType_html_a9a35f9b638432e52628aa367e5706edd"><div class="ttname"><a href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">llzk::array::ArrayType::getElementType</a></div><div class="ttdeci">::mlir::Type getElementType() const</div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Types_8cpp_8inc_source.html#l00199">Types.cpp.inc:199</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html">llzk::felt::FeltType</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Types_8h_8inc_source.html#l00023">Types.h.inc:23</a></div></div>
-<div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a6770fd0e74196859ed6e7c9ec0358780"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">llzk::felt::FeltType::getField</a></div><div class="ttdeci">const ::llzk::Field &amp; getField() const</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Dialect_8cpp_source.html#l00105">Dialect.cpp:105</a></div></div>
+<div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_a6770fd0e74196859ed6e7c9ec0358780"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#a6770fd0e74196859ed6e7c9ec0358780">llzk::felt::FeltType::getField</a></div><div class="ttdeci">const ::llzk::Field &amp; getField() const</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Dialect_8cpp_source.html#l00107">Dialect.cpp:107</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltType_html_ae8c6b7303e8daa54120f316f41ac73d2"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltType.html#ae8c6b7303e8daa54120f316f41ac73d2">llzk::felt::FeltType::hasField</a></div><div class="ttdeci">bool hasField() const</div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Types_8h_8inc_source.html#l00030">Types.h.inc:30</a></div></div>
 <div class="ttc" id="aclassllzk_1_1pod_1_1PodType_html"><div class="ttname"><a href="classllzk_1_1pod_1_1PodType.html">llzk::pod::PodType</a></div><div class="ttdef"><b>Definition</b> <a href="POD_2IR_2Types_8h_8inc_source.html#l00023">Types.h.inc:23</a></div></div>
 <div class="ttc" id="aclassllzk_1_1pod_1_1PodType_html_acfd4313b3e24d3c31a87d35d78f35c6f"><div class="ttname"><a href="classllzk_1_1pod_1_1PodType.html#acfd4313b3e24d3c31a87d35d78f35c6f">llzk::pod::PodType::getRecords</a></div><div class="ttdeci">::llvm::ArrayRef&lt;::llzk::pod::RecordAttr &gt; getRecords() const</div><div class="ttdef"><b>Definition</b> <a href="POD_2IR_2Types_8cpp_8inc_source.html#l00115">Types.cpp.inc:115</a></div></div>
 <div class="ttc" id="allzk_2Util_2Constants_8h_html"><div class="ttname"><a href="llzk_2Util_2Constants_8h.html">Constants.h</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a0316d55f010d8beb8d657a4073d00da0"><div class="ttname"><a href="namespacellzk.html#a0316d55f010d8beb8d657a4073d00da0">llzk::modInversePrime</a></div><div class="ttdeci">llvm::DynamicAPInt modInversePrime(const DynamicAPInt &amp;f, const DynamicAPInt &amp;p)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00156">DynamicAPIntHelper.cpp:156</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a55eb9bd3756426974f8a8cfe20d1deb7"><div class="ttname"><a href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">llzk::EmitErrorFn</a></div><div class="ttdeci">llvm::function_ref&lt; InFlightDiagnosticWrapper()&gt; EmitErrorFn</div><div class="ttdoc">Callback to produce an error diagnostic.</div><div class="ttdef"><b>Definition</b> <a href="ErrorHelper_8h_source.html#l00138">ErrorHelper.h:138</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a591c6bf26566c23d2ccb0c9ed20ab12b"><div class="ttname"><a href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">llzk::toDynamicAPInt</a></div><div class="ttdeci">DynamicAPInt toDynamicAPInt(StringRef str)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00089">DynamicAPIntHelper.cpp:89</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a97449772c71c3fa5ed642c11df578b38"><div class="ttname"><a href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">llzk::addSpecifiedFields</a></div><div class="ttdeci">LogicalResult addSpecifiedFields(ModuleOp modOp)</div><div class="ttdef"><b>Definition</b> <a href="#l00174">Field.cpp:174</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ace41b88b3084e2fb14bd6573034e41f2"><div class="ttname"><a href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a></div><div class="ttdeci">llvm::SmallSet&lt; FieldRef, 2 &gt; FieldSet</div><div class="ttdoc">Typealias for a set of Fields.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00149">Field.h:149</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a591c6bf26566c23d2ccb0c9ed20ab12b"><div class="ttname"><a href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">llzk::toDynamicAPInt</a></div><div class="ttdeci">DynamicAPInt toDynamicAPInt(StringRef str)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00090">DynamicAPIntHelper.cpp:90</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a97449772c71c3fa5ed642c11df578b38"><div class="ttname"><a href="namespacellzk.html#a97449772c71c3fa5ed642c11df578b38">llzk::addSpecifiedFields</a></div><div class="ttdeci">LogicalResult addSpecifiedFields(ModuleOp modOp)</div><div class="ttdef"><b>Definition</b> <a href="#l00176">Field.cpp:176</a></div></div>
+<div class="ttc" id="anamespacellzk_html_acadd66413800c2610538c0e3568561fd"><div class="ttname"><a href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">llzk::modInversePrime</a></div><div class="ttdeci">DynamicAPInt modInversePrime(const DynamicAPInt &amp;f, const DynamicAPInt &amp;p)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00161">DynamicAPIntHelper.cpp:161</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ace41b88b3084e2fb14bd6573034e41f2"><div class="ttname"><a href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a></div><div class="ttdeci">llvm::SmallSet&lt; FieldRef, 2 &gt; FieldSet</div><div class="ttdoc">Typealias for a set of Fields.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00155">Field.h:155</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ad9aa681c2fc2160938a72878439bad3d"><div class="ttname"><a href="namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d">llzk::tryDetectSpecifiedField</a></div><div class="ttdeci">std::optional&lt; std::reference_wrapper&lt; const Field &gt; &gt; tryDetectSpecifiedField(mlir::Operation *root)</div><div class="ttdoc">Try to detect a uniquely used field from the enclosing LLZK module.</div></div>
 <div class="ttc" id="anamespacellzk_html_adbaddece4688a926984736b45c0376c6"><div class="ttname"><a href="namespacellzk.html#adbaddece4688a926984736b45c0376c6">llzk::FIELD_ATTR_NAME</a></div><div class="ttdeci">constexpr char FIELD_ATTR_NAME[]</div><div class="ttdoc">Name of the attribute on the top-level ModuleOp that defines prime fields used in the circuit.</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00032">Constants.h:32</a></div></div>
-<div class="ttc" id="anamespacellzk_html_afcfdee46edb27b06b8bd67475a16ec37"><div class="ttname"><a href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">llzk::collectFields</a></div><div class="ttdeci">mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &amp;fields, bool silent=true)</div><div class="ttdoc">Collects all the fields used in a circuit.</div><div class="ttdef"><b>Definition</b> <a href="#l00245">Field.cpp:245</a></div></div>
+<div class="ttc" id="anamespacellzk_html_afcfdee46edb27b06b8bd67475a16ec37"><div class="ttname"><a href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">llzk::collectFields</a></div><div class="ttdeci">mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &amp;fields, bool silent=true)</div><div class="ttdoc">Collects all the fields used in a circuit.</div><div class="ttdef"><b>Definition</b> <a href="#l00247">Field.cpp:247</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

@@ -3,6 +3,7 @@ var classllzk_1_1felt_1_1MulFeltOp =
     [ "Adaptor", "classllzk_1_1felt_1_1MulFeltOp.html#a6296463ef91d35ad936543c1d72afecd", null ],
     [ "FoldAdaptor", "classllzk_1_1felt_1_1MulFeltOp.html#a2fa8bd83d96a6e59d07df6bd3ee228fd", null ],
     [ "GenericAdaptor", "classllzk_1_1felt_1_1MulFeltOp.html#acf8d7f098acbba024f6ba7d0ead2c101", null ],
+    [ "fold", "classllzk_1_1felt_1_1MulFeltOp.html#ad412a15adc2127ff42f2d4f1ba4c11f3", null ],
     [ "getAttributeNames", "classllzk_1_1felt_1_1MulFeltOp.html#a7e573f81ad69a03790262ad4c06a4c36", null ],
     [ "getEffects", "classllzk_1_1felt_1_1MulFeltOp.html#ad2d81e1f6fea27573ab52535dfd3d8c9", null ],
     [ "getLhs", "classllzk_1_1felt_1_1MulFeltOp.html#a2632de6e78aef077f6b8cddf0bdbaf95", null ],

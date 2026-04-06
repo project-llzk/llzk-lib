@@ -142,6 +142,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a19c0f1b71bdc99d474f856754a199d37" id="r_a19c0f1b71bdc99d474f856754a199d37"><td class="memItemLeft" align="right" valign="top">::mlir::TypedValue&lt;::mlir::Type &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a19c0f1b71bdc99d474f856754a199d37">getResult</a> ()</td></tr>
 <tr class="memitem:a253e7b114c1cbc57644d9ed4176cd8ce" id="r_a253e7b114c1cbc57644d9ed4176cd8ce"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a253e7b114c1cbc57644d9ed4176cd8ce">verifyInvariantsImpl</a> ()</td></tr>
 <tr class="memitem:a5dae24ba23be5ee1811dbb379e8e2ffc" id="r_a5dae24ba23be5ee1811dbb379e8e2ffc"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5dae24ba23be5ee1811dbb379e8e2ffc">verifyInvariants</a> ()</td></tr>
+<tr class="memitem:ae12ee9fd9354780374db7082cccf28c7" id="r_ae12ee9fd9354780374db7082cccf28c7"><td class="memItemLeft" align="right" valign="top">::mlir::OpFoldResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae12ee9fd9354780374db7082cccf28c7">fold</a> (<a class="el" href="#abf11a179c1e4786ccbfa19c01498b5c4">FoldAdaptor</a> adaptor)</td></tr>
 <tr class="memitem:ad00b6b3fe0418dada02c117d75109343" id="r_ad00b6b3fe0418dada02c117d75109343"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad00b6b3fe0418dada02c117d75109343">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 <tr class="memitem:ab835ff3bd1b4b2efc39da5bce48a9c64" id="r_ab835ff3bd1b4b2efc39da5bce48a9c64"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab835ff3bd1b4b2efc39da5bce48a9c64">getEffects</a> (::llvm::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect &gt; &gt; &amp;effects)</td></tr>
 </table><table class="memberdecls">
@@ -160,7 +161,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01476">1476</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01482">1482</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a0ebcb3ac51f46b46da700c16d7a69487" name="a0ebcb3ac51f46b46da700c16d7a69487"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0ebcb3ac51f46b46da700c16d7a69487">&#9670;&#160;</a></span>Adaptor</h2>
@@ -174,7 +175,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01480">1480</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01486">1486</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -190,7 +191,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01483">1483</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01489">1489</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -208,7 +209,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01482">1482</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01488">1488</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -418,6 +419,25 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="ae12ee9fd9354780374db7082cccf28c7" name="ae12ee9fd9354780374db7082cccf28c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae12ee9fd9354780374db7082cccf28c7">&#9670;&#160;</a></span>fold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">OpFoldResult llzk::felt::NotFeltOp::fold </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#abf11a179c1e4786ccbfa19c01498b5c4">FoldAdaptor</a></td>          <td class="paramname"><span class="paramname"><em>adaptor</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8cpp_source.html#l00319">319</a> of file <a class="el" href="Felt_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a39c72f72126d7b4c4c8d9c6c95740a9d" name="a39c72f72126d7b4c4c8d9c6c95740a9d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a39c72f72126d7b4c4c8d9c6c95740a9d">&#9670;&#160;</a></span>getAttributeNames()</h2>
 
@@ -441,7 +461,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01484">1484</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01490">1490</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -487,7 +507,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01492">1492</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01498">1498</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -514,7 +534,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01496">1496</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01502">1502</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -541,7 +561,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01511">1511</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01517">1517</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -568,7 +588,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01515">1515</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01521">1521</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -595,7 +615,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01502">1502</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01508">1508</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -622,7 +642,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01506">1506</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01512">1512</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -649,7 +669,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01488">1488</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01494">1494</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -676,7 +696,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01521">1521</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l01527">1527</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -894,6 +914,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>build/include/llzk/Dialect/Felt/IR/<a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a></li>
+<li>lib/Dialect/Felt/IR/<a class="el" href="Felt_2IR_2Ops_8cpp_source.html">Ops.cpp</a></li>
 <li>build/include/llzk/Dialect/Felt/IR/<a class="el" href="Felt_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a></li>
 </ul>
 </div><!-- contents -->
