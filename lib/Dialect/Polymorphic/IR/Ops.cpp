@@ -155,7 +155,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
   // Ensure the named constant is a parameter of the parent struct
   FlatSymbolRefAttr name = this->getConstNameAttr();
-  auto constParam = getParentRes->getConstNamed<ConstParamSymbolOpInterface>(name);
+  auto constParam = getParentRes->getConstNamed<TemplateSymbolBindingOpInterface>(name);
   if (!constParam) {
     return this->emitOpError()
         .append("references unknown symbol \"", name, '"')

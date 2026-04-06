@@ -159,7 +159,7 @@ def LLZK_StructDefOp
 
     /// Return `true` iff the `struct.def` appears within a `poly.template` that defines
     /// constant parameters and/or expressions.
-    bool hasTemplateConstParamSymbols();
+    bool hasTemplateSymbolBindings();
 
     /// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
     /// within the `poly.template` in the order they are defined. Otherwise, return empty.

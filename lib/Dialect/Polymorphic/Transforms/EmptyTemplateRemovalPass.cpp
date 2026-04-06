@@ -95,7 +95,9 @@ class ReplaceNoParamTemplatePattern : public OpConversionPattern<TemplateOp> {
 public:
   using OpConversionPattern<TemplateOp>::OpConversionPattern;
 
-  static inline bool legal(TemplateOp op) { return op.hasConstOps<ConstParamSymbolOpInterface>(); }
+  static inline bool legal(TemplateOp op) {
+    return op.hasConstOps<TemplateSymbolBindingOpInterface>();
+  }
 
   LogicalResult matchAndRewrite(
       TemplateOp op, TemplateOpAdaptor adaptor, ConversionPatternRewriter &rewriter

@@ -182,7 +182,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Struct, MemberReadOp, WithConstParamDistance, MlirType memberType, MlirValue component,
+    Struct, MemberReadOp, WithTemplateSymbolDistance, MlirType memberType, MlirValue component,
     MlirIdentifier memberName, MlirStringRef symbol
 ) {
   return wrap(

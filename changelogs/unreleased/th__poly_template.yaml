@@ -41,7 +41,8 @@ changed:
   - "Update `ModuleBuilder` to support `poly.template` and nested module building"
   - CAPI:
     - "`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter"
-    - "replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateConstParamSymbols`"
+    - "replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateSymbolBindings`"
+    - "renamed `llzkStruct_MemberReadOpBuildWithConstParamDistance` to `llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance`"
 
 removed:
   - CAPI:

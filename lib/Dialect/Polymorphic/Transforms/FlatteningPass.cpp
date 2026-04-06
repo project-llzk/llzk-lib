@@ -2125,7 +2125,7 @@ struct FromKeepSet : public CleanupBase {
               });
               // Ignore struct/template parameter symbols (before doing the lookup below because it
               // would fail anyway and then cause the "failed" case to be triggered unnecessarily).
-              if (usedSymbolNode->isTemplateParam()) {
+              if (usedSymbolNode->isTemplateSymbolBinding()) {
                 continue;
               }
               // If `usedSymbolNode` references a StructDefOp, ensure it's considered in the roots.
@@ -2492,7 +2492,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   LogicalResult eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
     SmallVector<StructDefOp> roots;
     rootMod.walk([&roots](StructDefOp op) {
-      if (!op.hasTemplateConstParamSymbols()) {
+      if (!op.hasTemplateSymbolBindings()) {
         roots.push_back(op);
       }
       return WalkResult::skip(); // StructDefOp cannot be nested

@@ -365,7 +365,7 @@ LogicalResult verifyParamOfType(
   // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
     if (TemplateOp parent = getParentOfType<TemplateOp>(origin)) {
-      if (parent.hasConstNamed<ConstParamSymbolOpInterface>(param.getRootReference())) {
+      if (parent.hasConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
         return success();
       }
     }

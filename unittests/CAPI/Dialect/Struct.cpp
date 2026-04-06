@@ -360,7 +360,7 @@ TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
       auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
-      return llzkStruct_MemberReadOpBuildWithConstParamDistance(
+      return llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance(
           builder, location, index_type, struct_value, member_name,
           mlirStringRefCreateFromCString("N")
       );

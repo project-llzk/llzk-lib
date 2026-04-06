@@ -999,7 +999,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       if (!currentNode->isRealNode()) {
         continue;
       }
-      if (currentNode->isTemplateParam()) {
+      if (currentNode->isTemplateSymbolBinding()) {
         // Try to get the location of the TemplateOp to report an error.
         Operation *lookupFrom = currentNode->getSymbolPathRoot().getOperation();
         SymbolRefAttr prefix = getPrefixAsSymbolRefAttr(currentNode->getSymbolPath());

@@ -113,7 +113,7 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
     if (auto usesOpt = llzk::getSymbolUses(&op->getRegion(0))) {
       // Create child node for each Symbol use, as successor of the user Symbol op.
       for (SymbolTable::SymbolUse u : usesOpt.value()) {
-        bool isTemplateParam = false;
+        bool isTemplateSymbol = false;
         Operation *user = u.getUser();
         SymbolRefAttr symRef = u.getSymbolRef();
         // Pending [LLZK-272] only a heuristic approach is possible. Check for FlatSymbolRefAttr
@@ -125,9 +125,11 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
             symRef = llzk::appendLeaf(fref.getStructType().getNameRef(), flatSymRef);
           } else if (auto userTemplate = getSelfOrParentOfType<polymorphic::TemplateOp>(user)) {
             StringAttr localName = flatSymRef.getAttr();
-            isTemplateParam =
-                userTemplate.hasConstNamed<polymorphic::ConstParamSymbolOpInterface>(localName);
-            if (isTemplateParam || tables.getSymbolTable(userTemplate).lookup(localName)) {
+            isTemplateSymbol =
+                userTemplate.hasConstNamed<polymorphic::TemplateSymbolBindingOpInterface>(
+                    localName
+                );
+            if (isTemplateSymbol || tables.getSymbolTable(userTemplate).lookup(localName)) {
               // If 'flatSymRef' is defined in the SymbolTable for 'userTemplate' then it's
               // a local symbol so prepend the full path of the template itself.
               auto parentPath = llzk::getPathFromRoot(userTemplate);
@@ -137,7 +139,7 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
           }
         }
         auto *node = this->getOrAddNode(opRootModule.value(), symRef, getSymbolUserNode(u));
-        node->isTemplateConstParam = isTemplateParam;
+        node->isTemplateSymBinding = isTemplateSymbol;
         node->opsThatUseTheSymbol.insert(user);
       }
     }
@@ -219,7 +221,7 @@ void SymbolUseGraphNode::print(
     llvm::raw_ostream &os, bool showLocations, const std::string &locationLinePrefix
 ) const {
   os << '\'' << symbolPath << '\'';
-  if (isTemplateConstParam) {
+  if (isTemplateSymBinding) {
     os << " (struct param)";
   }
   os << " with root module ";

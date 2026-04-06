@@ -13,8 +13,8 @@
 include "mlir/IR/Interfaces.td"
 include "mlir/IR/SymbolInterfaces.td"
 
-def ConstParamSymbolOpInterface
-    : OpInterface<"ConstParamSymbolOpInterface", [Symbol]> {
+def TemplateSymbolBindingOpInterface
+    : OpInterface<"TemplateSymbolBindingOpInterface", [Symbol]> {
   let description = [{
     Common interface for constant parameter-like symbol operations that can be
     defined within a `TemplateOp`

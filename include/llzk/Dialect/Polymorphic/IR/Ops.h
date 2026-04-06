@@ -23,8 +23,9 @@
 namespace llzk::polymorphic {
 
 template <typename OpT>
-concept ConstParamSymbol = std::is_same_v<OpT, ConstParamSymbolOpInterface> ||
-                           std::is_base_of_v<ConstParamSymbolOpInterface::Trait<OpT>, OpT>;
+concept TemplateSymbolBindingOp =
+    std::is_same_v<OpT, TemplateSymbolBindingOpInterface> ||
+    std::is_base_of_v<TemplateSymbolBindingOpInterface::Trait<OpT>, OpT>;
 }
 
 // Include TableGen'd declarations

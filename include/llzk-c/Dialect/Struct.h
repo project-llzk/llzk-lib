@@ -154,7 +154,7 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 /// Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Struct, MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    Struct, MemberReadOp, WithTemplateSymbolDistance, MlirType type, MlirValue component,
     MlirIdentifier memberName, MlirStringRef paramName
 );
 
