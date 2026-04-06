@@ -160,8 +160,11 @@ def LLZK_CmpOp
   let arguments = (ins LLZK_CmpPredicateAttr:$predicate, LLZK_FeltType:$lhs,
       LLZK_FeltType:$rhs);
   let results = (outs I1:$result);
-  let assemblyFormat =
-      [{ `` $predicate `(` $lhs `,` $rhs `)` `` custom<InferredOrParsedType>(type($lhs), "true") `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict }];
+  let assemblyFormat = [{
+    `` $predicate `(` $lhs `,` $rhs `)`
+    `` custom<InferredOrParsedType>(type($lhs), "true")
+    `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict
+  }];
   let hasFolder = 1;
 }
 

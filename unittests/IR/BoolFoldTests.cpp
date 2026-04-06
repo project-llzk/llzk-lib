@@ -37,7 +37,9 @@ using namespace llzk::boolean;
 
 class BoolFoldTest : public LLZKTest {
 protected:
+  /// bitwidth large enough to hold babybear prime (which is 31 bits) with optional sign bit.
   static constexpr unsigned BITWIDTH = 32;
+  /// babybear: p = 2013265921, half = (p+1)/2 = 1006632961
   static constexpr uint64_t BB_PRIME = 2013265921ULL;
   static constexpr StringLiteral BB_FIELD = "babybear";
 
