@@ -1417,7 +1417,20 @@ LogicalResult StructIntervals::computeIntervals(
     }
 
     // Sort the outputs since we assembled things out of order.
-    llvm::sort(memberRanges, [](auto a, auto b) { return std::get<0>(a) < std::get<0>(b); });
+    //
+    // `llvm::MapVector` maintains an internal key -> index map. Sorting it in
+    // place corrupts lookup semantics because the backing vector is reordered
+    // without rebuilding that map. Reinsert into a fresh MapVector instead.
+    llvm::SmallVector<std::pair<SourceRef, Interval>> sortedRanges;
+    sortedRanges.reserve(memberRanges.size());
+    for (const auto &[ref, interval] : memberRanges) {
+      sortedRanges.emplace_back(ref, interval);
+    }
+    llvm::sort(sortedRanges, [](const auto &a, const auto &b) { return a.first < b.first; });
+    memberRanges.clear();
+    for (auto &[ref, interval] : sortedRanges) {
+      memberRanges[ref] = interval;
+    }
   };
 
   computeIntervalsImpl(structDef.getComputeFuncOp(), computeMemberRanges, computeSolverConstraints);
