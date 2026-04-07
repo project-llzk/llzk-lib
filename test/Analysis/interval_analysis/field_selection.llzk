@@ -38,7 +38,7 @@ module attributes {llzk.lang} {
     }
 
     function.def @constrain(%self: !struct.type<@DetectMersenne31>, %a: !F) {
-      %one = felt.const 1 <"mersenne31">
+      %one = felt.const 1 : !F
       %cmp = bool.cmp gt(%a, %one) : !F, !F
       bool.assert %cmp
       function.return

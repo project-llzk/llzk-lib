@@ -167,8 +167,8 @@ function.def @fold_not_false() -> i1 attributes {function.allow_non_native_field
 
 // fold_cmp_eq_same: 5 == 5 = true (babybear)
 function.def @fold_cmp_eq_same() -> i1 {
-  %a = felt.const 5 <"babybear">
-  %b = felt.const 5 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %b = felt.const 5 : !felt.type<"babybear">
   %r = bool.cmp eq(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -180,8 +180,8 @@ function.def @fold_cmp_eq_same() -> i1 {
 
 // fold_cmp_eq_diff: 3 == 7 = false (babybear)
 function.def @fold_cmp_eq_diff() -> i1 {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %r = bool.cmp eq(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -193,8 +193,8 @@ function.def @fold_cmp_eq_diff() -> i1 {
 
 // fold_cmp_ne_diff: 3 != 7 = true (babybear)
 function.def @fold_cmp_ne_diff() -> i1 {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %r = bool.cmp ne(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -206,8 +206,8 @@ function.def @fold_cmp_ne_diff() -> i1 {
 
 // fold_cmp_ne_same: 5 != 5 = false (babybear)
 function.def @fold_cmp_ne_same() -> i1 {
-  %a = felt.const 5 <"babybear">
-  %b = felt.const 5 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %b = felt.const 5 : !felt.type<"babybear">
   %r = bool.cmp ne(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -223,8 +223,8 @@ function.def @fold_cmp_ne_same() -> i1 {
 
 // fold_cmp_lt_true: 3 < 7 = true (babybear)
 function.def @fold_cmp_lt_true() -> i1 {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %r = bool.cmp lt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -236,8 +236,8 @@ function.def @fold_cmp_lt_true() -> i1 {
 
 // fold_cmp_lt_false: 7 < 3 = false (babybear)
 function.def @fold_cmp_lt_false() -> i1 {
-  %a = felt.const 7 <"babybear">
-  %b = felt.const 3 <"babybear">
+  %a = felt.const 7 : !felt.type<"babybear">
+  %b = felt.const 3 : !felt.type<"babybear">
   %r = bool.cmp lt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -249,8 +249,8 @@ function.def @fold_cmp_lt_false() -> i1 {
 
 // fold_cmp_le_equal: 5 <= 5 = true (babybear)
 function.def @fold_cmp_le_equal() -> i1 {
-  %a = felt.const 5 <"babybear">
-  %b = felt.const 5 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %b = felt.const 5 : !felt.type<"babybear">
   %r = bool.cmp le(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -262,8 +262,8 @@ function.def @fold_cmp_le_equal() -> i1 {
 
 // fold_cmp_le_less: 3 <= 7 = true (babybear)
 function.def @fold_cmp_le_less() -> i1 {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %r = bool.cmp le(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -275,8 +275,8 @@ function.def @fold_cmp_le_less() -> i1 {
 
 // fold_cmp_gt_true: 7 > 3 = true (babybear)
 function.def @fold_cmp_gt_true() -> i1 {
-  %a = felt.const 7 <"babybear">
-  %b = felt.const 3 <"babybear">
+  %a = felt.const 7 : !felt.type<"babybear">
+  %b = felt.const 3 : !felt.type<"babybear">
   %r = bool.cmp gt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -288,8 +288,8 @@ function.def @fold_cmp_gt_true() -> i1 {
 
 // fold_cmp_gt_false: 3 > 7 = false (babybear)
 function.def @fold_cmp_gt_false() -> i1 {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %r = bool.cmp gt(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -301,8 +301,8 @@ function.def @fold_cmp_gt_false() -> i1 {
 
 // fold_cmp_ge_equal: 5 >= 5 = true (babybear)
 function.def @fold_cmp_ge_equal() -> i1 {
-  %a = felt.const 5 <"babybear">
-  %b = felt.const 5 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %b = felt.const 5 : !felt.type<"babybear">
   %r = bool.cmp ge(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }
@@ -314,8 +314,8 @@ function.def @fold_cmp_ge_equal() -> i1 {
 
 // fold_cmp_ge_false: 3 >= 7 = false (babybear)
 function.def @fold_cmp_ge_false() -> i1 {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %r = bool.cmp ge(%a, %b) : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %r : i1
 }

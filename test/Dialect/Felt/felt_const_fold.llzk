@@ -10,13 +10,13 @@
 
 // Simple: 5 + 7 = 12
 function.def @fold_add() -> !felt.type<"babybear"> {
-  %a = felt.const 5 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %c = felt.add %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_add() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 12 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 12 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -24,13 +24,13 @@ function.def @fold_add() -> !felt.type<"babybear"> {
 
 // Wrap-around: (p-1) + 2 = p+1 ≡ 1 (mod p)
 function.def @fold_add_wrap() -> !felt.type<"babybear"> {
-  %a = felt.const 2013265920 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 2013265920 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.add %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_add_wrap() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -42,13 +42,13 @@ function.def @fold_add_wrap() -> !felt.type<"babybear"> {
 
 // Simple: 10 - 7 = 3
 function.def @fold_sub() -> !felt.type<"babybear"> {
-  %a = felt.const 10 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 10 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %c = felt.sub %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_sub() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -56,13 +56,13 @@ function.def @fold_sub() -> !felt.type<"babybear"> {
 
 // Wrap-around: 3 - 10 = -7 ≡ p-7 = 2013265914 (mod p)
 function.def @fold_sub_wrap() -> !felt.type<"babybear"> {
-  %a = felt.const 3 <"babybear">
-  %b = felt.const 10 <"babybear">
+  %a = felt.const 3 : !felt.type<"babybear">
+  %b = felt.const 10 : !felt.type<"babybear">
   %c = felt.sub %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_sub_wrap() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2013265914 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2013265914 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -74,13 +74,13 @@ function.def @fold_sub_wrap() -> !felt.type<"babybear"> {
 
 // Simple: 6 * 7 = 42
 function.def @fold_mul() -> !felt.type<"babybear"> {
-  %a = felt.const 6 <"babybear">
-  %b = felt.const 7 <"babybear">
+  %a = felt.const 6 : !felt.type<"babybear">
+  %b = felt.const 7 : !felt.type<"babybear">
   %c = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_mul() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 42 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 42 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -88,13 +88,13 @@ function.def @fold_mul() -> !felt.type<"babybear"> {
 
 // Wrap-around: half(p) * 2 = (p+1)/2 * 2 = p+1 ≡ 1 (mod p)
 function.def @fold_mul_wrap() -> !felt.type<"babybear"> {
-  %a = felt.const 1006632961 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 1006632961 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_mul_wrap() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -106,13 +106,13 @@ function.def @fold_mul_wrap() -> !felt.type<"babybear"> {
 
 // 2 ** 10 = 1024
 function.def @fold_pow() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 2 <"babybear">
-  %b = felt.const 10 <"babybear">
+  %a = felt.const 2 : !felt.type<"babybear">
+  %b = felt.const 10 : !felt.type<"babybear">
   %c = felt.pow %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_pow() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1024 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1024 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -124,13 +124,13 @@ function.def @fold_pow() -> !felt.type<"babybear"> attributes {function.allow_no
 
 // 6 / 2 = 3  (6 * inv(2) mod p, inv(2) = 1006632961, 6*1006632961 mod p = 3)
 function.def @fold_div() -> !felt.type<"babybear"> {
-  %a = felt.const 6 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 6 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.div %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_div() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -142,13 +142,13 @@ function.def @fold_div() -> !felt.type<"babybear"> {
 
 // 7 / 2 = 3  (truncating unsigned integer division)
 function.def @fold_uintdiv() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 7 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 7 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.uintdiv %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_uintdiv() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -160,13 +160,13 @@ function.def @fold_uintdiv() -> !felt.type<"babybear"> attributes {function.allo
 
 // 7 / 2 = 3  (both positive, truncating toward zero)
 function.def @fold_sintdiv_pos() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 7 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 7 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.sintdiv %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_sintdiv_pos() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 3 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -174,13 +174,13 @@ function.def @fold_sintdiv_pos() -> !felt.type<"babybear"> attributes {function.
 
 // (p-7) / 2: signed interpretation of (p-7) is -7, -7/2 = -3 → reduce(-3) = p-3 = 2013265918
 function.def @fold_sintdiv_neg() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 2013265914 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 2013265914 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.sintdiv %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_sintdiv_neg() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2013265918 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2013265918 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -192,13 +192,13 @@ function.def @fold_sintdiv_neg() -> !felt.type<"babybear"> attributes {function.
 
 // 7 % 2 = 1
 function.def @fold_umod() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 7 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 7 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.umod %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_umod() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -210,13 +210,13 @@ function.def @fold_umod() -> !felt.type<"babybear"> attributes {function.allow_n
 
 // 7 % 2 = 1  (both positive)
 function.def @fold_smod() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 7 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 7 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.smod %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_smod() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -228,12 +228,12 @@ function.def @fold_smod() -> !felt.type<"babybear"> attributes {function.allow_n
 
 // neg 5 = p - 5 = 2013265916
 function.def @fold_neg() -> !felt.type<"babybear"> {
-  %a = felt.const 5 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
   %c = felt.neg %a : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_neg() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2013265916 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2013265916 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -241,12 +241,12 @@ function.def @fold_neg() -> !felt.type<"babybear"> {
 
 // neg 0 = 0
 function.def @fold_neg_zero() -> !felt.type<"babybear"> {
-  %a = felt.const 0 <"babybear">
+  %a = felt.const 0 : !felt.type<"babybear">
   %c = felt.neg %a : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_neg_zero() -> !felt.type<"babybear"> {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 0 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 0 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -258,12 +258,12 @@ function.def @fold_neg_zero() -> !felt.type<"babybear"> {
 
 // inv(1) = 1
 function.def @fold_inv_one() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 1 <"babybear">
+  %a = felt.const 1 : !felt.type<"babybear">
   %c = felt.inv %a : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_inv_one() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -271,12 +271,12 @@ function.def @fold_inv_one() -> !felt.type<"babybear"> attributes {function.allo
 
 // inv(2) = (p+1)/2 = 1006632961
 function.def @fold_inv_two() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 2 <"babybear">
+  %a = felt.const 2 : !felt.type<"babybear">
   %c = felt.inv %a : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_inv_two() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1006632961 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 1006632961 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -288,13 +288,13 @@ function.def @fold_inv_two() -> !felt.type<"babybear"> attributes {function.allo
 
 // 6 & 3 = 0b110 & 0b011 = 0b010 = 2
 function.def @fold_bit_and() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 6 <"babybear">
-  %b = felt.const 3 <"babybear">
+  %a = felt.const 6 : !felt.type<"babybear">
+  %b = felt.const 3 : !felt.type<"babybear">
   %c = felt.bit_and %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_bit_and() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 2 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -302,13 +302,13 @@ function.def @fold_bit_and() -> !felt.type<"babybear"> attributes {function.allo
 
 // 6 | 3 = 0b110 | 0b011 = 0b111 = 7
 function.def @fold_bit_or() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 6 <"babybear">
-  %b = felt.const 3 <"babybear">
+  %a = felt.const 6 : !felt.type<"babybear">
+  %b = felt.const 3 : !felt.type<"babybear">
   %c = felt.bit_or %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_bit_or() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 7 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 7 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -316,13 +316,13 @@ function.def @fold_bit_or() -> !felt.type<"babybear"> attributes {function.allow
 
 // 6 ^ 3 = 0b110 ^ 0b011 = 0b101 = 5
 function.def @fold_bit_xor() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 6 <"babybear">
-  %b = felt.const 3 <"babybear">
+  %a = felt.const 6 : !felt.type<"babybear">
+  %b = felt.const 3 : !felt.type<"babybear">
   %c = felt.bit_xor %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_bit_xor() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 5 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 5 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -334,13 +334,13 @@ function.def @fold_bit_xor() -> !felt.type<"babybear"> attributes {function.allo
 
 // 1 << 4 = 16
 function.def @fold_shl() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 1 <"babybear">
-  %b = felt.const 4 <"babybear">
+  %a = felt.const 1 : !felt.type<"babybear">
+  %b = felt.const 4 : !felt.type<"babybear">
   %c = felt.shl %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_shl() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 16 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 16 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -348,13 +348,13 @@ function.def @fold_shl() -> !felt.type<"babybear"> attributes {function.allow_no
 
 // 16 >> 2 = 4
 function.def @fold_shr() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 16 <"babybear">
-  %b = felt.const 2 <"babybear">
+  %a = felt.const 16 : !felt.type<"babybear">
+  %b = felt.const 2 : !felt.type<"babybear">
   %c = felt.shr %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_shr() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 4 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 4 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -367,12 +367,12 @@ function.def @fold_shr() -> !felt.type<"babybear"> attributes {function.allow_no
 // bit_not(0): ~0 at bitWidth=31 = 0x7FFFFFFF = 2147483647
 //   reduce(2147483647) = 2147483647 - p = 2147483647 - 2013265921 = 134217726
 function.def @fold_bit_not() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 0 <"babybear">
+  %a = felt.const 0 : !felt.type<"babybear">
   %c = felt.bit_not %a : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
 // CHECK-LABEL: function.def @fold_bit_not() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 134217726 <"babybear">
+// CHECK-NEXT:    %[[C:[0-9a-zA-Z_\.]+]] = felt.const 134217726 : <"babybear">
 // CHECK-NEXT:    function.return %[[C]] : !felt.type<"babybear">
 // CHECK-NEXT:  }
 
@@ -409,8 +409,8 @@ function.def @no_fold_unspecified_neg() -> !felt.type {
 //===------------------------------------------------------------------===//
 
 function.def @no_fold_div_by_zero() -> !felt.type<"babybear"> {
-  %a = felt.const 5 <"babybear">
-  %z = felt.const 0 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %z = felt.const 0 : !felt.type<"babybear">
   %c = felt.div %a, %z : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
@@ -420,8 +420,8 @@ function.def @no_fold_div_by_zero() -> !felt.type<"babybear"> {
 // -----
 
 function.def @no_fold_uintdiv_by_zero() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %a = felt.const 5 <"babybear">
-  %z = felt.const 0 <"babybear">
+  %a = felt.const 5 : !felt.type<"babybear">
+  %z = felt.const 0 : !felt.type<"babybear">
   %c = felt.uintdiv %a, %z : !felt.type<"babybear">, !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }
@@ -431,7 +431,7 @@ function.def @no_fold_uintdiv_by_zero() -> !felt.type<"babybear"> attributes {fu
 // -----
 
 function.def @no_fold_inv_zero() -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
-  %z = felt.const 0 <"babybear">
+  %z = felt.const 0 : !felt.type<"babybear">
   %c = felt.inv %z : !felt.type<"babybear">
   function.return %c : !felt.type<"babybear">
 }

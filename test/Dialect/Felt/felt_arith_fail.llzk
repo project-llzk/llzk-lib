@@ -40,8 +40,9 @@ function.def @f_add(
 // -----
 
 function.def @f_const_bad_field()  {
-  // expected-error@+1 {{custom op 'felt.const' field 'moo' is not defined}}
-  %c = felt.const 42 <"moo">
+  // expected-error@+1 {{field 'moo' is not defined}}
+  %c = felt.const 42 : !felt.type<"moo">
+  // expected-error@+1 {{custom op 'felt.const' failed to parse LLZK_FeltConstAttr parameter 'type' which is to be a `FeltType`}}
   function.return
 }
 
