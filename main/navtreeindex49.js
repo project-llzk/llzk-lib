@@ -1,5 +1,15 @@
 var NAVTREEINDEX49 =
 {
+"maintanence.html#patches":[6,0,1],
+"maintanence.html#preparing-a-new-release":[6,1,0],
+"maintanence.html#release-version":[6,0,0],
+"maintanence.html#releasing-a-new-version":[6,1],
+"maintanence.html#tracking-a-new-version":[6,0],
+"namespaceStep1A__InstantiateStructs.html":[10,0,4],
+"namespaceStep1B__InstantiateFunctions.html":[10,0,5],
+"namespaceStep2__Unroll.html":[10,0,6],
+"namespaceStep3__InstantiateAffineMaps.html":[10,0,7],
+"namespaceStep4__PropagateTypes.html":[10,0,8],
 "namespaceStep5__Cleanup.html":[10,0,9],
 "namespaceclang.html":[10,0,0],
 "namespacellvm.html":[10,0,1],
@@ -239,15 +249,5 @@ var NAVTREEINDEX49 =
 "namespacellzk.html#a9a5d035608b9efe5cccc5330a8f76c4c":[10,0,2,160],
 "namespacellzk.html#a9accc3ce245c0f1d83ec1756bdfddc7f":[10,0,2,373],
 "namespacellzk.html#a9b8e8dff43891ffe5045760d87d2899b":[10,0,2,217],
-"namespacellzk.html#a9bdd2635c665c9a009596b32ceeeafec":[10,0,2,144],
-"namespacellzk.html#a9cce4142a25f1429d4e93b1d4f607a3e":[10,0,2,311],
-"namespacellzk.html#a9d230c67381812388fc7b012cafdd068":[10,0,2,234],
-"namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826":[10,0,2,426],
-"namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1":[10,0,2,163],
-"namespacellzk.html#a9f56287370613ea28dce42066fd4d880":[10,0,2,151],
-"namespacellzk.html#aa0684a91edd323e82c739f7e542c4525":[10,0,2,346],
-"namespacellzk.html#aa087d5d7590ba6ccdab7817737f4f596":[10,0,2,303],
-"namespacellzk.html#aa11f89b7ec8fa837b9c8f0edcb90ac1f":[10,0,2,385],
-"namespacellzk.html#aa2361346b0d5cd8b5817a8c8b65ef23e":[10,0,2,481],
-"namespacellzk.html#aa27b5260e5b373868e1f59a9f0676843":[10,0,2,326]
+"namespacellzk.html#a9bdd2635c665c9a009596b32ceeeafec":[10,0,2,144]
 };

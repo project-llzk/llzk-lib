@@ -128,14 +128,14 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a0cb780de51134c04586e64a27d4e809c" id="r_a0cb780de51134c04586e64a27d4e809c"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0cb780de51134c04586e64a27d4e809c">llzkAttributeIsA_Felt_FeltConstAttr</a> (MlirAttribute)</td></tr>
 <tr class="memdesc:a0cb780de51134c04586e64a27d4e809c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::felt::FeltConstAttr.  <br /></td></tr>
-<tr class="memitem:a430789f935c2b5fb78656e54e21ded6b" id="r_a430789f935c2b5fb78656e54e21ded6b"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a430789f935c2b5fb78656e54e21ded6b">llzkFelt_FeltConstAttrGet</a> (MlirContext ctx, int64_t value, MlirIdentifier fieldName)</td></tr>
-<tr class="memdesc:a430789f935c2b5fb78656e54e21ded6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a ::llzk::felt::FeltConstAttr Attribute with the given parameters.  <br /></td></tr>
+<tr class="memitem:a16f0f38c1a69eb751c7960cd90a383a9" id="r_a16f0f38c1a69eb751c7960cd90a383a9"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a16f0f38c1a69eb751c7960cd90a383a9">llzkFelt_FeltConstAttrGet</a> (MlirContext ctx, int64_t value, MlirType type)</td></tr>
+<tr class="memdesc:a16f0f38c1a69eb751c7960cd90a383a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a ::llzk::felt::FeltConstAttr Attribute with the given parameters.  <br /></td></tr>
 <tr class="memitem:a7e4e201738d8df964f9a1e9bd321bd01" id="r_a7e4e201738d8df964f9a1e9bd321bd01"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7e4e201738d8df964f9a1e9bd321bd01">llzkFelt_FeltConstAttrGetValue</a> (MlirAttribute)</td></tr>
 <tr class="memdesc:a7e4e201738d8df964f9a1e9bd321bd01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'value' parameter from a ::llzk::felt::FeltConstAttr Attribute.  <br /></td></tr>
-<tr class="memitem:a33a9d73fc84478a8e48deb88fb6e491e" id="r_a33a9d73fc84478a8e48deb88fb6e491e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirIdentifier&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a33a9d73fc84478a8e48deb88fb6e491e">llzkFelt_FeltConstAttrGetFieldName</a> (MlirAttribute)</td></tr>
-<tr class="memdesc:a33a9d73fc84478a8e48deb88fb6e491e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'fieldName' parameter from a ::llzk::felt::FeltConstAttr Attribute.  <br /></td></tr>
-<tr class="memitem:aba2708ad9dadcf8bbbccb9342f20ded2" id="r_aba2708ad9dadcf8bbbccb9342f20ded2"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aba2708ad9dadcf8bbbccb9342f20ded2">llzkFelt_FeltConstAttrGetType</a> (MlirAttribute inp)</td></tr>
-<tr class="memdesc:aba2708ad9dadcf8bbbccb9342f20ded2"><td class="mdescLeft">&#160;</td><td class="mdescRight">getType  <br /></td></tr>
+<tr class="memitem:a2af84b50b09356fbaf84c1e46c2688e6" id="r_a2af84b50b09356fbaf84c1e46c2688e6"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2af84b50b09356fbaf84c1e46c2688e6">llzkFelt_FeltConstAttrGetType</a> (MlirAttribute)</td></tr>
+<tr class="memdesc:a2af84b50b09356fbaf84c1e46c2688e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get 'type' parameter from a ::llzk::felt::FeltConstAttr Attribute.  <br /></td></tr>
+<tr class="memitem:a74a7364398dc2d82af02da6cfdd9b831" id="r_a74a7364398dc2d82af02da6cfdd9b831"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirIdentifier&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74a7364398dc2d82af02da6cfdd9b831">llzkFelt_FeltConstAttrGetFieldName</a> (MlirAttribute inp)</td></tr>
+<tr class="memdesc:a74a7364398dc2d82af02da6cfdd9b831"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the field name from the stored FeltType, or a null StringAttr if no type is stored.  <br /></td></tr>
 <tr class="memitem:a69e898e7eee778dbe89eb27d585883df" id="r_a69e898e7eee778dbe89eb27d585883df"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a69e898e7eee778dbe89eb27d585883df">llzkAttributeIsA_Felt_FieldSpecAttr</a> (MlirAttribute)</td></tr>
 <tr class="memdesc:a69e898e7eee778dbe89eb27d585883df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Attribute is a ::llzk::felt::FieldSpecAttr.  <br /></td></tr>
 <tr class="memitem:a26eedc411168e78e52c839e90f375bb8" id="r_a26eedc411168e78e52c839e90f375bb8"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a26eedc411168e78e52c839e90f375bb8">llzkFelt_FieldSpecAttrGet</a> (MlirContext ctx, MlirIdentifier fieldName, int64_t prime)</td></tr>
@@ -188,8 +188,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a430789f935c2b5fb78656e54e21ded6b" name="a430789f935c2b5fb78656e54e21ded6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a430789f935c2b5fb78656e54e21ded6b">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGet()</h2>
+<a id="a16f0f38c1a69eb751c7960cd90a383a9" name="a16f0f38c1a69eb751c7960cd90a383a9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16f0f38c1a69eb751c7960cd90a383a9">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGet()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -207,7 +207,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>fieldName</em></span>&#160;)</td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -218,8 +218,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a33a9d73fc84478a8e48deb88fb6e491e" name="a33a9d73fc84478a8e48deb88fb6e491e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a33a9d73fc84478a8e48deb88fb6e491e">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFieldName()</h2>
+<a id="a74a7364398dc2d82af02da6cfdd9b831" name="a74a7364398dc2d82af02da6cfdd9b831"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74a7364398dc2d82af02da6cfdd9b831">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetFieldName()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -233,14 +233,14 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Get 'fieldName' parameter from a ::llzk::felt::FeltConstAttr Attribute. </p>
+<p>Returns the field name from the stored FeltType, or a null StringAttr if no type is stored. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00036">36</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="aba2708ad9dadcf8bbbccb9342f20ded2" name="aba2708ad9dadcf8bbbccb9342f20ded2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aba2708ad9dadcf8bbbccb9342f20ded2">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetType()</h2>
+<a id="a2af84b50b09356fbaf84c1e46c2688e6" name="a2af84b50b09356fbaf84c1e46c2688e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2af84b50b09356fbaf84c1e46c2688e6">&#9670;&#160;</a></span>llzkFelt_FeltConstAttrGetType()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -254,9 +254,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>getType </p>
+<p>Get 'type' parameter from a ::llzk::felt::FeltConstAttr Attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00036">36</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="Felt_2IR_2Attrs_8capi_8cpp_8inc_source.html">Attrs.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

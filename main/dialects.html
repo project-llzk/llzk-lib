@@ -2173,7 +2173,7 @@ FeltConstAttr</h3>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#felt.const&lt;</div>
 <div class="line">  ::llvm::APInt,   # value</div>
-<div class="line">  ::mlir::StringAttr   # fieldName</div>
+<div class="line">  FeltType   # type</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>A felt attribute represents a finite field element.</p>
 <h4 class="doxsection"><a class="anchor" id="parameters-2"></a>
@@ -2184,7 +2184,7 @@ Parameters:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt">::llvm::APInt</span>  </td><td class="markdownTableBodyNone">The felt constant value  </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyCenter">fieldName  </td><td class="markdownTableBodyCenter"><span class="tt">::mlir::StringAttr</span>  </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyCenter">type  </td><td class="markdownTableBodyCenter"><span class="tt">FeltType</span>  </td><td class="markdownTableBodyNone"></td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="fieldspecattr"></a>
 FieldSpecAttr</h3>

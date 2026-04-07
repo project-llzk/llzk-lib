@@ -1,5 +1,15 @@
 var NAVTREEINDEX48 =
 {
+"dir_bf1c9d5f0a4fbcc96c8bd057e52371fc.html":[13,0,0,0,0,2,12],
+"dir_c2490ce7b8342dca046463bb1b105ace.html":[13,0,0,0,0,2,4,0],
+"dir_c298ce2707b4cc7f338c5c0280243548.html":[13,0,3,1,0],
+"dir_c58a88d8069372690b48eabd02275d52.html":[13,0,0,0,0,2],
+"dir_c9ffcee501422a82310fdc6fcd6a1257.html":[13,0,2,0,2,10],
+"dir_caf5a70baae3de2dafe2e652d1073bbf.html":[13,0,0,0,0,2,5,0],
+"dir_ceba73c11f3dc827ed7118b77e68a37b.html":[13,0,0,0,0,2,11,0],
+"dir_d33650c8adf61c13b39878fa74c71151.html":[13,0,0,0,0,2,10],
+"dir_d44c64559bbebec7f509842c48db8b23.html":[13,0,2],
+"dir_d67cdf70054398cbe8b5ca2496827513.html":[13,0,3,3,10,1],
 "dir_d75590aea9a2d3fadafefc2c2dbecd67.html":[13,0,2,0,2,6,0],
 "dir_d8b7245be51b87a010bd3a4e7efe394a.html":[13,0,2,0,2,0,2],
 "dir_de74d209c7b6d8175fe41883c961ccd5.html":[13,0,3,3,3],
@@ -239,15 +249,5 @@ var NAVTREEINDEX48 =
 "llzk_2Util_2Constants_8h_source.html":[13,0,2,0,5,5],
 "maintanence.html":[6],
 "maintanence.html#create-the-release":[6,1,2],
-"maintanence.html#creating-the-release-candidate":[6,1,1],
-"maintanence.html#patches":[6,0,1],
-"maintanence.html#preparing-a-new-release":[6,1,0],
-"maintanence.html#release-version":[6,0,0],
-"maintanence.html#releasing-a-new-version":[6,1],
-"maintanence.html#tracking-a-new-version":[6,0],
-"namespaceStep1A__InstantiateStructs.html":[10,0,4],
-"namespaceStep1B__InstantiateFunctions.html":[10,0,5],
-"namespaceStep2__Unroll.html":[10,0,6],
-"namespaceStep3__InstantiateAffineMaps.html":[10,0,7],
-"namespaceStep4__PropagateTypes.html":[10,0,8]
+"maintanence.html#creating-the-release-candidate":[6,1,1]
 };
