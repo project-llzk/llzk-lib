@@ -1,0 +1,16 @@
+added:
+  - CAPI:
+    - "`llzkFelt_FeltTypeGetFromRef`"
+    - "`llzkFelt_FeltConstAttrGetInField` (use in place of old `llzkFelt_FeltConstAttrGet`)"
+    - "`llzkFelt_FeltConstAttrGetWithBitsInField` (use in place of old `llzkFelt_FeltConstAttrGetWithBits`)"
+    - "`llzkFelt_FeltConstAttrGetFromStringInField` (use in place of old `llzkFelt_FeltConstAttrGetFromString`)"
+    - "`llzkFelt_FeltConstAttrGetFromPartsInField` (use in place of old `llzkFelt_FeltConstAttrGetFromParts`)"
+
+changed:
+  - FeltConstAttr now directly stores the FeltType rather than field name as a StringAttr
+  - "FeltConstAttr syntax changed from `felt.const N <FIELD_NAME>` to `felt.const N : !felt.type<FIELD_NAME>`"
+  - CAPI:
+    - "changed last parameter of `llzkFelt_FeltConstAttrGet` from `MlirIdentifier` to `MlirType`"
+    - "changed last parameter of `llzkFelt_FeltConstAttrGetWithBits` from `MlirIdentifier` to `MlirType`"
+    - "changed last parameter of `llzkFelt_FeltConstAttrGetFromString` from `MlirIdentifier` to `MlirType`"
+    - "changed last parameter of `llzkFelt_FeltConstAttrGetFromParts` from `MlirIdentifier` to `MlirType`"

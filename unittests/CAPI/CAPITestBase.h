@@ -13,6 +13,7 @@
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
@@ -76,8 +77,20 @@ public:
 
   /// Get FeltType, using C++ API to avoid indirectly testing other LLZK C API functions
   /// within the tests.
-  static mlir::Type cppGetFeltType(MlirOpBuilder builder) {
+  static llzk::felt::FeltType cppGetFeltType(MlirOpBuilder builder) {
     return unwrap(builder)->getType<llzk::felt::FeltType>();
+  }
+
+  /// Get FeltType for the specified field, using C++ API to avoid indirectly testing other
+  /// LLZK C API functions within the tests.
+  static llzk::felt::FeltType cppGetFeltType(MlirOpBuilder builder, mlir::StringRef fieldName) {
+    return unwrap(builder)->getType<llzk::felt::FeltType>(fieldName);
+  }
+
+  /// Get FeltType for the specified field, using C++ API to avoid indirectly testing other
+  /// LLZK C API functions within the tests.
+  inline llzk::felt::FeltType cppGetFeltType(mlir::StringRef fieldName) const {
+    return llzk::felt::FeltType::get(unwrap(context), fieldName);
   }
 
   /// Build a boolean constant value, using C++ API to avoid indirectly testing other

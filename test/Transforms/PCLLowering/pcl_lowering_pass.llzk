@@ -25,17 +25,17 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@Add>
     }
     function.def @constrain(%arg0: !struct.type<@Add>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@add_operation_29] : <@Add>, !felt.type<"koalabear">
       %1 = struct.readm %arg0[@add_operation_30] : <@Add>, !felt.type<"koalabear">
       %2 = struct.readm %arg0[@add_operation_31] : <@Add>, !felt.type<"koalabear">
@@ -495,18 +495,18 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@Subw>
     }
     function.def @constrain(%arg0: !struct.type<@Subw>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@subw_operation_29] : <@Subw>, !felt.type<"koalabear">
       %1 = struct.readm %arg0[@subw_operation_30] : <@Subw>, !felt.type<"koalabear">
       %2 = struct.readm %arg0[@subw_operation_31] : <@Subw>, !felt.type<"koalabear">
@@ -1158,22 +1158,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@DIV>
     }
     function.def @constrain(%arg0: !struct.type<@DIV>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@DIV>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_1 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -3942,22 +3942,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@DIVU>
     }
     function.def @constrain(%arg0: !struct.type<@DIVU>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@DIVU>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_1 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -6726,22 +6726,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@REM>
     }
     function.def @constrain(%arg0: !struct.type<@REM>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@REM>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_1 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -9510,22 +9510,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@REMU>
     }
     function.def @constrain(%arg0: !struct.type<@REMU>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@REMU>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_1 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -12294,22 +12294,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@DIVW>
     }
     function.def @constrain(%arg0: !struct.type<@DIVW>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@DIVW>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -15078,22 +15078,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@REMW>
     }
     function.def @constrain(%arg0: !struct.type<@REMW>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@REMW>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -17862,22 +17862,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@DIVUW>
     }
     function.def @constrain(%arg0: !struct.type<@DIVUW>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@DIVUW>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
@@ -20646,22 +20646,22 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@REMUW>
     }
     function.def @constrain(%arg0: !struct.type<@REMUW>, %arg1: !felt.type<"koalabear">, %arg2: !felt.type<"koalabear">, %arg3: !felt.type<"koalabear">, %arg4: !felt.type<"koalabear">, %arg5: !felt.type<"koalabear">, %arg6: !felt.type<"koalabear">, %arg7: !felt.type<"koalabear">, %arg8: !felt.type<"koalabear">, %arg9: !felt.type<"koalabear">, %arg10: !felt.type<"koalabear">, %arg11: !felt.type<"koalabear">, %arg12: !felt.type<"koalabear">, %arg13: !felt.type<"koalabear">, %arg14: !felt.type<"koalabear">, %arg15: !felt.type<"koalabear">, %arg16: !felt.type<"koalabear">, %arg17: !felt.type<"koalabear">, %arg18: !felt.type<"koalabear">, %arg19: !felt.type<"koalabear">, %arg20: !felt.type<"koalabear">, %arg21: !felt.type<"koalabear">, %arg22: !felt.type<"koalabear">, %arg23: !felt.type<"koalabear">, %arg24: !felt.type<"koalabear">, %arg25: !felt.type<"koalabear">, %arg26: !felt.type<"koalabear">, %arg27: !felt.type<"koalabear">, %arg28: !felt.type<"koalabear">) attributes {function.allow_constraint} {
-      %felt_const_3 = felt.const 3 <"koalabear">
-      %felt_const_8192 = felt.const 8192 <"koalabear">
-      %felt_const_1864368129 = felt.const 1864368129 <"koalabear">
-      %felt_const_65537 = felt.const 65537 <"koalabear">
-      %felt_const_4 = felt.const 4 <"koalabear">
-      %felt_const_2130673921 = felt.const 2130673921 <"koalabear">
-      %felt_const_32768 = felt.const 32768 <"koalabear">
-      %felt_const_255 = felt.const 255 <"koalabear">
-      %felt_const_65536 = felt.const 65536 <"koalabear">
-      %felt_const_2 = felt.const 2 <"koalabear">
-      %felt_const_128 = felt.const 128 <"koalabear">
-      %felt_const_256 = felt.const 256 <"koalabear">
-      %felt_const_2122383361 = felt.const 2122383361 <"koalabear">
-      %felt_const_65535 = felt.const 65535 <"koalabear">
-      %felt_const_1 = felt.const 1 <"koalabear">
-      %felt_const_0 = felt.const 0 <"koalabear">
+      %felt_const_3 = felt.const 3 : !felt.type<"koalabear">
+      %felt_const_8192 = felt.const 8192 : !felt.type<"koalabear">
+      %felt_const_1864368129 = felt.const 1864368129 : !felt.type<"koalabear">
+      %felt_const_65537 = felt.const 65537 : !felt.type<"koalabear">
+      %felt_const_4 = felt.const 4 : !felt.type<"koalabear">
+      %felt_const_2130673921 = felt.const 2130673921 : !felt.type<"koalabear">
+      %felt_const_32768 = felt.const 32768 : !felt.type<"koalabear">
+      %felt_const_255 = felt.const 255 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %felt_const_2 = felt.const 2 : !felt.type<"koalabear">
+      %felt_const_128 = felt.const 128 : !felt.type<"koalabear">
+      %felt_const_256 = felt.const 256 : !felt.type<"koalabear">
+      %felt_const_2122383361 = felt.const 2122383361 : !felt.type<"koalabear">
+      %felt_const_65535 = felt.const 65535 : !felt.type<"koalabear">
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
+      %felt_const_0 = felt.const 0 : !felt.type<"koalabear">
       %0 = struct.readm %arg0[@is_real_not_word_240] : <@REMUW>, !felt.type<"koalabear">
       %1 = felt.sub %0, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
       constrain.eq %1, %felt_const_0 : !felt.type<"koalabear">, !felt.type<"koalabear">
