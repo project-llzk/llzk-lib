@@ -11,10 +11,10 @@
 
 #include "llzk-c/InitDialects.h"
 
+#include <mlir-c/IR.h>
+
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Wrap.h>
-
-#include <mlir-c/IR.h>
 
 void llzkRegisterAllDialects(MlirDialectRegistry registry) {
   llzk::registerAllDialects(*unwrap(registry));

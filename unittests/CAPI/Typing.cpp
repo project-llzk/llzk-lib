@@ -9,11 +9,11 @@
 
 #include "llzk-c/Typing.h"
 
+#include "CAPITestBase.h"
+
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
-
-#include "CAPITestBase.h"
 
 static bool test_callback1(MlirType, MlirType, void *) { return true; }
 

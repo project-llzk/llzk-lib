@@ -41,14 +41,14 @@
 
 #pragma once
 
+#include "CommonCAPIGen.h"
+
 #include <mlir/TableGen/AttrOrTypeDef.h>
 #include <mlir/TableGen/Dialect.h>
 
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/raw_ostream.h>
-
-#include "CommonCAPIGen.h"
 
 /// @brief Generate dummy parameters for Get builder (used by both Attr and Type)
 /// @param def The attribute or type definition

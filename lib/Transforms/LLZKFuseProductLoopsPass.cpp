@@ -12,10 +12,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Transforms/LLZKFuseProductLoopsPass.h"
+
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKFuseProductLoopsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/AlignmentHelper.h"
 #include "llzk/Util/Constants.h"

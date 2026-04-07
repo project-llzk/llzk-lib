@@ -23,25 +23,33 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : !struct.type<@Component01<[affine_map<(i)->(i)>]>>
-  struct.def @Component01<[@N]> {
-    function.def @compute() -> !struct.type<@Component01<[@N]>> {
-      %self = struct.new : !struct.type<@Component01<[@N]>>
-      function.return %self : !struct.type<@Component01<[@N]>>
+  global.def @g : !struct.type<@TComponent01::@Component01<[affine_map<(i)->(i)>]>>
+  poly.template @TComponent01 {
+    poly.param @N
+
+    struct.def @Component01 {
+      function.def @compute() -> !struct.type<@TComponent01::@Component01<[@N]>> {
+        %self = struct.new : !struct.type<@TComponent01::@Component01<[@N]>>
+        function.return %self : !struct.type<@TComponent01::@Component01<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent01::@Component01<[@N]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component01<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
-  global.def @g : !struct.type<@Component01<[@any_symbol_here_is_illegal]>>
-  struct.def @Component01<[@N]> {
-    function.def @compute() -> !struct.type<@Component01<[@N]>> {
-      %self = struct.new : !struct.type<@Component01<[@N]>>
-      function.return %self : !struct.type<@Component01<[@N]>>
+  global.def @g : !struct.type<@TComponent01::@Component01<[@any_symbol_here_is_illegal]>>
+  poly.template @TComponent01 {
+    poly.param @N
+
+    struct.def @Component01 {
+      function.def @compute() -> !struct.type<@TComponent01::@Component01<[@N]>> {
+        %self = struct.new : !struct.type<@TComponent01::@Component01<[@N]>>
+        function.return %self : !struct.type<@TComponent01::@Component01<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent01::@Component01<[@N]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component01<[@N]>>) { function.return }
   }
 }
 // -----
@@ -244,13 +252,17 @@ module attributes {llzk.lang} {
 // TEST: Struct parameter conflicts with a global name
 module attributes {llzk.lang} {
   global.def const @N : index = 3 // expected-note {{symbol already defined here}}
-  // expected-error@+1 {{'struct.def' op parameter name "@N" conflicts with an existing symbol}}
-  struct.def @Component08<[@N]> {
-    function.def @compute() -> !struct.type<@Component08<[@N]>> {
-      %self = struct.new : !struct.type<@Component08<[@N]>>
-      function.return %self : !struct.type<@Component08<[@N]>>
+  poly.template @TComponent08 {
+    // expected-error@+1 {{'poly.param' op name conflicts with an existing symbol}}
+    poly.param @N
+
+    struct.def @Component08 {
+      function.def @compute() -> !struct.type<@TComponent08::@Component08<[@N]>> {
+        %self = struct.new : !struct.type<@TComponent08::@Component08<[@N]>>
+        function.return %self : !struct.type<@TComponent08::@Component08<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent08::@Component08<[@N]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component08<[@N]>>) { function.return }
   }
 }
 // -----

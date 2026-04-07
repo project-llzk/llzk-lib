@@ -9,6 +9,7 @@
 
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
+#include "tools/config.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/IR/MLIRContext.h>
@@ -18,8 +19,6 @@
 
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
-
-#include "tools/config.h"
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());

@@ -7,6 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "zklean/Conversions/Passes.h"
+#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
+
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -28,11 +33,6 @@
 #include <llvm/ADT/StringSet.h>
 
 #include <optional>
-
-#include "zklean/Conversions/Passes.h"
-#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 
 // ZKLean -> LLZK conversion overview:
 // - `createConvertZKLeanToLLZKPass` constructs `ConvertZKLeanToLLZKPass`.
@@ -119,9 +119,8 @@ static void emitStructDefsFromZKLean(ModuleOp source, ZKLeanToLLZKState &state) 
     }
     OpBuilder::InsertionGuard guard(state.builder);
     state.builder.setInsertionPointToEnd(state.dest.getBody());
-    auto structDef = state.builder.create<llzk::component::StructDefOp>(
-        def.getLoc(), def.getSymNameAttr(), ArrayAttr()
-    );
+    auto structDef =
+        state.builder.create<llzk::component::StructDefOp>(def.getLoc(), def.getSymNameAttr());
     auto &body = structDef.getBodyRegion().emplaceBlock();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::zkleanlean::MemberDefOp>()) {

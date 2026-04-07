@@ -8,18 +8,19 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/CAPI/Support.h"
+
+#include "llzk-c/Support.h"
+
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolLookup.h"
 
-#include "llzk-c/Support.h"
+#include <mlir-c/BuiltinAttributes.h>
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/Iterators.h>
-
-#include <mlir-c/BuiltinAttributes.h>
 
 #include <cstdint>
 #include <cstring>

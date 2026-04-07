@@ -19,6 +19,7 @@ def BoolDialect : Dialect {
   let cppNamespace = "::llzk::boolean";
 
   let useDefaultAttributePrinterParser = true;
+  let hasConstantMaterializer = 1;
 }
 
 #endif // LLZK_BOOLEAN_DIALECT

@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "OpTestBase.h"
+
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
-
-#include "OpTestBase.h"
 
 using namespace mlir;
 using namespace llzk;
@@ -156,20 +156,56 @@ TEST_F(OpTests, testCallNoAffine_InvalidCalleeName) {
   );
 }
 
+TEST_F(OpTests, testCallNoAffine_InvalidTemplateParam) {
+  auto [modBldr, tmplBldr] = newTemplateFunctionsExample(1);
+
+  auto funcA = tmplBldr->getFreeFunc(funcNameA);
+  ASSERT_TRUE(succeeded(funcA));
+  auto funcB = tmplBldr->getFreeFunc(funcNameB);
+  ASSERT_TRUE(succeeded(funcB));
+
+  // create an 256-bit IntegerAttr with larger value than IndexType can hold
+  APInt bigValue = APInt::getMaxValue(256);
+  IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 256), bigValue);
+
+  OpBuilder bldr(funcA->getBody());
+  CallOp op = bldr.create<CallOp>(
+      loc, TypeRange {bldr.getIndexType()}, funcB->getFullyQualifiedName(), ValueRange {},
+      ArrayRef<Attribute> {a}
+  );
+  // module attributes {llzk.lang} {
+  //   poly.template @ExampleTemplate {
+  //     poly.param @T0
+  //     function.def @FuncA() -> index {
+  //       %0 = call @FuncB<[-1 : i256]>() : () -> index
+  //     }
+  //     function.def @FuncB() -> index {
+  //     }
+  //   }
+  // }
+  EXPECT_DEATH(
+      {
+        verifyOrDie(mod.get());
+        verifyOrDie(op, true);
+      },
+      "'function.call' op value is too large for `index` type: -1"
+  );
+}
+
 //===------------------------------------------------------------------===//
 // CallOp::build(..., TypeRange, SymbolRefAttr, ArrayRef<ValueRange>,
 //                    ArrayRef<int32_t>, ValueRange = {})
 //===------------------------------------------------------------------===//
 
 TEST_F(OpTests, testCallWithAffine_Good) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -189,14 +225,14 @@ TEST_F(OpTests, testCallWithAffine_Good) {
 }
 
 TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structA = llzkBldr.getStruct(structNameA);
+  auto structA = tmplBldr->getStruct(structNameA);
   ASSERT_TRUE(succeeded(structA));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -217,21 +253,21 @@ TEST_F(OpTests, testCallWithAffine_WrongStructNameInResultType) {
         verifyOrDie(op, true);
       },
       "error: 'function.call' op result type mismatch: expected type "
-      "'!struct.type<@StructB<\\[@T0, @T1\\]>>', but found "
-      "'!struct.type<@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, affine_map<\\(d0\\) -> "
-      "\\(d0\\)>\\]>>' for result number 0"
+      "'!struct.type<@ExampleTemplate::@StructB<\\[@T0, @T1\\]>>', but found "
+      "'!struct.type<@ExampleTemplate::@StructA<\\[affine_map<\\(d0\\) -> \\(d0\\)>, "
+      "affine_map<\\(d0\\) -> \\(d0\\)>\\]>>' for result number 0"
   );
 }
 
 TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -256,14 +292,14 @@ TEST_F(OpTests, testCallWithAffine_TooFewMapsInResultType) {
 }
 
 TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -288,14 +324,14 @@ TEST_F(OpTests, testCallWithAffine_TooManyMapsInResultType) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -320,14 +356,14 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountLessThanDimSizeCount) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -352,14 +388,14 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCountMoreThanDimSizeCount) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -383,14 +419,14 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0) {
 }
 
 TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -415,14 +451,14 @@ TEST_F(OpTests, testCallWithAffine_DimSizeCount0) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -446,14 +482,14 @@ TEST_F(OpTests, testCallWithAffine_OpGroupCount0DimSizeCount0) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -478,14 +514,14 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeLessThanDimSize) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());
@@ -511,14 +547,14 @@ TEST_F(OpTests, testCallWithAffine_OpGroupSizeMoreThanDimSize) {
 }
 
 TEST_F(OpTests, testCallWithAffine_OpGroupCountAndDimSizeCountMoreThanType) {
-  ModuleBuilder llzkBldr = newStructExample(2);
+  auto [modBldr, tmplBldr] = newTemplateStructExample(2);
 
-  auto funcComputeA = llzkBldr.getComputeFn(structNameA);
+  auto funcComputeA = tmplBldr->getComputeFn(structNameA);
   ASSERT_TRUE(succeeded(funcComputeA));
-  auto funcComputeB = llzkBldr.getComputeFn(structNameB);
+  auto funcComputeB = tmplBldr->getComputeFn(structNameB);
   ASSERT_TRUE(succeeded(funcComputeB));
 
-  auto structB = llzkBldr.getStruct(structNameB);
+  auto structB = tmplBldr->getStruct(structNameB);
   ASSERT_TRUE(succeeded(structB));
 
   OpBuilder bldr(funcComputeA->getBody());

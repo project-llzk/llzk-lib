@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 /* Tests for the ModuleBuilder */
 
@@ -37,7 +37,7 @@ protected:
   }
 };
 
-TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getRootModule(), nullptr); }
+TEST_F(ModuleBuilderTests, testModuleOpCreation) { ASSERT_NE(builder.getModule(), nullptr); }
 
 TEST_F(ModuleBuilderTests, testStructDefInsertion) {
   builder.insertEmptyStruct(structAName);
@@ -56,43 +56,6 @@ TEST_F(ModuleBuilderTests, testFnInsertion) {
   ASSERT_EQ(constrainFn->getBody().getArguments().size(), 1);
 }
 
-TEST_F(ModuleBuilderTests, testReachabilitySimple) {
-  builder.insertComputeOnlyStruct(structAName)
-      .insertComputeOnlyStruct(structBName)
-      .insertComputeCall(structAName, structBName);
-
-  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
-  ASSERT_FALSE(builder.computeReachable(structBName, structAName));
-}
-
-TEST_F(ModuleBuilderTests, testReachabilityTransitive) {
-  builder.insertComputeOnlyStruct(structAName)
-      .insertComputeOnlyStruct(structBName)
-      .insertComputeOnlyStruct(structCName)
-      .insertComputeCall(structAName, structBName)
-      .insertComputeCall(structBName, structCName);
-
-  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
-  ASSERT_TRUE(builder.computeReachable(structBName, structCName));
-  ASSERT_TRUE(builder.computeReachable(structAName, structCName));
-  ASSERT_FALSE(builder.computeReachable(structBName, structAName));
-  ASSERT_FALSE(builder.computeReachable(structCName, structAName));
-  ASSERT_TRUE(builder.computeReachable(structAName, structAName));
-}
-
-TEST_F(ModuleBuilderTests, testReachabilityComputeAndConstrain) {
-  builder.insertFullStruct(structAName)
-      .insertComputeOnlyStruct(structBName)
-      .insertConstrainOnlyStruct(structCName)
-      .insertComputeCall(structAName, structBName)
-      .insertConstrainCall(structAName, structCName);
-
-  ASSERT_TRUE(builder.computeReachable(structAName, structBName));
-  ASSERT_TRUE(builder.constrainReachable(structAName, structCName));
-  ASSERT_FALSE(builder.constrainReachable(structAName, structBName));
-  ASSERT_FALSE(builder.computeReachable(structAName, structCName));
-}
-
 TEST_F(ModuleBuilderTests, testConstruction) {
   builder.insertConstrainOnlyStruct(structAName)
       .insertConstrainOnlyStruct(structBName)
@@ -100,7 +63,7 @@ TEST_F(ModuleBuilderTests, testConstruction) {
       .insertConstrainCall(structAName, structBName);
 
   size_t numStructs = 0;
-  for (auto s : builder.getRootModule().getOps<llzk::component::StructDefOp>()) {
+  for (auto s : builder.getModule().getOps<llzk::component::StructDefOp>()) {
     numStructs++;
     size_t numFn = 0;
     for (auto fn : s.getOps<llzk::function::FuncDefOp>()) {

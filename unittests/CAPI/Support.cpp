@@ -9,6 +9,8 @@
 
 #include "llzk-c/Support.h"
 
+#include "CAPITestBase.h"
+
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/IR.h>
 
@@ -16,8 +18,6 @@
 
 #include <cstdint>
 #include <gtest/gtest.h>
-
-#include "CAPITestBase.h"
 
 TEST_F(CAPITest, MlirOperationReplaceUsesOfWith) {
   // Create two constant operations that produce values

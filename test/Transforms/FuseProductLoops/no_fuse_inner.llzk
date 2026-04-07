@@ -2,57 +2,61 @@
 // REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
-    struct.def @A<[@N]> {
-        struct.member @arr : !array.type<@N, @N x !felt.type>
+    poly.template @TA {
+      poly.param @N
 
-        function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@A<[@N]>> {
-            %self = struct.new : <@A<[@N]>>
+      struct.def @A {
+          struct.member @arr : !array.type<@N, @N x !felt.type>
 
-            %c0 = arith.constant 0 : index
-            %c1 = arith.constant 1 : index
-            %N = poly.read_const @N : index
+          function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N]>> {
+              %self = struct.new : <@TA::@A<[@N]>>
 
-            %arr = array.new : !array.type<@N, @N x !felt.type>
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
+              %N = poly.read_const @N : index
 
-            scf.for %i = %c0 to %N step %c1 {
-                scf.for %j = %c0 to %N step %c1 {
-                    %k = arith.addi %i, %j : index
-                    %elem = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
-                    array.write %arr[%i, %j] = %elem : !array.type<@N, @N x !felt.type>, !felt.type
-                }
-            }
+              %arr = array.new : !array.type<@N, @N x !felt.type>
 
-            struct.writem %self[@arr] = %arr : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
-            function.return %self : !struct.type<@A<[@N]>>
-        }
+              scf.for %i = %c0 to %N step %c1 {
+                  scf.for %j = %c0 to %N step %c1 {
+                      %k = arith.addi %i, %j : index
+                      %elem = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
+                      array.write %arr[%i, %j] = %elem : !array.type<@N, @N x !felt.type>, !felt.type
+                  }
+              }
 
-        function.def @constrain(%self: !struct.type<@A<[@N]>>, %inp: !array.type<@N x !felt.type>) {
-            %c0 = arith.constant 0 : index
-            %c1 = arith.constant 1 : index
-            %c2 = arith.constant 2 : index
-            %N = poly.read_const @N : index
+              struct.writem %self[@arr] = %arr : !struct.type<@TA::@A<[@N]>>, !array.type<@N, @N x !felt.type>
+              function.return %self : !struct.type<@TA::@A<[@N]>>
+          }
 
-            %arr = struct.readm %self[@arr] : !struct.type<@A<[@N]>>, !array.type<@N, @N x !felt.type>
+          function.def @constrain(%self: !struct.type<@TA::@A<[@N]>>, %inp: !array.type<@N x !felt.type>) {
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
+              %c2 = arith.constant 2 : index
+              %N = poly.read_const @N : index
 
-            scf.for %i = %c0 to %N step %c2 {
-                scf.for %j = %c0 to %N step %c1 {
-                    %k = arith.addi %i, %j : index
-                    %elem1 = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
-                    %elem2 = array.read %arr[%i, %j] : !array.type<@N, @N x !felt.type>, !felt.type
-                    constrain.eq %elem1, %elem2 : !felt.type
-                }
-            }
+              %arr = struct.readm %self[@arr] : !struct.type<@TA::@A<[@N]>>, !array.type<@N, @N x !felt.type>
 
-            function.return
-        }
+              scf.for %i = %c0 to %N step %c2 {
+                  scf.for %j = %c0 to %N step %c1 {
+                      %k = arith.addi %i, %j : index
+                      %elem1 = array.read %inp[%k] : !array.type<@N x !felt.type>, !felt.type
+                      %elem2 = array.read %arr[%i, %j] : !array.type<@N, @N x !felt.type>, !felt.type
+                      constrain.eq %elem1, %elem2 : !felt.type
+                  }
+              }
 
+              function.return
+          }
+
+      }
     }
 }
 
 // CHECK:  scf.for
-// CHECK-SAME: [[VAL_0:[0-9a-zA-Z_\.]+]] = 
-// CHECK-SAME: %[[VAL_1:[0-9a-zA-Z_\.]+]] to 
-// CHECK-SAME: %[[VAL_2:[0-9a-zA-Z_\.]+]] step 
+// CHECK-SAME: [[VAL_0:[0-9a-zA-Z_\.]+]] =
+// CHECK-SAME: %[[VAL_1:[0-9a-zA-Z_\.]+]] to
+// CHECK-SAME: %[[VAL_2:[0-9a-zA-Z_\.]+]] step
 // CHECK-SAME: %[[VAL_3:[0-9a-zA-Z_\.]+]] {
 // CHECK-NEXT:    scf.for %[[VAL_4:[0-9a-zA-Z_\.]+]] = %[[VAL_1]] to %[[VAL_2]] step %[[VAL_3]] {
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_4]] {product_source = "compute"} : index
@@ -60,10 +64,10 @@ module attributes {llzk.lang = "llzk"} {
 // CHECK-NEXT:      array.write %[[VAL_8:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]], %[[VAL_4]]] = %[[VAL_6]] : <@N,@N x !felt.type>, !felt.type {product_source = "compute"}
 // CHECK-NEXT:    } {product_source = "compute"}
 // CHECK-NEXT:  } {product_source = "compute"}
-// CHECK:  scf.for 
-// CHECK-SAME: %[[VAL_9:[0-9a-zA-Z_\.]+]] = 
-// CHECK-SAME: %[[VAL_10:[0-9a-zA-Z_\.]+]] to 
-// CHECK-SAME: %[[VAL_11:[0-9a-zA-Z_\.]+]] step 
+// CHECK:  scf.for
+// CHECK-SAME: %[[VAL_9:[0-9a-zA-Z_\.]+]] =
+// CHECK-SAME: %[[VAL_10:[0-9a-zA-Z_\.]+]] to
+// CHECK-SAME: %[[VAL_11:[0-9a-zA-Z_\.]+]] step
 // CHECK-SAME: %[[VAL_12:[0-9a-zA-Z_\.]+]] {
 // CHECK-NEXT:    scf.for %[[VAL_13:[0-9a-zA-Z_\.]+]] = %[[VAL_10]] to %[[VAL_11]] step %[[VAL_14:[0-9a-zA-Z_\.]+]] {
 // CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_9]], %[[VAL_13]] {product_source = "constrain"} : index

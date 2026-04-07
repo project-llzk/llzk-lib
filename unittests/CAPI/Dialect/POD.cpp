@@ -8,12 +8,20 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk-c/Dialect/POD.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk-c/Support.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 
-#include "llzk-c/Support.h"
+#include <mlir-c/BuiltinAttributes.h>
+#include <mlir-c/BuiltinTypes.h>
+#include <mlir-c/IR.h>
+#include <mlir-c/Support.h>
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
@@ -21,19 +29,12 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinAttributes.h>
 
-#include <mlir-c/BuiltinAttributes.h>
-#include <mlir-c/BuiltinTypes.h>
-#include <mlir-c/IR.h>
-#include <mlir-c/Support.h>
-
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/StringRef.h>
 
 #include <gtest/gtest.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/POD/IR/Attrs.capi.test.cpp.inc"

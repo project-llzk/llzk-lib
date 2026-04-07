@@ -1,0 +1,8 @@
+added:
+  - "`CallOp::unifyTypeSignature()` method"
+  - "`podTypesUnify()` and `functionTypesUnify()` functions in `TypeHelper`"
+
+changed:
+  - "Rename `CallOp::getCalleeType()` method to `CallOp::getTypeSignature()` to clarify it's not computed from the callee"
+  - CAPI:
+    - "Rename `llzkFunction_CallOpGetCalleeType` to `llzkFunction_CallOpGetTypeSignature`"

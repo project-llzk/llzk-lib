@@ -7,15 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Compare.h"
-
 #include "llzk-c/Dialect/Function.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk/Util/Compare.h"
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Function/IR/Attrs.capi.test.cpp.inc"
@@ -300,7 +300,7 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
       return llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
     }
     void doOtherChecks(MlirOperation op) override {
-      auto out_type = llzkFunction_CallOpGetCalleeType(op);
+      auto out_type = llzkFunction_CallOpGetTypeSignature(op);
       EXPECT_TRUE(mlirTypeEqual(this->func_type, out_type));
     }
   } helper;
@@ -375,7 +375,8 @@ std::unique_ptr<FuncDefOpBuildFuncHelper> FuncDefOpBuildFuncHelper::get() {
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       {
         // Use ModuleOp as parent to avoid the following:
-        // error: 'function.def' op expects parent op to be one of 'builtin.module, struct.def'
+        // error: 'function.def' op expects parent op to be one of 'builtin.module, struct.def,
+        // poly.template'
         this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
         // setup function type
         fTy = mlir::FunctionType::get(unwrap(ctx), mlir::TypeRange {}, mlir::TypeRange {});

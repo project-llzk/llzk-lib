@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 // Adapted from mlir/include/mlir/Dialect/Func/IR/FuncOps.td
@@ -40,9 +41,9 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 
 def LLZK_StructDefOp
     : StructDialectOp<
-          "def", [HasParent<"::mlir::ModuleOp">, Symbol, LLZKSymbolTable,
-                  IsolatedFromAbove, SetFuncAllowAttrs,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+          "def", [ParentOneOf<["::mlir::ModuleOp",
+                               "::llzk::polymorphic::TemplateOp"]>,
+                  Symbol, LLZKSymbolTable, IsolatedFromAbove, SetFuncAllowAttrs,
                   NoRegionArguments]#GraphRegionNoTerminator.traits> {
   let summary = "circuit component definition";
   let description = [{
@@ -76,43 +77,45 @@ def LLZK_StructDefOp
       LLZK IR program expresses the main entry point of the circuit as a concrete instantiation
       of a specific struct. For example, `llzk.main = !struct.type<@Top<[52,12]>>` or
       `llzk.main = !struct.type<@Main<[i1, !felt.type, 256]>>`.
-      This component has additional restrictions:
+      This struct has additional restrictions:
       1. The parameter types of its functions (besides the required "self" parameter) can
          only be `!felt.type` or `!array.type<.. x !felt.type>`.
-      2. The members marked as public (i.e., with the `{llzk.pub}` attribute) represent
-         the public outputs of the overall circuit.
+      2. All inputs to the main struct are signals, even though they are not marked with
+         the `{signal}` attribute (as the `{signal}` attribute is not used on function arguments).
+         Input signals may be public (given the `{llzk.pub}` attribute) or private (by default).
+      3. All public members of the main struct are also signals (representing public output signals),
+         and can also only be `!felt.type` or `!array.type<.. x !felt.type>`.
 
       Example of a `Main` component:
 
       ```llzk
-      struct.def @Main {
-        member @out : !felt.type {llzk.pub} // public output
-        member @intermediate : !felt.type
-        function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
-          // ...
-        }
-        function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
-          // ...
+      module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+        struct.def @Main {
+          member @out : !felt.type {llzk.pub, signal} // public output signal
+          member @out2 : !felt.type {llzk.pub} // also a public output signal, implicitly
+          member @intermediate : !struct.type<@OtherStruct> // an intermediate value, not a signal, can be any LLZK type
+          // %p is a private input signal
+          function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
+            // ...
+          }
+          // %self is not a signal, but again, %p is a private input signal
+          function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
+            // ...
+          }
         }
       }
       ```
   }];
 
-  // Note: `$const_params` contains symbol definitions that do not use the
-  // standard SymbolTable mechanism. Instead hasParamNamed() can be used to
-  // check if a certain FlatSymbolRefAttr is a parameter in the function.
-  let arguments = (ins SymbolNameAttr:$sym_name,
-      OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
+  let arguments = (ins SymbolNameAttr:$sym_name);
 
   let regions = (region SizedRegion<1>:$bodyRegion);
 
-  let assemblyFormat = [{
-    $sym_name (`<` $const_params^ `>`)? $bodyRegion attr-dict
-  }];
+  let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
-    /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
+    /// the type are not given, the StructType will use `this->getParams()`.
     StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {});
     inline StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {}) const {
       return const_cast<StructDefOp*>(this)->getType(constParams);
@@ -151,30 +154,30 @@ def LLZK_StructDefOp
     /// Returns `true` iff this structure defines compute and constrain functions.
     bool hasComputeConstrain() { return lookupSymbol(FUNC_NAME_COMPUTE) != nullptr && lookupSymbol(FUNC_NAME_CONSTRAIN) != nullptr; }
 
-    /// Generate header string, in the same format as the assemblyFormat
+    /// Generate header string, in the same format as the assemblyFormat.
     ::std::string getHeaderString();
 
-    /// Return `false` iff `getConstParamsAttr()` returns `nullptr`
-    bool hasConstParamsAttr() { return getProperties().const_params != nullptr; };
+    /// Return `true` iff the `struct.def` appears within a `poly.template` that defines
+    /// constant parameters and/or expressions.
+    bool hasTemplateSymbolBindings();
 
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::StringRef find);
+    /// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty.
+    /// The names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type
+    /// is used in the return type since that's usually what's needed.
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateParamOpNames();
 
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    inline bool hasParamNamed(::mlir::StringAttr find) {
-      return hasParamNamed(find.strref());
-    }
-
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
-      return hasParamNamed(find.getRootReference());
-    }
+    /// If this `struct.def` is within a `poly.template`, return names of all `poly.expr`
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty.
+    /// The names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type
+    /// is used in the return type since that's usually what's needed.
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateExprOpNames();
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
-    /// Return `true` iff this StructDefOp is the main struct. See `llzk::MAIN_ATTR_NAME`.
+    /// Return `true` iff this `struct.def` is the main struct. See `llzk::MAIN_ATTR_NAME`.
     bool isMainComponent();
   }];
 
@@ -207,6 +210,13 @@ def LLZK_MemberDefOp
       table offsets using the `readm` and `writem` operations.
     - Members marked with the `{signal}` attribute are constraint variables that
       are stored in the witness; non-signal values are intermediate expressions.
+
+    Further restrictions on the `signal` attribute:
+    - It is only used on struct members, since they represent storage locations.
+      It is not used to mark struct inputs, as struct may be passed signal or non-signal
+      (i.e., intermediate expression) values.
+    - Only !felt.type or simple aggregates of !felt.type (i.e., !array.type and !pod.type)
+      may be marked as signals.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type,
@@ -237,6 +247,8 @@ def LLZK_MemberDefOp
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
     void setPublicAttr(bool newValue = true);
   }];
+
+  let hasVerifier = 1;
 }
 
 class MemberRefOpBase<string mnemonic, list<Trait> traits = []>

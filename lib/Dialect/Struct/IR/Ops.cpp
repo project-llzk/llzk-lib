@@ -3,17 +3,22 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Function/IR/Ops.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -24,6 +29,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 #include <optional>
 
@@ -39,6 +45,8 @@ using namespace llzk::felt;
 using namespace llzk::array;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::pod;
+using namespace llzk::polymorphic;
 
 namespace llzk::component {
 
@@ -126,14 +134,15 @@ LogicalResult checkSelfType(
           .append("uses this type instead");
     }
     // Check for an EXACT match in the parameter list since it must reference the "self" type.
-    if (expectedStruct.getConstParamsAttr() != actualStructType.getParams()) {
+    ArrayAttr actualTypeParamsAttr = actualStructType.getParams(); // may be nullptr
+    ArrayRef<Attribute> actualTypeParams =
+        actualTypeParamsAttr ? actualTypeParamsAttr.getValue() : ArrayRef<Attribute> {};
+    if (ArrayRef(expectedStruct.getTemplateParamOpNames()) != actualTypeParams) {
       // To make error messages more consistent and meaningful, if the parameters don't match
       // because the actual type uses symbols that are not defined, generate an error about the
       // undefined symbol(s).
-      if (ArrayAttr tyParams = actualStructType.getParams()) {
-        if (failed(verifyParamsOfType(tables, tyParams.getValue(), actualStructType, origin))) {
-          return failure();
-        }
+      if (failed(verifyParamsOfType(tables, actualTypeParams, actualStructType, origin))) {
+        return failure();
       }
       // Otherwise, generate an error stating the parent struct type must be used.
       return genCompareErr(expectedStruct, origin, aspect)
@@ -153,7 +162,16 @@ LogicalResult checkSelfType(
 StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   auto pathRes = getPathFromRoot(*this);
   assert(succeeded(pathRes)); // consistent with StructType::get() with invalid args
-  return StructType::get(pathRes.value(), constParams.value_or(getConstParamsAttr()));
+  // Use the specified parameters if provided.
+  if (constParams.has_value()) {
+    return StructType::get(pathRes.value(), constParams.value());
+  }
+  // Check if there is an enclosing `TemplateOp` defining parameters, else there are none.
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return StructType::get(pathRes.value(), parent.getConstNames<TemplateParamOp>());
+  } else {
+    return StructType::get(pathRes.value());
+  }
 }
 
 std::string StructDefOp::getHeaderString() {
@@ -166,22 +184,31 @@ std::string StructDefOp::getHeaderString() {
       //  just print its symbol name directly.
       ss << '@' << this->getSymName();
     }
-    if (auto attr = this->getConstParamsAttr()) {
-      ss << '<' << attr << '>';
-    }
+    ss << '<' << debug::toStringList(this->getTemplateParamOpNames()) << '>';
   });
 }
 
-bool StructDefOp::hasParamNamed(StringRef find) {
-  if (ArrayAttr params = this->getConstParamsAttr()) {
-    for (Attribute attr : params) {
-      assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
-      if (llvm::cast<FlatSymbolRefAttr>(attr).getRootReference().strref() == find) {
-        return true;
-      }
-    }
+bool StructDefOp::hasTemplateSymbolBindings() {
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return parent.hasConstOps<TemplateSymbolBindingOpInterface>();
   }
   return false;
+}
+
+SmallVector<Attribute> StructDefOp::getTemplateParamOpNames() {
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return parent.getConstNames<TemplateParamOp>();
+  } else {
+    return SmallVector<Attribute>();
+  }
+}
+
+SmallVector<Attribute> StructDefOp::getTemplateExprOpNames() {
+  if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
+    return parent.getConstNames<TemplateExprOp>();
+  } else {
+    return SmallVector<Attribute>();
+  }
 }
 
 SymbolRefAttr StructDefOp::getFullyQualifiedName() {
@@ -190,43 +217,12 @@ SymbolRefAttr StructDefOp::getFullyQualifiedName() {
   return res.value();
 }
 
-LogicalResult StructDefOp::verifySymbolUses(SymbolTableCollection &tables) {
-  if (ArrayAttr params = this->getConstParamsAttr()) {
-    // Ensure struct parameter names are unique
-    llvm::StringSet<> uniqNames;
-    for (Attribute attr : params) {
-      assert(llvm::isa<FlatSymbolRefAttr>(attr)); // per ODS
-      StringRef name = llvm::cast<FlatSymbolRefAttr>(attr).getValue();
-      if (!uniqNames.insert(name).second) {
-        return this->emitOpError().append("has more than one parameter named \"@", name, '"');
-      }
-    }
-    // Ensure they do not conflict with existing symbols
-    for (Attribute attr : params) {
-      auto res = lookupTopLevelSymbol(tables, llvm::cast<FlatSymbolRefAttr>(attr), *this, false);
-      if (succeeded(res)) {
-        return this->emitOpError()
-            .append("parameter name \"@")
-            .append(llvm::cast<FlatSymbolRefAttr>(attr).getValue())
-            .append("\" conflicts with an existing symbol")
-            .attachNote(res->get()->getLoc())
-            .append("symbol already defined here");
-      }
-    }
-  }
-  return success();
-}
-
 namespace {
 
 inline LogicalResult
 checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> appendSelfType) {
-  if (llvm::isa<FeltType>(pType)) {
+  if (isValidMainSignalType(pType)) {
     return success();
-  } else if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
-    if (llvm::isa<FeltType>(arrayParamTy.getElementType())) {
-      return success();
-    }
   }
 
   std::string message = buildStringViaCallback([&inFunc, appendSelfType](llvm::raw_ostream &ss) {
@@ -239,6 +235,19 @@ checkMainFuncParamType(Type pType, FuncDefOp inFunc, std::optional<StructType> a
     ss << '!' << ArrayType::name << "<.. x !" << FeltType::name << ">}";
   });
   return inFunc.emitError(message);
+}
+
+inline LogicalResult checkMainFuncOutputSignalType(Type pType, StructDefOp structOp) {
+  if (isValidMainSignalType(pType)) {
+    return success();
+  }
+
+  std::string message = buildStringViaCallback([](llvm::raw_ostream &ss) {
+    ss << "main entry component output signals must be one of: {";
+    ss << '!' << FeltType::name << ", ";
+    ss << '!' << ArrayType::name << "<.. x !" << FeltType::name << ">}";
+  });
+  return structOp.emitError(message);
 }
 
 inline LogicalResult verifyStructComputeConstrain(
@@ -321,7 +330,8 @@ LogicalResult StructDefOp::verifyRegions() {
     Region &bodyRegion = getBodyRegion();
     if (!bodyRegion.empty()) {
       for (Operation &op : bodyRegion.front()) {
-        if (!llvm::isa<MemberDefOp>(op)) {
+        auto member = llvm::dyn_cast<MemberDefOp>(op);
+        if (!member) {
           if (FuncDefOp funcDef = llvm::dyn_cast<FuncDefOp>(op)) {
             if (funcDef.nameIsCompute()) {
               if (foundCompute) {
@@ -353,6 +363,12 @@ LogicalResult StructDefOp::verifyRegions() {
                    << MemberDefOp::getOperationName() << '\'' << " and '"
                    << FuncDefOp::getOperationName() << "' operations are permitted";
           }
+        }
+        // Also check if the member complies with output signal restrictions
+        else if (isMainComponent() && member.hasPublicAttr() &&
+                 failed(checkMainFuncOutputSignalType(member.getType(), *this))) {
+          // checkMainFuncOutputSignalType already emits a sufficient error message
+          return failure();
         }
       }
     }
@@ -558,6 +574,13 @@ LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     return emitOpError() << "marked as column can only contain felts, arrays of column types, or "
                             "structs with columns, but has type "
                          << getType();
+  }
+  return success();
+}
+
+LogicalResult MemberDefOp::verify() {
+  if (getSignal() && !isFeltOrSimpleFeltAggregate(getType())) {
+    return emitOpError() << "with type " << getType() << " cannot have the signal attribute";
   }
   return success();
 }

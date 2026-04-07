@@ -4,8 +4,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
+
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 
 #include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>

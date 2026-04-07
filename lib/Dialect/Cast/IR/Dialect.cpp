@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Cast/IR/Dialect.h"
+
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 

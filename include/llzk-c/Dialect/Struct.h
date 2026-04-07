@@ -110,8 +110,31 @@ MLIR_CAPI_EXPORTED const char *llzkStruct_StructDefOpGetHeaderString(
     MlirOperation op, intptr_t *dstSize, char *(*alloc_string)(size_t)
 );
 
-/// Returns true if the struct has a parameter that has the given name.
-LLZK_DECLARE_NARY_OP_PREDICATE(Struct, StructDefOp, HasParamName, MlirStringRef name);
+/// If this `struct.def` is within a `poly.template`, add names of all `poly.param` within the
+/// `poly.template` in the order they are defined. Otherwise, do nothing. The names are added as
+/// `FlatSymbolRefAttr` but the more general `Attribute` type is used in the type since that's
+/// usually what's needed.
+///
+/// The pointer to the attributes must have been preallocated. See
+/// `llzkStruct_StructDefOpGetNumTemplateParamOpNames` for obtaining the required size of the array.
+MLIR_CAPI_EXPORTED void
+llzkStruct_StructDefOpGetTemplateParamOpNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns the number of `poly.param` operations defined within this template.
+MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateParamOpNames(MlirOperation op);
+
+/// If this `struct.def` is within a `poly.template`, add names of all `poly.expr` within the
+/// `poly.template` in the order they are defined. Otherwise, do nothing. The names are added as
+/// `FlatSymbolRefAttr` but the more general `Attribute` type is used in the type since that's
+/// usually what's needed.
+///
+/// The pointer to the attributes must have been preallocated. See
+/// `llzkStruct_StructDefOpGetNumTemplateExprOpNames` for obtaining the required size of the array.
+MLIR_CAPI_EXPORTED void
+llzkStruct_StructDefOpGetTemplateExprOpNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns the number of `poly.expr` operations defined within this template.
+MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op);
 
 //===----------------------------------------------------------------------===//
 // MemberReadOp
@@ -133,7 +156,7 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 /// Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant
 /// parameter in the struct.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Struct, MemberReadOp, WithConstParamDistance, MlirType type, MlirValue component,
+    Struct, MemberReadOp, WithTemplateSymbolDistance, MlirType type, MlirValue component,
     MlirIdentifier memberName, MlirStringRef paramName
 );
 

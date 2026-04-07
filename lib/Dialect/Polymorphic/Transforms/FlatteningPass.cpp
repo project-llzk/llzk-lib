@@ -48,6 +48,7 @@
 #include <mlir/Support/LogicalResult.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/GreedyPatternRewriteDriver.h>
+#include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
@@ -79,6 +80,21 @@ using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
 namespace {
+
+static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&diagnostics) {
+  DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
+  for (Diagnostic &diag : diagnostics) {
+    // Update any notes referencing an UnknownLoc to use the CallOp location.
+    for (Diagnostic &note : diag.getNotes()) {
+      assert(note.getNotes().empty() && "notes cannot have notes attached");
+      if (llvm::isa<UnknownLoc>(note.getLocation())) {
+        note = std::move(Diagnostic(caller.getLoc(), note.getSeverity()).append(note.str()));
+      }
+    }
+    // Report. Based on InFlightDiagnostic::report().
+    engine.emit(std::move(diag));
+  }
+}
 
 class ConversionTracker {
   /// Tracks if some step performed a modification of the code such that another pass should be run.
@@ -137,26 +153,14 @@ public:
 
   void reportDelayedDiagnostics(StructType newType, CallOp caller) {
     auto res = delayedDiagnostics.find(newType);
-    if (res == delayedDiagnostics.end()) {
-      return;
-    }
+    if (res != delayedDiagnostics.end()) {
+      ::reportDelayedDiagnostics(caller, std::move(res->second));
 
-    DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
-    for (Diagnostic &diag : res->second) {
-      // Update any notes referencing an UnknownLoc to use the CallOp location.
-      for (Diagnostic &note : diag.getNotes()) {
-        assert(note.getNotes().empty() && "notes cannot have notes attached");
-        if (llvm::isa<UnknownLoc>(note.getLocation())) {
-          note = std::move(Diagnostic(caller.getLoc(), note.getSeverity()).append(note.str()));
-        }
-      }
-      // Report. Based on InFlightDiagnostic::report().
-      engine.emit(std::move(diag));
+      // Emitting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
+      // Unfortunately, this means if the key StructType is the result of instantiation at multiple
+      // `compute()` calls it will only be reported at one of those locations, not all.
+      delayedDiagnostics.erase(newType);
     }
-    // Emitting a Diagnostic consumes it (per DiagnosticEngine::emit) so remove them from the map.
-    // Unfortunately, this means if the key StructType is the result of instantiation at multiple
-    // `compute()` calls it will only be reported at one of those locations, not all.
-    delayedDiagnostics.erase(newType);
   }
 
   SmallVector<Diagnostic> &delayedDiagnosticSet(StructType newType) {
@@ -209,6 +213,122 @@ public:
   }
 };
 
+template <typename Impl, typename Op, typename... HandledAttrs>
+class SymbolUserHelper : public OpConversionPattern<Op> {
+private:
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
+
+  SymbolUserHelper(
+      TypeConverter &converter, MLIRContext *ctx, unsigned benefit,
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
+  )
+      : OpConversionPattern<Op>(converter, ctx, benefit),
+        paramNameToValue(paramNameToInstantiatedValue) {}
+
+public:
+  using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
+
+  virtual Attribute getNameAttr(Op) const = 0;
+
+  virtual LogicalResult handleDefaultRewrite(
+      Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
+  ) const {
+    return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
+  }
+
+  LogicalResult
+  matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
+    auto res = this->paramNameToValue.find(getNameAttr(op));
+    if (res == this->paramNameToValue.end()) {
+      LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] no instantiation for " << op << '\n');
+      return failure();
+    }
+    llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
+    llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
+
+    ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
+      return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
+    }))),
+     ...);
+
+    return TS.Default([&](Attribute a) {
+      return handleDefaultRewrite(res->first, op, adaptor, rewriter, a);
+    });
+  }
+  friend Impl;
+};
+
+class ClonedBodyConstReadOpPattern
+    : public SymbolUserHelper<
+          ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
+  SmallVector<Diagnostic> &diagnostics;
+
+  using super =
+      SymbolUserHelper<ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
+
+public:
+  ClonedBodyConstReadOpPattern(
+      TypeConverter &converter, MLIRContext *ctx,
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
+      SmallVector<Diagnostic> &instantiationDiagnostics
+  )
+      // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
+      // instead of the GeneralTypeReplacePattern<ConstReadOp> from newGeneralRewritePatternSet().
+      : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue),
+        diagnostics(instantiationDiagnostics) {}
+
+  Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
+
+  LogicalResult handleRewrite(
+      Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
+  ) const {
+    APInt attrValue = a.getValue();
+    Type origResTy = op.getType();
+    if (FeltType ty = llvm::dyn_cast<FeltType>(origResTy)) {
+      replaceOpWithNewOp<FeltConstantOp>(
+          rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)
+      );
+      return success();
+    }
+
+    if (llvm::isa<IndexType>(origResTy)) {
+      replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
+      return success();
+    }
+
+    if (origResTy.isSignlessInteger(1)) {
+      // Treat 0 as false and any other value as true (but give a warning if it's not 1)
+      if (attrValue.isZero()) {
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
+        return success();
+      }
+      if (!attrValue.isOne()) {
+        Location opLoc = op.getLoc();
+        Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
+        diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
+        if (getContext()->shouldPrintOpOnDiagnostic()) {
+          diag.attachNote(opLoc) << "see current operation: " << *op;
+        }
+        diag.attachNote(UnknownLoc::get(getContext()))
+            << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \"" << sym
+            << "\" for this call";
+        diagnostics.push_back(std::move(diag));
+      }
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
+      return success();
+    }
+    return op->emitOpError().append("unexpected result type ", origResTy);
+  }
+
+  LogicalResult handleRewrite(
+      Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
+  ) const {
+    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    return success();
+  }
+};
+
 /// Patterns can use this listener and call notifyMatchFailure(..) for failures where the entire
 /// pass must fail, i.e., where instantiation would introduce an illegal type conversion.
 struct MatchFailureListener : public RewriterBase::Listener {
@@ -248,7 +368,91 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return false;
 }
 
-namespace Step1_InstantiateStructs {
+/// Attempt to evaluate the concrete result of a single `TemplateExprOp` expression given
+/// the currently-known concrete param values in `paramNameToConcrete`. Returns the result
+/// attribute if all referenced params are concrete and all operations in the body can be
+/// constant-folded; otherwise returns `std::nullopt`.
+static std::optional<Attribute>
+evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+  // Map from SSA value in the expr body to its concrete Attribute.
+  DenseMap<Value, Attribute> valueMap;
+  for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
+    if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
+      auto it = valueMap.find(yieldOp.getVal());
+      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+    }
+
+    if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
+      auto it = paramNameToConcrete.find(constReadOp.getConstNameAttr());
+      if (it == paramNameToConcrete.end()) {
+        return std::nullopt; // a referenced param is not concrete
+      }
+      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
+      // a `FeltConstAttr`.
+      Attribute val = it->second;
+      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
+        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
+          val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
+        }
+      }
+      valueMap[constReadOp.getResult()] = val;
+      continue;
+    }
+
+    // Gather constant attributes for all operands.
+    SmallVector<Attribute> operandAttrs;
+    operandAttrs.reserve(bodyOp.getNumOperands());
+    for (Value operand : bodyOp.getOperands()) {
+      auto it = valueMap.find(operand);
+      if (it == valueMap.end()) {
+        return std::nullopt; // operand not known as a constant
+      }
+      operandAttrs.push_back(it->second);
+    }
+
+    // Try constant folding.
+    SmallVector<OpFoldResult> foldResults;
+    if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
+        foldResults.size() == bodyOp.getNumResults()) {
+      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
+        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
+          valueMap[result] = a;
+        } else {
+          return std::nullopt;
+        }
+      }
+    }
+  }
+  return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
+}
+
+/// Evaluate all `TemplateExprOp`s in `templateOp` that can be computed from the currently-known
+/// concrete param values in `paramNameToConcrete`, and add their results to the map.
+/// Exprs whose operands are not all concrete are silently skipped (partial instantiation).
+static void
+evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+  LLVM_DEBUG(
+      llvm::dbgs() << "[evaluateTemplateExprs] before: " << debug::toStringList(paramNameToConcrete)
+                   << '\n'
+  );
+  for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
+    std::optional<Attribute> result = evaluateExpr(exprOp, paramNameToConcrete);
+    if (result.has_value()) {
+      auto exprNameAttr = FlatSymbolRefAttr::get(exprOp.getSymNameAttr());
+      paramNameToConcrete.try_emplace(exprNameAttr, *result);
+      LLVM_DEBUG(
+          llvm::dbgs() << "[evaluateTemplateExprs] expr @" << exprOp.getSymName()
+                       << " evaluated to " << *result << '\n'
+      );
+    }
+  }
+  LLVM_DEBUG(
+      llvm::dbgs() << "[evaluateTemplateExprs] after: " << debug::toStringList(paramNameToConcrete)
+                   << '\n'
+  );
+}
+
+namespace Step1A_InstantiateStructs {
 
 static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
   return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
@@ -338,122 +542,6 @@ class StructCloner {
     }
   };
 
-  template <typename Impl, typename Op, typename... HandledAttrs>
-  class SymbolUserHelper : public OpConversionPattern<Op> {
-  private:
-    const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-    SymbolUserHelper(
-        TypeConverter &converter, MLIRContext *ctx, unsigned Benefit,
-        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
-    )
-        : OpConversionPattern<Op>(converter, ctx, Benefit),
-          paramNameToValue(paramNameToInstantiatedValue) {}
-
-  public:
-    using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
-
-    virtual Attribute getNameAttr(Op) const = 0;
-
-    virtual LogicalResult handleDefaultRewrite(
-        Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
-    ) const {
-      return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
-    }
-
-    LogicalResult
-    matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-      LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
-      auto res = this->paramNameToValue.find(getNameAttr(op));
-      if (res == this->paramNameToValue.end()) {
-        LLVM_DEBUG(llvm::dbgs() << "[StructCloner] no instantiation for " << op << '\n');
-        return failure();
-      }
-      llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
-      llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
-
-      ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
-        return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
-      }))),
-       ...);
-
-      return TS.Default([&](Attribute a) {
-        return handleDefaultRewrite(res->first, op, adaptor, rewriter, a);
-      });
-    }
-    friend Impl;
-  };
-
-  class ClonedStructConstReadOpPattern
-      : public SymbolUserHelper<
-            ClonedStructConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
-    SmallVector<Diagnostic> &diagnostics;
-
-    using super =
-        SymbolUserHelper<ClonedStructConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
-
-  public:
-    ClonedStructConstReadOpPattern(
-        TypeConverter &converter, MLIRContext *ctx,
-        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
-        SmallVector<Diagnostic> &instantiationDiagnostics
-    )
-        // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-        // instead of the GeneralTypeReplacePattern<ConstReadOp> from newGeneralRewritePatternSet().
-        : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue),
-          diagnostics(instantiationDiagnostics) {}
-
-    Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
-
-    LogicalResult handleRewrite(
-        Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
-    ) const {
-      APInt attrValue = a.getValue();
-      Type origResTy = op.getType();
-      if (llvm::isa<FeltType>(origResTy)) {
-        replaceOpWithNewOp<FeltConstantOp>(
-            rewriter, op, FeltConstAttr::get(getContext(), attrValue)
-        );
-        return success();
-      }
-
-      if (llvm::isa<IndexType>(origResTy)) {
-        replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-        return success();
-      }
-
-      if (origResTy.isSignlessInteger(1)) {
-        // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-        if (attrValue.isZero()) {
-          replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
-          return success();
-        }
-        if (!attrValue.isOne()) {
-          Location opLoc = op.getLoc();
-          Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
-          diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
-          if (getContext()->shouldPrintOpOnDiagnostic()) {
-            diag.attachNote(opLoc) << "see current operation: " << *op;
-          }
-          diag.attachNote(UnknownLoc::get(getContext()))
-              << "when instantiating '" << StructDefOp::getOperationName() << "' parameter \""
-              << sym << "\" for this call";
-          diagnostics.push_back(std::move(diag));
-        }
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
-        return success();
-      }
-      return op->emitOpError().append("unexpected result type ", origResTy);
-    }
-
-    LogicalResult handleRewrite(
-        Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
-    ) const {
-      replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
-      return success();
-    }
-  };
-
   class ClonedStructMemberReadOpPattern
       : public SymbolUserHelper<
             ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr, FeltConstAttr> {
@@ -520,9 +608,9 @@ class StructCloner {
     // where the original attribute from the current instantiation site was not concrete. This is
     // used for generating the new struct name. See `BuildShortTypeString::from()`.
     SmallVector<Attribute> attrsForInstantiatedNameSuffix;
-    // Parameter list for the new StructDefOp containing the names that must be preserved because
-    // they were not assigned concrete values at the current instantiation site.
-    ArrayAttr reducedParamNameList = nullptr;
+    // List of template const param names that must be preserved because they
+    // were not assigned concrete values at the current instantiation site.
+    SmallVector<Attribute> remainingNames;
     // Reduced from `typeAtCallerParams` to contain only the non-concrete Attributes.
     ArrayAttr reducedCallerParams = nullptr;
     {
@@ -532,7 +620,6 @@ class StructCloner {
       assert(!isNullOrEmpty(paramNames));
       assert(paramNames.size() == typeAtCallerParams.size());
 
-      SmallVector<Attribute> remainingNames;
       SmallVector<Attribute> nonConcreteParams;
       for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
         Attribute next = typeAtCallerParams[i];
@@ -555,41 +642,75 @@ class StructCloner {
         return failure();
       }
       if (!remainingNames.empty()) {
-        reducedParamNameList = ArrayAttr::get(ctx, remainingNames);
         reducedCallerParams = ArrayAttr::get(ctx, nonConcreteParams);
       }
     }
 
-    // Clone the original struct, apply the new name, and set the parameter list of the new struct
-    // to contain only those that did not have concrete instantiated values.
-    StructDefOp newStruct = origStruct.clone();
-    newStruct.setConstParamsAttr(reducedParamNameList);
-    newStruct.setSymName(
-        BuildShortTypeString::from(
-            typeAtCaller.getNameRef().getLeafReference().str(), attrsForInstantiatedNameSuffix
-        )
+    // This list will be used to build the new remote/external type.
+    SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
+    typeAtCallerSymPieces.pop_back(); // drop struct name
+    // Name of template with instantiated parameter values.
+    std::string templateNameWithAttrs = BuildShortTypeString::from(
+        typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
     );
 
-    // Insert 'newStruct' into the parent ModuleOp of the original StructDefOp. Use the
-    // `SymbolTable::insert()` function directly so that the name will be made unique.
-    ModuleOp parentModule = origStruct.getParentOp<ModuleOp>(); // parent is ModuleOp per ODS
-    symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(origStruct));
-    // Retrieve the new type AFTER inserting since the name may be appended to make it unique and
-    // use the remaining non-concrete parameters from the original type.
-    StructType newLocalType = newStruct.getType(reducedCallerParams);
-    auto typeAtCallerSym = typeAtCaller.getNameRef();
-    // Copy the leafs of the type at the caller.
-    SmallVector<FlatSymbolRefAttr> newLeafs(typeAtCallerSym.getNestedReferences());
-    auto rootSym = typeAtCallerSym.getRootReference();
-    if (!newLeafs.empty()) {
-      // Replace the last one with the new name.
-      newLeafs.back() = FlatSymbolRefAttr::get(newLocalType.getNameRef().getLeafReference());
-    } else {
-      // If there's only one symbol then write the new name on the root.
-      rootSym = newLocalType.getNameRef().getLeafReference();
+    // Get parent refs
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
+    assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
+    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+
+    // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
+    // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
+    evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
+
+    // Clone the original struct.
+    StructDefOp newStruct = origStruct.clone();
+    if (remainingNames.empty()) { // FULL INSTANTIATION CASE
+      // Set name of the new struct by prepending its name with instantiated template name.
+      newStruct.setSymName(
+          (templateNameWithAttrs + mlir::Twine('_') + newStruct.getSymName()).str()
+      );
+      // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
+      // `SymbolTable::insert()` function so that the name will be made unique if necessary.
+      symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
+      // Drop the old template name from the list.
+      typeAtCallerSymPieces.pop_back();
+    } else { // PARTIAL INSTANTIATION CASE
+      // Clone the template and set instantiated name.
+      TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
+      newTemplate.setSymName(templateNameWithAttrs);
+      assert(newTemplate->getNumRegions() > 0 && "region exists"); // it just doesn't have a block
+      newTemplate.getBodyRegion().emplaceBlock();
+
+      // Clone preserved const param/expr ops.
+      for (Attribute name : remainingNames) {
+        FlatSymbolRefAttr nameSym = llvm::dyn_cast<FlatSymbolRefAttr>(name);
+        assert(nameSym && "expected FlatSymbolRefAttr");
+
+        Operation *symOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
+        assert(symOp && "symbol must exist");
+        newTemplate.insert(newTemplate.begin(), symOp->clone());
+      }
+
+      // Insert the struct into the template and the template into the module. Use the
+      // `SymbolTable::insert()` function so that the name will be made unique if necessary.
+      symTables.getSymbolTable(newTemplate).insert(newStruct);
+      symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+
+      // Replace the old template name in the list with the new one (get template name after
+      // symbol table insertion since it may be modified to make it unique).
+      typeAtCallerSymPieces.back() = FlatSymbolRefAttr::get(newTemplate.getSymNameAttr());
     }
+
+    // Retrieve the new type AFTER inserting since the struct name may be appended to make
+    // it unique and use the remaining non-concrete parameters from the original type.
+    StructType newLocalType = newStruct.getType(reducedCallerParams);
+    typeAtCallerSymPieces.push_back(
+        FlatSymbolRefAttr::get(newLocalType.getNameRef().getLeafReference())
+    );
     StructType newRemoteType =
-        StructType::get(SymbolRefAttr::get(rootSym, newLeafs), newLocalType.getParams());
+        StructType::get(asSymbolRefAttr(typeAtCallerSymPieces), newLocalType.getParams());
     LLVM_DEBUG({
       llvm::dbgs() << "[StructCloner]   original def type: " << typeAtDef << '\n';
       llvm::dbgs() << "[StructCloner]   cloned def type: " << newStruct.getType() << '\n';
@@ -606,11 +727,11 @@ class StructCloner {
         newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
     target.addDynamicallyLegalOp<ConstReadOp>([&paramNameToConcrete](ConstReadOp op) {
       // Legal if it's not in the map of concrete attribute instantiations
-      return paramNameToConcrete.find(op.getConstNameAttr()) == paramNameToConcrete.end();
+      return !paramNameToConcrete.contains(op.getConstNameAttr());
     });
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
-    patterns.add<ClonedStructConstReadOpPattern>(
+    patterns.add<ClonedBodyConstReadOpPattern>(
         tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
     );
     patterns.add<ClonedStructMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
@@ -752,8 +873,7 @@ public:
     Type oldMemberType = op.getType();
     Type newMemberType = getTypeConverter()->convertType(oldMemberType);
     if (oldMemberType == newMemberType) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     rewriter.modifyOpInPlace(op, [&op, &newMemberType]() { op.setType(newMemberType); });
     return success();
@@ -783,7 +903,405 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
-} // namespace Step1_InstantiateStructs
+} // namespace Step1A_InstantiateStructs
+
+namespace Step1B_InstantiateFunctions {
+
+/// TypeConverter for function instantiation that replaces TypeVarType and symbolic
+/// ArrayType/StructType parameters with their concrete values determined by unification.
+class FuncInstTypeConverter : public TypeConverter {
+  DenseMap<Attribute, Attribute> paramNameToValue;
+
+  Attribute convertIfPossible(Attribute a) const {
+    auto res = paramNameToValue.find(a);
+    return (res != paramNameToValue.end()) ? res->second : a;
+  }
+
+public:
+  explicit FuncInstTypeConverter(DenseMap<Attribute, Attribute> paramNameToConcrete)
+      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)) {
+    addConversion([](Type t) { return t; });
+
+    addConversion([this](TypeVarType inputTy) -> Type {
+      if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
+        Type convertedType = tyAttr.getValue();
+        if (isConcreteType(convertedType)) {
+          return convertedType;
+        }
+      }
+      return inputTy;
+    });
+
+    addConversion([this](ArrayType inputTy) {
+      SmallVector<Attribute> updated;
+      bool changed = false;
+      for (Attribute a : inputTy.getDimensionSizes()) {
+        Attribute converted = convertIfPossible(a);
+        updated.push_back(converted);
+        if (converted != a) {
+          changed = true;
+        }
+      }
+      Type newElemTy = this->convertType(inputTy.getElementType());
+      if (!changed && newElemTy == inputTy.getElementType()) {
+        return inputTy;
+      }
+      return ArrayType::get(newElemTy, updated);
+    });
+
+    addConversion([this](StructType inputTy) -> StructType {
+      if (ArrayAttr params = inputTy.getParams()) {
+        SmallVector<Attribute> updated;
+        bool changed = false;
+        for (Attribute a : params) {
+          if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
+            Type newTy = this->convertType(ta.getValue());
+            if (newTy != ta.getValue()) {
+              updated.push_back(TypeAttr::get(newTy));
+              changed = true;
+              continue;
+            }
+          } else {
+            Attribute converted = convertIfPossible(a);
+            if (converted != a) {
+              updated.push_back(converted);
+              changed = true;
+              continue;
+            }
+          }
+          updated.push_back(a);
+        }
+        if (changed) {
+          return StructType::get(
+              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
+          );
+        }
+      }
+      return inputTy;
+    });
+  }
+
+  bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
+  const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
+};
+
+class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
+  ConversionTracker &tracker_;
+
+public:
+  InstantiateFuncAtCallOp(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern<CallOp>(ctx), tracker_(tracker) {}
+
+  LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
+    LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp] op: " << op << '\n');
+
+    // Lookup callee target function
+    SymbolTableCollection symTables;
+    FailureOr<SymbolLookupResult<FuncDefOp>> callTgtOpt = op.getCalleeTarget(symTables);
+    if (failed(callTgtOpt)) {
+      return rewriter.notifyMatchFailure(op, [](Diagnostic &diag) {
+        diag << "could not find target function for call";
+      });
+    }
+    FuncDefOp callTgt = callTgtOpt->get();
+
+    // Check if callee is within a TemplateOp
+    TemplateOp parentTemplate = llvm::dyn_cast<TemplateOp>(callTgt->getParentOp());
+    if (!parentTemplate) {
+      return failure(); // nothing to do if not parameterized
+    }
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  target function in template "
+                     << parentTemplate.getSymName() << '\n'
+    );
+
+    // Perform type unification with tracking to infer the instantiated type(s). Even though
+    // `CallOp` verification already checked that caller and callee types unify, the progress of
+    // instantiation so far may have brought together a chain of calls across templates where each
+    // individual unification check passed due to permissive type variables and/or symbols in the
+    // middle but the overall chain does not unify. Hence, this unification may fail and should
+    // produce a meaningful error message if it does.
+    // See: `test/Transforms/Flattening/instantiate_funcs_fail.llzk`
+    FailureOr<UnificationMap> unifyResult = op.unifyTypeSignature(callTgt.getFunctionType());
+    if (failed(unifyResult)) {
+      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        diag.append("target function type does not unify with call type ")
+            .append(op.getTypeSignature())
+            .attachNote(callTgt.getLoc())
+            .append("target function declared here");
+      });
+    }
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  unifications of types: "
+                     << debug::toStringList(unifyResult.value()) << '\n'
+    );
+
+    // Maps template parameter symbols to the instantiation value at the call site.
+    DenseMap<Attribute, Attribute> paramNameToConcrete;
+    // If template instantiation list is given, must use that. Otherwise, infer.
+    auto realParams = parentTemplate.getConstOps<TemplateParamOp>();
+    ArrayAttr callParams = op.getTemplateParamsAttr();
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  TemplateParamsAttr: " << callParams << '\n'
+    );
+    if (isNullOrEmpty(callParams)) {
+      for (auto paramOp : realParams) {
+        auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+        auto it = unifyResult->find({paramName, Side::RHS});
+        if (it == unifyResult->end()) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': not found\n"
+          );
+          continue;
+        }
+        Attribute inferredVal = it->second;
+        if (!isConcreteAttr(inferredVal)) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': not concrete, " << inferredVal << '\n'
+          );
+          continue;
+        }
+        // Ensure it's a valid value for the optional type restriction on the TemplateParamOp
+        if (failed(op.verifyTemplateParamCompatibility(inferredVal, paramOp))) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': incompatible with specified param type. MUST FAIL!\n"
+          );
+          return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+            diag.append("inferred value for parameter '")
+                .append(paramName)
+                .append("' is incompatible with specified param type")
+                .attachNote(paramOp.getLoc())
+                .append("template parameter declared here");
+          });
+        }
+        paramNameToConcrete[paramName] = inferredVal;
+      }
+    } else {
+      // As stated earlier, need to run the verification checks again to ensure the
+      // instantiation is valid, except for the size check becuase that cannot change.
+      assert((callParams.size() == llvm::range_size(realParams)) && "per CallOpVerifier");
+      if (failed(op.verifyTemplateParamCompatibility(realParams))) {
+        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+          diag.append("incompatible with specified param type(s)");
+        });
+      }
+      if (failed(op.verifyTemplateParamsMatchInferred(realParams, unifyResult.value()))) {
+        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+          diag.append("incompatible with inferred param value(s)");
+        });
+      }
+      // Add the mappings
+      for (auto [paramOp, attr] : llvm::zip_equal(realParams, callParams.getValue())) {
+        auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+        if (!isConcreteAttr(attr)) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]  unification for param '" << paramName
+                           << "': not concrete, " << attr << '\n'
+          );
+          continue;
+        }
+        paramNameToConcrete[paramName] = attr;
+      }
+    }
+
+    if (paramNameToConcrete.empty()) {
+      LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp]  skip: no concrete params\n");
+      return failure();
+    }
+
+    // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
+    // map so ClonedFuncConstReadOpPattern can replace uses of those symbols too.
+    evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
+
+    // Classify each template parameter as concrete (to be inlined) or remaining (to be preserved).
+    SmallVector<Attribute> remainingNames;
+    SmallVector<Attribute> attrsForInstantiatedNameSuffix;
+    for (Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
+      auto it = paramNameToConcrete.find(paramName);
+      if (it != paramNameToConcrete.end()) {
+        attrsForInstantiatedNameSuffix.push_back(it->second);
+      } else {
+        attrsForInstantiatedNameSuffix.push_back(nullptr); // placeholder for non-concrete param
+        remainingNames.push_back(paramName);
+      }
+    }
+
+    MLIRContext *ctx = op.getContext();
+    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+
+    // Build the (partially-)instantiated template name, e.g., "TemplateName_8_\x1A" where \x1A
+    // is a placeholder character at the position of a non-concrete parameter.
+    std::string templateNameWithAttrs = BuildShortTypeString::from(
+        parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix
+    );
+
+    // Helper lambda to:
+    // 1. build the FuncInstTypeConverter and apply it to a cloned function
+    // 2. verify CallOp in the converted function are valid for their respective targets
+    //    and emit a more helpful error at this point rather than discovering it later
+    //    when verifying the entire module.
+    auto applyBodyConversions = [&](FuncDefOp newFunc) -> LogicalResult {
+      FuncInstTypeConverter tyConv(paramNameToConcrete);
+      ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
+      target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp p) {
+        // Legal if it's not in the map of concrete attribute instantiations
+        return !tyConv.containsParam(p.getConstNameAttr());
+      });
+      SmallVector<Diagnostic> delayedDiagnostics;
+      RewritePatternSet bodyPatterns = newGeneralRewritePatternSet(tyConv, ctx, target);
+      bodyPatterns.add<ClonedBodyConstReadOpPattern>(
+          tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
+      );
+      if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
+        return failure();
+      }
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]   instantiated clone: " << newFunc << '\n'
+      );
+      ::reportDelayedDiagnostics(op, std::move(delayedDiagnostics));
+
+      // Verify CallOp match targets
+      SymbolTableCollection tables;
+      WalkResult res = newFunc.walk([&tables](CallOp nestedCall) {
+        return WalkResult(nestedCall.verifySymbolUses(tables));
+      });
+      return failure(res.wasInterrupted());
+    };
+
+    SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
+    assert(symPieces.size() >= 2 && "callee must include at least template and function names");
+    if (remainingNames.empty()) {
+      // FULL INSTANTIATION: place the cloned function directly in the parent module.
+      // New function name encodes all parameter values, e.g., "TemplateName_8_12_funcName".
+      std::string newFuncName =
+          (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
+      StringRef actualNewFuncName = newFuncName;
+      if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
+        FuncDefOp newFunc = callTgt.clone();
+        newFunc.setSymName(newFuncName);
+        // Insert before the TemplateOp; symbol table may adjust the name to ensure uniqueness.
+        symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
+        actualNewFuncName = newFunc.getSymName();
+        LLVM_DEBUG(
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
+                         << actualNewFuncName << '\n'
+        );
+        if (failed(applyBodyConversions(newFunc))) {
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
+                           << actualNewFuncName << '\n'
+          );
+          newFunc->erase();
+          return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+            diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+          });
+        }
+      } else {
+        LLVM_DEBUG(
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                         << actualNewFuncName << '\n'
+        );
+      }
+      // Callee: drop template & original function names, add the new module-level function name.
+      // Original: @[prefix...]::@TemplateName::@funcName
+      // New:      @[prefix...]::@newFuncName
+      symPieces.pop_back(); // remove original function name
+      symPieces.pop_back(); // remove template name
+      symPieces.push_back(FlatSymbolRefAttr::get(StringAttr::get(ctx, actualNewFuncName)));
+    } else {
+      // PARTIAL INSTANTIATION: place the cloned function in a new partially-instantiated
+      // TemplateOp that retains only the non-concrete parameters.
+      // New template name encodes the concrete values and uses placeholder chars for the rest,
+      // e.g., "TemplateName_8_\x1A" where \x1A marks the position of a non-concrete param.
+      TemplateOp newTemplate;
+      if (Operation *existing =
+              symTables.getSymbolTable(parentModule).lookup(templateNameWithAttrs)) {
+        newTemplate = llvm::dyn_cast<TemplateOp>(existing);
+      }
+      if (!newTemplate) {
+        // Clone the TemplateOp structure without its body and set the new name.
+        newTemplate = parentTemplate.cloneWithoutRegions();
+        newTemplate.setSymName(templateNameWithAttrs);
+        assert(newTemplate->getNumRegions() > 0 && "region exists");
+        newTemplate.getBodyRegion().emplaceBlock();
+
+        // Clone the preserved (non-concrete) param/expr ops into the new template in order.
+        Block &newTemplateBody = newTemplate.getBodyRegion().front();
+        for (Attribute name : remainingNames) {
+          FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
+          Operation *paramOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
+          assert(paramOp && "symbol must exist");
+          newTemplateBody.push_back(paramOp->clone());
+        }
+
+        // Clone and partially convert the function (concretize only the concrete params).
+        FuncDefOp newFunc = callTgt.clone();
+        if (failed(applyBodyConversions(newFunc))) {
+          StringRef newFuncName = newFunc.getSymName();
+          LLVM_DEBUG(
+              llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
+                           << newFuncName << '\n'
+          );
+          newTemplate->erase();
+          return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+            diag.append("failure while creating instantiated function '", newFuncName, '\'');
+          });
+        }
+
+        // Insert the function into the new template, then the template into the module. Use the
+        // `SymbolTable::insert()` function so that the name will be made unique if necessary.
+        symTables.getSymbolTable(newTemplate).insert(newFunc);
+        symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+        LLVM_DEBUG(
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
+                         << newTemplate.getSymName() << '\n'
+        );
+      } else {
+        LLVM_DEBUG(
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
+                         << newTemplate.getSymName() << '\n'
+        );
+      }
+      // Callee: replace old template name with new template name, keep the function name.
+      // Original: @[prefix...]::@TemplateName::@funcName
+      // New:      @[prefix...]::@newTemplateName::@funcName
+      symPieces.pop_back(); // remove original function name (will be re-appended)
+      symPieces.pop_back(); // remove original template name
+      symPieces.push_back(FlatSymbolRefAttr::get(newTemplate.getSymNameAttr()));
+      symPieces.push_back(FlatSymbolRefAttr::get(callTgt.getSymNameAttr()));
+    }
+
+    // Update the CallOp to point to the instantiated function and mark the module as modified.
+    rewriter.modifyOpInPlace(op, [&op, &symPieces]() {
+      // Update callee attribute.
+      SymbolRefAttr newCalleeAttr = asSymbolRefAttr(symPieces);
+      LLVM_DEBUG({
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  updating callee from " << op.getCalleeAttr()
+                     << " to " << newCalleeAttr << '\n';
+      });
+      op.setCalleeAttr(newCalleeAttr);
+      // Also drop template param list. If it was present, it was fully used (no partial case).
+      op.setTemplateParamsAttr(nullptr);
+    });
+    tracker_.updateModifiedFlag(true);
+    return success();
+  }
+};
+
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
+  MLIRContext *ctx = modOp.getContext();
+  RewritePatternSet patterns(ctx);
+  patterns.add<InstantiateFuncAtCallOp>(ctx, tracker);
+  MatchFailureListener failureListener;
+  walkAndApplyPatterns(modOp, std::move(patterns), &failureListener);
+  return failure(failureListener.hadFailure);
+}
+
+} // namespace Step1B_InstantiateFunctions
 
 namespace Step2_Unroll {
 
@@ -970,8 +1488,7 @@ public:
 
     ArrayType newResultType = ArrayType::get(oldResultType.getElementType(), out.paramsOfStructTy);
     if (newResultType == oldResultType) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     // ASSERT: folding only preserves the original Attribute or converts affine to integer
     assert(tracker_.isLegalConversion(oldResultType, newResultType, "InstantiateAtCreateArrayOp"));
@@ -1048,8 +1565,7 @@ public:
     StructType newRetTy = StructType::get(oldRetTy.getNameRef(), out.paramsOfStructTy);
     LLVM_DEBUG(llvm::dbgs() << "[InstantiateAtCallOpCompute]   newRetTy: " << newRetTy << '\n');
     if (newRetTy == oldRetTy) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     // The `newRetTy` is computed via instantiateViaTargetType() which can only preserve the
     // original Attribute or convert to a concrete attribute via the unification process. Thus, if
@@ -1329,8 +1845,7 @@ public:
       }
     }
     if (!newType || newType == op.getType()) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateMemberDefTypeFromWrite")) {
       return failure();
@@ -1375,8 +1890,7 @@ public:
       return failure();
     }
     if (op->getResultTypes() == inferredResultTypes) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.areLegalConversions(
             op->getResultTypes(), inferredResultTypes, "UpdateInferredResultTypes"
@@ -1416,8 +1930,7 @@ public:
 
     FunctionType oldFuncTy = op.getFunctionType();
     if (oldFuncTy.getResults() == tyFromReturnOp) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.areLegalConversions(
             oldFuncTy.getResults(), tyFromReturnOp, "UpdateFuncTypeFromReturn"
@@ -1437,14 +1950,14 @@ public:
 };
 
 /// Update CallOp result type based on the updated return type from the target FuncDefOp.
-/// This only applies to global (i.e., non-struct) functions because the functions within structs
+/// This only applies to free (i.e., non-struct) functions because the functions within structs
 /// only return StructType or nothing and propagating those can result in bringing un-instantiated
 /// types from a templated struct into the current call which will give errors.
-class UpdateGlobalCallOpTypes final : public OpRewritePattern<CallOp> {
+class UpdateFreeFuncCallOpTypes final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
-  UpdateGlobalCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
+  UpdateFreeFuncCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
@@ -1459,17 +1972,16 @@ public:
       return failure();
     }
     if (op.getResultTypes() == targetFunc.getFunctionType().getResults()) {
-      // nothing changed
-      return failure();
+      return failure(); // nothing changed
     }
     if (!tracker_.areLegalConversions(
             op.getResultTypes(), targetFunc.getFunctionType().getResults(),
-            "UpdateGlobalCallOpTypes"
+            "UpdateFreeFuncCallOpTypes"
         )) {
       return failure();
     }
 
-    LLVM_DEBUG(llvm::dbgs() << "[UpdateGlobalCallOpTypes] replaced " << op);
+    LLVM_DEBUG(llvm::dbgs() << "[UpdateFreeFuncCallOpTypes] replaced " << op);
     CallOp newOp = replaceOpWithNewOp<CallOp>(rewriter, op, targetFunc, op.getArgOperands());
     (void)newOp; // tell compiler it's intentionally unused in release builds
     LLVM_DEBUG(llvm::dbgs() << " with " << newOp << '\n');
@@ -1537,7 +2049,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       //  benefit = 6
       UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
       //  benefit = 3
-      UpdateGlobalCallOpTypes,      // CallOp, targeting non-struct functions
+      UpdateFreeFuncCallOpTypes,    // CallOp, targeting non-struct functions
       UpdateFuncTypeFromReturn,     // FuncDefOp
       UpdateNewArrayElemFromWrite,  // CreateArrayOp
       UpdateArrayElemFromArrRead,   // ReadArrayOp
@@ -1613,7 +2125,7 @@ struct FromKeepSet : public CleanupBase {
               });
               // Ignore struct/template parameter symbols (before doing the lookup below because it
               // would fail anyway and then cause the "failed" case to be triggered unnecessarily).
-              if (usedSymbolNode->isStructParam()) {
+              if (usedSymbolNode->isTemplateSymbolBinding()) {
                 continue;
               }
               // If `usedSymbolNode` references a StructDefOp, ensure it's considered in the roots.
@@ -1739,10 +2251,11 @@ private:
     visitedPlusSafetyResult[check] = true;
 
     // Check if it's safe according to both the def tree and use graph.
-    // Note: every symbol must have a def node but module symbols may not have a use node.
+    // Note: Every symbol must have a def node but ModuleOp and TemplateOp symbols may not have a
+    // use node since they are not "terminal" symbols (i.e. they are not referred to directly).
     if (collectSafeToErase(defTree.lookupNode(check))) {
       const auto *useNode = useGraph.lookupNode(check);
-      assert(useNode || llvm::isa<ModuleOp>(check.getOperation()));
+      assert(useNode || (llvm::isa<ModuleOp, TemplateOp>(check.getOperation())));
       if (!useNode || collectSafeToErase(useNode)) {
         return true;
       }
@@ -1834,13 +2347,16 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       }
     }
 
-    {
-      // Preliminary step: remove empty parameter lists from structs
-      OpPassManager nestedPM(ModuleOp::getOperationName());
-      nestedPM.addPass(createEmptyParamListRemoval());
-      if (failed(runPipeline(nestedPM, modOp))) {
-        return failure();
-      }
+    // Pass Manager to run some standard cleanup passes that are always beneficial:
+    // - Remove templates that contain no struct or function definitions
+    // - Convert templates with no constant parameters or expressions into modules
+    OpPassManager universalCleanup(ModuleOp::getOperationName());
+    universalCleanup.addPass(createEmptyTemplateRemoval());
+
+    // Run universal cleanup as a preliminary step to satisfy the
+    // `assert(!isNullOrEmpty(paramNames))` precondition in `genClone()`.
+    if (failed(runPipeline(universalCleanup, modOp))) {
+      return failure();
     }
 
     ConversionTracker tracker;
@@ -1858,11 +2374,16 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
                      << ")] Running step 1: struct instantiation\n";
       });
-      // Find calls to "compute()" that return a parameterized struct and replace it to call a
-      // flattened version of the struct that has parameters replaced with the constant values.
+      // Find calls to "compute()" that return a parameterized struct type and replace it to call an
+      // instantiated version of the struct that has parameters replaced with the constant values.
       // Create the necessary instantiated/flattened struct in the same location as the original.
-      if (failed(Step1_InstantiateStructs::run(modOp, tracker))) {
-        llvm::errs() << DEBUG_TYPE << " failed while replacing concrete-parameter struct types\n";
+      if (failed(Step1A_InstantiateStructs::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while instantiating structs in templates\n";
+        return failure();
+      }
+      // Instantiate calls to templated functions.
+      if (failed(Step1B_InstantiateFunctions::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while instantiating functions in templates\n";
         return failure();
       }
 
@@ -1904,9 +2425,21 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
       });
     } while (tracker.isModified());
 
+    // Run user-selected cleanup first.
+    if (failed(cleanupSwitch(modOp, tracker))) {
+      return failure();
+    }
+    // Run universal cleanup again since no-param or param-only structs may exist now.
+    if (failed(runPipeline(universalCleanup, modOp))) {
+      return failure();
+    }
+    return success();
+  }
+
+  // Perform cleanup according to the 'cleanupMode' option.
+  LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
-    // Perform cleanup according to the 'cleanupMode' option.
-    switch (cleanupMode) { // NOLINT(bugprone-switch-missing-default-case)
+    switch (cleanupMode) {
     case StructCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);
@@ -1916,11 +2449,10 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
     case StructCleanupMode::Preimage:
       LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
-    case StructCleanupMode::Disabled:
+    default:
       LLVM_DEBUG(llvm::dbgs() << "(disabled)\n");
       return success();
     }
-    llvm_unreachable("switch cases cover all options");
   }
 
   // Erase parameterized structs that were replaced with concrete instantiations.
@@ -1960,9 +2492,7 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
   LogicalResult eraseUnreachableFromConcreteStructs(ModuleOp rootMod) {
     SmallVector<StructDefOp> roots;
     rootMod.walk([&roots](StructDefOp op) {
-      // Note: no need to check if the ConstParamsAttr is empty since `EmptyParamRemovalPass`
-      // ran earlier.
-      if (!op.hasConstParamsAttr()) {
+      if (!op.hasTemplateSymbolBindings()) {
         roots.push_back(op);
       }
       return WalkResult::skip(); // StructDefOp cannot be nested

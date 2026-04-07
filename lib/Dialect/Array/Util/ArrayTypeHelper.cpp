@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>

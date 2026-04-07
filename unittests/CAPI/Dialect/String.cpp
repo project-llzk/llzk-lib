@@ -9,9 +9,9 @@
 
 #include "llzk-c/Dialect/String.h"
 
-#include <mlir-c/BuiltinTypes.h>
-
 #include "../CAPITestBase.h"
+
+#include <mlir-c/BuiltinTypes.h>
 
 // Include the auto-generated tests
 #include "llzk/Dialect/String/IR/Dialect.capi.test.cpp.inc"

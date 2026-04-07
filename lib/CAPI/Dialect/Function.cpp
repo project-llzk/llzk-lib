@@ -7,13 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Function.h"
+
+#include "llzk-c/Support.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 
-#include "llzk-c/Dialect/Function.h"
-#include "llzk-c/Support.h"
+#include <mlir-c/IR.h>
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Pass.h>
@@ -21,9 +25,6 @@
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
-
-#include <mlir-c/IR.h>
-#include <mlir-c/Pass.h>
 
 #include <llvm/ADT/SmallVectorExtras.h>
 

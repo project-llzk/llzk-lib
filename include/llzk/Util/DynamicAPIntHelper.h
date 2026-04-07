@@ -42,6 +42,11 @@ inline llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i) {
 
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
+/// Converts a DynamicAPInt that is non-negative and fits in `bitWidth` bits into an APInt.
+/// Uses `bitWidth+1` so that all field values in `[0, p)` — which satisfy
+/// `val < 2^bitWidth` — have a clear sign bit and print as positive decimals.
+llvm::APInt toAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
+
 llvm::DynamicAPInt modExp(
     const llvm::DynamicAPInt &base, const llvm::DynamicAPInt &exp, const llvm::DynamicAPInt &mod
 );

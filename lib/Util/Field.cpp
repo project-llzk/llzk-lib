@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/Field.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
@@ -17,7 +19,6 @@
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
-#include "llzk/Util/Field.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -126,6 +127,8 @@ DynamicAPInt Field::reduce(const DynamicAPInt &i) const {
 }
 
 DynamicAPInt Field::reduce(const APInt &i) const { return reduce(toDynamicAPInt(i)); }
+
+DynamicAPInt Field::toSigned(const DynamicAPInt &i) const { return i < half() ? i : i - prime(); }
 
 DynamicAPInt Field::inv(const DynamicAPInt &i) const { return modInversePrime(i, prime()); }
 

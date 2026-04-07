@@ -1,45 +1,39 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 module attributes {llzk.lang} {
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%0: index) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type 'index' and output type '!felt.type' are not unifiable}}
-      %r0 = poly.unifiable_cast %0 : (index) -> !felt.type
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %0: index) {
-      function.return
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%0: index) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type 'index' and output type '!felt.type' are not unifiable}}
+        %r0 = poly.unifiable_cast %0 : (index) -> !felt.type
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %0: index) {
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%0: !array.type<1 x !felt.type>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<1 x !felt.type>' and output type '!array.type<2 x !felt.type>' are not unifiable}}
-      %r0 = poly.unifiable_cast %0 : (!array.type<1 x !felt.type>) -> !array.type<2 x !felt.type>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %0: index) {
-      function.return
-    }
-  }
-}
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
 
-// -----
-
-module attributes {llzk.lang} {
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%0: index) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type 'index' and output type '!felt.type' are not unifiable}}
-      %r0 = poly.unifiable_cast %0 : (index) -> !felt.type
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %0: index) {
-      function.return
+    struct.def @Tester {
+      function.def @compute(%0: !array.type<1 x !felt.type>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<1 x !felt.type>' and output type '!array.type<2 x !felt.type>' are not unifiable}}
+        %r0 = poly.unifiable_cast %0 : (!array.type<1 x !felt.type>) -> !array.type<2 x !felt.type>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %0: index) {
+        function.return
+      }
     }
   }
 }
@@ -47,15 +41,41 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%1: i1) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type 'i1' and output type 'index' are not unifiable}}
-      %r1 = poly.unifiable_cast %1 : (i1) -> index
-     function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%0: index) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type 'index' and output type '!felt.type' are not unifiable}}
+        %r0 = poly.unifiable_cast %0 : (index) -> !felt.type
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %0: index) {
+        function.return
+      }
     }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %1: i1) {
-      function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%1: i1) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type 'i1' and output type 'index' are not unifiable}}
+        %r1 = poly.unifiable_cast %1 : (i1) -> index
+       function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %1: i1) {
+        function.return
+      }
     }
   }
 }
@@ -64,15 +84,20 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%2: !felt.type) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type' and output type '!string.type' are not unifiable}}
-      %r2 = poly.unifiable_cast %2 : (!felt.type) -> !string.type
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %2: !felt.type) {
-      function.return
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%2: !felt.type) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type' and output type '!string.type' are not unifiable}}
+        %r2 = poly.unifiable_cast %2 : (!felt.type) -> !string.type
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %2: !felt.type) {
+        function.return
+      }
     }
   }
 }
@@ -80,33 +105,44 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @T1<[]> {
-    function.def @compute() -> !struct.type<@T1<[]>> {
-      %self = struct.new : <@T1<[]>>
-      function.return %self : !struct.type<@T1<[]>>
-    }
-    function.def @constrain(%self : !struct.type<@T1<[]>>) {
-      function.return
-    }
-  }
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
+  poly.template @TT1 {
+    struct.def @T1 {
+      function.def @compute() -> !struct.type<@TT1::@T1<[]>> {
+        %self = struct.new : <@TT1::@T1<[]>>
+        function.return %self : !struct.type<@TT1::@T1<[]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT1::@T1<[]>>) {
+        function.return
+      }
     }
   }
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%3: !struct.type<@T1<[]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T1<[]>>' and output type '!struct.type<@T2<[@S0]>>' are not unifiable}}
-      %r3 = poly.unifiable_cast %3 : (!struct.type<@T1<[]>>) -> !struct.type<@T2<[@S0]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
     }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %3: !struct.type<@T1<[]>>) {
-      function.return
+  }
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%3: !struct.type<@TT1::@T1<[]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@TT1::@T1<[]>>' and output type '!struct.type<@TT2::@T2<[@S0]>>' are not unifiable}}
+        %r3 = poly.unifiable_cast %3 : (!struct.type<@TT1::@T1<[]>>) -> !struct.type<@TT2::@T2<[@S0]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %3: !struct.type<@TT1::@T1<[]>>) {
+        function.return
+      }
     }
   }
 }
@@ -114,112 +150,156 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
     }
   }
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%4: !struct.type<@T2<[1]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T2<[1]>>' and output type '!struct.type<@T2<[!felt.type]>>' are not unifiable}}
-      %r4 = poly.unifiable_cast %4 : (!struct.type<@T2<[1]>>) -> !struct.type<@T2<[!felt.type]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %4: !struct.type<@T2<[1]>>) {
-      function.return
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%4: !struct.type<@TT2::@T2<[1]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@TT2::@T2<[1]>>' and output type '!struct.type<@TT2::@T2<[!felt.type]>>' are not unifiable}}
+        %r4 = poly.unifiable_cast %4 : (!struct.type<@TT2::@T2<[1]>>) -> !struct.type<@TT2::@T2<[!felt.type]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %4: !struct.type<@TT2::@T2<[1]>>) {
+        function.return
+      }
     }
   }
 }
 
-
-// -----
-
-#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {llzk.lang} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
-    }
-  }
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%6: !struct.type<@T2<[index]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T2<[index]>>' and output type '!struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>' are not unifiable}}
-      %r6 = poly.unifiable_cast %6 : (!struct.type<@T2<[index]>>) -> !struct.type<@T2<[#map1]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %6: !struct.type<@T2<[index]>>) {
-      function.return
-    }
-  }
-}
-
-// -----
-
-#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
-module attributes {llzk.lang} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
-    }
-  }
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%7: !struct.type<@T2<[!felt.type]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T2<[!felt.type]>>' and output type '!struct.type<@T2<[1234]>>' are not unifiable}}
-      %r7 = poly.unifiable_cast %7 : (!struct.type<@T2<[!felt.type]>>) -> !struct.type<@T2<[1234]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
-    }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>) {
-      function.return
-    }
-  }
-}
 
 // -----
 
 #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
 module attributes {llzk.lang} {
-  struct.def @T2<[@N]> {
-    function.def @compute() -> !struct.type<@T2<[@N]>> {
-      %self = struct.new : <@T2<[@N]>>
-      function.return %self : !struct.type<@T2<[@N]>>
-    }
-    function.def @constrain(%self : !struct.type<@T2<[@N]>>) {
-      function.return
-    }
-  }
-  struct.def @T3<[@A, @B, @C, @D, @E]> {
-    function.def @compute() -> !struct.type<@T3<[@A, @B, @C, @D, @E]>> {
-      %self = struct.new : <@T3<[@A, @B, @C, @D, @E]>>
-      function.return %self : !struct.type<@T3<[@A, @B, @C, @D, @E]>>
-    }
-    function.def @constrain(%self : !struct.type<@T3<[@A, @B, @C, @D, @E]>>) {
-      function.return
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
     }
   }
-  struct.def @Tester<[@S0, @S1]> {
-    function.def @compute(%18: !struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@Tester<[@S0, @S1]>> {
-      %self = struct.new : <@Tester<[@S0, @S1]>>
-      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>' and output type '!struct.type<@T3<[!string.type, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !struct.type<@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
-      %19 = poly.unifiable_cast %18 : (!struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) -> !struct.type<@T3<[!string.type, #map1, 1, @S0, !struct.type<@T2<[#map1]>>]>>
-      function.return %self : !struct.type<@Tester<[@S0, @S1]>>
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%6: !struct.type<@TT2::@T2<[index]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@TT2::@T2<[index]>>' and output type '!struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>' are not unifiable}}
+        %r6 = poly.unifiable_cast %6 : (!struct.type<@TT2::@T2<[index]>>) -> !struct.type<@TT2::@T2<[#map1]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %6: !struct.type<@TT2::@T2<[index]>>) {
+        function.return
+      }
     }
-    function.def @constrain(%self: !struct.type<@Tester<[@S0, @S1]>>, %18: !struct.type<@T3<[1, 1, @S0, 1, !struct.type<@T2<[1]>>]>>) {
-      function.return
+  }
+}
+
+// -----
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {llzk.lang} {
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%7: !struct.type<@TT2::@T2<[!felt.type]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@TT2::@T2<[!felt.type]>>' and output type '!struct.type<@TT2::@T2<[1234]>>' are not unifiable}}
+        %r7 = poly.unifiable_cast %7 : (!struct.type<@TT2::@T2<[!felt.type]>>) -> !struct.type<@TT2::@T2<[1234]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+#map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {llzk.lang} {
+  poly.template @TT2 {
+    poly.param @N
+
+    struct.def @T2 {
+      function.def @compute() -> !struct.type<@TT2::@T2<[@N]>> {
+        %self = struct.new : <@TT2::@T2<[@N]>>
+        function.return %self : !struct.type<@TT2::@T2<[@N]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT2::@T2<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @TT3 {
+    poly.param @A
+    poly.param @B
+    poly.param @C
+    poly.param @D
+    poly.param @E
+
+    struct.def @T3 {
+      function.def @compute() -> !struct.type<@TT3::@T3<[@A, @B, @C, @D, @E]>> {
+        %self = struct.new : <@TT3::@T3<[@A, @B, @C, @D, @E]>>
+        function.return %self : !struct.type<@TT3::@T3<[@A, @B, @C, @D, @E]>>
+      }
+      function.def @constrain(%self : !struct.type<@TT3::@T3<[@A, @B, @C, @D, @E]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @TTester {
+    poly.param @S0
+    poly.param @S1
+
+    struct.def @Tester {
+      function.def @compute(%18: !struct.type<@TT3::@T3<[1, 1, @S0, 1, !struct.type<@TT2::@T2<[1]>>]>>) -> !struct.type<@TTester::@Tester<[@S0, @S1]>> {
+        %self = struct.new : <@TTester::@Tester<[@S0, @S1]>>
+        // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@TT3::@T3<[1, 1, @S0, 1, !struct.type<@TT2::@T2<[1]>>]>>' and output type '!struct.type<@TT3::@T3<[!string.type, affine_map<()[s0, s1] -> (s0 + s1)>, 1, @S0, !struct.type<@TT2::@T2<[affine_map<()[s0, s1] -> (s0 + s1)>]>>]>>' are not unifiable}}
+        %19 = poly.unifiable_cast %18 : (!struct.type<@TT3::@T3<[1, 1, @S0, 1, !struct.type<@TT2::@T2<[1]>>]>>) -> !struct.type<@TT3::@T3<[!string.type, #map1, 1, @S0, !struct.type<@TT2::@T2<[#map1]>>]>>
+        function.return %self : !struct.type<@TTester::@Tester<[@S0, @S1]>>
+      }
+      function.def @constrain(%self: !struct.type<@TTester::@Tester<[@S0, @S1]>>, %18: !struct.type<@TT3::@T3<[1, 1, @S0, 1, !struct.type<@TT2::@T2<[1]>>]>>) {
+        function.return
+      }
     }
   }
 }

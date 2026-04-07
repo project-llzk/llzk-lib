@@ -70,6 +70,13 @@ public:
   explicit InFlightDiagnosticWrapper(const mlir::Location &loc)
       : InFlightDiagnosticWrapper(loc.getContext()) {}
 
+  /// Construct a silent diagnostic that does nothing when appended to or reported.
+  static InFlightDiagnosticWrapper createSilent(mlir::MLIRContext *ctx) {
+    mlir::InFlightDiagnostic d = mlir::emitRemark(mlir::UnknownLoc::get(ctx));
+    d.abandon();
+    return InFlightDiagnosticWrapper(std::move(d));
+  }
+
   /// Stream operator for new diagnostic arguments.
   template <typename Arg> InFlightDiagnosticWrapper &operator<<(Arg &&arg) & {
     return append(std::forward<Arg>(arg));

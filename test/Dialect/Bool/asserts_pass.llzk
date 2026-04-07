@@ -1,38 +1,47 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
-  struct.def @Component01<[@C]> {
-    function.def @compute(%a: !felt.type) -> !struct.type<@Component01<[@C]>> {
-      %self = struct.new : !struct.type<@Component01<[@C]>>
-      %b = poly.read_const @C : !felt.type
-      %c = bool.cmp gt(%a, %b)
-      bool.assert %c
-      function.return %self : !struct.type<@Component01<[@C]>>
-    }
+  poly.template @TComponent01 {
+    poly.param @C
 
-    function.def @constrain(%self: !struct.type<@Component01<[@C]>>, %a: !felt.type) {
-      %b = poly.read_const @C : !felt.type
-      %c = bool.cmp gt(%a, %b)
-      bool.assert %c
-      function.return
+    struct.def @Component01 {
+      function.def @compute(%a: !felt.type) -> !struct.type<@TComponent01::@Component01<[@C]>> {
+        %self = struct.new : !struct.type<@TComponent01::@Component01<[@C]>>
+        %b = poly.read_const @C : !felt.type
+        %c = bool.cmp gt(%a, %b)
+        bool.assert %c
+        function.return %self : !struct.type<@TComponent01::@Component01<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponent01::@Component01<[@C]>>, %a: !felt.type) {
+        %b = poly.read_const @C : !felt.type
+        %c = bool.cmp gt(%a, %b)
+        bool.assert %c
+        function.return
+      }
     }
   }
 }
-//CHECK-LABEL: struct.def @Component01<[@C]> {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Component01<[@C]>> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Component01<[@C]>>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
-//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A0]], %[[T0]])
-//CHECK-NEXT:      bool.assert %[[T1]]
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Component01<[@C]>>
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Component01<[@C]>>, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
-//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[A1]], %[[T0]])
-//CHECK-NEXT:      bool.assert %[[T1]]
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TComponent01 {
+// CHECK-NEXT:      poly.param @C
+// CHECK-NEXT:      struct.def @Component01 {
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TComponent01::@Component01<[@C]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent01::@Component01<[@C]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_0]], %[[VAL_2]]) : !felt.type, !felt.type
+// CHECK-NEXT:          bool.assert %[[VAL_3]]
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TComponent01::@Component01<[@C]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent01::@Component01<[@C]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @C : !felt.type
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_5]], %[[VAL_6]]) : !felt.type, !felt.type
+// CHECK-NEXT:          bool.assert %[[VAL_7]]
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 function.def @test_in_global_func(%a: !felt.type, %b: !felt.type) -> i1 {

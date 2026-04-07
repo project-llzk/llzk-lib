@@ -9,9 +9,9 @@
 
 #include "llzk-c/Dialect/LLZK.h"
 
-#include "llzk-c/Dialect/Felt.h"
-
 #include "../CAPITestBase.h"
+
+#include "llzk-c/Dialect/Felt.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/LLZK/IR/Attrs.capi.test.cpp.inc"

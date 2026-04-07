@@ -13,9 +13,9 @@
 
 #pragma once
 
-#include <mlir/TableGen/AttrOrTypeDef.h>
-
 #include "CommonCAPIGen.h"
+
+#include <mlir/TableGen/AttrOrTypeDef.h>
 
 /// @brief Generator for attribute/type C header files
 ///

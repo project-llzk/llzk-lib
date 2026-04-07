@@ -8,13 +8,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/Debug.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace llzk;
 using namespace llzk::array;

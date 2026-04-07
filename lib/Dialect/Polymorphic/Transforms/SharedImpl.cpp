@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "SharedImpl.h"
+
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
@@ -19,8 +21,6 @@
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
-
-#include "SharedImpl.h"
 
 mlir::ConversionTarget llzk::polymorphic::detail::newBaseTarget(mlir::MLIRContext *ctx) {
   mlir::ConversionTarget target(*ctx);

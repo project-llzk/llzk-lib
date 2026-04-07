@@ -1,0 +1,118 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
+
+// Tests: attempt to instantiate with incompatible types via `poly.tvar` (no template params on CallOp)
+module attributes {llzk.lang} {
+  poly.template @template_a1 {
+    poly.param @N
+    function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
+      function.return %2 : !felt.type
+    }
+  }
+
+  poly.template @template_a2 {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // expected-error@+2 {{'function.call' op operand type mismatch: expected type '!array.type<8,@N x !felt.type>', but found '!array.type<8,9 x i1>' for operand number 0}}
+      // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type', but found 'i1' for result number 0}}
+      %2 = function.call @template_a1::@f(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %2 : !poly.tvar<@T>
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      // expected-error@+1 {{failure while creating instantiated function 'template_a2_8_9_b_f'}}
+      function.call @template_a2::@f(%z) : (!array.type<8,9 x i1>) -> i1
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,9 x i1>) {
+      function.return
+    }
+  }
+}
+// CHECK: llzk-flatten failed while instantiating functions in templates
+// -----
+
+// Tests: attempt to instantiate with incompatible types via `poly.tvar` (with template params on CallOp)
+module attributes {llzk.lang} {
+  poly.template @template_b1 {
+    poly.param @N
+    function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
+      function.return %2 : !felt.type
+    }
+  }
+
+  poly.template @template_b2 {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // expected-error@+2 {{'function.call' op operand type mismatch: expected type '!array.type<8,9 x !felt.type>', but found '!array.type<8,9 x i1>' for operand number 0}}
+      // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type', but found 'i1' for result number 0}}
+      %2 = function.call @template_b1::@f<[9]>(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %2 : !poly.tvar<@T>
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      // expected-error@+1 {{failure while creating instantiated function 'template_b2_8_9_b_f'}}
+      function.call @template_b2::@f<[8,9,i1]>(%z) : (!array.type<8,9 x i1>) -> i1
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,9 x i1>) {
+      function.return
+    }
+  }
+}
+// CHECK: llzk-flatten failed while instantiating functions in templates
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @template_c1 {
+    poly.param @N
+    poly.expr @M {
+      %n = poly.read_const @N : index
+      %c = arith.addi %n, %n : index
+      poly.yield %c : index
+    }
+
+    function.def @f(%inp: !array.type<8,@M x i1>) -> i1 {
+      %c0 = arith.constant 0 : index
+      %2 = array.read %inp[%c0, %c0] : !array.type<8,@M x i1>, i1
+      function.return %2 : i1
+    }
+  }
+
+  poly.template @template_c2 {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!array.type<8,48 x i1>', but found '!array.type<8,9 x i1>' for operand number 0}}
+      %2 = function.call @template_c1::@f<[24]>(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %2 : !poly.tvar<@T>
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      // expected-error@+1 {{failure while creating instantiated function 'template_c2_8_9_b_f'}}
+      function.call @template_c2::@f(%z) : (!array.type<8,9 x i1>) -> i1
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,9 x i1>) {
+      function.return
+    }
+  }
+}
+// CHECK: llzk-flatten failed while instantiating functions in templates

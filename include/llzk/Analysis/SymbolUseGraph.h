@@ -30,7 +30,7 @@ class SymbolUseGraphNode {
   mlir::ModuleOp symbolPathRoot;
   mlir::SymbolRefAttr symbolPath;
   OpSet opsThatUseTheSymbol;
-  bool isStructConstParam;
+  bool isTemplateSymBinding;
 
   /* Tree structure. The SymbolUseGraph owns the nodes so just pointers here. */
   /// Predecessor: Symbol that uses the current Symbol with its defining Operation.
@@ -39,13 +39,14 @@ class SymbolUseGraphNode {
   mlir::SetVector<SymbolUseGraphNode *> successors;
 
   SymbolUseGraphNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path)
-      : symbolPathRoot(pathRoot), symbolPath(path), isStructConstParam(false) {
+      : symbolPathRoot(pathRoot), symbolPath(path), isTemplateSymBinding(false) {
     assert(pathRoot && "'pathRoot' cannot be nullptr");
     assert(path && "'path' cannot be nullptr");
   }
 
   /// Used only for creating the artificial root/head and tail nodes in the graph.
-  SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr), isStructConstParam(false) {}
+  SymbolUseGraphNode()
+      : symbolPathRoot(nullptr), symbolPath(nullptr), isTemplateSymBinding(false) {}
 
   /// Return 'false' iff the given node is an artificial node created for the graph head/tail.
   static bool isRealNodeImpl(const SymbolUseGraphNode *node) { return node->symbolPath != nullptr; }
@@ -73,8 +74,8 @@ public:
   /// The set of operations that use the symbol.
   const OpSet &getUserOps() const { return opsThatUseTheSymbol; }
 
-  /// Return `true` iff the symbol is a struct constant parameter name.
-  bool isStructParam() const { return isStructConstParam; }
+  /// Return `true` iff the symbol is a defined by a `TemplateSymbolBindingOpInterface`.
+  bool isTemplateSymbolBinding() const { return isTemplateSymBinding; }
 
   /// Return true if this node has any predecessors.
   bool hasPredecessor() const {

@@ -2,33 +2,20 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/Felt/IR/Types.h"
 
 using namespace mlir;
 
 namespace llzk::felt {
 
-LogicalResult FeltConstAttr::verify(
-    function_ref<InFlightDiagnostic()> errFn,
-    APInt, // NOLINT(performance-unnecessary-value-param)
-    StringAttr fieldName
-) {
-  return fieldName ? Field::verifyFieldDefined(
-                         fieldName.getValue(), wrapNonNullableInFlightDiagnostic(errFn)
-                     )
-                   : success();
+StringAttr FeltConstAttr::getFieldName() const {
+  auto ft = getType();
+  return ft ? ft.getFieldName() : StringAttr();
 }
-
-Type FeltConstAttr::getType() const {
-  return FeltType::get(this->getContext(), this->getFieldName());
-}
-
-FeltConstAttr::operator APInt() const { return getValue(); }
 
 } // namespace llzk::felt

@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Function/IR/OpTraits.h"
+
 #include "llzk/Dialect/Function/IR/Ops.h"
 
 #include <mlir/IR/Operation.h>

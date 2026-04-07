@@ -7,35 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
-#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+
 using namespace mlir;
+using namespace llzk::polymorphic;
 
 namespace llzk::component {
-
-ParseResult parseStructParams(AsmParser &parser, ArrayAttr &value) {
-  auto parseResult = FieldParser<ArrayAttr>::parse(parser);
-  if (failed(parseResult)) {
-    return parser.emitError(parser.getCurrentLocation(), "failed to parse struct parameters");
-  }
-  auto emitError = [&parser] {
-    return InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
-  };
-  FailureOr<SmallVector<Attribute>> res = forceIntAttrTypes(parseResult->getValue(), emitError);
-  if (failed(res)) {
-    return failure();
-  }
-  value = parser.getBuilder().getArrayAttr(*res);
-  return success();
-}
-
-void printStructParams(AsmPrinter &printer, ArrayAttr value) {
-  printer << '[';
-  printAttrs(printer, value.getValue(), ", ");
-  printer << ']';
-}
 
 LogicalResult StructType::verify(
     function_ref<InFlightDiagnostic()> emitError, SymbolRefAttr /*nameRef*/, ArrayAttr params
@@ -61,10 +41,13 @@ FailureOr<SymbolLookupResult<StructDefOp>> StructType::getDefinition(
       return failure();
     }
   }
-  // If this StructType contains parameters, make sure they match the number from the StructDefOp.
+  // If this StructType contains parameters, make sure the StructDefOp is within a TemplateOp with
+  // the same number of params.
   if (typeParams) {
-    auto defParams = res.value().get().getConstParams();
-    size_t numExpected = defParams ? defParams->size() : 0;
+    size_t numExpected = 0;
+    if (TemplateOp parent = getParentOfType<TemplateOp>(*res.value())) {
+      numExpected = parent.numConstOps<TemplateParamOp>();
+    }
     if (typeParams.size() != numExpected) {
       return op->emitError() << '\'' << StructType::name << "' type has " << typeParams.size()
                              << " parameters but \"" << res.value().get().getSymName()

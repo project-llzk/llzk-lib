@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "r1cs/Dialect/IR/Dialect.h"
+
 #include "r1cs/Dialect/IR/Ops.h"
 #include "r1cs/Dialect/IR/Types.h"
 

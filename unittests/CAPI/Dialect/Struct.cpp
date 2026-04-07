@@ -7,9 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Compare.h"
-
 #include "llzk-c/Dialect/Struct.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk/Util/Compare.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
@@ -17,8 +19,6 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include <gtest/gtest.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Struct/IR/Dialect.capi.test.cpp.inc"
@@ -244,11 +244,31 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_header_string) {
   }
 }
 
-TEST_F(StructDefTest, llzk_struct_def_op_get_has_param_name) {
+TEST_F(StructDefTest, llzk_struct_def_op_get_template_param_op_names) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
-    auto name = mlirStringRefCreateFromCString("p");
-    llzkStruct_StructDefOpHasParamName(op.op, name);
+    llzkStruct_StructDefOpGetTemplateParamOpNames(op.op, (MlirAttribute *)NULL);
+  }
+}
+
+TEST_F(StructDefTest, llzk_struct_def_op_get_num_template_param_op_names) {
+  auto op = test_op();
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
+    llzkStruct_StructDefOpGetNumTemplateParamOpNames(op.op);
+  }
+}
+
+TEST_F(StructDefTest, llzk_struct_def_op_get_template_expr_op_names) {
+  auto op = test_op();
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
+    llzkStruct_StructDefOpGetTemplateExprOpNames(op.op, (MlirAttribute *)NULL);
+  }
+}
+
+TEST_F(StructDefTest, llzk_struct_def_op_get_num_template_expr_op_names) {
+  auto op = test_op();
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
+    llzkStruct_StructDefOpGetNumTemplateExprOpNames(op.op);
   }
 }
 
@@ -340,7 +360,7 @@ TEST_F(StructDefTest, llzk_member_read_op_builder_with_const_param_distance) {
       auto index_type = testClass.createIndexType();
       auto struct_value = mlirOperationGetResult(struct_new_op, 0);
       auto member_name = mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("f"));
-      return llzkStruct_MemberReadOpBuildWithConstParamDistance(
+      return llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance(
           builder, location, index_type, struct_value, member_name,
           mlirStringRefCreateFromCString("N")
       );
@@ -397,13 +417,12 @@ std::unique_ptr<StructDefOpBuildFuncHelper> StructDefOpBuildFuncHelper::get() {
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       // Use ModuleOp as parent to avoid the following:
-      // error: 'struct.def' op expects parent op 'builtin.module'
+      // error: 'struct.def' op expects parent op to be one of 'builtin.module, poly.template'
       const auto *name = "TestStruct";
       this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
       auto result = llzkStruct_StructDefOpBuild(
           builder, location,
-          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name)),
-          MlirAttribute {}
+          mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString(name))
       );
       // Populate the struct to avoid the errors mentioned below.
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.

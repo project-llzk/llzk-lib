@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+
 #include "llzk/Util/TypeHelper.h"
 
 // TableGen'd implementation files

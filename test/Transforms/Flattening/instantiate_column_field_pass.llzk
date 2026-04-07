@@ -1,49 +1,53 @@
-// RUN: llzk-opt -split-input-file %s -llzk-flatten 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
-  struct.def @ComponentA1<[@T]> {
-    struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
+  poly.template @TComponentA1 {
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@ComponentA1<[@T]>>) { function.return }
-    function.def @compute() -> !struct.type<@ComponentA1<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentA1<[@T]>>
-      function.return %self : !struct.type<@ComponentA1<[@T]>>
+    struct.def @ComponentA1 {
+      struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
+
+      function.def @constrain(%self: !struct.type<@TComponentA1::@ComponentA1<[@T]>>) { function.return }
+      function.def @compute() -> !struct.type<@TComponentA1::@ComponentA1<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentA1::@ComponentA1<[@T]>>
+        function.return %self : !struct.type<@TComponentA1::@ComponentA1<[@T]>>
+      }
     }
   }
 
   struct.def @ComponentA2 {
-    function.def @compute(%p: !struct.type<@ComponentA1<[!felt.type]>>) -> !struct.type<@ComponentA2> {
+    function.def @compute(%p: !struct.type<@TComponentA1::@ComponentA1<[!felt.type]>>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
-      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1<[!felt.type]>>, !felt.type {tableOffset = -1 : index}
+      %r = struct.readm %p[@f1] : !struct.type<@TComponentA1::@ComponentA1<[!felt.type]>>, !felt.type {tableOffset = -1 : index}
       function.return %self : !struct.type<@ComponentA2>
     }
 
-    function.def @constrain(%self: !struct.type<@ComponentA2>, %p: !struct.type<@ComponentA1<[!felt.type]>>) {
+    function.def @constrain(%self: !struct.type<@ComponentA2>, %p: !struct.type<@TComponentA1::@ComponentA1<[!felt.type]>>) {
       function.return
     }
   }
 }
-//CHECK-LABEL: struct.def @ComponentA1_f {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1_f> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1_f>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA1_f>
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @ComponentA2 {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) -> !struct.type<@ComponentA2> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@ComponentA1_f>, !felt.type {tableOffset = -1 : index}
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA2>
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-
+// CHECK-LABEL: struct.def @TComponentA1_f_ComponentA1 {
+// CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
+// CHECK-NEXT:    function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TComponentA1_f_ComponentA1> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentA1_f_ComponentA1>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TComponentA1_f_ComponentA1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @ComponentA2 {
+// CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) -> !struct.type<@ComponentA2> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@TComponentA1_f_ComponentA1>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@ComponentA2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
@@ -57,22 +61,26 @@ module attributes {llzk.lang} {
     }
   }
 
-  struct.def @ComponentA2<[@N]> {
-    function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2<[@N]>> {
-      %self = struct.new : !struct.type<@ComponentA2<[@N]>>
-      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @N}
-      function.return %self : !struct.type<@ComponentA2<[@N]>>
-    }
+  poly.template @TComponentA2 {
+    poly.param @N
 
-    function.def @constrain(%self: !struct.type<@ComponentA2<[@N]>>, %p: !struct.type<@ComponentA1>) {
-      function.return
+    struct.def @ComponentA2 {
+      function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@TComponentA2::@ComponentA2<[@N]>> {
+        %self = struct.new : !struct.type<@TComponentA2::@ComponentA2<[@N]>>
+        %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @N}
+        function.return %self : !struct.type<@TComponentA2::@ComponentA2<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentA2::@ComponentA2<[@N]>>, %p: !struct.type<@ComponentA1>) {
+        function.return
+      }
     }
   }
 
   struct.def @ComponentA3 {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA3> {
       %self = struct.new : !struct.type<@ComponentA3>
-      %c = function.call @ComponentA2::@compute(%p) : (!struct.type<@ComponentA1>) -> !struct.type<@ComponentA2<[-1]>>
+      %c = function.call @TComponentA2::@ComponentA2::@compute(%p) : (!struct.type<@ComponentA1>) -> !struct.type<@TComponentA2::@ComponentA2<[-1]>>
       function.return %self : !struct.type<@ComponentA3>
     }
 
@@ -81,37 +89,38 @@ module attributes {llzk.lang} {
     }
   }
 }
-//CHECK-LABEL: struct.def @ComponentA1 {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA1>
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @"ComponentA2_-1" {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@"ComponentA2_-1"> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@"ComponentA2_-1">
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@"ComponentA2_-1">
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@"ComponentA2_-1">, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @ComponentA3 {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA3> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA3>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = function.call @"ComponentA2_-1"::@compute(%[[A0]]) : (!struct.type<@ComponentA1>) -> !struct.type<@"ComponentA2_-1">
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA3>
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA3>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-
+// CHECK-LABEL: struct.def @ComponentA1 {
+// CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
+// CHECK-NEXT:    function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@ComponentA1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @"TComponentA2_-1_ComponentA2" {
+// CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@"TComponentA2_-1_ComponentA2"> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@"TComponentA2_-1_ComponentA2">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@"TComponentA2_-1_ComponentA2">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"TComponentA2_-1_ComponentA2">, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @ComponentA3 {
+// CHECK-NEXT:    function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA3> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA3>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"TComponentA2_-1_ComponentA2"::@compute(%[[VAL_7]]) : (!struct.type<@ComponentA1>) -> !struct.type<@"TComponentA2_-1_ComponentA2">
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@ComponentA3>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA3>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
@@ -125,15 +134,19 @@ module attributes {llzk.lang} {
     }
   }
 
-  struct.def @ComponentA2<[@N]> {
-    function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2<[@N]>> {
-      %self = struct.new : !struct.type<@ComponentA2<[@N]>>
-      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @N}
-      function.return %self : !struct.type<@ComponentA2<[@N]>>
-    }
+  poly.template @TComponentA2 {
+    poly.param @N
 
-    function.def @constrain(%self: !struct.type<@ComponentA2<[@N]>>, %p: !struct.type<@ComponentA1>) {
-      function.return
+    struct.def @ComponentA2 {
+      function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@TComponentA2::@ComponentA2<[@N]>> {
+        %self = struct.new : !struct.type<@TComponentA2::@ComponentA2<[@N]>>
+        %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !felt.type {tableOffset = @N}
+        function.return %self : !struct.type<@TComponentA2::@ComponentA2<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentA2::@ComponentA2<[@N]>>, %p: !struct.type<@ComponentA1>) {
+        function.return
+      }
     }
   }
 
@@ -141,7 +154,7 @@ module attributes {llzk.lang} {
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA3> {
       %self = struct.new : !struct.type<@ComponentA3>
       %c0 = arith.constant 2 : index
-      %c = function.call @ComponentA2::@compute(%p) {()[%c0]} : (!struct.type<@ComponentA1>) -> !struct.type<@ComponentA2<[affine_map<()[s0] -> (s0 + 1)>]>>
+      %c = function.call @TComponentA2::@ComponentA2::@compute(%p) {()[%c0]} : (!struct.type<@ComponentA1>) -> !struct.type<@TComponentA2::@ComponentA2<[affine_map<()[s0] -> (s0 + 1)>]>>
       function.return %self : !struct.type<@ComponentA3>
     }
 
@@ -150,101 +163,113 @@ module attributes {llzk.lang} {
     }
   }
 }
-//CHECK-LABEL: struct.def @ComponentA1 {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA1>
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @ComponentA2_3 {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2_3> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2_3>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@ComponentA1>, !felt.type {tableOffset = 3 : index}
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA2_3>
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2_3>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @ComponentA3 {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA3> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA3>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = function.call @ComponentA2_3::@compute(%[[A0]]) : (!struct.type<@ComponentA1>) -> !struct.type<@ComponentA2_3>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA3>
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA3>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-
+// CHECK-LABEL: struct.def @ComponentA1 {
+// CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
+// CHECK-NEXT:    function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@ComponentA1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @TComponentA2_3_ComponentA2 {
+// CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@TComponentA2_3_ComponentA2> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentA2_3_ComponentA2>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@ComponentA1>, !felt.type {tableOffset = 3 : index}
+// CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@TComponentA2_3_ComponentA2>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA2_3_ComponentA2>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @ComponentA3 {
+// CHECK-NEXT:    function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA3> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA3>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TComponentA2_3_ComponentA2::@compute(%[[VAL_7]]) : (!struct.type<@ComponentA1>) -> !struct.type<@TComponentA2_3_ComponentA2>
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@ComponentA3>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA3>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
-  struct.def @ComponentA1<[@T]> {
-    struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
+  poly.template @TComponentA1 {
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@ComponentA1<[@T]>>) { function.return }
-    function.def @compute() -> !struct.type<@ComponentA1<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentA1<[@T]>>
-      function.return %self : !struct.type<@ComponentA1<[@T]>>
+    struct.def @ComponentA1 {
+      struct.member @f1 : !poly.tvar<@T> {column, llzk.pub}
+
+      function.def @constrain(%self: !struct.type<@TComponentA1::@ComponentA1<[@T]>>) { function.return }
+      function.def @compute() -> !struct.type<@TComponentA1::@ComponentA1<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentA1::@ComponentA1<[@T]>>
+        function.return %self : !struct.type<@TComponentA1::@ComponentA1<[@T]>>
+      }
     }
   }
 
-  struct.def @ComponentA2<[@N, @T]> {
-    function.def @compute(%p: !struct.type<@ComponentA1<[@T]>>) -> !struct.type<@ComponentA2<[@N, @T]>> {
-      %self = struct.new : !struct.type<@ComponentA2<[@N, @T]>>
-      %r = struct.readm %p[@f1] : !struct.type<@ComponentA1<[@T]>>, !poly.tvar<@T> {tableOffset = @N}
-      function.return %self : !struct.type<@ComponentA2<[@N, @T]>>
-    }
+  poly.template @TComponentA2 {
+    poly.param @N
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@ComponentA2<[@N, @T]>>, %p: !struct.type<@ComponentA1<[@T]>>) {
-      function.return
+    struct.def @ComponentA2 {
+      function.def @compute(%p: !struct.type<@TComponentA1::@ComponentA1<[@T]>>) -> !struct.type<@TComponentA2::@ComponentA2<[@N, @T]>> {
+        %self = struct.new : !struct.type<@TComponentA2::@ComponentA2<[@N, @T]>>
+        %r = struct.readm %p[@f1] : !struct.type<@TComponentA1::@ComponentA1<[@T]>>, !poly.tvar<@T> {tableOffset = @N}
+        function.return %self : !struct.type<@TComponentA2::@ComponentA2<[@N, @T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentA2::@ComponentA2<[@N, @T]>>, %p: !struct.type<@TComponentA1::@ComponentA1<[@T]>>) {
+        function.return
+      }
     }
   }
 
   struct.def @ComponentA3 {
-    function.def @compute(%p: !struct.type<@ComponentA1<[!felt.type]>>) -> !struct.type<@ComponentA3> {
+    function.def @compute(%p: !struct.type<@TComponentA1::@ComponentA1<[!felt.type]>>) -> !struct.type<@ComponentA3> {
       %self = struct.new : !struct.type<@ComponentA3>
-      %c = function.call @ComponentA2::@compute(%p) : (!struct.type<@ComponentA1<[!felt.type]>>) -> !struct.type<@ComponentA2<[-1, !felt.type]>>
+      %c = function.call @TComponentA2::@ComponentA2::@compute(%p) : (!struct.type<@TComponentA1::@ComponentA1<[!felt.type]>>) -> !struct.type<@TComponentA2::@ComponentA2<[-1, !felt.type]>>
       function.return %self : !struct.type<@ComponentA3>
     }
 
-    function.def @constrain(%self: !struct.type<@ComponentA3>, %p: !struct.type<@ComponentA1<[!felt.type]>>) {
+    function.def @constrain(%self: !struct.type<@ComponentA3>, %p: !struct.type<@TComponentA1::@ComponentA1<[!felt.type]>>) {
       function.return
     }
   }
 }
-//CHECK-LABEL: struct.def @ComponentA1_f {
-//CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @compute() -> !struct.type<@ComponentA1_f> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA1_f>
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA1_f>
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @"ComponentA2_-1_f" {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) -> !struct.type<@"ComponentA2_-1_f"> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@"ComponentA2_-1_f">
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@ComponentA1_f>, !felt.type {tableOffset = -1 : index}
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@"ComponentA2_-1_f">
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@"ComponentA2_-1_f">, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
-//CHECK-LABEL: struct.def @ComponentA3 {
-//CHECK-NEXT:    function.def @compute(%[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) -> !struct.type<@ComponentA3> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA3>
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = function.call @"ComponentA2_-1_f"::@compute(%[[A0]]) : (!struct.type<@ComponentA1_f>) -> !struct.type<@"ComponentA2_-1_f">
-//CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@ComponentA3>
-//CHECK-NEXT:    }
-//CHECK-NEXT:    function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA3>, %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1_f>) attributes {function.allow_constraint} {
-//CHECK-NEXT:      function.return
-//CHECK-NEXT:    }
-//CHECK-NEXT:  }
+// CHECK-LABEL: struct.def @TComponentA1_f_ComponentA1 {
+// CHECK-NEXT:    struct.member @f1 : !felt.type {column, llzk.pub}
+// CHECK-NEXT:    function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TComponentA1_f_ComponentA1> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentA1_f_ComponentA1>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TComponentA1_f_ComponentA1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @"TComponentA2_-1_f_ComponentA2" {
+// CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) -> !struct.type<@"TComponentA2_-1_f_ComponentA2"> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@"TComponentA2_-1_f_ComponentA2">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@TComponentA1_f_ComponentA1>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@"TComponentA2_-1_f_ComponentA2">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"TComponentA2_-1_f_ComponentA2">, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: struct.def @ComponentA3 {
+// CHECK-NEXT:    function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) -> !struct.type<@ComponentA3> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA3>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"TComponentA2_-1_f_ComponentA2"::@compute(%[[VAL_7]]) : (!struct.type<@TComponentA1_f_ComponentA1>) -> !struct.type<@"TComponentA2_-1_f_ComponentA2">
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@ComponentA3>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA3>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

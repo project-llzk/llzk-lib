@@ -56,7 +56,7 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
           OptionalParameter<"::mlir::ArrayAttr", "Struct parameters">:$params);
 
   let assemblyFormat =
-      [{ `<` $nameRef ( `<` custom<StructParams>($params)^ `>` )? `>` }];
+      [{ `<` $nameRef ( `<` custom<TemplateParams>($params)^ `>` )? `>` }];
 
   let genVerifyDecl = 1;
 

@@ -1,0 +1,239 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @MissingTemplateParams {
+    function.def @compute() -> !struct.type<@MissingTemplateParams> {
+      %self = struct.new : !struct.type<@MissingTemplateParams>
+      // expected-error@+1 {{'function.call' op must provide template instantiation parameters when calling "@id" because not all template parameters of "@GlobalFunc" appear in the function type signature}}
+      %0 = function.call @GlobalFunc::@id() : () -> index
+      function.return %self : !struct.type<@MissingTemplateParams>
+    }
+
+    function.def @constrain(%self: !struct.type<@MissingTemplateParams>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @EmptyTemplateParams {
+    function.def @compute() -> !struct.type<@EmptyTemplateParams> {
+      %self = struct.new : !struct.type<@EmptyTemplateParams>
+      // expected-error@+1 {{'function.call' op must provide template instantiation parameters when calling "@id" because not all template parameters of "@GlobalFunc" appear in the function type signature}}
+      %0 = function.call @GlobalFunc::@id<[]>() : () -> index
+      function.return %self : !struct.type<@EmptyTemplateParams>
+    }
+
+    function.def @constrain(%self: !struct.type<@EmptyTemplateParams>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @ExtraTemplateParams {
+    function.def @compute() -> !struct.type<@ExtraTemplateParams> {
+      %self = struct.new : !struct.type<@ExtraTemplateParams>
+      // expected-error@+1 {{'function.call' op template instantiation has 2 parameter(s) but "@GlobalFunc" expects 1 template parameter(s)}}
+      %0 = function.call @GlobalFunc::@id<[23, 91]>() : () -> index
+      function.return %self : !struct.type<@ExtraTemplateParams>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExtraTemplateParams>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  function.def @id() -> index {
+    %a = arith.constant 42 : index
+    function.return %a : index
+  }
+
+  struct.def @ShouldNotHaveTemplateParams {
+    function.def @compute() -> !struct.type<@ShouldNotHaveTemplateParams> {
+      %self = struct.new : !struct.type<@ShouldNotHaveTemplateParams>
+      // expected-error@+1 {{'function.call' op can only have template instantiations when targeting a templated free function}}
+      %0 = function.call @id<[23, 91]>() : () -> index
+      function.return %self : !struct.type<@ShouldNotHaveTemplateParams>
+    }
+
+    function.def @constrain(%self: !struct.type<@ShouldNotHaveTemplateParams>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : index
+
+    function.def @id() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @WrongParamTypeB {
+    function.def @compute() -> !struct.type<@WrongParamTypeB> {
+      %self = struct.new : !struct.type<@WrongParamTypeB>
+      // expected-error@+1 {{'function.call' op instantiation value '#felt<const 35> : !felt.type' is not compatible with parameter "@A" type restriction 'index'}}
+      %0 = function.call @GlobalFunc::@id<[#felt<const 35>]>() : () -> index
+      function.return %self : !struct.type<@WrongParamTypeB>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongParamTypeB>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !felt.type
+
+    function.def @id() -> !felt.type {
+      %a = poly.read_const @A : !felt.type
+      function.return %a : !felt.type
+    }
+  }
+
+  struct.def @WrongParamTypeC {
+    function.def @compute() -> !struct.type<@WrongParamTypeC> {
+      %self = struct.new : !struct.type<@WrongParamTypeC>
+      // expected-error@+1 {{'function.call' op instantiation value '"string"' is not compatible with parameter "@A" type restriction '!felt.type'}}
+      %0 = function.call @GlobalFunc::@id<["string"]>() : () -> !felt.type
+      function.return %self : !struct.type<@WrongParamTypeC>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongParamTypeC>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !poly.tvar<@A>
+
+    function.def @id() -> !poly.tvar<@A> {
+      %a = poly.read_const @A : !poly.tvar<@A>
+      function.return %a : !poly.tvar<@A>
+    }
+  }
+
+  struct.def @WrongParamTypeD {
+    function.def @compute() -> !struct.type<@WrongParamTypeD> {
+      %self = struct.new : !struct.type<@WrongParamTypeD>
+      // expected-error@+1 {{'function.call' op instantiation value '98 : index' is not compatible with parameter "@A" type restriction '!poly.tvar<@A>'}}
+      %0 = function.call @GlobalFunc::@id<[98]>() : () -> !felt.type
+      function.return %self : !struct.type<@WrongParamTypeD>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongParamTypeD>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @N
+
+    function.def @id() -> !array.type<2,@N x index> {
+      %a = array.new : !array.type<2,@N x index>
+      function.return %a : !array.type<2,@N x index>
+    }
+  }
+
+  struct.def @CannotUnifyWithInferredA {
+    function.def @compute() -> !struct.type<@CannotUnifyWithInferredA> {
+      %self = struct.new : !struct.type<@CannotUnifyWithInferredA>
+      // expected-error@+1 {{'function.call' op template instantiation value '9 : index' for parameter "@N" conflicts with value '5 : index' inferred from function type signature}}
+      %0 = function.call @GlobalFunc::@id<[9]>() : () -> !array.type<2,5 x index>
+      function.return %self : !struct.type<@CannotUnifyWithInferredA>
+    }
+
+    function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredA>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @N
+
+    function.def @id() -> !array.type<2,@N x index> {
+      %a = array.new : !array.type<2,@N x index>
+      function.return %a : !array.type<2,@N x index>
+    }
+  }
+
+  struct.def @CannotUnifyWithInferredB {
+    function.def @compute() -> !struct.type<@CannotUnifyWithInferredB> {
+      %self = struct.new : !struct.type<@CannotUnifyWithInferredB>
+      // expected-error@+1 {{'function.call' op template instantiation value '1 : index' for parameter "@N" conflicts with value '5 : index' inferred from function type signature}}
+      %0 = function.call @GlobalFunc::@id<[true]>() : () -> !array.type<2,5 x index>
+      function.return %self : !struct.type<@CannotUnifyWithInferredB>
+    }
+
+    function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredB>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @N
+
+    function.def @id() -> !array.type<2,@N x index> {
+      %a = array.new : !array.type<2,@N x index>
+      function.return %a : !array.type<2,@N x index>
+    }
+  }
+
+  struct.def @CannotUnifyWithInferredC {
+    function.def @compute() -> !struct.type<@CannotUnifyWithInferredC> {
+      %self = struct.new : !struct.type<@CannotUnifyWithInferredC>
+      // expected-error@+1 {{'function.call' op template instantiation value '#felt<const 5> : !felt.type' for parameter "@N" conflicts with value '5 : index' inferred from function type signature}}
+      %0 = function.call @GlobalFunc::@id<[#felt<const 5>]>() : () -> !array.type<2,5 x index>
+      function.return %self : !struct.type<@CannotUnifyWithInferredC>
+    }
+
+    function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredC>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @N
+
+    function.def @id() -> !array.type<2,@N x index> {
+      %a = array.new : !array.type<2,@N x index>
+      function.return %a : !array.type<2,@N x index>
+    }
+  }
+
+  struct.def @CannotUnifyWithInferredD {
+    function.def @compute() -> !struct.type<@CannotUnifyWithInferredD> {
+      %self = struct.new : !struct.type<@CannotUnifyWithInferredD>
+      // expected-error@+1 {{'function.call' op template instantiation value 'i1' for parameter "@N" conflicts with value '5 : index' inferred from function type signature}}
+      %0 = function.call @GlobalFunc::@id<[i1]>() : () -> !array.type<2,5 x index>
+      function.return %self : !struct.type<@CannotUnifyWithInferredD>
+    }
+
+    function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredD>) { function.return }
+  }
+}

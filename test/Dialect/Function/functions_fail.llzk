@@ -23,7 +23,7 @@ function.def @fail_06(%x: (i1) -> i32) -> index {
 }
 // -----
 function.def @fail_07() {
-  // expected-error@+1 {{'function.def' op expects parent op to be one of 'builtin.module, struct.def'}}
+  // expected-error@+1 {{'function.def' op expects parent op to be one of 'builtin.module, struct.def, poly.template'}}
   function.def @inner() {
     function.return
   }

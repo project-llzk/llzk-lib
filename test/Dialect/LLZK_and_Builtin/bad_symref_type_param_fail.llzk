@@ -26,21 +26,25 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @A<[@T]> {
-    function.def @compute() -> !struct.type<@A<[@T]>> {
-      %self = struct.new : !struct.type<@A<[@T]>>
-      function.return %self : !struct.type<@A<[@T]>>
+  poly.template @TA {
+    poly.param @T
+
+    struct.def @A {
+      function.def @compute() -> !struct.type<@TA::@A<[@T]>> {
+        %self = struct.new : !struct.type<@TA::@A<[@T]>>
+        function.return %self : !struct.type<@TA::@A<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TA::@A<[@T]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@A<[@T]>>) { function.return }
   }
 
   // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
   function.def private @in_return_deep() ->
-    !array.type<2 x !struct.type<@A<[
-      !array.type<2 x !struct.type<@A<[
-        !struct.type<@A<[
-          !array.type<2 x !struct.type<@A<[
-            !struct.type<@A<[!poly.tvar<@Unknown>]>>
+    !array.type<2 x !struct.type<@TA::@A<[
+      !array.type<2 x !struct.type<@TA::@A<[
+        !struct.type<@TA::@A<[
+          !array.type<2 x !struct.type<@TA::@A<[
+            !struct.type<@TA::@A<[!poly.tvar<@Unknown>]>>
           ]>>>
         ]>>
       ]>>>
@@ -65,21 +69,25 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @A<[@T]> {
-    function.def @compute() -> !struct.type<@A<[@T]>> {
-      %self = struct.new : !struct.type<@A<[@T]>>
-      function.return %self : !struct.type<@A<[@T]>>
+  poly.template @TA {
+    poly.param @T
+
+    struct.def @A {
+      function.def @compute() -> !struct.type<@TA::@A<[@T]>> {
+        %self = struct.new : !struct.type<@TA::@A<[@T]>>
+        function.return %self : !struct.type<@TA::@A<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TA::@A<[@T]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@A<[@T]>>) { function.return }
   }
 
   // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
   function.def private @in_arg_deep(
-    !array.type<2 x !struct.type<@A<[
-      !struct.type<@A<[
-        !array.type<2 x !struct.type<@A<[
-          !array.type<2 x !struct.type<@A<[
-            !struct.type<@A<[!poly.tvar<@Unknown>]>>
+    !array.type<2 x !struct.type<@TA::@A<[
+      !struct.type<@TA::@A<[
+        !array.type<2 x !struct.type<@TA::@A<[
+          !array.type<2 x !struct.type<@TA::@A<[
+            !struct.type<@TA::@A<[!poly.tvar<@Unknown>]>>
           ]>>>
         ]>>>
       ]>>
@@ -88,36 +96,48 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @InComputeReturnStruct<[@N]> {
-    // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
-    function.def @compute() -> !struct.type<@InComputeReturnStruct<[@Unknown]>> {
-      %self = struct.new : !struct.type<@InComputeReturnStruct<[@N]>>
-      function.return %self : !struct.type<@InComputeReturnStruct<[@N]>>
+  poly.template @TInComputeReturnStruct {
+    poly.param @N
+
+    struct.def @InComputeReturnStruct {
+      // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
+      function.def @compute() -> !struct.type<@TInComputeReturnStruct::@InComputeReturnStruct<[@Unknown]>> {
+        %self = struct.new : !struct.type<@TInComputeReturnStruct::@InComputeReturnStruct<[@N]>>
+        function.return %self : !struct.type<@TInComputeReturnStruct::@InComputeReturnStruct<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TInComputeReturnStruct::@InComputeReturnStruct<[@N]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@InComputeReturnStruct<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @InComputeReturnArrayOfScalar<[@N]> {
-    // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
-    function.def @compute() -> !struct.type<@InComputeReturnArrayOfScalar<[!array.type<@Unknown x i1>]>> {
-      %self = struct.new : !struct.type<@InComputeReturnArrayOfScalar<[@N]>>
-      function.return %self : !struct.type<@InComputeReturnArrayOfScalar<[@N]>>
+  poly.template @TInComputeReturnArrayOfScalar {
+    poly.param @N
+
+    struct.def @InComputeReturnArrayOfScalar {
+      // expected-error@+1 {{'function.def' op references unknown symbol "@Unknown"}}
+      function.def @compute() -> !struct.type<@TInComputeReturnArrayOfScalar::@InComputeReturnArrayOfScalar<[!array.type<@Unknown x i1>]>> {
+        %self = struct.new : !struct.type<@TInComputeReturnArrayOfScalar::@InComputeReturnArrayOfScalar<[@N]>>
+        function.return %self : !struct.type<@TInComputeReturnArrayOfScalar::@InComputeReturnArrayOfScalar<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TInComputeReturnArrayOfScalar::@InComputeReturnArrayOfScalar<[@N]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@InComputeReturnArrayOfScalar<[@N]>>) { function.return }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @InComputeReturnArrayOfStruct<[@N]> {
-    // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
-    // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
-    function.def @compute() -> !struct.type<@InComputeReturnArrayOfStruct<[!array.type<1 x !struct.type<@Unknown>>]>> {
-      %self = struct.new : !struct.type<@InComputeReturnArrayOfStruct<[@N]>>
-      function.return %self : !struct.type<@InComputeReturnArrayOfStruct<[@N]>>
+  poly.template @TInComputeReturnArrayOfStruct {
+    poly.param @N
+
+    struct.def @InComputeReturnArrayOfStruct {
+      // expected-error@+2 {{'function.def' op references unknown symbol "@Unknown"}}
+      // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+      function.def @compute() -> !struct.type<@TInComputeReturnArrayOfStruct::@InComputeReturnArrayOfStruct<[!array.type<1 x !struct.type<@Unknown>>]>> {
+        %self = struct.new : !struct.type<@TInComputeReturnArrayOfStruct::@InComputeReturnArrayOfStruct<[@N]>>
+        function.return %self : !struct.type<@TInComputeReturnArrayOfStruct::@InComputeReturnArrayOfStruct<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TInComputeReturnArrayOfStruct::@InComputeReturnArrayOfStruct<[@N]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@InComputeReturnArrayOfStruct<[@N]>>) { function.return }
   }
 }
 // -----
@@ -247,26 +267,34 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @InNewStructParam<[@A]> {
-    function.def @compute() -> !struct.type<@InNewStructParam<[@A]>> {
-      %self = struct.new : !struct.type<@InNewStructParam<[@A]>>
-      // expected-error@+1 {{'struct.new' op references unknown symbol "@Unknown"}}
-      %u = struct.new : !struct.type<@InNewStructParam<[@Unknown]>>
-      function.return %self : !struct.type<@InNewStructParam<[@A]>>
+  poly.template @TInNewStructParam {
+    poly.param @A
+
+    struct.def @InNewStructParam {
+      function.def @compute() -> !struct.type<@TInNewStructParam::@InNewStructParam<[@A]>> {
+        %self = struct.new : !struct.type<@TInNewStructParam::@InNewStructParam<[@A]>>
+        // expected-error@+1 {{'struct.new' op references unknown symbol "@Unknown"}}
+        %u = struct.new : !struct.type<@TInNewStructParam::@InNewStructParam<[@Unknown]>>
+        function.return %self : !struct.type<@TInNewStructParam::@InNewStructParam<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TInNewStructParam::@InNewStructParam<[@A]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@InNewStructParam<[@A]>>) { function.return }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @InNewStructArrayParam<[@A]> {
-    function.def @compute() -> !struct.type<@InNewStructArrayParam<[@A]>> {
-      %self = struct.new : !struct.type<@InNewStructArrayParam<[@A]>>
-      // expected-error@+1 {{'struct.new' op references unknown symbol "@Unknown"}}
-      %u = struct.new : !struct.type<@InNewStructArrayParam<[!array.type<@Unknown x i1>]>>
-      function.return %self : !struct.type<@InNewStructArrayParam<[@A]>>
+  poly.template @TInNewStructArrayParam {
+    poly.param @A
+
+    struct.def @InNewStructArrayParam {
+      function.def @compute() -> !struct.type<@TInNewStructArrayParam::@InNewStructArrayParam<[@A]>> {
+        %self = struct.new : !struct.type<@TInNewStructArrayParam::@InNewStructArrayParam<[@A]>>
+        // expected-error@+1 {{'struct.new' op references unknown symbol "@Unknown"}}
+        %u = struct.new : !struct.type<@TInNewStructArrayParam::@InNewStructArrayParam<[!array.type<@Unknown x i1>]>>
+        function.return %self : !struct.type<@TInNewStructArrayParam::@InNewStructArrayParam<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TInNewStructArrayParam::@InNewStructArrayParam<[@A]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@InNewStructArrayParam<[@A]>>) { function.return }
   }
 }
 // -----
@@ -295,31 +323,39 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @ConstReadWithUnknown<[@T]> {
-    function.def @compute() -> !struct.type<@ConstReadWithUnknown<[@T]>> {
-      %self = struct.new : !struct.type<@ConstReadWithUnknown<[@T]>>
-      function.return %self : !struct.type<@ConstReadWithUnknown<[@T]>>
-    }
-    function.def @constrain(%self: !struct.type<@ConstReadWithUnknown<[@T]>>) {
-      // expected-error@+1 {{'poly.read_const' op references unknown symbol "@Unknown"}}
-      %0 = poly.read_const @T : !poly.tvar<@Unknown>
-      function.return
+  poly.template @TConstReadWithUnknown {
+    poly.param @T
+
+    struct.def @ConstReadWithUnknown {
+      function.def @compute() -> !struct.type<@TConstReadWithUnknown::@ConstReadWithUnknown<[@T]>> {
+        %self = struct.new : !struct.type<@TConstReadWithUnknown::@ConstReadWithUnknown<[@T]>>
+        function.return %self : !struct.type<@TConstReadWithUnknown::@ConstReadWithUnknown<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TConstReadWithUnknown::@ConstReadWithUnknown<[@T]>>) {
+        // expected-error@+1 {{'poly.read_const' op references unknown symbol "@Unknown"}}
+        %0 = poly.read_const @T : !poly.tvar<@Unknown>
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @MemberReadWithUnknownInBase<[@A]> {
-    struct.member @f: !felt.type
-    function.def @compute() -> !struct.type<@MemberReadWithUnknownInBase<[@A]>> {
-      %self = struct.new : !struct.type<@MemberReadWithUnknownInBase<[@A]>>
-      function.return %self : !struct.type<@MemberReadWithUnknownInBase<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@MemberReadWithUnknownInBase<[@A]>>) { // expected-note {{prior use here}}
-      // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.type<@MemberReadWithUnknownInBase<[@Unknown]>>' vs '!struct.type<@MemberReadWithUnknownInBase<[@A]>>'}}
-      %0 = struct.readm %self[@f] : !struct.type<@MemberReadWithUnknownInBase<[@Unknown]>>, !felt.type
-      function.return
+  poly.template @Templ {
+    poly.param @A
+
+    struct.def @MemberReadWithUnknownInBase {
+      struct.member @f: !felt.type
+      function.def @compute() -> !struct.type<@Templ::@MemberReadWithUnknownInBase<[@A]>> {
+        %self = struct.new : !struct.type<@Templ::@MemberReadWithUnknownInBase<[@A]>>
+        function.return %self : !struct.type<@Templ::@MemberReadWithUnknownInBase<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@Templ::@MemberReadWithUnknownInBase<[@A]>>) { // expected-note {{prior use here}}
+        // See NOTE on line 4.
+        // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.type<@Templ::@MemberReadWithUnknownInBase<[@Unknown]>>' vs '!struct.type<@Templ::@MemberReadWithUnknownInBase<[@A]>>'}}
+        %0 = struct.readm %self[@f] : !struct.type<@Templ::@MemberReadWithUnknownInBase<[@Unknown]>>, !felt.type
+        function.return
+      }
     }
   }
 }
@@ -340,68 +376,84 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @MemberReadWithUnknownInResultArr<[@A]> {
-    struct.member @f: !array.type<@A x i1>
-    function.def @compute() -> !struct.type<@MemberReadWithUnknownInResultArr<[@A]>> {
-      %self = struct.new : !struct.type<@MemberReadWithUnknownInResultArr<[@A]>>
-      function.return %self : !struct.type<@MemberReadWithUnknownInResultArr<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@MemberReadWithUnknownInResultArr<[@A]>>) {
-      // expected-error@+1 {{'struct.readm' op references unknown symbol "@Unknown"}}
-      %0 = struct.readm %self[@f] : !struct.type<@MemberReadWithUnknownInResultArr<[@A]>>, !array.type<@Unknown x i1>
-      function.return
-    }
-  }
-}
-// -----
-module attributes {llzk.lang} {
-  struct.def @MemberWriteWithUnknownInBase<[@A]> {
-    struct.member @f: !felt.type
-    function.def @compute(%0: i1) -> !struct.type<@MemberWriteWithUnknownInBase<[@A]>> {
-      %self = struct.new : !struct.type<@MemberWriteWithUnknownInBase<[@A]>>
-      function.return %self : !struct.type<@MemberWriteWithUnknownInBase<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@MemberWriteWithUnknownInBase<[@A]>>, %0: i1) { // expected-note {{prior use here}}
-      // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.type<@MemberWriteWithUnknownInBase<[@Unknown]>>' vs '!struct.type<@MemberWriteWithUnknownInBase<[@A]>>'}}
-      struct.writem %self[@f] = %0 : !struct.type<@MemberWriteWithUnknownInBase<[@Unknown]>>, i1
-      function.return
+  poly.template @TMemberReadWithUnknownInResultArr {
+    poly.param @A
+
+    struct.def @MemberReadWithUnknownInResultArr {
+      struct.member @f: !array.type<@A x i1>
+      function.def @compute() -> !struct.type<@TMemberReadWithUnknownInResultArr::@MemberReadWithUnknownInResultArr<[@A]>> {
+        %self = struct.new : !struct.type<@TMemberReadWithUnknownInResultArr::@MemberReadWithUnknownInResultArr<[@A]>>
+        function.return %self : !struct.type<@TMemberReadWithUnknownInResultArr::@MemberReadWithUnknownInResultArr<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMemberReadWithUnknownInResultArr::@MemberReadWithUnknownInResultArr<[@A]>>) {
+        // expected-error@+1 {{'struct.readm' op references unknown symbol "@Unknown"}}
+        %0 = struct.readm %self[@f] : !struct.type<@TMemberReadWithUnknownInResultArr::@MemberReadWithUnknownInResultArr<[@A]>>, !array.type<@Unknown x i1>
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @MemberWriteWithUnknownInRHSTypeVar<[@A]> {
-    struct.member @f: !poly.tvar<@A>
-    function.def @compute(
-      %0: !poly.tvar<@A> // expected-note {{prior use here}}
-    ) -> !struct.type<@MemberWriteWithUnknownInRHSTypeVar<[@A]>> {
-      %self = struct.new : !struct.type<@MemberWriteWithUnknownInRHSTypeVar<[@A]>>
-      // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!poly.tvar<@Unknown>' vs '!poly.tvar<@A>'}}
-      struct.writem %self[@f] = %0 : !struct.type<@MemberWriteWithUnknownInRHSTypeVar<[@A]>>, !poly.tvar<@Unknown>
-      function.return %self : !struct.type<@MemberWriteWithUnknownInRHSTypeVar<[@A]>>
-    }
-    function.def @constrain(%self: !struct.type<@MemberWriteWithUnknownInRHSTypeVar<[@A]>>) {
-      function.return
+  poly.template @Templ {
+    poly.param @A
+
+    struct.def @MemberWriteWithUnknownInBase {
+      struct.member @f: !felt.type
+      function.def @compute(%0: i1) -> !struct.type<@Templ::@MemberWriteWithUnknownInBase<[@A]>> {
+        %self = struct.new : !struct.type<@Templ::@MemberWriteWithUnknownInBase<[@A]>>
+        function.return %self : !struct.type<@Templ::@MemberWriteWithUnknownInBase<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@Templ::@MemberWriteWithUnknownInBase<[@A]>>, %0: i1) { // expected-note {{prior use here}}
+        // See NOTE on line 4.
+        // expected-error@+1 {{use of value '%self' expects different type than prior uses: '!struct.type<@Templ::@MemberWriteWithUnknownInBase<[@Unknown]>>' vs '!struct.type<@Templ::@MemberWriteWithUnknownInBase<[@A]>>'}}
+        struct.writem %self[@f] = %0 : !struct.type<@Templ::@MemberWriteWithUnknownInBase<[@Unknown]>>, i1
+        function.return
+      }
     }
   }
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @MemberWriteWithUnknownInRHSArr<[@A]> {
-    struct.member @f: !array.type<@A x i1>
-    function.def @compute(
-      %0: !array.type<@A x i1> // expected-note {{prior use here}}
-    ) -> !struct.type<@MemberWriteWithUnknownInRHSArr<[@A]>> {
-      %self = struct.new : !struct.type<@MemberWriteWithUnknownInRHSArr<[@A]>>
-      // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!array.type<@Unknown x i1>' vs '!array.type<@A x i1>'}}
-      struct.writem %self[@f] = %0 : !struct.type<@MemberWriteWithUnknownInRHSArr<[@A]>>, !array.type<@Unknown x i1>
-      function.return %self : !struct.type<@MemberWriteWithUnknownInRHSArr<[@A]>>
+  poly.template @TMemberWriteWithUnknownInRHSTypeVar {
+    poly.param @A
+
+    struct.def @MemberWriteWithUnknownInRHSTypeVar {
+      struct.member @f: !poly.tvar<@A>
+      function.def @compute(
+        %0: !poly.tvar<@A> // expected-note {{prior use here}}
+      ) -> !struct.type<@TMemberWriteWithUnknownInRHSTypeVar::@MemberWriteWithUnknownInRHSTypeVar<[@A]>> {
+        %self = struct.new : !struct.type<@TMemberWriteWithUnknownInRHSTypeVar::@MemberWriteWithUnknownInRHSTypeVar<[@A]>>
+        // See NOTE on line 4.
+        // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!poly.tvar<@Unknown>' vs '!poly.tvar<@A>'}}
+        struct.writem %self[@f] = %0 : !struct.type<@TMemberWriteWithUnknownInRHSTypeVar::@MemberWriteWithUnknownInRHSTypeVar<[@A]>>, !poly.tvar<@Unknown>
+        function.return %self : !struct.type<@TMemberWriteWithUnknownInRHSTypeVar::@MemberWriteWithUnknownInRHSTypeVar<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMemberWriteWithUnknownInRHSTypeVar::@MemberWriteWithUnknownInRHSTypeVar<[@A]>>) {
+        function.return
+      }
     }
-    function.def @constrain(%self: !struct.type<@MemberWriteWithUnknownInRHSArr<[@A]>>) {
-      function.return
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @TMemberWriteWithUnknownInRHSArr {
+    poly.param @A
+
+    struct.def @MemberWriteWithUnknownInRHSArr {
+      struct.member @f: !array.type<@A x i1>
+      function.def @compute(
+        %0: !array.type<@A x i1> // expected-note {{prior use here}}
+      ) -> !struct.type<@TMemberWriteWithUnknownInRHSArr::@MemberWriteWithUnknownInRHSArr<[@A]>> {
+        %self = struct.new : !struct.type<@TMemberWriteWithUnknownInRHSArr::@MemberWriteWithUnknownInRHSArr<[@A]>>
+        // See NOTE on line 4.
+        // expected-error@+1 {{use of value '%0' expects different type than prior uses: '!array.type<@Unknown x i1>' vs '!array.type<@A x i1>'}}
+        struct.writem %self[@f] = %0 : !struct.type<@TMemberWriteWithUnknownInRHSArr::@MemberWriteWithUnknownInRHSArr<[@A]>>, !array.type<@Unknown x i1>
+        function.return %self : !struct.type<@TMemberWriteWithUnknownInRHSArr::@MemberWriteWithUnknownInRHSArr<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMemberWriteWithUnknownInRHSArr::@MemberWriteWithUnknownInRHSArr<[@A]>>) {
+        function.return
+      }
     }
   }
 }
@@ -435,17 +487,21 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @ReadArrayOpWithUnknownInResultTypeArrElem<[@T]> {
-    function.def @compute(%arr: !array.type<5 x !poly.tvar<@T>>) -> !struct.type<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
-      %self = struct.new : !struct.type<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
-      function.return %self : !struct.type<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
-    }
-    function.def @constrain(%self: !struct.type<@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !array.type<5 x !poly.tvar<@T>>) {
-      %k = arith.constant 0 : index
-      // expected-error@+2 {{'array.read' op references unknown symbol "@Unknown"}}
-      // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
-      %v = array.read %arr[%k] : !array.type<5 x !poly.tvar<@T>>, !struct.type<@Unknown>
-      function.return
+  poly.template @TReadArrayOpWithUnknownInResultTypeArrElem {
+    poly.param @T
+
+    struct.def @ReadArrayOpWithUnknownInResultTypeArrElem {
+      function.def @compute(%arr: !array.type<5 x !poly.tvar<@T>>) -> !struct.type<@TReadArrayOpWithUnknownInResultTypeArrElem::@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
+        %self = struct.new : !struct.type<@TReadArrayOpWithUnknownInResultTypeArrElem::@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+        function.return %self : !struct.type<@TReadArrayOpWithUnknownInResultTypeArrElem::@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TReadArrayOpWithUnknownInResultTypeArrElem::@ReadArrayOpWithUnknownInResultTypeArrElem<[@T]>>, %arr: !array.type<5 x !poly.tvar<@T>>) {
+        %k = arith.constant 0 : index
+        // expected-error@+2 {{'array.read' op references unknown symbol "@Unknown"}}
+        // expected-error@+1 {{could not find 'struct.def' named "@Unknown"}}
+        %v = array.read %arr[%k] : !array.type<5 x !poly.tvar<@T>>, !struct.type<@Unknown>
+        function.return
+      }
     }
   }
 }
@@ -477,23 +533,27 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  struct.def @WriteArrayOpWithUnknownInResultTypeArrElem<[@T]> {
-    function.def @compute(%arr: !array.type<5 x !poly.tvar<@T>>,
-      %v: !struct.type<@T> // expected-note {{prior use here}}
-    ) -> !struct.type<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
-      %self = struct.new : !struct.type<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
-      %k = arith.constant 0 : index
-      // See NOTE on line 4.
-      // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!struct.type<@Unknown>' vs '!struct.type<@T>'}}
-      array.write %arr[%k] = %v : !array.type<5 x !poly.tvar<@T>>, !struct.type<@Unknown>
-      function.return %self : !struct.type<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
-    }
-    function.def @constrain(%self: !struct.type<@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>,
-        %arr: !array.type<5 x !poly.tvar<@T>>,
-        %v: !struct.type<@T>
-    ) {
-      %k = arith.constant 0 : index
-      function.return
+  poly.template @TWriteArrayOpWithUnknownInResultTypeArrElem {
+    poly.param @T
+
+    struct.def @WriteArrayOpWithUnknownInResultTypeArrElem {
+      function.def @compute(%arr: !array.type<5 x !poly.tvar<@T>>,
+        %v: !struct.type<@T> // expected-note {{prior use here}}
+      ) -> !struct.type<@TWriteArrayOpWithUnknownInResultTypeArrElem::@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>> {
+        %self = struct.new : !struct.type<@TWriteArrayOpWithUnknownInResultTypeArrElem::@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+        %k = arith.constant 0 : index
+        // See NOTE on line 4.
+        // expected-error@+1 {{use of value '%v' expects different type than prior uses: '!struct.type<@Unknown>' vs '!struct.type<@T>'}}
+        array.write %arr[%k] = %v : !array.type<5 x !poly.tvar<@T>>, !struct.type<@Unknown>
+        function.return %self : !struct.type<@TWriteArrayOpWithUnknownInResultTypeArrElem::@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TWriteArrayOpWithUnknownInResultTypeArrElem::@WriteArrayOpWithUnknownInResultTypeArrElem<[@T]>>,
+          %arr: !array.type<5 x !poly.tvar<@T>>,
+          %v: !struct.type<@T>
+      ) {
+        %k = arith.constant 0 : index
+        function.return
+      }
     }
   }
 }

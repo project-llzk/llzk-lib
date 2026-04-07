@@ -12,6 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "pcl-conv/Transforms/TransformationPasses.h"
+
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -46,8 +48,6 @@
 
 #include <deque>
 #include <memory>
-
-#include "pcl-conv/Transforms/TransformationPasses.h"
 
 // Include the generated base pass class definitions.
 namespace pcl::conversion {

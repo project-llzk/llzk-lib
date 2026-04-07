@@ -7,7 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/TypeHelper.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
@@ -19,7 +22,6 @@
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
-#include "llzk/Util/TypeHelper.h"
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
@@ -296,10 +298,12 @@ using ArrayDimensionTypes = TypeList<IntegerAttr, SymbolRefAttr, AffineMapAttr>;
 
 // Parameters in the StructType must be one of the following:
 //  - Integer constants
+//  - Field element constants
 //  - SymbolRef (flat ref for struct params, non-flat for global constants from another module)
 //  - Type
 //  - AffineMap (for array of non-homogeneous structs)
-using StructParamTypes = TypeList<IntegerAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
+using StructParamTypes =
+    TypeList<IntegerAttr, FeltConstAttr, SymbolRefAttr, TypeAttr, AffineMapAttr>;
 
 class AllowedTypes {
   struct ColumnCheckData {
@@ -609,6 +613,27 @@ struct UnifierImpl {
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
         overrideSuccess(nullptr) {}
 
+  UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
+    this->affineToIntTracker = tracker;
+    return *this;
+  }
+
+  UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
+    this->overrideSuccess = overrides;
+    return *this;
+  }
+
+  /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
+  /// full instantiation of template parameters (if applicable within the given types).
+  template <typename Iter1, typename Iter2> bool typeListsUnify(Iter1 lhs, Iter2 rhs) {
+    return (lhs.size() == rhs.size()) &&
+           std::equal(lhs.begin(), lhs.end(), rhs.begin(), [this](Type a, Type b) {
+      return this->typesUnify(a, b);
+    });
+  }
+
+  /// Return `true` iff the two Attribute lists containing StructType or ArrayType parameters
+  /// are equivalent or could be equivalent after full instantiation of struct parameters.
   bool typeParamsUnify(
       const ArrayRef<Attribute> &lhsParams, const ArrayRef<Attribute> &rhsParams,
       bool unifyDynamicSize = false
@@ -618,16 +643,6 @@ struct UnifierImpl {
     };
     return (lhsParams.size() == rhsParams.size()) &&
            std::equal(lhsParams.begin(), lhsParams.end(), rhsParams.begin(), pred);
-  }
-
-  UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
-    this->affineToIntTracker = tracker;
-    return *this;
-  }
-
-  UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
-    this->overrideSuccess = overrides;
-    return *this;
   }
 
   /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
@@ -695,6 +710,11 @@ struct UnifierImpl {
     });
   }
 
+  bool functionTypesUnify(FunctionType lhs, FunctionType rhs) {
+    return typeListsUnify(lhs.getInputs(), rhs.getInputs()) &&
+           typeListsUnify(lhs.getResults(), rhs.getResults());
+  }
+
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
       return true;
@@ -719,6 +739,9 @@ struct UnifierImpl {
     }
     if (llvm::isa<PodType>(lhs) && llvm::isa<PodType>(rhs)) {
       return podTypesUnify(llvm::cast<PodType>(lhs), llvm::cast<PodType>(rhs));
+    }
+    if (llvm::isa<FunctionType>(lhs) && llvm::isa<FunctionType>(rhs)) {
+      return functionTypesUnify(llvm::cast<FunctionType>(lhs), llvm::cast<FunctionType>(rhs));
     }
     return false;
   }
@@ -883,6 +906,19 @@ bool structTypesUnify(
     UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).structTypesUnify(lhs, rhs);
+}
+
+bool podTypesUnify(
+    PodType lhs, PodType rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
+) {
+  return UnifierImpl(unifications, rhsReversePrefix).podTypesUnify(lhs, rhs);
+}
+
+bool functionTypesUnify(
+    FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix,
+    UnificationMap *unifications
+) {
+  return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
 }
 
 bool typesUnify(
@@ -1059,6 +1095,29 @@ verifySubArrayOrElementType(EmitErrorFn emitError, ArrayType arrayType, Type sub
   }
 
   return success();
+}
+
+bool isFeltOrSimpleFeltAggregate(Type ty) {
+  return TypeSwitch<Type, bool>(ty)
+      .Case<FeltType>([](auto) { return true; })
+      .Case<ArrayType>([](auto arrTy) {
+    return isFeltOrSimpleFeltAggregate(arrTy.getElementType());
+  })
+      .Case<PodType>([](auto podTy) {
+    for (auto record : podTy.getRecords()) {
+      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
+        return false;
+      }
+    }
+    return true;
+  }).Default([](auto) { return false; });
+}
+
+bool isValidMainSignalType(Type pType) {
+  if (auto arrayParamTy = llvm::dyn_cast<ArrayType>(pType)) {
+    return llvm::isa<FeltType>(arrayParamTy.getElementType());
+  }
+  return llvm::isa<FeltType>(pType);
 }
 
 } // namespace llzk

@@ -8,8 +8,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
+
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
+
+#include <mlir/IR/BuiltinAttributes.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -29,6 +33,123 @@ void AssertOp::getEffects(
     SmallVectorImpl<SideEffects::EffectInstance<MemoryEffects::Effect>> &effects
 ) {
   effects.emplace_back(MemoryEffects::Write::get());
+}
+
+//===------------------------------------------------------------------===//
+// Fold helpers
+//===------------------------------------------------------------------===//
+
+namespace {
+
+/// Extract a bool value from an i1 IntegerAttr operand. Returns failure() if
+/// the operand is not an IntegerAttr with i1 type.
+static FailureOr<bool> getBoolValue(Attribute attr) {
+  auto ia = llvm::dyn_cast_or_null<IntegerAttr>(attr);
+  if (!ia || !ia.getType().isInteger(1)) {
+    return failure();
+  }
+  return ia.getValue().getBoolValue();
+}
+
+/// Build an i1 IntegerAttr from a bool value.
+static IntegerAttr makeBoolAttr(MLIRContext *ctx, bool val) {
+  auto i1Ty = IntegerType::get(ctx, 1);
+  return IntegerAttr::get(i1Ty, val ? 1 : 0);
+}
+
+} // namespace
+
+//===------------------------------------------------------------------===//
+// AndBoolOp
+//===------------------------------------------------------------------===//
+
+OpFoldResult AndBoolOp::fold(FoldAdaptor adaptor) {
+  auto lhs = getBoolValue(adaptor.getLhs());
+  auto rhs = getBoolValue(adaptor.getRhs());
+  if (failed(lhs) || failed(rhs)) {
+    return {};
+  }
+  return makeBoolAttr(getContext(), *lhs && *rhs);
+}
+
+//===------------------------------------------------------------------===//
+// OrBoolOp
+//===------------------------------------------------------------------===//
+
+OpFoldResult OrBoolOp::fold(FoldAdaptor adaptor) {
+  auto lhs = getBoolValue(adaptor.getLhs());
+  auto rhs = getBoolValue(adaptor.getRhs());
+  if (failed(lhs) || failed(rhs)) {
+    return {};
+  }
+  return makeBoolAttr(getContext(), *lhs || *rhs);
+}
+
+//===------------------------------------------------------------------===//
+// XorBoolOp
+//===------------------------------------------------------------------===//
+
+OpFoldResult XorBoolOp::fold(FoldAdaptor adaptor) {
+  auto lhs = getBoolValue(adaptor.getLhs());
+  auto rhs = getBoolValue(adaptor.getRhs());
+  if (failed(lhs) || failed(rhs)) {
+    return {};
+  }
+  return makeBoolAttr(getContext(), *lhs != *rhs);
+}
+
+//===------------------------------------------------------------------===//
+// NotBoolOp
+//===------------------------------------------------------------------===//
+
+OpFoldResult NotBoolOp::fold(FoldAdaptor adaptor) {
+  auto val = getBoolValue(adaptor.getOperand());
+  if (failed(val)) {
+    return {};
+  }
+  return makeBoolAttr(getContext(), !*val);
+}
+
+//===------------------------------------------------------------------===//
+// CmpOp
+//===------------------------------------------------------------------===//
+
+inline static bool eval(FeltCmpPredicate pred, const llvm::APInt &lval, const llvm::APInt &rval) {
+  switch (pred) {
+  case FeltCmpPredicate::EQ:
+    return lval == rval;
+  case FeltCmpPredicate::NE:
+    return lval != rval;
+  case FeltCmpPredicate::LT:
+    return lval.ult(rval);
+  case FeltCmpPredicate::LE:
+    return lval.ule(rval);
+  case FeltCmpPredicate::GT:
+    return lval.ugt(rval);
+  case FeltCmpPredicate::GE:
+    return lval.uge(rval);
+  }
+  llvm_unreachable("invalid FeltCmpPredicate");
+}
+
+OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
+  auto lhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getLhs());
+  auto rhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getRhs());
+  if (!lhsAttr || !rhsAttr) {
+    return {};
+  }
+
+  // Normalize to a common bit width for unsigned comparison.
+  llvm::APInt lval = lhsAttr.getValue();
+  llvm::APInt rval = rhsAttr.getValue();
+  unsigned w = std::max(lval.getBitWidth(), rval.getBitWidth());
+  if (lval.getBitWidth() < w) {
+    lval = lval.zext(w);
+  }
+  if (rval.getBitWidth() < w) {
+    rval = rval.zext(w);
+  }
+  return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
 }
 
 } // namespace llzk::boolean

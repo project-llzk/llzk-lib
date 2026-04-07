@@ -697,7 +697,16 @@ public:
   }
 };
 
-LogicalResult
+static void baseTargetSetup(ConversionTarget &target) {
+  target.addLegalDialect<
+      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, constrain::ConstrainDialect,
+      component::StructDialect, felt::FeltDialect, function::FunctionDialect, global::GlobalDialect,
+      include::IncludeDialect, polymorphic::PolymorphicDialect, arith::ArithDialect,
+      scf::SCFDialect>();
+  target.addLegalOp<ModuleOp>();
+}
+
+static LogicalResult
 step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
@@ -706,19 +715,14 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &me
   patterns.add<SplitArrayInMemberDefOp>(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
-  target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, felt::FeltDialect,
-      function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
-      component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect,
-      scf::SCFDialect>();
-  target.addLegalOp<ModuleOp>();
+  baseTargetSetup(target);
   target.addDynamicallyLegalOp<MemberDefOp>(SplitArrayInMemberDefOp::legal);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array members\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-LogicalResult
+static LogicalResult
 step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
@@ -743,11 +747,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       >(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
-  target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, component::StructDialect,
-      constrain::ConstrainDialect, felt::FeltDialect, function::FunctionDialect,
-      global::GlobalDialect, include::IncludeDialect, arith::ArithDialect, scf::SCFDialect>();
-  target.addLegalOp<ModuleOp>();
+  baseTargetSetup(target);
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);
   target.addDynamicallyLegalOp<ExtractArrayOp>(SplitExtractArrayOp::legal);

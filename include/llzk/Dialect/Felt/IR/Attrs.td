@@ -25,44 +25,49 @@ def LLZK_FeltConstAttr
   }];
 
   let parameters = (ins APIntParameter<"The felt constant value">:$value,
-      OptionalParameter<"::mlir::StringAttr">:$fieldName);
+      DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
 
-  let assemblyFormat = [{ $value ( ` ` `<` $fieldName^ `>` )? }];
+  let assemblyFormat = [{ $value ( `:` $type^ )? }];
 
-  let builders =
-      [AttrBuilder<(ins "unsigned":$numBits, "::llvm::StringRef":$str,
-                       "::llvm::StringRef":$fieldName),
-                   [{
-        return $_get(context, ::llvm::APInt(numBits, str, 10), ::mlir::StringAttr::get(context, fieldName));
-      }]>,
-       AttrBuilder<(ins "unsigned":$numBits,
-                       "::llvm::ArrayRef<uint64_t>":$parts,
-                       "::llvm::StringRef":$fieldName),
-                   [{
-        return $_get(context, ::llvm::APInt(numBits, parts), ::mlir::StringAttr::get(context, fieldName));
-      }]>,
-       AttrBuilder<(ins "unsigned":$numBits, "::llvm::StringRef":$str), [{
-        return $_get(context, ::llvm::APInt(numBits, str, 10), ::mlir::StringAttr());
-      }]>,
-       AttrBuilder<
-           (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts), [{
-        return $_get(context, ::llvm::APInt(numBits, parts), ::mlir::StringAttr());
-      }]>,
-       AttrBuilder<(ins "::llvm::APInt":$value, "::llvm::StringRef":$fieldName),
-                   [{
-        return $_get(context, value, ::mlir::StringAttr::get(context, fieldName));
-      }]>,
-       AttrBuilder<(ins "::llvm::APInt":$value), [{
-        return $_get(context, value, ::mlir::StringAttr());
-      }]>];
+  let builders = [
+      // Like the default builder but with convenience overloads for
+      // constructing the APInt.
+      AttrBuilder<
+          (ins "unsigned":$numBits, "::llvm::StringRef":$str, "FeltType":$ty),
+          [{ return $_get(context, ::llvm::APInt(numBits, str, 10), ty); }]>,
+      AttrBuilder<
+          (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts,
+              "FeltType":$ty),
+          [{ return $_get(context, ::llvm::APInt(numBits, parts), ty); }]>,
+      // All APInt combinations but using felt type with unspecified field.
+      AttrBuilder<(ins "::llvm::APInt":$value),
+                  [{ return get(context, value, FeltType::get(context)); }]>,
+      AttrBuilder<
+          (ins "unsigned":$numBits, "::llvm::StringRef":$str),
+          [{ return get(context, numBits, str, FeltType::get(context)); }]>,
+      AttrBuilder<
+          (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts),
+          [{ return get(context, numBits, parts, FeltType::get(context)); }]>,
+      // All APInt combinations but using the field name to construct felt type.
+      AttrBuilder<
+          (ins "::llvm::APInt":$value, "::llvm::StringRef":$fieldName),
+          [{ return get(context, value, FeltType::get(context, fieldName)); }]>,
+      AttrBuilder<
+          (ins "unsigned":$numBits, "::llvm::StringRef":$str,
+              "::llvm::StringRef":$fieldName),
+          [{ return get(context, numBits, str, FeltType::get(context, fieldName)); }]>,
+      AttrBuilder<
+          (ins "unsigned":$numBits, "::llvm::ArrayRef<uint64_t>":$parts,
+              "::llvm::StringRef":$fieldName),
+          [{ return get(context, numBits, parts, FeltType::get(context, fieldName)); }]>];
 
   let extraClassDeclaration = [{
-    ::mlir::Type getType() const;
+    operator ::llvm::APInt() const { return getValue(); }
 
-    operator ::llvm::APInt() const;
+    /// Returns the field name from the stored FeltType, or a null StringAttr
+    /// if no type is stored.
+    ::mlir::StringAttr getFieldName() const;
   }];
-
-  let genVerifyDecl = 1;
 }
 
 def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {

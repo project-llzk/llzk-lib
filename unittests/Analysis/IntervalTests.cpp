@@ -7,15 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+#include "../LLZKTestUtils.h"
+
+#include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Debug.h"
+#include "llzk/Util/StreamHelper.h"
+
+#include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
 #include <string>
 
-#include "../LLZKTestUtils.h"
-
+using namespace mlir;
 using namespace llzk;
+using namespace llzk::component;
 
 class IntervalTests : public testing::Test {
 protected:
@@ -191,11 +200,11 @@ TEST_F(IntervalTests, UnsignedIntDiv) {
   auto five = Interval::Degenerate(f, f.felt(5));
 
   auto res0 = unsignedIntDiv(rangeTenToFifteen, five);
-  ASSERT_TRUE(mlir::succeeded(res0));
+  ASSERT_TRUE(succeeded(res0));
   AssertIntervalEq(Interval::TypeA(f, f.felt(2), f.felt(3)), *res0);
 
   auto res1 = unsignedIntDiv(ten, rangeTenToFifteen);
-  ASSERT_TRUE(mlir::succeeded(res1));
+  ASSERT_TRUE(succeeded(res1));
   AssertIntervalEq(Interval::TypeA(f, f.zero(), f.one()), *res1);
 }
 
@@ -204,7 +213,7 @@ TEST_F(IntervalTests, UnsignedIntDivByZero) {
   auto zeroToOne = Interval::TypeA(f, f.zero(), f.one());
 
   auto res = unsignedIntDiv(ten, zeroToOne);
-  ASSERT_TRUE(mlir::failed(res));
+  ASSERT_TRUE(failed(res));
 }
 
 TEST_F(IntervalTests, FeltDiv) {
@@ -213,7 +222,7 @@ TEST_F(IntervalTests, FeltDiv) {
   auto invTwo = Interval::Degenerate(f, f.inv(f.felt(2)));
 
   auto res0 = feltDiv(one, two);
-  ASSERT_TRUE(mlir::succeeded(res0));
+  ASSERT_TRUE(succeeded(res0));
   AssertIntervalEq(invTwo, *res0);
 }
 
@@ -222,7 +231,7 @@ TEST_F(IntervalTests, FeltDivIntervalDivisorUnsupported) {
   auto oneToTwo = Interval::TypeA(f, f.one(), f.felt(2));
 
   auto res = feltDiv(ten, oneToTwo);
-  ASSERT_TRUE(mlir::failed(res));
+  ASSERT_TRUE(failed(res));
 }
 
 TEST_F(IntervalTests, FeltDivByZero) {
@@ -230,7 +239,7 @@ TEST_F(IntervalTests, FeltDivByZero) {
   auto zeroToOne = Interval::TypeA(f, f.zero(), f.one());
 
   auto res = feltDiv(ten, zeroToOne);
-  ASSERT_TRUE(mlir::failed(res));
+  ASSERT_TRUE(failed(res));
 }
 
 TEST_F(IntervalTests, SignedIntDiv) {
@@ -240,19 +249,19 @@ TEST_F(IntervalTests, SignedIntDiv) {
   auto negFifteenToTen = UnreducedInterval(-15, -10).reduce(f);
 
   auto res0 = signedIntDiv(ten, rangeTenToFifteen);
-  ASSERT_TRUE(mlir::succeeded(res0));
+  ASSERT_TRUE(succeeded(res0));
   AssertIntervalEq(Interval::TypeA(f, f.zero(), f.one()), *res0);
 
   auto res1 = signedIntDiv(negTen, rangeTenToFifteen);
-  ASSERT_TRUE(mlir::succeeded(res1));
+  ASSERT_TRUE(succeeded(res1));
   AssertIntervalEq(UnreducedInterval(-1, 0).reduce(f), *res1);
 
   auto res2 = signedIntDiv(negTen, negFifteenToTen);
-  ASSERT_TRUE(mlir::succeeded(res2));
+  ASSERT_TRUE(succeeded(res2));
   AssertIntervalEq(Interval::TypeA(f, f.zero(), f.one()), *res2);
 
   auto res3 = signedIntDiv(negFifteenToTen, ten);
-  ASSERT_TRUE(mlir::succeeded(res3));
+  ASSERT_TRUE(succeeded(res3));
   AssertIntervalEq(Interval::Degenerate(f, f.reduce(-1)), *res3);
 }
 
@@ -261,5 +270,91 @@ TEST_F(IntervalTests, SignedIntDivByZero) {
   auto minusOneToOne = UnreducedInterval(-1, 1).reduce(f);
 
   auto res = signedIntDiv(ten, minusOneToOne);
-  ASSERT_TRUE(mlir::failed(res));
+  ASSERT_TRUE(failed(res));
+}
+
+class IntervalAnalysisAPITests : public LLZKTest {
+protected:
+  static constexpr auto kArrayIntervalModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ArrayIntervals {
+    struct.member @out : !array.type<3 x !felt.type> {llzk.pub, signal}
+
+    function.def @compute() -> !struct.type<@ArrayIntervals> attributes {function.allow_witness} {
+      %self = struct.new : <@ArrayIntervals>
+      function.return %self : !struct.type<@ArrayIntervals>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@ArrayIntervals>) attributes {function.allow_constraint} {
+      %0 = struct.readm %arg0[@out] : <@ArrayIntervals>, !array.type<3 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %1 = array.read %0[%c0] : <3 x !felt.type>, !felt.type
+      %2 = array.read %0[%c1] : <3 x !felt.type>, !felt.type
+      %3 = array.read %0[%c2] : <3 x !felt.type>, !felt.type
+      %felt_const_1 = felt.const  1
+      %felt_const_2 = felt.const  2
+      %felt_const_3 = felt.const  3
+      constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
+      constrain.eq %2, %felt_const_2 : !felt.type, !felt.type
+      constrain.eq %3, %felt_const_3 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
+    auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    EXPECT_TRUE(mod);
+    return mod;
+  }
+};
+
+TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
+  auto mod = parseModule(kArrayIntervalModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  ASSERT_TRUE(constrainFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setPropagateInputConstraints(true);
+  analysis.runAnalysis(am);
+
+  const auto &intervals = analysis.getResult(structDef).getConstrainIntervals();
+  ASSERT_FALSE(intervals.empty());
+
+  // Iteration and lookup should agree for every stored key.
+  for (const auto &[ref, interval] : intervals) {
+    auto it = intervals.find(ref);
+    ASSERT_NE(it, intervals.end()) << "missing key on self-lookup: " << buildStringViaPrint(ref);
+    ASSERT_TRUE(checkCond(interval, it->second, interval == it->second))
+        << buildStringViaPrint(ref);
+  }
+
+  MemberDefOp outMember;
+  for (auto member : structDef.getOps<MemberDefOp>()) {
+    if (member.getName() == "out") {
+      outMember = member;
+      break;
+    }
+  }
+  ASSERT_TRUE(outMember != nullptr);
+
+  SourceRef outRef(constrainFn.getArgument(0), {SourceRefIndex(outMember)});
+  for (int64_t i = 0; i < 3; i++) {
+    auto elemRef = outRef.createChild(SourceRefIndex(i));
+    ASSERT_TRUE(succeeded(elemRef));
+    auto it = intervals.find(*elemRef);
+    ASSERT_NE(it, intervals.end())
+        << "missing constrain interval for " << buildStringViaPrint(*elemRef);
+    ASSERT_TRUE(it->second.isDegenerate())
+        << buildStringViaPrint(*elemRef) << " -> " << buildStringViaPrint(it->second);
+    ASSERT_EQ(it->second.lhs(), field.felt(i + 1)) << buildStringViaPrint(*elemRef);
+  }
 }

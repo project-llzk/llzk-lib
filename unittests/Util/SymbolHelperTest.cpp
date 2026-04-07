@@ -7,15 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/SymbolHelper.h"
+
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/Debug.h"
-#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace llzk;
 using namespace mlir;

@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 

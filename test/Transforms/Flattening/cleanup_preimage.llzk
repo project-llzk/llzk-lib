@@ -6,10 +6,10 @@
 // there are no remaining uses of `@MakeGuess<[@PEGS]>` so it is removed.
 
 module attributes {llzk.lang} {
-  struct.def @Main<[]> {
+  struct.def @Main {
     function.def @compute() -> !struct.type<@Main<[]>> {
       %self = struct.new : !struct.type<@Main<[]>>
-      %26 = function.call @Impl::@MakeGuess::@compute() : () -> !struct.type<@Impl::@MakeGuess<[4]>>
+      %26 = function.call @Impl::@TMakeGuess::@MakeGuess::@compute() : () -> !struct.type<@Impl::@TMakeGuess::@MakeGuess<[4]>>
       function.return %self : !struct.type<@Main<[]>>
     }
     function.def @constrain(%arg0: !struct.type<@Main<[]>>) {
@@ -17,63 +17,78 @@ module attributes {llzk.lang} {
     }
   }
 
-  module @Helper{
-    struct.def @Pair<[@Fst, @Snd]> {
-      function.def @compute() -> !struct.type<@Helper::@Pair<[@Fst, @Snd]>> {
-        %self = struct.new : !struct.type<@Helper::@Pair<[@Fst, @Snd]>>
-        function.return %self : !struct.type<@Helper::@Pair<[@Fst, @Snd]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@Helper::@Pair<[@Fst, @Snd]>>) {
-        function.return
+  module @Helper {
+    poly.template @TPair {
+      poly.param @Fst
+      poly.param @Snd
+
+      struct.def @Pair {
+        function.def @compute() -> !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>> {
+          %self = struct.new : !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>>
+          function.return %self : !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@Helper::@TPair::@Pair<[@Fst, @Snd]>>) {
+          function.return
+        }
       }
     }
 
-    struct.def @Zip<[@Lhs, @Rhs, @N]> {
-      struct.member @"$super" : !array.type<9 x !struct.type<@Helper::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
-      function.def @compute() -> !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>> {
-        %self = struct.new : !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>
-        function.return %self : !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@Helper::@Zip<[@Lhs, @Rhs, @N]>>) {
-        function.return
+    poly.template @TZip {
+      poly.param @Lhs
+      poly.param @Rhs
+      poly.param @N
+
+      struct.def @Zip {
+        struct.member @"$super" : !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
+        function.def @compute() -> !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>> {
+          %self = struct.new : !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>>
+          function.return %self : !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@Helper::@TZip::@Zip<[@Lhs, @Rhs, @N]>>) {
+          function.return
+        }
       }
     }
   }
 
   module @Impl {
-    struct.def @MakeGuess<[@PEGS]> {
-      struct.member @"$temp" : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
+    poly.template @TMakeGuess {
+      poly.param @PEGS
 
-      function.def @compute() -> !struct.type<@Impl::@MakeGuess<[@PEGS]>> {
-        %self = struct.new : !struct.type<@Impl::@MakeGuess<[@PEGS]>>
-        function.return %self : !struct.type<@Impl::@MakeGuess<[@PEGS]>>
-      }
+      struct.def @MakeGuess {
+        struct.member @"$temp" : !struct.type<@Helper::@TZip::@Zip<[!felt.type, !felt.type, @PEGS]>>
 
-      function.def @constrain(%arg0: !struct.type<@Impl::@MakeGuess<[@PEGS]>>) {
-        %c1 = arith.constant 1 : index
-        %c0 = arith.constant 0 : index
-        %14 = struct.readm %arg0[@"$temp"] : !struct.type<@Impl::@MakeGuess<[@PEGS]>>, !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>
-        %15 = struct.readm %14[@"$super"] : !struct.type<@Helper::@Zip<[!felt.type, !felt.type, @PEGS]>>, !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
-        %17 = array.len %15, %c0 : !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>
-        scf.for %arg5 = %c0 to %17 step %c1 {
-          %34 = array.read %15[%arg5] : !array.type<9 x !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>>, !struct.type<@Helper::@Pair<[!felt.type, !felt.type]>>
+        function.def @compute() -> !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>> {
+          %self = struct.new : !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>
+          function.return %self : !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>
         }
-        function.return
+
+        function.def @constrain(%arg0: !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>) {
+          %c1 = arith.constant 1 : index
+          %c0 = arith.constant 0 : index
+          %14 = struct.readm %arg0[@"$temp"] : !struct.type<@Impl::@TMakeGuess::@MakeGuess<[@PEGS]>>, !struct.type<@Helper::@TZip::@Zip<[!felt.type, !felt.type, @PEGS]>>
+          %15 = struct.readm %14[@"$super"] : !struct.type<@Helper::@TZip::@Zip<[!felt.type, !felt.type, @PEGS]>>, !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>>
+          %17 = array.len %15, %c0 : !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>>
+          scf.for %arg5 = %c0 to %17 step %c1 {
+            %34 = array.read %15[%arg5] : !array.type<9 x !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>>, !struct.type<@Helper::@TPair::@Pair<[!felt.type, !felt.type]>>
+          }
+          function.return
+        }
       }
     }
   }
 }
 // CHECK:       struct.def @Main {
 // CHECK-LABEL: module @Helper
-// CHECK-NOT:   struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NOT:   struct.def @Zip<[@Lhs, @Rhs, @N]> {
-// CHECK:       struct.def @Pair_f_f {
-// CHECK-NOT:   struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NOT:   struct.def @Zip<[@Lhs, @Rhs, @N]> {
-// CHECK:       struct.def @Zip_f_f_4 {
-// CHECK-NOT:   struct.def @Pair<[@Fst, @Snd]> {
-// CHECK-NOT:   struct.def @Zip<[@Lhs, @Rhs, @N]> {
+// CHECK-NOT:   poly.template @TPair {
+// CHECK-NOT:   poly.template @TZip {
+// CHECK:       struct.def @TPair_f_f_Pair {
+// CHECK-NOT:   poly.template @TPair {
+// CHECK-NOT:   poly.template @TZip {
+// CHECK:       struct.def @TZip_f_f_4_Zip {
+// CHECK-NOT:   poly.template @TPair {
+// CHECK-NOT:   poly.template @TZip {
 // CHECK-LABEL: module @Impl
-// CHECK-NOT:   struct.def @MakeGuess<[@PEGS]> {
-// CHECK:       struct.def @MakeGuess_4 {
-// CHECK-NOT:   struct.def @MakeGuess<[@PEGS]> {
+// CHECK-NOT:   poly.template @TMakeGuess {
+// CHECK:       struct.def @TMakeGuess_4_MakeGuess {
+// CHECK-NOT:   poly.template @TMakeGuess {

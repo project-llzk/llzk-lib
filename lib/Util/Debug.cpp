@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Util/Debug.h"
+
 #include "llzk/Util/StreamHelper.h"
 
 using namespace mlir;

@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
@@ -1390,12 +1391,16 @@ LogicalResult StructIntervals::computeIntervals(
       }
     }
 
-    // Iterate over members that were touched by the analysis
+    // Aggregate all read intervals for a ref. A single ref may be read at multiple program
+    // points with different precision, so picking an arbitrary lattice from the DenseSet is
+    // nondeterministic. Joining preserves the overapproximation regardless of iteration order.
     for (const auto &[ref, lattices] : ctx.intervalDFA->getReadResults()) {
-      // All lattices should have the same value, so we can get the front.
       if (!lattices.empty() && searchSet.erase(ref)) {
-        const IntervalAnalysisLattice *lattice = *lattices.begin();
-        memberRanges[ref] = lattice->getValue().getScalarValue().getInterval();
+        Interval joinedInterval = Interval::Empty(ctx.getField());
+        for (const IntervalAnalysisLattice *lattice : lattices) {
+          joinedInterval = joinedInterval.join(lattice->getValue().getScalarValue().getInterval());
+        }
+        memberRanges[ref] = joinedInterval;
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
       }
     }
@@ -1413,7 +1418,20 @@ LogicalResult StructIntervals::computeIntervals(
     }
 
     // Sort the outputs since we assembled things out of order.
-    llvm::sort(memberRanges, [](auto a, auto b) { return std::get<0>(a) < std::get<0>(b); });
+    //
+    // `llvm::MapVector` maintains an internal key -> index map. Sorting it in
+    // place corrupts lookup semantics because the backing vector is reordered
+    // without rebuilding that map. Reinsert into a fresh MapVector instead.
+    llvm::SmallVector<std::pair<SourceRef, Interval>> sortedRanges;
+    sortedRanges.reserve(memberRanges.size());
+    for (const auto &[ref, interval] : memberRanges) {
+      sortedRanges.emplace_back(ref, interval);
+    }
+    llvm::sort(sortedRanges, [](const auto &a, const auto &b) { return a.first < b.first; });
+    memberRanges.clear();
+    for (auto &[ref, interval] : sortedRanges) {
+      memberRanges[ref] = interval;
+    }
   };
 
   computeIntervalsImpl(structDef.getComputeFuncOp(), computeMemberRanges, computeSolverConstraints);

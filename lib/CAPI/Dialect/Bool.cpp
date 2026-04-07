@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Bool.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
-
-#include "llzk-c/Dialect/Bool.h"
 
 #include <mlir/CAPI/Registration.h>
 

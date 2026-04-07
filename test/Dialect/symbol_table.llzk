@@ -59,3 +59,21 @@ module attributes {llzk.lang} {
     }
   }
 }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TComponentW {
+    // expected-note@+1 {{see existing symbol definition here}}
+    poly.param @DuplicateParam
+    // expected-error@+1 {{redefinition of symbol named 'DuplicateParam'}}
+    poly.param @DuplicateParam
+
+    struct.def @ComponentW {
+      function.def @compute() -> !struct.type<@TComponentW::@ComponentW<[@DuplicateParam, @DuplicateParam]>> {
+        %self = struct.new : !struct.type<@TComponentW::@ComponentW<[@DuplicateParam, @DuplicateParam]>>
+        function.return %self : !struct.type<@TComponentW::@ComponentW<[@DuplicateParam, @DuplicateParam]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponentW::@ComponentW<[@DuplicateParam, @DuplicateParam]>>) { function.return }
+    }
+  }
+}

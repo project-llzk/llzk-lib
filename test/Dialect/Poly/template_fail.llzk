@@ -1,0 +1,170 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'poly.param' op expects parent op 'poly.template'}}
+  poly.param @P
+}
+// -----
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'poly.expr' op expects parent op 'poly.template'}}
+  poly.expr @P {
+    %v = arith.constant 42 : index
+    poly.yield %v : index
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // The parsing error isn't clear but this tests that `param` doesn't allow a region.
+  // expected-error@+1 {{expected attribute name}}
+  poly.param @P {
+    %v = arith.constant 42 : index
+    poly.yield %v : index
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // The parsing error isn't clear but this tests that `param` doesn't allow a region.
+  // expected-error@+1 {{expected attribute name}}
+  poly.param @P : index {
+    %v = arith.constant 42 : index
+    poly.yield %v : index
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.expr @P {
+      // expected-error@+1 {{block with no terminator}}
+      %v = arith.constant 42 : index
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-error@+1 {{'poly.expr' op expects a non-empty block}}
+    poly.expr @P {}
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    // expected-error@+1 {{'poly.param' op attribute 'type_opt' failed to satisfy constraint: type attribute of integral, felt, or typevar type}}
+    poly.param @P : !string.type
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.expr @P {
+      %str = string.new "hi"
+      // expected-error@+1 {{'poly.yield' op operand #0 must be integral, felt, or typevar type, but got '!string.type'}}
+      poly.yield %str : !string.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @S1 {
+    // expected-error@+1 {{'poly.template' op expects parent op 'builtin.module'}}
+    poly.template @T1 {
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T2 {
+    // expected-error@+1 {{'poly.expr' op initialization cannot use a symbol defined by another `poly.expr` within this template}}
+    poly.expr @C { // expected-note {{defined here}}
+      %c = poly.read_const @C : !felt.type // expected-note {{symbol @C used here}}
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T3 {
+    poly.expr @D { // expected-note {{defined here}}
+      %c = felt.const 54
+      poly.yield %c : !felt.type
+    }
+    // expected-error@+1 {{'poly.expr' op initialization cannot use a symbol defined by another `poly.expr` within this template}}
+    poly.expr @F {
+      %c = poly.read_const @D : !felt.type // expected-note {{symbol @D used here}}
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  global.def @b : !felt.type = 999
+
+  poly.template @T4 {
+    poly.expr @D {
+      // expected-error@+1 {{'global.write' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+      global.write @b = %c : !felt.type
+      %c = felt.const 123
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  global.def @b : !felt.type = 999
+
+  poly.template @T4 {
+    poly.expr @D {
+      // expected-error@+1 {{'global.read' op is not allowed within a `poly.expr` initializer}}
+      %c = global.read @b : !felt.type
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @c () -> ()
+
+  poly.template @T5 {
+    poly.expr @D {
+      // expected-error@+1 {{'function.call' op is not allowed within a `poly.expr` initializer}}
+      function.call @c() : () -> ()
+      %c = felt.const 123
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  poly.template @T6 {
+    poly.expr @D {
+      // expected-error@+1 {{'function.call' op is not allowed within a `poly.expr` initializer}}
+      function.call @Top::@compute() : () -> !struct.type<@Top>
+      %c = felt.const 123
+      poly.yield %c : !felt.type
+    }
+  }
+}

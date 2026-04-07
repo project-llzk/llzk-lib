@@ -13,10 +13,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Validators/LLZKValidationPasses.h"
+
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/MemberOverwriteAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
 

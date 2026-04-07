@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Poly.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
@@ -15,7 +17,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Util/Compare.h"
 
-#include "llzk-c/Dialect/Poly.h"
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/AffineExpr.h>
 #include <mlir/CAPI/AffineMap.h>
@@ -24,8 +26,6 @@
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/Support/LLVM.h>
-
-#include <mlir-c/Pass.h>
 
 using namespace mlir;
 using namespace llzk;
@@ -54,6 +54,50 @@ MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute attrWrapper) {
     return wrap(TypeVarType::get(sym));
   }
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(llvm::cast<StringAttr>(attr))));
+}
+
+//===----------------------------------------------------------------------===//
+// TemplateOp
+//===----------------------------------------------------------------------===//
+
+static inline TemplateOp asTemplateOp(MlirOperation op) { return unwrap_cast<TemplateOp>(op); }
+
+static inline void copyAttrs(SmallVector<Attribute> attrs, MlirAttribute *dst) {
+  for (auto [n, attr] : llvm::enumerate(attrs)) {
+    dst[n] = wrap(attr);
+  }
+}
+
+bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op) {
+  return asTemplateOp(op).hasConstOps<TemplateParamOp>();
+}
+
+intptr_t llzkPoly_TemplateOpNumConstParamOps(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(asTemplateOp(op).numConstOps<TemplateParamOp>());
+}
+
+void llzkPoly_TemplateOpGetConstParamNames(MlirOperation op, MlirAttribute *dst) {
+  copyAttrs(asTemplateOp(op).getConstNames<TemplateParamOp>(), dst);
+}
+
+bool llzkPoly_TemplateOpHasConstParamNamed(MlirOperation op, MlirStringRef find) {
+  return asTemplateOp(op).hasConstNamed<TemplateParamOp>(unwrap(find));
+}
+
+bool llzkPoly_TemplateOpHasConstExprOps(MlirOperation op) {
+  return asTemplateOp(op).hasConstOps<TemplateExprOp>();
+}
+
+intptr_t llzkPoly_TemplateOpNumConstExprOps(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(asTemplateOp(op).numConstOps<TemplateExprOp>());
+}
+
+void llzkPoly_TemplateOpGetConstExprNames(MlirOperation op, MlirAttribute *dst) {
+  copyAttrs(asTemplateOp(op).getConstNames<TemplateExprOp>(), dst);
+}
+
+bool llzkPoly_TemplateOpHasConstExprNamed(MlirOperation op, MlirStringRef find) {
+  return asTemplateOp(op).hasConstNamed<TemplateExprOp>(unwrap(find));
 }
 
 //===----------------------------------------------------------------------===//

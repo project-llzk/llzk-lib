@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Dialect/Felt/IR/Types.h"
+
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributeInterfaces.h>
 

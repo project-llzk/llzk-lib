@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/SourceRefLattice.h"
+
+#include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"

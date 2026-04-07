@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Util/AffineHelper.h"
+
 #include "llzk/Util/Compare.h"
 
 #include <numeric>

@@ -7,6 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
+
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 
@@ -30,11 +35,6 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <optional>
-
-#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
 
 // Pretty-printing overview:
 // - emitZKLeanModule collects structs via collectZKLeanStructDefs, prints them

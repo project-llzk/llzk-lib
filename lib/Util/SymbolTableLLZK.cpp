@@ -416,6 +416,31 @@ std::optional<SymbolTable::UseRange> llzk::getSymbolUses(Operation *symbol, Regi
 }
 
 //===----------------------------------------------------------------------===//
+// llzk::getSymbolsUsedIn
+
+void llzk::getSymbolsUsedIn(Type t, llvm::SmallDenseSet<SymbolRefAttr> &symbolsUsed) {
+  t.walk([&symbolsUsed](SymbolRefAttr symbolRef) { symbolsUsed.insert(symbolRef); });
+}
+
+void llzk::getSymbolsUsedIn(ArrayRef<Type> types, llvm::SmallDenseSet<SymbolRefAttr> &symbolsUsed) {
+  for (Type t : types) {
+    getSymbolsUsedIn(t, symbolsUsed);
+  }
+}
+
+llvm::SmallDenseSet<SymbolRefAttr> llzk::getSymbolsUsedIn(Type t) {
+  llvm::SmallDenseSet<SymbolRefAttr> symbolsUsed;
+  getSymbolsUsedIn(t, symbolsUsed);
+  return symbolsUsed;
+}
+
+llvm::SmallDenseSet<SymbolRefAttr> llzk::getSymbolsUsedIn(ArrayRef<Type> types) {
+  llvm::SmallDenseSet<SymbolRefAttr> symbolsUsed;
+  getSymbolsUsedIn(types, symbolsUsed);
+  return symbolsUsed;
+}
+
+//===----------------------------------------------------------------------===//
 // llzk::symbolKnownUseEmpty
 
 namespace {
