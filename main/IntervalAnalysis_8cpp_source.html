@@ -1568,105 +1568,109 @@ $(function(){initNavTree('IntervalAnalysis_8cpp_source.html','',''); });
 <div class="line"><a id="l01390" name="l01390"></a><span class="lineno"> 1390</span>      }</div>
 <div class="line"><a id="l01391" name="l01391"></a><span class="lineno"> 1391</span>    }</div>
 <div class="line"><a id="l01392" name="l01392"></a><span class="lineno"> 1392</span> </div>
-<div class="line"><a id="l01393" name="l01393"></a><span class="lineno"> 1393</span>    <span class="comment">// Iterate over members that were touched by the analysis</span></div>
-<div class="line"><a id="l01394" name="l01394"></a><span class="lineno"> 1394</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, lattices] : ctx.<a class="code hl_variable" href="structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc">intervalDFA</a>-&gt;<a class="code hl_function" href="classllzk_1_1IntervalDataFlowAnalysis.html#ad4cd6edf9c7ea6137de8ae33c8c0fd9b">getReadResults</a>()) {</div>
-<div class="line"><a id="l01395" name="l01395"></a><span class="lineno"> 1395</span>      <span class="comment">// All lattices should have the same value, so we can get the front.</span></div>
-<div class="line"><a id="l01396" name="l01396"></a><span class="lineno"> 1396</span>      <span class="keywordflow">if</span> (!lattices.empty() &amp;&amp; searchSet.erase(ref)) {</div>
-<div class="line"><a id="l01397" name="l01397"></a><span class="lineno"> 1397</span>        <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1IntervalAnalysisLattice.html">IntervalAnalysisLattice</a> *lattice = *lattices.begin();</div>
-<div class="line"><a id="l01398" name="l01398"></a><span class="lineno"> 1398</span>        memberRanges[ref] = lattice-&gt;<a class="code hl_function" href="classllzk_1_1IntervalAnalysisLattice.html#a0aa552a97e7352ce61a20a9603e22df2">getValue</a>().<a class="code hl_function" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#aca66faebc24afd4dd373b99151c3193e">getScalarValue</a>().getInterval();</div>
-<div class="line"><a id="l01399" name="l01399"></a><span class="lineno"> 1399</span>        assert(memberRanges[ref].getField() == ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>() &amp;&amp; <span class="stringliteral">&quot;bad interval defaults&quot;</span>);</div>
-<div class="line"><a id="l01400" name="l01400"></a><span class="lineno"> 1400</span>      }</div>
-<div class="line"><a id="l01401" name="l01401"></a><span class="lineno"> 1401</span>    }</div>
-<div class="line"><a id="l01402" name="l01402"></a><span class="lineno"> 1402</span> </div>
-<div class="line"><a id="l01403" name="l01403"></a><span class="lineno"> 1403</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, val] : ctx.<a class="code hl_variable" href="structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc">intervalDFA</a>-&gt;<a class="code hl_function" href="classllzk_1_1IntervalDataFlowAnalysis.html#ad19f4b98cd9964b5da8eaf23e4489557">getWriteResults</a>()) {</div>
-<div class="line"><a id="l01404" name="l01404"></a><span class="lineno"> 1404</span>      <span class="keywordflow">if</span> (searchSet.erase(ref)) {</div>
-<div class="line"><a id="l01405" name="l01405"></a><span class="lineno"> 1405</span>        memberRanges[ref] = val.getInterval();</div>
-<div class="line"><a id="l01406" name="l01406"></a><span class="lineno"> 1406</span>        assert(memberRanges[ref].getField() == ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>() &amp;&amp; <span class="stringliteral">&quot;bad interval defaults&quot;</span>);</div>
-<div class="line"><a id="l01407" name="l01407"></a><span class="lineno"> 1407</span>      }</div>
-<div class="line"><a id="l01408" name="l01408"></a><span class="lineno"> 1408</span>    }</div>
-<div class="line"><a id="l01409" name="l01409"></a><span class="lineno"> 1409</span> </div>
-<div class="line"><a id="l01410" name="l01410"></a><span class="lineno"> 1410</span>    <span class="comment">// For all unfound refs, default to the entire range.</span></div>
-<div class="line"><a id="l01411" name="l01411"></a><span class="lineno"> 1411</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;ref : searchSet) {</div>
-<div class="line"><a id="l01412" name="l01412"></a><span class="lineno"> 1412</span>      memberRanges[ref] = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">Interval::Entire</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
-<div class="line"><a id="l01413" name="l01413"></a><span class="lineno"> 1413</span>    }</div>
-<div class="line"><a id="l01414" name="l01414"></a><span class="lineno"> 1414</span> </div>
-<div class="line"><a id="l01415" name="l01415"></a><span class="lineno"> 1415</span>    <span class="comment">// Sort the outputs since we assembled things out of order.</span></div>
-<div class="line"><a id="l01416" name="l01416"></a><span class="lineno"> 1416</span>    llvm::sort(memberRanges, [](<span class="keyword">auto</span> a, <span class="keyword">auto</span> b) { <span class="keywordflow">return</span> std::get&lt;0&gt;(a) &lt; std::get&lt;0&gt;(b); });</div>
-<div class="line"><a id="l01417" name="l01417"></a><span class="lineno"> 1417</span>  };</div>
+<div class="line"><a id="l01393" name="l01393"></a><span class="lineno"> 1393</span>    <span class="comment">// Aggregate all read intervals for a ref. A single ref may be read at multiple program</span></div>
+<div class="line"><a id="l01394" name="l01394"></a><span class="lineno"> 1394</span>    <span class="comment">// points with different precision, so picking an arbitrary lattice from the DenseSet is</span></div>
+<div class="line"><a id="l01395" name="l01395"></a><span class="lineno"> 1395</span>    <span class="comment">// nondeterministic. Joining preserves the overapproximation regardless of iteration order.</span></div>
+<div class="line"><a id="l01396" name="l01396"></a><span class="lineno"> 1396</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, lattices] : ctx.<a class="code hl_variable" href="structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc">intervalDFA</a>-&gt;<a class="code hl_function" href="classllzk_1_1IntervalDataFlowAnalysis.html#ad4cd6edf9c7ea6137de8ae33c8c0fd9b">getReadResults</a>()) {</div>
+<div class="line"><a id="l01397" name="l01397"></a><span class="lineno"> 1397</span>      <span class="keywordflow">if</span> (!lattices.empty() &amp;&amp; searchSet.erase(ref)) {</div>
+<div class="line"><a id="l01398" name="l01398"></a><span class="lineno"> 1398</span>        <a class="code hl_class" href="classllzk_1_1Interval.html">Interval</a> joinedInterval = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aace2c8aed9c2fa0cfbed56cbda4d8bf07">Interval::Empty</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
+<div class="line"><a id="l01399" name="l01399"></a><span class="lineno"> 1399</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1IntervalAnalysisLattice.html">IntervalAnalysisLattice</a> *lattice : lattices) {</div>
+<div class="line"><a id="l01400" name="l01400"></a><span class="lineno"> 1400</span>          joinedInterval = joinedInterval.<a class="code hl_function" href="classllzk_1_1Interval.html#afb06a47bf4e8eebceaed94398087d34d">join</a>(lattice-&gt;getValue().getScalarValue().getInterval());</div>
+<div class="line"><a id="l01401" name="l01401"></a><span class="lineno"> 1401</span>        }</div>
+<div class="line"><a id="l01402" name="l01402"></a><span class="lineno"> 1402</span>        memberRanges[ref] = joinedInterval;</div>
+<div class="line"><a id="l01403" name="l01403"></a><span class="lineno"> 1403</span>        assert(memberRanges[ref].getField() == ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>() &amp;&amp; <span class="stringliteral">&quot;bad interval defaults&quot;</span>);</div>
+<div class="line"><a id="l01404" name="l01404"></a><span class="lineno"> 1404</span>      }</div>
+<div class="line"><a id="l01405" name="l01405"></a><span class="lineno"> 1405</span>    }</div>
+<div class="line"><a id="l01406" name="l01406"></a><span class="lineno"> 1406</span> </div>
+<div class="line"><a id="l01407" name="l01407"></a><span class="lineno"> 1407</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, val] : ctx.<a class="code hl_variable" href="structllzk_1_1IntervalAnalysisContext.html#a9963abb9ab406a7cd8f41f5c5d9705fc">intervalDFA</a>-&gt;<a class="code hl_function" href="classllzk_1_1IntervalDataFlowAnalysis.html#ad19f4b98cd9964b5da8eaf23e4489557">getWriteResults</a>()) {</div>
+<div class="line"><a id="l01408" name="l01408"></a><span class="lineno"> 1408</span>      <span class="keywordflow">if</span> (searchSet.erase(ref)) {</div>
+<div class="line"><a id="l01409" name="l01409"></a><span class="lineno"> 1409</span>        memberRanges[ref] = val.getInterval();</div>
+<div class="line"><a id="l01410" name="l01410"></a><span class="lineno"> 1410</span>        assert(memberRanges[ref].getField() == ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>() &amp;&amp; <span class="stringliteral">&quot;bad interval defaults&quot;</span>);</div>
+<div class="line"><a id="l01411" name="l01411"></a><span class="lineno"> 1411</span>      }</div>
+<div class="line"><a id="l01412" name="l01412"></a><span class="lineno"> 1412</span>    }</div>
+<div class="line"><a id="l01413" name="l01413"></a><span class="lineno"> 1413</span> </div>
+<div class="line"><a id="l01414" name="l01414"></a><span class="lineno"> 1414</span>    <span class="comment">// For all unfound refs, default to the entire range.</span></div>
+<div class="line"><a id="l01415" name="l01415"></a><span class="lineno"> 1415</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;ref : searchSet) {</div>
+<div class="line"><a id="l01416" name="l01416"></a><span class="lineno"> 1416</span>      memberRanges[ref] = <a class="code hl_enumvalue" href="classllzk_1_1Interval.html#ae7090a31ef19bbaaf1787b08fb76a79aa54851ed2f0a6af25a1b7fdaf83df6a1f">Interval::Entire</a>(ctx.<a class="code hl_function" href="structllzk_1_1IntervalAnalysisContext.html#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a>());</div>
+<div class="line"><a id="l01417" name="l01417"></a><span class="lineno"> 1417</span>    }</div>
 <div class="line"><a id="l01418" name="l01418"></a><span class="lineno"> 1418</span> </div>
-<div class="line"><a id="l01419" name="l01419"></a><span class="lineno"> 1419</span>  computeIntervalsImpl(structDef.getComputeFuncOp(), computeMemberRanges, computeSolverConstraints);</div>
-<div class="line"><a id="l01420" name="l01420"></a><span class="lineno"> 1420</span>  computeIntervalsImpl(</div>
-<div class="line"><a id="l01421" name="l01421"></a><span class="lineno"> 1421</span>      structDef.getConstrainFuncOp(), constrainMemberRanges, constrainSolverConstraints</div>
-<div class="line"><a id="l01422" name="l01422"></a><span class="lineno"> 1422</span>  );</div>
-<div class="line"><a id="l01423" name="l01423"></a><span class="lineno"> 1423</span> </div>
-<div class="line"><a id="l01424" name="l01424"></a><span class="lineno"> 1424</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01425" name="l01425"></a><span class="lineno"> 1425</span>}</div>
+<div class="line"><a id="l01419" name="l01419"></a><span class="lineno"> 1419</span>    <span class="comment">// Sort the outputs since we assembled things out of order.</span></div>
+<div class="line"><a id="l01420" name="l01420"></a><span class="lineno"> 1420</span>    llvm::sort(memberRanges, [](<span class="keyword">auto</span> a, <span class="keyword">auto</span> b) { <span class="keywordflow">return</span> std::get&lt;0&gt;(a) &lt; std::get&lt;0&gt;(b); });</div>
+<div class="line"><a id="l01421" name="l01421"></a><span class="lineno"> 1421</span>  };</div>
+<div class="line"><a id="l01422" name="l01422"></a><span class="lineno"> 1422</span> </div>
+<div class="line"><a id="l01423" name="l01423"></a><span class="lineno"> 1423</span>  computeIntervalsImpl(structDef.getComputeFuncOp(), computeMemberRanges, computeSolverConstraints);</div>
+<div class="line"><a id="l01424" name="l01424"></a><span class="lineno"> 1424</span>  computeIntervalsImpl(</div>
+<div class="line"><a id="l01425" name="l01425"></a><span class="lineno"> 1425</span>      structDef.getConstrainFuncOp(), constrainMemberRanges, constrainSolverConstraints</div>
+<div class="line"><a id="l01426" name="l01426"></a><span class="lineno"> 1426</span>  );</div>
+<div class="line"><a id="l01427" name="l01427"></a><span class="lineno"> 1427</span> </div>
+<div class="line"><a id="l01428" name="l01428"></a><span class="lineno"> 1428</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01429" name="l01429"></a><span class="lineno"> 1429</span>}</div>
 </div>
-<div class="line"><a id="l01426" name="l01426"></a><span class="lineno"> 1426</span> </div>
-<div class="foldopen" id="foldopen01427" data-start="{" data-end="}">
-<div class="line"><a id="l01427" name="l01427"></a><span class="lineno"><a class="line" href="classllzk_1_1StructIntervals.html#a820ac1447d86a54f6401c05f517ebed2"> 1427</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1StructIntervals.html#a820ac1447d86a54f6401c05f517ebed2">StructIntervals::print</a>(mlir::raw_ostream &amp;os, <span class="keywordtype">bool</span> withConstraints, <span class="keywordtype">bool</span> printCompute)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l01428" name="l01428"></a><span class="lineno"> 1428</span>  <span class="keyword">auto</span> writeIntervals =</div>
-<div class="line"><a id="l01429" name="l01429"></a><span class="lineno"> 1429</span>      [&amp;os, &amp;withConstraints](</div>
-<div class="line"><a id="l01430" name="l01430"></a><span class="lineno"> 1430</span>          <span class="keyword">const</span> <span class="keywordtype">char</span> *fnName, <span class="keyword">const</span> llvm::MapVector&lt;SourceRef, Interval&gt; &amp;memberRanges,</div>
-<div class="line"><a id="l01431" name="l01431"></a><span class="lineno"> 1431</span>          <span class="keyword">const</span> llvm::SetVector&lt;ExpressionValue&gt; &amp;solverConstraints, <span class="keywordtype">bool</span> printName</div>
-<div class="line"><a id="l01432" name="l01432"></a><span class="lineno"> 1432</span>      ) {</div>
-<div class="line"><a id="l01433" name="l01433"></a><span class="lineno"> 1433</span>    <span class="keywordtype">int</span> indent = 4;</div>
-<div class="line"><a id="l01434" name="l01434"></a><span class="lineno"> 1434</span>    <span class="keywordflow">if</span> (printName) {</div>
-<div class="line"><a id="l01435" name="l01435"></a><span class="lineno"> 1435</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l01436" name="l01436"></a><span class="lineno"> 1436</span>      os.indent(indent) &lt;&lt; fnName &lt;&lt; <span class="stringliteral">&quot; {&quot;</span>;</div>
-<div class="line"><a id="l01437" name="l01437"></a><span class="lineno"> 1437</span>      indent += 4;</div>
-<div class="line"><a id="l01438" name="l01438"></a><span class="lineno"> 1438</span>    }</div>
-<div class="line"><a id="l01439" name="l01439"></a><span class="lineno"> 1439</span> </div>
-<div class="line"><a id="l01440" name="l01440"></a><span class="lineno"> 1440</span>    <span class="keywordflow">if</span> (memberRanges.empty()) {</div>
-<div class="line"><a id="l01441" name="l01441"></a><span class="lineno"> 1441</span>      os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
-<div class="line"><a id="l01442" name="l01442"></a><span class="lineno"> 1442</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l01443" name="l01443"></a><span class="lineno"> 1443</span>    }</div>
-<div class="line"><a id="l01444" name="l01444"></a><span class="lineno"> 1444</span> </div>
-<div class="line"><a id="l01445" name="l01445"></a><span class="lineno"> 1445</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberRanges) {</div>
-<div class="line"><a id="l01446" name="l01446"></a><span class="lineno"> 1446</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l01447" name="l01447"></a><span class="lineno"> 1447</span>      os.indent(indent) &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span> &lt;&lt; interval;</div>
-<div class="line"><a id="l01448" name="l01448"></a><span class="lineno"> 1448</span>    }</div>
-<div class="line"><a id="l01449" name="l01449"></a><span class="lineno"> 1449</span> </div>
-<div class="line"><a id="l01450" name="l01450"></a><span class="lineno"> 1450</span>    <span class="keywordflow">if</span> (withConstraints) {</div>
-<div class="line"><a id="l01451" name="l01451"></a><span class="lineno"> 1451</span>      os &lt;&lt; <span class="stringliteral">&quot;\n\n&quot;</span>;</div>
-<div class="line"><a id="l01452" name="l01452"></a><span class="lineno"> 1452</span>      os.indent(indent) &lt;&lt; <span class="stringliteral">&quot;Solver Constraints { &quot;</span>;</div>
-<div class="line"><a id="l01453" name="l01453"></a><span class="lineno"> 1453</span>      <span class="keywordflow">if</span> (solverConstraints.empty()) {</div>
-<div class="line"><a id="l01454" name="l01454"></a><span class="lineno"> 1454</span>        os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
-<div class="line"><a id="l01455" name="l01455"></a><span class="lineno"> 1455</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l01456" name="l01456"></a><span class="lineno"> 1456</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;e : solverConstraints) {</div>
-<div class="line"><a id="l01457" name="l01457"></a><span class="lineno"> 1457</span>          os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l01458" name="l01458"></a><span class="lineno"> 1458</span>          os.indent(indent + 4);</div>
-<div class="line"><a id="l01459" name="l01459"></a><span class="lineno"> 1459</span>          e.getExpr()-&gt;print(os);</div>
-<div class="line"><a id="l01460" name="l01460"></a><span class="lineno"> 1460</span>        }</div>
-<div class="line"><a id="l01461" name="l01461"></a><span class="lineno"> 1461</span>        os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l01462" name="l01462"></a><span class="lineno"> 1462</span>        os.indent(indent) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
-<div class="line"><a id="l01463" name="l01463"></a><span class="lineno"> 1463</span>      }</div>
-<div class="line"><a id="l01464" name="l01464"></a><span class="lineno"> 1464</span>    }</div>
-<div class="line"><a id="l01465" name="l01465"></a><span class="lineno"> 1465</span> </div>
-<div class="line"><a id="l01466" name="l01466"></a><span class="lineno"> 1466</span>    <span class="keywordflow">if</span> (printName) {</div>
-<div class="line"><a id="l01467" name="l01467"></a><span class="lineno"> 1467</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l01468" name="l01468"></a><span class="lineno"> 1468</span>      os.indent(indent - 4) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
-<div class="line"><a id="l01469" name="l01469"></a><span class="lineno"> 1469</span>    }</div>
-<div class="line"><a id="l01470" name="l01470"></a><span class="lineno"> 1470</span>  };</div>
-<div class="line"><a id="l01471" name="l01471"></a><span class="lineno"> 1471</span> </div>
-<div class="line"><a id="l01472" name="l01472"></a><span class="lineno"> 1472</span>  os &lt;&lt; <span class="stringliteral">&quot;StructIntervals { &quot;</span>;</div>
-<div class="line"><a id="l01473" name="l01473"></a><span class="lineno"> 1473</span>  <span class="keywordflow">if</span> (constrainMemberRanges.empty() &amp;&amp; (!printCompute || computeMemberRanges.empty())) {</div>
-<div class="line"><a id="l01474" name="l01474"></a><span class="lineno"> 1474</span>    os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
-<div class="line"><a id="l01475" name="l01475"></a><span class="lineno"> 1475</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l01476" name="l01476"></a><span class="lineno"> 1476</span>  }</div>
-<div class="line"><a id="l01477" name="l01477"></a><span class="lineno"> 1477</span> </div>
-<div class="line"><a id="l01478" name="l01478"></a><span class="lineno"> 1478</span>  <span class="keywordflow">if</span> (printCompute) {</div>
-<div class="line"><a id="l01479" name="l01479"></a><span class="lineno"> 1479</span>    writeIntervals(<a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, computeMemberRanges, computeSolverConstraints, printCompute);</div>
+<div class="line"><a id="l01430" name="l01430"></a><span class="lineno"> 1430</span> </div>
+<div class="foldopen" id="foldopen01431" data-start="{" data-end="}">
+<div class="line"><a id="l01431" name="l01431"></a><span class="lineno"><a class="line" href="classllzk_1_1StructIntervals.html#a820ac1447d86a54f6401c05f517ebed2"> 1431</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1StructIntervals.html#a820ac1447d86a54f6401c05f517ebed2">StructIntervals::print</a>(mlir::raw_ostream &amp;os, <span class="keywordtype">bool</span> withConstraints, <span class="keywordtype">bool</span> printCompute)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l01432" name="l01432"></a><span class="lineno"> 1432</span>  <span class="keyword">auto</span> writeIntervals =</div>
+<div class="line"><a id="l01433" name="l01433"></a><span class="lineno"> 1433</span>      [&amp;os, &amp;withConstraints](</div>
+<div class="line"><a id="l01434" name="l01434"></a><span class="lineno"> 1434</span>          <span class="keyword">const</span> <span class="keywordtype">char</span> *fnName, <span class="keyword">const</span> llvm::MapVector&lt;SourceRef, Interval&gt; &amp;memberRanges,</div>
+<div class="line"><a id="l01435" name="l01435"></a><span class="lineno"> 1435</span>          <span class="keyword">const</span> llvm::SetVector&lt;ExpressionValue&gt; &amp;solverConstraints, <span class="keywordtype">bool</span> printName</div>
+<div class="line"><a id="l01436" name="l01436"></a><span class="lineno"> 1436</span>      ) {</div>
+<div class="line"><a id="l01437" name="l01437"></a><span class="lineno"> 1437</span>    <span class="keywordtype">int</span> indent = 4;</div>
+<div class="line"><a id="l01438" name="l01438"></a><span class="lineno"> 1438</span>    <span class="keywordflow">if</span> (printName) {</div>
+<div class="line"><a id="l01439" name="l01439"></a><span class="lineno"> 1439</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l01440" name="l01440"></a><span class="lineno"> 1440</span>      os.indent(indent) &lt;&lt; fnName &lt;&lt; <span class="stringliteral">&quot; {&quot;</span>;</div>
+<div class="line"><a id="l01441" name="l01441"></a><span class="lineno"> 1441</span>      indent += 4;</div>
+<div class="line"><a id="l01442" name="l01442"></a><span class="lineno"> 1442</span>    }</div>
+<div class="line"><a id="l01443" name="l01443"></a><span class="lineno"> 1443</span> </div>
+<div class="line"><a id="l01444" name="l01444"></a><span class="lineno"> 1444</span>    <span class="keywordflow">if</span> (memberRanges.empty()) {</div>
+<div class="line"><a id="l01445" name="l01445"></a><span class="lineno"> 1445</span>      os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
+<div class="line"><a id="l01446" name="l01446"></a><span class="lineno"> 1446</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l01447" name="l01447"></a><span class="lineno"> 1447</span>    }</div>
+<div class="line"><a id="l01448" name="l01448"></a><span class="lineno"> 1448</span> </div>
+<div class="line"><a id="l01449" name="l01449"></a><span class="lineno"> 1449</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;[ref, interval] : memberRanges) {</div>
+<div class="line"><a id="l01450" name="l01450"></a><span class="lineno"> 1450</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l01451" name="l01451"></a><span class="lineno"> 1451</span>      os.indent(indent) &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span> &lt;&lt; interval;</div>
+<div class="line"><a id="l01452" name="l01452"></a><span class="lineno"> 1452</span>    }</div>
+<div class="line"><a id="l01453" name="l01453"></a><span class="lineno"> 1453</span> </div>
+<div class="line"><a id="l01454" name="l01454"></a><span class="lineno"> 1454</span>    <span class="keywordflow">if</span> (withConstraints) {</div>
+<div class="line"><a id="l01455" name="l01455"></a><span class="lineno"> 1455</span>      os &lt;&lt; <span class="stringliteral">&quot;\n\n&quot;</span>;</div>
+<div class="line"><a id="l01456" name="l01456"></a><span class="lineno"> 1456</span>      os.indent(indent) &lt;&lt; <span class="stringliteral">&quot;Solver Constraints { &quot;</span>;</div>
+<div class="line"><a id="l01457" name="l01457"></a><span class="lineno"> 1457</span>      <span class="keywordflow">if</span> (solverConstraints.empty()) {</div>
+<div class="line"><a id="l01458" name="l01458"></a><span class="lineno"> 1458</span>        os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
+<div class="line"><a id="l01459" name="l01459"></a><span class="lineno"> 1459</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l01460" name="l01460"></a><span class="lineno"> 1460</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;e : solverConstraints) {</div>
+<div class="line"><a id="l01461" name="l01461"></a><span class="lineno"> 1461</span>          os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l01462" name="l01462"></a><span class="lineno"> 1462</span>          os.indent(indent + 4);</div>
+<div class="line"><a id="l01463" name="l01463"></a><span class="lineno"> 1463</span>          e.getExpr()-&gt;print(os);</div>
+<div class="line"><a id="l01464" name="l01464"></a><span class="lineno"> 1464</span>        }</div>
+<div class="line"><a id="l01465" name="l01465"></a><span class="lineno"> 1465</span>        os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l01466" name="l01466"></a><span class="lineno"> 1466</span>        os.indent(indent) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
+<div class="line"><a id="l01467" name="l01467"></a><span class="lineno"> 1467</span>      }</div>
+<div class="line"><a id="l01468" name="l01468"></a><span class="lineno"> 1468</span>    }</div>
+<div class="line"><a id="l01469" name="l01469"></a><span class="lineno"> 1469</span> </div>
+<div class="line"><a id="l01470" name="l01470"></a><span class="lineno"> 1470</span>    <span class="keywordflow">if</span> (printName) {</div>
+<div class="line"><a id="l01471" name="l01471"></a><span class="lineno"> 1471</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l01472" name="l01472"></a><span class="lineno"> 1472</span>      os.indent(indent - 4) &lt;&lt; <span class="charliteral">&#39;}&#39;</span>;</div>
+<div class="line"><a id="l01473" name="l01473"></a><span class="lineno"> 1473</span>    }</div>
+<div class="line"><a id="l01474" name="l01474"></a><span class="lineno"> 1474</span>  };</div>
+<div class="line"><a id="l01475" name="l01475"></a><span class="lineno"> 1475</span> </div>
+<div class="line"><a id="l01476" name="l01476"></a><span class="lineno"> 1476</span>  os &lt;&lt; <span class="stringliteral">&quot;StructIntervals { &quot;</span>;</div>
+<div class="line"><a id="l01477" name="l01477"></a><span class="lineno"> 1477</span>  <span class="keywordflow">if</span> (constrainMemberRanges.empty() &amp;&amp; (!printCompute || computeMemberRanges.empty())) {</div>
+<div class="line"><a id="l01478" name="l01478"></a><span class="lineno"> 1478</span>    os &lt;&lt; <span class="stringliteral">&quot;}\n&quot;</span>;</div>
+<div class="line"><a id="l01479" name="l01479"></a><span class="lineno"> 1479</span>    <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l01480" name="l01480"></a><span class="lineno"> 1480</span>  }</div>
-<div class="line"><a id="l01481" name="l01481"></a><span class="lineno"> 1481</span>  writeIntervals(</div>
-<div class="line"><a id="l01482" name="l01482"></a><span class="lineno"> 1482</span>      <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>, constrainMemberRanges, constrainSolverConstraints, printCompute</div>
-<div class="line"><a id="l01483" name="l01483"></a><span class="lineno"> 1483</span>  );</div>
-<div class="line"><a id="l01484" name="l01484"></a><span class="lineno"> 1484</span> </div>
-<div class="line"><a id="l01485" name="l01485"></a><span class="lineno"> 1485</span>  os &lt;&lt; <span class="stringliteral">&quot;\n}\n&quot;</span>;</div>
-<div class="line"><a id="l01486" name="l01486"></a><span class="lineno"> 1486</span>}</div>
+<div class="line"><a id="l01481" name="l01481"></a><span class="lineno"> 1481</span> </div>
+<div class="line"><a id="l01482" name="l01482"></a><span class="lineno"> 1482</span>  <span class="keywordflow">if</span> (printCompute) {</div>
+<div class="line"><a id="l01483" name="l01483"></a><span class="lineno"> 1483</span>    writeIntervals(<a class="code hl_variable" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">FUNC_NAME_COMPUTE</a>, computeMemberRanges, computeSolverConstraints, printCompute);</div>
+<div class="line"><a id="l01484" name="l01484"></a><span class="lineno"> 1484</span>  }</div>
+<div class="line"><a id="l01485" name="l01485"></a><span class="lineno"> 1485</span>  writeIntervals(</div>
+<div class="line"><a id="l01486" name="l01486"></a><span class="lineno"> 1486</span>      <a class="code hl_variable" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a>, constrainMemberRanges, constrainSolverConstraints, printCompute</div>
+<div class="line"><a id="l01487" name="l01487"></a><span class="lineno"> 1487</span>  );</div>
+<div class="line"><a id="l01488" name="l01488"></a><span class="lineno"> 1488</span> </div>
+<div class="line"><a id="l01489" name="l01489"></a><span class="lineno"> 1489</span>  os &lt;&lt; <span class="stringliteral">&quot;\n}\n&quot;</span>;</div>
+<div class="line"><a id="l01490" name="l01490"></a><span class="lineno"> 1490</span>}</div>
 </div>
-<div class="line"><a id="l01487" name="l01487"></a><span class="lineno"> 1487</span> </div>
-<div class="line"><a id="l01488" name="l01488"></a><span class="lineno"> 1488</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l01491" name="l01491"></a><span class="lineno"> 1491</span> </div>
+<div class="line"><a id="l01492" name="l01492"></a><span class="lineno"> 1492</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aArrayTypeHelper_8h_html"><div class="ttname"><a href="ArrayTypeHelper_8h.html">ArrayTypeHelper.h</a></div></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aDebug_8h_html"><div class="ttname"><a href="Debug_8h.html">Debug.h</a></div></div>
@@ -1728,7 +1732,7 @@ $(function(){initNavTree('IntervalAnalysis_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1SourceRef_html_a10cc0e52eb9c770e1b1d91a1dd1c85bf"><div class="ttname"><a href="classllzk_1_1SourceRef.html#a10cc0e52eb9c770e1b1d91a1dd1c85bf">llzk::SourceRef::createChild</a></div><div class="ttdeci">mlir::FailureOr&lt; SourceRef &gt; createChild(const SourceRefIndex &amp;r) const</div><div class="ttdef"><b>Definition</b> <a href="SourceRef_8h_source.html#l00339">SourceRef.h:339</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRef_html_a6d3a2eebe39597a8d729892d18ba548c"><div class="ttname"><a href="classllzk_1_1SourceRef.html#a6d3a2eebe39597a8d729892d18ba548c">llzk::SourceRef::Path</a></div><div class="ttdeci">std::vector&lt; SourceRefIndex &gt; Path</div><div class="ttdef"><b>Definition</b> <a href="SourceRef_8h_source.html#l00134">SourceRef.h:134</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SourceRef_html_a6d98d6d83de09ac058689bdc1945e2c7"><div class="ttname"><a href="classllzk_1_1SourceRef.html#a6d98d6d83de09ac058689bdc1945e2c7">llzk::SourceRef::getAllSourceRefs</a></div><div class="ttdeci">static std::vector&lt; SourceRef &gt; getAllSourceRefs(mlir::SymbolTableCollection &amp;tables, mlir::ModuleOp mod, const SourceRef &amp;root)</div><div class="ttdoc">Produce all possible SourceRefs that are present starting from the given root.</div></div>
-<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a820ac1447d86a54f6401c05f517ebed2"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a820ac1447d86a54f6401c05f517ebed2">llzk::StructIntervals::print</a></div><div class="ttdeci">void print(mlir::raw_ostream &amp;os, bool withConstraints=false, bool printCompute=false) const</div><div class="ttdef"><b>Definition</b> <a href="#l01427">IntervalAnalysis.cpp:1427</a></div></div>
+<div class="ttc" id="aclassllzk_1_1StructIntervals_html_a820ac1447d86a54f6401c05f517ebed2"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#a820ac1447d86a54f6401c05f517ebed2">llzk::StructIntervals::print</a></div><div class="ttdeci">void print(mlir::raw_ostream &amp;os, bool withConstraints=false, bool printCompute=false) const</div><div class="ttdef"><b>Definition</b> <a href="#l01431">IntervalAnalysis.cpp:1431</a></div></div>
 <div class="ttc" id="aclassllzk_1_1StructIntervals_html_adcdf4f748f6a861177930efc428e2ba6"><div class="ttname"><a href="classllzk_1_1StructIntervals.html#adcdf4f748f6a861177930efc428e2ba6">llzk::StructIntervals::computeIntervals</a></div><div class="ttdeci">mlir::LogicalResult computeIntervals(mlir::DataFlowSolver &amp;solver, const IntervalAnalysisContext &amp;ctx)</div><div class="ttdef"><b>Definition</b> <a href="#l01356">IntervalAnalysis.cpp:1356</a></div></div>
 <div class="ttc" id="aclassllzk_1_1UnreducedInterval_html_a6812fca806618af19a06573ad2f9813f"><div class="ttname"><a href="classllzk_1_1UnreducedInterval.html#a6812fca806618af19a06573ad2f9813f">llzk::UnreducedInterval::computeLTPart</a></div><div class="ttdeci">UnreducedInterval computeLTPart(const UnreducedInterval &amp;rhs) const</div><div class="ttdoc">Return the part of the interval that is guaranteed to be less than the rhs&#39;s max value.</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00062">Intervals.cpp:62</a></div></div>
 <div class="ttc" id="aclassllzk_1_1UnreducedInterval_html_a714d71c0a751ab4595e2c7655a77ae9a"><div class="ttname"><a href="classllzk_1_1UnreducedInterval.html#a714d71c0a751ab4595e2c7655a77ae9a">llzk::UnreducedInterval::computeGEPart</a></div><div class="ttdeci">UnreducedInterval computeGEPart(const UnreducedInterval &amp;rhs) const</div><div class="ttdoc">Return the part of the interval that is greater than or equal to the rhs&#39;s lower bound.</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00085">Intervals.cpp:85</a></div></div>
