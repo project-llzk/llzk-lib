@@ -126,18 +126,40 @@ class FunctionDefConverter : public OpConversionPattern<function::FuncDefOp> {
 };
 
 class FeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
-  Value invFunc;
-
 public:
-  FeltDivConverter(TypeConverter &_typeConverter, MLIRContext *context, Value _invFunc)
-      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, invFunc {_invFunc} {}
+  using OpConversionPattern<felt::DivFeltOp>::OpConversionPattern;
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    SmallVector<Value> invArgs = {adaptor.getRhs()};
-    auto y_inv = rewriter.create<smt::ApplyFuncOp>(op->getLoc(), invFunc, invArgs).getResult();
-    SmallVector<Value> mulArgs = {adaptor.getLhs(), y_inv};
-    rewriter.replaceOpWithNewOp<smt::IntMulOp>(op, mulArgs);
+
+    // Rewrite `%z = felt.div %x, %y` into:
+    // %z = smt.declare_fun "z" : !smt.int
+    // %c0 = smt.constant 0 : !smt.int
+    // %y0 = smt.eq %y, %c0 : !smt.bool
+    // %z0 = smt.eq %z, %c0 : !smt.bool
+    // %yz = smt.int.mul %y, %z : !smt.int
+    // %yz_eq_x = smt.eq %yz, %x : !smt.bool
+    // %div_constraint = smt.ite %y0, %z0, %yz_eq_x : !smt.bool
+    // smt.assert %div_constraint
+
+    auto div = rewriter.create<smt::DeclareFunOp>(op->getLoc(), smt::IntType::get(getContext()));
+    auto zero = rewriter.create<smt::IntConstantOp>(
+        op->getLoc(), IntegerAttr::get(getContext(), APSInt {APInt {1, 0}})
+    );
+    auto denominatorIsZero =
+        rewriter.create<smt::EqOp>(op->getLoc(), adaptor.getRhs(), zero.getResult());
+    auto divIsZero = rewriter.create<smt::EqOp>(op->getLoc(), div.getResult(), zero.getResult());
+    auto product =
+        rewriter.create<smt::IntMulOp>(op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()});
+    auto productEqualsNumerator =
+        rewriter.create<smt::EqOp>(op->getLoc(), product.getResult(), adaptor.getLhs());
+    auto divConstraint = rewriter.create<smt::IteOp>(
+        op->getLoc(), denominatorIsZero.getResult(), divIsZero.getResult(),
+        productEqualsNumerator.getResult()
+    );
+    rewriter.create<smt::AssertOp>(op->getLoc(), divConstraint.getResult());
+    rewriter.replaceOp(op, div.getResult());
+
     return success();
   }
 };
@@ -386,8 +408,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
   }
 
   // Convert the body and signature of a @product function to SMT
-  Operation *
-  convertBodies(Operation *op, const SignalSymbols &signalSymbols, APSInt prime, Value invFunc) {
+  Operation *convertBodies(Operation *op, const SignalSymbols &signalSymbols, APSInt prime) {
     if (op == nullptr) {
       return op;
     }
@@ -432,7 +453,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         BoolCmpConverter, FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter>(
         typeConverter, context
     );
-    patterns.add<FeltDivConverter>(typeConverter, context, invFunc);
+    patterns.add<FeltDivConverter>(typeConverter, context);
     patterns.add<ConstrainConverter>(typeConverter, context, prime);
     patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
     patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
@@ -506,28 +527,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
 
-      // Insert an `inv` function
-      SmallVector<Type> domainTypes = {smt::IntType::get(&getContext())};
-      auto inv = rewriter.create<smt::DeclareFunOp>(
-          preamble, smt::SMTFuncType::get(domainTypes, smt::IntType::get(&getContext())),
-          StringAttr::get(&getContext(), "inv")
-      );
-      // forall x, assert x * inv(x) == 1
-      auto forallBuilder = [&](OpBuilder &builder, Location loc, ValueRange args) {
-        auto x = args[0];
-        auto x_inv = builder.create<smt::ApplyFuncOp>(loc, inv.getResult(), args).getResult();
-        SmallVector<Value> mulArgs = {x, x_inv};
-        auto x_times_x_inv = builder.create<smt::IntMulOp>(loc, mulArgs);
-        auto one = builder.create<smt::IntConstantOp>(
-            loc, IntegerAttr::get(&getContext(), APSInt {APInt {prime.getBitWidth(), 1}})
-        );
-        return builder.create<smt::EqOp>(loc, x_times_x_inv, one).getResult();
-      };
-      auto forallOp = rewriter.create<smt::ForallOp>(preamble, domainTypes, forallBuilder);
-      rewriter.create<smt::AssertOp>(preamble, forallOp.getResult());
-
-      auto *result =
-          convertFunction(convertBodies(structDef, signalSymbols, prime, inv.getResult()));
+      auto *result = convertFunction(convertBodies(structDef, signalSymbols, prime));
       if (result == nullptr) {
         signalPassFailure();
         return WalkResult::interrupt();

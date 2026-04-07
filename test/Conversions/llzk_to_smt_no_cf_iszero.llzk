@@ -58,10 +58,18 @@ module attributes {llzk.lang, llzk.main = !struct.type<@IsZero_0<[]>>} {
 // CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[NONZERO]] : !smt.bool to i1
 // CHECK: %[[INV:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!smt.int) {
 // CHECK:   %[[ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
-// CHECK:   %[[INVIN:[0-9a-zA-Z_\.]+]] = smt.apply_func %{{[0-9a-zA-Z_\.]+}}(%[[IN]]) : !smt.func<(!smt.int) !smt.int>
-// CHECK:   %[[MUL:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[ONE]], %[[INVIN]]
+// CHECK:   %[[DIVSYM:[0-9a-zA-Z_\.]+]] = smt.declare_fun : !smt.int
+// CHECK:   %[[ZERO_DIV:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK:   %[[DENOM_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[IN]], %[[ZERO_DIV]] : !smt.int
+// CHECK:   %[[DIV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIVSYM]], %[[ZERO_DIV]] : !smt.int
+// CHECK:   %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[IN]], %[[DIVSYM]]
+// CHECK:   %[[PROD_EQ_ONE:[0-9a-zA-Z_\.]+]] = smt.eq %[[PROD]], %[[ONE]] : !smt.int
+// CHECK:   %[[DIV_CONSTRAINT:[0-9a-zA-Z_\.]+]] = smt.ite %[[DENOM_ZERO]], %[[DIV_ZERO]], %[[PROD_EQ_ONE]] : !smt.bool
+// CHECK:   smt.assert %[[DIV_CONSTRAINT]]
+// CHECK:   %[[INV_ASSIGN_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %inv_w, %{{[0-9a-zA-Z_\.]+}}
+// CHECK:   %[[DIV_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[DIVSYM]], %{{[0-9a-zA-Z_\.]+}}
 // CHECK:   smt.assert
-// CHECK:   scf.yield %[[MUL]] : !smt.int
+// CHECK:   scf.yield %[[DIVSYM]] : !smt.int
 // CHECK: } else {
 // CHECK:   %[[ZERO2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
 // CHECK:   smt.assert
