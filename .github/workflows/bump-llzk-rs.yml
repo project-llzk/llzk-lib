@@ -84,6 +84,10 @@ jobs:
             Source commit: `${{ github.sha }}`
             Source workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
+            Auto-merge is enabled and will complete once required approval and CI checks pass.
+          team-reviewers: |
+            ${{ vars.CORE_DEV_TEAM_SLUG }}
+
       - name: Enable auto-merge
         if: steps.cpr.outputs.pull-request-number != ''
         env:
