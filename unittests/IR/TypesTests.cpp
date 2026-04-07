@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace llzk;
 using namespace mlir;

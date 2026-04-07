@@ -34,6 +34,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CommonCAPIGen.h"
+#include "OpCAPIParamHelper.h"
+
 #include <mlir/TableGen/GenInfo.h>
 #include <mlir/TableGen/Operator.h>
 
@@ -42,9 +45,6 @@
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/TableGen/Record.h>
 #include <llvm/TableGen/TableGenBackend.h>
-
-#include "CommonCAPIGen.h"
-#include "OpCAPIParamHelper.h"
 
 using namespace mlir;
 using namespace mlir::tblgen;

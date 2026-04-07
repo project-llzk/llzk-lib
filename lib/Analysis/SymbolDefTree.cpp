@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/SymbolDefTree.h"
+
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"

@@ -18,6 +18,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
+
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <llvm/Support/Debug.h>

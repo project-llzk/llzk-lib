@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include "llzk-c/Builder.h"
+#include "llzk-c/InitDialects.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Bool/IR/Attrs.h"
@@ -17,16 +20,13 @@
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
-#include "llzk-c/Builder.h"
-#include "llzk-c/InitDialects.h"
-
-#include <mlir/CAPI/Wrap.h>
-#include <mlir/Dialect/Arith/IR/Arith.h>
-
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/RegisterEverything.h>
+
+#include <mlir/CAPI/Wrap.h>
+#include <mlir/Dialect/Arith/IR/Arith.h>
 
 #include <gtest/gtest.h>
 

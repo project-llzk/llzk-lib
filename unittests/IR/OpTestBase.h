@@ -9,12 +9,12 @@
 
 #pragma once
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 class OpTests : public LLZKTest {
 protected:

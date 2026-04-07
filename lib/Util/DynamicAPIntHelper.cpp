@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+
+#include "llzk/Util/Compare.h"
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallString.h>

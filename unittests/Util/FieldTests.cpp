@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestUtils.h"
+
 #include "llzk/Util/Field.h"
 
 #include <gtest/gtest.h>
 #include <string>
-
-#include "../LLZKTestUtils.h"
 
 using namespace llvm;
 using namespace llzk;

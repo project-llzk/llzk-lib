@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk-c/Dialect/Bool.h"
-
 #include "../CAPITestBase.h"
+
+#include "llzk-c/Dialect/Bool.h"
 
 // Include necessary generated CAPI
 #include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"

@@ -13,6 +13,14 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "r1cs/Dialect/IR/Dialect.h"
+#include "r1cs/DialectRegistration.h"
+#include "r1cs/Transforms/TransformationPasses.h"
+#include "tools/config.h"
+#include "zklean/Conversions/Passes.h"
+#include "zklean/DialectRegistration.h"
+#include "zklean/Transforms/ZKLeanPasses.h"
+
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
@@ -22,9 +30,6 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
-#include "r1cs/Dialect/IR/Dialect.h"
-#include "r1cs/DialectRegistration.h"
-#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
@@ -37,17 +42,12 @@
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
 
-#include "tools/config.h"
-#include "zklean/Conversions/Passes.h"
-#include "zklean/DialectRegistration.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
-
 #if LLZK_WITH_PCL
+#include "pcl-conv/Transforms/TransformationPasses.h"
+
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/InitAllDialects.h>
 #include <pcl/Transforms/PCLTransformationPasses.h>
-
-#include "pcl-conv/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(

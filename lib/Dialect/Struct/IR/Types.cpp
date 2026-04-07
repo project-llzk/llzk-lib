@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Struct/IR/Types.h"
+
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Dialect/Struct/IR/Types.h"
 
 using namespace mlir;
 using namespace llzk::polymorphic;

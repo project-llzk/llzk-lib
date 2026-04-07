@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 /* Tests for the ModuleBuilder */
 

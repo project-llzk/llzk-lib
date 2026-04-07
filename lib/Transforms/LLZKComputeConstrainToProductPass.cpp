@@ -12,10 +12,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Transforms/LLZKComputeConstrainToProductPass.h"
+
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKComputeConstrainToProductPass.h"
 #include "llzk/Transforms/LLZKInlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"

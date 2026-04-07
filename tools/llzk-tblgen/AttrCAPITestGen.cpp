@@ -20,6 +20,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CommonAttrOrTypeCAPITestGen.h"
+#include "CommonCAPIGen.h"
+
 #include <mlir/TableGen/AttrOrTypeDef.h>
 #include <mlir/TableGen/Dialect.h>
 #include <mlir/TableGen/GenInfo.h>
@@ -29,9 +32,6 @@
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/TableGen/Record.h>
 #include <llvm/TableGen/TableGenBackend.h>
-
-#include "CommonAttrOrTypeCAPITestGen.h"
-#include "CommonCAPIGen.h"
 
 using namespace mlir;
 using namespace mlir::tblgen;

@@ -7,14 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Config/Config.h"
-
 #include "llzk-c/Target/PCL.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk/Config/Config.h"
 
 #include <pcl/Dialect/IR/Attrs.h>
 #include <pcl/Dialect/IR/Ops.h>
 #include <pcl/Dialect/IR/Types.h>
 #include <pcl/InitAllDialects.h>
+
+#include <mlir-c/IR.h>
 
 #include <mlir/CAPI/Support.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -23,12 +27,8 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 
-#include <mlir-c/IR.h>
-
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/Debug.h>
-
-#include "../CAPITestBase.h"
 
 constexpr unsigned SEVEN = 7;
 

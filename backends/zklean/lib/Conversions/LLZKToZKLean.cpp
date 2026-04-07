@@ -7,6 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "zklean/Conversions/Passes.h"
+#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
+#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
+
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -23,11 +28,6 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
-
-#include "zklean/Conversions/Passes.h"
-#include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
 
 // LLZK -> ZKLean conversion overview:
 // - `createConvertLLZKToZKLeanPass` constructs `ConvertLLZKToZKLeanPass`.

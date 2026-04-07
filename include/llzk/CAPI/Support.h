@@ -14,15 +14,15 @@
 
 #pragma once
 
+#include "llzk-c/Support.h"
+
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
-#include "llzk-c/Support.h"
+#include <mlir-c/IR.h>
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/IR/ValueRange.h>
-
-#include <mlir-c/IR.h>
 
 #define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix, ...)                               \
   MlirOperation llzk##dialect##_##op##Build##suffix(                                               \

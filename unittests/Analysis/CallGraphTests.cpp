@@ -7,14 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace llzk;
 

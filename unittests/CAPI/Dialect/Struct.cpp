@@ -7,9 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Compare.h"
-
 #include "llzk-c/Dialect/Struct.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk/Util/Compare.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
@@ -17,8 +19,6 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include <gtest/gtest.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Struct/IR/Dialect.capi.test.cpp.inc"

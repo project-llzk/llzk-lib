@@ -7,6 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+#include "../LLZKTestUtils.h"
+
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -18,9 +21,6 @@
 
 #include <gtest/gtest.h>
 #include <string>
-
-#include "../LLZKTestBase.h"
-#include "../LLZKTestUtils.h"
 
 using namespace mlir;
 using namespace llzk;

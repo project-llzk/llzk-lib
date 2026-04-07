@@ -7,16 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/TypeHelper.h"
+
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
-#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinTypeInterfaces.h>
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace mlir;
 using namespace llzk;

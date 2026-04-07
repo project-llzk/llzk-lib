@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/TypeHelper.h"
-
 #include "llzk-c/Typing.h"
+
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>

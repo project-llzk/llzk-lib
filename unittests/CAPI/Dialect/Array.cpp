@@ -7,11 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Array.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk-c/Support.h"
+
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Util/Compare.h"
-
-#include "llzk-c/Dialect/Array.h"
-#include "llzk-c/Support.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
@@ -19,8 +22,6 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Array/IR/Dialect.capi.test.cpp.inc"

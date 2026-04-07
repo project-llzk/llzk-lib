@@ -8,6 +8,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk-c/Dialect/Felt.h"
+
+#include "../CAPITestBase.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 
@@ -16,8 +19,6 @@
 #include <mlir-c/Support.h>
 
 #include <llvm/ADT/APInt.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Felt/IR/Attrs.capi.test.cpp.inc"

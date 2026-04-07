@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Bool/IR/Enums.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
@@ -23,8 +25,6 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace mlir;
 using namespace llzk;

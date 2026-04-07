@@ -9,13 +9,13 @@
 
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
 
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
+#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
+
 #include <mlir/IR/Builders.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/TypeSwitch.h>
-
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
-#include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanTypes.h"
 
 // Include TableGen'd declarations
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.cpp.inc"

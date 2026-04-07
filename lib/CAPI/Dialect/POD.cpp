@@ -7,13 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/POD.h"
+
+#include "llzk-c/Support.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 
-#include "llzk-c/Dialect/POD.h"
-#include "llzk-c/Support.h"
+#include <mlir-c/IR.h>
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Registration.h>
@@ -22,8 +25,6 @@
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/Diagnostics.h>
 #include <mlir/Support/LLVM.h>
-
-#include <mlir-c/IR.h>
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVectorExtras.h>

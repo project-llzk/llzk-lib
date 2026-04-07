@@ -7,15 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Felt.h"
+
+#include "llzk-c/Dialect/LLZK.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
-
-#include "llzk-c/Dialect/Felt.h"
-#include "llzk-c/Dialect/LLZK.h"
 
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>

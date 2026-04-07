@@ -7,15 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Compare.h"
-
 #include "llzk-c/Dialect/Function.h"
+
+#include "../CAPITestBase.h"
+
+#include "llzk/Util/Compare.h"
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
-
-#include "../CAPITestBase.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Function/IR/Attrs.capi.test.cpp.inc"

@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Constrain.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
-
-#include "llzk-c/Dialect/Constrain.h"
 
 #include <mlir/CAPI/Registration.h>
 

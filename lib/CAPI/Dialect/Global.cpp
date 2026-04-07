@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Global.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
-
-#include "llzk-c/Dialect/Global.h"
 
 #include <mlir/CAPI/Registration.h>
 

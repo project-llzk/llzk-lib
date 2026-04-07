@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "OpTestBase.h"
+
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
-
-#include "OpTestBase.h"
 
 using namespace mlir;
 using namespace llzk;

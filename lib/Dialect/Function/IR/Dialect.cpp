@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
+
+#include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 

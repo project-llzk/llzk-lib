@@ -12,16 +12,17 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "r1cs/Dialect/IR/Attrs.h"
+#include "r1cs/Dialect/IR/Ops.h"
+#include "r1cs/Dialect/IR/Types.h"
+#include "r1cs/Transforms/TransformationPasses.h"
+
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
-#include "r1cs/Dialect/IR/Attrs.h"
-#include "r1cs/Dialect/IR/Ops.h"
-#include "r1cs/Dialect/IR/Types.h"
-#include "r1cs/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/BuiltinOps.h>
 

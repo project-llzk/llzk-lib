@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
@@ -19,8 +21,6 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace mlir;
 using namespace llzk;

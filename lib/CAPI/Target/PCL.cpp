@@ -10,11 +10,11 @@
 #include "llzk/CAPI/Support.h"
 #include "llzk/Config/Config.h"
 
-#include <mlir/CAPI/Support.h>
-#include <mlir/Support/LogicalResult.h>
-
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
+
+#include <mlir/CAPI/Support.h>
+#include <mlir/Support/LogicalResult.h>
 
 #if LLZK_WITH_PCL
 

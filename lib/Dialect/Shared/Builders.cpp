@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Shared/Builders.h"
+
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
 
 #include <llvm/Support/ErrorHandling.h>
 

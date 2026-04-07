@@ -12,8 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+
+#include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>

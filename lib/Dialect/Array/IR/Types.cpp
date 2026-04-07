@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
+
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Util/TypeHelper.h"
 

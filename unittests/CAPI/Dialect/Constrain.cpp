@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/IR/Ops.h"
-
 #include "llzk-c/Dialect/Constrain.h"
 
 #include "../CAPITestBase.h"
+
+#include "llzk/Dialect/Array/IR/Ops.h"
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Constrain/IR/Dialect.capi.test.cpp.inc"

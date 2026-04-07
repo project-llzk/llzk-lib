@@ -12,10 +12,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "pcl-conv/Transforms/TransformationPasses.h" // IWYU pragma: keep
+
 #include <mlir/CAPI/Pass.h>
 
 #include "pcl-conv/Transforms/TransformationPasses.capi.h.inc"
-#include "pcl-conv/Transforms/TransformationPasses.h" // IWYU pragma: keep
 
 using namespace pcl::conversion;
 

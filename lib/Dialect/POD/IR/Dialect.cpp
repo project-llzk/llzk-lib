@@ -7,9 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/POD/IR/Dialect.h"
+
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
-#include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 

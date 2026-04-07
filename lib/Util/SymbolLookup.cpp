@@ -12,9 +12,10 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Util/SymbolLookup.h"
+
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
-#include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>

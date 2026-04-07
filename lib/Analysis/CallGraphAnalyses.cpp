@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
+
 #include "llzk/Dialect/Function/IR/Ops.h"
 
 #include <llvm/ADT/DepthFirstIterator.h>

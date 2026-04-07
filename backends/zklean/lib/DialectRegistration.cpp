@@ -9,12 +9,12 @@
 
 #include "zklean/DialectRegistration.h"
 
-#include <mlir/Dialect/Func/IR/FuncOps.h>
-#include <mlir/IR/DialectRegistry.h>
-
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderDialect.h"
 #include "zklean/Dialect/ZKExpr/IR/ZKExprDialect.h"
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanDialect.h"
+
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/DialectRegistry.h>
 
 namespace zklean {
 void registerAllDialects(mlir::DialectRegistry &registry) {

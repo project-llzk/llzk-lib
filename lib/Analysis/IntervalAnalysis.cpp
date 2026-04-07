@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"

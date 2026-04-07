@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Poly.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
@@ -15,7 +17,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Util/Compare.h"
 
-#include "llzk-c/Dialect/Poly.h"
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/AffineExpr.h>
 #include <mlir/CAPI/AffineMap.h>
@@ -24,8 +26,6 @@
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/Support/LLVM.h>
-
-#include <mlir-c/Pass.h>
 
 using namespace mlir;
 using namespace llzk;

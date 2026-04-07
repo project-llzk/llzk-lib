@@ -18,6 +18,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Transforms/LLZKInlineStructsPass.h"
+
 #include "llzk/Analysis/GraphUtil.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -26,7 +28,6 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
-#include "llzk/Transforms/LLZKInlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"

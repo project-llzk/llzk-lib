@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
+
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"

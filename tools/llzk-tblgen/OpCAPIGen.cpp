@@ -11,6 +11,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CommonCAPIGen.h"
+#include "OpCAPIParamHelper.h"
+
 #include <mlir/TableGen/GenInfo.h>
 #include <mlir/TableGen/Operator.h>
 
@@ -22,9 +25,6 @@
 
 #include <string>
 #include <vector>
-
-#include "CommonCAPIGen.h"
-#include "OpCAPIParamHelper.h"
 
 using namespace mlir;
 using namespace mlir::tblgen;

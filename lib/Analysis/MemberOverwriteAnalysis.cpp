@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/MemberOverwriteAnalysis.h"
+
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 

@@ -12,8 +12,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "r1cs/Transforms/TransformationPasses.h"
+
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>

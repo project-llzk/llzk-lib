@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/Compare.h"
-
 #include "llzk-c/Dialect/Poly.h"
 
-#include <llvm/ADT/SmallVector.h>
-
 #include "../CAPITestBase.h"
+
+#include "llzk/Util/Compare.h"
+
+#include <llvm/ADT/SmallVector.h>
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Polymorphic/IR/Dialect.capi.test.cpp.inc"
