@@ -1,0 +1,96 @@
+name: Bump llzk-rs flake input
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bump-llzk-rs
+  cancel-in-progress: true
+
+jobs:
+  bump-llzk-rs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.LLZK_APP_ID }}
+          private-key: ${{ secrets.LLZK_APP_PRIVATE_KEY }}
+          owner: project-llzk
+          repositories: llzk-rs
+
+      - name: Check out llzk-rs
+        uses: actions/checkout@v4
+        with:
+          repository: project-llzk/llzk-rs
+          token: ${{ steps.app-token.outputs.token }}
+          path: llzk-rs
+          persist-credentials: false
+
+      # v37.1.0
+      - uses: cachix/install-nix-action@d1ca217b388ee87b2507a9a93bf01368bde7cec2
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.23.3/install
+          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Set Git credentials
+        run: |
+          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
+          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
+          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
+      # v16
+      - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
+        with:
+          name: veridise-public
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+
+      - name: Configure Git for llzk-rs
+        working-directory: llzk-rs
+        run: |
+          git config user.name "project-llzk[bot]"
+          git config user.email "project-llzk[bot]@users.noreply.github.com"
+
+      - name: Update llzk-lib flake input
+        id: update
+        working-directory: llzk-rs
+        run: |
+          nix flake lock --update-input llzk-lib
+          if git diff --quiet -- flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update PR
+        if: steps.update.outputs.changed == 'true'
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: llzk-rs
+          commit-message: "chore: bump llzk-lib flake input"
+          branch: bot/bump-llzk-lib
+          delete-branch: true
+          title: "chore: bump llzk-lib flake input"
+          body: |
+            Automated flake input update triggered by a push to `project-llzk/llzk-lib@main`.
+
+            Source commit: `${{ github.sha }}`
+            Source workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          gh pr merge "$PR_NUMBER" \
+            --repo project-llzk/llzk-rs \
+            --auto \
+            --squash
