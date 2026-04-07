@@ -116,148 +116,149 @@ $(function(){initNavTree('Felt_8cpp_source.html','',''); });
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">//</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="llzk_2CAPI_2Support_8h.html">llzk/CAPI/Support.h</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Attrs_8h.html">llzk/Dialect/Felt/IR/Attrs.h</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Dialect_8h.html">llzk/Dialect/Felt/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Ops_8h.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Types_8h.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="AttributeHelper_8h.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_8h.html">llzk-c/Dialect/Felt.h</a>&quot;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_8h.html">llzk-c/Dialect/LLZK.h</a>&quot;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;mlir/CAPI/Registration.h&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;mlir/CAPI/Wrap.h&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1felt.html">llzk::felt</a>;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// Include the generated CAPI</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Attrs_8capi_8cpp_8inc.html">llzk/Dialect/Felt/IR/Attrs.capi.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Ops_8capi_8cpp_8inc.html">llzk/Dialect/Felt/IR/Ops.capi.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Types_8capi_8cpp_8inc.html">llzk/Dialect/Felt/IR/Types.capi.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltDialect.html">FeltDialect</a>)</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
-<div class="foldopen" id="foldopen00035" data-start="{" data-end="}">
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28">   35</a></span><a class="code hl_function" href="Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28">llzkFelt_FeltConstAttrGetInField</a>(MlirContext ctx, int64_t value, MlirStringRef fieldName) {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), <a class="code hl_function" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a>(value), unwrap(fieldName)));</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>}</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_8h.html">llzk-c/Dialect/Felt.h</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_8h.html">llzk-c/Dialect/LLZK.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="llzk_2CAPI_2Support_8h.html">llzk/CAPI/Support.h</a>&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Attrs_8h.html">llzk/Dialect/Felt/IR/Attrs.h</a>&quot;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Dialect_8h.html">llzk/Dialect/Felt/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Ops_8h.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Types_8h.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;<a class="code" href="AttributeHelper_8h.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;mlir/CAPI/Registration.h&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;mlir/CAPI/Wrap.h&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1felt.html">llzk::felt</a>;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// Include the generated CAPI</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Attrs_8capi_8cpp_8inc.html">llzk/Dialect/Felt/IR/Attrs.capi.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Ops_8capi_8cpp_8inc.html">llzk/Dialect/Felt/IR/Ops.capi.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Types_8capi_8cpp_8inc.html">llzk/Dialect/Felt/IR/Types.capi.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt, <a class="code hl_class" href="classllzk_1_1felt_1_1FeltDialect.html">FeltDialect</a>)</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
+<div class="foldopen" id="foldopen00036" data-start="{" data-end="}">
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28">   36</a></span><a class="code hl_function" href="Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28">llzkFelt_FeltConstAttrGetInField</a>(MlirContext ctx, int64_t value, MlirStringRef fieldName) {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), <a class="code hl_function" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a>(value), unwrap(fieldName)));</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
 </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
-<div class="foldopen" id="foldopen00040" data-start="{" data-end="}">
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded">   40</a></span><a class="code hl_function" href="Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded">llzkFelt_FeltConstAttrGetUnspecified</a>(MlirContext ctx, int64_t value) {</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), <a class="code hl_function" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a>(value)));</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>}</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
+<div class="foldopen" id="foldopen00041" data-start="{" data-end="}">
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded">   41</a></span><a class="code hl_function" href="Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded">llzkFelt_FeltConstAttrGetUnspecified</a>(MlirContext ctx, int64_t value) {</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), <a class="code hl_function" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a>(value)));</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>}</div>
 </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
-<div class="foldopen" id="foldopen00045" data-start="{" data-end="}">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#aeae8be0d80367fb8dfe8bb76d7abdcff">   45</a></span><a class="code hl_function" href="Felt_8cpp.html#aeae8be0d80367fb8dfe8bb76d7abdcff">llzkFelt_FeltConstAttrGetWithBits</a>(MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, int64_t value, MlirType type) {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value), <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;FeltType&gt;</a>(type)));</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>}</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
+<div class="foldopen" id="foldopen00046" data-start="{" data-end="}">
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#aeae8be0d80367fb8dfe8bb76d7abdcff">   46</a></span><a class="code hl_function" href="Felt_8cpp.html#aeae8be0d80367fb8dfe8bb76d7abdcff">llzkFelt_FeltConstAttrGetWithBits</a>(MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, int64_t value, MlirType type) {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value), <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;FeltType&gt;</a>(type)));</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>}</div>
 </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="foldopen" id="foldopen00049" data-start="{" data-end="}">
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#aa68ed00d7067d8ec608d8dc3a5d3e096">   49</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#aa68ed00d7067d8ec608d8dc3a5d3e096">llzkFelt_FeltConstAttrGetWithBitsInField</a>(</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, int64_t value, MlirStringRef fieldName</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>) {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value), unwrap(fieldName)));</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>}</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="foldopen" id="foldopen00050" data-start="{" data-end="}">
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#aa68ed00d7067d8ec608d8dc3a5d3e096">   50</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#aa68ed00d7067d8ec608d8dc3a5d3e096">llzkFelt_FeltConstAttrGetWithBitsInField</a>(</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, int64_t value, MlirStringRef fieldName</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>) {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value), unwrap(fieldName)));</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>}</div>
 </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
-<div class="foldopen" id="foldopen00056" data-start="{" data-end="}">
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ac10951c3d45a5dfe5015737267ef6150">   56</a></span><a class="code hl_function" href="Felt_8cpp.html#ac10951c3d45a5dfe5015737267ef6150">llzkFelt_FeltConstAttrGetWithBitsUnspecified</a>(MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, int64_t value) {</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value)));</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>MLIR_CAPI_EXPORTED MlirAttribute</div>
+<div class="foldopen" id="foldopen00057" data-start="{" data-end="}">
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ac10951c3d45a5dfe5015737267ef6150">   57</a></span><a class="code hl_function" href="Felt_8cpp.html#ac10951c3d45a5dfe5015737267ef6150">llzkFelt_FeltConstAttrGetWithBitsUnspecified</a>(MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, int64_t value) {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), APInt(numBits, value)));</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>}</div>
 </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="foldopen" id="foldopen00060" data-start="{" data-end="}">
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc">   60</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc">llzkFelt_FeltConstAttrGetFromString</a>(</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, MlirStringRef str, MlirType type</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>) {</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str), <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;FeltType&gt;</a>(type)));</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
+<div class="foldopen" id="foldopen00061" data-start="{" data-end="}">
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc">   61</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc">llzkFelt_FeltConstAttrGetFromString</a>(</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, MlirStringRef str, MlirType type</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>) {</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str), <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;FeltType&gt;</a>(type)));</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>}</div>
 </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="foldopen" id="foldopen00066" data-start="{" data-end="}">
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">   66</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">llzkFelt_FeltConstAttrGetFromStringInField</a>(</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, MlirStringRef str, MlirStringRef fieldName</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>) {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str), unwrap(fieldName)));</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>}</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
+<div class="foldopen" id="foldopen00067" data-start="{" data-end="}">
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">   67</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">llzkFelt_FeltConstAttrGetFromStringInField</a>(</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, MlirStringRef str, MlirStringRef fieldName</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>) {</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str), unwrap(fieldName)));</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
 </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="foldopen" id="foldopen00072" data-start="{" data-end="}">
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ad1522c1b7e958ce9add3b71bd21f4aa3">   72</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#ad1522c1b7e958ce9add3b71bd21f4aa3">llzkFelt_FeltConstAttrGetFromStringUnspecified</a>(</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, MlirStringRef str</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>) {</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str)));</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="foldopen" id="foldopen00073" data-start="{" data-end="}">
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ad1522c1b7e958ce9add3b71bd21f4aa3">   73</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#ad1522c1b7e958ce9add3b71bd21f4aa3">llzkFelt_FeltConstAttrGetFromStringUnspecified</a>(</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, MlirStringRef str</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>) {</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, unwrap(str)));</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>}</div>
 </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="foldopen" id="foldopen00078" data-start="{" data-end="}">
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566">   78</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566">llzkFelt_FeltConstAttrGetFromParts</a>(</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts, intptr_t nParts, MlirType type</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>) {</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">return</span> wrap(</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>      FeltConstAttr::get(unwrap(ctx), numBits, ArrayRef(parts, nParts), <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;FeltType&gt;</a>(type))</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  );</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>}</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="foldopen" id="foldopen00079" data-start="{" data-end="}">
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566">   79</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566">llzkFelt_FeltConstAttrGetFromParts</a>(</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts, intptr_t nParts, MlirType type</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>) {</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">return</span> wrap(</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      FeltConstAttr::get(unwrap(ctx), numBits, ArrayRef(parts, nParts), <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;FeltType&gt;</a>(type))</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  );</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>}</div>
 </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="foldopen" id="foldopen00086" data-start="{" data-end="}">
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3">   86</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3">llzkFelt_FeltConstAttrGetFromPartsInField</a>(</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts, intptr_t nParts,</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    MlirStringRef fieldName</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>) {</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, ArrayRef(parts, nParts), unwrap(fieldName)));</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>}</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="foldopen" id="foldopen00087" data-start="{" data-end="}">
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3">   87</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3">llzkFelt_FeltConstAttrGetFromPartsInField</a>(</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts, intptr_t nParts,</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    MlirStringRef fieldName</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>) {</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, ArrayRef(parts, nParts), unwrap(fieldName)));</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>}</div>
 </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="foldopen" id="foldopen00093" data-start="{" data-end="}">
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade">   93</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade">llzkFelt_FeltConstAttrGetFromPartsUnspecified</a>(</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts, intptr_t nParts</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>) {</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, ArrayRef(parts, nParts)));</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>}</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="foldopen" id="foldopen00094" data-start="{" data-end="}">
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade">   94</a></span>MLIR_CAPI_EXPORTED MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade">llzkFelt_FeltConstAttrGetFromPartsUnspecified</a>(</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    MlirContext ctx, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts, intptr_t nParts</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>) {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordflow">return</span> wrap(FeltConstAttr::get(unwrap(ctx), numBits, ArrayRef(parts, nParts)));</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>}</div>
 </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="foldopen" id="foldopen00099" data-start="{" data-end="}">
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4">   99</a></span>MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4">llzkFelt_FieldSpecAttrGetFromString</a>(</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    MlirContext ctx, MlirIdentifier fieldName, <span class="keywordtype">unsigned</span> numBits, MlirStringRef primeStr</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>) {</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordflow">return</span> wrap(</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      FieldSpecAttr::get(unwrap(ctx), unwrap(fieldName), APInt(numBits, unwrap(primeStr), 10))</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  );</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>}</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="foldopen" id="foldopen00100" data-start="{" data-end="}">
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4">  100</a></span>MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4">llzkFelt_FieldSpecAttrGetFromString</a>(</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    MlirContext ctx, MlirIdentifier fieldName, <span class="keywordtype">unsigned</span> numBits, MlirStringRef primeStr</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>) {</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="keywordflow">return</span> wrap(</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      FieldSpecAttr::get(unwrap(ctx), unwrap(fieldName), APInt(numBits, unwrap(primeStr), 10))</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  );</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>}</div>
 </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="foldopen" id="foldopen00107" data-start="{" data-end="}">
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#aad4ecd41d0aaeba8b968a99daa76aa7b">  107</a></span>MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#aad4ecd41d0aaeba8b968a99daa76aa7b">llzkFelt_FieldSpecAttrGetFromParts</a>(</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    MlirContext ctx, MlirIdentifier fieldName, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    intptr_t nParts</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>) {</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordflow">return</span> wrap(</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      FieldSpecAttr::get(unwrap(ctx), unwrap(fieldName), APInt(numBits, ArrayRef(parts, nParts)))</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  );</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>}</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
+<div class="foldopen" id="foldopen00108" data-start="{" data-end="}">
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#aad4ecd41d0aaeba8b968a99daa76aa7b">  108</a></span>MlirAttribute <a class="code hl_function" href="Felt_8cpp.html#aad4ecd41d0aaeba8b968a99daa76aa7b">llzkFelt_FieldSpecAttrGetFromParts</a>(</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    MlirContext ctx, MlirIdentifier fieldName, <span class="keywordtype">unsigned</span> numBits, <span class="keyword">const</span> uint64_t *parts,</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    intptr_t nParts</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>) {</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordflow">return</span> wrap(</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      FieldSpecAttr::get(unwrap(ctx), unwrap(fieldName), APInt(numBits, ArrayRef(parts, nParts)))</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  );</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>}</div>
 </div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="foldopen" id="foldopen00116" data-start="{" data-end="}">
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd">  116</a></span>MlirType <a class="code hl_function" href="Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd">llzkFelt_FeltTypeGetUnspecified</a>(MlirContext ctx) {</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordflow">return</span> wrap(<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(unwrap(ctx)));</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>}</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="foldopen" id="foldopen00117" data-start="{" data-end="}">
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd">  117</a></span>MlirType <a class="code hl_function" href="Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd">llzkFelt_FeltTypeGetUnspecified</a>(MlirContext ctx) {</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keywordflow">return</span> wrap(<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(unwrap(ctx)));</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
 </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="foldopen" id="foldopen00120" data-start="{" data-end="}">
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ab2e19d7a2b236ae6b0966026809884a2">  120</a></span>MlirType <a class="code hl_function" href="Felt_8cpp.html#ab2e19d7a2b236ae6b0966026809884a2">llzkFelt_FeltTypeGetFromRef</a>(MlirContext ctx, MlirStringRef fieldName) {</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordflow">return</span> wrap(<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(unwrap(ctx), unwrap(fieldName)));</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>}</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="foldopen" id="foldopen00121" data-start="{" data-end="}">
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno"><a class="line" href="Felt_8cpp.html#ab2e19d7a2b236ae6b0966026809884a2">  121</a></span>MlirType <a class="code hl_function" href="Felt_8cpp.html#ab2e19d7a2b236ae6b0966026809884a2">llzkFelt_FeltTypeGetFromRef</a>(MlirContext ctx, MlirStringRef fieldName) {</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keywordflow">return</span> wrap(<a class="code hl_function" href="classllzk_1_1felt_1_1FeltType.html#af0cd82b1465e6ad9c1272637203c0e22">FeltType::get</a>(unwrap(ctx), unwrap(fieldName)));</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>}</div>
 </div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Attrs_8capi_8cpp_8inc_html"><div class="ttname"><a href="Felt_2IR_2Attrs_8capi_8cpp_8inc.html">Attrs.capi.cpp.inc</a></div></div>
@@ -267,21 +268,21 @@ $(function(){initNavTree('Felt_8cpp_source.html','',''); });
 <div class="ttc" id="aFelt_2IR_2Ops_8h_html"><div class="ttname"><a href="Felt_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Types_8capi_8cpp_8inc_html"><div class="ttname"><a href="Felt_2IR_2Types_8capi_8cpp_8inc.html">Types.capi.cpp.inc</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Types_8h_html"><div class="ttname"><a href="Felt_2IR_2Types_8h.html">Types.h</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a0aca9081ea41fe4def8375e804695bf3"><div class="ttname"><a href="Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3">llzkFelt_FeltConstAttrGetFromPartsInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified ...</div><div class="ttdef"><b>Definition</b> <a href="#l00086">Felt.cpp:86</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a12867e32713261c0814f5ae885d9e0fd"><div class="ttname"><a href="Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd">llzkFelt_FeltTypeGetUnspecified</a></div><div class="ttdeci">MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx)</div><div class="ttdoc">Creates a llzk::felt::FeltType with an unspecified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00116">Felt.cpp:116</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a3e697c3166d5e562e89103fd13b02ded"><div class="ttname"><a href="Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded">llzkFelt_FeltConstAttrGetUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00040">Felt.cpp:40</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a47845ad51aa441e63c523575f1e62566"><div class="ttname"><a href="Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566">llzkFelt_FeltConstAttrGetFromParts</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts(MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirType type)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified ...</div><div class="ttdef"><b>Definition</b> <a href="#l00078">Felt.cpp:78</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a4c8aecd54891277a8b1266f9454d9ade"><div class="ttname"><a href="Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade">llzkFelt_FeltConstAttrGetFromPartsUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in an unspecified...</div><div class="ttdef"><b>Definition</b> <a href="#l00093">Felt.cpp:93</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a55bb4d1b9e550d7b781ad3a604b521b4"><div class="ttname"><a href="Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4">llzkFelt_FieldSpecAttrGetFromString</a></div><div class="ttdeci">MlirAttribute llzkFelt_FieldSpecAttrGetFromString(MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, MlirStringRef primeStr)</div><div class="ttdoc">Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.</div><div class="ttdef"><b>Definition</b> <a href="#l00099">Felt.cpp:99</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a610ef21234419a7dcf82a2bf6b687afc"><div class="ttname"><a href="Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc">llzkFelt_FeltConstAttrGetFromString</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str, MlirType type)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00060">Felt.cpp:60</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_a7b5a459877dfa59cedb21a078fe2ec28"><div class="ttname"><a href="Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28">llzkFelt_FeltConstAttrGetInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetInField(MlirContext ctx, int64_t value, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with the given value in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00035">Felt.cpp:35</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_aa68ed00d7067d8ec608d8dc3a5d3e096"><div class="ttname"><a href="Felt_8cpp.html#aa68ed00d7067d8ec608d8dc3a5d3e096">llzkFelt_FeltConstAttrGetWithBitsInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsInField(MlirContext ctx, unsigned numBits, int64_t value, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00049">Felt.cpp:49</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_aad4ecd41d0aaeba8b968a99daa76aa7b"><div class="ttname"><a href="Felt_8cpp.html#aad4ecd41d0aaeba8b968a99daa76aa7b">llzkFelt_FieldSpecAttrGetFromParts</a></div><div class="ttdeci">MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, const uint64_t *parts, intptr_t nParts)</div><div class="ttdoc">Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing the ...</div><div class="ttdef"><b>Definition</b> <a href="#l00107">Felt.cpp:107</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_ab2e19d7a2b236ae6b0966026809884a2"><div class="ttname"><a href="Felt_8cpp.html#ab2e19d7a2b236ae6b0966026809884a2">llzkFelt_FeltTypeGetFromRef</a></div><div class="ttdeci">MlirType llzkFelt_FeltTypeGetFromRef(MlirContext ctx, MlirStringRef fieldName)</div><div class="ttdoc">Create a llzk::felt::FeltType Type with the given parameters.</div><div class="ttdef"><b>Definition</b> <a href="#l00120">Felt.cpp:120</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_ab5c5c5f2fc67b1a6a92f0bc92d45e92c"><div class="ttname"><a href="Felt_8cpp.html#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">llzkFelt_FeltConstAttrGetFromStringInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(MlirContext ctx, unsigned numBits, MlirStringRef str, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00066">Felt.cpp:66</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_ac10951c3d45a5dfe5015737267ef6150"><div class="ttname"><a href="Felt_8cpp.html#ac10951c3d45a5dfe5015737267ef6150">llzkFelt_FeltConstAttrGetWithBitsUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsUnspecified(MlirContext ctx, unsigned numBits, int64_t value)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with a set bit length and value in an unspecified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00056">Felt.cpp:56</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_ad1522c1b7e958ce9add3b71bd21f4aa3"><div class="ttname"><a href="Felt_8cpp.html#ad1522c1b7e958ce9add3b71bd21f4aa3">llzkFelt_FeltConstAttrGetFromStringUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(MlirContext ctx, unsigned numBits, MlirStringRef str)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in an unspecified field...</div><div class="ttdef"><b>Definition</b> <a href="#l00072">Felt.cpp:72</a></div></div>
-<div class="ttc" id="aFelt_8cpp_html_aeae8be0d80367fb8dfe8bb76d7abdcff"><div class="ttname"><a href="Felt_8cpp.html#aeae8be0d80367fb8dfe8bb76d7abdcff">llzkFelt_FeltConstAttrGetWithBits</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value, MlirType type)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00045">Felt.cpp:45</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a0aca9081ea41fe4def8375e804695bf3"><div class="ttname"><a href="Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3">llzkFelt_FeltConstAttrGetFromPartsInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified ...</div><div class="ttdef"><b>Definition</b> <a href="#l00087">Felt.cpp:87</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a12867e32713261c0814f5ae885d9e0fd"><div class="ttname"><a href="Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd">llzkFelt_FeltTypeGetUnspecified</a></div><div class="ttdeci">MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx)</div><div class="ttdoc">Creates a llzk::felt::FeltType with an unspecified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00117">Felt.cpp:117</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a3e697c3166d5e562e89103fd13b02ded"><div class="ttname"><a href="Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded">llzkFelt_FeltConstAttrGetUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00041">Felt.cpp:41</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a47845ad51aa441e63c523575f1e62566"><div class="ttname"><a href="Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566">llzkFelt_FeltConstAttrGetFromParts</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts(MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirType type)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in the specified ...</div><div class="ttdef"><b>Definition</b> <a href="#l00079">Felt.cpp:79</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a4c8aecd54891277a8b1266f9454d9ade"><div class="ttname"><a href="Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade">llzkFelt_FeltConstAttrGetFromPartsUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order in an unspecified...</div><div class="ttdef"><b>Definition</b> <a href="#l00094">Felt.cpp:94</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a55bb4d1b9e550d7b781ad3a604b521b4"><div class="ttname"><a href="Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4">llzkFelt_FieldSpecAttrGetFromString</a></div><div class="ttdeci">MlirAttribute llzkFelt_FieldSpecAttrGetFromString(MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, MlirStringRef primeStr)</div><div class="ttdoc">Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.</div><div class="ttdef"><b>Definition</b> <a href="#l00100">Felt.cpp:100</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a610ef21234419a7dcf82a2bf6b687afc"><div class="ttname"><a href="Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc">llzkFelt_FeltConstAttrGetFromString</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromString(MlirContext ctx, unsigned numBits, MlirStringRef str, MlirType type)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00061">Felt.cpp:61</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_a7b5a459877dfa59cedb21a078fe2ec28"><div class="ttname"><a href="Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28">llzkFelt_FeltConstAttrGetInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetInField(MlirContext ctx, int64_t value, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with the given value in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00036">Felt.cpp:36</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_aa68ed00d7067d8ec608d8dc3a5d3e096"><div class="ttname"><a href="Felt_8cpp.html#aa68ed00d7067d8ec608d8dc3a5d3e096">llzkFelt_FeltConstAttrGetWithBitsInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsInField(MlirContext ctx, unsigned numBits, int64_t value, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00050">Felt.cpp:50</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_aad4ecd41d0aaeba8b968a99daa76aa7b"><div class="ttname"><a href="Felt_8cpp.html#aad4ecd41d0aaeba8b968a99daa76aa7b">llzkFelt_FieldSpecAttrGetFromParts</a></div><div class="ttdeci">MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, const uint64_t *parts, intptr_t nParts)</div><div class="ttdoc">Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing the ...</div><div class="ttdef"><b>Definition</b> <a href="#l00108">Felt.cpp:108</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_ab2e19d7a2b236ae6b0966026809884a2"><div class="ttname"><a href="Felt_8cpp.html#ab2e19d7a2b236ae6b0966026809884a2">llzkFelt_FeltTypeGetFromRef</a></div><div class="ttdeci">MlirType llzkFelt_FeltTypeGetFromRef(MlirContext ctx, MlirStringRef fieldName)</div><div class="ttdoc">Create a llzk::felt::FeltType Type with the given parameters.</div><div class="ttdef"><b>Definition</b> <a href="#l00121">Felt.cpp:121</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_ab5c5c5f2fc67b1a6a92f0bc92d45e92c"><div class="ttname"><a href="Felt_8cpp.html#ab5c5c5f2fc67b1a6a92f0bc92d45e92c">llzkFelt_FeltConstAttrGetFromStringInField</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(MlirContext ctx, unsigned numBits, MlirStringRef str, MlirStringRef fieldName)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00067">Felt.cpp:67</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_ac10951c3d45a5dfe5015737267ef6150"><div class="ttname"><a href="Felt_8cpp.html#ac10951c3d45a5dfe5015737267ef6150">llzkFelt_FeltConstAttrGetWithBitsUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsUnspecified(MlirContext ctx, unsigned numBits, int64_t value)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with a set bit length and value in an unspecified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00057">Felt.cpp:57</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_ad1522c1b7e958ce9add3b71bd21f4aa3"><div class="ttname"><a href="Felt_8cpp.html#ad1522c1b7e958ce9add3b71bd21f4aa3">llzkFelt_FeltConstAttrGetFromStringUnspecified</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(MlirContext ctx, unsigned numBits, MlirStringRef str)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number in an unspecified field...</div><div class="ttdef"><b>Definition</b> <a href="#l00073">Felt.cpp:73</a></div></div>
+<div class="ttc" id="aFelt_8cpp_html_aeae8be0d80367fb8dfe8bb76d7abdcff"><div class="ttname"><a href="Felt_8cpp.html#aeae8be0d80367fb8dfe8bb76d7abdcff">llzkFelt_FeltConstAttrGetWithBits</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value, MlirType type)</div><div class="ttdoc">Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.</div><div class="ttdef"><b>Definition</b> <a href="#l00046">Felt.cpp:46</a></div></div>
 <div class="ttc" id="aFelt_8h_html"><div class="ttname"><a href="Felt_8h.html">Felt.h</a></div></div>
 <div class="ttc" id="aLLZK_8h_html"><div class="ttname"><a href="LLZK_8h.html">LLZK.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1felt_1_1FeltDialect_html"><div class="ttname"><a href="classllzk_1_1felt_1_1FeltDialect.html">llzk::felt::FeltDialect</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
@@ -289,7 +290,7 @@ $(function(){initNavTree('Felt_8cpp_source.html','',''); });
 <div class="ttc" id="allzk_2CAPI_2Support_8h_html"><div class="ttname"><a href="llzk_2CAPI_2Support_8h.html">Support.h</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1felt_html"><div class="ttname"><a href="namespacellzk_1_1felt.html">llzk::felt</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Attrs_8cpp_source.html#l00014">Attrs.cpp:14</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a6ec06c177f8be824dc8c3adc0ae22eb6"><div class="ttname"><a href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">llzk::toAPInt</a></div><div class="ttdeci">APInt toAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00138">DynamicAPIntHelper.cpp:138</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a6ec06c177f8be824dc8c3adc0ae22eb6"><div class="ttname"><a href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">llzk::toAPInt</a></div><div class="ttdeci">APInt toAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00139">DynamicAPIntHelper.cpp:139</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 <div class="ttc" id="anamespacemlir_html_ab8a6c4b0af7bb4ad955c5e4f44a4827e"><div class="ttname"><a href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">mlir::unwrap_cast</a></div><div class="ttdeci">auto unwrap_cast(auto &amp;from)</div><div class="ttdef"><b>Definition</b> <a href="llzk_2CAPI_2Support_8h_source.html#l00051">Support.h:51</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

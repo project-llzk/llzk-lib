@@ -110,21 +110,21 @@ $(function(){initNavTree('Support_8cpp.html','',''); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="llzk_2CAPI_2Support_8h_source.html">llzk/CAPI/Support.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="llzk-c_2Support_8h_source.html">llzk-c/Support.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolLookup_8h_source.html">llzk/Util/SymbolLookup.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="llzk-c_2Support_8h_source.html">llzk-c/Support.h</a>&quot;</code><br />
+<code>#include &lt;mlir-c/BuiltinAttributes.h&gt;</code><br />
 <code>#include &lt;mlir/CAPI/IR.h&gt;</code><br />
 <code>#include &lt;mlir/CAPI/Support.h&gt;</code><br />
 <code>#include &lt;mlir/CAPI/Wrap.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinAttributes.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Iterators.h&gt;</code><br />
-<code>#include &lt;mlir-c/BuiltinAttributes.h&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
 <code>#include &lt;cstring&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Support.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Support_8cpp__incl.svg" width="2808" height="359"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Support_8cpp__incl.svg" width="3131" height="359"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Support_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -186,7 +186,7 @@ Functions</h2></td></tr>
 <p>Appends a dimension count to the list of dimensions per map. </p>
 <p>If the builder is in <span class="tt">Attr</span> mode allocates an array with enough space and copies the attr's contents into it before appending the new value. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00153">153</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00154">154</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -216,7 +216,7 @@ Functions</h2></td></tr>
 
 <p>Appends the value ranges to the list of map operands. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00137">137</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00138">138</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -252,7 +252,7 @@ Functions</h2></td></tr>
 <p>Appends the value ranges to the list of map operands and indicates how many of these operands are dimensions. </p>
 <p>Asserts that the number of map operands and the number of dimensions per map is the same to avoid going out of sync. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00143">143</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00144">144</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -274,7 +274,7 @@ Functions</h2></td></tr>
 <p>Converts the list of dimensions defined as an attribute into an array. </p>
 <p>This function is a no-op if the list was already in array mode. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00169">169</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00170">170</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -300,7 +300,7 @@ Functions</h2></td></tr>
 <p>Converts the list of dimensions defined as an array into an attribute. </p>
 <p>This function is a no-op if the list was already in attribute mode. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00180">180</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00181">181</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -321,7 +321,7 @@ Functions</h2></td></tr>
 
 <p>Creates a new struct. The owner is responsible for cleaning the struct. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00115">115</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00116">116</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -342,7 +342,7 @@ Functions</h2></td></tr>
 
 <p>Destroys the struct releasing its resources. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00125">125</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00126">126</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -367,7 +367,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of dimensions per map represented as an attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00188">188</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00189">189</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ Functions</h2></td></tr>
 <p>Overwrites the previous values and deallocates if necessary.</p>
 <p>Asserts that the attribute is of type <span class="tt">DenseI32ArrayAttr</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00160">160</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00161">161</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -415,7 +415,7 @@ Functions</h2></td></tr>
 
 <p>Destroys the lookup result, releasing its resources. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00031">31</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00032">32</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -437,7 +437,7 @@ Functions</h2></td></tr>
 <p>Returns the looked up Operation. </p>
 <p>The lifetime of the Operation is tied to the lifetime of the lookup result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00038">38</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00039">39</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -468,7 +468,7 @@ Functions</h2></td></tr>
 <p>Note: Duplicated from upstream LLVM. Available in 21.1.8 and later. </p>
 <p>Replace uses of 'of' value with the 'with' value inside the 'op' operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00044">44</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00045">45</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>
@@ -504,7 +504,7 @@ Functions</h2></td></tr>
 <p>Walks operation <span class="tt">op</span> in <span class="tt">walkOrder</span>, with operations at the same nesting level traversed in reverse order, and calls <span class="tt">callback</span> on that operation. </p>
 <p><span class="tt">*userData</span> is passed to the callback as well and can be used to tunnel some context or other data into the callback. </p>
 
-<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00063">63</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Support_8cpp_source.html#l00064">64</a> of file <a class="el" href="Support_8cpp_source.html">Support.cpp</a>.</p>
 
 </div>
 </div>

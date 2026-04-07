@@ -117,39 +117,40 @@ $(function(){initNavTree('Include_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="Include_2IR_2Ops_8h.html">llzk/Dialect/Include/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="BuilderHelper_8h.html">llzk/Util/BuilderHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// TableGen&#39;d implementation files</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="Include_2IR_2Ops_8cpp.html#a52c883a38e577b8b12282ff70c95a16d">   14</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Include_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Include/IR/Ops.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellvm.html">llvm</a>;</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="foldopen" id="foldopen00020" data-start="{" data-end="}">
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="namespacellzk_1_1include.html">   20</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1include.html">llzk::include</a> {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">// IncludeOp (see IncludeHelper.cpp for other functions)</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><a class="code hl_class" href="classllzk_1_1include_1_1IncludeOp.html">IncludeOp</a> <a class="code hl_function" href="classllzk_1_1include_1_1IncludeOp.html#a04977e850e55d58f7f52c3813a460098">IncludeOp::create</a>(Location loc, StringRef name, StringRef path) {</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build&lt;IncludeOp&gt;</a>(loc, name, path);</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>}</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><a class="code hl_class" href="classllzk_1_1include_1_1IncludeOp.html">IncludeOp</a> <a class="code hl_function" href="classllzk_1_1include_1_1IncludeOp.html#a04977e850e55d58f7f52c3813a460098">IncludeOp::create</a>(Location loc, StringAttr name, StringAttr path) {</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build&lt;IncludeOp&gt;</a>(loc, name, path);</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>}</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>} <span class="comment">// namespace llzk::include</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="BuilderHelper_8h.html">llzk/Util/BuilderHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// TableGen&#39;d implementation files</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="Include_2IR_2Ops_8cpp.html#a52c883a38e577b8b12282ff70c95a16d">   15</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Include_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Include/IR/Ops.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellvm.html">llvm</a>;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="foldopen" id="foldopen00021" data-start="{" data-end="}">
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="namespacellzk_1_1include.html">   21</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1include.html">llzk::include</a> {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="comment">// IncludeOp (see IncludeHelper.cpp for other functions)</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><a class="code hl_class" href="classllzk_1_1include_1_1IncludeOp.html">IncludeOp</a> <a class="code hl_function" href="classllzk_1_1include_1_1IncludeOp.html#a04977e850e55d58f7f52c3813a460098">IncludeOp::create</a>(Location loc, StringRef name, StringRef path) {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build&lt;IncludeOp&gt;</a>(loc, name, path);</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>}</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><a class="code hl_class" href="classllzk_1_1include_1_1IncludeOp.html">IncludeOp</a> <a class="code hl_function" href="classllzk_1_1include_1_1IncludeOp.html#a04977e850e55d58f7f52c3813a460098">IncludeOp::create</a>(Location loc, StringAttr name, StringAttr path) {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build&lt;IncludeOp&gt;</a>(loc, name, path);</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>}</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>} <span class="comment">// namespace llzk::include</span></div>
 </div>
 <div class="ttc" id="aBuilderHelper_8h_html"><div class="ttname"><a href="BuilderHelper_8h.html">BuilderHelper.h</a></div></div>
 <div class="ttc" id="aInclude_2IR_2Ops_8cpp_8inc_html"><div class="ttname"><a href="Include_2IR_2Ops_8cpp_8inc.html">Ops.cpp.inc</a></div></div>
 <div class="ttc" id="aInclude_2IR_2Ops_8h_html"><div class="ttname"><a href="Include_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1include_1_1IncludeOp_html"><div class="ttname"><a href="classllzk_1_1include_1_1IncludeOp.html">llzk::include::IncludeOp</a></div><div class="ttdef"><b>Definition</b> <a href="Include_2IR_2Ops_8h_8inc_source.html#l00137">Ops.h.inc:137</a></div></div>
 <div class="ttc" id="aclassllzk_1_1include_1_1IncludeOp_html_a04977e850e55d58f7f52c3813a460098"><div class="ttname"><a href="classllzk_1_1include_1_1IncludeOp.html#a04977e850e55d58f7f52c3813a460098">llzk::include::IncludeOp::create</a></div><div class="ttdeci">static IncludeOp create(::mlir::Location, ::llvm::StringRef name, ::llvm::StringRef path)</div></div>
-<div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00320">SourceRefLattice.cpp:320</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1include_html"><div class="ttname"><a href="namespacellzk_1_1include.html">llzk::include</a></div><div class="ttdef"><b>Definition</b> <a href="#l00020">Ops.cpp:20</a></div></div>
+<div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00321">SourceRefLattice.cpp:321</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1include_html"><div class="ttname"><a href="namespacellzk_1_1include.html">llzk::include</a></div><div class="ttdef"><b>Definition</b> <a href="#l00021">Ops.cpp:21</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ad19f7db21d0d9d7f998bb6f00782e35a"><div class="ttname"><a href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">llzk::delegate_to_build</a></div><div class="ttdeci">OpClass delegate_to_build(mlir::Location location, Args &amp;&amp;...args)</div><div class="ttdef"><b>Definition</b> <a href="BuilderHelper_8h_source.html#l00018">BuilderHelper.h:18</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

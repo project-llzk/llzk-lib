@@ -117,41 +117,42 @@ $(function(){initNavTree('AttributeHelper_8cpp_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="AttributeHelper_8h.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="TypeHelper_8h.html">llzk/Util/TypeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="comment">// Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.</span></div>
-<div class="foldopen" id="foldopen00018" data-start="{" data-end="}">
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">   18</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">printAttrs</a>(AsmPrinter &amp;printer, ArrayRef&lt;Attribute&gt; attrs, <span class="keyword">const</span> StringRef &amp;separator) {</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  llvm::interleave(attrs, printer.getStream(), [&amp;printer](Attribute a) {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    if (auto intAttr = mlir::dyn_cast_if_present&lt;IntegerAttr&gt;(a)) {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>      if (isDynamic(intAttr)) {</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>        printer.getStream() &lt;&lt; <span class="stringliteral">&quot;?&quot;</span>;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        return;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>      }</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    }</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    if (succeeded(printer.printAlias(a))) {</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>      return;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    }</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    raw_ostream &amp;os = printer.getStream();</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    uint64_t posPrior = os.tell();</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    printer.printAttributeWithoutType(a);</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    <span class="comment">// Fallback to printing with prefix if the above failed to write anything to the output stream.</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    if (posPrior == os.tell()) {</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>      printer &lt;&lt; a;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    }</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  }, separator);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>}</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="TypeHelper_8h.html">llzk/Util/TypeHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="comment">// Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.</span></div>
+<div class="foldopen" id="foldopen00019" data-start="{" data-end="}">
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">   19</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">printAttrs</a>(AsmPrinter &amp;printer, ArrayRef&lt;Attribute&gt; attrs, <span class="keyword">const</span> StringRef &amp;separator) {</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  llvm::interleave(attrs, printer.getStream(), [&amp;printer](Attribute a) {</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    if (auto intAttr = mlir::dyn_cast_if_present&lt;IntegerAttr&gt;(a)) {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>      if (isDynamic(intAttr)) {</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        printer.getStream() &lt;&lt; <span class="stringliteral">&quot;?&quot;</span>;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>        return;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>      }</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    }</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    if (succeeded(printer.printAlias(a))) {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>      return;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    }</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    raw_ostream &amp;os = printer.getStream();</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    uint64_t posPrior = os.tell();</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    printer.printAttributeWithoutType(a);</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="comment">// Fallback to printing with prefix if the above failed to write anything to the output stream.</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    if (posPrior == os.tell()) {</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      printer &lt;&lt; a;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    }</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  }, separator);</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
 </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aTypeHelper_8h_html"><div class="ttname"><a href="TypeHelper_8h.html">TypeHelper.h</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a47e44fbda81e2f164ab37d3696457eff"><div class="ttname"><a href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">llzk::printAttrs</a></div><div class="ttdeci">void printAttrs(AsmPrinter &amp;printer, ArrayRef&lt; Attribute &gt; attrs, const StringRef &amp;separator)</div><div class="ttdef"><b>Definition</b> <a href="#l00018">AttributeHelper.cpp:18</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a47e44fbda81e2f164ab37d3696457eff"><div class="ttname"><a href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">llzk::printAttrs</a></div><div class="ttdeci">void printAttrs(AsmPrinter &amp;printer, ArrayRef&lt; Attribute &gt; attrs, const StringRef &amp;separator)</div><div class="ttdef"><b>Definition</b> <a href="#l00019">AttributeHelper.cpp:19</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

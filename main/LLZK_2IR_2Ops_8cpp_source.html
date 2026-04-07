@@ -117,31 +117,32 @@ $(function(){initNavTree('LLZK_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_2IR_2Ops_8h.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="TypeHelper_8h.html">llzk/Util/TypeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// TableGen&#39;d implementation files</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8cpp.html#a52c883a38e577b8b12282ff70c95a16d">   14</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/LLZK/IR/Ops.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">// NonDetOp</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="foldopen" id="foldopen00025" data-start="{" data-end="}">
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f">   25</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f">NonDetOp::getAsmResultNames</a>(OpAsmSetValueNameFn setNameFn) {</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  setNameFn(getResult(), <span class="stringliteral">&quot;nondet&quot;</span>);</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>}</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="TypeHelper_8h.html">llzk/Util/TypeHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// TableGen&#39;d implementation files</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8cpp.html#a52c883a38e577b8b12282ff70c95a16d">   15</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/LLZK/IR/Ops.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">// NonDetOp</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="comment">//===------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="foldopen" id="foldopen00026" data-start="{" data-end="}">
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f">   26</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f">NonDetOp::getAsmResultNames</a>(OpAsmSetValueNameFn setNameFn) {</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  setNameFn(getResult(), <span class="stringliteral">&quot;nondet&quot;</span>);</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>}</div>
 </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aLLZK_2IR_2Ops_8cpp_8inc_html"><div class="ttname"><a href="LLZK_2IR_2Ops_8cpp_8inc.html">Ops.cpp.inc</a></div></div>
 <div class="ttc" id="aLLZK_2IR_2Ops_8h_html"><div class="ttname"><a href="LLZK_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aTypeHelper_8h_html"><div class="ttname"><a href="TypeHelper_8h.html">TypeHelper.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1NonDetOp_html_afab3cfc96129cf021abe6b0c8a32014f"><div class="ttname"><a href="classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f">llzk::NonDetOp::getAsmResultNames</a></div><div class="ttdeci">void getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn)</div><div class="ttdef"><b>Definition</b> <a href="#l00025">Ops.cpp:25</a></div></div>
+<div class="ttc" id="aclassllzk_1_1NonDetOp_html_afab3cfc96129cf021abe6b0c8a32014f"><div class="ttname"><a href="classllzk_1_1NonDetOp.html#afab3cfc96129cf021abe6b0c8a32014f">llzk::NonDetOp::getAsmResultNames</a></div><div class="ttdeci">void getAsmResultNames(::mlir::OpAsmSetValueNameFn setNameFn)</div><div class="ttdef"><b>Definition</b> <a href="#l00026">Ops.cpp:26</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
