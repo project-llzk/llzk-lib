@@ -52,6 +52,9 @@ MLIR_CAPI_EXPORTED MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute value)
 // TemplateOp
 //===------------------------------------------------------------------===//
 
+/// Returns the single body Block within the TemplateOp's Region.
+MLIR_CAPI_EXPORTED MlirBlock llzkPoly_TemplateOpGetBody(MlirOperation op);
+
 /// Returns true if the TemplateOp has any TemplateParamOp children.
 MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op);
 
