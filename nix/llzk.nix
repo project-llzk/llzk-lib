@@ -12,7 +12,7 @@
 }:
 
 let
-  version = "1.1.5";
+  version = "2.0.0";
 in
 stdenv.mkDerivation {
   pname = "llzk-${lib.toLower cmakeBuildType}";
