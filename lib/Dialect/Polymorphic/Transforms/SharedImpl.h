@@ -73,10 +73,11 @@ static struct OpClassesWithStructTypes {
       >
       WithGeneralBuilder {};
 
-  /// Subset that do NOT define the general builder function. These cannot use
-  /// `GeneralTypeReplacePattern` and must have a `OpConversionPattern` defined if they need
-  /// to be converted. There is a default `OpConversionPattern` defined for each of these if
-  /// using `newGeneralRewritePatternSet()`.
+  /// Subset that do NOT define the general builder function. Cannot use `GeneralTypeReplacePattern`
+  /// and must have an `OpConversionPattern` defined if they need to be converted. If using
+  /// `newGeneralRewritePatternSet()`, there is a default `OpConversionPattern` defined for each of
+  /// these with benefit (0) so a specific pattern with a higher priority can be added for any of
+  /// these Ops that will take precedence over the default one.
   const std::tuple<llzk::function::CallOp, llzk::array::CreateArrayOp> NoGeneralBuilder {};
 
 } OpClassesWithStructTypes;
@@ -139,7 +140,10 @@ inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args 
 template <typename OpClass>
 class GeneralTypeReplacePattern : public mlir::OpConversionPattern<OpClass> {
 public:
-  using mlir::OpConversionPattern<OpClass>::OpConversionPattern;
+  /// Defaults to benefit 0 so that any op-specific pattern at the standard
+  /// benefit (1), or higher, takes priority over this generic fallback.
+  GeneralTypeReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
+      : mlir::OpConversionPattern<OpClass>(converter, ctx, 0) {}
 
   mlir::LogicalResult matchAndRewrite(
       OpClass op, OpClass::Adaptor adaptor, mlir::ConversionPatternRewriter &rewriter
@@ -184,7 +188,10 @@ public:
 class CreateArrayOpClassReplacePattern
     : public mlir::OpConversionPattern<llzk::array::CreateArrayOp> {
 public:
-  using mlir::OpConversionPattern<llzk::array::CreateArrayOp>::OpConversionPattern;
+  /// Defaults to benefit 0 so that any op-specific pattern at the standard
+  /// benefit (1), or higher, takes priority over this generic fallback.
+  CreateArrayOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
+      : mlir::OpConversionPattern<llzk::array::CreateArrayOp>(converter, ctx, 0) {}
 
   mlir::LogicalResult match(llzk::array::CreateArrayOp op) const override {
     if (mlir::Type newType = getTypeConverter()->convertType(op.getType())) {
@@ -217,7 +224,10 @@ public:
 
 class CallOpClassReplacePattern : public mlir::OpConversionPattern<llzk::function::CallOp> {
 public:
-  using mlir::OpConversionPattern<llzk::function::CallOp>::OpConversionPattern;
+  /// Defaults to benefit 0 so that any op-specific pattern at the standard
+  /// benefit (1), or higher, takes priority over this generic fallback.
+  CallOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
+      : mlir::OpConversionPattern<llzk::function::CallOp>(converter, ctx, 0) {}
 
   mlir::LogicalResult matchAndRewrite(
       llzk::function::CallOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &rewriter
@@ -235,10 +245,12 @@ public:
   }
 };
 
-/// Return a new `RewritePatternSet` that includes a `GeneralTypeReplacePattern` for all of
-/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpClasses`.
-/// Note: `GeneralTypeReplacePattern` uses the default benefit (1) so additional patterns with a
-/// higher priority can be added for any of the Ops already included and that will take precedence.
+/// Return a new `RewritePatternSet` that includes a `GeneralTypeReplacePattern` for all classes in
+/// `OpClassesWithStructTypes.WithGeneralBuilder` and `AdditionalOpClasses` and also includes
+/// default patterns for classes in `OpClassesWithStructTypes.NoGeneralBuilder`.
+///
+/// Note: `GeneralTypeReplacePattern` uses benefit 0 so additional patterns with a higher priority
+/// can be added for any of the Ops already included and that will take precedence.
 template <typename... AdditionalOpClasses>
 mlir::RewritePatternSet newGeneralRewritePatternSet(
     mlir::TypeConverter &tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &target
