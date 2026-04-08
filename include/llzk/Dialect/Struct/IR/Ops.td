@@ -113,6 +113,8 @@ def LLZK_StructDefOp
 
   let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
 
+  let useCustomPropertiesEncoding = 1;
+
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
     /// the type are not given, the StructType will use `this->getParams()`.
