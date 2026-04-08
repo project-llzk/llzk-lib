@@ -584,17 +584,18 @@ var NAVTREEINDEX =
 "classllzk_1_1polymorphic_1_1ConstReadOp.html#aeb83db534e721dbf823f937d519a707b",
 "classllzk_1_1polymorphic_1_1TemplateParamOp.html#a86cbf5ba6620f24b9657886458d907d5",
 "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html#a3a4b26bf1621cb747e49b351f4c58f5f",
-"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a788e36b3dd5c409cf9e3342db7c41b87",
-"dialects.html#functioncall-llzkfunctioncallop",
-"dir_bf1c9d5f0a4fbcc96c8bd057e52371fc.html",
-"maintanence.html#patches",
-"namespacellzk.html#a9cce4142a25f1429d4e93b1d4f607a3e",
-"namespacellzk_1_1debug.html#a79074e66e01152925813cd328e09c153",
-"structGenerator.html#a4d8de52512ddb4ea8477af0735e8f119",
-"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_4.html#a8661d9d0808838d9035107a6316ead43",
-"structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Concept.html#ab90cf43fbae978a302f4e646d027c814",
-"structllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1Concept.html",
-"structllzk_1_1pod_1_1detail_1_1NewPodOpGenericAdaptorBase_1_1Properties.html#ad475712bc602c9f8febd5d3ba146d056"
+"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a5953e2acf09f9871e5bce5dc3d584a1d",
+"dialects.html#feltsub-llzkfeltsubfeltop",
+"dir_b8ac85dafec165950e4efaffc2025602.html",
+"llzk_2Dialect_2InitDialects_8h_source.html",
+"namespacellzk.html#a9798d3afd220d09f46b40473781a6e86",
+"namespacellzk_1_1debug.html#a26d41644d8893b584f5e5e07f875784a",
+"structGenStringFromOpPieces.html#ac656495290e6a304544e59c3d07144a7",
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html",
+"structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Concept.html",
+"structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceTrait.html",
+"structllzk_1_1pod_1_1detail_1_1NewPodOpGenericAdaptorBase_1_1Properties.html#a862d7a8a721817dbef5f2fc412001ec9",
+"tools.html#options-9"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

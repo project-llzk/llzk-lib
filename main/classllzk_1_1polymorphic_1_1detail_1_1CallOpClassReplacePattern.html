@@ -125,12 +125,48 @@ Collaboration diagram for llzk::polymorphic::detail::CallOpClassReplacePattern:<
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a19469ec868d5349316aa4077f23ff7fb" id="r_a19469ec868d5349316aa4077f23ff7fb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a19469ec868d5349316aa4077f23ff7fb">CallOpClassReplacePattern</a> (mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</td></tr>
+<tr class="memdesc:a19469ec868d5349316aa4077f23ff7fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defaults to benefit 0 so that any op-specific pattern at the standard benefit (1), or higher, takes priority over this generic fallback.  <br /></td></tr>
 <tr class="memitem:ae95d01e0af792ccac7836b27167823eb" id="r_ae95d01e0af792ccac7836b27167823eb"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae95d01e0af792ccac7836b27167823eb">matchAndRewrite</a> (<a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> op, OpAdaptor adapter, mlir::ConversionPatternRewriter &amp;rewriter) const override</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00218">218</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00225">225</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+</div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a19469ec868d5349316aa4077f23ff7fb" name="a19469ec868d5349316aa4077f23ff7fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19469ec868d5349316aa4077f23ff7fb">&#9670;&#160;</a></span>CallOpClassReplacePattern()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llzk::polymorphic::detail::CallOpClassReplacePattern::CallOpClassReplacePattern </td>
+          <td>(</td>
+          <td class="paramtype">mlir::TypeConverter &amp;</td>          <td class="paramname"><span class="paramname"><em>converter</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Defaults to benefit 0 so that any op-specific pattern at the standard benefit (1), or higher, takes priority over this generic fallback. </p>
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00229">229</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="ae95d01e0af792ccac7836b27167823eb" name="ae95d01e0af792ccac7836b27167823eb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae95d01e0af792ccac7836b27167823eb">&#9670;&#160;</a></span>matchAndRewrite()</h2>
 
@@ -163,7 +199,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00222">222</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00232">232</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>

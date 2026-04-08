@@ -136,7 +136,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:ac4e215d27e901a09169132a82f3feb3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the Op in ODS).  <br /></td></tr>
 <tr class="memitem:a3e3237f59e7426aaaed9979a8fedad36" id="r_a3e3237f59e7426aaaed9979a8fedad36"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses&gt; </td></tr>
 <tr class="memitem:a3e3237f59e7426aaaed9979a8fedad36 template"><td class="memItemLeft" align="right" valign="top">mlir::RewritePatternSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3e3237f59e7426aaaed9979a8fedad36">newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
-<tr class="memdesc:a3e3237f59e7426aaaed9979a8fedad36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all of <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span>.  <br /></td></tr>
+<tr class="memdesc:a3e3237f59e7426aaaed9979a8fedad36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all classes in <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span> and also includes default patterns for classes in <span class="tt">OpClassesWithStructTypes.NoGeneralBuilder</span>.  <br /></td></tr>
 <tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa4db6a4baedb109176585c4bfc46e48">newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386" id="r_a49b3116406d5104fcf8b37bed9f1f386"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </td></tr>
@@ -197,7 +197,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>. </p>
 <p>Additional legality checks can be included for certain ops that will run along with the default check. For an op to be considered legal all checks (default plus additional checks if any) must return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00285">285</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00297">297</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -235,7 +235,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>. </p>
 <p>Additional legality checks can be included for certain ops that will run along with the default check. For an op to be considered legal all checks (default plus additional checks if any) must return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00301">301</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00313">313</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -265,10 +265,10 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all of <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span>. </p>
-<p>Note: <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> uses the default benefit (1) so additional patterns with a higher priority can be added for any of the Ops already included and that will take precedence. </p>
+<p>Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all classes in <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span> and also includes default patterns for classes in <span class="tt">OpClassesWithStructTypes.NoGeneralBuilder</span>. </p>
+<p>Note: <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> uses benefit 0 so additional patterns with a higher priority can be added for any of the Ops already included and that will take precedence. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00243">243</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00255">255</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -308,7 +308,7 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
 
 <p>Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the Op in ODS). </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00129">129</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00130">130</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>

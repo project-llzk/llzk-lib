@@ -125,13 +125,51 @@ Collaboration diagram for llzk::polymorphic::detail::GeneralTypeReplacePattern&l
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a11b34b39f61ff69b2f084ab2fedf628e" id="r_a11b34b39f61ff69b2f084ab2fedf628e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a11b34b39f61ff69b2f084ab2fedf628e">GeneralTypeReplacePattern</a> (mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</td></tr>
+<tr class="memdesc:a11b34b39f61ff69b2f084ab2fedf628e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defaults to benefit 0 so that any op-specific pattern at the standard benefit (1), or higher, takes priority over this generic fallback.  <br /></td></tr>
 <tr class="memitem:a8f70e4d5ff010023d9b61b4083a65b43" id="r_a8f70e4d5ff010023d9b61b4083a65b43"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8f70e4d5ff010023d9b61b4083a65b43">matchAndRewrite</a> (OpClass op, OpClass::Adaptor adaptor, mlir::ConversionPatternRewriter &amp;rewriter) const override</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename OpClass&gt;<br />
 class llzk::polymorphic::detail::GeneralTypeReplacePattern&lt; OpClass &gt;</div>
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00140">140</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00141">141</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+</div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a11b34b39f61ff69b2f084ab2fedf628e" name="a11b34b39f61ff69b2f084ab2fedf628e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11b34b39f61ff69b2f084ab2fedf628e">&#9670;&#160;</a></span>GeneralTypeReplacePattern()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OpClass&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">llzk::polymorphic::detail::GeneralTypeReplacePattern</a>&lt; OpClass &gt;::GeneralTypeReplacePattern </td>
+          <td>(</td>
+          <td class="paramtype">mlir::TypeConverter &amp;</td>          <td class="paramname"><span class="paramname"><em>converter</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Defaults to benefit 0 so that any op-specific pattern at the standard benefit (1), or higher, takes priority over this generic fallback. </p>
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00145">145</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a8f70e4d5ff010023d9b61b4083a65b43" name="a8f70e4d5ff010023d9b61b4083a65b43"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8f70e4d5ff010023d9b61b4083a65b43">&#9670;&#160;</a></span>matchAndRewrite()</h2>
 
@@ -166,7 +204,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00144">144</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00148">148</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
