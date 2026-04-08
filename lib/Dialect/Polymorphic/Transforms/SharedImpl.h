@@ -47,7 +47,7 @@ namespace {
 /// Lists all Op classes that may contain a StructType in their results or attributes.
 static struct OpClassesWithStructTypes {
 
-  /// Subset that define the general builder function:
+  /// Ops in this subset define the general builder function:
   /// `build(OpBuilder&, OperationState&, TypeRange, ValueRange, ArrayRef<NamedAttribute>)`
   const std::tuple<
       // clang-format off
@@ -73,11 +73,11 @@ static struct OpClassesWithStructTypes {
       >
       WithGeneralBuilder {};
 
-  /// Subset that do NOT define the general builder function. Cannot use `GeneralTypeReplacePattern`
-  /// and must have an `OpConversionPattern` defined if they need to be converted. If using
-  /// `newGeneralRewritePatternSet()`, there is a default `OpConversionPattern` defined for each of
-  /// these with benefit (0) so a specific pattern with a higher priority can be added for any of
-  /// these Ops that will take precedence over the default one.
+  /// Ops in this subset do NOT define the general builder function (see above), so they cannot use
+  /// `GeneralTypeReplacePattern`. A custom `OpConversionPattern` is needed to convert these ops.
+  ///
+  /// The `newGeneralRewritePatternSet()` function defines a default `OpConversionPattern` for each
+  /// of these with benefit 0 allowing more specific higher-benefit patterns to override it.
   const std::tuple<llzk::function::CallOp, llzk::array::CreateArrayOp> NoGeneralBuilder {};
 
 } OpClassesWithStructTypes;
