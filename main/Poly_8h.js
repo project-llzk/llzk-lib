@@ -7,6 +7,7 @@ var Poly_8h =
     [ "llzkPoly_ApplyMapOpGetNumDimOperands", "Poly_8h.html#a32bace9b387b0d452d279dadb98a78cb", null ],
     [ "llzkPoly_ApplyMapOpGetNumSymbolOperands", "Poly_8h.html#a176f2e95e11b6c2bf20b52ff2e07ba2d", null ],
     [ "llzkPoly_ApplyMapOpGetSymbolOperands", "Poly_8h.html#a31775caca2ce3b91b9cdce41383af0dc", null ],
+    [ "llzkPoly_TemplateOpGetBody", "Poly_8h.html#ae25a361b66420ff5d10afd32d084ca86", null ],
     [ "llzkPoly_TemplateOpGetConstExprNames", "Poly_8h.html#a80fdde0d183897bf317deace1a5daaaf", null ],
     [ "llzkPoly_TemplateOpGetConstParamNames", "Poly_8h.html#a97c1eff1c9c3e80e171d459f61f02df3", null ],
     [ "llzkPoly_TemplateOpHasConstExprNamed", "Poly_8h.html#ac1702ea805d8ef20ade3db229b1db0a3", null ],

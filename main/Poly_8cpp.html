@@ -142,6 +142,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:acadeb77afffbd7859e5d5c2e40c9be6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1polymorphic_1_1TypeVarType.html">llzk::polymorphic::TypeVarType</a>.  <br /></td></tr>
 <tr class="memitem:ab7e760a9f89497bd8bb2612ca9b5fa95" id="r_ab7e760a9f89497bd8bb2612ca9b5fa95"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab7e760a9f89497bd8bb2612ca9b5fa95">llzkPoly_TypeVarTypeGetFromAttr</a> (MlirAttribute attrWrapper)</td></tr>
 <tr class="memdesc:ab7e760a9f89497bd8bb2612ca9b5fa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1polymorphic_1_1TypeVarType.html">llzk::polymorphic::TypeVarType</a> from either a StringAttr or a FlatSymbolRefAttr.  <br /></td></tr>
+<tr class="memitem:a3d5efdb79d3f211fb39a923928f5dbbd" id="r_a3d5efdb79d3f211fb39a923928f5dbbd"><td class="memItemLeft" align="right" valign="top">MlirBlock&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d5efdb79d3f211fb39a923928f5dbbd">llzkPoly_TemplateOpGetBody</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a3d5efdb79d3f211fb39a923928f5dbbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the single body Block within the TemplateOp's Region.  <br /></td></tr>
 <tr class="memitem:a9eaaecf8f7e9c706c958c2d476949e13" id="r_a9eaaecf8f7e9c706c958c2d476949e13"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9eaaecf8f7e9c706c958c2d476949e13">llzkPoly_TemplateOpHasConstParamOps</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:a9eaaecf8f7e9c706c958c2d476949e13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the TemplateOp has any TemplateParamOp children.  <br /></td></tr>
 <tr class="memitem:adfabe38e61ac450a4d00cc81711d0a3b" id="r_adfabe38e61ac450a4d00cc81711d0a3b"><td class="memItemLeft" align="right" valign="top">intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adfabe38e61ac450a4d00cc81711d0a3b">llzkPoly_TemplateOpNumConstParamOps</a> (MlirOperation op)</td></tr>
@@ -200,7 +202,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00107">107</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00109">109</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -238,7 +240,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00129">129</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00131">131</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -276,7 +278,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00117">117</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00119">119</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -302,7 +304,7 @@ Functions</h2></td></tr>
 <p>Writes into the destination buffer the operands that correspond to dimensions in the affine map. </p>
 <p>The buffer needs to be preallocated first with the necessary amount and the caller is responsible of its lifetime. See <span class="tt">llzkPoly_ApplyMapOpGetNumDimOperands</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00163">163</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00165">165</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -323,7 +325,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of operands that correspond to dimensions in the affine map. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00156">156</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00158">158</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -344,7 +346,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of operands that correspond to symbols in the affine map. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00168">168</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00170">170</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -370,7 +372,28 @@ Functions</h2></td></tr>
 <p>Writes into the destination buffer the operands that correspond to symbols in the affine map. </p>
 <p>The buffer needs to be preallocated first with the necessary amount and the caller is responsible of its lifetime. See <span class="tt">llzkPoly_ApplyMapOpGetNumSymbolOperands</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00175">175</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00177">177</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3d5efdb79d3f211fb39a923928f5dbbd" name="a3d5efdb79d3f211fb39a923928f5dbbd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d5efdb79d3f211fb39a923928f5dbbd">&#9670;&#160;</a></span>llzkPoly_TemplateOpGetBody()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirBlock llzkPoly_TemplateOpGetBody </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the single body Block within the TemplateOp's Region. </p>
+
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00071">71</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -396,7 +419,7 @@ Functions</h2></td></tr>
 <p>Writes into the destination buffer the names of all TemplateExprOp children as FlatSymbolRefAttr attributes, in definition order. </p>
 <p>The buffer must be preallocated and the caller is responsible for its lifetime. See <span class="tt">llzkPoly_TemplateOpNumConstExprOps</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00095">95</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00097">97</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -422,7 +445,7 @@ Functions</h2></td></tr>
 <p>Writes into the destination buffer the names of all TemplateParamOp children as FlatSymbolRefAttr attributes, in definition order. </p>
 <p>The buffer must be preallocated and the caller is responsible for its lifetime. See <span class="tt">llzkPoly_TemplateOpNumConstParamOps</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00079">79</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00081">81</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -447,7 +470,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the TemplateOp has a TemplateExprOp with the given name. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00099">99</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00101">101</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -468,7 +491,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the TemplateOp has any TemplateExprOp children. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00087">87</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00089">89</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -493,7 +516,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the TemplateOp has a TemplateParamOp with the given name. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00083">83</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00085">85</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -514,7 +537,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the TemplateOp has any TemplateParamOp children. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00071">71</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00073">73</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -535,7 +558,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of TemplateExprOp children in the TemplateOp. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00091">91</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00093">93</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>
@@ -556,7 +579,7 @@ Functions</h2></td></tr>
 
 <p>Returns the number of TemplateParamOp children in the TemplateOp. </p>
 
-<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00075">75</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Poly_8cpp_source.html#l00077">77</a> of file <a class="el" href="Poly_8cpp_source.html">Poly.cpp</a>.</p>
 
 </div>
 </div>

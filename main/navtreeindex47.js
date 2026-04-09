@@ -1,5 +1,7 @@
 var NAVTREEINDEX47 =
 {
+"dialects.html#feltsintdiv-llzkfeltsignedintdivfeltop":[7,4,0,13],
+"dialects.html#feltsmod-llzkfeltsignedmodfeltop":[7,4,0,14],
 "dialects.html#feltsub-llzkfeltsubfeltop":[7,4,0,15],
 "dialects.html#felttype":[7,4,2,0],
 "dialects.html#feltuintdiv-llzkfeltunsignedintdivfeltop":[7,4,0,16],
@@ -247,7 +249,5 @@ var NAVTREEINDEX47 =
 "dir_adfe3cc28faefdcc2b149bf5452f8464.html":[13,0,3,3,0,0],
 "dir_aeb111a66559cddca48532b3374d72a2.html":[13,0,2,0,2,12],
 "dir_b021b4b3d5f8cbb2a4f19e87b1315b0c.html":[13,0,3,3,2,0],
-"dir_b32245508e9ba2415c96893d377a675c.html":[13,0,2,0,2,9],
-"dir_b33c2407c9958632ad478ff09d62835b.html":[13,0,2,0,2,10,0],
-"dir_b57964f09af826cfffee4b0782785e82.html":[13,0,2,0,2,0]
+"dir_b32245508e9ba2415c96893d377a675c.html":[13,0,2,0,2,9]
 };
