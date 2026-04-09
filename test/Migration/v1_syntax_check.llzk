@@ -2,4 +2,245 @@
 
 // Read bytecode from `v1_syntax.llzk.bc` and check that it migrates to current dialect version.
 
-// CHECK: TODO
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<() -> (42)>
+// CHECK: #[[$ATTR_2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 1)>
+// CHECK: #[[$ATTR_3:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 * s0)>
+// CHECK: #[[$ATTR_4:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
+//
+// CHECK-LABEL: module attributes {llzk.fields = [#felt.field<"foo", 101>, #felt.field<"bar", 11>], llzk.lang, llzk.main = !struct.type<@Top>} {
+// CHECK-NEXT:    module @util {
+// CHECK-NEXT:      function.def private @log(!string.type) -> i1
+// CHECK-NEXT:      function.def private @pub_args(!felt.type {llzk.pub}, index {llzk.pub})
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @gstore {
+// CHECK-NEXT:      global.def const @BOUND : !felt.type =  16
+// CHECK-NEXT:      global.def @tally : index = 0
+// CHECK-NEXT:      global.def @flag : i1 = false
+// CHECK-NEXT:      global.def @label : !string.type
+// CHECK-NEXT:      global.def const @BITS : !array.type<2,2 x i1> = [0, 1, 1, 0]
+// CHECK-NEXT:      global.def @score : !array.type<2,1,2 x !felt.type> = [1, 2, 3, 4]
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Box {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @val : !poly.tvar<@T> {llzk.pub}
+// CHECK-NEXT:        struct.member @"$tag" : i1
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@Box::@Box<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Box::@Box<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@val] = %[[VAL_0]] : <@Box::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@"$tag"] = %[[VAL_2]] : <@Box::@Box<[@T]>>, i1
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Box::@Box<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Box::@Box<[@T]>>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@val] : <@Box::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          constrain.eq %[[VAL_5]], %[[VAL_4]] : !poly.tvar<@T>, !poly.tvar<@T>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Reg {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @Reg {
+// CHECK-NEXT:        struct.member @data : !array.type<@N x !felt.type> {column}
+// CHECK-NEXT:        function.def @compute(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@Reg::@Reg<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg::@Reg<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_7]][@data] = %[[VAL_6]] : <@Reg::@Reg<[@N]>>, !array.type<@N x !felt.type>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@data] : <@Reg::@Reg<[@N]>>, !array.type<@N x !felt.type> {tableOffset = -1 : index}
+// CHECK-NEXT:          function.return %[[VAL_7]] : !struct.type<@Reg::@Reg<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg::@Reg<[@N]>>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@data] : <@Reg::@Reg<[@N]>>, !array.type<@N x !felt.type>
+// CHECK-NEXT:          constrain.eq %[[VAL_11]], %[[VAL_10]] : !array.type<@N x !felt.type>, !array.type<@N x !felt.type>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @ArrComp {
+// CHECK-NEXT:      poly.param @X
+// CHECK-NEXT:      poly.param @Y
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @ArrComp {
+// CHECK-NEXT:        struct.member @reg : !struct.type<@Reg::@Reg<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@ArrComp::@ArrComp<[@X, @Y, @N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@ArrComp::@ArrComp<[@X, @Y, @N]>>
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = poly.read_const @X : index
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = poly.read_const @Y : index
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_12]] : (!array.type<@N x !felt.type>) -> !array.type<#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @Reg::@Reg::@compute(%[[VAL_16]]) {(){{\[}}%[[VAL_14]], %[[VAL_15]]]} : (!array.type<#[[$ATTR_0]] x !felt.type>) -> !struct.type<@Reg::@Reg<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          struct.writem %[[VAL_13]][@reg] = %[[VAL_17]] : <@ArrComp::@ArrComp<[@X, @Y, @N]>>, !struct.type<@Reg::@Reg<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          function.return %[[VAL_13]] : !struct.type<@ArrComp::@ArrComp<[@X, @Y, @N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrComp::@ArrComp<[@X, @Y, @N]>>, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_19]] : (!array.type<@N x !felt.type>) -> !array.type<#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_18]][@reg] : <@ArrComp::@ArrComp<[@X, @Y, @N]>>, !struct.type<@Reg::@Reg<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          function.call @Reg::@Reg::@constrain(%[[VAL_21]], %[[VAL_20]]) : (!struct.type<@Reg::@Reg<[#[[$ATTR_0]]]>>, !array.type<#[[$ATTR_0]] x !felt.type>) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Entry {
+// CHECK-NEXT:      struct.def @Entry {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Entry::@Entry<[]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = struct.new : <@Entry::@Entry<[]>>
+// CHECK-NEXT:          function.return %[[VAL_22]] : !struct.type<@Entry::@Entry<[]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_23:[0-9a-zA-Z_\.]+]]: !struct.type<@Entry::@Entry<[]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      struct.member @bit : !felt.type {signal}
+// CHECK-NEXT:      struct.member @reg4 : !struct.type<@Reg::@Reg<[4]>>
+// CHECK-NEXT:      struct.member @box : !struct.type<@Box::@Box<[!felt.type]>>
+// CHECK-NEXT:      function.def @compute(%[[VAL_24:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}) -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = felt.const  7
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_24]], %[[VAL_29]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_24]], %[[VAL_28]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_24]], %[[VAL_29]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.div %[[VAL_24]], %[[VAL_29]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_24]], %[[VAL_25]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_35:[0-9a-zA-Z_\.]+]] = bool.cmp ne(%[[VAL_24]], %[[VAL_25]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_24]], %[[VAL_25]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = bool.cmp le(%[[VAL_24]], %[[VAL_25]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_24]], %[[VAL_25]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_39:[0-9a-zA-Z_\.]+]] = bool.cmp ge(%[[VAL_24]], %[[VAL_25]]) : !felt.type, !felt.type
+// CHECK-NEXT:        bool.assert %[[VAL_39]]
+// CHECK-NEXT:        bool.assert %[[VAL_34]], "a must equal pub"
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_34]] : i1, !felt.type
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_41]] : index, !felt.type
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = string.new "hello LLZK"
+// CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_41]], %[[VAL_44]] : index
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_44]], %[[VAL_45]] : index
+// CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = arith.muli %[[VAL_44]], %[[VAL_45]] : index
+// CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = arith.divui %[[VAL_44]], %[[VAL_45]] : index
+// CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_41]], %[[VAL_44]] : index
+// CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = arith.cmpi ne, %[[VAL_41]], %[[VAL_44]] : index
+// CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[VAL_41]], %[[VAL_44]] : index
+// CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = arith.cmpi sle, %[[VAL_41]], %[[VAL_44]] : index
+// CHECK-NEXT:        %[[VAL_54:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_55:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:        %[[VAL_56:[0-9a-zA-Z_\.]+]] = arith.andi %[[VAL_54]], %[[VAL_55]] : i1
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = arith.ori %[[VAL_54]], %[[VAL_55]] : i1
+// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = arith.xori %[[VAL_54]], %[[VAL_55]] : i1
+// CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = poly.applymap () #[[$ATTR_1]]
+// CHECK-NEXT:        %[[VAL_60:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[VAL_44]]) #[[$ATTR_2]]
+// CHECK-NEXT:        %[[VAL_61:[0-9a-zA-Z_\.]+]] = poly.applymap (){{\[}}%[[VAL_44]], %[[VAL_45]]] #[[$ATTR_0]]
+// CHECK-NEXT:        %[[VAL_62:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[VAL_44]]){{\[}}%[[VAL_45]]] #[[$ATTR_3]]
+// CHECK-NEXT:        %[[VAL_63:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_27]], %[[VAL_28]], %[[VAL_30]], %[[VAL_32]] : <4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_64:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_63]]{{\[}}%[[VAL_41]]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_63]]{{\[}}%[[VAL_41]]] = %[[VAL_33]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_65:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_66:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_27]], %[[VAL_28]], %[[VAL_30]], %[[VAL_32]], %[[VAL_27]], %[[VAL_28]], %[[VAL_30]], %[[VAL_32]] : <2,4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_67:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_66]]{{\[}}%[[VAL_41]]] : <2,4 x !felt.type>
+// CHECK-NEXT:        array.insert %[[VAL_66]]{{\[}}%[[VAL_41]]] = %[[VAL_63]] : <2,4 x !felt.type>, <4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_68:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_66]]{{\[}}%[[VAL_65]], %[[VAL_65]]] : <2,4 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_69:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_66]], %[[VAL_41]] : <2,4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_70:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_34]] -> (!felt.type) {
+// CHECK-NEXT:          scf.yield %[[VAL_27]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_28]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        struct.writem %[[VAL_26]][@bit] = %[[VAL_70]] : <@Top>, !felt.type
+// CHECK-NEXT:        scf.if %[[VAL_35]] {
+// CHECK-NEXT:          array.write %[[VAL_63]]{{\[}}%[[VAL_41]]] = %[[VAL_28]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_71:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_72:[0-9a-zA-Z_\.]+]] = %[[VAL_41]] to %[[VAL_44]] step %[[VAL_45]] iter_args(%[[VAL_73:[0-9a-zA-Z_\.]+]] = %[[VAL_27]]) -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_74:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_24]], %[[VAL_73]] : !felt.type, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_74]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_75:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_76:[0-9a-zA-Z_\.]+]] = %[[VAL_27]]) : (!felt.type) -> !felt.type {
+// CHECK-NEXT:          %[[VAL_77:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_76]], %[[VAL_24]]) : !felt.type, !felt.type
+// CHECK-NEXT:          scf.condition(%[[VAL_77]]) %[[VAL_76]] : !felt.type
+// CHECK-NEXT:        } do {
+// CHECK-NEXT:        ^bb0(%[[VAL_78:[0-9a-zA-Z_\.]+]]: !felt.type):
+// CHECK-NEXT:          %[[VAL_79:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_78]], %[[VAL_28]] : !felt.type, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_79]] : !felt.type
+// CHECK-NEXT:        } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
+// CHECK-NEXT:        %[[VAL_80:[0-9a-zA-Z_\.]+]] = function.call @Box::@Box::@compute(%[[VAL_24]]) : (!felt.type) -> !struct.type<@Box::@Box<[!felt.type]>>
+// CHECK-NEXT:        struct.writem %[[VAL_26]][@box] = %[[VAL_80]] : <@Top>, !struct.type<@Box::@Box<[!felt.type]>>
+// CHECK-NEXT:        %[[VAL_81:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_82:[0-9a-zA-Z_\.]+]] = function.call @Reg::@Reg::@compute(%[[VAL_81]]) : (!array.type<4 x !felt.type>) -> !struct.type<@Reg::@Reg<[4]>>
+// CHECK-NEXT:        struct.writem %[[VAL_26]][@reg4] = %[[VAL_82]] : <@Top>, !struct.type<@Reg::@Reg<[4]>>
+// CHECK-NEXT:        %[[VAL_83:[0-9a-zA-Z_\.]+]] = global.read @gstore::@BOUND : !felt.type
+// CHECK-NEXT:        global.write @gstore::@tally = %[[VAL_41]] : index
+// CHECK-NEXT:        function.return %[[VAL_26]] : !struct.type<@Top>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_84:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_85:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_86:[0-9a-zA-Z_\.]+]]: !felt.type {llzk.pub}) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_87:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_84]][@bit] : <@Top>, !felt.type
+// CHECK-NEXT:        %[[VAL_88:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_84]][@box] : <@Top>, !struct.type<@Box::@Box<[!felt.type]>>
+// CHECK-NEXT:        %[[VAL_89:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_84]][@reg4] : <@Top>, !struct.type<@Reg::@Reg<[4]>>
+// CHECK-NEXT:        %[[VAL_90:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:        %[[VAL_91:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_92:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_93:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_87]], %[[VAL_92]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_94:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_87]], %[[VAL_93]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_94]], %[[VAL_91]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_95:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_91]], %[[VAL_92]] : <2 x !felt.type>
+// CHECK-NEXT:        constrain.in %[[VAL_95]], %[[VAL_87]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.call @Box::@Box::@constrain(%[[VAL_88]], %[[VAL_85]]) : (!struct.type<@Box::@Box<[!felt.type]>>, !felt.type) -> ()
+// CHECK-NEXT:        %[[VAL_96:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
+// CHECK-NEXT:        function.call @Reg::@Reg::@constrain(%[[VAL_89]], %[[VAL_96]]) : (!struct.type<@Reg::@Reg<[4]>>, !array.type<4 x !felt.type>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @bool_logic(%[[VAL_97:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_98:[0-9a-zA-Z_\.]+]]: i1) -> (i1, i1, i1, i1) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_99:[0-9a-zA-Z_\.]+]] = bool.and %[[VAL_97]], %[[VAL_98]] : i1, i1
+// CHECK-NEXT:      %[[VAL_100:[0-9a-zA-Z_\.]+]] = bool.or %[[VAL_97]], %[[VAL_98]] : i1, i1
+// CHECK-NEXT:      %[[VAL_101:[0-9a-zA-Z_\.]+]] = bool.xor %[[VAL_97]], %[[VAL_98]] : i1, i1
+// CHECK-NEXT:      %[[VAL_102:[0-9a-zA-Z_\.]+]] = bool.not %[[VAL_97]] : i1
+// CHECK-NEXT:      function.return %[[VAL_99]], %[[VAL_100]], %[[VAL_101]], %[[VAL_102]] : i1, i1, i1, i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @pair(%[[VAL_103:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_104:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_103]], %[[VAL_104]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_pair(%[[VAL_105:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_106:[0-9a-zA-Z_\.]+]]:2 = function.call @pair(%[[VAL_105]]) : (index) -> (index, index)
+// CHECK-NEXT:      function.return %[[VAL_106]]#0, %[[VAL_106]]#1 : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @non_native(%[[VAL_107:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_108:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_109:[0-9a-zA-Z_\.]+]]: index) -> (index, !felt.type, !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_110:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_107]] : !felt.type
+// CHECK-NEXT:      %[[VAL_111:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_108]] : i1, !felt.type
+// CHECK-NEXT:      %[[VAL_112:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_109]] : index, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_110]], %[[VAL_111]], %[[VAL_112]] : index, !felt.type, !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @babybear_ops(%[[VAL_113:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">, %[[VAL_114:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_115:[0-9a-zA-Z_\.]+]] = felt.const  5 : <"babybear">
+// CHECK-NEXT:      %[[VAL_116:[0-9a-zA-Z_\.]+]] = felt.pow %[[VAL_113]], %[[VAL_114]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_117:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[VAL_113]], %[[VAL_114]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_118:[0-9a-zA-Z_\.]+]] = felt.sintdiv %[[VAL_113]], %[[VAL_114]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_119:[0-9a-zA-Z_\.]+]] = felt.umod %[[VAL_113]], %[[VAL_114]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[VAL_116]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @foo_ops(%[[VAL_120:[0-9a-zA-Z_\.]+]]: !felt.type<"foo">, %[[VAL_121:[0-9a-zA-Z_\.]+]]: !felt.type<"foo">) -> !felt.type<"foo"> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_122:[0-9a-zA-Z_\.]+]] = felt.const  5 : <"foo">
+// CHECK-NEXT:      %[[VAL_123:[0-9a-zA-Z_\.]+]] = felt.pow %[[VAL_120]], %[[VAL_121]] : !felt.type<"foo">, !felt.type<"foo">
+// CHECK-NEXT:      %[[VAL_124:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[VAL_120]], %[[VAL_121]] : !felt.type<"foo">, !felt.type<"foo">
+// CHECK-NEXT:      %[[VAL_125:[0-9a-zA-Z_\.]+]] = felt.sintdiv %[[VAL_120]], %[[VAL_121]] : !felt.type<"foo">, !felt.type<"foo">
+// CHECK-NEXT:      %[[VAL_126:[0-9a-zA-Z_\.]+]] = felt.umod %[[VAL_120]], %[[VAL_121]] : !felt.type<"foo">, !felt.type<"foo">
+// CHECK-NEXT:      %[[VAL_127:[0-9a-zA-Z_\.]+]] = felt.const  18446744069414584321
+// CHECK-NEXT:      %[[VAL_128:[0-9a-zA-Z_\.]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208583
+// CHECK-NEXT:      function.return %[[VAL_123]] : !felt.type<"foo">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @dyn_array(%[[VAL_129:[0-9a-zA-Z_\.]+]]: index) -> !array.type<#[[$ATTR_4]] x !felt.type> {
+// CHECK-NEXT:      %[[VAL_130:[0-9a-zA-Z_\.]+]] = array.new{(%[[VAL_129]])} : <#[[$ATTR_4]] x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_130]] : !array.type<#[[$ATTR_4]] x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @pod_ops(%[[VAL_131:[0-9a-zA-Z_\.]+]]: index) -> !pod.type<[@n: index]> {
+// CHECK-NEXT:      %[[VAL_132:[0-9a-zA-Z_\.]+]] = pod.new : <[]>
+// CHECK-NEXT:      %[[VAL_133:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: index]>
+// CHECK-NEXT:      %[[VAL_134:[0-9a-zA-Z_\.]+]] = pod.new { @n = %[[VAL_131]] }  : <[@n: index]>
+// CHECK-NEXT:      %[[VAL_135:[0-9a-zA-Z_\.]+]] = pod.read %[[VAL_134]][@n] : <[@n: index]>, index
+// CHECK-NEXT:      pod.write %[[VAL_134]][@n] = %[[VAL_135]] : <[@n: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_134]] : !pod.type<[@n: index]>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
