@@ -68,6 +68,8 @@ static inline void copyAttrs(SmallVector<Attribute> attrs, MlirAttribute *dst) {
   }
 }
 
+MlirBlock llzkPoly_TemplateOpGetBody(MlirOperation op) { return wrap(asTemplateOp(op).getBody()); }
+
 bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op) {
   return asTemplateOp(op).hasConstOps<TemplateParamOp>();
 }
