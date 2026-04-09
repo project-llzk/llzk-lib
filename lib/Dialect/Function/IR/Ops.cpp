@@ -422,15 +422,9 @@ LogicalResult ReturnOp::verify() {
 // `OptionalAttr<ArrayAttr>:$templateParams`.
 LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
   auto &prop = state.getOrAddProperties<Properties>();
-  if (failed(reader.readAttribute(prop.callee))) {
-    return failure();
-  }
-
-  if (failed(reader.readAttribute(prop.mapOpGroupSizes))) {
-    return failure();
-  }
-
-  if (failed(reader.readOptionalAttribute(prop.numDimsPerMap))) {
+  if (failed(reader.readAttribute(prop.callee)) || 
+      failed(reader.readAttribute(prop.mapOpGroupSizes)) ||
+      failed(reader.readOptionalAttribute(prop.numDimsPerMap))) {
     return failure();
   }
 
