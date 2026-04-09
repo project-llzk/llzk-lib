@@ -452,18 +452,9 @@ LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationSta
     }
   }
 
-  {
-    auto &propStorage = prop.operandSegmentSizes;
-    auto readProp = [&]() {
-      if (reader.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6) {
-        return reader.readSparseArray(MutableArrayRef(propStorage));
-      };
-      return success();
-    };
-    if (failed(readProp())) {
-      return failure();
-    }
-  }
+  if (reader.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6) {
+    return reader.readSparseArray(MutableArrayRef(prop.operandSegmentSizes));
+  };
   return success();
 }
 
@@ -481,11 +472,9 @@ void CallOp::writeProperties(DialectBytecodeWriter &writer) {
 
   writer.writeOptionalAttribute(prop.templateParams);
 
-  {
-    auto &propStorage = prop.operandSegmentSizes;
-    if (writer.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6) {
-      writer.writeSparseArray(ArrayRef(propStorage));
-    };
+  auto &propStorage = prop.operandSegmentSizes;
+  if (writer.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6) {
+    writer.writeSparseArray(ArrayRef(propStorage));
   }
 }
 
