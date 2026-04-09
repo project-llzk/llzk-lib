@@ -27,35 +27,64 @@ jobs:
           owner: project-llzk
           repositories: llzk-rs
 
-      - name: Check out llzk-rs
+      - name: Find existing open bump PR
+        id: existing-pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --repo project-llzk/llzk-rs \
+            --state open \
+            --search 'in:title "chore: bump llzk-lib flake input"' \
+            --json number,headRefName \
+            --jq 'map(select(.headRefName == "bot/bump-llzk-lib")) | .[0].number // empty')
+
+          HEAD_REF=$(gh pr list \
+            --repo project-llzk/llzk-rs \
+            --state open \
+            --search 'in:title "chore: bump llzk-lib flake input"' \
+            --json number,headRefName \
+            --jq 'map(select(.headRefName == "bot/bump-llzk-lib")) | .[0].headRefName // empty')
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "head_ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Check out llzk-rs main
+        if: steps.existing-pr.outputs.pr_number == ''
         uses: actions/checkout@v4
         with:
           repository: project-llzk/llzk-rs
           token: ${{ steps.app-token.outputs.token }}
+          ref: main
           path: llzk-rs
-          persist-credentials: false
+          fetch-depth: 0
 
-      # v37.1.0
-      - uses: cachix/install-nix-action@d1ca217b388ee87b2507a9a93bf01368bde7cec2
+      - name: Check out existing PR branch
+        if: steps.existing-pr.outputs.pr_number != ''
+        uses: actions/checkout@v4
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.23.3/install
-          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Set Git credentials
-        run: |
-          git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
-          git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
-          git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
-      # v16
-      - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
-        with:
-          name: veridise-public
-          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+          repository: project-llzk/llzk-rs
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ steps.existing-pr.outputs.head_ref }}
+          path: llzk-rs
+          fetch-depth: 0
 
-      - name: Configure Git for llzk-rs
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
         working-directory: llzk-rs
         run: |
           git config user.name "project-llzk[bot]"
           git config user.email "project-llzk[bot]@users.noreply.github.com"
+
+      - name: Create bump branch if needed
+        if: steps.existing-pr.outputs.pr_number == ''
+        working-directory: llzk-rs
+        run: |
+          git checkout -b bot/bump-llzk-lib
 
       - name: Update llzk-lib flake input
         id: update
@@ -68,34 +97,66 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create or update PR
+      - name: Commit changes
         if: steps.update.outputs.changed == 'true'
+        working-directory: llzk-rs
+        run: |
+          git add flake.lock
+          git commit -m "chore: bump llzk-lib flake input to ${{ github.sha }}"
+
+      - name: Push branch
+        if: steps.update.outputs.changed == 'true'
+        working-directory: llzk-rs
+        run: |
+          git push origin HEAD:bot/bump-llzk-lib
+
+      - name: Create PR
+        if: steps.update.outputs.changed == 'true' && steps.existing-pr.outputs.pr_number == ''
         id: cpr
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          path: llzk-rs
-          commit-message: "chore: bump llzk-lib flake input"
-          branch: bot/bump-llzk-lib
-          delete-branch: true
-          title: "chore: bump llzk-lib flake input"
-          body: |
-            Automated flake input update triggered by a push to `project-llzk/llzk-lib@main`.
-
-            Source commit: `${{ github.sha }}`
-            Source workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            Auto-merge is enabled and will complete once required approval and CI checks pass.
-          team-reviewers: |
-            ${{ vars.CORE_DEV_TEAM_SLUG }}
-
-      - name: Enable auto-merge
-        if: steps.cpr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
-          gh pr merge "$PR_NUMBER" \
+          PR_URL=$(gh pr create \
+            --repo project-llzk/llzk-rs \
+            --base main \
+            --head bot/bump-llzk-lib \
+            --title "chore: bump llzk-lib flake input" \
+            --body "$(cat <<EOF
+          Automated flake input update triggered by a push to \`project-llzk/llzk-lib@main\`.
+
+          Source commit: \`${{ github.sha }}\`
+          Source workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Auto-merge is enabled and will complete once required approval and CI checks pass.
+          EOF
+          )")
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Request core dev review on new PR
+        if: steps.update.outputs.changed == 'true' && steps.existing-pr.outputs.pr_number == ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr edit bot/bump-llzk-lib \
+            --repo project-llzk/llzk-rs \
+            --add-reviewer project-llzk/core-devs
+
+      - name: Enable auto-merge on new PR
+        if: steps.update.outputs.changed == 'true' && steps.existing-pr.outputs.pr_number == ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr merge bot/bump-llzk-lib \
             --repo project-llzk/llzk-rs \
             --auto \
             --squash
+
+      - name: Comment on existing PR update
+        if: steps.update.outputs.changed == 'true' && steps.existing-pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.existing-pr.outputs.pr_number }}
+        run: |
+          gh pr comment "$PR_NUMBER" \
+            --repo project-llzk/llzk-rs \
+            --body "Updated this PR with a new \`llzk-lib\` bump from \`${{ github.sha }}\`."
