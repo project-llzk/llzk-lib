@@ -327,6 +327,8 @@ def CallOp : FunctionDialectOp<
     custom<AttrDictWithWarnings>(attr-dict, prop-dict)
   }];
 
+  let useCustomPropertiesEncoding = 1;
+
   // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
   // call `verifyAffineMapInstantiations()`. However, in this op that check must
   // happen within `verifySymbolUses()` instead because the target FuncDefOp
