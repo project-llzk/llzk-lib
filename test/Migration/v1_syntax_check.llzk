@@ -1,0 +1,5 @@
+// RUN: llzk-opt %S/v1_syntax.llzk.bc 2>&1 | FileCheck --enable-var-scope %s
+
+// Read bytecode from `v1_syntax.llzk.bc` and check that it migrates to current dialect version.
+
+// CHECK: TODO
