@@ -51,7 +51,7 @@ jobs:
 
       - name: Check out llzk-rs main
         if: steps.existing-pr.outputs.pr_number == ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: project-llzk/llzk-rs
           token: ${{ steps.app-token.outputs.token }}
@@ -61,7 +61,7 @@ jobs:
 
       - name: Check out existing PR branch
         if: steps.existing-pr.outputs.pr_number != ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: project-llzk/llzk-rs
           token: ${{ steps.app-token.outputs.token }}
