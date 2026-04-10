@@ -1,2 +1,0 @@
-fixed:
-  - "lower benefit of `GeneralTypeReplacePattern` and similar default patterns to 0 to avoid possible ordering bug, specifically on `FuncDefOp` with pattern from `populateFunctionOpInterfaceTypeConversionPattern()`"

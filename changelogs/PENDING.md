@@ -1,0 +1,108 @@
+## v2.0.0 - 2026-04-10
+### Added
+- CAPI:
+  - '`llzkStruct_StructDefOpGetTemplateParamOpNames`'
+  - '`llzkStruct_StructDefOpGetNumTemplateParamOpNames`'
+  - '`llzkStruct_StructDefOpGetTemplateExprOpNames`'
+  - '`llzkStruct_StructDefOpGetNumTemplateExprOpNames`'
+  - '`llzkOperationIsA_Poly_TemplateOp`'
+  - '`llzkPoly_TemplateOpBuild`'
+  - '`llzkPoly_TemplateOpGetSymName`'
+  - '`llzkPoly_TemplateOpSetSymName`'
+  - '`llzkPoly_TemplateOpGetBodyRegion`'
+  - '`llzkPoly_TemplateOpHasConstParamOps`'
+  - '`llzkPoly_TemplateOpNumConstParamOps`'
+  - '`llzkPoly_TemplateOpGetConstParamNames`'
+  - '`llzkPoly_TemplateOpHasConstParamNamed`'
+  - '`llzkPoly_TemplateOpHasConstExprOps`'
+  - '`llzkPoly_TemplateOpNumConstExprOps`'
+  - '`llzkPoly_TemplateOpGetConstExprNames`'
+  - '`llzkPoly_TemplateOpHasConstExprNamed`'
+  - '`llzkOperationIsA_Poly_TemplateExprOp`'
+  - '`llzkPoly_TemplateExprOpBuild`'
+  - '`llzkPoly_TemplateExprOpGetSymName`'
+  - '`llzkPoly_TemplateExprOpSetSymName`'
+  - '`llzkPoly_TemplateExprOpGetInitializerRegion`'
+  - '`llzkPoly_TemplateExprOpGetType`'
+  - '`llzkOperationIsA_Poly_TemplateParamOp`'
+  - '`llzkPoly_TemplateParamOpBuild`'
+  - '`llzkPoly_TemplateParamOpGetSymName`'
+  - '`llzkPoly_TemplateParamOpSetSymName`'
+  - '`llzkPoly_TemplateParamOpGetTypeOpt`'
+  - '`llzkPoly_TemplateParamOpSetTypeOpt`'
+  - '`llzkOperationIsA_Poly_YieldOp`'
+  - '`llzkPoly_YieldOpBuild`'
+  - '`llzkPoly_YieldOpGetVal`'
+  - '`llzkPoly_YieldOpSetVal`'
+- CAPI:
+  - '`llzkPoly_TemplateOpGetBody`'
+- CAPI:
+  - '`llzkFelt_FeltTypeGetFromRef`'
+  - '`llzkFelt_FeltConstAttrGetInField` (use in place of old `llzkFelt_FeltConstAttrGet`)'
+  - '`llzkFelt_FeltConstAttrGetWithBitsInField` (use in place of old `llzkFelt_FeltConstAttrGetWithBits`)'
+  - '`llzkFelt_FeltConstAttrGetFromStringInField` (use in place of old `llzkFelt_FeltConstAttrGetFromString`)'
+  - '`llzkFelt_FeltConstAttrGetFromPartsInField` (use in place of old `llzkFelt_FeltConstAttrGetFromParts`)'
+- Add interval analysis support for `arith.select`, `arith.xori`, `felt.uintdiv`, `felt.sintdiv`, and `felt.bit_or`
+- Add interval analysis support for `array.new`, including empty-array roots and explicit element initializers
+- Add interval analysis support for `array.write` so later `array.read` operations can reuse written intervals
+- Add support for `bool` dialect operators to `pcl` boolean ops
+- Created `--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members
+- '`CallOp::unifyTypeSignature()` method'
+- '`podTypesUnify()` and `functionTypesUnify()` functions in `TypeHelper`'
+- '`poly.template`, `poly.param`, and `poly.expr` ops'
+- automatic IR migration from version 1.x.x to 2.0.0
+- folding implementation for bool operations
+- folding implementation for felt operations
+- functions to query symbol uses within types
+
+### Changed
+- CAPI:
+  - '`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter'
+  - replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateSymbolBindings`
+  - renamed `llzkStruct_MemberReadOpBuildWithConstParamDistance` to `llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance`
+- CAPI:
+  - changed last parameter of `llzkFelt_FeltConstAttrGet` from `MlirIdentifier` to `MlirType`
+  - changed last parameter of `llzkFelt_FeltConstAttrGetWithBits` from `MlirIdentifier` to `MlirType`
+  - changed last parameter of `llzkFelt_FeltConstAttrGetFromString` from `MlirIdentifier` to `MlirType`
+  - changed last parameter of `llzkFelt_FeltConstAttrGetFromParts` from `MlirIdentifier` to `MlirType`
+- CAPI:
+  - Rename `llzkFunction_CallOpGetCalleeType` to `llzkFunction_CallOpGetTypeSignature`
+- Augment SourceRef API
+- Changed field detection logic in IntervalAnalysis
+- Clarify `felt.div` in documentation and interval analysis
+- FeltConstAttr now directly stores the FeltType rather than field name as a StringAttr
+- 'FeltConstAttr syntax changed from `felt.const N <FIELD_NAME>` to `felt.const N : !felt.type<FIELD_NAME>`'
+- Rename `CallOp::getCalleeType()` method to `CallOp::getTypeSignature()` to clarify it's not computed from the callee
+- Rename `llzk-drop-empty-params` pass to `llzk-drop-empty-templates` and adapt it to new `poly.template` op
+- Replace constant parameters on `struct.def` with `poly.template` plus `poly.param` ops
+- Subcomponent members (i.e., `struct.member`s of `struct.type`) can no longer be marked as `signal`
+- Update `ModuleBuilder` to support `poly.template` and nested module building
+- Updated `--llzk-validate-member-writes` pass to correctly handle control flow
+- refactor `llzk::getParentOfType()` to return nullable pointer instead of FailureOr and also check for null input
+- version number updated to 2.0.0
+
+### Fixed
+- Bugs causing product program alignment to crash on the circom benchmarks
+- Don't build PCL unit tests when PCL is disabled
+- Fixed nondeterministic output bug in interval analysis
+- Fixed translation of `bool.cmp ne` op to PCL
+- Handle `llzk.nondet` ops in `llzk-to-pcl`
+- Header files of backends are now installed in the final `include` directory
+- Interval analysis lookup bug
+- Remove `ConstantLike` and `Pure` traits from `llzk.nondet`
+- Support `llzk.nondet` op in SourceRef, Interval lattices
+- Treat external `function.call` results as SourceRef roots so accesses through external-call returned values remain trackable in SourceRef-based analyses
+- Updated `signal` attribute documentation
+- duplicate symbols sometimes caused assertion failure instead of producing an error diagnostic
+- fix bug that allowed parameterized callee to target a function other than a struct function
+- lower benefit of `GeneralTypeReplacePattern` and similar default patterns to 0 to avoid possible ordering bug, specifically on `FuncDefOp` with pattern from `populateFunctionOpInterfaceTypeConversionPattern()`
+- missing nullptr check in `pod.new` type verifier
+
+### Removed
+- CAPI:
+  - '`llzkStruct_StructDefOpGetConstParams`'
+  - '`llzkStruct_StructDefOpSetConstParams`'
+  - '`llzkStruct_StructDefOpHasParamName` - use proper `llzkPoly_TemplateOp*` instead'
+- '`computeReachable()` and `constrainReachable()` functions from ModuleBuilder'
+- meaningless `add_dependencies` from cmake config files
+
