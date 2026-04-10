@@ -1,5 +1,16 @@
 ## v2.0.0 - 2026-04-10
 ### Added
+- 'Interval analysis support for `arith.select`, `arith.xori`, `felt.uintdiv`, `felt.sintdiv`, and `felt.bit_or`'
+- 'Interval analysis support for `array.new`, including empty-array roots and explicit element initializers'
+- 'Interval analysis support for `array.write` so later `array.read` operations can reuse written intervals'
+- 'Support for `bool` dialect operators to `pcl` boolean ops'
+- '`--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members'
+- '`CallOp::unifyTypeSignature()` method'
+- '`podTypesUnify()` and `functionTypesUnify()` functions in `TypeHelper`'
+- '`poly.template`, `poly.param`, and `poly.expr` ops'
+- 'Folding implementation for `bool` and `felt` operations'
+- Functions to query symbol uses within types
+- Automatic IR migration from version 1.x.x to 2.0.0
 - CAPI:
   - '`llzkStruct_StructDefOpGetTemplateParamOpNames`'
   - '`llzkStruct_StructDefOpGetNumTemplateParamOpNames`'
@@ -9,6 +20,7 @@
   - '`llzkPoly_TemplateOpBuild`'
   - '`llzkPoly_TemplateOpGetSymName`'
   - '`llzkPoly_TemplateOpSetSymName`'
+  - '`llzkPoly_TemplateOpGetBody`'
   - '`llzkPoly_TemplateOpGetBodyRegion`'
   - '`llzkPoly_TemplateOpHasConstParamOps`'
   - '`llzkPoly_TemplateOpNumConstParamOps`'
@@ -34,39 +46,13 @@
   - '`llzkPoly_YieldOpBuild`'
   - '`llzkPoly_YieldOpGetVal`'
   - '`llzkPoly_YieldOpSetVal`'
-- CAPI:
-  - '`llzkPoly_TemplateOpGetBody`'
-- CAPI:
   - '`llzkFelt_FeltTypeGetFromRef`'
   - '`llzkFelt_FeltConstAttrGetInField` (use in place of old `llzkFelt_FeltConstAttrGet`)'
   - '`llzkFelt_FeltConstAttrGetWithBitsInField` (use in place of old `llzkFelt_FeltConstAttrGetWithBits`)'
   - '`llzkFelt_FeltConstAttrGetFromStringInField` (use in place of old `llzkFelt_FeltConstAttrGetFromString`)'
   - '`llzkFelt_FeltConstAttrGetFromPartsInField` (use in place of old `llzkFelt_FeltConstAttrGetFromParts`)'
-- Add interval analysis support for `arith.select`, `arith.xori`, `felt.uintdiv`, `felt.sintdiv`, and `felt.bit_or`
-- Add interval analysis support for `array.new`, including empty-array roots and explicit element initializers
-- Add interval analysis support for `array.write` so later `array.read` operations can reuse written intervals
-- Add support for `bool` dialect operators to `pcl` boolean ops
-- Created `--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members
-- '`CallOp::unifyTypeSignature()` method'
-- '`podTypesUnify()` and `functionTypesUnify()` functions in `TypeHelper`'
-- '`poly.template`, `poly.param`, and `poly.expr` ops'
-- automatic IR migration from version 1.x.x to 2.0.0
-- folding implementation for bool operations
-- folding implementation for felt operations
-- functions to query symbol uses within types
 
 ### Changed
-- CAPI:
-  - '`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter'
-  - replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateSymbolBindings`
-  - renamed `llzkStruct_MemberReadOpBuildWithConstParamDistance` to `llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance`
-- CAPI:
-  - changed last parameter of `llzkFelt_FeltConstAttrGet` from `MlirIdentifier` to `MlirType`
-  - changed last parameter of `llzkFelt_FeltConstAttrGetWithBits` from `MlirIdentifier` to `MlirType`
-  - changed last parameter of `llzkFelt_FeltConstAttrGetFromString` from `MlirIdentifier` to `MlirType`
-  - changed last parameter of `llzkFelt_FeltConstAttrGetFromParts` from `MlirIdentifier` to `MlirType`
-- CAPI:
-  - Rename `llzkFunction_CallOpGetCalleeType` to `llzkFunction_CallOpGetTypeSignature`
 - Augment SourceRef API
 - Changed field detection logic in IntervalAnalysis
 - Clarify `felt.div` in documentation and interval analysis
@@ -78,8 +64,17 @@
 - Subcomponent members (i.e., `struct.member`s of `struct.type`) can no longer be marked as `signal`
 - Update `ModuleBuilder` to support `poly.template` and nested module building
 - Updated `--llzk-validate-member-writes` pass to correctly handle control flow
-- refactor `llzk::getParentOfType()` to return nullable pointer instead of FailureOr and also check for null input
-- version number updated to 2.0.0
+- Refactor `llzk::getParentOfType()` to return nullable pointer instead of FailureOr and also check for null input
+- Version number updated to 2.0.0
+- CAPI:
+  - '`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter'
+  - Replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateSymbolBindings`
+  - Renamed `llzkStruct_MemberReadOpBuildWithConstParamDistance` to `llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGet` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetWithBits` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetFromString` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetFromParts` from `MlirIdentifier` to `MlirType`
+  - Rename `llzkFunction_CallOpGetCalleeType` to `llzkFunction_CallOpGetTypeSignature`
 
 ### Fixed
 - Bugs causing product program alignment to crash on the circom benchmarks
@@ -93,16 +88,15 @@
 - Support `llzk.nondet` op in SourceRef, Interval lattices
 - Treat external `function.call` results as SourceRef roots so accesses through external-call returned values remain trackable in SourceRef-based analyses
 - Updated `signal` attribute documentation
-- duplicate symbols sometimes caused assertion failure instead of producing an error diagnostic
-- fix bug that allowed parameterized callee to target a function other than a struct function
-- lower benefit of `GeneralTypeReplacePattern` and similar default patterns to 0 to avoid possible ordering bug, specifically on `FuncDefOp` with pattern from `populateFunctionOpInterfaceTypeConversionPattern()`
-- missing nullptr check in `pod.new` type verifier
+- Duplicate symbols sometimes caused assertion failure instead of producing an error diagnostic
+- Fix bug that allowed parameterized callee to target a function other than a struct function
+- Lower benefit of `GeneralTypeReplacePattern` and similar default patterns to 0 to avoid possible ordering bug, specifically on `FuncDefOp` with pattern from `populateFunctionOpInterfaceTypeConversionPattern()`
+- Missing nullptr check in `pod.new` type verifier
 
 ### Removed
+- '`computeReachable()` and `constrainReachable()` functions from ModuleBuilder'
+- meaningless `add_dependencies` from cmake config files
 - CAPI:
   - '`llzkStruct_StructDefOpGetConstParams`'
   - '`llzkStruct_StructDefOpSetConstParams`'
   - '`llzkStruct_StructDefOpHasParamName` - use proper `llzkPoly_TemplateOp*` instead'
-- '`computeReachable()` and `constrainReachable()` functions from ModuleBuilder'
-- meaningless `add_dependencies` from cmake config files
-
