@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;1.1.5</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;2.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -112,8 +112,9 @@ $(function(){initNavTree('structllzk_1_1LLZKDialectBytecodeInterface.html','',''
 <table class="directory">
   <tr class="even"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#ad3b46fd55fe8865fb43dd6923a86c0b5">LLZKDialectBytecodeInterface</a>(mlir::Dialect *dia)</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr class="odd"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#a1bec72a5c477ecc2422fec411ae99e43">readVersion</a>(mlir::DialectBytecodeReader &amp;reader) const override</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#a2e480a7eef87d6ed174906863ec794c6">upgradeFromVersion</a>(mlir::Operation *topLevelOp, const mlir::DialectVersion &amp;version) const override</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="odd"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#aafabdbbceef8d9f14ae8652b35c1aee5">writeVersion</a>(mlir::DialectBytecodeWriter &amp;writer) const override</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#a18418dd87b2b0aa8247e414abceecae3">upgradeFromVersion</a>(mlir::Operation *rootOp, const mlir::DialectVersion &amp;version) const final</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="odd"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#a10ec2818e60eab70eef6563d1c936b8d">upgradeFromVersion</a>(mlir::Operation *rootOp, const LLZKDialectVersion &amp;current, const LLZKDialectVersion &amp;requested) const</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">virtual</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html#aafabdbbceef8d9f14ae8652b35c1aee5">writeVersion</a>(mlir::DialectBytecodeWriter &amp;writer) const override</td><td class="entry"><a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
 </table></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

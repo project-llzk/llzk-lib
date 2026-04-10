@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;1.1.5</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;2.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -221,6 +221,8 @@ Classes</h2></td></tr>
 <tr class="memitem:NonDetOp" id="r_NonDetOp"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1NonDetOp.html">NonDetOp</a></td></tr>
 <tr class="memitem:NonDetOpAdaptor" id="r_NonDetOpAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1NonDetOpAdaptor.html">NonDetOpAdaptor</a></td></tr>
 <tr class="memitem:NonDetOpGenericAdaptor" id="r_NonDetOpGenericAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1NonDetOpGenericAdaptor.html">NonDetOpGenericAdaptor</a></td></tr>
+<tr class="memitem:OpClassesWithStructTypes" id="r_OpClassesWithStructTypes"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><b>OpClassesWithStructTypes</b></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lists all LLZK op classes that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> in their results or attributes. <br /></td></tr>
 <tr class="memitem:OpHash" id="r_OpHash"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1OpHash.html">OpHash</a></td></tr>
 <tr class="memitem:OpLocationLess" id="r_OpLocationLess"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1OpLocationLess.html">OpLocationLess</a></td></tr>
 <tr class="memitem:PolyLoweringPassOptions" id="r_PolyLoweringPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1PolyLoweringPassOptions.html">PolyLoweringPassOptions</a></td></tr>
@@ -539,6 +541,14 @@ Functions</h2></td></tr>
 <tr class="memitem:ac26809b0165de690450423f29240339b" id="r_ac26809b0165de690450423f29240339b"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac26809b0165de690450423f29240339b">parseTemplateParams</a> (mlir::AsmParser &amp;parser, mlir::ArrayAttr &amp;value)</td></tr>
 <tr class="memitem:a28bea81a49cf839e3359ecd4980bc375" id="r_a28bea81a49cf839e3359ecd4980bc375"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a28bea81a49cf839e3359ecd4980bc375">printTemplateParams</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayAttr value)</td></tr>
 <tr class="memitem:a1b94afdbbfc3d9cbb416cae2df62e1f0" id="r_a1b94afdbbfc3d9cbb416cae2df62e1f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1b94afdbbfc3d9cbb416cae2df62e1f0">printTemplateParams</a> (mlir::AsmPrinter &amp;printer, void *, mlir::ArrayAttr value)</td></tr>
+<tr class="memitem:af3181672011649b0e7987f2ae2453386" id="r_af3181672011649b0e7987f2ae2453386"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af3181672011649b0e7987f2ae2453386">defaultLegalityCheck</a> (const mlir::TypeConverter &amp;tyConv, mlir::Operation *op)</td></tr>
+<tr class="memdesc:af3181672011649b0e7987f2ae2453386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether an op is legal with respect to the given type converter, including TypeAttr attributes (with special handling for FunctionType stored inside a TypeAttr).  <br /></td></tr>
+<tr class="memitem:a1427f2f608259bf0a8ccfac39383aa89" id="r_a1427f2f608259bf0a8ccfac39383aa89"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </td></tr>
+<tr class="memitem:a1427f2f608259bf0a8ccfac39383aa89 template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp</a> (Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</td></tr>
+<tr class="memdesc:a1427f2f608259bf0a8ccfac39383aa89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper for <span class="tt">PatternRewriter::replaceOpWithNewOp()</span> that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the op in ODS).  <br /></td></tr>
+<tr class="memitem:aaa4a11b9841dc711843a40d178fea482" id="r_aaa4a11b9841dc711843a40d178fea482"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses&gt; </td></tr>
+<tr class="memitem:aaa4a11b9841dc711843a40d178fea482 template"><td class="memItemLeft" align="right" valign="top">mlir::RewritePatternSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
+<tr class="memdesc:aaa4a11b9841dc711843a40d178fea482"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> covering all LLZK op types that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a>.  <br /></td></tr>
 <tr class="memitem:a4f2a7298c40bf845f96f54b518a68dfe" id="r_a4f2a7298c40bf845f96f54b518a68dfe"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4f2a7298c40bf845f96f54b518a68dfe">alignStartingAt</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> root, mlir::SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a> &amp;equivalence)</td></tr>
 <tr class="memitem:ad809d2a8931e263f7879703211032d0d" id="r_ad809d2a8931e263f7879703211032d0d"><td class="memItemLeft" align="right" valign="top">mlir::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad809d2a8931e263f7879703211032d0d">rebuildExprInCompute</a> (mlir::Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> computeFunc, mlir::OpBuilder &amp;builder, llvm::DenseMap&lt; mlir::Value, mlir::Value &gt; &amp;memo)</td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
@@ -2791,6 +2801,39 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKUnusedDeclarationEliminationPass_8cpp_source.html#l00234">234</a> of file <a class="el" href="LLZKUnusedDeclarationEliminationPass_8cpp_source.html">LLZKUnusedDeclarationEliminationPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="af3181672011649b0e7987f2ae2453386" name="af3181672011649b0e7987f2ae2453386"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3181672011649b0e7987f2ae2453386">&#9670;&#160;</a></span>defaultLegalityCheck()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::defaultLegalityCheck </td>
+          <td>(</td>
+          <td class="paramtype">const mlir::TypeConverter &amp;</td>          <td class="paramname"><span class="paramname"><em>tyConv</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Check whether an op is legal with respect to the given type converter, including TypeAttr attributes (with special handling for FunctionType stored inside a TypeAttr). </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeConversionPatterns_8h_source.html#l00043">43</a> of file <a class="el" href="TypeConversionPatterns_8h_source.html">TypeConversionPatterns.h</a>.</p>
 
 </div>
 </div>
@@ -5862,6 +5905,48 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
 
 </div>
 </div>
+<a id="aaa4a11b9841dc711843a40d178fea482" name="aaa4a11b9841dc711843a40d178fea482"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa4a11b9841dc711843a40d178fea482">&#9670;&#160;</a></span>newGeneralRewritePatternSet()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename... AdditionalOpClasses&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::RewritePatternSet llzk::newGeneralRewritePatternSet </td>
+          <td>(</td>
+          <td class="paramtype">mlir::TypeConverter &amp;</td>          <td class="paramname"><span class="paramname"><em>tyConv</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ConversionTarget &amp;</td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return a new <span class="tt">RewritePatternSet</span> covering all LLZK op types that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a>. </p>
+<p>All fallback patterns use benefit 0 so higher-benefit patterns can override if needed.</p>
+<p>The <span class="tt">GeneralTypeReplacePattern</span> is used for all classes in <span class="tt">AdditionalOpClasses</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeConversionPatterns_8h_source.html#l00240">240</a> of file <a class="el" href="TypeConversionPatterns_8h_source.html">TypeConversionPatterns.h</a>.</p>
+
+</div>
+</div>
 <a id="aebb77a8bf5d05c1fa010e41374f8de17" name="aebb77a8bf5d05c1fa010e41374f8de17"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aebb77a8bf5d05c1fa010e41374f8de17">&#9670;&#160;</a></span>notOp()</h2>
 
@@ -8244,6 +8329,46 @@ template&lt;typename ConcreteOp&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00245">245</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a1427f2f608259bf0a8ccfac39383aa89" name="a1427f2f608259bf0a8ccfac39383aa89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1427f2f608259bf0a8ccfac39383aa89">&#9670;&#160;</a></span>replaceOpWithNewOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">OpClass llzk::replaceOpWithNewOp </td>
+          <td>(</td>
+          <td class="paramtype">Rewriter &amp;</td>          <td class="paramname"><span class="paramname"><em>rewriter</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Args &amp;&amp;...</td>          <td class="paramname"><span class="paramname"><em>args</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Wrapper for <span class="tt">PatternRewriter::replaceOpWithNewOp()</span> that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the op in ODS). </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeConversionPatterns_8h_source.html#l00071">71</a> of file <a class="el" href="TypeConversionPatterns_8h_source.html">TypeConversionPatterns.h</a>.</p>
 
 </div>
 </div>

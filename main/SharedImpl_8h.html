@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;1.1.5</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;2.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -119,8 +119,8 @@ $(function(){initNavTree('SharedImpl_8h.html','',''); });
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="AttributeHelper_8h_source.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeConversionPatterns_8h_source.html">llzk/Dialect/Shared/TypeConversionPatterns.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
@@ -138,7 +138,7 @@ $(function(){initNavTree('SharedImpl_8h.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SharedImpl.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__incl.svg" width="5264" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__incl.svg" width="3807" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -150,9 +150,6 @@ This graph shows which files directly or indirectly include this file:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AGeneralTypeReplacePattern_3C_20OpClass_20_3E" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AGeneralTypeReplacePattern_3C_20OpClass_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">llzk::polymorphic::detail::GeneralTypeReplacePattern&lt; OpClass &gt;</a></td></tr>
-<tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ACreateArrayOpClassReplacePattern" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ACreateArrayOpClassReplacePattern"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CreateArrayOpClassReplacePattern.html">llzk::polymorphic::detail::CreateArrayOpClassReplacePattern</a></td></tr>
-<tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ACallOpClassReplacePattern" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ACallOpClassReplacePattern"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CallOpClassReplacePattern.html">llzk::polymorphic::detail::CallOpClassReplacePattern</a></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ALegalityCheckCallback" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ALegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">llzk::polymorphic::detail::LegalityCheckCallback</a></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AEmptyLegalityCheckCallback" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AEmptyLegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html">llzk::polymorphic::detail::EmptyLegalityCheckCallback</a></td></tr>
 </table><table class="memberdecls">
@@ -168,12 +165,6 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ac4e215d27e901a09169132a82f3feb3c" id="r_ac4e215d27e901a09169132a82f3feb3c"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </td></tr>
-<tr class="memitem:ac4e215d27e901a09169132a82f3feb3c template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#ac4e215d27e901a09169132a82f3feb3c">llzk::polymorphic::detail::replaceOpWithNewOp</a> (Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</td></tr>
-<tr class="memdesc:ac4e215d27e901a09169132a82f3feb3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the Op in ODS).  <br /></td></tr>
-<tr class="memitem:a3e3237f59e7426aaaed9979a8fedad36" id="r_a3e3237f59e7426aaaed9979a8fedad36"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses&gt; </td></tr>
-<tr class="memitem:a3e3237f59e7426aaaed9979a8fedad36 template"><td class="memItemLeft" align="right" valign="top">mlir::RewritePatternSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a3e3237f59e7426aaaed9979a8fedad36">llzk::polymorphic::detail::newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
-<tr class="memdesc:a3e3237f59e7426aaaed9979a8fedad36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all classes in <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span> and also includes default patterns for classes in <span class="tt">OpClassesWithStructTypes.NoGeneralBuilder</span>.  <br /></td></tr>
 <tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#afa4db6a4baedb109176585c4bfc46e48">llzk::polymorphic::detail::newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386" id="r_a49b3116406d5104fcf8b37bed9f1f386"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </td></tr>

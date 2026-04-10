@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;1.1.5</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;2.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -105,15 +105,28 @@ $(function(){initNavTree('Struct_2IR_2Dialect_8cpp.html','',''); });
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a> &#124;
 <a href="#define-members">Macros</a>  </div>
   <div class="headertitle"><div class="title">Dialect.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Struct_2IR_2Dialect_8h_source.html">llzk/Dialect/Struct/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Versioning_8h_source.html">llzk/Dialect/LLZK/IR/Versioning.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeConversionPatterns_8h_source.html">llzk/Dialect/Shared/TypeConversionPatterns.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Types_8h_source.html">llzk/Dialect/Struct/IR/Types.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="SymbolHelper_8h_source.html">llzk/Util/SymbolHelper.h</a>&quot;</code><br />
+<code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
+<code>#include &lt;mlir/IR/BuiltinTypes.h&gt;</code><br />
 <code>#include &lt;mlir/IR/DialectImplementation.h&gt;</code><br />
+<code>#include &lt;mlir/Transforms/DialectConversion.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/TypeSwitch.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Dialect_8cpp_8inc_source.html">llzk/Dialect/Struct/IR/Dialect.cpp.inc</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Types_8cpp_8inc_source.html">llzk/Dialect/Struct/IR/Types.cpp.inc</a>&quot;</code><br />
@@ -121,11 +134,21 @@ $(function(){initNavTree('Struct_2IR_2Dialect_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Dialect.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Struct_2IR_2Dialect_8cpp__incl.svg" width="3750" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Struct_2IR_2Dialect_8cpp__incl.svg" width="3211" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Struct_2IR_2Dialect_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:llzk_3A_3Acomponent_3A_3AStructDialectBytecodeInterface" id="r_llzk_3A_3Acomponent_3A_3AStructDialectBytecodeInterface"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1component_1_1StructDialectBytecodeInterface.html">llzk::component::StructDialectBytecodeInterface</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implement version upgrade for <a class="el" href="classllzk_1_1component_1_1StructDialect.html">StructDialect</a>.  <a href="structllzk_1_1component_1_1StructDialectBytecodeInterface.html#details">More...</a><br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
+<tr class="memitem:llzk_3A_3Acomponent" id="r_llzk_3A_3Acomponent"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1component.html">llzk::component</a></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a69e2a4688847620f9e0b19eb7d719156" id="r_a69e2a4688847620f9e0b19eb7d719156"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a69e2a4688847620f9e0b19eb7d719156">GET_TYPEDEF_CLASSES</a></td></tr>
@@ -159,7 +182,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Dialect_8cpp_source.html#l00023">23</a> of file <a class="el" href="Struct_2IR_2Dialect_8cpp_source.html">Dialect.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Dialect_8cpp_source.html#l00034">34</a> of file <a class="el" href="Struct_2IR_2Dialect_8cpp_source.html">Dialect.cpp</a>.</p>
 
 </div>
 </div>

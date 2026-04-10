@@ -139,6 +139,7 @@ var annotated_dup =
         [ "StructDefOpAdaptor", "classllzk_1_1component_1_1StructDefOpAdaptor.html", "classllzk_1_1component_1_1StructDefOpAdaptor" ],
         [ "StructDefOpGenericAdaptor", "classllzk_1_1component_1_1StructDefOpGenericAdaptor.html", "classllzk_1_1component_1_1StructDefOpGenericAdaptor" ],
         [ "StructDialect", "classllzk_1_1component_1_1StructDialect.html", "classllzk_1_1component_1_1StructDialect" ],
+        [ "StructDialectBytecodeInterface", "structllzk_1_1component_1_1StructDialectBytecodeInterface.html", "structllzk_1_1component_1_1StructDialectBytecodeInterface" ],
         [ "StructType", "classllzk_1_1component_1_1StructType.html", "classllzk_1_1component_1_1StructType" ]
       ] ],
       [ "constrain", "namespacellzk_1_1constrain.html", [
@@ -340,11 +341,8 @@ var annotated_dup =
       [ "polymorphic", "namespacellzk_1_1polymorphic.html", [
         [ "detail", "namespacellzk_1_1polymorphic_1_1detail.html", [
           [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
-          [ "CallOpClassReplacePattern", "classllzk_1_1polymorphic_1_1detail_1_1CallOpClassReplacePattern.html", "classllzk_1_1polymorphic_1_1detail_1_1CallOpClassReplacePattern" ],
           [ "ConstReadOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase" ],
-          [ "CreateArrayOpClassReplacePattern", "classllzk_1_1polymorphic_1_1detail_1_1CreateArrayOpClassReplacePattern.html", "classllzk_1_1polymorphic_1_1detail_1_1CreateArrayOpClassReplacePattern" ],
           [ "EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback" ],
-          [ "GeneralTypeReplacePattern", "classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html", "classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern" ],
           [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
           [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
           [ "TemplateOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase" ],

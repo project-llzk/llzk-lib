@@ -28,6 +28,8 @@ var NAVTREEINDEX12 =
 "TypeCAPIGen_8cpp_source.html":[13,0,4,3,15],
 "TypeCAPITestGen_8cpp.html":[13,0,4,3,16],
 "TypeCAPITestGen_8cpp_source.html":[13,0,4,3,16],
+"TypeConversionPatterns_8h.html":[13,0,2,0,2,11,4],
+"TypeConversionPatterns_8h_source.html":[13,0,2,0,2,11,4],
 "TypeHelper_8cpp.html":[13,0,3,5,7],
 "TypeHelper_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,5,7,1],
 "TypeHelper_8cpp_source.html":[13,0,3,5,7],
@@ -247,7 +249,5 @@ var NAVTREEINDEX12 =
 "classllzk_1_1CallGraphNode_1_1Edge.html#aa8725e060f0941e6831b266507c101f9":[10,0,2,23,0,3],
 "classllzk_1_1CallGraphNode_1_1Edge.html#aa8725e060f0941e6831b266507c101f9":[12,0,1,20,0,3],
 "classllzk_1_1CallGraphNode_1_1Edge.html#acf84371a995da42becbcda5585f063a4":[10,0,2,23,0,0],
-"classllzk_1_1CallGraphNode_1_1Edge.html#acf84371a995da42becbcda5585f063a4":[12,0,1,20,0,0],
-"classllzk_1_1CallGraphNode_1_1Edge.html#ad12a53b7043b8c3f8b90d6b8db66d990":[10,0,2,23,0,2],
-"classllzk_1_1CallGraphNode_1_1Edge.html#ad12a53b7043b8c3f8b90d6b8db66d990":[12,0,1,20,0,2]
+"classllzk_1_1CallGraphNode_1_1Edge.html#acf84371a995da42becbcda5585f063a4":[12,0,1,20,0,0]
 };

@@ -75,6 +75,9 @@ var hierarchy =
     ] ],
     [ "llzk::BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
     [ "mlir::BytecodeDialectInterface", null, [
+      [ "llzk::LLZKDialectBytecodeInterface< StructDialect >", "structllzk_1_1LLZKDialectBytecodeInterface.html", [
+        [ "llzk::component::StructDialectBytecodeInterface", "structllzk_1_1component_1_1StructDialectBytecodeInterface.html", null ]
+      ] ],
       [ "llzk::LLZKDialectBytecodeInterface< DialectTy >", "structllzk_1_1LLZKDialectBytecodeInterface.html", null ]
     ] ],
     [ "llzk::CallGraph", "classllzk_1_1CallGraph.html", null ],
@@ -568,11 +571,6 @@ var hierarchy =
       [ "llzk::polymorphic::UnifiableCastOp", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html", null ],
       [ "llzk::polymorphic::YieldOp", "classllzk_1_1polymorphic_1_1YieldOp.html", null ],
       [ "llzk::string::LitStringOp", "classllzk_1_1string_1_1LitStringOp.html", null ]
-    ] ],
-    [ "mlir::OpConversionPattern", null, [
-      [ "llzk::polymorphic::detail::CallOpClassReplacePattern", "classllzk_1_1polymorphic_1_1detail_1_1CallOpClassReplacePattern.html", null ],
-      [ "llzk::polymorphic::detail::CreateArrayOpClassReplacePattern", "classllzk_1_1polymorphic_1_1detail_1_1CreateArrayOpClassReplacePattern.html", null ],
-      [ "llzk::polymorphic::detail::GeneralTypeReplacePattern< OpClass >", "classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html", null ]
     ] ],
     [ "mlir::OperationPass", null, [
       [ "llzk::impl::CallGraphPrinterPassBase< CallGraphPrinterPass >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", [

@@ -20,6 +20,7 @@ var namespacellzk_1_1component =
     [ "StructDefOpAdaptor", "classllzk_1_1component_1_1StructDefOpAdaptor.html", "classllzk_1_1component_1_1StructDefOpAdaptor" ],
     [ "StructDefOpGenericAdaptor", "classllzk_1_1component_1_1StructDefOpGenericAdaptor.html", "classllzk_1_1component_1_1StructDefOpGenericAdaptor" ],
     [ "StructDialect", "classllzk_1_1component_1_1StructDialect.html", "classllzk_1_1component_1_1StructDialect" ],
+    [ "StructDialectBytecodeInterface", "structllzk_1_1component_1_1StructDialectBytecodeInterface.html", "structllzk_1_1component_1_1StructDialectBytecodeInterface" ],
     [ "StructType", "classllzk_1_1component_1_1StructType.html", "classllzk_1_1component_1_1StructType" ],
     [ "checkSelfType", "namespacellzk_1_1component.html#a275b6e87c8fda84b470c5da478fc1203", null ],
     [ "checkSelfType", "namespacellzk_1_1component.html#a8c211e6cb7a97e4702d2f47c90b5021c", null ],

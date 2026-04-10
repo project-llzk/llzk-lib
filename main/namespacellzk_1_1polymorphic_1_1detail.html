@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;1.1.5</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;2.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -114,11 +114,8 @@ $(function(){initNavTree('namespacellzk_1_1polymorphic_1_1detail.html','',''); }
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:ApplyMapOpGenericAdaptorBase" id="r_ApplyMapOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html">ApplyMapOpGenericAdaptorBase</a></td></tr>
-<tr class="memitem:CallOpClassReplacePattern" id="r_CallOpClassReplacePattern"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CallOpClassReplacePattern.html">CallOpClassReplacePattern</a></td></tr>
 <tr class="memitem:ConstReadOpGenericAdaptorBase" id="r_ConstReadOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html">ConstReadOpGenericAdaptorBase</a></td></tr>
-<tr class="memitem:CreateArrayOpClassReplacePattern" id="r_CreateArrayOpClassReplacePattern"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CreateArrayOpClassReplacePattern.html">CreateArrayOpClassReplacePattern</a></td></tr>
 <tr class="memitem:EmptyLegalityCheckCallback" id="r_EmptyLegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html">EmptyLegalityCheckCallback</a></td></tr>
-<tr class="memitem:GeneralTypeReplacePattern" id="r_GeneralTypeReplacePattern"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></td></tr>
 <tr class="memitem:LegalityCheckCallback" id="r_LegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">LegalityCheckCallback</a></td></tr>
 <tr class="memitem:TemplateExprOpGenericAdaptorBase" id="r_TemplateExprOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html">TemplateExprOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:TemplateOpGenericAdaptorBase" id="r_TemplateOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html">TemplateOpGenericAdaptorBase</a></td></tr>
@@ -131,12 +128,6 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ac4e215d27e901a09169132a82f3feb3c" id="r_ac4e215d27e901a09169132a82f3feb3c"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </td></tr>
-<tr class="memitem:ac4e215d27e901a09169132a82f3feb3c template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac4e215d27e901a09169132a82f3feb3c">replaceOpWithNewOp</a> (Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</td></tr>
-<tr class="memdesc:ac4e215d27e901a09169132a82f3feb3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the Op in ODS).  <br /></td></tr>
-<tr class="memitem:a3e3237f59e7426aaaed9979a8fedad36" id="r_a3e3237f59e7426aaaed9979a8fedad36"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses&gt; </td></tr>
-<tr class="memitem:a3e3237f59e7426aaaed9979a8fedad36 template"><td class="memItemLeft" align="right" valign="top">mlir::RewritePatternSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3e3237f59e7426aaaed9979a8fedad36">newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
-<tr class="memdesc:a3e3237f59e7426aaaed9979a8fedad36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all classes in <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span> and also includes default patterns for classes in <span class="tt">OpClassesWithStructTypes.NoGeneralBuilder</span>.  <br /></td></tr>
 <tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa4db6a4baedb109176585c4bfc46e48">newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386" id="r_a49b3116406d5104fcf8b37bed9f1f386"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </td></tr>
@@ -197,7 +188,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>. </p>
 <p>Additional legality checks can be included for certain ops that will run along with the default check. For an op to be considered legal all checks (default plus additional checks if any) must return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00297">297</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00081">81</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -235,80 +226,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>. </p>
 <p>Additional legality checks can be included for certain ops that will run along with the default check. For an op to be considered legal all checks (default plus additional checks if any) must return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00313">313</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
-
-</div>
-</div>
-<a id="a3e3237f59e7426aaaed9979a8fedad36" name="a3e3237f59e7426aaaed9979a8fedad36"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e3237f59e7426aaaed9979a8fedad36">&#9670;&#160;</a></span>newGeneralRewritePatternSet()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename... AdditionalOpClasses&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">mlir::RewritePatternSet llzk::polymorphic::detail::newGeneralRewritePatternSet </td>
-          <td>(</td>
-          <td class="paramtype">mlir::TypeConverter &amp;</td>          <td class="paramname"><span class="paramname"><em>tyConv</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mlir::ConversionTarget &amp;</td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return a new <span class="tt">RewritePatternSet</span> that includes a <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> for all classes in <span class="tt">OpClassesWithStructTypes.WithGeneralBuilder</span> and <span class="tt">AdditionalOpClasses</span> and also includes default patterns for classes in <span class="tt">OpClassesWithStructTypes.NoGeneralBuilder</span>. </p>
-<p>Note: <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1GeneralTypeReplacePattern.html">GeneralTypeReplacePattern</a></span> uses benefit 0 so additional patterns with a higher priority can be added for any of the Ops already included and that will take precedence. </p>
-
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00255">255</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
-
-</div>
-</div>
-<a id="ac4e215d27e901a09169132a82f3feb3c" name="ac4e215d27e901a09169132a82f3feb3c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac4e215d27e901a09169132a82f3feb3c">&#9670;&#160;</a></span>replaceOpWithNewOp()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">OpClass llzk::polymorphic::detail::replaceOpWithNewOp </td>
-          <td>(</td>
-          <td class="paramtype">Rewriter &amp;</td>          <td class="paramname"><span class="paramname"><em>rewriter</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">Args &amp;&amp;...</td>          <td class="paramname"><span class="paramname"><em>args</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Wrapper for PatternRewriter.replaceOpWithNewOp() that automatically copies discardable attributes (i.e., attributes other than those specifically defined as part of the Op in ODS). </p>
-
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00130">130</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00097">97</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>

@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;1.1.5</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;2.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -133,14 +133,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aafabdbbceef8d9f14ae8652b35c1aee5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes the current version of the LLZK-lib to the given writer.  <br /></td></tr>
 <tr class="memitem:a1bec72a5c477ecc2422fec411ae99e43" id="r_a1bec72a5c477ecc2422fec411ae99e43"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::DialectVersion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1bec72a5c477ecc2422fec411ae99e43">readVersion</a> (mlir::DialectBytecodeReader &amp;reader) const override</td></tr>
 <tr class="memdesc:a1bec72a5c477ecc2422fec411ae99e43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the version of this dialect from the provided reader and return it as a <span class="tt">unique_ptr</span> to a dialect version object (or nullptr on failure).  <br /></td></tr>
-<tr class="memitem:a2e480a7eef87d6ed174906863ec794c6" id="r_a2e480a7eef87d6ed174906863ec794c6"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2e480a7eef87d6ed174906863ec794c6">upgradeFromVersion</a> (mlir::Operation *topLevelOp, const mlir::DialectVersion &amp;version) const override</td></tr>
-<tr class="memdesc:a2e480a7eef87d6ed174906863ec794c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hook invoked after parsing completed, if a version directive was present and included an entry for the current dialect.  <br /></td></tr>
+<tr class="memitem:a18418dd87b2b0aa8247e414abceecae3" id="r_a18418dd87b2b0aa8247e414abceecae3"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a18418dd87b2b0aa8247e414abceecae3">upgradeFromVersion</a> (mlir::Operation *rootOp, const mlir::DialectVersion &amp;version) const final</td></tr>
+<tr class="memdesc:a18418dd87b2b0aa8247e414abceecae3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hook invoked for each custom dialect after parsing is completed if a version directive was present and included an entry for the current dialect.  <br /></td></tr>
+<tr class="memitem:a10ec2818e60eab70eef6563d1c936b8d" id="r_a10ec2818e60eab70eef6563d1c936b8d"><td class="memItemLeft" align="right" valign="top">virtual mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a10ec2818e60eab70eef6563d1c936b8d">upgradeFromVersion</a> (mlir::Operation *rootOp, const <a class="el" href="structllzk_1_1LLZKDialectVersion.html">LLZKDialectVersion</a> &amp;current, const <a class="el" href="structllzk_1_1LLZKDialectVersion.html">LLZKDialectVersion</a> &amp;requested) const</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DialectTy&gt;<br />
 struct llzk::LLZKDialectBytecodeInterface&lt; DialectTy &gt;</div><p>This implements the bytecode interface for the LLZK dialect. </p>
 
-<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00036">36</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00040">40</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ad3b46fd55fe8865fb43dd6923a86c0b5" name="ad3b46fd55fe8865fb43dd6923a86c0b5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad3b46fd55fe8865fb43dd6923a86c0b5">&#9670;&#160;</a></span>LLZKDialectBytecodeInterface()</h2>
@@ -167,7 +168,7 @@ template&lt;typename DialectTy&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00038">38</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00042">42</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 
 </div>
 </div>
@@ -199,12 +200,50 @@ template&lt;typename DialectTy&gt; </div>
 
 <p>Read the version of this dialect from the provided reader and return it as a <span class="tt">unique_ptr</span> to a dialect version object (or nullptr on failure). </p>
 
-<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00055">55</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00059">59</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 
 </div>
 </div>
-<a id="a2e480a7eef87d6ed174906863ec794c6" name="a2e480a7eef87d6ed174906863ec794c6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2e480a7eef87d6ed174906863ec794c6">&#9670;&#160;</a></span>upgradeFromVersion()</h2>
+<a id="a10ec2818e60eab70eef6563d1c936b8d" name="a10ec2818e60eab70eef6563d1c936b8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a10ec2818e60eab70eef6563d1c936b8d">&#9670;&#160;</a></span>upgradeFromVersion() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DialectTy&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual mlir::LogicalResult <a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface</a>&lt; DialectTy &gt;::upgradeFromVersion </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>rootOp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structllzk_1_1LLZKDialectVersion.html">LLZKDialectVersion</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>current</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structllzk_1_1LLZKDialectVersion.html">LLZKDialectVersion</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>requested</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00087">87</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+
+</div>
+</div>
+<a id="a18418dd87b2b0aa8247e414abceecae3" name="a18418dd87b2b0aa8247e414abceecae3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18418dd87b2b0aa8247e414abceecae3">&#9670;&#160;</a></span>upgradeFromVersion() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -217,7 +256,7 @@ template&lt;typename DialectTy&gt; </div>
         <tr>
           <td class="memname">mlir::LogicalResult <a class="el" href="structllzk_1_1LLZKDialectBytecodeInterface.html">llzk::LLZKDialectBytecodeInterface</a>&lt; DialectTy &gt;::upgradeFromVersion </td>
           <td>(</td>
-          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>topLevelOp</em></span>, </td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>rootOp</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -227,15 +266,15 @@ template&lt;typename DialectTy&gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel override">override</span></span>  </td>
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel final">final</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Hook invoked after parsing completed, if a version directive was present and included an entry for the current dialect. </p>
-<p>This hook offers the opportunity to the dialect to visit the IR and upgrades constructs emitted by the version of the dialect corresponding to the provided version. </p>
+<p>Hook invoked for each custom dialect after parsing is completed if a version directive was present and included an entry for the current dialect. </p>
+<p>This hook offers the opportunity for the dialect to visit the IR and upgrade constructs emitted by the provided version of the dialect to the current version. </p>
 
-<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00067">67</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00072">72</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 
 </div>
 </div>
@@ -266,7 +305,7 @@ template&lt;typename DialectTy&gt; </div>
 
 <p>Writes the current version of the LLZK-lib to the given writer. </p>
 
-<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00041">41</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00045">45</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 
 </div>
 </div>
