@@ -63,9 +63,24 @@ TEST_F(CAPITest, llzk_type_is_a_struct_type_pass) {
   EXPECT_TRUE(llzkTypeIsA_Struct_StructType(t));
 }
 
-TEST_F(CAPITest, llzk_struct_type_get_name) {
+TEST_F(CAPITest, llzk_struct_type_get_name_flat) {
   auto s = mlirStringRefCreateFromCString("T");
   auto sym = mlirFlatSymbolRefAttrGet(context, s);
+  auto t = llzkStruct_StructTypeGet(sym);
+  EXPECT_NE(t.ptr, (void *)NULL);
+  EXPECT_TRUE(mlirAttributeEqual(sym, llzkStruct_StructTypeGetNameRef(t)));
+}
+
+TEST_F(CAPITest, llzk_struct_type_get_name_non_flat) {
+  llvm::SmallVector<MlirAttribute> nested(
+      {mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("A")),
+       mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("B")),
+       mlirFlatSymbolRefAttrGet(context, mlirStringRefCreateFromCString("C"))}
+  );
+  auto sym = mlirSymbolRefAttrGet(
+      context, mlirStringRefCreateFromCString("Z"), llzk::checkedCast<intptr_t>(nested.size()),
+      nested.data()
+  );
   auto t = llzkStruct_StructTypeGet(sym);
   EXPECT_NE(t.ptr, (void *)NULL);
   EXPECT_TRUE(mlirAttributeEqual(sym, llzkStruct_StructTypeGetNameRef(t)));
