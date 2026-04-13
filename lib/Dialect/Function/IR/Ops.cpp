@@ -16,7 +16,9 @@
 
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -415,6 +417,66 @@ LogicalResult ReturnOp::verify() {
 //===----------------------------------------------------------------------===//
 // CallOp
 //===----------------------------------------------------------------------===//
+
+// Custom implementation to deserialize bytecode produced prior to version 2 which added optional
+// `OptionalAttr<ArrayAttr>:$templateParams`.
+LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>();
+  if (failed(reader.readAttribute(prop.callee)) ||
+      failed(reader.readAttribute(prop.mapOpGroupSizes)) ||
+      failed(reader.readOptionalAttribute(prop.numDimsPerMap))) {
+    return failure();
+  }
+
+  if (reader.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+    auto &propStorage = prop.operandSegmentSizes;
+    DenseI32ArrayAttr attr;
+    if (failed(reader.readAttribute(attr))) {
+      return failure();
+    }
+    if (attr.size() > static_cast<int64_t>(sizeof(propStorage) / sizeof(int32_t))) {
+      reader.emitError("size mismatch for operand/result_segment_size");
+      return failure();
+    }
+    llvm::copy(ArrayRef<int32_t>(attr), propStorage.begin());
+  }
+
+  // The `templateParams` is only available in version 2 or later.
+  auto versionOpt = reader.getDialectVersion<FunctionDialect>();
+  if (succeeded(versionOpt)) {
+    const auto &ver = static_cast<const LLZKDialectVersion &>(**versionOpt);
+    if (ver.majorVersion >= 2) {
+      if (failed(reader.readOptionalAttribute(prop.templateParams))) {
+        return failure();
+      }
+    }
+  }
+
+  if (reader.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6) {
+    return reader.readSparseArray(MutableArrayRef(prop.operandSegmentSizes));
+  };
+  return success();
+}
+
+// Same as tablegen would generate to serialize version 2 IR.
+void CallOp::writeProperties(DialectBytecodeWriter &writer) {
+  auto &prop = getProperties();
+  writer.writeAttribute(prop.callee);
+  writer.writeAttribute(prop.mapOpGroupSizes);
+  writer.writeOptionalAttribute(prop.numDimsPerMap);
+
+  if (writer.getBytecodeVersion() < /*kNativePropertiesODSSegmentSize=*/6) {
+    auto &propStorage = prop.operandSegmentSizes;
+    writer.writeAttribute(DenseI32ArrayAttr::get(this->getContext(), propStorage));
+  }
+
+  writer.writeOptionalAttribute(prop.templateParams);
+
+  auto &propStorage = prop.operandSegmentSizes;
+  if (writer.getBytecodeVersion() >= /*kNativePropertiesODSSegmentSize=*/6) {
+    writer.writeSparseArray(ArrayRef(propStorage));
+  }
+}
 
 static void addTemplateParams(
     OpBuilder &odsBuilder, CallOp::Properties &props, ArrayRef<Attribute> templateParams

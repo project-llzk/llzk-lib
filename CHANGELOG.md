@@ -1,3 +1,105 @@
+## v2.0.0 - 2026-04-10
+### Added
+- 'Interval analysis support for `arith.select`, `arith.xori`, `felt.uintdiv`, `felt.sintdiv`, and `felt.bit_or`'
+- 'Interval analysis support for `array.new`, including empty-array roots and explicit element initializers'
+- 'Interval analysis support for `array.write` so later `array.read` operations can reuse written intervals'
+- 'Support for `bool` dialect operators to `pcl` boolean ops'
+- '`--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members'
+- '`CallOp::unifyTypeSignature()` method'
+- '`podTypesUnify()` and `functionTypesUnify()` functions in `TypeHelper`'
+- '`poly.template`, `poly.param`, and `poly.expr` ops'
+- 'Folding implementation for `bool` and `felt` operations'
+- Functions to query symbol uses within types
+- Automatic IR migration from version 1.x.x to 2.0.0
+- CAPI:
+  - '`llzkStruct_StructDefOpGetTemplateParamOpNames`'
+  - '`llzkStruct_StructDefOpGetNumTemplateParamOpNames`'
+  - '`llzkStruct_StructDefOpGetTemplateExprOpNames`'
+  - '`llzkStruct_StructDefOpGetNumTemplateExprOpNames`'
+  - '`llzkOperationIsA_Poly_TemplateOp`'
+  - '`llzkPoly_TemplateOpBuild`'
+  - '`llzkPoly_TemplateOpGetSymName`'
+  - '`llzkPoly_TemplateOpSetSymName`'
+  - '`llzkPoly_TemplateOpGetBody`'
+  - '`llzkPoly_TemplateOpGetBodyRegion`'
+  - '`llzkPoly_TemplateOpHasConstParamOps`'
+  - '`llzkPoly_TemplateOpNumConstParamOps`'
+  - '`llzkPoly_TemplateOpGetConstParamNames`'
+  - '`llzkPoly_TemplateOpHasConstParamNamed`'
+  - '`llzkPoly_TemplateOpHasConstExprOps`'
+  - '`llzkPoly_TemplateOpNumConstExprOps`'
+  - '`llzkPoly_TemplateOpGetConstExprNames`'
+  - '`llzkPoly_TemplateOpHasConstExprNamed`'
+  - '`llzkOperationIsA_Poly_TemplateExprOp`'
+  - '`llzkPoly_TemplateExprOpBuild`'
+  - '`llzkPoly_TemplateExprOpGetSymName`'
+  - '`llzkPoly_TemplateExprOpSetSymName`'
+  - '`llzkPoly_TemplateExprOpGetInitializerRegion`'
+  - '`llzkPoly_TemplateExprOpGetType`'
+  - '`llzkOperationIsA_Poly_TemplateParamOp`'
+  - '`llzkPoly_TemplateParamOpBuild`'
+  - '`llzkPoly_TemplateParamOpGetSymName`'
+  - '`llzkPoly_TemplateParamOpSetSymName`'
+  - '`llzkPoly_TemplateParamOpGetTypeOpt`'
+  - '`llzkPoly_TemplateParamOpSetTypeOpt`'
+  - '`llzkOperationIsA_Poly_YieldOp`'
+  - '`llzkPoly_YieldOpBuild`'
+  - '`llzkPoly_YieldOpGetVal`'
+  - '`llzkPoly_YieldOpSetVal`'
+  - '`llzkFelt_FeltTypeGetFromRef`'
+  - '`llzkFelt_FeltConstAttrGetInField` (use in place of old `llzkFelt_FeltConstAttrGet`)'
+  - '`llzkFelt_FeltConstAttrGetWithBitsInField` (use in place of old `llzkFelt_FeltConstAttrGetWithBits`)'
+  - '`llzkFelt_FeltConstAttrGetFromStringInField` (use in place of old `llzkFelt_FeltConstAttrGetFromString`)'
+  - '`llzkFelt_FeltConstAttrGetFromPartsInField` (use in place of old `llzkFelt_FeltConstAttrGetFromParts`)'
+
+### Changed
+- Augment SourceRef API
+- Changed field detection logic in IntervalAnalysis
+- Clarify `felt.div` in documentation and interval analysis
+- FeltConstAttr now directly stores the FeltType rather than field name as a StringAttr
+- 'FeltConstAttr syntax changed from `felt.const N <FIELD_NAME>` to `felt.const N : !felt.type<FIELD_NAME>`'
+- Rename `CallOp::getCalleeType()` method to `CallOp::getTypeSignature()` to clarify it's not computed from the callee
+- Rename `llzk-drop-empty-params` pass to `llzk-drop-empty-templates` and adapt it to new `poly.template` op
+- Replace constant parameters on `struct.def` with `poly.template` plus `poly.param` ops
+- Subcomponent members (i.e., `struct.member`s of `struct.type`) can no longer be marked as `signal`
+- Update `ModuleBuilder` to support `poly.template` and nested module building
+- Updated `--llzk-validate-member-writes` pass to correctly handle control flow
+- Refactor `llzk::getParentOfType()` to return nullable pointer instead of FailureOr and also check for null input
+- Version number updated to 2.0.0
+- CAPI:
+  - '`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter'
+  - Replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateSymbolBindings`
+  - Renamed `llzkStruct_MemberReadOpBuildWithConstParamDistance` to `llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGet` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetWithBits` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetFromString` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetFromParts` from `MlirIdentifier` to `MlirType`
+  - Rename `llzkFunction_CallOpGetCalleeType` to `llzkFunction_CallOpGetTypeSignature`
+
+### Fixed
+- Bugs causing product program alignment to crash on the circom benchmarks
+- Don't build PCL unit tests when PCL is disabled
+- Fixed nondeterministic output bug in interval analysis
+- Fixed translation of `bool.cmp ne` op to PCL
+- Handle `llzk.nondet` ops in `llzk-to-pcl`
+- Header files of backends are now installed in the final `include` directory
+- Interval analysis lookup bug
+- Remove `ConstantLike` and `Pure` traits from `llzk.nondet`
+- Support `llzk.nondet` op in SourceRef, Interval lattices
+- Treat external `function.call` results as SourceRef roots so accesses through external-call returned values remain trackable in SourceRef-based analyses
+- Updated `signal` attribute documentation
+- Duplicate symbols sometimes caused assertion failure instead of producing an error diagnostic
+- Fix bug that allowed parameterized callee to target a function other than a struct function
+- Lower benefit of `GeneralTypeReplacePattern` and similar default patterns to 0 to avoid possible ordering bug, specifically on `FuncDefOp` with pattern from `populateFunctionOpInterfaceTypeConversionPattern()`
+- Missing nullptr check in `pod.new` type verifier
+
+### Removed
+- '`computeReachable()` and `constrainReachable()` functions from ModuleBuilder'
+- meaningless `add_dependencies` from cmake config files
+- CAPI:
+  - '`llzkStruct_StructDefOpGetConstParams`'
+  - '`llzkStruct_StructDefOpSetConstParams`'
+  - '`llzkStruct_StructDefOpHasParamName` - use proper `llzkPoly_TemplateOp*` instead'
 ## v1.1.5 - 2026-03-05
 ### Fixed
 - ensure versioned doc pages are stored in version-specific folders on gh-pages branch

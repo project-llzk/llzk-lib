@@ -102,6 +102,66 @@ void FieldSpecAttr::print(AsmPrinter &odsPrinter) const {
 }
 
 //===------------------------------------------------------------------===//
+// FeltConstAttr
+//===------------------------------------------------------------------===//
+
+Attribute FeltConstAttr::parse(AsmParser &odsParser, Type) {
+  SMLoc odsLoc = odsParser.getCurrentLocation();
+
+  // Parse the APInt value.
+  FailureOr<APInt> valueRes = FieldParser<APInt>::parse(odsParser);
+  if (failed(valueRes)) {
+    odsParser.emitError(
+        odsParser.getCurrentLocation(),
+        "failed to parse LLZK_FeltConstAttr parameter 'value' which is to be a `::llvm::APInt`"
+    );
+    return {};
+  }
+
+  FeltType type = FeltType::get(odsParser.getContext());
+
+  // v2 syntax: VALUE : !felt.type<"fieldName">
+  if (odsParser.parseOptionalColon().succeeded()) {
+    FailureOr<FeltType> typeRes = FieldParser<FeltType>::parse(odsParser);
+    if (failed(typeRes)) {
+      odsParser.emitError(
+          odsParser.getCurrentLocation(),
+          "failed to parse LLZK_FeltConstAttr parameter 'type' which is to be a `FeltType`"
+      );
+      return {};
+    }
+    type = *typeRes;
+  }
+  // v1 compat syntax: VALUE <"fieldName">
+  else if (odsParser.parseOptionalLess().succeeded()) {
+    FailureOr<StringAttr> fieldNameRes = FieldParser<StringAttr>::parse(odsParser);
+    if (failed(fieldNameRes)) {
+      odsParser.emitError(
+          odsParser.getCurrentLocation(), "failed to parse LLZK_FeltConstAttr(version 1) field "
+                                          "name parameter which is to be a `StringAttr`"
+      );
+      return {};
+    }
+    if (odsParser.parseGreater()) {
+      return {};
+    }
+    type = FeltType::get(odsParser.getContext(), (*fieldNameRes).getValue());
+  }
+
+  return odsParser.getChecked<FeltConstAttr>(odsLoc, odsParser.getContext(), *valueRes, type);
+}
+
+// Same as tablegen would generate to serialize version 2 IR.
+void FeltConstAttr::print(AsmPrinter &odsPrinter) const {
+  odsPrinter << ' ';
+  odsPrinter.printStrippedAttrOrType(getValue());
+  if (getType() != FeltType::get(getContext())) {
+    odsPrinter << " : ";
+    odsPrinter.printStrippedAttrOrType(getType());
+  }
+}
+
+//===------------------------------------------------------------------===//
 // FeltType
 //===------------------------------------------------------------------===//
 

@@ -27,7 +27,7 @@ def LLZK_FeltConstAttr
   let parameters = (ins APIntParameter<"The felt constant value">:$value,
       DefaultValuedParameter<"FeltType", "FeltType::get($_ctxt)">:$type);
 
-  let assemblyFormat = [{ $value ( `:` $type^ )? }];
+  let hasCustomAssemblyFormat = 1;
 
   let builders = [
       // Like the default builder but with convenience overloads for

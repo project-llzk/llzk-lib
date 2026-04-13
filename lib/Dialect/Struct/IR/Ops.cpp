@@ -13,8 +13,10 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/Constants.h"
@@ -481,6 +483,38 @@ bool StructDefOp::isMainComponent() {
     }
   }
   return false;
+}
+
+// Custom implementation to deserialize bytecode produced prior to version 2 when `StructDefOp` had
+// an optional `const_params` attribute serialized before `sym_name`.
+LogicalResult StructDefOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>();
+
+  auto versionOpt = reader.getDialectVersion<StructDialect>();
+  if (succeeded(versionOpt)) {
+    const auto &ver = static_cast<const LLZKDialectVersion &>(**versionOpt);
+    if (ver.majorVersion < 2) {
+      // Read and stash the old `const_params` as a temporary attribute so `upgradeFromVersion()`
+      // can wrap this `StructDefOp` in a `TemplateOp` with the corresponding `TemplateParamOps`.
+      ArrayAttr constParams;
+      if (failed(reader.readOptionalAttribute(constParams))) {
+        return failure();
+      }
+      if (constParams) {
+        state.addAttribute(llzk::kV1ConstParamsAttr, constParams);
+      }
+      return reader.readAttribute(prop.sym_name);
+    }
+  }
+
+  // Same as tablegen would generate to deserialize current-version IR.
+  return reader.readAttribute(prop.sym_name);
+}
+
+// Same as tablegen would generate to serialize version 2 IR.
+void StructDefOp::writeProperties(DialectBytecodeWriter &writer) {
+  auto &prop = getProperties();
+  writer.writeAttribute(prop.sym_name);
 }
 
 //===------------------------------------------------------------------===//

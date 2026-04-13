@@ -140,7 +140,7 @@ class EmptyTemplateRemovalPass
     target.addDynamicallyLegalOp<TemplateOp>([](TemplateOp op) {
       return DeleteNoDefTemplatePattern::legal(op) && ReplaceNoParamTemplatePattern::legal(op);
     });
-    RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
+    RewritePatternSet patterns = llzk::newGeneralRewritePatternSet(tyConv, ctx, target);
     // Try `DeleteNoDefTemplatePattern` first since full removal is better that replacement.
     patterns.add<DeleteNoDefTemplatePattern>(tyConv, ctx);
     patterns.add<ReplaceNoParamTemplatePattern>(tyConv, ctx);

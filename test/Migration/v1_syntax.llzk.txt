@@ -1,0 +1,355 @@
+// This is the plaintext source for `v1_syntax.llzk.bc` (converted at commit
+// 5bf26306ca09ff5b91f918787f5cb98a89d227fa) which is intended to test that migration
+// from v1 syntax to later versions works correctly. The test uses nearly all LLZK v1
+// syntax except for
+
+#mapSum = affine_map<()[s0, s1] -> (s0 + s1)>
+#dynLen = affine_map<(d0) -> (d0 * 5 + 1)>
+
+module attributes {
+    llzk.lang,
+    llzk.main  = !struct.type<@Top>,
+    // Multiple fields: single form is llzk.fields = #felt.field<"name", prime>.
+    llzk.fields = [
+        #felt.field<"foo", 101>,
+        #felt.field<"bar",  11>
+    ]} {
+
+  // ── Sub-modules (namespace / package) ──────────────────────────────────────
+  module @util {
+    function.def private @log(!string.type) -> i1
+    // Private decl with {llzk.pub} argument attributes.
+    function.def private @pub_args(%a: !felt.type {llzk.pub}, %b: index {llzk.pub})
+  }
+
+  module @gstore {
+    // global.def: const/mutable, initialized/uninitialized, all basic types.
+    global.def const @BOUND : !felt.type  = 16
+    global.def       @tally : index       = 0
+    global.def       @flag  : i1          = false
+    global.def       @label : !string.type                         // uninitialized
+    global.def const @BITS  : !array.type<2,2 x i1>               = [0, 1, 1, 0]
+    global.def       @score : !array.type<2,1,2 x !felt.type>     = [1, 2, 3, 4]
+  }
+
+  // ── @Box ──────────────────────────────────────────────────────────────────
+  // Polymorphic struct: type-variable @T, quoted member name, {llzk.pub}.
+  struct.def @Box<[@T]> {
+    struct.member @val    : !poly.tvar<@T> {llzk.pub}
+    struct.member @"$tag" : i1                         // quoted symbol name
+
+    function.def @compute(%v: !poly.tvar<@T>) -> !struct.type<@Box<[@T]>> {
+      %self = struct.new : !struct.type<@Box<[@T]>>
+      struct.writem %self[@val]    = %v : !struct.type<@Box<[@T]>>, !poly.tvar<@T>
+      %t = arith.constant true
+      struct.writem %self[@"$tag"] = %t : !struct.type<@Box<[@T]>>, i1
+      function.return %self : !struct.type<@Box<[@T]>>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box<[@T]>>, %v: !poly.tvar<@T>) {
+      %w = struct.readm %self[@val] : !struct.type<@Box<[@T]>>, !poly.tvar<@T>
+      constrain.eq %w, %v : !poly.tvar<@T>
+      function.return
+    }
+  }
+
+  // ── @Reg ──────────────────────────────────────────────────────────────────
+  // Numeric param @N, {column} member, struct.readm with {tableOffset}.
+  struct.def @Reg<[@N]> {
+    struct.member @data : !array.type<@N x !felt.type> {column}
+
+    function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@Reg<[@N]>> {
+      %self = struct.new : !struct.type<@Reg<[@N]>>
+      struct.writem %self[@data] = %inp : !struct.type<@Reg<[@N]>>, !array.type<@N x !felt.type>
+      // struct.readm with tableOffset attribute
+      %dc = struct.readm %self[@data]
+              : !struct.type<@Reg<[@N]>>, !array.type<@N x !felt.type> {tableOffset = -1 : index}
+      function.return %self : !struct.type<@Reg<[@N]>>
+    }
+
+    function.def @constrain(%self: !struct.type<@Reg<[@N]>>, %inp: !array.type<@N x !felt.type>) {
+      %d = struct.readm %self[@data] : !struct.type<@Reg<[@N]>>, !array.type<@N x !felt.type>
+      constrain.eq %d, %inp : !array.type<@N x !felt.type>
+      function.return
+    }
+  }
+
+  // ── @ArrComp ──────────────────────────────────────────────────────────────
+  // poly.read_const, poly.unifiable_cast, function.call with sym bindings.
+  struct.def @ArrComp<[@X, @Y, @N]> {
+    struct.member @reg : !struct.type<@Reg<[#mapSum]>>
+
+    function.def @compute(%inp: !array.type<@N x !felt.type>)
+        -> !struct.type<@ArrComp<[@X, @Y, @N]>> {
+      %self = struct.new : <@ArrComp<[@X, @Y, @N]>>
+      %x    = poly.read_const @X : index
+      %y    = poly.read_const @Y : index
+      // poly.unifiable_cast: assert @N is compatible with the two-symbol map #mapSum.
+      %cast = poly.unifiable_cast %inp
+                : (!array.type<@N x !felt.type>) -> !array.type<#mapSum x !felt.type>
+      // function.call with explicit affine-symbol bindings {()[%x, %y]}.
+      %r    = function.call @Reg::@compute(%cast){()[%x, %y]}
+                : (!array.type<#mapSum x !felt.type>) -> !struct.type<@Reg<[#mapSum]>>
+      struct.writem %self[@reg] = %r
+              : !struct.type<@ArrComp<[@X, @Y, @N]>>, !struct.type<@Reg<[#mapSum]>>
+      function.return %self : !struct.type<@ArrComp<[@X, @Y, @N]>>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrComp<[@X, @Y, @N]>>,
+        %inp:  !array.type<@N x !felt.type>) {
+      %cast = poly.unifiable_cast %inp
+                : (!array.type<@N x !felt.type>) -> !array.type<#mapSum x !felt.type>
+      %r = struct.readm %self[@reg]
+              : !struct.type<@ArrComp<[@X, @Y, @N]>>, !struct.type<@Reg<[#mapSum]>>
+      function.call @Reg::@constrain(%r, %cast)
+              : (!struct.type<@Reg<[#mapSum]>>, !array.type<#mapSum x !felt.type>) -> ()
+      function.return
+    }
+  }
+
+  // ── @Entry ────────────────────────────────────────────────────────────────
+  // Struct with empty explicit parameter list (the <[]> syntax).
+  struct.def @Entry<[]> {
+    function.def @compute() -> !struct.type<@Entry<[]>> {
+      %self = struct.new : !struct.type<@Entry<[]>>
+      function.return %self : !struct.type<@Entry<[]>>
+    }
+    function.def @constrain(%self: !struct.type<@Entry<[]>>) { function.return }
+  }
+
+  // ── @Top (llzk.main) ──────────────────────────────────────────────────────
+  struct.def @Top {
+    struct.member @bit  : !felt.type {signal}
+    struct.member @reg4 : !struct.type<@Reg<[4]>>
+    struct.member @box  : !struct.type<@Box<[!felt.type]>>
+
+    function.def @compute(%a: !felt.type, %pub: !felt.type {llzk.pub})
+        -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+
+      // felt: const, add, sub, mul, div
+      %c0  = felt.const 0
+      %c1  = felt.const 1
+      %c7  = felt.const 7
+      %add = felt.add %a, %c7
+      %sub = felt.sub %a, %c1
+      %mul = felt.mul %a, %c7
+      %div = felt.div %a, %c7
+
+      // bool: all six comparison predicates on felt
+      %beq = bool.cmp eq(%a, %pub)
+      %bne = bool.cmp ne(%a, %pub)
+      %blt = bool.cmp lt(%a, %pub)
+      %ble = bool.cmp le(%a, %pub)
+      %bgt = bool.cmp gt(%a, %pub)
+      %bge = bool.cmp ge(%a, %pub)
+
+      // bool: assert (plain) and assert with message
+      bool.assert %bge
+      bool.assert %beq, "a must equal pub"
+
+      // cast: i1 -> felt,  index -> felt  (cast.toindex shown in @non_native)
+      %flt_b = cast.tofelt %beq : i1
+      %i0    = arith.constant 0 : index
+      %flt_i = cast.tofelt %i0  : index
+
+      // string.new
+      %str = string.new "hello LLZK"
+
+      // index: addi, subi, muli, divui, cmpi (eq, ne, slt, sle)
+      %ub    = arith.constant 4 : index
+      %step  = arith.constant 1 : index
+      %ia    = arith.addi  %i0, %ub    : index
+      %is    = arith.subi  %ub, %step  : index
+      %im    = arith.muli  %ub, %step  : index
+      %id    = arith.divui %ub, %step  : index
+      %cieq  = arith.cmpi eq,  %i0, %ub : index
+      %cine  = arith.cmpi ne,  %i0, %ub : index
+      %cislt = arith.cmpi slt, %i0, %ub : index
+      %cisle = arith.cmpi sle, %i0, %ub : index
+
+      // arith ops on i1 width
+      %tf  = arith.constant true
+      %ff  = arith.constant false
+      %ai  = arith.andi %tf, %ff : i1
+      %ao  = arith.ori  %tf, %ff : i1
+      %ax  = arith.xori %tf, %ff : i1
+
+      // poly.applymap: no-args constant, dims-only, syms-only, mixed
+      %pa0 = poly.applymap ()             affine_map<() -> (42)>
+      %pa1 = poly.applymap (%ub)[]        affine_map<(d0) -> (d0 + 1)>
+      %pa2 = poly.applymap ()[%ub, %step] affine_map<()[s0, s1] -> (s0 + s1)>
+      %pa3 = poly.applymap (%ub)[%step]   affine_map<(d0)[s0] -> (d0 * s0)>
+
+      // 1-D array: new (with values), read, write
+      %arr4 = array.new %c0, %c1, %add, %mul : !array.type<4 x !felt.type>
+      %e0   = array.read  %arr4[%i0]          : !array.type<4 x !felt.type>, !felt.type
+      array.write %arr4[%i0] = %div            : !array.type<4 x !felt.type>, !felt.type
+
+      // 2-D array: new, extract row, insert row, multi-index read, len
+      %i1   = arith.constant 1 : index
+      %arr8 = array.new %c0, %c1, %add, %mul, %c0, %c1, %add, %mul
+                : !array.type<2,4 x !felt.type>
+      %row  = array.extract %arr8[%i0]   : !array.type<2,4 x !felt.type>
+      array.insert %arr8[%i0] = %arr4    : !array.type<2,4 x !felt.type>, !array.type<4 x !felt.type>
+      %e11  = array.read %arr8[%i1, %i1] : !array.type<2,4 x !felt.type>, !felt.type
+      %len  = array.len  %arr8, %i0      : !array.type<2,4 x !felt.type>
+
+      // scf.if with result value
+      %bit = scf.if %beq -> !felt.type {
+        scf.yield %c0 : !felt.type
+      } else {
+        scf.yield %c1 : !felt.type
+      }
+      struct.writem %self[@bit] = %bit : !struct.type<@Top>, !felt.type
+
+      // scf.if without result (side-effect only)
+      scf.if %bne {
+        array.write %arr4[%i0] = %c1 : !array.type<4 x !felt.type>, !felt.type
+      }
+
+      // scf.for with iter_args
+      %sum = scf.for %iv = %i0 to %ub step %step
+                 iter_args(%acc = %c0) -> !felt.type {
+        %v = felt.add %a, %acc
+        scf.yield %v : !felt.type
+      }
+
+      // scf.while with #llzk.loopbounds attribute
+      %wres = scf.while (%w = %c0) : (!felt.type) -> !felt.type {
+        %cond = bool.cmp lt(%w, %a)
+        scf.condition(%cond) %w : !felt.type
+      } do {
+        ^bb0(%w1: !felt.type):
+          %nxt = felt.add %w1, %c1
+          scf.yield %nxt : !felt.type
+      } attributes { llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1> }
+
+      // sub-struct compute calls
+      %boxed = function.call @Box::@compute(%a)
+                 : (!felt.type) -> !struct.type<@Box<[!felt.type]>>
+      struct.writem %self[@box] = %boxed : !struct.type<@Top>, !struct.type<@Box<[!felt.type]>>
+
+      %inp4 = array.new : !array.type<4 x !felt.type>
+      %reg4 = function.call @Reg::@compute(%inp4)
+                 : (!array.type<4 x !felt.type>) -> !struct.type<@Reg<[4]>>
+      struct.writem %self[@reg4] = %reg4 : !struct.type<@Top>, !struct.type<@Reg<[4]>>
+
+      // global.read / global.write  (only valid in allow_witness / @compute)
+      %prime = global.read  @gstore::@BOUND      : !felt.type
+      global.write          @gstore::@tally = %i0 : index
+
+      function.return %self : !struct.type<@Top>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Top>,
+        %a:   !felt.type,
+        %pub: !felt.type {llzk.pub}) {
+      // struct.readm
+      %b   = struct.readm %self[@bit]  : !struct.type<@Top>, !felt.type
+      %bxm = struct.readm %self[@box]  : !struct.type<@Top>, !struct.type<@Box<[!felt.type]>>
+      %rm  = struct.readm %self[@reg4] : !struct.type<@Top>, !struct.type<@Reg<[4]>>
+
+      // llzk.nondet: non-deterministic witness  (only valid in @constrain)
+      %nd = llzk.nondet : !felt.type
+
+      // constrain.eq: verify bit*(bit-1) == 0  (boolean soundness)
+      %c0  = felt.const 0
+      %c1  = felt.const 1
+      %bm1 = felt.sub %b, %c1
+      %chk = felt.mul %b, %bm1
+      constrain.eq %chk, %c0 : !felt.type
+
+      // constrain.in: bit must be in {0, 1}
+      %vals = array.new %c0, %c1 : !array.type<2 x !felt.type>
+      constrain.in %vals, %b : !array.type<2 x !felt.type>, !felt.type
+
+      // delegate constrain to sub-structs
+      function.call @Box::@constrain(%bxm, %a)
+          : (!struct.type<@Box<[!felt.type]>>, !felt.type) -> ()
+      %inp4 = array.new : !array.type<4 x !felt.type>
+      function.call @Reg::@constrain(%rm, %inp4)
+          : (!struct.type<@Reg<[4]>>, !array.type<4 x !felt.type>) -> ()
+
+      function.return
+    }
+  }
+
+  // ── Standalone functions ──────────────────────────────────────────────────
+
+  // bool.and/or/xor/not require function.allow_non_native_field_ops.
+  function.def @bool_logic(%a: i1, %b: i1) -> (i1, i1, i1, i1)
+      attributes {function.allow_non_native_field_ops} {
+    %and = bool.and %a, %b
+    %or  = bool.or  %a, %b
+    %xor = bool.xor %a, %b
+    %not = bool.not %a
+    function.return %and, %or, %xor, %not : i1, i1, i1, i1
+  }
+
+  // Multi-return function + caller with destructured result.
+  function.def @pair(%x: index) -> (index, index) {
+    %one = arith.constant 1 : index
+    function.return %x, %one : index, index
+  }
+  function.def @use_pair(%x: index) -> (index, index) {
+    %a, %b = function.call @pair(%x) : (index) -> (index, index)
+    function.return %a, %b : index, index
+  }
+
+  // cast.toindex requires function.allow_non_native_field_ops;
+  // also demonstrates cast.tofelt with explicit result-type form.
+  function.def @non_native(%f: !felt.type, %b: i1, %idx: index)
+      -> (index, !felt.type, !felt.type)
+      attributes {function.allow_non_native_field_ops} {
+    %ti  = cast.toindex %f                      // felt -> index
+    %tf  = cast.tofelt  %b   : i1, !felt.type   // i1 -> felt  (explicit result type)
+    %ti2 = cast.tofelt  %idx : index             // index -> felt
+    function.return %ti, %tf, %ti2 : index, !felt.type, !felt.type
+  }
+
+  // Field-specific felt type + all non-native felt ops.
+  // Large felt constants (prime fields) also demonstrated here.
+  function.def @babybear_ops(%a: !felt.type<"babybear">, %b: !felt.type<"babybear">)
+      -> !felt.type<"babybear">
+      attributes {function.allow_non_native_field_ops} {
+    %k  = felt.const 5 <"babybear">            // felt.const with field specifier
+    %pw = felt.pow      %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %ud = felt.uintdiv  %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %sd = felt.sintdiv  %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %um = felt.umod     %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    function.return %pw : !felt.type<"babybear">
+  }
+
+  // Field-specific felt type with a user-defined prime field.
+  function.def @foo_ops(%a: !felt.type<"foo">, %b: !felt.type<"foo">)
+      -> !felt.type<"foo">
+      attributes {function.allow_non_native_field_ops} {
+    %k  = felt.const 5 <"foo">            // felt.const with field specifier
+    %pw = felt.pow      %a, %b : !felt.type<"foo">, !felt.type<"foo">
+    %ud = felt.uintdiv  %a, %b : !felt.type<"foo">, !felt.type<"foo">
+    %sd = felt.sintdiv  %a, %b : !felt.type<"foo">, !felt.type<"foo">
+    %um = felt.umod     %a, %b : !felt.type<"foo">, !felt.type<"foo">
+    %gl = felt.const 18446744069414584321      // Goldilocks prime
+    %bn = felt.const 21888242871839275222246405745257275088696311157297823662689037894645226208583
+    function.return %pw : !felt.type<"foo">
+  }
+
+  // Dynamic-length array: array.new{(<dim>)} with affine-map element count.
+  function.def @dyn_array(%n: index) -> !array.type<#dynLen x !felt.type> {
+    %arr = array.new{(%n)} : !array.type<#dynLen x !felt.type>
+    function.return %arr : !array.type<#dynLen x !felt.type>
+  }
+
+  // POD type: empty, uninitialized, initialized; pod.read, pod.write.
+  function.def @pod_ops(%n: index) -> !pod.type<[@n: index]> {
+    %empty  = pod.new               : <[]>
+    %uninit = pod.new               : <[@n: index]>
+    %init   = pod.new { @n = %n }  : <[@n: index]>
+    %v      = pod.read  %init[@n]  : !pod.type<[@n: index]>, index
+    pod.write %init[@n] = %v       : !pod.type<[@n: index]>, index
+    function.return %init : !pod.type<[@n: index]>
+  }
+}

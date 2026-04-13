@@ -375,6 +375,14 @@ static llzk::polymorphic::TemplateOp createTemplateWithBlock(
 
 // --- TemplateParamOp tests ---
 
+TEST_F(CAPITest, llzk_template_op_get_body) {
+  MlirOperation c = createIndexOperation();
+  if (llzkOperationIsA_Poly_TemplateOp(c)) {
+    llzkPoly_TemplateOpGetBody(c);
+  }
+  mlirOperationDestroy(c);
+}
+
 TEST_F(CAPITest, llzk_template_op_has_param_ops_empty) {
   MlirOpBuilder builder = mlirOpBuilderCreate(context);
   MlirLocation loc = mlirLocationUnknownGet(context);

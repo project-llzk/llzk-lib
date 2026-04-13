@@ -273,9 +273,8 @@ public:
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
       SmallVector<Diagnostic> &instantiationDiagnostics
   )
-      // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-      // instead of the GeneralTypeReplacePattern<ConstReadOp> from newGeneralRewritePatternSet().
-      : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue),
+      // benefit>0 so this applies instead of GeneralTypeReplacePattern<ConstReadOp>
+      : super(converter, ctx, /*benefit=*/1, paramNameToInstantiatedValue),
         diagnostics(instantiationDiagnostics) {}
 
   Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
@@ -553,10 +552,8 @@ class StructCloner {
         TypeConverter &converter, MLIRContext *ctx,
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
-        // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-        // instead of the GeneralTypeReplacePattern<MemberReadOp> from
-        // newGeneralRewritePatternSet().
-        : super(converter, ctx, /*benefit=*/2, paramNameToInstantiatedValue) {}
+        // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberReadOp>
+        : super(converter, ctx, /*benefit=*/1, paramNameToInstantiatedValue) {}
 
     Attribute getNameAttr(MemberReadOp op) const override {
       return op.getTableOffset().value_or(nullptr);
@@ -810,9 +807,8 @@ class CallStructFuncPattern : public OpConversionPattern<CallOp> {
 
 public:
   CallStructFuncPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
-      // Must use higher benefit than CallOpClassReplacePattern so this pattern will be applied
-      // instead of the CallOpClassReplacePattern from newGeneralRewritePatternSet().
-      : OpConversionPattern<CallOp>(converter, ctx, /*benefit=*/2), tracker_(tracker) {}
+      // benefit>0 so this applies instead of CallOpClassReplacePattern
+      : OpConversionPattern<CallOp>(converter, ctx, /*benefit=*/1), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
@@ -861,9 +857,8 @@ public:
 class MemberDefOpPattern : public OpConversionPattern<MemberDefOp> {
 public:
   MemberDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
-      // Must use higher benefit than GeneralTypeReplacePattern so this pattern will be applied
-      // instead of the GeneralTypeReplacePattern<MemberDefOp> from newGeneralRewritePatternSet().
-      : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/2) {}
+      // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberDefOp>
+      : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/1) {}
 
   LogicalResult matchAndRewrite(
       MemberDefOp op, OpAdaptor /*adapter*/, ConversionPatternRewriter &rewriter
