@@ -12,6 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "smt/Conversions/ConversionPasses.h"
+
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Enums.h"
@@ -47,8 +49,6 @@
 
 #include <algorithm>
 #include <utility>
-
-#include "smt/Conversions/ConversionPasses.h"
 
 namespace llzk {
 namespace smt {
@@ -149,8 +149,9 @@ public:
     auto denominatorIsZero =
         rewriter.create<smt::EqOp>(op->getLoc(), adaptor.getRhs(), zero.getResult());
     auto divIsZero = rewriter.create<smt::EqOp>(op->getLoc(), div.getResult(), zero.getResult());
-    auto product =
-        rewriter.create<smt::IntMulOp>(op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()});
+    auto product = rewriter.create<smt::IntMulOp>(
+        op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()}
+    );
     auto productEqualsNumerator =
         rewriter.create<smt::EqOp>(op->getLoc(), product.getResult(), adaptor.getLhs());
     auto divConstraint = rewriter.create<smt::IteOp>(

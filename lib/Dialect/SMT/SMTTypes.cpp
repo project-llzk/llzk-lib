@@ -11,6 +11,7 @@
 #include "llvm/ADT/TypeSwitch.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/DialectImplementation.h"
+
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
 
 using namespace mlir;

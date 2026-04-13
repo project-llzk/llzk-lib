@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "smt/Conversions/ConversionPasses.h"
+
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
@@ -16,6 +18,7 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 
@@ -24,9 +27,6 @@
 #include <mlir/IR/BuiltinOps.h>
 
 #include <utility>
-
-#include "smt/Conversions/ConversionPasses.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
 
 namespace llzk {
 namespace smt {

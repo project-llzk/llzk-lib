@@ -14,6 +14,7 @@
 #define MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 
 #include "llvm/ADT/TypeSwitch.h"
+
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 
 namespace llzk {
