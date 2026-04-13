@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
@@ -41,6 +42,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::felt::FeltDialect,
       llzk::function::FunctionDialect,
       llzk::global::GlobalDialect,
+      llzk::ram::RAMDialect,
       llzk::include::IncludeDialect,
       llzk::string::StringDialect,
       llzk::pod::PODDialect,
