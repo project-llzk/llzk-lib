@@ -191,10 +191,10 @@ public:
     auto mod =
         rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
 
-    auto equal = rewriter.create<smt::EqOp>(
-        op->getLoc(), rewriter.create<smt::IntModOp>(op->getLoc(), witness, mod).getResult(),
-        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getVal(), mod).getResult()
-    );
+    auto witnessMod = rewriter.create<smt::IntModOp>(op->getLoc(), witness, mod);
+    auto valueMod = rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getVal(), mod);
+    auto equal =
+        rewriter.create<smt::EqOp>(op->getLoc(), witnessMod.getResult(), valueMod.getResult());
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, equal);
 
     return success();
@@ -285,11 +285,9 @@ public:
     auto mod =
         rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
 
-    auto eq = rewriter.create<smt::EqOp>(
-        op->getLoc(),
-        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod).getResult(),
-        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getRhs(), mod).getResult()
-    );
+    auto lhsMod = rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod);
+    auto rhsMod = rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getRhs(), mod);
+    auto eq = rewriter.create<smt::EqOp>(op->getLoc(), lhsMod.getResult(), rhsMod.getResult());
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, eq.getResult());
     return success();
   }
