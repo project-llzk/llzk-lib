@@ -552,7 +552,25 @@ FailureOr<Interval> signedIntDiv(const Interval &lhs, const Interval &rhs) {
 
 Interval operator%(const Interval &lhs, const Interval &rhs) {
   const Field &f = checkFields(lhs, rhs);
-  return UnreducedInterval(f.zero(), rhs.b).reduce(f);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+
+  if (lhs.isDegenerate() && rhs.isDegenerate() && rhs.lhs() != f.zero()) {
+    return Interval::Degenerate(f, lhs.lhs() % rhs.lhs());
+  }
+
+  if (rhs.isDegenerate()) {
+    if (rhs.lhs() == f.zero()) {
+      return Interval::Entire(f);
+    }
+    return UnreducedInterval(f.zero(), rhs.lhs() - f.one()).reduce(f);
+  }
+
+  if (rhs.lhs() == f.zero()) {
+    return UnreducedInterval(f.zero(), rhs.b).reduce(f);
+  }
+  return UnreducedInterval(f.zero(), rhs.b - f.one()).reduce(f);
 }
 
 Interval operator&(const Interval &lhs, const Interval &rhs) {
