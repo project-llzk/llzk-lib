@@ -24,7 +24,7 @@ module attributes {llzk.lang} {
 
 // OVERRIDE-NOT: warning: could not detect a unique module field; falling back to 'bn128'
 // OVERRIDE-LABEL: @FallbackBn128 StructIntervals {
-// OVERRIDE-NEXT:     %arg1 in TypeC:[ 2, 2013265920 ]
+// OVERRIDE-NEXT:     %arg1 in TypeA:[ 2, 2013265920 ]
 // OVERRIDE-NEXT: }
 
 // -----
@@ -48,9 +48,9 @@ module attributes {llzk.lang} {
 
 // DEFAULT-NOT: warning: could not detect a unique module field; falling back to 'bn128'
 // DEFAULT-LABEL: @DetectMersenne31 StructIntervals {
-// DEFAULT-NEXT:     %arg1 in TypeC:[ 2, 2147483646 ]
+// DEFAULT-NEXT:     %arg1 in TypeA:[ 2, 2147483646 ]
 // DEFAULT-NEXT: }
 
 // OVERRIDE-LABEL: @DetectMersenne31 StructIntervals {
-// OVERRIDE-NEXT:     %arg1 in TypeC:[ 2, 2013265920 ]
+// OVERRIDE-NEXT:     %arg1 in TypeA:[ 2, 2013265920 ]
 // OVERRIDE-NEXT: }

@@ -97,6 +97,14 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
               /* default */ "false",
               "Whether to print compute function intervals (default only "
               "prints constrain function intervals).">,
+       Option<"refineWithSolver", "refine-with-solver", "bool",
+              /* default */ "true",
+              "Whether to run a second SMT-guided refinement phase on final "
+              "scalar intervals.">,
+       Option<"refinementQueryBudget", "refinement-query-budget", "unsigned",
+              /* default */ "16",
+              "Maximum number of SMT satisfiability queries per function "
+              "during scalar interval refinement.">,
   ];
 }
 

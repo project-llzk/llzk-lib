@@ -33,9 +33,100 @@ using namespace function;
 
 /* ExpressionValue */
 
+namespace {
+
+ExpressionValue::DeferredConstraintSet mergeDeferredConstraints(
+    llvm::ArrayRef<llvm::SMTExprRef> lhs, llvm::ArrayRef<llvm::SMTExprRef> rhs
+) {
+  ExpressionValue::DeferredConstraintSet merged(lhs.begin(), lhs.end());
+  for (llvm::SMTExprRef constraint : rhs) {
+    if (!llvm::is_contained(merged, constraint)) {
+      merged.push_back(constraint);
+    }
+  }
+  return merged;
+}
+
+void constrainFieldSymbol(
+    const llvm::SMTSolverRef &solver, const Field &field, const llvm::SMTExprRef &sym
+) {
+  llvm::SMTExprRef zero = solver->mkBitvector(toAPSInt(field.zero()), field.bitWidth());
+  llvm::SMTExprRef max = solver->mkBitvector(toAPSInt(field.maxVal()), field.bitWidth());
+  solver->addConstraint(solver->mkBVUge(sym, zero));
+  solver->addConstraint(solver->mkBVUle(sym, max));
+}
+
+Interval getInverseInterval(const ExpressionValue &val) {
+  const Field &field = val.getField();
+  const Interval &iv = val.getInterval();
+  if (iv.isEmpty()) {
+    return Interval::Empty(field);
+  }
+
+  Interval zero = Interval::Degenerate(field, field.zero());
+  if (iv.isDegenerate() && iv.lhs() != field.zero()) {
+    return Interval::Degenerate(field, field.inv(iv.lhs()));
+  }
+  if (iv.intersect(zero).isEmpty()) {
+    return Interval::Entire(field).difference(zero);
+  }
+  return Interval::Entire(field);
+}
+
+} // namespace
+
+llvm::SMTExprRef
+getFieldPrimeExpr(const llvm::SMTSolverRef &solver, const Field &field, unsigned bitwidth) {
+  return solver->mkBitvector(toAPSInt(field.prime()), bitwidth);
+}
+
+llvm::SMTExprRef reduceFieldExpr(
+    const llvm::SMTSolverRef &solver, const Field &field, llvm::SMTExprRef expr, unsigned exprWidth
+) {
+  llvm::SMTExprRef reduced = solver->mkBVURem(expr, getFieldPrimeExpr(solver, field, exprWidth));
+  if (exprWidth == field.bitWidth()) {
+    return reduced;
+  }
+  return solver->mkBVExtract(field.bitWidth() - 1, 0, reduced);
+}
+
+llvm::SMTExprRef addFieldExpr(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
+  const Field &field = lhs.getField();
+  llvm::SMTExprRef lhsWide = solver->mkBVZeroExt(1, lhs.getExpr());
+  llvm::SMTExprRef rhsWide = solver->mkBVZeroExt(1, rhs.getExpr());
+  llvm::SMTExprRef sum = solver->mkBVAdd(lhsWide, rhsWide);
+  return reduceFieldExpr(solver, field, sum, field.bitWidth() + 1);
+}
+
+llvm::SMTExprRef subFieldExpr(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
+  const Field &field = lhs.getField();
+  unsigned wideWidth = field.bitWidth() + 1;
+  llvm::SMTExprRef lhsWide = solver->mkBVZeroExt(1, lhs.getExpr());
+  llvm::SMTExprRef rhsWide = solver->mkBVZeroExt(1, rhs.getExpr());
+  llvm::SMTExprRef primeWide = getFieldPrimeExpr(solver, field, wideWidth);
+  llvm::SMTExprRef sum = solver->mkBVAdd(lhsWide, primeWide);
+  llvm::SMTExprRef diff = solver->mkBVSub(sum, rhsWide);
+  return reduceFieldExpr(solver, field, diff, wideWidth);
+}
+
+llvm::SMTExprRef mulFieldExpr(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
+  const Field &field = lhs.getField();
+  unsigned wideWidth = field.bitWidth() * 2;
+  llvm::SMTExprRef lhsWide = solver->mkBVZeroExt(field.bitWidth(), lhs.getExpr());
+  llvm::SMTExprRef rhsWide = solver->mkBVZeroExt(field.bitWidth(), rhs.getExpr());
+  llvm::SMTExprRef prod = solver->mkBVMul(lhsWide, rhsWide);
+  return reduceFieldExpr(solver, field, prod, wideWidth);
+}
+
 llvm::SMTExprRef createFieldInverseExpr(
     const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val,
-    StringRef suffix = ""
+    StringRef suffix = "", llvm::SMTExprRef *outConstraint = nullptr
 ) {
   const Field &field = val.getField();
   const Interval &iv = val.getInterval();
@@ -51,24 +142,32 @@ llvm::SMTExprRef createFieldInverseExpr(
   if (!suffix.empty()) {
     symName += suffix.str();
   }
+  llvm::raw_string_ostream os(symName);
+  os << "@" << op;
   llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
+  constrainFieldSymbol(solver, field, invSym);
   llvm::SMTExprRef one = solver->mkBitvector(APSInt::get(1), field.bitWidth());
-  llvm::SMTExprRef prime = solver->mkBitvector(toAPSInt(field.prime()), field.bitWidth());
-  llvm::SMTExprRef mult = solver->mkBVMul(val.getExpr(), invSym);
-  llvm::SMTExprRef mod = solver->mkBVURem(mult, prime);
+  llvm::SMTExprRef mult =
+      mulFieldExpr(solver, val, ExpressionValue(invSym, Interval::Entire(field)));
+  llvm::SMTExprRef mod = reduceFieldExpr(solver, field, mult, field.bitWidth());
   llvm::SMTExprRef constraint = solver->mkEqual(mod, one);
-  solver->addConstraint(constraint);
+  if (outConstraint != nullptr) {
+    *outConstraint = constraint;
+  } else {
+    solver->addConstraint(constraint);
+  }
   return invSym;
 }
 
 bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
   if (expr == nullptr && rhs.expr == nullptr) {
-    return i == rhs.i;
+    return i == rhs.i && llvm::equal(deferredConstraints, rhs.deferredConstraints);
   }
   if (expr == nullptr || rhs.expr == nullptr) {
     return false;
   }
-  return i == rhs.i && *expr == *rhs.expr;
+  return i == rhs.i && *expr == *rhs.expr &&
+         llvm::equal(deferredConstraints, rhs.deferredConstraints);
 }
 
 ExpressionValue
@@ -97,7 +196,13 @@ ExpressionValue selectValue(
   }
   llvm::SMTExprRef resultExpr =
       solver->mkIte(cond.getExpr(), trueVal.getExpr(), falseVal.getExpr());
-  return ExpressionValue(resultExpr, resultInterval);
+  return ExpressionValue(
+      resultExpr, resultInterval,
+      mergeDeferredConstraints(
+          mergeDeferredConstraints(cond.getDeferredConstraints(), trueVal.getDeferredConstraints()),
+          falseVal.getDeferredConstraints()
+      )
+  );
 }
 
 ExpressionValue intersection(
@@ -105,14 +210,21 @@ ExpressionValue intersection(
 ) {
   Interval res = lhs.i.intersect(rhs.i);
   const auto *exprEq = solver->mkEqual(lhs.expr, rhs.expr);
-  return ExpressionValue(exprEq, res);
+  return ExpressionValue(
+      exprEq, res,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
 add(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i + rhs.i;
-  res.expr = solver->mkBVAdd(lhs.expr, rhs.expr);
+  res.expr = addFieldExpr(solver, lhs, rhs);
+  res = ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
   return res;
 }
 
@@ -120,7 +232,11 @@ ExpressionValue
 sub(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i - rhs.i;
-  res.expr = solver->mkBVSub(lhs.expr, rhs.expr);
+  res.expr = subFieldExpr(solver, lhs, rhs);
+  res = ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
   return res;
 }
 
@@ -128,7 +244,11 @@ ExpressionValue
 mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i * rhs.i;
-  res.expr = solver->mkBVMul(lhs.expr, rhs.expr);
+  res.expr = mulFieldExpr(solver, lhs, rhs);
+  res = ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
   return res;
 }
 
@@ -167,9 +287,17 @@ div(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &lhs,
   } else {
     res.i = *divRes;
   }
-  llvm::SMTExprRef invExpr = createFieldInverseExpr(solver, op, rhs, ".div_inv");
-  res.expr = solver->mkBVMul(lhs.expr, invExpr);
-  return res;
+  llvm::SMTExprRef invConstraint = nullptr;
+  llvm::SMTExprRef invExpr = createFieldInverseExpr(solver, op, rhs, ".div_inv", &invConstraint);
+  ExpressionValue invVal(invExpr, getInverseInterval(rhs), rhs.getDeferredConstraints());
+  if (invConstraint != nullptr) {
+    invVal = invVal.withDeferredConstraint(invConstraint);
+  }
+  res.expr = mulFieldExpr(solver, lhs, invVal);
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), invVal.getDeferredConstraints())
+  );
 }
 
 ExpressionValue uintDiv(
@@ -189,7 +317,10 @@ ExpressionValue uintDiv(
     res.i = *divRes;
   }
   res.expr = solver->mkBVUDiv(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue sintDiv(
@@ -209,7 +340,10 @@ ExpressionValue sintDiv(
     res.i = *divRes;
   }
   res.expr = solver->mkBVSDiv(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -217,7 +351,117 @@ mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expressi
   ExpressionValue res;
   res.i = lhs.i % rhs.i;
   res.expr = solver->mkBVURem(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
+}
+
+namespace {
+
+bool isZeroConstant(Value value) {
+  auto constOp = dyn_cast_if_present<FeltConstantOp>(value.getDefiningOp());
+  return constOp && APSInt(constOp.getValue()).isZero();
+}
+
+std::optional<Interval>
+matchBooleanGatedSub(SubFeltOp subOp, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  auto mulOp = dyn_cast_if_present<MulFeltOp>(subOp.getRhs().getDefiningOp());
+  if (!mulOp) {
+    return std::nullopt;
+  }
+
+  bool reusesLhs = mulOp.getLhs() == subOp.getLhs() || mulOp.getRhs() == subOp.getLhs();
+  if (!reusesLhs) {
+    return std::nullopt;
+  }
+
+  if (lhs.getInterval().isBoolean() && rhs.getInterval().isBoolean()) {
+    return Interval::Boolean(lhs.getField());
+  }
+  return std::nullopt;
+}
+
+std::optional<Interval>
+matchBooleanGatedAdd(AddFeltOp addOp, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  auto matchSide = [&](Value gatedVal, const ExpressionValue &gated, Value passthroughVal,
+                       const ExpressionValue &passthrough) {
+    auto subOp = dyn_cast_if_present<SubFeltOp>(gatedVal.getDefiningOp());
+    if (!subOp || !isZeroConstant(subOp.getLhs()) || subOp.getRhs().getDefiningOp() == nullptr) {
+      return std::optional<Interval>();
+    }
+
+    auto mulOp = dyn_cast_if_present<MulFeltOp>(subOp.getRhs().getDefiningOp());
+    if (!mulOp) {
+      return std::optional<Interval>();
+    }
+
+    bool reusesPassthrough = mulOp.getLhs() == passthroughVal || mulOp.getRhs() == passthroughVal;
+    if (!reusesPassthrough) {
+      return std::optional<Interval>();
+    }
+
+    if (passthrough.getInterval().isBoolean()) {
+      return std::optional<Interval>(Interval::Boolean(passthrough.getField()));
+    }
+    return std::optional<Interval>();
+  };
+
+  if (auto iv = matchSide(addOp.getLhs(), lhs, addOp.getRhs(), rhs)) {
+    return iv;
+  }
+  return matchSide(addOp.getRhs(), rhs, addOp.getLhs(), lhs);
+}
+
+std::optional<Interval> matchSubMod(SubFeltOp subOp, const ExpressionValue &lhs) {
+  auto modOp = dyn_cast_if_present<UnsignedModFeltOp>(subOp.getRhs().getDefiningOp());
+  if (!modOp || modOp.getLhs() != subOp.getLhs()) {
+    return std::nullopt;
+  }
+
+  auto modulusOp = dyn_cast_if_present<FeltConstantOp>(modOp.getRhs().getDefiningOp());
+  if (!modulusOp || APSInt(modulusOp.getValue()).isZero()) {
+    return std::nullopt;
+  }
+
+  const Interval &lhsInterval = lhs.getInterval();
+  const Field &f = lhsInterval.getField();
+  if (!(lhsInterval.isDegenerate() || lhsInterval.isTypeA())) {
+    return std::nullopt;
+  }
+
+  llvm::DynamicAPInt modulus = f.reduce(APSInt(modulusOp.getValue()));
+  llvm::DynamicAPInt lower = lhsInterval.lhs();
+  llvm::DynamicAPInt upper = lhsInterval.rhs();
+  llvm::DynamicAPInt roundedLower = (lower / modulus) * modulus;
+  llvm::DynamicAPInt roundedUpper = (upper / modulus) * modulus;
+  return UnreducedInterval(roundedLower, roundedUpper).reduce(f);
+}
+
+} // namespace
+
+std::string buildUniqueSymbolName(mlir::Value value) {
+  std::string name = "sym_";
+  llvm::raw_string_ostream os(name);
+  if (auto fn = value.getParentRegion()->getParentOfType<FuncDefOp>()) {
+    auto fullName = getPathFromTopRoot(fn);
+    if (succeeded(fullName)) {
+      os << fullName.value() << "::";
+    } else {
+      os << fn.getName() << "::";
+    }
+  }
+  os << buildStringViaPrint(value) << "@" << value.getAsOpaquePointer();
+  return os.str();
+}
+
+std::string buildUniqueSymbolName(const SourceRef &ref) {
+  auto rootRes = ref.getRoot();
+  ensure(succeeded(rootRes), "source ref must have rooted value");
+  std::string name = buildUniqueSymbolName(*rootRes);
+  llvm::raw_string_ostream os(name);
+  os << "::" << ref;
+  return os.str();
 }
 
 ExpressionValue
@@ -225,7 +469,10 @@ bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expre
   ExpressionValue res;
   res.i = lhs.i & rhs.i;
   res.expr = solver->mkBVAnd(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -233,7 +480,10 @@ bitOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expres
   ExpressionValue res;
   res.i = lhs.i | rhs.i;
   res.expr = solver->mkBVOr(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -245,7 +495,10 @@ bitXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expre
   ExpressionValue res;
   res.i = lhs.i ^ rhs.i;
   res.expr = solver->mkBVXor(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue shiftLeft(
@@ -254,7 +507,10 @@ ExpressionValue shiftLeft(
   ExpressionValue res;
   res.i = lhs.i << rhs.i;
   res.expr = solver->mkBVShl(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue shiftRight(
@@ -263,7 +519,10 @@ ExpressionValue shiftRight(
   ExpressionValue res;
   res.i = lhs.i >> rhs.i;
   res.expr = solver->mkBVLshr(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -327,7 +586,10 @@ cmp(const llvm::SMTSolverRef &solver, CmpOp op, const ExpressionValue &lhs,
     }
     break;
   }
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -335,7 +597,10 @@ boolAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expr
   ExpressionValue res;
   res.i = boolAnd(lhs.i, rhs.i);
   res.expr = solver->mkAnd(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -343,7 +608,10 @@ boolOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expre
   ExpressionValue res;
   res.i = boolOr(lhs.i, rhs.i);
   res.expr = solver->mkOr(lhs.expr, rhs.expr);
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue
@@ -354,46 +622,54 @@ boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expr
   res.expr = solver->mkAnd(
       solver->mkOr(lhs.expr, rhs.expr), solver->mkNot(solver->mkAnd(lhs.expr, rhs.expr))
   );
-  return res;
+  return ExpressionValue(
+      res.expr, res.i,
+      mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+  );
 }
 
 ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = -val.i;
-  res.expr = solver->mkBVNeg(val.expr);
-  return res;
+  llvm::SMTExprRef prime = getFieldPrimeExpr(solver, val.getField(), val.getField().bitWidth());
+  res.expr = reduceFieldExpr(
+      solver, val.getField(), solver->mkBVSub(prime, val.expr), val.getField().bitWidth()
+  );
+  return ExpressionValue(res.expr, res.i, val.getDeferredConstraints());
 }
 
 ExpressionValue notOp(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = ~val.i;
   res.expr = solver->mkBVNot(val.expr);
-  return res;
+  return ExpressionValue(res.expr, res.i, val.getDeferredConstraints());
 }
 
 ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = boolNot(val.i);
   res.expr = solver->mkNot(val.expr);
-  return res;
+  return ExpressionValue(res.expr, res.i, val.getDeferredConstraints());
 }
 
 ExpressionValue
 fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val) {
   const Field &field = val.getField();
-  ExpressionValue res;
-  res.i = Interval::Entire(field);
-  res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
-                 .Case<InvFeltOp>([&](auto) {
-    return createFieldInverseExpr(solver, op, val);
-  }).Default([](Operation *unsupported) {
+  return TypeSwitch<Operation *, ExpressionValue>(op)
+      .Case<InvFeltOp>([&](auto) {
+    llvm::SMTExprRef invConstraint = nullptr;
+    llvm::SMTExprRef invExpr = createFieldInverseExpr(solver, op, val, "", &invConstraint);
+    ExpressionValue res(invExpr, getInverseInterval(val), val.getDeferredConstraints());
+    if (invConstraint != nullptr) {
+      res = res.withDeferredConstraint(invConstraint);
+    }
+    return res;
+  }).Default([&](Operation *unsupported) {
     llvm::report_fatal_error(
         "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
     );
-    return nullptr;
+    return ExpressionValue(field);
   });
-
-  return res;
 }
 
 void ExpressionValue::print(mlir::raw_ostream &os) const {
@@ -438,8 +714,8 @@ ChangeResult IntervalAnalysisLattice::setValue(const ExpressionValue &e) {
 }
 
 ChangeResult IntervalAnalysisLattice::addSolverConstraint(const ExpressionValue &e) {
-  if (!constraints.contains(e)) {
-    constraints.insert(e);
+  if (!llvm::is_contained(constraints, e)) {
+    constraints.push_back(e);
     return ChangeResult::Change;
   }
   return ChangeResult::NoChange;
@@ -557,6 +833,19 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     ExpressionValue newVal = prior.withInterval(intersection);
     propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
   }
+}
+
+void IntervalDataFlowAnalysis::addFunctionConstraint(
+    FuncDefOp fn, const ExpressionValue &constraint
+) {
+  if (constraint.getExpr() == nullptr || constraint.hasDeferredConstraints()) {
+    return;
+  }
+  auto &constraints = functionConstraints[fn];
+  if (!llvm::is_contained(constraints, constraint)) {
+    constraints.push_back(constraint);
+  }
+  smtSolver->addConstraint(constraint.getExpr());
 }
 
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
@@ -702,6 +991,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     const Interval &constrainInterval = constraint.getInterval();
     applyInterval(emitEq, lhsVal, constrainInterval);
     applyInterval(emitEq, rhsVal, constrainInterval);
+    addFunctionConstraint(fn, constraint);
   } else if (auto assertOp = llvm::dyn_cast<AssertOp>(op)) {
     // assert enforces that the operand is true. So we apply an interval of [1, 1]
     // to the operand.
@@ -709,8 +999,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     applyInterval(assertOp, cond, Interval::True(field.get()));
     // Also add the solver constraint that the expression must be true.
     auto assertExpr = operandVals[0].getScalarValue();
-    // No need to propagate the constraint
-    (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
+    addFunctionConstraint(fn, assertExpr);
   } else if (auto writem = llvm::dyn_cast<MemberWriteOp>(op)) {
     // Update values stored in a member
     ExpressionValue writeVal = operandVals[1].getScalarValue();
@@ -868,16 +1157,20 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(mlir::Type ty, const cha
   if (isBooleanType(ty)) {
     return smtSolver->mkSymbol(name, smtSolver->getBoolSort());
   }
-  return field.get().createSymbol(smtSolver, name);
+  llvm::SMTExprRef sym = field.get().createSymbol(smtSolver, name);
+  if (fieldConstrainedSymbols.insert(sym).second) {
+    constrainFieldSymbol(smtSolver, field.get(), sym);
+  }
+  return sym;
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(const SourceRef &r) const {
-  std::string name = buildStringViaPrint(r);
+  std::string name = buildUniqueSymbolName(r);
   return createSymbol(r.getType(), name.c_str());
 }
 
 llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(Value v) const {
-  std::string name = buildStringViaPrint(v);
+  std::string name = buildUniqueSymbolName(v);
   return createSymbol(v.getType(), name.c_str());
 }
 
@@ -917,6 +1210,30 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
   auto lhs = a.getScalarValue(), rhs = b.getScalarValue();
   ensure(lhs.getExpr(), "cannot perform arithmetic over null lhs smt expr");
   ensure(rhs.getExpr(), "cannot perform arithmetic over null rhs smt expr");
+
+  if (auto subOp = dyn_cast<SubFeltOp>(op)) {
+    if (auto gatedInterval = matchBooleanGatedSub(subOp, lhs, rhs)) {
+      return ExpressionValue(
+          subFieldExpr(smtSolver, lhs, rhs), *gatedInterval,
+          mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+      );
+    }
+    if (auto roundedInterval = matchSubMod(subOp, lhs)) {
+      return ExpressionValue(
+          subFieldExpr(smtSolver, lhs, rhs), *roundedInterval,
+          mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+      );
+    }
+  }
+
+  if (auto addOp = dyn_cast<AddFeltOp>(op)) {
+    if (auto gatedInterval = matchBooleanGatedAdd(addOp, lhs, rhs)) {
+      return ExpressionValue(
+          addFieldExpr(smtSolver, lhs, rhs), *gatedInterval,
+          mergeDeferredConstraints(lhs.getDeferredConstraints(), rhs.getDeferredConstraints())
+      );
+    }
+  }
 
   // clang-format off
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
@@ -1161,6 +1478,20 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     applyInterval(mulOp, rhs, newRhsInterval);
   };
 
+  auto invCase = [&](InvFeltOp invOp) {
+    Interval zeroInt = Interval::Degenerate(f, f.zero());
+    if (newInterval.intersect(zeroInt).isEmpty()) {
+      applyInterval(
+          invOp, invOp.getOperand(),
+          getLatticeElement(invOp.getOperand())
+              ->getValue()
+              .getScalarValue()
+              .getInterval()
+              .difference(zeroInt)
+      );
+    }
+  };
+
   auto addCase = [&](AddFeltOp addOp) {
     Value lhs = addOp.getLhs(), rhs = addOp.getRhs();
     Lattice *lhsLat = getLatticeElement(lhs), *rhsLat = getLatticeElement(rhs);
@@ -1293,6 +1624,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
             .Case<AddFeltOp>([&](auto op) { return addCase(op); })
             .Case<SubFeltOp>([&](auto op) { return subCase(op); })
             .Case<MulFeltOp>([&](auto op) { mulCase(op); })
+            .Case<InvFeltOp>([&](auto op) { invCase(op); })
             .Case<arith::SelectOp>([&](auto op) { selectCase(op); })
             .Case<MemberReadOp>([&](auto op){ readmCase(op); })
             .Case<ReadArrayOp>([&](auto op){ readArrCase(op); })
@@ -1390,13 +1722,171 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value 
 
 /* StructIntervals */
 
+namespace {
+
+llvm::SMTExprRef makeBoolConstant(const llvm::SMTSolverRef &solver, bool value) {
+  return solver->mkBoolean(value);
+}
+
+llvm::SMTExprRef makeIntervalConstraint(
+    const llvm::SMTSolverRef &solver, const Field &field, llvm::SMTExprRef expr, const Interval &iv
+) {
+  if (solver->getSort(expr)->isBooleanSort()) {
+    if (iv.isEmpty()) {
+      return solver->mkAnd(makeBoolConstant(solver, true), makeBoolConstant(solver, false));
+    }
+    if (iv.isBoolTrue()) {
+      return expr;
+    }
+    if (iv.isBoolFalse()) {
+      return solver->mkNot(expr);
+    }
+    return makeBoolConstant(solver, true);
+  }
+
+  auto makeConst = [&](const llvm::DynamicAPInt &value) {
+    return solver->mkBitvector(toAPSInt(value), field.bitWidth());
+  };
+  auto ge = [&](const llvm::DynamicAPInt &value) {
+    return solver->mkBVUge(expr, makeConst(value));
+  };
+  auto le = [&](const llvm::DynamicAPInt &value) {
+    return solver->mkBVUle(expr, makeConst(value));
+  };
+
+  if (iv.isEmpty()) {
+    return solver->mkAnd(ge(field.zero()), solver->mkNot(ge(field.zero())));
+  }
+  if (iv.isEntire()) {
+    return makeBoolConstant(solver, true);
+  }
+  if (iv.isDegenerate()) {
+    return solver->mkEqual(expr, makeConst(iv.lhs()));
+  }
+  if (iv.isTypeA()) {
+    return solver->mkAnd(ge(iv.lhs()), le(iv.rhs()));
+  }
+  return solver->mkOr(le(iv.rhs()), ge(iv.lhs()));
+}
+
+std::optional<Interval> refineIntervalWithSolver(
+    const llvm::SMTSolverRef &solver, const Field &field, const ExpressionValue &exprVal,
+    llvm::ArrayRef<ExpressionValue> solverConstraints, unsigned &remainingQueryBudget
+) {
+  const Interval &coarse = exprVal.getInterval();
+  llvm::SMTExprRef expr = exprVal.getExpr();
+  // Restrict refinement to intervals that already have a simple, bounded shape.
+  // Entire/wrapped intervals are common after control-flow joins and loop-carried
+  // values, and binary-searching those large domains is expensive while usually
+  // providing little additional precision in the current interval domain.
+  if (expr == nullptr || exprVal.hasDeferredConstraints() || coarse.isEmpty() ||
+      coarse.isDegenerate() || remainingQueryBudget == 0 ||
+      (!exprVal.isBoolSort(solver) && !coarse.isTypeA())) {
+    return std::nullopt;
+  }
+
+  llvm::SMTExprRef coarseConstraint = makeIntervalConstraint(solver, field, expr, coarse);
+
+  auto checkConstraint = [&](llvm::SMTExprRef extra) -> std::optional<bool> {
+    if (remainingQueryBudget == 0) {
+      return std::nullopt;
+    }
+    --remainingQueryBudget;
+    solver->push();
+    for (const auto &constraint : solverConstraints) {
+      if (constraint.getExpr() != nullptr) {
+        solver->addConstraint(constraint.getExpr());
+      }
+    }
+    solver->addConstraint(coarseConstraint);
+    solver->addConstraint(extra);
+    std::optional<bool> sat = solver->check();
+    solver->pop();
+    return sat;
+  };
+
+  if (exprVal.isBoolSort(solver)) {
+    auto satFalse = checkConstraint(solver->mkNot(expr));
+    auto satTrue = checkConstraint(expr);
+    if (!satFalse.has_value() || !satTrue.has_value()) {
+      return std::nullopt;
+    }
+    if (!*satFalse && !*satTrue) {
+      return Interval::Empty(field);
+    }
+    if (!*satFalse) {
+      return Interval::True(field);
+    }
+    if (!*satTrue) {
+      return Interval::False(field);
+    }
+    return Interval::Boolean(field);
+  }
+
+  llvm::DynamicAPInt low = field.zero();
+  llvm::DynamicAPInt high = field.maxVal();
+  if (coarse.isTypeA() || coarse.isDegenerate()) {
+    low = coarse.lhs();
+    high = coarse.rhs();
+  }
+
+  auto makeConst = [&](const llvm::DynamicAPInt &value) {
+    return solver->mkBitvector(toAPSInt(value), field.bitWidth());
+  };
+
+  llvm::DynamicAPInt minVal = low;
+  llvm::DynamicAPInt minLow = low;
+  llvm::DynamicAPInt minHigh = high;
+  while (minLow != minHigh) {
+    llvm::DynamicAPInt mid = minLow + ((minHigh - minLow) / llvm::DynamicAPInt(2));
+    auto sat = checkConstraint(solver->mkBVUle(expr, makeConst(mid)));
+    if (!sat.has_value()) {
+      return std::nullopt;
+    }
+    if (*sat) {
+      minHigh = mid;
+    } else {
+      minLow = mid + llvm::DynamicAPInt(1);
+    }
+  }
+  minVal = minLow;
+
+  llvm::DynamicAPInt maxVal = minVal;
+  llvm::DynamicAPInt maxLow = minVal;
+  llvm::DynamicAPInt maxHigh = high;
+  while (maxLow != maxHigh) {
+    llvm::DynamicAPInt mid =
+        maxLow + ((maxHigh - maxLow + llvm::DynamicAPInt(1)) / llvm::DynamicAPInt(2));
+    auto sat = checkConstraint(solver->mkBVUge(expr, makeConst(mid)));
+    if (!sat.has_value()) {
+      return std::nullopt;
+    }
+    if (*sat) {
+      maxLow = mid;
+    } else {
+      maxHigh = mid - llvm::DynamicAPInt(1);
+    }
+  }
+  maxVal = maxLow;
+
+  Interval refined = minVal == maxVal ? Interval::Degenerate(field, minVal)
+                                      : Interval::TypeA(field, minVal, maxVal);
+  if (refined.intersect(coarse) != refined) {
+    return coarse;
+  }
+  return refined.width() <= coarse.width() ? std::optional<Interval>(refined)
+                                           : std::optional<Interval>(coarse);
+}
+
+} // namespace
+
 LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
 ) {
 
   auto computeIntervalsImpl = [&solver, &ctx, this](
                                   FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &memberRanges,
-                                  llvm::SetVector<ExpressionValue> & /*solverConstraints*/
+                                  llvm::SmallVector<ExpressionValue> &solverConstraints
                               ) {
     // Since every lattice value does not contain every value, we will traverse
     // the function backwards (from most up-to-date to least-up-to-date lattices)
@@ -1404,6 +1894,7 @@ LogicalResult StructIntervals::computeIntervals(
     // from the search set.
 
     SourceRefSet searchSet;
+    llvm::MapVector<SourceRef, ExpressionValue> memberValues;
     for (const auto &ref : SourceRef::getAllSourceRefs(structDef, fn)) {
       // We only want to compute intervals for field elements and not composite types.
       if (!ref.isScalar()) {
@@ -1422,8 +1913,7 @@ LogicalResult StructIntervals::computeIntervals(
         if (!expr.getExpr()) {
           expr = expr.withInterval(Interval::Entire(ctx.getField()));
         }
-        memberRanges[ref] = expr.getInterval();
-        assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
+        memberValues[ref] = expr;
       }
     }
 
@@ -1433,24 +1923,60 @@ LogicalResult StructIntervals::computeIntervals(
     for (const auto &[ref, lattices] : ctx.intervalDFA->getReadResults()) {
       if (!lattices.empty() && searchSet.erase(ref)) {
         Interval joinedInterval = Interval::Empty(ctx.getField());
+        llvm::SMTExprRef sharedExpr = nullptr;
+        llvm::ArrayRef<llvm::SMTExprRef> sharedDeferred;
+        bool shared = true;
         for (const IntervalAnalysisLattice *lattice : lattices) {
-          joinedInterval = joinedInterval.join(lattice->getValue().getScalarValue().getInterval());
+          const ExpressionValue &expr = lattice->getValue().getScalarValue();
+          joinedInterval = joinedInterval.join(expr.getInterval());
+          if (expr.getExpr() == nullptr) {
+            shared = false;
+          } else if (sharedExpr == nullptr) {
+            sharedExpr = expr.getExpr();
+            sharedDeferred = expr.getDeferredConstraints();
+          } else if (*sharedExpr != *expr.getExpr() ||
+                     !llvm::equal(sharedDeferred, expr.getDeferredConstraints())) {
+            shared = false;
+          }
         }
-        memberRanges[ref] = joinedInterval;
-        assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
+        memberValues[ref] =
+            ExpressionValue(shared ? sharedExpr : nullptr, joinedInterval, sharedDeferred);
       }
     }
 
     for (const auto &[ref, val] : ctx.intervalDFA->getWriteResults()) {
       if (searchSet.erase(ref)) {
-        memberRanges[ref] = val.getInterval();
-        assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
+        memberValues[ref] = val;
       }
     }
 
     // For all unfound refs, default to the entire range.
     for (const auto &ref : searchSet) {
-      memberRanges[ref] = Interval::Entire(ctx.getField());
+      memberValues[ref] = ExpressionValue(ctx.getField());
+    }
+
+    solverConstraints = ctx.intervalDFA->getFunctionConstraints(fn);
+    unsigned remainingQueryBudget = ctx.refinementQueryBudget;
+    bool skipSolverRefinementForControlFlow = false;
+    fn->walk([&](Operation *op) {
+      if (isa<scf::ForOp, scf::IfOp, scf::WhileOp>(op)) {
+        skipSolverRefinementForControlFlow = true;
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    });
+
+    for (auto &[ref, exprVal] : memberValues) {
+      Interval finalInterval = exprVal.getInterval();
+      if (ctx.refineWithSolver && !skipSolverRefinementForControlFlow) {
+        if (auto refined = refineIntervalWithSolver(
+                ctx.smtSolver, ctx.getField(), exprVal, solverConstraints, remainingQueryBudget
+            )) {
+          finalInterval = *refined;
+        }
+      }
+      memberRanges[ref] = finalInterval;
+      assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
     }
 
     // Sort the outputs since we assembled things out of order.
@@ -1482,7 +2008,7 @@ void StructIntervals::print(mlir::raw_ostream &os, bool withConstraints, bool pr
   auto writeIntervals =
       [&os, &withConstraints](
           const char *fnName, const llvm::MapVector<SourceRef, Interval> &memberRanges,
-          const llvm::SetVector<ExpressionValue> &solverConstraints, bool printName
+          const llvm::SmallVector<ExpressionValue> &solverConstraints, bool printName
       ) {
     int indent = 4;
     if (printName) {

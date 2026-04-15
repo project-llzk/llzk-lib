@@ -305,6 +305,45 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kInverseModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @InverseBehavior {
+    struct.member @const_inv : !felt.type {llzk.pub, signal}
+    struct.member @reciprocal : !felt.type {llzk.pub, signal}
+    struct.member @bounded : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%a: !felt.type, %b: !felt.type)
+        -> !struct.type<@InverseBehavior>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@InverseBehavior>
+      %felt_const_0 = felt.const  0
+      %felt_const_2 = felt.const  2
+      %felt_const_10 = felt.const  10
+      %felt_const_12 = felt.const  12
+      %cmp_nonzero = bool.cmp ne(%a, %felt_const_0) : !felt.type, !felt.type
+      bool.assert %cmp_nonzero
+      %cmp0 = bool.cmp ge(%b, %felt_const_10) : !felt.type, !felt.type
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%b, %felt_const_12) : !felt.type, !felt.type
+      bool.assert %cmp1
+
+      %0 = felt.inv %felt_const_2 : !felt.type
+      %1 = felt.inv %a : !felt.type
+
+      struct.writem %self[@const_inv] = %0 : <@InverseBehavior>, !felt.type
+      struct.writem %self[@reciprocal] = %1 : <@InverseBehavior>, !felt.type
+      struct.writem %self[@bounded] = %b : <@InverseBehavior>, !felt.type
+      function.return %self : !struct.type<@InverseBehavior>
+    }
+
+    function.def @constrain(%self: !struct.type<@InverseBehavior>, %a: !felt.type, %b: !felt.type)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
   static constexpr auto kComputeArrayMemberWriteModule = R"mlir(
 module attributes {llzk.lang} {
   struct.def @ComputeArrayMemberWrite {
@@ -327,6 +366,62 @@ module attributes {llzk.lang} {
 
     function.def @constrain(%arg0: !struct.type<@ComputeArrayMemberWrite>, %arg1: !felt.type)
         attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kOperatorPrecisionModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @OperatorPrecision {
+    struct.member @add_case : !felt.type {llzk.pub, signal}
+    struct.member @sub_case : !felt.type {llzk.pub, signal}
+    struct.member @mod2 : !felt.type {llzk.pub, signal}
+    struct.member @round_down : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%x: !felt.type, %b: !felt.type, %a: !felt.type)
+        -> !struct.type<@OperatorPrecision>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@OperatorPrecision>
+      %felt_const_0 = felt.const  0
+      %felt_const_1 = felt.const  1
+      %felt_const_2 = felt.const  2
+      %felt_const_4 = felt.const  4
+      %felt_const_10 = felt.const  10
+      %felt_const_12 = felt.const  12
+
+      %cmp0 = bool.cmp ge(%x, %felt_const_0) : !felt.type, !felt.type
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%x, %felt_const_1) : !felt.type, !felt.type
+      bool.assert %cmp1
+      %cmp2 = bool.cmp ge(%b, %felt_const_0) : !felt.type, !felt.type
+      bool.assert %cmp2
+      %cmp3 = bool.cmp le(%b, %felt_const_1) : !felt.type, !felt.type
+      bool.assert %cmp3
+      %cmp4 = bool.cmp ge(%a, %felt_const_10) : !felt.type, !felt.type
+      bool.assert %cmp4
+      %cmp5 = bool.cmp le(%a, %felt_const_12) : !felt.type, !felt.type
+      bool.assert %cmp5
+
+      %0 = felt.mul %x, %b : !felt.type, !felt.type
+      %1 = felt.sub %x, %0 : !felt.type, !felt.type
+      %2 = felt.sub %felt_const_0, %0 : !felt.type, !felt.type
+      %3 = felt.add %2, %x : !felt.type, !felt.type
+      %4 = felt.umod %a, %felt_const_2 : !felt.type, !felt.type
+      %5 = felt.umod %a, %felt_const_4 : !felt.type, !felt.type
+      %6 = felt.sub %a, %5 : !felt.type, !felt.type
+
+      struct.writem %self[@add_case] = %3 : <@OperatorPrecision>, !felt.type
+      struct.writem %self[@sub_case] = %1 : <@OperatorPrecision>, !felt.type
+      struct.writem %self[@mod2] = %4 : <@OperatorPrecision>, !felt.type
+      struct.writem %self[@round_down] = %6 : <@OperatorPrecision>, !felt.type
+      function.return %self : !struct.type<@OperatorPrecision>
+    }
+
+    function.def
+        @constrain(%arg0: !struct.type<@OperatorPrecision>, %arg1: !felt.type, %arg2: !felt.type,
+                   %arg3: !felt.type) attributes {function.allow_constraint} {
       function.return
     }
   }
@@ -429,4 +524,112 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackOperatorPrecisionPatterns) {
+  auto mod = parseModule(kOperatorPrecisionModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  const auto &intervals = analysis.getResult(structDef).getComputeIntervals();
+  ASSERT_FALSE(intervals.empty());
+
+  auto getMemberRef = [&](StringRef name) -> SourceRef {
+    MemberDefOp target;
+    for (auto member : structDef.getOps<MemberDefOp>()) {
+      if (member.getName() == name) {
+        target = member;
+        break;
+      }
+    }
+    EXPECT_TRUE(target != nullptr);
+    return SourceRef(
+        mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(target)}
+    );
+  };
+
+  auto addIt = intervals.find(getMemberRef("add_case"));
+  ASSERT_NE(addIt, intervals.end());
+  auto boolExpected = Interval::Boolean(field);
+  ASSERT_TRUE(checkCond(boolExpected, addIt->second, boolExpected == addIt->second));
+
+  auto subIt = intervals.find(getMemberRef("sub_case"));
+  ASSERT_NE(subIt, intervals.end());
+  ASSERT_TRUE(checkCond(boolExpected, subIt->second, boolExpected == subIt->second));
+
+  auto modIt = intervals.find(getMemberRef("mod2"));
+  ASSERT_NE(modIt, intervals.end());
+  ASSERT_TRUE(checkCond(boolExpected, modIt->second, boolExpected == modIt->second));
+
+  auto roundIt = intervals.find(getMemberRef("round_down"));
+  ASSERT_NE(roundIt, intervals.end());
+  auto roundedExpected = Interval::TypeA(field, field.felt(8), field.felt(12));
+  ASSERT_TRUE(checkCond(roundedExpected, roundIt->second, roundedExpected == roundIt->second))
+      << buildStringViaPrint(roundIt->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, InverseIntervalsStayFastAndSound) {
+  auto mod = parseModule(kInverseModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  const auto &computeIntervals = analysis.getResult(structDef).getComputeIntervals();
+  ASSERT_FALSE(computeIntervals.empty());
+
+  auto getMemberRef = [&](StringRef name) -> SourceRef {
+    MemberDefOp target;
+    for (auto member : structDef.getOps<MemberDefOp>()) {
+      if (member.getName() == name) {
+        target = member;
+        break;
+      }
+    }
+    EXPECT_TRUE(target != nullptr);
+    return SourceRef(
+        llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(target)}
+    );
+  };
+
+  auto constInvIt = computeIntervals.find(getMemberRef("const_inv"));
+  ASSERT_NE(constInvIt, computeIntervals.end());
+  auto exactInverse = Interval::Degenerate(field, field.inv(field.felt(2)));
+  ASSERT_TRUE(checkCond(exactInverse, constInvIt->second, exactInverse == constInvIt->second));
+
+  auto boundedIt = computeIntervals.find(getMemberRef("bounded"));
+  ASSERT_NE(boundedIt, computeIntervals.end());
+  auto boundedExpected = Interval::TypeA(field, field.felt(10), field.felt(12));
+  ASSERT_TRUE(checkCond(boundedExpected, boundedIt->second, boundedExpected == boundedIt->second));
+
+  auto reciprocalIt = computeIntervals.find(getMemberRef("reciprocal"));
+  ASSERT_NE(reciprocalIt, computeIntervals.end());
+  auto nonZeroExpected =
+      Interval::Entire(field).difference(Interval::Degenerate(field, field.zero()));
+  ASSERT_TRUE(
+      checkCond(nonZeroExpected, reciprocalIt->second, nonZeroExpected == reciprocalIt->second)
+  );
+
+  SourceRef constrainArgA(computeFn.getArgument(0));
+  auto argAIt = computeIntervals.find(constrainArgA);
+  ASSERT_NE(argAIt, computeIntervals.end());
+  auto inputNonZeroExpected =
+      Interval::Entire(field).difference(Interval::Degenerate(field, field.zero()));
+  ASSERT_TRUE(
+      checkCond(inputNonZeroExpected, argAIt->second, inputNonZeroExpected == argAIt->second)
+  );
 }

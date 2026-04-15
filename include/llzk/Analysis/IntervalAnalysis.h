@@ -32,10 +32,12 @@
 
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/SMTAPI.h>
 
 #include <array>
 #include <mutex>
+#include <optional>
 
 namespace llzk {
 
@@ -45,23 +47,35 @@ namespace llzk {
 /// Used as a scalar lattice value.
 class ExpressionValue {
 public:
-  /* Must be default initializable to be a ScalarLatticeValue. */
-  ExpressionValue() : i(), expr(nullptr) {}
+  using DeferredConstraintSet = llvm::SmallVector<llvm::SMTExprRef>;
 
-  explicit ExpressionValue(const Field &f) : i(Interval::Entire(f)), expr(nullptr) {}
+  /* Must be default initializable to be a ScalarLatticeValue. */
+  ExpressionValue() : i(), expr(nullptr), deferredConstraints() {}
+
+  explicit ExpressionValue(const Field &f)
+      : i(Interval::Entire(f)), expr(nullptr), deferredConstraints() {}
 
   ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
-      : i(Interval::Entire(f)), expr(exprRef) {}
+      : i(Interval::Entire(f)), expr(exprRef), deferredConstraints() {}
 
   ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::DynamicAPInt &singleVal)
-      : i(Interval::Degenerate(f, singleVal)), expr(exprRef) {}
+      : i(Interval::Degenerate(f, singleVal)), expr(exprRef), deferredConstraints() {}
 
   ExpressionValue(llvm::SMTExprRef exprRef, const Interval &interval)
-      : i(interval), expr(exprRef) {}
+      : i(interval), expr(exprRef), deferredConstraints() {}
+
+  ExpressionValue(
+      llvm::SMTExprRef exprRef, const Interval &interval, llvm::ArrayRef<llvm::SMTExprRef> deferred
+  )
+      : i(interval), expr(exprRef), deferredConstraints(deferred.begin(), deferred.end()) {}
 
   llvm::SMTExprRef getExpr() const { return expr; }
 
   const Interval &getInterval() const { return i; }
+
+  llvm::ArrayRef<llvm::SMTExprRef> getDeferredConstraints() const { return deferredConstraints; }
+
+  bool hasDeferredConstraints() const { return !deferredConstraints.empty(); }
 
   const Field &getField() const { return i.getField(); }
 
@@ -69,12 +83,20 @@ public:
   /// @param newInterval
   /// @return
   ExpressionValue withInterval(const Interval &newInterval) const {
-    return ExpressionValue(expr, newInterval);
+    return ExpressionValue(expr, newInterval, deferredConstraints);
   }
 
   /// @brief Return the current expression with a new SMT expression.
   ExpressionValue withExpression(const llvm::SMTExprRef &newExpr) const {
-    return ExpressionValue(newExpr, i);
+    return ExpressionValue(newExpr, i, deferredConstraints);
+  }
+
+  ExpressionValue withDeferredConstraint(const llvm::SMTExprRef &newConstraint) const {
+    DeferredConstraintSet updated(deferredConstraints.begin(), deferredConstraints.end());
+    if (!llvm::is_contained(updated, newConstraint)) {
+      updated.push_back(newConstraint);
+    }
+    return ExpressionValue(expr, i, updated);
   }
 
   /* Required to be a ScalarLatticeValue. */
@@ -188,13 +210,17 @@ public:
 
   struct Hash {
     unsigned operator()(const ExpressionValue &e) const {
-      return Interval::Hash {}(e.i) ^ llvm::hash_value(e.expr);
+      return llvm::hash_combine(
+          Interval::Hash {}(e.i), llvm::hash_value(e.expr),
+          llvm::hash_combine_range(e.deferredConstraints.begin(), e.deferredConstraints.end())
+      );
     }
   };
 
 private:
   Interval i;
   llvm::SMTExprRef expr;
+  DeferredConstraintSet deferredConstraints;
 };
 
 /* IntervalAnalysisLatticeValue */
@@ -221,7 +247,7 @@ public:
   // Expression to interval map for convenience.
   using ExpressionIntervals = mlir::DenseMap<llvm::SMTExprRef, Interval>;
   // Tracks all constraints and assignments in insertion order
-  using ConstraintSet = llvm::SetVector<ExpressionValue>;
+  using ConstraintSet = llvm::SmallVector<ExpressionValue>;
 
   using AbstractSparseLattice::AbstractSparseLattice;
 
@@ -260,6 +286,7 @@ class IntervalDataFlowAnalysis
   using Base = dataflow::SparseForwardDataFlowAnalysis<IntervalAnalysisLattice>;
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
+  using ConstraintSet = llvm::SmallVector<ExpressionValue>;
 
   // Map SourceRefs to their symbols.
   using SymbolMap = mlir::DenseMap<SourceRef, llvm::SMTExprRef>;
@@ -289,6 +316,14 @@ public:
 
   const llvm::DenseMap<SourceRef, ExpressionValue> &getWriteResults() const { return writeResults; }
 
+  const ConstraintSet &getFunctionConstraints(function::FuncDefOp fn) const {
+    static const ConstraintSet empty;
+    if (auto it = functionConstraints.find(fn); it != functionConstraints.end()) {
+      return it->second;
+    }
+    return empty;
+  }
+
 private:
   mlir::DataFlowSolver &_dataflowSolver;
   llvm::SMTSolverRef smtSolver;
@@ -301,6 +336,8 @@ private:
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> readResults;
   // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
+  llvm::DenseMap<function::FuncDefOp, ConstraintSet> functionConstraints;
+  mutable llvm::DenseSet<llvm::SMTExprRef> fieldConstrainedSymbols;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
@@ -416,6 +453,8 @@ private:
   /// are currently tracking the same storage location.
   void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
 
+  void addFunctionConstraint(function::FuncDefOp fn, const ExpressionValue &constraint);
+
   /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
   /// if `val` has no associated SourceRefLattice.
   const SourceRefLattice *getSourceRefLattice(mlir::Operation *baseOp, mlir::Value val);
@@ -429,6 +468,8 @@ struct IntervalAnalysisContext {
   llvm::SMTSolverRef smtSolver;
   std::optional<std::reference_wrapper<const Field>> field;
   bool propagateInputConstraints;
+  bool refineWithSolver = true;
+  unsigned refinementQueryBudget = 16;
 
   llvm::SMTExprRef getSymbol(const SourceRef &r) const { return intervalDFA->getOrCreateSymbol(r); }
   bool hasField() const { return field.has_value(); }
@@ -450,7 +491,8 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
         std::hash<const llzk::IntervalDataFlowAnalysis *> {}(c.intervalDFA),
         std::hash<const llvm::SMTSolver *> {}(c.smtSolver.get()),
         std::hash<const llzk::Field *> {}(&c.getField()),
-        std::hash<bool> {}(c.propagateInputConstraints)
+        std::hash<bool> {}(c.propagateInputConstraints), std::hash<bool> {}(c.refineWithSolver),
+        std::hash<unsigned> {}(c.refinementQueryBudget)
     );
   }
 };
@@ -490,7 +532,7 @@ public:
     return constrainMemberRanges;
   }
 
-  const llvm::SetVector<ExpressionValue> getConstrainSolverConstraints() const {
+  const llvm::SmallVector<ExpressionValue> &getConstrainSolverConstraints() const {
     return constrainSolverConstraints;
   }
 
@@ -498,7 +540,7 @@ public:
     return computeMemberRanges;
   }
 
-  const llvm::SetVector<ExpressionValue> getComputeSolverConstraints() const {
+  const llvm::SmallVector<ExpressionValue> &getComputeSolverConstraints() const {
     return computeSolverConstraints;
   }
 
@@ -514,7 +556,7 @@ private:
   // llvm::MapVector keeps insertion order for consistent iteration
   llvm::MapVector<SourceRef, Interval> constrainMemberRanges, computeMemberRanges;
   // llvm::SetVector for the same reasons as above
-  llvm::SetVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
+  llvm::SmallVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
 
   StructIntervals(mlir::ModuleOp m, component::StructDefOp s) : mod(m), structDef(s) {}
 };
@@ -553,6 +595,8 @@ public:
 
   void setField(const Field &f) { ctx.field = f; }
   void setPropagateInputConstraints(bool prop) { ctx.propagateInputConstraints = prop; }
+  void setRefineWithSolver(bool refine) { ctx.refineWithSolver = refine; }
+  void setRefinementQueryBudget(unsigned budget) { ctx.refinementQueryBudget = budget; }
 
 protected:
   void initializeSolver() override {

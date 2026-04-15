@@ -90,6 +90,8 @@ protected:
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
     mia.setField(selectedField);
     mia.setPropagateInputConstraints(propagateInputConstraints);
+    mia.setRefineWithSolver(refineWithSolver);
+    mia.setRefinementQueryBudget(refinementQueryBudget);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 

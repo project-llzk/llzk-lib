@@ -1106,6 +1106,104 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @BooleanGatedArithmetic {
+    struct.member @mul_case : !felt.type
+    struct.member @sub_case : !felt.type
+    struct.member @add_case : !felt.type
+
+    function.def @compute(%x: !felt.type, %b: !felt.type) -> !struct.type<@BooleanGatedArithmetic> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@BooleanGatedArithmetic>
+
+      %0 = felt.const 0
+      %1 = felt.const 1
+
+      %cmp0 = bool.cmp ge(%x, %0)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%x, %1)
+      bool.assert %cmp1
+      %cmp2 = bool.cmp ge(%b, %0)
+      bool.assert %cmp2
+      %cmp3 = bool.cmp le(%b, %1)
+      bool.assert %cmp3
+
+      %mul = felt.mul %x, %b
+      // sub = (x - (x*b)) = x(1 - b), which is [0,1] if x and b are both boolean
+      %sub = felt.sub %x, %mul
+      %neg = felt.sub %0, %mul
+      // add = (-(x+b) + x) = x(1-b), same as above
+      %add = felt.add %neg, %x
+
+      struct.writem %self[@mul_case] = %mul : <@BooleanGatedArithmetic>, !felt.type
+      struct.writem %self[@sub_case] = %sub : <@BooleanGatedArithmetic>, !felt.type
+      struct.writem %self[@add_case] = %add : <@BooleanGatedArithmetic>, !felt.type
+
+      function.return %self : !struct.type<@BooleanGatedArithmetic>
+    }
+
+    function.def @constrain(%self: !struct.type<@BooleanGatedArithmetic>, %x: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BooleanGatedArithmetic StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@mul_case] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@sub_case] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@add_case] in TypeA:[ 0, 1 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ModBoundedArithmetic {
+    struct.member @mod2 : !felt.type
+    struct.member @mod4 : !felt.type
+    struct.member @round_down : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@ModBoundedArithmetic> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@ModBoundedArithmetic>
+
+      %2 = felt.const 2
+      %4 = felt.const 4
+      %10 = felt.const 10
+      %12 = felt.const 12
+
+      %cmp0 = bool.cmp ge(%a, %10)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %12)
+      bool.assert %cmp1
+
+      %mod2 = felt.umod %a, %2
+      %mod4 = felt.umod %a, %4
+      %round = felt.sub %a, %mod4
+
+      struct.writem %self[@mod2] = %mod2 : <@ModBoundedArithmetic>, !felt.type
+      struct.writem %self[@mod4] = %mod4 : <@ModBoundedArithmetic>, !felt.type
+      struct.writem %self[@round_down] = %round : <@ModBoundedArithmetic>, !felt.type
+
+      function.return %self : !struct.type<@ModBoundedArithmetic>
+    }
+
+    function.def @constrain(%self: !struct.type<@ModBoundedArithmetic>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ModBoundedArithmetic StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 10, 12 ]
+// CHECK-NEXT:     %self[@mod2] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self[@mod4] in TypeA:[ 0, 3 ]
+// CHECK-NEXT:     %self[@round_down] in TypeA:[ 8, 12 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ArrayWrite {
     struct.member @case0 : !felt.type
     struct.member @case1 : !felt.type
@@ -1292,4 +1390,52 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
 // CHECK-NEXT:     %self[@out][0] in Degenerate(0)
 // CHECK-NEXT:     %self[@out][1] in TypeA:[ 5, 6 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @InverseBehavior {
+    struct.member @const_inv : !felt.type
+    struct.member @reciprocal : !felt.type
+    struct.member @bounded : !felt.type
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@InverseBehavior> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@InverseBehavior>
+
+      %0 = felt.const 0
+      %2 = felt.const 2
+      %10 = felt.const 10
+      %12 = felt.const 12
+
+      %cmp_nonzero = bool.cmp ne(%a, %0)
+      bool.assert %cmp_nonzero
+      %cmp0 = bool.cmp ge(%b, %10)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%b, %12)
+      bool.assert %cmp1
+
+      %const_inv = felt.inv %2 : !felt.type
+      %reciprocal = felt.inv %a : !felt.type
+
+      struct.writem %self[@const_inv] = %const_inv : !struct.type<@InverseBehavior>, !felt.type
+      struct.writem %self[@reciprocal] = %reciprocal : !struct.type<@InverseBehavior>, !felt.type
+      struct.writem %self[@bounded] = %b : !struct.type<@InverseBehavior>, !felt.type
+
+      function.return %self : !struct.type<@InverseBehavior>
+    }
+
+    function.def @constrain(%self: !struct.type<@InverseBehavior>, %a: !felt.type, %b: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @InverseBehavior StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 1, 2013265920 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 10, 12 ]
+// CHECK-NEXT:     %self[@const_inv] in Degenerate(1006632961)
+// CHECK-NEXT:     %self[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CHECK-NEXT:     %self[@bounded] in TypeA:[ 10, 12 ]
 // CHECK-NEXT: }
