@@ -412,20 +412,24 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   }
   ASSERT_TRUE(outMember != nullptr);
 
-  SourceRef outRef(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(outMember)});
+  SourceRef outRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(outMember)}
+  );
   auto out0Ref = outRef.createChild(SourceRefIndex(0));
   auto out1Ref = outRef.createChild(SourceRefIndex(1));
   ASSERT_TRUE(succeeded(out0Ref));
   ASSERT_TRUE(succeeded(out1Ref));
 
   auto out0It = intervals.find(*out0Ref);
-  ASSERT_NE(out0It, intervals.end()) << "missing compute interval for " << buildStringViaPrint(*out0Ref);
+  ASSERT_NE(out0It, intervals.end())
+      << "missing compute interval for " << buildStringViaPrint(*out0Ref);
   ASSERT_TRUE(out0It->second.isDegenerate())
       << buildStringViaPrint(*out0Ref) << " -> " << buildStringViaPrint(out0It->second);
   ASSERT_EQ(out0It->second.lhs(), field.zero()) << buildStringViaPrint(*out0Ref);
 
   auto out1It = intervals.find(*out1Ref);
-  ASSERT_NE(out1It, intervals.end()) << "missing compute interval for " << buildStringViaPrint(*out1Ref);
+  ASSERT_NE(out1It, intervals.end())
+      << "missing compute interval for " << buildStringViaPrint(*out1Ref);
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);

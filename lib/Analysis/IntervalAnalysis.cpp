@@ -541,7 +541,8 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
     const ExpressionValue &old = it->second;
     Interval combinedWrite = old.getInterval().join(written.getInterval());
-    if (old.getExpr() != nullptr && written.getExpr() != nullptr && *old.getExpr() == *written.getExpr()) {
+    if (old.getExpr() != nullptr && written.getExpr() != nullptr &&
+        *old.getExpr() == *written.getExpr()) {
       writeResults[writtenRef] = old.withInterval(combinedWrite);
     } else {
       llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
