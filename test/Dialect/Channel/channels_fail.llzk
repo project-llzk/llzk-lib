@@ -1,0 +1,141 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// TEST: channel declaration must use a tuple type
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'channel.def' op message type must be a builtin tuple type}}
+  channel.def @c : !felt.type
+}
+// -----
+
+// TEST: channel declaration tuple elements must be felt-typed
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'channel.def' op message type element #1 must have type '!felt.type'}}
+  channel.def @c : tuple<!felt.type, index>
+}
+// -----
+
+// TEST: unknown channel symbol
+module attributes {llzk.lang} {
+  function.def @emit(%x: !felt.type) attributes {function.allow_constraint} {
+    // expected-error@+1 {{'channel.push' op references unknown symbol "@missing"}}
+    channel.push @missing (%x) : !felt.type
+    function.return
+  }
+}
+// -----
+
+// TEST: tuple arity must reject one fewer element than the declared signature
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type, !felt.type>
+
+  function.def @emit(%x: !felt.type) attributes {function.allow_constraint} {
+    // expected-error@+1 {{'channel.push' op expects 2 tuple operands to match channel 'c' but found 1}}
+    channel.push @c (%x) : !felt.type
+    function.return
+  }
+}
+// -----
+
+// TEST: tuple arity must reject one more element than the declared signature
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type, !felt.type>
+
+  function.def @emit(
+      %x: !felt.type,
+      %y: !felt.type,
+      %z: !felt.type
+      ) attributes {function.allow_constraint} {
+    // expected-error@+1 {{'channel.push' op expects 2 tuple operands to match channel 'c' but found 3}}
+    channel.push @c (%x, %y, %z) : !felt.type, !felt.type, !felt.type
+    function.return
+  }
+}
+// -----
+
+// TEST: tuple element types must match the declared channel signature
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type, !felt.type>
+
+  function.def @emit(%x: !felt.type, %y: index) attributes {function.allow_constraint} {
+    // expected-error@+1 {{'channel.pull' op tuple operand #1 has wrong type; expected}}
+    channel.pull @c (%x, %y) : !felt.type, index
+    function.return
+  }
+}
+// -----
+
+// TEST: multiplicity must be felt-typed
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type>
+
+  function.def @emit(%x: !felt.type, %m: index) attributes {function.allow_constraint} {
+    // expected-error@+1 {{'channel.pull' op multiplicity must have type '!felt.type'}}
+    channel.pull @c (%x) { mult = %m } : !felt.type, index
+    function.return
+  }
+}
+// -----
+
+// TEST: channel ops require constraint-capable functions
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type>
+
+  function.def @emit(%x: !felt.type) {
+    // expected-error@+1 {{'channel.push' op only valid within a 'function.def' with 'function.allow_constraint' attribute}}
+    channel.push @c (%x) : !felt.type
+    function.return
+  }
+}
+// -----
+
+// TEST: tuple elements must be field-native algebraic expressions
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type>
+
+  function.def @emit(%x: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+    %inv = felt.inv %x : !felt.type
+    // expected-error@+1 {{'channel.push' op tuple operand #0 must be a field-native algebraic expression, but found 'felt.inv'}}
+    channel.push @c (%inv) : !felt.type
+    function.return
+  }
+}
+// -----
+
+// TEST: all tuple operands in a channel interaction must share one row context
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type, !felt.type>
+
+  struct.def @RowA {
+    struct.member @x : !felt.type {llzk.pub, column}
+
+    function.def @compute() -> !struct.type<@RowA> {
+      %self = struct.new : <@RowA>
+      function.return %self : !struct.type<@RowA>
+    }
+
+    function.def @constrain(%self: !struct.type<@RowA>) {
+      function.return
+    }
+  }
+
+  struct.def @RowB {
+    struct.member @y : !felt.type {llzk.pub, column}
+
+    function.def @compute() -> !struct.type<@RowB> {
+      %self = struct.new : <@RowB>
+      function.return %self : !struct.type<@RowB>
+    }
+
+    function.def @constrain(%self: !struct.type<@RowB>) {
+      function.return
+    }
+  }
+
+  function.def @emit(%a: !struct.type<@RowA>, %b: !struct.type<@RowB>) attributes {function.allow_constraint} {
+    %x = struct.readm %a[@x] : !struct.type<@RowA>, !felt.type
+    %y = struct.readm %b[@y] : !struct.type<@RowB>, !felt.type
+    // expected-error@+1 {{'channel.push' op tuple operands must be derived from a single row context}}
+    channel.push @c (%x, %y) : !felt.type, !felt.type
+    function.return
+  }
+}
