@@ -11,6 +11,7 @@
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Analysis/SourceRef.h"
+#include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/Analysis/DataFlow/DenseAnalysis.h>
@@ -108,6 +109,7 @@ public:
   /// return failure.
   /// Our lattice values must originate from somewhere.
   static mlir::FailureOr<SourceRef> getSourceRef(mlir::Value val);
+  static SourceRefLatticeValue getDefaultValue(ValueTy v);
 
   /* Required methods */
 
@@ -154,6 +156,25 @@ public:
 private:
   ValueMap valMap;
   Ref2Val refMap;
+};
+
+/// Sparse SSA-value lattice for SourceRef propagation.
+class SourceRefSparseLattice : public dataflow::AbstractSparseLattice {
+public:
+  using LatticeValue = SourceRefLatticeValue;
+  using AbstractSparseLattice::AbstractSparseLattice;
+
+  mlir::ChangeResult join(const AbstractSparseLattice &rhs) override;
+  mlir::ChangeResult meet(const AbstractSparseLattice &rhs) override;
+  void print(mlir::raw_ostream &os) const override;
+
+  const LatticeValue &getValue() const { return value; }
+
+  mlir::ChangeResult setValue(const LatticeValue &newValue);
+  mlir::ChangeResult setValue(const SourceRef &ref);
+
+private:
+  LatticeValue value;
 };
 
 } // namespace llzk

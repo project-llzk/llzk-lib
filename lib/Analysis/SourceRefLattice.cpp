@@ -284,6 +284,10 @@ SourceRefLatticeValue SourceRefLattice::getOrDefault(SourceRefLattice::ValueTy v
     return it->second;
   }
 
+  return getDefaultValue(v);
+}
+
+SourceRefLatticeValue SourceRefLattice::getDefaultValue(SourceRefLattice::ValueTy v) {
   if (auto asVal = llvm::dyn_cast_if_present<Value>(v)) {
     auto sourceRef = getSourceRef(asVal);
     if (mlir::succeeded(sourceRef)) {
@@ -314,6 +318,29 @@ SourceRefLattice::ValueSet SourceRefLattice::lookupValues(const SourceRef &ref) 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const SourceRefLattice &lattice) {
   lattice.print(os);
   return os;
+}
+
+/* SourceRefSparseLattice */
+
+ChangeResult SourceRefSparseLattice::join(const AbstractSparseLattice &rhs) {
+  return value.update(static_cast<const SourceRefSparseLattice &>(rhs).value);
+}
+
+ChangeResult SourceRefSparseLattice::meet(const AbstractSparseLattice & /*rhs*/) {
+  llvm::report_fatal_error("meet operation is not supported for SourceRefSparseLattice");
+  return ChangeResult::NoChange;
+}
+
+void SourceRefSparseLattice::print(mlir::raw_ostream &os) const {
+  os << "SourceRefSparseLattice { " << value << " }";
+}
+
+ChangeResult SourceRefSparseLattice::setValue(const LatticeValue &newValue) {
+  return value.setValue(newValue);
+}
+
+ChangeResult SourceRefSparseLattice::setValue(const SourceRef &ref) {
+  return value.setValue(LatticeValue(ref));
 }
 
 } // namespace llzk

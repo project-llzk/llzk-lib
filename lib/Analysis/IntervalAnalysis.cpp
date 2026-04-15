@@ -31,6 +31,32 @@ using namespace constrain;
 using namespace felt;
 using namespace function;
 
+static bool
+dependsOnRegionBlockArgument(Value val, Region *region, llvm::SmallPtrSetImpl<Value> &seen) {
+  if (!seen.insert(val).second) {
+    return false;
+  }
+  if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
+    return blockArg.getParentRegion() == region;
+  }
+
+  Operation *defOp = val.getDefiningOp();
+  if (!defOp) {
+    return false;
+  }
+  for (Value operand : defOp->getOperands()) {
+    if (dependsOnRegionBlockArgument(operand, region, seen)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool dependsOnRegionBlockArgument(Value val, Region *region) {
+  llvm::SmallPtrSet<Value, 16> seen;
+  return dependsOnRegionBlockArgument(val, region, seen);
+}
+
 /* ExpressionValue */
 
 llvm::SMTExprRef createFieldInverseExpr(
@@ -447,18 +473,8 @@ ChangeResult IntervalAnalysisLattice::addSolverConstraint(const ExpressionValue 
 
 /* IntervalDataFlowAnalysis */
 
-const SourceRefLattice *
-IntervalDataFlowAnalysis::getSourceRefLattice(Operation *baseOp, Value val) {
-  ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(baseOp);
-  const auto *defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
-  ensure(defaultSourceRefLattice, "failed to get lattice");
-  if (Operation *defOp = val.getDefiningOp()) {
-    ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
-    const auto *sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
-    ensure(sourceRefLattice, "failed to get SourceRefLattice for value");
-    return sourceRefLattice;
-  }
-  return defaultSourceRefLattice;
+SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Operation *baseOp, Value val) {
+  return SourceRefAnalysis::getValueState(_dataflowSolver, baseOp, val);
 }
 
 std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
@@ -471,8 +487,7 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
 
   for (size_t i = 0; i < numIndices; ++i) {
     Value idxOperand = arrayAccessOp.getIndices()[i];
-    SourceRefLatticeValue idxVals =
-        getSourceRefLattice(baseOp, idxOperand)->getOrDefault(idxOperand);
+    SourceRefLatticeValue idxVals = getSourceRefState(baseOp, idxOperand);
 
     // Only exact constant indices get tracked precisely.
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
@@ -574,7 +589,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   llvm::SmallVector<std::optional<SourceRef>> operandRefs;
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
-    SourceRefLatticeValue refSet = getSourceRefLattice(op, val)->getOrDefault(val);
+    SourceRefLatticeValue refSet = getSourceRefState(op, val);
     if (refSet.isSingleValue()) {
       operandRefs.push_back(refSet.getSingleValue());
     } else {
@@ -711,7 +726,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     ExpressionValue writeVal = operandVals[1].getScalarValue();
     auto cmp = writem.getComponent();
     // We also need to update the interval on the assigned symbol
-    SourceRefLatticeValue refSet = getSourceRefLattice(op, cmp)->getOrDefault(cmp);
+    SourceRefLatticeValue refSet = getSourceRefState(op, cmp);
     if (refSet.isSingleValue()) {
       auto memberDefRes = writem.getMemberDefOp(tables);
       if (succeeded(memberDefRes)) {
@@ -729,8 +744,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       recordRefWrite(*arrayRef, writeVal);
     }
 
-    SourceRefLatticeValue arrayVals =
-        getSourceRefLattice(op, writeArr.getArrRef())->getOrDefault(writeArr.getArrRef());
+    SourceRefLatticeValue arrayVals = getSourceRefState(op, writeArr.getArrRef());
     if (arrayVals.isScalar()) {
       std::vector<SourceRefIndex> indices = getArrayAccessIndices(op, writeArr);
       auto targetRefsRes = arrayVals.extract(indices);
@@ -793,6 +807,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       // has possible value that must be merged.
       ExpressionValue exprVal = resLattice->getValue().getScalarValue();
       ExpressionValue newResVal = operandVals[idx].getScalarValue();
+      if (auto forOp = llvm::dyn_cast<scf::ForOp>(parent)) {
+        // If the yielded value depends on loop body block arguments, such as an iter_arg
+        // or the induction variable, we conservatively widen the loop result.
+        if (dependsOnRegionBlockArgument(yieldOp.getOperand(idx), &forOp.getRegion())) {
+          newResVal = ExpressionValue(createSymbol(parentRes), Interval::Entire(field.get()));
+        }
+      }
       if (exprVal.getExpr() != nullptr) {
         newResVal = exprVal.withInterval(exprVal.getInterval().join(newResVal.getInterval()));
       } else {
@@ -1201,8 +1222,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   };
 
   auto readmCase = [&](MemberReadOp) {
-    const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
-    SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
+    SourceRefLatticeValue sourceRefVal = getSourceRefState(valUser, val);
 
     if (sourceRefVal.isSingleValue()) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
@@ -1229,8 +1249,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
       }
     }
 
-    const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
-    SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
+    SourceRefLatticeValue sourceRefVal = getSourceRefState(valUser, val);
 
     if (sourceRefVal.isSingleValue()) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
@@ -1303,8 +1322,7 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value 
     FeltConstantOp c;
     Value signalVal;
     auto handleRefValue = [this, &baseOp, &signalRef, &signalVal, &signalVals]() {
-      SourceRefLatticeValue refSet =
-          getSourceRefLattice(baseOp, signalVal)->getOrDefault(signalVal);
+      SourceRefLatticeValue refSet = getSourceRefState(baseOp, signalVal);
       if (!refSet.isScalar() || !refSet.isSingleValue()) {
         return failure();
       }
