@@ -21,7 +21,8 @@ include "mlir/IR/SymbolInterfaces.td"
 class ChannelDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<ChannelDialect, mnemonic, traits>;
 
-def ChannelDefOp : ChannelDialectOp<"def", [HasParent<"mlir::ModuleOp">, Symbol]> {
+def ChannelDefOp
+    : ChannelDialectOp<"def", [HasParent<"mlir::ModuleOp">, Symbol]> {
   let summary = "channel declaration";
   let description = [{
     Declares a channel symbol for the channel API used to model multiset

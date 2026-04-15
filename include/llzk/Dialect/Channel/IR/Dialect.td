@@ -14,8 +14,8 @@ include "mlir/IR/DialectBase.td"
 
 def ChannelDialect : Dialect {
   let name = "channel";
-  let summary =
-      "LLZK multiset-equality operations for row-local cross-struct interaction.";
+  let summary = "LLZK multiset-equality operations for row-local cross-struct "
+                "interaction.";
   let description = [{
     The `channel` dialect provides the IR surface for expressing multiset
     equality constraints between interacting LLZK structs. A channel

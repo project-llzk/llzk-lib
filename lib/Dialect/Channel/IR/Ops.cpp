@@ -16,8 +16,9 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
-#include <llvm/ADT/STLExtras.h>
 #include <mlir/IR/BuiltinTypes.h>
+
+#include <llvm/ADT/STLExtras.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -46,9 +47,7 @@ struct RowContext {
   Value root;
   RowOffsetContext offset;
 
-  bool operator==(const RowContext &rhs) const {
-    return root == rhs.root && offset == rhs.offset;
-  }
+  bool operator==(const RowContext &rhs) const { return root == rhs.root && offset == rhs.offset; }
 };
 
 bool isCurrentRowOffset(Attribute tableOffset) {
@@ -77,9 +76,8 @@ RowOffsetContext getRowOffsetContext(component::MemberReadOp op) {
 
 using EmitErrorFnRef = llvm::function_ref<InFlightDiagnostic()>;
 
-LogicalResult mergeRowOffsets(
-    RowOffsetContext &lhs, const RowOffsetContext &rhs, EmitErrorFnRef emitError
-) {
+LogicalResult
+mergeRowOffsets(RowOffsetContext &lhs, const RowOffsetContext &rhs, EmitErrorFnRef emitError) {
   if (!rhs.tableOffset) {
     return success();
   }
@@ -140,9 +138,8 @@ LogicalResult combineRowContexts(
   return emitError() << "must be derived from a single row context";
 }
 
-LogicalResult verifyChannelTupleExpr(
-    Value value, std::optional<RowContext> &rowCtx, EmitErrorFnRef emitError
-) {
+LogicalResult
+verifyChannelTupleExpr(Value value, std::optional<RowContext> &rowCtx, EmitErrorFnRef emitError) {
   if (!llvm::isa<FeltType>(value.getType())) {
     rowCtx = std::nullopt;
     return success();
@@ -366,8 +363,8 @@ template <typename ChannelUseOpT> LogicalResult verifyTupleExprsImpl(ChannelUseO
       return failure();
     }
     if (failed(combineRowContexts(tupleCtx, exprCtx, tupleCtx, [&]() -> InFlightDiagnostic {
-          return op.emitOpError() << "tuple operands ";
-        }))) {
+      return op.emitOpError() << "tuple operands ";
+    }))) {
       return failure();
     }
   }
