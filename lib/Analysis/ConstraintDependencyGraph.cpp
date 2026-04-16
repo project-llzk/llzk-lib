@@ -41,9 +41,9 @@ static bool isOperationLive(DataFlowSolver &solver, Operation *op) {
   if (!op->getBlock()) {
     return true;
   }
-  if (const auto *exec =
-          solver.lookupState<mlir::dataflow::Executable>(solver.getProgramPointBefore(op->getBlock()
-          ))) {
+  if (const auto *exec = solver.lookupState<mlir::dataflow::Executable>(
+          solver.getProgramPointBefore(op->getBlock())
+      )) {
     return exec->isLive();
   }
   return true;
