@@ -31,32 +31,6 @@ using namespace constrain;
 using namespace felt;
 using namespace function;
 
-static bool
-dependsOnRegionBlockArgument(Value val, Region *region, llvm::SmallPtrSetImpl<Value> &seen) {
-  if (!seen.insert(val).second) {
-    return false;
-  }
-  if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
-    return blockArg.getParentRegion() == region;
-  }
-
-  Operation *defOp = val.getDefiningOp();
-  if (!defOp) {
-    return false;
-  }
-  for (Value operand : defOp->getOperands()) {
-    if (dependsOnRegionBlockArgument(operand, region, seen)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static bool dependsOnRegionBlockArgument(Value val, Region *region) {
-  llvm::SmallPtrSet<Value, 16> seen;
-  return dependsOnRegionBlockArgument(val, region, seen);
-}
-
 /* ExpressionValue */
 
 llvm::SMTExprRef createFieldInverseExpr(
@@ -807,13 +781,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       // has possible value that must be merged.
       ExpressionValue exprVal = resLattice->getValue().getScalarValue();
       ExpressionValue newResVal = operandVals[idx].getScalarValue();
-      if (auto forOp = llvm::dyn_cast<scf::ForOp>(parent)) {
-        // If the yielded value depends on loop body block arguments, such as an iter_arg
-        // or the induction variable, we conservatively widen the loop result since we
-        // don't try to predict trip count, etc.
-        if (dependsOnRegionBlockArgument(yieldOp.getOperand(idx), &forOp.getRegion())) {
-          newResVal = ExpressionValue(createSymbol(parentRes), Interval::Entire(field.get()));
-        }
+      if (auto loopOp = llvm::dyn_cast<LoopLikeOpInterface>(parent)) {
+        // We overapproximate for loops because we aren't going to try to track trip count.
+        newResVal = ExpressionValue(createSymbol(parentRes), Interval::Entire(field.get()));
       }
       if (exprVal.getExpr() != nullptr) {
         newResVal = exprVal.withInterval(exprVal.getInterval().join(newResVal.getInterval()));
