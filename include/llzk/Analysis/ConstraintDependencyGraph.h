@@ -69,9 +69,8 @@ protected:
   // Perform the update for either a array.read op or an array.extract op, which
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
-  static SourceRefLatticeValue arraySubdivisionOpUpdate(
-      array::ArrayAccessOpInterface op, const OperandValues &operandVals, mlir::MLIRContext *ctx
-  );
+  static SourceRefLatticeValue
+  arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
 
   bool visitCallEntryBlock(
       mlir::CallableOpInterface callable, mlir::ArrayRef<mlir::Operation *> callsites,

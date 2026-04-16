@@ -151,7 +151,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
 
   if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
     if (!results.empty()) {
-      auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals, op->getContext());
+      auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
       propagateIfChanged(results.front(), results.front()->setValue(newVals));
     }
     return success();
@@ -261,7 +261,7 @@ ChangeResult SourceRefAnalysis::fallbackOpUpdate(
 }
 
 SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
-    ArrayAccessOpInterface arrayAccessOp, const OperandValues &operandVals, MLIRContext * /*ctx*/
+    ArrayAccessOpInterface arrayAccessOp, const OperandValues &operandVals
 ) {
   auto array = arrayAccessOp.getArrRef();
   auto it = operandVals.find(array);
