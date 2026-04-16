@@ -55,8 +55,7 @@ const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &
   return solver.lookupState<Lattice>(val);
 }
 
-SourceRefLatticeValue
-SourceRefAnalysis::getValueState(DataFlowSolver &solver, Operation * /*contextOp*/, Value val) {
+SourceRefLatticeValue SourceRefAnalysis::getValueState(DataFlowSolver &solver, Value val) {
   if (const auto *state = getLattice(solver, val)) {
     return state->getValue();
   }
@@ -67,7 +66,7 @@ mlir::FailureOr<SourceRefLatticeValue>
 SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
   llvm::SmallDenseMap<Value, SourceRefLatticeValue, 4> operandVals;
   for (Value operand : op->getOperands()) {
-    operandVals[operand] = getValueState(solver, op, operand);
+    operandVals[operand] = getValueState(solver, operand);
   }
 
   SymbolTableCollection tables;
@@ -385,13 +384,13 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     }
 
     for (Value operand : op->getOperands()) {
-      auto operandRefs = SourceRefAnalysis::getValueState(solver, op, operand).foldToScalar();
+      auto operandRefs = SourceRefAnalysis::getValueState(solver, operand).foldToScalar();
       for (const SourceRef &ref : operandRefs) {
         ref2Val[ref].insert(operand);
       }
     }
     for (Value result : op->getResults()) {
-      auto resultRefs = SourceRefAnalysis::getValueState(solver, op, result).foldToScalar();
+      auto resultRefs = SourceRefAnalysis::getValueState(solver, result).foldToScalar();
       for (const SourceRef &ref : resultRefs) {
         ref2Val[ref].insert(result);
       }
@@ -433,8 +432,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
       SourceRef prefix(fn.getArgument(i));
       Value operand = fnCall.getOperand(i);
-      SourceRefLatticeValue val =
-          SourceRefAnalysis::getValueState(solver, fnCall.getOperation(), operand);
+      SourceRefLatticeValue val = SourceRefAnalysis::getValueState(solver, operand);
       translations.push_back({prefix, val});
     }
     auto &childAnalysis =
@@ -480,7 +478,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
   std::vector<SourceRef> signalUsages, constUsages;
 
   for (auto operand : emitOp->getOperands()) {
-    auto latticeVal = SourceRefAnalysis::getValueState(solver, emitOp, operand);
+    auto latticeVal = SourceRefAnalysis::getValueState(solver, operand);
     for (const auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant()) {
         constUsages.push_back(ref);

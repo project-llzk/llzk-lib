@@ -417,7 +417,7 @@ private:
   void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
 
   /// @brief Get the SourceRef state that defines `val`.
-  SourceRefLatticeValue getSourceRefState(mlir::Operation *baseOp, mlir::Value val);
+  SourceRefLatticeValue getSourceRefState(mlir::Value val);
 };
 
 /* StructIntervals */

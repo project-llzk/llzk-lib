@@ -41,8 +41,7 @@ public:
   using Base::SparseForwardDataFlowAnalysis;
 
   static const Lattice *getLattice(mlir::DataFlowSolver &solver, mlir::Value val);
-  static SourceRefLatticeValue
-  getValueState(mlir::DataFlowSolver &solver, mlir::Operation *contextOp, mlir::Value val);
+  static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
   static mlir::FailureOr<SourceRefLatticeValue>
   getWriteTargetState(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
