@@ -96,25 +96,6 @@ protected:
       mlir::ArrayRef<AbstractSparseLattice *> argLattices, unsigned firstIndex
   ) = 0;
 
-  /// Allow analyses to override callable entry propagation from callsites.
-  /// Return true when the analysis handled propagation.
-  virtual bool visitCallEntryBlock(
-      mlir::CallableOpInterface callable, mlir::ArrayRef<mlir::Operation *> callsites,
-      mlir::ArrayRef<AbstractSparseLattice *> argLattices
-  ) {
-    return false;
-  }
-
-  /// Allow analyses to override call result propagation from return sites.
-  /// Return true when the analysis handled propagation.
-  virtual bool visitCallControlFlow(
-      mlir::CallOpInterface call, mlir::ArrayRef<mlir::Operation *> returnSites,
-      mlir::ArrayRef<const AbstractSparseLattice *> operandLattices,
-      mlir::ArrayRef<AbstractSparseLattice *> resultLattices
-  ) {
-    return false;
-  }
-
   /// Get the lattice element of a value.
   virtual AbstractSparseLattice *getLatticeElement(mlir::Value value) = 0;
 

@@ -190,36 +190,35 @@ LogicalResult SourceRefAnalysis::visitOperation(
 }
 
 void SourceRefAnalysis::visitExternalCall(
-    CallOpInterface call, ArrayRef<const Lattice *> /*argumentLattices*/,
+    CallOpInterface call, ArrayRef<const Lattice *> operandLattices,
     ArrayRef<Lattice *> resultLattices
 ) {
-  for (auto [result, lattice] : llvm::zip(call->getResults(), resultLattices)) {
-    auto resultRef = SourceRefLattice::getSourceRef(result);
-    ensure(succeeded(resultRef), "could not create external call SourceRef");
-    propagateIfChanged(lattice, lattice->setValue(*resultRef));
+  auto callable = dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
+  if (!callable || !callable.getCallableRegion()) {
+    // Call is truly external
+    for (auto [result, lattice] : llvm::zip(call->getResults(), resultLattices)) {
+      auto resultRef = SourceRefLattice::getSourceRef(result);
+      ensure(succeeded(resultRef), "could not create external call SourceRef");
+      propagateIfChanged(lattice, lattice->setValue(*resultRef));
+    }
+    return;
   }
-}
-
-bool SourceRefAnalysis::visitCallEntryBlock(
-    CallableOpInterface /*callable*/, ArrayRef<Operation *> /*callsites*/,
-    ArrayRef<mlir::dataflow::AbstractSparseLattice *> argLattices
-) {
-  for (auto *argLattice : argLattices) {
-    setToEntryState(static_cast<Lattice *>(argLattice));
-  }
-  return true;
-}
-
-bool SourceRefAnalysis::visitCallControlFlow(
-    CallOpInterface call, ArrayRef<Operation *> returnSites,
-    ArrayRef<const mlir::dataflow::AbstractSparseLattice *> operandLattices,
-    ArrayRef<mlir::dataflow::AbstractSparseLattice *> resultLattices
-) {
-  LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitCallControlFlow: " << call << '\n');
-
+  // Call is to a defined function with a body, but it's treated as external so we
+  // can translate the results based on the arguments.
   auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
   ensure(succeeded(funcOpRes), "could not lookup called function");
   auto funcOp = funcOpRes->get();
+
+  const auto *predecessors = getOrCreateFor<mlir::dataflow::PredecessorState>(
+      getProgramPointAfter(call), getProgramPointAfter(call)
+  );
+  // If not all return sites are known, then conservatively assume we can't
+  // reason about the data-flow.
+  if (!predecessors->allPredecessorsKnown()) {
+    setAllToEntryStates(resultLattices);
+    return;
+  }
+  const auto returnSites = predecessors->getKnownPredecessors();
 
   std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
   for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
@@ -242,8 +241,6 @@ bool SourceRefAnalysis::visitCallControlFlow(
     }
     propagateIfChanged(resultLattice, static_cast<Lattice *>(resultLattice)->setValue(combined));
   }
-
-  return true;
 }
 
 ChangeResult SourceRefAnalysis::fallbackOpUpdate(

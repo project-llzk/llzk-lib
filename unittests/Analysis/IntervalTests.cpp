@@ -306,31 +306,6 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
-  static constexpr auto kCallTranslatedIntervalModule = R"mlir(
-module attributes {llzk.lang} {
-  function.def @identity(%arg0: !felt.type) -> !felt.type attributes {function.allow_constraint} {
-    function.return %arg0 : !felt.type
-  }
-
-  struct.def @CallTranslatedIntervals {
-    struct.member @out : !felt.type {llzk.pub, signal}
-
-    function.def @compute() -> !struct.type<@CallTranslatedIntervals> attributes {function.allow_witness} {
-      %self = struct.new : <@CallTranslatedIntervals>
-      function.return %self : !struct.type<@CallTranslatedIntervals>
-    }
-
-    function.def @constrain(%arg0: !struct.type<@CallTranslatedIntervals>) attributes {function.allow_constraint} {
-      %0 = struct.readm %arg0[@out] : <@CallTranslatedIntervals>, !felt.type
-      %1 = function.call @identity(%0) : (!felt.type) -> !felt.type
-      %7 = felt.const 7
-      constrain.eq %1, %7 : !felt.type, !felt.type
-      function.return
-    }
-  }
-}
-)mlir";
-
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
     EXPECT_TRUE(mod);
@@ -383,40 +358,4 @@ TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
         << buildStringViaPrint(*elemRef) << " -> " << buildStringViaPrint(it->second);
     ASSERT_EQ(it->second.lhs(), field.felt(i + 1)) << buildStringViaPrint(*elemRef);
   }
-}
-
-TEST_F(IntervalAnalysisAPITests, SourceRefAnalysisTranslatesInternalCallsBackToCallerRefs) {
-  auto mod = parseModule(kCallTranslatedIntervalModule);
-  auto structDef = *mod->getOps<StructDefOp>().begin();
-  auto constrainFn = structDef.getConstrainFuncOp();
-  ASSERT_TRUE(constrainFn != nullptr);
-
-  DataFlowSolver solver;
-  ASSERT_TRUE(succeeded(llzk::dataflow::loadAndRunRequiredAnalyses(solver, mod->getOperation())));
-  (void)solver.load<SourceRefAnalysis>();
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(mod->getOperation())));
-
-  MemberDefOp outMember;
-  for (auto member : structDef.getOps<MemberDefOp>()) {
-    if (member.getName() == "out") {
-      outMember = member;
-      break;
-    }
-  }
-  ASSERT_TRUE(outMember != nullptr);
-
-  SourceRef outRef(constrainFn.getArgument(0), {SourceRefIndex(outMember)});
-
-  function::CallOp identityCall;
-  constrainFn.walk([&](function::CallOp call) {
-    identityCall = call;
-    return WalkResult::interrupt();
-  });
-  ASSERT_TRUE(identityCall != nullptr);
-
-  auto callResultState = SourceRefAnalysis::getValueState(
-      solver, identityCall.getOperation(), identityCall.getResult(0)
-  );
-  ASSERT_TRUE(callResultState.isSingleValue());
-  ASSERT_EQ(callResultState.getSingleValue(), outRef);
 }

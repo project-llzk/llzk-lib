@@ -66,22 +66,11 @@ protected:
       mlir::Operation *op, const OperandValues &operandVals, mlir::ArrayRef<Lattice *> results
   );
 
-  // Perform the update for either a array.read op or an array.extract op, which
+  // Create the references for either an array.read op or an array.extract op, which
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
   static SourceRefLatticeValue
   arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
-
-  bool visitCallEntryBlock(
-      mlir::CallableOpInterface callable, mlir::ArrayRef<mlir::Operation *> callsites,
-      mlir::ArrayRef<mlir::dataflow::AbstractSparseLattice *> argLattices
-  ) override;
-
-  bool visitCallControlFlow(
-      mlir::CallOpInterface call, mlir::ArrayRef<mlir::Operation *> returnSites,
-      mlir::ArrayRef<const mlir::dataflow::AbstractSparseLattice *> operandLattices,
-      mlir::ArrayRef<mlir::dataflow::AbstractSparseLattice *> resultLattices
-  ) override;
 
 private:
   mlir::SymbolTableCollection tables;
@@ -265,7 +254,12 @@ class ConstraintDependencyGraphModuleAnalysis
           ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis> {
 
 public:
-  using ModuleAnalysis::ModuleAnalysis;
+  // We set the SourceRef analysis as intraprocedural so that calls are treated as "external"
+  // calls, and we can leverage the `visitExternalCall` hook to translate `SourceRef`s
+  // between function contexts.
+  ConstraintDependencyGraphModuleAnalysis(mlir::Operation *op)
+      : ModuleAnalysis(op, mlir::DataFlowConfig().setInterprocedural(false)) {}
+
   ~ConstraintDependencyGraphModuleAnalysis() override = default;
 
   void setIntraprocedural(bool runIntraprocedural) {
@@ -278,6 +272,8 @@ protected:
   const CDGAnalysisContext &getContext() const override { return ctx; }
 
 private:
+  // This "intraprocedural" option is related to the CDG construction, not the dataflow analysis
+  // itself.
   CDGAnalysisContext ctx = {.runIntraprocedural = false};
 };
 

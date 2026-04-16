@@ -156,11 +156,6 @@ LogicalResult AbstractSparseForwardDataFlowAnalysis::visitOperation(Operation *o
       setAllToEntryStates(resultLattices);
       return success();
     }
-    if (visitCallControlFlow(
-            call, predecessors->getKnownPredecessors(), operandLattices, resultLattices
-        )) {
-      return success();
-    }
     for (Operation *predecessor : predecessors->getKnownPredecessors()) {
       for (auto &&[operand, resLattice] : llvm::zip(predecessor->getOperands(), resultLattices)) {
         join(resLattice, *getLatticeElementFor(getProgramPointAfter(op), operand));
@@ -205,9 +200,6 @@ void AbstractSparseForwardDataFlowAnalysis::visitBlock(Block *block) {
       // having reached their pessimistic fixpoints.
       if (!callsites->allPredecessorsKnown() || !getSolverConfig().isInterprocedural()) {
         return setAllToEntryStates(argLattices);
-      }
-      if (visitCallEntryBlock(callable, callsites->getKnownPredecessors(), argLattices)) {
-        return;
       }
       for (Operation *callsite : callsites->getKnownPredecessors()) {
         auto call = cast<CallOpInterface>(callsite);

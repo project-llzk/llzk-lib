@@ -1122,3 +1122,32 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @NondetProp ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, %arg2, <%nondet = llzk.nondet : !felt.type> }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @identity(%arg0: !felt.type) -> !felt.type attributes {function.allow_constraint} {
+    function.return %arg0 : !felt.type
+  }
+
+  struct.def @CallTranslatedIntervals {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute() -> !struct.type<@CallTranslatedIntervals> attributes {function.allow_witness} {
+      %self = struct.new : <@CallTranslatedIntervals>
+      function.return %self : !struct.type<@CallTranslatedIntervals>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@CallTranslatedIntervals>) attributes {function.allow_constraint} {
+      %0 = struct.readm %arg0[@out] : <@CallTranslatedIntervals>, !felt.type
+      %1 = function.call @identity(%0) : (!felt.type) -> !felt.type
+      %7 = felt.const 7
+      constrain.eq %1, %7 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallTranslatedIntervals ConstraintDependencyGraph {
+// CHECK-NEXT:      { %arg0[@out], <felt.const: 7> }
+// CHECK-NEXT:  }

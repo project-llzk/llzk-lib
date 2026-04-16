@@ -545,7 +545,9 @@ class ModuleIntervalAnalysis
     : public ModuleAnalysis<StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis> {
 
 public:
-  ModuleIntervalAnalysis(mlir::Operation *op) : ModuleAnalysis(op), ctx {} {
+  // We set intraprocedural to false for the sake of the SourceRefAnalysis
+  ModuleIntervalAnalysis(mlir::Operation *op)
+      : ModuleAnalysis(op, mlir::DataFlowConfig().setInterprocedural(false)), ctx {} {
     ctx.smtSolver = llvm::CreateZ3Solver();
   }
   ~ModuleIntervalAnalysis() override = default;
