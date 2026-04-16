@@ -556,20 +556,30 @@ Interval operator%(const Interval &lhs, const Interval &rhs) {
     return Interval::Empty(f);
   }
 
-  if (lhs.isDegenerate() && rhs.isDegenerate() && rhs.lhs() != f.zero()) {
-    return Interval::Degenerate(f, lhs.lhs() % rhs.lhs());
+  if (lhs.isDegenerate() && rhs.isDegenerate() && rhs.a != f.zero()) {
+    return Interval::Degenerate(f, lhs.a % rhs.a);
   }
 
   if (rhs.isDegenerate()) {
-    if (rhs.lhs() == f.zero()) {
+    if (rhs.a == f.zero()) {
       return Interval::Entire(f);
     }
-    return UnreducedInterval(f.zero(), rhs.lhs() - f.one()).reduce(f);
+    return UnreducedInterval(f.zero(), rhs.a - f.one()).reduce(f);
   }
 
-  if (rhs.lhs() == f.zero()) {
-    return UnreducedInterval(f.zero(), rhs.b).reduce(f);
+  // For any interval modulus, the result is bounded by the largest value of
+  // the interval.
+  // Since TypeF wraps around, the interval is just Entire since the max value
+  // would be the prime field's max value.
+  if (rhs.isTypeF() || rhs.isEntire()) {
+    return Interval::Entire(f);
   }
+  // Any possible division by zero also yields Entire
+  Interval zeroInt = Interval::Degenerate(f, f.zero());
+  if (rhs.intersect(zeroInt) == zeroInt) {
+    return Interval::Entire(f);
+  }
+
   return UnreducedInterval(f.zero(), rhs.b - f.one()).reduce(f);
 }
 

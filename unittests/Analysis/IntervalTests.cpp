@@ -34,6 +34,10 @@ protected:
   IntervalTests()
       : f(Field::getField("babybear")), empty(Interval::Empty(f)), entire(Interval::Entire(f)) {}
 
+  Interval degen(int64_t i) const { return Interval::Degenerate(f, DynamicAPInt(i)); }
+
+  Interval interval(int64_t a, int64_t b) const { return UnreducedInterval(a, b).reduce(f); }
+
   inline static void
   AssertUnreducedIntervalEq(const UnreducedInterval &expected, const UnreducedInterval &actual) {
     ASSERT_TRUE(checkCond(expected, actual, expected == actual));
@@ -271,6 +275,20 @@ TEST_F(IntervalTests, SignedIntDivByZero) {
 
   auto res = signedIntDiv(ten, minusOneToOne);
   ASSERT_TRUE(failed(res));
+}
+
+TEST_F(IntervalTests, Mod) {
+  AssertIntervalEq(interval(0, 7), entire % degen(8));
+  AssertIntervalEq(interval(0, 9), interval(0, 100) % interval(1, 10));
+  AssertIntervalEq(entire, degen(7) % interval(0, 1000));
+  AssertIntervalEq(empty, empty % empty);
+  AssertIntervalEq(empty, entire % empty);
+  AssertIntervalEq(empty, empty % entire);
+  AssertIntervalEq(entire, degen(1) % entire);
+  // any % typeF == entire
+  auto typeF = UnreducedInterval(f.half() + f.one(), f.prime() + f.one()).reduce(f);
+  ASSERT_TRUE(typeF.isTypeF());
+  AssertIntervalEq(entire, interval(7, 8) % typeF);
 }
 
 class IntervalAnalysisAPITests : public LLZKTest {
