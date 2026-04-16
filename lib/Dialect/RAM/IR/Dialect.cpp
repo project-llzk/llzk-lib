@@ -9,8 +9,8 @@
 
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 
-#include "llzk/Dialect/RAM/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Dialect/RAM/IR/Ops.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/RAM/IR/Dialect.cpp.inc"

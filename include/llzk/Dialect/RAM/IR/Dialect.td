@@ -14,7 +14,8 @@ include "mlir/IR/DialectBase.td"
 
 def RAMDialect : Dialect {
   let name = "ram";
-  let summary = "LLZK support for random access memory during witness generation.";
+  let summary =
+      "LLZK support for random access memory during witness generation.";
 
   let cppNamespace = "::llzk::ram";
 }
