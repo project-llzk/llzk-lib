@@ -33,9 +33,9 @@ using SourceRefRemappings = std::vector<std::pair<SourceRef, SourceRefLatticeVal
 /// LLZK operations use and produce. The analysis is simple: any operation will
 /// simply output a union of its input references, regardless of what type of
 /// operation it performs, as the analysis is operator-insensitive.
-class SourceRefAnalysis : public dataflow::SparseForwardDataFlowAnalysis<SourceRefSparseLattice> {
+class SourceRefAnalysis : public dataflow::SparseForwardDataFlowAnalysis<SourceRefLattice> {
 public:
-  using Lattice = SourceRefSparseLattice;
+  using Lattice = SourceRefLattice;
   using OperandValues = mlir::DenseMap<mlir::Value, const Lattice *>;
   using Base = dataflow::SparseForwardDataFlowAnalysis<Lattice>;
   using Base::SparseForwardDataFlowAnalysis;
