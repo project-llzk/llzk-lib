@@ -10,7 +10,6 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
-#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
