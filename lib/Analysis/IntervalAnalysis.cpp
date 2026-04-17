@@ -525,13 +525,18 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
 void IntervalDataFlowAnalysis::recordRefWrite(
     const SourceRef &writtenRef, const ExpressionValue &writeVal
 ) {
-  llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
-  ExpressionValue written(expr, writeVal.getInterval());
+  ExpressionValue written = writeVal;
 
   if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
     const ExpressionValue &old = it->second;
     Interval combinedWrite = old.getInterval().join(written.getInterval());
-    writeResults[writtenRef] = old.withInterval(combinedWrite);
+    if (old.getExpr() != nullptr && written.getExpr() != nullptr &&
+        *old.getExpr() == *written.getExpr()) {
+      writeResults[writtenRef] = old.withInterval(combinedWrite);
+    } else {
+      llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
+      writeResults[writtenRef] = ExpressionValue(expr, combinedWrite);
+    }
   } else {
     writeResults[writtenRef] = written;
   }
@@ -650,6 +655,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     } else {
       result = performUnaryArithmetic(op, operandVals[0]);
     }
+
     // Also intersect with prior interval, if it's initialized
     const ExpressionValue &prior = results[0]->getValue().getScalarValue();
     if (prior.getExpr()) {
@@ -708,7 +714,38 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         auto memberRefRes = refSet.getSingleValue().createChild(idx);
         ensure(succeeded(memberRefRes), "could not create SourceRef child for member write");
         SourceRef memberRef = *memberRefRes;
-        recordRefWrite(memberRef, writeVal);
+        Type memberTy = writem.getVal().getType();
+        if (!llvm::isa<ArrayType, StructType>(memberTy)) {
+          // Simple scalar update
+          recordRefWrite(memberRef, writeVal);
+        } else {
+          // Map the intervals of aggregates to the written member
+          std::optional<SourceRef> rhsPrefix;
+          if (operandRefs[1].has_value() && operandRefs[1]->isRooted()) {
+            rhsPrefix = operandRefs[1];
+          } else if (auto blockArg = llvm::dyn_cast<BlockArgument>(writem.getVal())) {
+            rhsPrefix = SourceRef(blockArg);
+          } else if (auto result = llvm::dyn_cast<OpResult>(writem.getVal())) {
+            rhsPrefix = SourceRef(result);
+          }
+
+          if (rhsPrefix.has_value()) {
+            llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
+            for (const auto &[writtenRef, writtenVal] : writeResults) {
+              if (!writtenRef.isValidPrefix(*rhsPrefix)) {
+                continue;
+              }
+
+              auto translatedRef = writtenRef.translate(*rhsPrefix, memberRef);
+              ensure(succeeded(translatedRef), "could not translate composite member write");
+              remappedWrites.emplace_back(*translatedRef, writtenVal);
+            }
+
+            for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+              recordRefWrite(translatedRef, translatedVal);
+            }
+          }
+        }
       }
     }
   } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
