@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.LLZK_APP_ID }}
           private-key: ${{ secrets.LLZK_APP_PRIVATE_KEY }}
@@ -80,11 +80,11 @@ jobs:
           git config user.name "project-llzk[bot]"
           git config user.email "project-llzk[bot]@users.noreply.github.com"
 
-      - name: Create bump branch if needed
+      - name: Create or reset bump branch if needed
         if: steps.existing-pr.outputs.pr_number == ''
         working-directory: llzk-rs
         run: |
-          git checkout -b bot/bump-llzk-lib
+          git checkout -B bot/bump-llzk-lib origin/main
 
       - name: Update llzk-lib flake input
         id: update
