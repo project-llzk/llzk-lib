@@ -652,7 +652,7 @@ $(function(){initNavTree('TypeHelper_8cpp_source.html','',''); });
 <div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span><span class="comment">// Allowed types must be a subset of StructParamTypes (defined below)</span></div>
 <div class="foldopen" id="foldopen00544" data-start="{" data-end="}">
 <div class="line"><a id="l00544" name="l00544"></a><span class="lineno"><a class="line" href="namespacellzk.html#afdc6a963256e586da485479d34e385dc">  544</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#afdc6a963256e586da485479d34e385dc">isValidConstReadType</a>(Type type) {</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>  <span class="keywordflow">return</span> AllowedTypes().noString().noStruct().noArray().isValidTypeImpl(type);</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>  <span class="keywordflow">return</span> AllowedTypes().noString().noStruct().noArray().noPod().isValidTypeImpl(type);</div>
 <div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>}</div>
 </div>
 <div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span> </div>
