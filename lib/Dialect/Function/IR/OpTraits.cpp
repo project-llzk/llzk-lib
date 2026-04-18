@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 
 #include <mlir/IR/Operation.h>
 
@@ -29,27 +30,31 @@ auto parentFuncDefOpHasAttr = [](Operation *op, auto attrFn) -> bool {
 } // namespace
 
 LogicalResult verifyConstraintGenTraitImpl(Operation *op) {
-  if (!parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowConstraintAttr)) {
-    return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName()
-                             << "' with '" << AllowConstraintAttr::name << "' attribute";
+  if (parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowConstraintAttr)) {
+    return success();
   }
-  return success();
+  return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName() << "' with '"
+                           << AllowConstraintAttr::name << "' attribute";
 }
 
 LogicalResult verifyWitnessGenTraitImpl(Operation *op) {
-  if (!parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowWitnessAttr)) {
-    return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName()
-                             << "' with '" << AllowWitnessAttr::name << "' attribute";
+  if (parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowWitnessAttr)) {
+    return success();
   }
-  return success();
+  return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName() << "' with '"
+                           << AllowWitnessAttr::name << "' attribute";
 }
 
 LogicalResult verifyNotFieldNativeTraitImpl(Operation *op) {
-  if (!parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowNonNativeFieldOpsAttr)) {
-    return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName()
-                             << "' with '" << AllowNonNativeFieldOpsAttr::name << "' attribute";
+  if (op->getParentOfType<llzk::polymorphic::TemplateExprOp>()) {
+    return success();
   }
-  return success();
+  if (parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowNonNativeFieldOpsAttr)) {
+    return success();
+  }
+  return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName() << "' with '"
+                           << AllowNonNativeFieldOpsAttr::name << "' attribute or a '"
+                           << llzk::polymorphic::TemplateExprOp::getOperationName() << "'";
 }
 
 } // namespace llzk::function
