@@ -43,7 +43,8 @@ def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen, MemoryEffects<[MemRead]>]> {
   }];
 }
 
-def LLZK_StoreOp : RAMDialectOp<"store", [WitnessGen, MemoryEffects<[MemWrite]>]> {
+def LLZK_StoreOp
+    : RAMDialectOp<"store", [WitnessGen, MemoryEffects<[MemWrite]>]> {
   let summary = "write a value to memory";
   let description = [{
     Writes felt `%val` to cell `%addr` of the flat, cell-addressed RAM.
