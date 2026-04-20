@@ -133,23 +133,32 @@ class FunctionDefConverter : public OpConversionPattern<function::FuncDefOp> {
 };
 
 class FeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
+  APSInt prime;
+
 public:
-  using OpConversionPattern<felt::DivFeltOp>::OpConversionPattern;
+  FeltDivConverter(TypeConverter &_typeConverter, MLIRContext *context, APSInt _prime)
+      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, prime {std::move(_prime)} {}
+
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
 
     // Rewrite `%z = felt.div %x, %y` into:
     // %z = smt.declare_fun "z" : !smt.int
+    // %p = smt.constant <field prime> : !smt.int
     // %c0 = smt.constant 0 : !smt.int
     // %y0 = smt.eq %y, %c0 : !smt.bool
     // %z0 = smt.eq %z, %c0 : !smt.bool
     // %yz = smt.int.mul %y, %z : !smt.int
-    // %yz_eq_x = smt.eq %yz, %x : !smt.bool
+    // %yz_mod = smt.int.mod %yz, %p : !smt.int
+    // %x_mod = smt.int.mod %x, %p : !smt.int
+    // %yz_eq_x = smt.eq %yz_mod, %x_mod : !smt.bool
     // %div_constraint = smt.ite %y0, %z0, %yz_eq_x : !smt.bool
     // smt.assert %div_constraint
 
     auto div = rewriter.create<smt::DeclareFunOp>(op->getLoc(), smt::IntType::get(getContext()));
+    auto mod =
+        rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
     auto zero = rewriter.create<smt::IntConstantOp>(
         op->getLoc(), IntegerAttr::get(getContext(), APSInt {APInt {1, 0}})
     );
@@ -159,8 +168,13 @@ public:
     auto product = rewriter.create<smt::IntMulOp>(
         op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()}
     );
-    auto productEqualsNumerator =
-        rewriter.create<smt::EqOp>(op->getLoc(), product.getResult(), adaptor.getLhs());
+    auto productMod =
+        rewriter.create<smt::IntModOp>(op->getLoc(), product.getResult(), mod.getResult());
+    auto numeratorMod =
+        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod.getResult());
+    auto productEqualsNumerator = rewriter.create<smt::EqOp>(
+        op->getLoc(), productMod.getResult(), numeratorMod.getResult()
+    );
     auto divConstraint = rewriter.create<smt::IteOp>(
         op->getLoc(), denominatorIsZero.getResult(), divIsZero.getResult(),
         productEqualsNumerator.getResult()
@@ -470,7 +484,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         BoolCmpConverter, FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter>(
         typeConverter, context
     );
-    patterns.add<FeltDivConverter>(typeConverter, context);
+    patterns.add<FeltDivConverter>(typeConverter, context, prime);
     patterns.add<ConstrainConverter>(typeConverter, context, prime);
     patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
     patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
