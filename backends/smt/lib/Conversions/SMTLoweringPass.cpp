@@ -43,6 +43,7 @@
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/Transforms/DialectConversion.h>
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -64,6 +65,12 @@ class LLZKToSMTTypeConverter : public TypeConverter {
 public:
   LLZKToSMTTypeConverter(MLIRContext *ctx) {
     addConversion([](Type type) { return type; });
+    addConversion([ctx](mlir::IntegerType type) -> Type {
+      if (type.isSignless() && type.getWidth() == 1) {
+        return smt::BoolType::get(ctx);
+      }
+      return type;
+    });
     addConversion([ctx](felt::FeltType) { return smt::IntType::get(ctx); });
     addConversion([this](array::ArrayType type) {
       auto elemType = convertType(type.getElementType());
@@ -337,8 +344,19 @@ class SCFIfConverter : public OpConversionPattern<scf::IfOp> {
       return getTypeConverter()->convertType(t);
     });
 
+    Value cond = adaptor.getCondition();
+    if (!isa<IntegerType>(cond.getType())) {
+      // We have to manually convert the condition type because it might be a block arg instead of
+      // coming from a converted op
+      cond = rewriter
+                 .create<UnrealizedConversionCastOp>(
+                     op.getLoc(), TypeRange {rewriter.getI1Type()}, cond
+                 )
+                 .getResult(0);
+    }
+
     auto convertedIf = rewriter.create<scf::IfOp>(
-        op.getLoc(), convertedResultTypes, adaptor.getCondition(),
+        op.getLoc(), convertedResultTypes, cond,
         /*addThenBlock=*/false, /*addElseBlock=*/false
     );
 

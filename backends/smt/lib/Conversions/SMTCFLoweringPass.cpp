@@ -41,7 +41,8 @@ class SMTCFLoweringPass : public smt::impl::SMTCFLoweringPassBase<SMTCFLoweringP
   // to an i1, so we need to see through that
   Value getCondition(scf::IfOp ifOp) {
     Value condition = ifOp.getCondition();
-    while (auto op = dyn_cast<mlir::UnrealizedConversionCastOp>(condition.getDefiningOp())) {
+    while (auto op =
+               dyn_cast_or_null<mlir::UnrealizedConversionCastOp>(condition.getDefiningOp())) {
       condition = op.getOperand(0);
     }
     return condition;

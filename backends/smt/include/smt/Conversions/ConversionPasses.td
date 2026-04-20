@@ -19,7 +19,7 @@ def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
     the theory of integers and arrays, and generates 
     assertions for struct member writes and constraints. This 
     pass preserves control flow, and should be used in 
-    conjuction with the -llzk-to-smt-cf pass, or as 
+    conjuction with the -llzk-to-smt-cf-only pass, or as 
     part of the -llzk-to-smt pass pipeline.
   }];
   let constructor = "smt::createSMTLoweringPass()";
@@ -29,7 +29,7 @@ def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
                         "If omitted, the pass auto-detects it.">];
 }
 
-def SMTCFLoweringPass : LLZKPass<"llzk-to-smt-cf"> {
+def SMTCFLoweringPass : LLZKPass<"llzk-to-smt-cf-only"> {
   let summary = "Lowers control-flow LLZK ops to SMTLIB";
   let description = [{
     Lowers scf.if by putting branching conditions into the 
