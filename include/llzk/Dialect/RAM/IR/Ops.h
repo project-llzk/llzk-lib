@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 

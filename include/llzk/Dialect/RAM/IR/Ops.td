@@ -10,7 +10,7 @@
 #ifndef LLZK_RAM_OPS
 #define LLZK_RAM_OPS
 
-include "llzk/Dialect/Shared/Types.td"
+include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/RAM/IR/Dialect.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 
@@ -20,7 +20,11 @@ class RAMDialectOp<string mnemonic, list<Trait> traits = []>
 def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen]> {
   let summary = "read a value from memory";
   let description = [{
-    Reads a value from the flat memory region at the given address.
+    Reads the felt stored at cell `%addr` of the flat, cell-addressed RAM.
+
+    `%addr` is a slot index. Each cell holds exactly one
+    `!felt.type` value; producers storing other types (booleans, integers,
+    composites) must widen or lay them out across cells themselves.
 
     Example:
 
@@ -30,7 +34,7 @@ def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen]> {
   }];
 
   let arguments = (ins Index:$addr);
-  let results = (outs AnyLLZKType:$val);
+  let results = (outs LLZK_FeltType:$val);
 
   let assemblyFormat = [{
     $addr `:` type($val) attr-dict
@@ -40,7 +44,11 @@ def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen]> {
 def LLZK_StoreOp : RAMDialectOp<"store", [WitnessGen]> {
   let summary = "write a value to memory";
   let description = [{
-    Writes a value to the flat memory region at the given address.
+    Writes felt `%val` to cell `%addr` of the flat, cell-addressed RAM.
+
+    `%addr` is a slot index. Each cell holds exactly one
+    `!felt.type` value; producers storing other types (booleans, integers,
+    composites) must widen or lay them out across cells themselves.
 
     Example:
 
@@ -49,7 +57,7 @@ def LLZK_StoreOp : RAMDialectOp<"store", [WitnessGen]> {
     ```
   }];
 
-  let arguments = (ins Index:$addr, AnyLLZKType:$val);
+  let arguments = (ins Index:$addr, LLZK_FeltType:$val);
 
   let assemblyFormat = [{
     $addr `,` $val `:` type($val) attr-dict
