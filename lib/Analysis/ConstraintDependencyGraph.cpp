@@ -90,7 +90,7 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
       const auto &currVals = it->second;
 
       std::vector<SourceRefIndex> indices;
-      for (unsigned i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
+      for (size_t i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
         auto idxOperand = arrayAccessOp.getIndices()[i];
         auto idxIt = operandVals.find(idxOperand);
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
@@ -101,7 +101,8 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
         } else {
           auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
           auto lower = APInt::getZero(64);
-          APInt upper(64, arrayType.getDimSize(i));
+          assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
+          APInt upper(64, arrayType.getDimSize(static_cast<unsigned>(i)));
           indices.emplace_back(lower, upper);
         }
       }
@@ -168,7 +169,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
     }
 
     SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
-    for (unsigned i = 0; i < elements.size(); i++) {
+    for (size_t i = 0; i < elements.size(); i++) {
       (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(elements[i])->getValue());
     }
     propagateIfChanged(results.front(), results.front()->setValue(newArrayVal));
@@ -220,7 +221,7 @@ void SourceRefAnalysis::visitExternalCall(
   const auto returnSites = predecessors->getKnownPredecessors();
 
   std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
-  for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
+  for (size_t i = 0; i < funcOp.getNumArguments(); i++) {
     translation[SourceRef(funcOp.getArgument(i))] =
         static_cast<const Lattice *>(operandLattices[i])->getValue();
   }
@@ -265,7 +266,7 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
   const auto &currVals = it->second->getValue();
 
   std::vector<SourceRefIndex> indices;
-  for (unsigned i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
+  for (size_t i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
     auto idxOperand = arrayAccessOp.getIndices()[i];
     auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
@@ -276,7 +277,8 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     } else {
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
       auto lower = APInt::getZero(64);
-      APInt upper(64, arrayType.getDimSize(i));
+      assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
+      APInt upper(64, arrayType.getDimSize(static_cast<unsigned>(i)));
       indices.emplace_back(lower, upper);
     }
   }
