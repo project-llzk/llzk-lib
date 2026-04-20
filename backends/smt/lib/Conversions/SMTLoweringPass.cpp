@@ -172,9 +172,8 @@ public:
         rewriter.create<smt::IntModOp>(op->getLoc(), product.getResult(), mod.getResult());
     auto numeratorMod =
         rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod.getResult());
-    auto productEqualsNumerator = rewriter.create<smt::EqOp>(
-        op->getLoc(), productMod.getResult(), numeratorMod.getResult()
-    );
+    auto productEqualsNumerator =
+        rewriter.create<smt::EqOp>(op->getLoc(), productMod.getResult(), numeratorMod.getResult());
     auto divConstraint = rewriter.create<smt::IteOp>(
         op->getLoc(), denominatorIsZero.getResult(), divIsZero.getResult(),
         productEqualsNumerator.getResult()
