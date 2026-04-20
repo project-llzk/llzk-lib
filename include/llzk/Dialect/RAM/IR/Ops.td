@@ -10,6 +10,8 @@
 #ifndef LLZK_RAM_OPS
 #define LLZK_RAM_OPS
 
+include "mlir/Interfaces/SideEffectInterfaces.td"
+
 include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/RAM/IR/Dialect.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
@@ -17,7 +19,7 @@ include "llzk/Dialect/Function/IR/OpTraits.td"
 class RAMDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<RAMDialect, mnemonic, traits>;
 
-def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen]> {
+def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen, MemoryEffects<[MemRead]>]> {
   let summary = "read a value from memory";
   let description = [{
     Reads the felt stored at cell `%addr` of the flat, cell-addressed RAM.
@@ -41,7 +43,7 @@ def LLZK_LoadOp : RAMDialectOp<"load", [WitnessGen]> {
   }];
 }
 
-def LLZK_StoreOp : RAMDialectOp<"store", [WitnessGen]> {
+def LLZK_StoreOp : RAMDialectOp<"store", [WitnessGen, MemoryEffects<[MemWrite]>]> {
   let summary = "write a value to memory";
   let description = [{
     Writes felt `%val` to cell `%addr` of the flat, cell-addressed RAM.
