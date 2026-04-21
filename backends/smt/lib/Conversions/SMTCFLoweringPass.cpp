@@ -83,7 +83,8 @@ public:
     }
 
     if (elseAssertions.empty()) {
-      // Don't bother materializing an SSA value for "~b" if there's no use for it
+      // Don't bother materializing an SSA value for "~b" if there's no assertions in the else
+      // branch
       return success();
     }
 
