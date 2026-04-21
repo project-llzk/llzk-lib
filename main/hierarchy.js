@@ -36,6 +36,20 @@ var hierarchy =
       ] ],
       [ "llzk::felt::AndFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1AndFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::smt::detail::AndOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1AndOpGenericAdaptorBase.html", [
+      [ "llzk::smt::AndOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1AndOpGenericAdaptor.html", null ],
+      [ "llzk::smt::AndOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1AndOpGenericAdaptor.html", [
+        [ "llzk::smt::AndOpAdaptor", "classllzk_1_1smt_1_1AndOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::AndOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1AndOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::ApplyFuncOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ApplyFuncOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ApplyFuncOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ApplyFuncOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ApplyFuncOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ApplyFuncOpGenericAdaptor.html", [
+        [ "llzk::smt::ApplyFuncOpAdaptor", "classllzk_1_1smt_1_1ApplyFuncOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ApplyFuncOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ApplyFuncOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::polymorphic::detail::ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", [
       [ "llzk::polymorphic::ApplyMapOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", null ],
       [ "llzk::polymorphic::ApplyMapOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", [
@@ -44,6 +58,13 @@ var hierarchy =
       [ "llzk::polymorphic::ApplyMapOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1ApplyMapOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::smt::detail::ArrayBroadcastOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ArrayBroadcastOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ArrayBroadcastOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ArrayBroadcastOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ArrayBroadcastOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ArrayBroadcastOpGenericAdaptor.html", [
+        [ "llzk::smt::ArrayBroadcastOpAdaptor", "classllzk_1_1smt_1_1ArrayBroadcastOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ArrayBroadcastOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ArrayBroadcastOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::array::ArrayIndexGen", "classllzk_1_1array_1_1ArrayIndexGen.html", null ],
     [ "llzk::array::detail::ArrayLengthOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1ArrayLengthOpGenericAdaptorBase.html", [
       [ "llzk::array::ArrayLengthOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1ArrayLengthOpGenericAdaptor.html", null ],
@@ -53,12 +74,33 @@ var hierarchy =
       [ "llzk::array::ArrayLengthOpGenericAdaptor< RangeT >", "classllzk_1_1array_1_1ArrayLengthOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::array::detail::ArrayRefOpInterfaceInterfaceTraits", "structllzk_1_1array_1_1detail_1_1ArrayRefOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::smt::detail::ArraySelectOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ArraySelectOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ArraySelectOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ArraySelectOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ArraySelectOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ArraySelectOpGenericAdaptor.html", [
+        [ "llzk::smt::ArraySelectOpAdaptor", "classllzk_1_1smt_1_1ArraySelectOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ArraySelectOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ArraySelectOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::ArrayStoreOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ArrayStoreOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ArrayStoreOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ArrayStoreOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ArrayStoreOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ArrayStoreOpGenericAdaptor.html", [
+        [ "llzk::smt::ArrayStoreOpAdaptor", "classllzk_1_1smt_1_1ArrayStoreOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ArrayStoreOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ArrayStoreOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::boolean::detail::AssertOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase.html", [
       [ "llzk::boolean::AssertOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html", null ],
       [ "llzk::boolean::AssertOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html", [
         [ "llzk::boolean::AssertOpAdaptor", "classllzk_1_1boolean_1_1AssertOpAdaptor.html", null ]
       ] ],
       [ "llzk::boolean::AssertOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::AssertOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1AssertOpGenericAdaptorBase.html", [
+      [ "llzk::smt::AssertOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1AssertOpGenericAdaptor.html", null ],
+      [ "llzk::smt::AssertOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1AssertOpGenericAdaptor.html", [
+        [ "llzk::smt::AssertOpAdaptor", "classllzk_1_1smt_1_1AssertOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::AssertOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1AssertOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::AuxAssignment", "structllzk_1_1AuxAssignment.html", null ],
     [ "llzk::BaseBuilder", "classllzk_1_1BaseBuilder.html", [
@@ -73,7 +115,140 @@ var hierarchy =
     [ "basic_parser", null, [
       [ "llvm::cl::parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", null ]
     ] ],
+    [ "llzk::smt::detail::BoolConstantOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BoolConstantOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BoolConstantOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BoolConstantOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BoolConstantOpGenericAdaptor.html", [
+        [ "llzk::smt::BoolConstantOpAdaptor", "classllzk_1_1smt_1_1BoolConstantOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BoolConstantOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BoolConstantOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
+    [ "llzk::smt::detail::BV2IntOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BV2IntOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BV2IntOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BV2IntOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BV2IntOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BV2IntOpGenericAdaptor.html", [
+        [ "llzk::smt::BV2IntOpAdaptor", "classllzk_1_1smt_1_1BV2IntOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BV2IntOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BV2IntOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVAddOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVAddOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVAddOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVAddOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVAddOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVAddOpGenericAdaptor.html", [
+        [ "llzk::smt::BVAddOpAdaptor", "classllzk_1_1smt_1_1BVAddOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVAddOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVAddOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVAndOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVAndOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVAndOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVAndOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVAndOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVAndOpGenericAdaptor.html", [
+        [ "llzk::smt::BVAndOpAdaptor", "classllzk_1_1smt_1_1BVAndOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVAndOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVAndOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVAShrOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVAShrOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVAShrOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVAShrOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVAShrOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVAShrOpGenericAdaptor.html", [
+        [ "llzk::smt::BVAShrOpAdaptor", "classllzk_1_1smt_1_1BVAShrOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVAShrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVAShrOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVCmpOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVCmpOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVCmpOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVCmpOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVCmpOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVCmpOpGenericAdaptor.html", [
+        [ "llzk::smt::BVCmpOpAdaptor", "classllzk_1_1smt_1_1BVCmpOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVCmpOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVCmpOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVConstantOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVConstantOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVConstantOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVConstantOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVConstantOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVConstantOpGenericAdaptor.html", [
+        [ "llzk::smt::BVConstantOpAdaptor", "classllzk_1_1smt_1_1BVConstantOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVConstantOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVConstantOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVLShrOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVLShrOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVLShrOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVLShrOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVLShrOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVLShrOpGenericAdaptor.html", [
+        [ "llzk::smt::BVLShrOpAdaptor", "classllzk_1_1smt_1_1BVLShrOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVLShrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVLShrOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVMulOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVMulOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVMulOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVMulOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVMulOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVMulOpGenericAdaptor.html", [
+        [ "llzk::smt::BVMulOpAdaptor", "classllzk_1_1smt_1_1BVMulOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVMulOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVMulOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVNegOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVNegOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVNegOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVNegOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVNegOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVNegOpGenericAdaptor.html", [
+        [ "llzk::smt::BVNegOpAdaptor", "classllzk_1_1smt_1_1BVNegOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVNegOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVNegOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVNotOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVNotOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVNotOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVNotOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVNotOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVNotOpGenericAdaptor.html", [
+        [ "llzk::smt::BVNotOpAdaptor", "classllzk_1_1smt_1_1BVNotOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVNotOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVNotOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVOrOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVOrOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVOrOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVOrOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVOrOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVOrOpGenericAdaptor.html", [
+        [ "llzk::smt::BVOrOpAdaptor", "classllzk_1_1smt_1_1BVOrOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVOrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVOrOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVSDivOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVSDivOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVSDivOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVSDivOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVSDivOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVSDivOpGenericAdaptor.html", [
+        [ "llzk::smt::BVSDivOpAdaptor", "classllzk_1_1smt_1_1BVSDivOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVSDivOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVSDivOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVShlOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVShlOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVShlOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVShlOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVShlOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVShlOpGenericAdaptor.html", [
+        [ "llzk::smt::BVShlOpAdaptor", "classllzk_1_1smt_1_1BVShlOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVShlOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVShlOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVSModOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVSModOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVSModOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVSModOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVSModOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVSModOpGenericAdaptor.html", [
+        [ "llzk::smt::BVSModOpAdaptor", "classllzk_1_1smt_1_1BVSModOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVSModOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVSModOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVSRemOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVSRemOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVSRemOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVSRemOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVSRemOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVSRemOpGenericAdaptor.html", [
+        [ "llzk::smt::BVSRemOpAdaptor", "classllzk_1_1smt_1_1BVSRemOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVSRemOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVSRemOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVUDivOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVUDivOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVUDivOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVUDivOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVUDivOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVUDivOpGenericAdaptor.html", [
+        [ "llzk::smt::BVUDivOpAdaptor", "classllzk_1_1smt_1_1BVUDivOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVUDivOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVUDivOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVURemOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVURemOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVURemOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVURemOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVURemOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVURemOpGenericAdaptor.html", [
+        [ "llzk::smt::BVURemOpAdaptor", "classllzk_1_1smt_1_1BVURemOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVURemOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVURemOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::BVXOrOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BVXOrOpGenericAdaptorBase.html", [
+      [ "llzk::smt::BVXOrOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BVXOrOpGenericAdaptor.html", null ],
+      [ "llzk::smt::BVXOrOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BVXOrOpGenericAdaptor.html", [
+        [ "llzk::smt::BVXOrOpAdaptor", "classllzk_1_1smt_1_1BVXOrOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::BVXOrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVXOrOpGenericAdaptor.html", null ]
+    ] ],
     [ "mlir::BytecodeDialectInterface", null, [
       [ "llzk::LLZKDialectBytecodeInterface< StructDialect >", "structllzk_1_1LLZKDialectBytecodeInterface.html", [
         [ "llzk::component::StructDialectBytecodeInterface", "structllzk_1_1component_1_1StructDialectBytecodeInterface.html", null ]
@@ -134,6 +309,13 @@ var hierarchy =
       [ "StructTypeLinkTests", "classStructTypeLinkTests.html", null ]
     ] ],
     [ "llzk::CDGAnalysisContext", "structllzk_1_1CDGAnalysisContext.html", null ],
+    [ "llzk::smt::detail::CheckOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1CheckOpGenericAdaptorBase.html", [
+      [ "llzk::smt::CheckOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1CheckOpGenericAdaptor.html", null ],
+      [ "llzk::smt::CheckOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1CheckOpGenericAdaptor.html", [
+        [ "llzk::smt::CheckOpAdaptor", "classllzk_1_1smt_1_1CheckOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::CheckOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1CheckOpGenericAdaptor.html", null ]
+    ] ],
     [ "ClangLexerContext", "classClangLexerContext.html", null ],
     [ "llzk::boolean::detail::CmpOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase.html", [
       [ "llzk::boolean::CmpOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1CmpOpGenericAdaptor.html", null ],
@@ -144,6 +326,13 @@ var hierarchy =
     ] ],
     [ "llzk::CommutativeMatcher< LhsMatcher, RhsMatcher, OpTypes >", "structllzk_1_1CommutativeMatcher.html", null ],
     [ "llzk::ComputeConstrainToProductPassOptions", "structllzk_1_1ComputeConstrainToProductPassOptions.html", null ],
+    [ "llzk::smt::detail::ConcatOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ConcatOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ConcatOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ConcatOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ConcatOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ConcatOpGenericAdaptor.html", [
+        [ "llzk::smt::ConcatOpAdaptor", "classllzk_1_1smt_1_1ConcatOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ConcatOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ConcatOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits::Concept", "structllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1Concept.html", [
       [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
         [ "llzk::array::detail::ArrayAccessOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1array_1_1detail_1_1ArrayAccessOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
@@ -226,6 +415,13 @@ var hierarchy =
         [ "llzk::dataflow::SparseForwardDataFlowAnalysis< StateT >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ]
       ] ]
     ] ],
+    [ "llzk::smt::detail::DeclareFunOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1DeclareFunOpGenericAdaptorBase.html", [
+      [ "llzk::smt::DeclareFunOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1DeclareFunOpGenericAdaptor.html", null ],
+      [ "llzk::smt::DeclareFunOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1DeclareFunOpGenericAdaptor.html", [
+        [ "llzk::smt::DeclareFunOpAdaptor", "classllzk_1_1smt_1_1DeclareFunOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::DeclareFunOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1DeclareFunOpGenericAdaptor.html", null ]
+    ] ],
     [ "DefaultDOTGraphTraits", null, [
       [ "llvm::DOTGraphTraits< const llzk::SymbolDefTreeNode * >", "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html", [
         [ "llvm::DOTGraphTraits< const llzk::SymbolDefTree * >", "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html", null ]
@@ -247,6 +443,8 @@ var hierarchy =
     [ "llvm::DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
     [ "llvm::DenseMapInfo<::llzk::OutputStream >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html", null ],
     [ "llvm::DenseMapInfo<::llzk::polymorphic::StructCleanupMode >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_4.html", null ],
+    [ "llvm::DenseMapInfo<::llzk::smt::BVCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
+    [ "llvm::DenseMapInfo<::llzk::smt::IntPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
     [ "mlir::Dialect", null, [
       [ "llzk::LLZKDialect", "classllzk_1_1LLZKDialect.html", null ],
       [ "llzk::array::ArrayDialect", "classllzk_1_1array_1_1ArrayDialect.html", null ],
@@ -261,10 +459,18 @@ var hierarchy =
       [ "llzk::pod::PODDialect", "classllzk_1_1pod_1_1PODDialect.html", null ],
       [ "llzk::polymorphic::PolymorphicDialect", "classllzk_1_1polymorphic_1_1PolymorphicDialect.html", null ],
       [ "llzk::ram::RAMDialect", "classllzk_1_1ram_1_1RAMDialect.html", null ],
+      [ "llzk::smt::SMTDialect", "classllzk_1_1smt_1_1SMTDialect.html", null ],
       [ "llzk::string::StringDialect", "classllzk_1_1string_1_1StringDialect.html", null ]
     ] ],
     [ "mlir::DialectVersion", null, [
       [ "llzk::LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", null ]
+    ] ],
+    [ "llzk::smt::detail::DistinctOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1DistinctOpGenericAdaptorBase.html", [
+      [ "llzk::smt::DistinctOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1DistinctOpGenericAdaptor.html", null ],
+      [ "llzk::smt::DistinctOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1DistinctOpGenericAdaptor.html", [
+        [ "llzk::smt::DistinctOpAdaptor", "classllzk_1_1smt_1_1DistinctOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::DistinctOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1DistinctOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::felt::detail::DivFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1DivFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::DivFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html", null ],
@@ -288,6 +494,20 @@ var hierarchy =
       ] ],
       [ "llzk::constrain::EmitEqualityOpGenericAdaptor< RangeT >", "classllzk_1_1constrain_1_1EmitEqualityOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::smt::detail::EqOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1EqOpGenericAdaptorBase.html", [
+      [ "llzk::smt::EqOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1EqOpGenericAdaptor.html", null ],
+      [ "llzk::smt::EqOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1EqOpGenericAdaptor.html", [
+        [ "llzk::smt::EqOpAdaptor", "classllzk_1_1smt_1_1EqOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::EqOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1EqOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::ExistsOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ExistsOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ExistsOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ExistsOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ExistsOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ExistsOpGenericAdaptor.html", [
+        [ "llzk::smt::ExistsOpAdaptor", "classllzk_1_1smt_1_1ExistsOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ExistsOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ExistsOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::ExpressionValue", "classllzk_1_1ExpressionValue.html", null ],
     [ "llzk::array::detail::ExtractArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1ExtractArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::ExtractArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1ExtractArrayOpGenericAdaptor.html", null ],
@@ -295,6 +515,13 @@ var hierarchy =
         [ "llzk::array::ExtractArrayOpAdaptor", "classllzk_1_1array_1_1ExtractArrayOpAdaptor.html", null ]
       ] ],
       [ "llzk::array::ExtractArrayOpGenericAdaptor< RangeT >", "classllzk_1_1array_1_1ExtractArrayOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::ExtractOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ExtractOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ExtractOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ExtractOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ExtractOpGenericAdaptor.html", [
+        [ "llzk::smt::ExtractOpAdaptor", "classllzk_1_1smt_1_1ExtractOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ExtractOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ExtractOpGenericAdaptor.html", null ]
     ] ],
     [ "ExtraMethod", "structExtraMethod.html", null ],
     [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits", "structllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits.html", null ],
@@ -318,11 +545,22 @@ var hierarchy =
     [ "mlir::FieldParser< std::optional<::llzk::boolean::FeltCmpPredicate >, std::optional<::llzk::boolean::FeltCmpPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4_00_0fa3d077b4dcce16eb97891943ddab480.html", null ],
     [ "mlir::FieldParser< std::optional<::llzk::OutputStream >, std::optional<::llzk::OutputStream > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1OutputStream_01_4_00_01std_1_1optionaf28399610e384e0d4fd7a9ffaf1b5959.html", null ],
     [ "mlir::FieldParser< std::optional<::llzk::polymorphic::StructCleanupMode >, std::optional<::llzk::polymorphic::StructCleanupMode > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_44ed1e4ff6df839a4978f25bf61fedc7d.html", null ],
+    [ "mlir::FieldParser< std::optional<::llzk::smt::BVCmpPredicate >, std::optional<::llzk::smt::BVCmpPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4_00_01std_1d17f21d2debc7c5ee46ab84e9b725e47.html", null ],
+    [ "mlir::FieldParser< std::optional<::llzk::smt::IntPredicate >, std::optional<::llzk::smt::IntPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1smt_1_1IntPredicate_01_4_00_01std_1_157158a30502fffadd47c7c7540cccf60.html", null ],
     [ "mlir::FieldParser<::llzk::boolean::FeltCmpPredicate, ::llzk::boolean::FeltCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_00_01_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
     [ "mlir::FieldParser<::llzk::OutputStream, ::llzk::OutputStream >", "structmlir_1_1FieldParser_3_1_1llzk_1_1OutputStream_00_01_1_1llzk_1_1OutputStream_01_4.html", null ],
     [ "mlir::FieldParser<::llzk::polymorphic::StructCleanupMode, ::llzk::polymorphic::StructCleanupMode >", "structmlir_1_1FieldParser_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_00_01_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_4.html", null ],
+    [ "mlir::FieldParser<::llzk::smt::BVCmpPredicate, ::llzk::smt::BVCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1BVCmpPredicate_00_01_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
+    [ "mlir::FieldParser<::llzk::smt::IntPredicate, ::llzk::smt::IntPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1IntPredicate_00_01_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
     [ "llzk::FileLineColLocComparator", "structllzk_1_1FileLineColLocComparator.html", null ],
     [ "llzk::polymorphic::FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", null ],
+    [ "llzk::smt::detail::ForallOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ForallOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ForallOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ForallOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", [
+        [ "llzk::smt::ForallOpAdaptor", "classllzk_1_1smt_1_1ForallOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ForallOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::function::detail::FuncDefOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase.html", [
       [ "llzk::function::FuncDefOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ],
       [ "llzk::function::FuncDefOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", [
@@ -388,6 +626,13 @@ var hierarchy =
     [ "std::hash< llzk::CDGAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html", null ],
     [ "std::hash< llzk::IntervalAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4.html", null ],
     [ "ClangLexerContext::Impl", "structClangLexerContext_1_1Impl.html", null ],
+    [ "llzk::smt::detail::ImpliesOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ImpliesOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ImpliesOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ImpliesOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ImpliesOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ImpliesOpGenericAdaptor.html", [
+        [ "llzk::smt::ImpliesOpAdaptor", "classllzk_1_1smt_1_1ImpliesOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ImpliesOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ImpliesOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::include::detail::IncludeOpGenericAdaptorBase", "classllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase.html", [
       [ "llzk::include::IncludeOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1include_1_1IncludeOpGenericAdaptor.html", null ],
       [ "llzk::include::IncludeOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1include_1_1IncludeOpGenericAdaptor.html", [
@@ -405,9 +650,83 @@ var hierarchy =
       [ "llzk::array::InsertArrayOpGenericAdaptor< RangeT >", "classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::component::InStructFunctionNamed< FuncName >", "structllzk_1_1component_1_1InStructFunctionNamed.html", null ],
+    [ "llzk::smt::detail::Int2BVOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1Int2BVOpGenericAdaptorBase.html", [
+      [ "llzk::smt::Int2BVOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1Int2BVOpGenericAdaptor.html", null ],
+      [ "llzk::smt::Int2BVOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1Int2BVOpGenericAdaptor.html", [
+        [ "llzk::smt::Int2BVOpAdaptor", "classllzk_1_1smt_1_1Int2BVOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::Int2BVOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1Int2BVOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntAbsOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntAbsOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntAbsOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntAbsOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntAbsOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntAbsOpGenericAdaptor.html", [
+        [ "llzk::smt::IntAbsOpAdaptor", "classllzk_1_1smt_1_1IntAbsOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntAbsOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntAbsOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntAddOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntAddOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntAddOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntAddOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntAddOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntAddOpGenericAdaptor.html", [
+        [ "llzk::smt::IntAddOpAdaptor", "classllzk_1_1smt_1_1IntAddOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntAddOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntAddOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntCmpOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntCmpOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntCmpOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntCmpOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntCmpOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntCmpOpGenericAdaptor.html", [
+        [ "llzk::smt::IntCmpOpAdaptor", "classllzk_1_1smt_1_1IntCmpOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntCmpOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntCmpOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntConstantOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntConstantOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntConstantOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntConstantOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntConstantOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntConstantOpGenericAdaptor.html", [
+        [ "llzk::smt::IntConstantOpAdaptor", "classllzk_1_1smt_1_1IntConstantOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntConstantOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntConstantOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntDivOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntDivOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntDivOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntDivOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntDivOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntDivOpGenericAdaptor.html", [
+        [ "llzk::smt::IntDivOpAdaptor", "classllzk_1_1smt_1_1IntDivOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntDivOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntDivOpGenericAdaptor.html", null ]
+    ] ],
+    [ "mlir::IntegerAttr", null, [
+      [ "llzk::smt::BVCmpPredicateAttr", "classllzk_1_1smt_1_1BVCmpPredicateAttr.html", null ],
+      [ "llzk::smt::IntPredicateAttr", "classllzk_1_1smt_1_1IntPredicateAttr.html", null ]
+    ] ],
     [ "llzk::Interval", "classllzk_1_1Interval.html", null ],
     [ "llzk::IntervalAnalysisContext", "structllzk_1_1IntervalAnalysisContext.html", null ],
     [ "llzk::IntervalAnalysisPrinterPassOptions", "structllzk_1_1IntervalAnalysisPrinterPassOptions.html", null ],
+    [ "llzk::smt::detail::IntModOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntModOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntModOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntModOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntModOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntModOpGenericAdaptor.html", [
+        [ "llzk::smt::IntModOpAdaptor", "classllzk_1_1smt_1_1IntModOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntModOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntModOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntMulOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntMulOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntMulOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntMulOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntMulOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntMulOpGenericAdaptor.html", [
+        [ "llzk::smt::IntMulOpAdaptor", "classllzk_1_1smt_1_1IntMulOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntMulOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntMulOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntNegOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntNegOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntNegOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntNegOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntNegOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntNegOpGenericAdaptor.html", [
+        [ "llzk::smt::IntNegOpAdaptor", "classllzk_1_1smt_1_1IntNegOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntNegOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntNegOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IntSubOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IntSubOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IntSubOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IntSubOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IntSubOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IntSubOpGenericAdaptor.html", [
+        [ "llzk::smt::IntSubOpAdaptor", "classllzk_1_1smt_1_1IntSubOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IntSubOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IntSubOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::cast::detail::IntToFeltOpGenericAdaptorBase", "classllzk_1_1cast_1_1detail_1_1IntToFeltOpGenericAdaptorBase.html", [
       [ "llzk::cast::IntToFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1cast_1_1IntToFeltOpGenericAdaptor.html", null ],
       [ "llzk::cast::IntToFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1cast_1_1IntToFeltOpGenericAdaptor.html", [
@@ -421,6 +740,13 @@ var hierarchy =
         [ "llzk::felt::InvFeltOpAdaptor", "classllzk_1_1felt_1_1InvFeltOpAdaptor.html", null ]
       ] ],
       [ "llzk::felt::InvFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1InvFeltOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::IteOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1IteOpGenericAdaptorBase.html", [
+      [ "llzk::smt::IteOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1IteOpGenericAdaptor.html", null ],
+      [ "llzk::smt::IteOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1IteOpGenericAdaptor.html", [
+        [ "llzk::smt::IteOpAdaptor", "classllzk_1_1smt_1_1IteOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::IteOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IteOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::polymorphic::detail::LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", [
       [ "llzk::polymorphic::detail::EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", null ]
@@ -522,6 +848,13 @@ var hierarchy =
       ] ],
       [ "llzk::felt::NotFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1NotFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::smt::detail::NotOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1NotOpGenericAdaptorBase.html", [
+      [ "llzk::smt::NotOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1NotOpGenericAdaptor.html", null ],
+      [ "llzk::smt::NotOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1NotOpGenericAdaptor.html", [
+        [ "llzk::smt::NotOpAdaptor", "classllzk_1_1smt_1_1NotOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::NotOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1NotOpGenericAdaptor.html", null ]
+    ] ],
     [ "mlir::Op", null, [
       [ "llzk::NonDetOp", "classllzk_1_1NonDetOp.html", null ],
       [ "llzk::array::ArrayLengthOp", "classllzk_1_1array_1_1ArrayLengthOp.html", null ],
@@ -582,6 +915,61 @@ var hierarchy =
       [ "llzk::polymorphic::YieldOp", "classllzk_1_1polymorphic_1_1YieldOp.html", null ],
       [ "llzk::ram::LoadOp", "classllzk_1_1ram_1_1LoadOp.html", null ],
       [ "llzk::ram::StoreOp", "classllzk_1_1ram_1_1StoreOp.html", null ],
+      [ "llzk::smt::AndOp", "classllzk_1_1smt_1_1AndOp.html", null ],
+      [ "llzk::smt::ApplyFuncOp", "classllzk_1_1smt_1_1ApplyFuncOp.html", null ],
+      [ "llzk::smt::ArrayBroadcastOp", "classllzk_1_1smt_1_1ArrayBroadcastOp.html", null ],
+      [ "llzk::smt::ArraySelectOp", "classllzk_1_1smt_1_1ArraySelectOp.html", null ],
+      [ "llzk::smt::ArrayStoreOp", "classllzk_1_1smt_1_1ArrayStoreOp.html", null ],
+      [ "llzk::smt::AssertOp", "classllzk_1_1smt_1_1AssertOp.html", null ],
+      [ "llzk::smt::BV2IntOp", "classllzk_1_1smt_1_1BV2IntOp.html", null ],
+      [ "llzk::smt::BVAShrOp", "classllzk_1_1smt_1_1BVAShrOp.html", null ],
+      [ "llzk::smt::BVAddOp", "classllzk_1_1smt_1_1BVAddOp.html", null ],
+      [ "llzk::smt::BVAndOp", "classllzk_1_1smt_1_1BVAndOp.html", null ],
+      [ "llzk::smt::BVCmpOp", "classllzk_1_1smt_1_1BVCmpOp.html", null ],
+      [ "llzk::smt::BVConstantOp", "classllzk_1_1smt_1_1BVConstantOp.html", null ],
+      [ "llzk::smt::BVLShrOp", "classllzk_1_1smt_1_1BVLShrOp.html", null ],
+      [ "llzk::smt::BVMulOp", "classllzk_1_1smt_1_1BVMulOp.html", null ],
+      [ "llzk::smt::BVNegOp", "classllzk_1_1smt_1_1BVNegOp.html", null ],
+      [ "llzk::smt::BVNotOp", "classllzk_1_1smt_1_1BVNotOp.html", null ],
+      [ "llzk::smt::BVOrOp", "classllzk_1_1smt_1_1BVOrOp.html", null ],
+      [ "llzk::smt::BVSDivOp", "classllzk_1_1smt_1_1BVSDivOp.html", null ],
+      [ "llzk::smt::BVSModOp", "classllzk_1_1smt_1_1BVSModOp.html", null ],
+      [ "llzk::smt::BVSRemOp", "classllzk_1_1smt_1_1BVSRemOp.html", null ],
+      [ "llzk::smt::BVShlOp", "classllzk_1_1smt_1_1BVShlOp.html", null ],
+      [ "llzk::smt::BVUDivOp", "classllzk_1_1smt_1_1BVUDivOp.html", null ],
+      [ "llzk::smt::BVURemOp", "classllzk_1_1smt_1_1BVURemOp.html", null ],
+      [ "llzk::smt::BVXOrOp", "classllzk_1_1smt_1_1BVXOrOp.html", null ],
+      [ "llzk::smt::BoolConstantOp", "classllzk_1_1smt_1_1BoolConstantOp.html", null ],
+      [ "llzk::smt::CheckOp", "classllzk_1_1smt_1_1CheckOp.html", null ],
+      [ "llzk::smt::ConcatOp", "classllzk_1_1smt_1_1ConcatOp.html", null ],
+      [ "llzk::smt::DeclareFunOp", "classllzk_1_1smt_1_1DeclareFunOp.html", null ],
+      [ "llzk::smt::DistinctOp", "classllzk_1_1smt_1_1DistinctOp.html", null ],
+      [ "llzk::smt::EqOp", "classllzk_1_1smt_1_1EqOp.html", null ],
+      [ "llzk::smt::ExistsOp", "classllzk_1_1smt_1_1ExistsOp.html", null ],
+      [ "llzk::smt::ExtractOp", "classllzk_1_1smt_1_1ExtractOp.html", null ],
+      [ "llzk::smt::ForallOp", "classllzk_1_1smt_1_1ForallOp.html", null ],
+      [ "llzk::smt::ImpliesOp", "classllzk_1_1smt_1_1ImpliesOp.html", null ],
+      [ "llzk::smt::Int2BVOp", "classllzk_1_1smt_1_1Int2BVOp.html", null ],
+      [ "llzk::smt::IntAbsOp", "classllzk_1_1smt_1_1IntAbsOp.html", null ],
+      [ "llzk::smt::IntAddOp", "classllzk_1_1smt_1_1IntAddOp.html", null ],
+      [ "llzk::smt::IntCmpOp", "classllzk_1_1smt_1_1IntCmpOp.html", null ],
+      [ "llzk::smt::IntConstantOp", "classllzk_1_1smt_1_1IntConstantOp.html", null ],
+      [ "llzk::smt::IntDivOp", "classllzk_1_1smt_1_1IntDivOp.html", null ],
+      [ "llzk::smt::IntModOp", "classllzk_1_1smt_1_1IntModOp.html", null ],
+      [ "llzk::smt::IntMulOp", "classllzk_1_1smt_1_1IntMulOp.html", null ],
+      [ "llzk::smt::IntNegOp", "classllzk_1_1smt_1_1IntNegOp.html", null ],
+      [ "llzk::smt::IntSubOp", "classllzk_1_1smt_1_1IntSubOp.html", null ],
+      [ "llzk::smt::IteOp", "classllzk_1_1smt_1_1IteOp.html", null ],
+      [ "llzk::smt::NotOp", "classllzk_1_1smt_1_1NotOp.html", null ],
+      [ "llzk::smt::OrOp", "classllzk_1_1smt_1_1OrOp.html", null ],
+      [ "llzk::smt::PopOp", "classllzk_1_1smt_1_1PopOp.html", null ],
+      [ "llzk::smt::PushOp", "classllzk_1_1smt_1_1PushOp.html", null ],
+      [ "llzk::smt::RepeatOp", "classllzk_1_1smt_1_1RepeatOp.html", null ],
+      [ "llzk::smt::ResetOp", "classllzk_1_1smt_1_1ResetOp.html", null ],
+      [ "llzk::smt::SetLogicOp", "classllzk_1_1smt_1_1SetLogicOp.html", null ],
+      [ "llzk::smt::SolverOp", "classllzk_1_1smt_1_1SolverOp.html", null ],
+      [ "llzk::smt::XOrOp", "classllzk_1_1smt_1_1XOrOp.html", null ],
+      [ "llzk::smt::YieldOp", "classllzk_1_1smt_1_1YieldOp.html", null ],
       [ "llzk::string::LitStringOp", "classllzk_1_1string_1_1LitStringOp.html", null ]
     ] ],
     [ "mlir::OperationPass", null, [
@@ -665,10 +1053,24 @@ var hierarchy =
       ] ],
       [ "llzk::felt::OrFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1OrFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::smt::detail::OrOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1OrOpGenericAdaptorBase.html", [
+      [ "llzk::smt::OrOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1OrOpGenericAdaptor.html", null ],
+      [ "llzk::smt::OrOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1OrOpGenericAdaptor.html", [
+        [ "llzk::smt::OrOpAdaptor", "classllzk_1_1smt_1_1OrOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::OrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1OrOpGenericAdaptor.html", null ]
+    ] ],
     [ "PassPipelineOptions", null, [
       [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", null ]
     ] ],
     [ "llzk::PolyLoweringPassOptions", "structllzk_1_1PolyLoweringPassOptions.html", null ],
+    [ "llzk::smt::detail::PopOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase.html", [
+      [ "llzk::smt::PopOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1PopOpGenericAdaptor.html", null ],
+      [ "llzk::smt::PopOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1PopOpGenericAdaptor.html", [
+        [ "llzk::smt::PopOpAdaptor", "classllzk_1_1smt_1_1PopOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::PopOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1PopOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::felt::detail::PowFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1PowFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::PowFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::PowFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html", [
@@ -700,7 +1102,27 @@ var hierarchy =
     [ "llzk::polymorphic::detail::TemplateExprOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::polymorphic::detail::TemplateOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::polymorphic::detail::TemplateParamOpGenericAdaptorBase::Properties", "structllzk_1_1polymorphic_1_1detail_1_1TemplateParamOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::BoolConstantOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::BV2IntOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1BV2IntOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::BVCmpOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1BVCmpOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::BVConstantOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1BVConstantOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::DeclareFunOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1DeclareFunOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::ExistsOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1ExistsOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::ForallOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1ForallOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::IntCmpOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1IntCmpOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::IntConstantOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1IntConstantOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::PopOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::PushOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::SetLogicOpGenericAdaptorBase::Properties", "structllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::string::detail::LitStringOpGenericAdaptorBase::Properties", "structllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::smt::detail::PushOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase.html", [
+      [ "llzk::smt::PushOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1PushOpGenericAdaptor.html", null ],
+      [ "llzk::smt::PushOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1PushOpGenericAdaptor.html", [
+        [ "llzk::smt::PushOpAdaptor", "classllzk_1_1smt_1_1PushOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::PushOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1PushOpGenericAdaptor.html", null ]
+    ] ],
     [ "llvm::raw_ostream", null, [
       [ "llzk::filtered_raw_ostream", "classllzk_1_1filtered__raw__ostream.html", null ]
     ] ],
@@ -720,12 +1142,33 @@ var hierarchy =
     ] ],
     [ "llzk::pod::RecordValue", "structllzk_1_1pod_1_1RecordValue.html", null ],
     [ "llzk::RefValueCapture", "structllzk_1_1RefValueCapture.html", null ],
+    [ "llzk::smt::detail::RepeatOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1RepeatOpGenericAdaptorBase.html", [
+      [ "llzk::smt::RepeatOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1RepeatOpGenericAdaptor.html", null ],
+      [ "llzk::smt::RepeatOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1RepeatOpGenericAdaptor.html", [
+        [ "llzk::smt::RepeatOpAdaptor", "classllzk_1_1smt_1_1RepeatOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::RepeatOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1RepeatOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::ResetOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ResetOpGenericAdaptorBase.html", [
+      [ "llzk::smt::ResetOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ResetOpGenericAdaptor.html", null ],
+      [ "llzk::smt::ResetOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ResetOpGenericAdaptor.html", [
+        [ "llzk::smt::ResetOpAdaptor", "classllzk_1_1smt_1_1ResetOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::ResetOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ResetOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::function::detail::ReturnOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1ReturnOpGenericAdaptorBase.html", [
       [ "llzk::function::ReturnOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1ReturnOpGenericAdaptor.html", null ],
       [ "llzk::function::ReturnOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1function_1_1ReturnOpGenericAdaptor.html", [
         [ "llzk::function::ReturnOpAdaptor", "classllzk_1_1function_1_1ReturnOpAdaptor.html", null ]
       ] ],
       [ "llzk::function::ReturnOpGenericAdaptor< RangeT >", "classllzk_1_1function_1_1ReturnOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::SetLogicOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase.html", [
+      [ "llzk::smt::SetLogicOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1SetLogicOpGenericAdaptor.html", null ],
+      [ "llzk::smt::SetLogicOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1SetLogicOpGenericAdaptor.html", [
+        [ "llzk::smt::SetLogicOpAdaptor", "classllzk_1_1smt_1_1SetLogicOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::SetLogicOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1SetLogicOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::felt::detail::ShlFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1ShlFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::ShlFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1ShlFeltOpGenericAdaptor.html", null ],
@@ -754,6 +1197,15 @@ var hierarchy =
         [ "llzk::felt::SignedModFeltOpAdaptor", "classllzk_1_1felt_1_1SignedModFeltOpAdaptor.html", null ]
       ] ],
       [ "llzk::felt::SignedModFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1SignedModFeltOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::SMTOpVisitor< ConcreteType, ResultType, ExtraArgs >", "classllzk_1_1smt_1_1SMTOpVisitor.html", null ],
+    [ "llzk::smt::SMTTypeVisitor< ConcreteType, ResultType, ExtraArgs >", "classllzk_1_1smt_1_1SMTTypeVisitor.html", null ],
+    [ "llzk::smt::detail::SolverOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1SolverOpGenericAdaptorBase.html", [
+      [ "llzk::smt::SolverOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1SolverOpGenericAdaptor.html", null ],
+      [ "llzk::smt::SolverOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1SolverOpGenericAdaptor.html", [
+        [ "llzk::smt::SolverOpAdaptor", "classllzk_1_1smt_1_1SolverOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::SolverOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1SolverOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::SourceRef", "classllzk_1_1SourceRef.html", null ],
     [ "llzk::SourceRefIndex", "classllzk_1_1SourceRefIndex.html", null ],
@@ -910,6 +1362,12 @@ var hierarchy =
       [ "llzk::felt::FeltType", "classllzk_1_1felt_1_1FeltType.html", null ],
       [ "llzk::pod::PodType", "classllzk_1_1pod_1_1PodType.html", null ],
       [ "llzk::polymorphic::TypeVarType", "classllzk_1_1polymorphic_1_1TypeVarType.html", null ],
+      [ "llzk::smt::ArrayType", "classllzk_1_1smt_1_1ArrayType.html", null ],
+      [ "llzk::smt::BitVectorType", "classllzk_1_1smt_1_1BitVectorType.html", null ],
+      [ "llzk::smt::BoolType", "classllzk_1_1smt_1_1BoolType.html", null ],
+      [ "llzk::smt::IntType", "classllzk_1_1smt_1_1IntType.html", null ],
+      [ "llzk::smt::SMTFuncType", "classllzk_1_1smt_1_1SMTFuncType.html", null ],
+      [ "llzk::smt::SortType", "classllzk_1_1smt_1_1SortType.html", null ],
       [ "llzk::string::StringType", "classllzk_1_1string_1_1StringType.html", null ]
     ] ],
     [ "mlir::TypeStorage", null, [
@@ -917,7 +1375,11 @@ var hierarchy =
       [ "llzk::component::detail::StructTypeStorage", "structllzk_1_1component_1_1detail_1_1StructTypeStorage.html", null ],
       [ "llzk::felt::detail::FeltTypeStorage", "structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html", null ],
       [ "llzk::pod::detail::PodTypeStorage", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html", null ],
-      [ "llzk::polymorphic::detail::TypeVarTypeStorage", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html", null ]
+      [ "llzk::polymorphic::detail::TypeVarTypeStorage", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html", null ],
+      [ "llzk::smt::detail::ArrayTypeStorage", "structllzk_1_1smt_1_1detail_1_1ArrayTypeStorage.html", null ],
+      [ "llzk::smt::detail::BitVectorTypeStorage", "structllzk_1_1smt_1_1detail_1_1BitVectorTypeStorage.html", null ],
+      [ "llzk::smt::detail::SMTFuncTypeStorage", "structllzk_1_1smt_1_1detail_1_1SMTFuncTypeStorage.html", null ],
+      [ "llzk::smt::detail::SortTypeStorage", "structllzk_1_1smt_1_1detail_1_1SortTypeStorage.html", null ]
     ] ],
     [ "llzk::polymorphic::detail::UnifiableCastOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html", [
       [ "llzk::polymorphic::UnifiableCastOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html", null ],
@@ -976,11 +1438,25 @@ var hierarchy =
       ] ],
       [ "llzk::felt::XorFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1XorFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::smt::detail::XOrOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1XOrOpGenericAdaptorBase.html", [
+      [ "llzk::smt::XOrOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1XOrOpGenericAdaptor.html", null ],
+      [ "llzk::smt::XOrOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1XOrOpGenericAdaptor.html", [
+        [ "llzk::smt::XOrOpAdaptor", "classllzk_1_1smt_1_1XOrOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::XOrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1XOrOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::polymorphic::detail::YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", [
       [ "llzk::polymorphic::YieldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", null ],
       [ "llzk::polymorphic::YieldOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", [
         [ "llzk::polymorphic::YieldOpAdaptor", "classllzk_1_1polymorphic_1_1YieldOpAdaptor.html", null ]
       ] ],
       [ "llzk::polymorphic::YieldOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::smt::detail::YieldOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1YieldOpGenericAdaptorBase.html", [
+      [ "llzk::smt::YieldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1YieldOpGenericAdaptor.html", null ],
+      [ "llzk::smt::YieldOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1YieldOpGenericAdaptor.html", [
+        [ "llzk::smt::YieldOpAdaptor", "classllzk_1_1smt_1_1YieldOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::smt::YieldOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1YieldOpGenericAdaptor.html", null ]
     ] ]
 ];

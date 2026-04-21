@@ -13,5 +13,11 @@ var searchData=
   ['xorfeltopgenericadaptor_10',['XorFeltOpGenericAdaptor',['../classllzk_1_1felt_1_1XorFeltOpGenericAdaptor.html',1,'llzk::felt']]],
   ['xorfeltopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_11',['XorFeltOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1felt_1_1XorFeltOpGenericAdaptor.html',1,'llzk::felt']]],
   ['xorfeltopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_12',['XorFeltOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1felt_1_1XorFeltOpGenericAdaptor.html',1,'llzk::felt']]],
-  ['xorfeltopgenericadaptorbase_13',['XorFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1XorFeltOpGenericAdaptorBase.html',1,'llzk::felt::detail']]]
+  ['xorfeltopgenericadaptorbase_13',['XorFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1XorFeltOpGenericAdaptorBase.html',1,'llzk::felt::detail']]],
+  ['xorop_14',['XOrOp',['../classllzk_1_1smt_1_1XOrOp.html',1,'llzk::smt']]],
+  ['xoropadaptor_15',['XOrOpAdaptor',['../classllzk_1_1smt_1_1XOrOpAdaptor.html',1,'llzk::smt']]],
+  ['xoropgenericadaptor_16',['XOrOpGenericAdaptor',['../classllzk_1_1smt_1_1XOrOpGenericAdaptor.html',1,'llzk::smt']]],
+  ['xoropgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_17',['XOrOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1smt_1_1XOrOpGenericAdaptor.html',1,'llzk::smt']]],
+  ['xoropgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_18',['XOrOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1smt_1_1XOrOpGenericAdaptor.html',1,'llzk::smt']]],
+  ['xoropgenericadaptorbase_19',['XOrOpGenericAdaptorBase',['../classllzk_1_1smt_1_1detail_1_1XOrOpGenericAdaptorBase.html',1,'llzk::smt::detail']]]
 ];

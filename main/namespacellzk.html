@@ -137,6 +137,7 @@ Namespaces</h2></td></tr>
 <tr class="memitem:pod" id="r_pod"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod.html">pod</a></td></tr>
 <tr class="memitem:polymorphic" id="r_polymorphic"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html">polymorphic</a></td></tr>
 <tr class="memitem:ram" id="r_ram"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1ram.html">ram</a></td></tr>
+<tr class="memitem:smt" id="r_smt"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1smt.html">smt</a></td></tr>
 <tr class="memitem:string" id="r_string"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1string.html">string</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
@@ -457,6 +458,7 @@ Functions</h2></td></tr>
 <tr class="memitem:abc5c6fc1f85b22d1d6e46755e5da1626" id="r_abc5c6fc1f85b22d1d6e46755e5da1626"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a> (Type lhs, Type rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> *unifications)</td></tr>
 <tr class="memitem:ac69242a61e4e25958e9c6e8fa0f8549e" id="r_ac69242a61e4e25958e9c6e8fa0f8549e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a> (Type oldTy, Type newTy, llvm::function_ref&lt; bool(Type oldTy, Type newTy)&gt; knownOldToNew)</td></tr>
 <tr class="memitem:a4347ca404454b983d3c978e268aca917" id="r_a4347ca404454b983d3c978e268aca917"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; IntegerAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4347ca404454b983d3c978e268aca917">forceIntType</a> (IntegerAttr attr, <a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
+<tr class="memdesc:a4347ca404454b983d3c978e268aca917"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert an IntegerAttr with a type other than IndexType to use IndexType.  <br /></td></tr>
 <tr class="memitem:a1575048cc6105ca9b8d50d99ef654562" id="r_a1575048cc6105ca9b8d50d99ef654562"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; Attribute &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1575048cc6105ca9b8d50d99ef654562">forceIntAttrType</a> (Attribute attr, <a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
 <tr class="memitem:a57632163fc64aabdf3ee27eaec6cea72" id="r_a57632163fc64aabdf3ee27eaec6cea72"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; SmallVector&lt; Attribute &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a57632163fc64aabdf3ee27eaec6cea72">forceIntAttrTypes</a> (ArrayRef&lt; Attribute &gt; attrList, <a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError)</td></tr>
 <tr class="memitem:a26ae160de4660dc25c69d9461f065d84" id="r_a26ae160de4660dc25c69d9461f065d84"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a26ae160de4660dc25c69d9461f065d84">verifyIntAttrType</a> (<a class="el" href="#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Attribute in)</td></tr>
@@ -3100,6 +3102,8 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
+<p>Convert an IntegerAttr with a type other than IndexType to use IndexType. </p>
+
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00952">952</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
@@ -3124,6 +3128,8 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p>Convert an IntegerAttr with a type other than IndexType to use IndexType. </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00952">952</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4848,6 +4854,8 @@ template&lt;typename GraphT&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8cpp_source.html#l00565">565</a> of file <a class="el" href="TypeHelper_8cpp_source.html">TypeHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -7221,7 +7229,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00033">33</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00034">34</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
 
 </div>
 </div>

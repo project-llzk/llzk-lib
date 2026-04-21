@@ -130,42 +130,44 @@ $(function(){initNavTree('Dialect_2InitDialects_8cpp_source.html','',''); });
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="POD_2IR_2Dialect_8h.html">llzk/Dialect/POD/IR/Dialect.h</a>&quot;</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Dialect_8h.html">llzk/Dialect/Polymorphic/IR/Dialect.h</a>&quot;</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="RAM_2IR_2Dialect_8h.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="String_2IR_2Dialect_8h.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Dialect_8h.html">llzk/Dialect/Struct/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;mlir/IR/DialectRegistry.h&gt;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="foldopen" id="foldopen00033" data-start="{" data-end="}">
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">   33</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">registerAllDialects</a>(mlir::DialectRegistry &amp;registry) {</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  registry.insert&lt;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      <a class="code hl_class" href="classllzk_1_1LLZKDialect.html">llzk::LLZKDialect</a>,</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>      <a class="code hl_class" href="classllzk_1_1array_1_1ArrayDialect.html">llzk::array::ArrayDialect</a>,</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>      <a class="code hl_class" href="classllzk_1_1boolean_1_1BoolDialect.html">llzk::boolean::BoolDialect</a>,</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>      <a class="code hl_class" href="classllzk_1_1cast_1_1CastDialect.html">llzk::cast::CastDialect</a>,</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>      <a class="code hl_class" href="classllzk_1_1component_1_1StructDialect.html">llzk::component::StructDialect</a>,</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      <a class="code hl_class" href="classllzk_1_1constrain_1_1ConstrainDialect.html">llzk::constrain::ConstrainDialect</a>,</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>      <a class="code hl_class" href="classllzk_1_1felt_1_1FeltDialect.html">llzk::felt::FeltDialect</a>,</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>      <a class="code hl_class" href="classllzk_1_1function_1_1FunctionDialect.html">llzk::function::FunctionDialect</a>,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>      <a class="code hl_class" href="classllzk_1_1global_1_1GlobalDialect.html">llzk::global::GlobalDialect</a>,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>      <a class="code hl_class" href="classllzk_1_1ram_1_1RAMDialect.html">llzk::ram::RAMDialect</a>,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>      <a class="code hl_class" href="classllzk_1_1include_1_1IncludeDialect.html">llzk::include::IncludeDialect</a>,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      <a class="code hl_class" href="classllzk_1_1string_1_1StringDialect.html">llzk::string::StringDialect</a>,</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <a class="code hl_class" href="classllzk_1_1pod_1_1PODDialect.html">llzk::pod::PODDialect</a>,</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      <a class="code hl_class" href="classllzk_1_1polymorphic_1_1PolymorphicDialect.html">llzk::polymorphic::PolymorphicDialect</a>,</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      mlir::arith::ArithDialect,</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>      mlir::scf::SCFDialect</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      &gt;();</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <a class="code hl_function" href="namespacellzk.html#aff868f4126dfe56cae327fc5359725c8">registerInliningExtensions</a>(registry);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="SMTDialect_8h.html">llzk/Dialect/SMT/IR/SMTDialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;<a class="code" href="String_2IR_2Dialect_8h.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Dialect_8h.html">llzk/Dialect/Struct/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;mlir/IR/DialectRegistry.h&gt;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="foldopen" id="foldopen00034" data-start="{" data-end="}">
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">   34</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">registerAllDialects</a>(mlir::DialectRegistry &amp;registry) {</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  registry.insert&lt;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>      <a class="code hl_class" href="classllzk_1_1LLZKDialect.html">llzk::LLZKDialect</a>,</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>      <a class="code hl_class" href="classllzk_1_1array_1_1ArrayDialect.html">llzk::array::ArrayDialect</a>,</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>      <a class="code hl_class" href="classllzk_1_1boolean_1_1BoolDialect.html">llzk::boolean::BoolDialect</a>,</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>      <a class="code hl_class" href="classllzk_1_1cast_1_1CastDialect.html">llzk::cast::CastDialect</a>,</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      <a class="code hl_class" href="classllzk_1_1component_1_1StructDialect.html">llzk::component::StructDialect</a>,</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>      <a class="code hl_class" href="classllzk_1_1constrain_1_1ConstrainDialect.html">llzk::constrain::ConstrainDialect</a>,</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>      <a class="code hl_class" href="classllzk_1_1felt_1_1FeltDialect.html">llzk::felt::FeltDialect</a>,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>      <a class="code hl_class" href="classllzk_1_1function_1_1FunctionDialect.html">llzk::function::FunctionDialect</a>,</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>      <a class="code hl_class" href="classllzk_1_1global_1_1GlobalDialect.html">llzk::global::GlobalDialect</a>,</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>      <a class="code hl_class" href="classllzk_1_1ram_1_1RAMDialect.html">llzk::ram::RAMDialect</a>,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      <a class="code hl_class" href="classllzk_1_1include_1_1IncludeDialect.html">llzk::include::IncludeDialect</a>,</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <a class="code hl_class" href="classllzk_1_1string_1_1StringDialect.html">llzk::string::StringDialect</a>,</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      <a class="code hl_class" href="classllzk_1_1pod_1_1PODDialect.html">llzk::pod::PODDialect</a>,</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      <a class="code hl_class" href="classllzk_1_1polymorphic_1_1PolymorphicDialect.html">llzk::polymorphic::PolymorphicDialect</a>,</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>      <a class="code hl_class" href="classllzk_1_1smt_1_1SMTDialect.html">llzk::smt::SMTDialect</a>,</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      mlir::arith::ArithDialect,</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      mlir::scf::SCFDialect</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      &gt;();</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <a class="code hl_function" href="namespacellzk.html#aff868f4126dfe56cae327fc5359725c8">registerInliningExtensions</a>(registry);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
 </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aArray_2IR_2Dialect_8h_html"><div class="ttname"><a href="Array_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8h_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Dialect_8h_html"><div class="ttname"><a href="Cast_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
@@ -179,6 +181,7 @@ $(function(){initNavTree('Dialect_2InitDialects_8cpp_source.html','',''); });
 <div class="ttc" id="aPOD_2IR_2Dialect_8h_html"><div class="ttname"><a href="POD_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Dialect_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aRAM_2IR_2Dialect_8h_html"><div class="ttname"><a href="RAM_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
+<div class="ttc" id="aSMTDialect_8h_html"><div class="ttname"><a href="SMTDialect_8h.html">SMTDialect.h</a></div></div>
 <div class="ttc" id="aString_2IR_2Dialect_8h_html"><div class="ttname"><a href="String_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Dialect_8h_html"><div class="ttname"><a href="Struct_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1LLZKDialect_html"><div class="ttname"><a href="classllzk_1_1LLZKDialect.html">llzk::LLZKDialect</a></div><div class="ttdef"><b>Definition</b> <a href="LLZK_2IR_2Dialect_8h_8inc_source.html#l00012">Dialect.h.inc:12</a></div></div>
@@ -194,10 +197,11 @@ $(function(){initNavTree('Dialect_2InitDialects_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1pod_1_1PODDialect_html"><div class="ttname"><a href="classllzk_1_1pod_1_1PODDialect.html">llzk::pod::PODDialect</a></div><div class="ttdef"><b>Definition</b> <a href="POD_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1PolymorphicDialect_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1PolymorphicDialect.html">llzk::polymorphic::PolymorphicDialect</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="aclassllzk_1_1ram_1_1RAMDialect_html"><div class="ttname"><a href="classllzk_1_1ram_1_1RAMDialect.html">llzk::ram::RAMDialect</a></div><div class="ttdef"><b>Definition</b> <a href="RAM_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
+<div class="ttc" id="aclassllzk_1_1smt_1_1SMTDialect_html"><div class="ttname"><a href="classllzk_1_1smt_1_1SMTDialect.html">llzk::smt::SMTDialect</a></div><div class="ttdef"><b>Definition</b> <a href="SMTDialect_8h_8inc_source.html#l00013">SMTDialect.h.inc:13</a></div></div>
 <div class="ttc" id="aclassllzk_1_1string_1_1StringDialect_html"><div class="ttname"><a href="classllzk_1_1string_1_1StringDialect.html">llzk::string::StringDialect</a></div><div class="ttdef"><b>Definition</b> <a href="String_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="allzk_2Dialect_2InitDialects_8h_html"><div class="ttname"><a href="llzk_2Dialect_2InitDialects_8h.html">InitDialects.h</a></div><div class="ttdoc">This file defines llzk::registerAllDialects.</div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a9338ef0435a6cb734c7aebea355d4a36"><div class="ttname"><a href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">llzk::registerAllDialects</a></div><div class="ttdeci">void registerAllDialects(mlir::DialectRegistry &amp;registry)</div><div class="ttdef"><b>Definition</b> <a href="#l00033">InitDialects.cpp:33</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a9338ef0435a6cb734c7aebea355d4a36"><div class="ttname"><a href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">llzk::registerAllDialects</a></div><div class="ttdeci">void registerAllDialects(mlir::DialectRegistry &amp;registry)</div><div class="ttdef"><b>Definition</b> <a href="#l00034">InitDialects.cpp:34</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aff868f4126dfe56cae327fc5359725c8"><div class="ttname"><a href="namespacellzk.html#aff868f4126dfe56cae327fc5359725c8">llzk::registerInliningExtensions</a></div><div class="ttdeci">void registerInliningExtensions(DialectRegistry &amp;registry)</div><div class="ttdef"><b>Definition</b> <a href="LLZKInliningExtensions_8cpp_source.html#l00100">LLZKInliningExtensions.cpp:100</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

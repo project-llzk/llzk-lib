@@ -13,5 +13,6 @@ var searchData=
   ['constant_10',['constant',['../structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#aa1c686eeeec7d994c4b9885e1f6217e8',1,'llzk::global::detail::GlobalDefOpGenericAdaptorBase::Properties']]],
   ['constrainfnmap_11',['constrainFnMap',['../classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3',1,'llzk::ModuleLikeBuilder']]],
   ['context_12',['context',['../classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e',1,'llzk::BaseBuilder']]],
-  ['copyright_13',['copyright',['../LICENSE_8txt.html#a57f6ea84cb044ebe0704c5e3aa48e9ad',1,'LICENSE.txt']]]
+  ['copyright_13',['copyright',['../LICENSE_8txt.html#a57f6ea84cb044ebe0704c5e3aa48e9ad',1,'LICENSE.txt']]],
+  ['count_14',['count',['../structllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase_1_1Properties.html#a512402f55f39603abcfd6df8c4b77d13',1,'llzk::smt::detail::PopOpGenericAdaptorBase::Properties::count'],['../structllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase_1_1Properties.html#a055d5f3b513d3aa6dece5b42cc5f64a3',1,'llzk::smt::detail::PushOpGenericAdaptorBase::Properties::count']]]
 ];

@@ -18,5 +18,11 @@ var searchData=
   ['orfeltopgenericadaptor_15',['OrFeltOpGenericAdaptor',['../classllzk_1_1felt_1_1OrFeltOpGenericAdaptor.html',1,'llzk::felt']]],
   ['orfeltopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_16',['OrFeltOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1felt_1_1OrFeltOpGenericAdaptor.html',1,'llzk::felt']]],
   ['orfeltopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_17',['OrFeltOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1felt_1_1OrFeltOpGenericAdaptor.html',1,'llzk::felt']]],
-  ['orfeltopgenericadaptorbase_18',['OrFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1OrFeltOpGenericAdaptorBase.html',1,'llzk::felt::detail']]]
+  ['orfeltopgenericadaptorbase_18',['OrFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1OrFeltOpGenericAdaptorBase.html',1,'llzk::felt::detail']]],
+  ['orop_19',['OrOp',['../classllzk_1_1smt_1_1OrOp.html',1,'llzk::smt']]],
+  ['oropadaptor_20',['OrOpAdaptor',['../classllzk_1_1smt_1_1OrOpAdaptor.html',1,'llzk::smt']]],
+  ['oropgenericadaptor_21',['OrOpGenericAdaptor',['../classllzk_1_1smt_1_1OrOpGenericAdaptor.html',1,'llzk::smt']]],
+  ['oropgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_22',['OrOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1smt_1_1OrOpGenericAdaptor.html',1,'llzk::smt']]],
+  ['oropgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_23',['OrOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1smt_1_1OrOpGenericAdaptor.html',1,'llzk::smt']]],
+  ['oropgenericadaptorbase_24',['OrOpGenericAdaptorBase',['../classllzk_1_1smt_1_1detail_1_1OrOpGenericAdaptorBase.html',1,'llzk::smt::detail']]]
 ];

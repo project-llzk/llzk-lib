@@ -115,6 +115,7 @@ $(function(){initNavTree('llzk-opt_8cpp.html','',''); });
 <div class="textblock"><code>#include &quot;r1cs/Dialect/IR/Dialect.h&quot;</code><br />
 <code>#include &quot;r1cs/DialectRegistration.h&quot;</code><br />
 <code>#include &quot;r1cs/Transforms/TransformationPasses.h&quot;</code><br />
+<code>#include &quot;smt/Conversions/ConversionPasses.h&quot;</code><br />
 <code>#include &quot;<a class="el" href="config_8h_source.html">tools/config.h</a>&quot;</code><br />
 <code>#include &quot;zklean/Conversions/Passes.h&quot;</code><br />
 <code>#include &quot;zklean/DialectRegistration.h&quot;</code><br />
@@ -128,6 +129,8 @@ $(function(){initNavTree('llzk-opt_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKValidationPasses_8h_source.html">llzk/Validators/LLZKValidationPasses.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</code><br />
+<code>#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</code><br />
 <code>#include &lt;mlir/IR/DialectRegistry.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassManager.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassRegistry.h&gt;</code><br />
@@ -140,7 +143,7 @@ $(function(){initNavTree('llzk-opt_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for llzk-opt.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-opt_8cpp__incl.svg" width="4746" height="443"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-opt_8cpp__incl.svg" width="5379" height="443"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="llzk-opt_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -173,7 +176,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00061">61</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00064">64</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
 
 </div>
 </div>
