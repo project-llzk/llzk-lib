@@ -37,6 +37,7 @@ var namespacellzk =
     [ "include", "namespacellzk_1_1include.html", "namespacellzk_1_1include" ],
     [ "pod", "namespacellzk_1_1pod.html", "namespacellzk_1_1pod" ],
     [ "polymorphic", "namespacellzk_1_1polymorphic.html", "namespacellzk_1_1polymorphic" ],
+    [ "ram", "namespacellzk_1_1ram.html", "namespacellzk_1_1ram" ],
     [ "string", "namespacellzk_1_1string.html", "namespacellzk_1_1string" ],
     [ "AuxAssignment", "structllzk_1_1AuxAssignment.html", "structllzk_1_1AuxAssignment" ],
     [ "BaseBuilder", "classllzk_1_1BaseBuilder.html", "classllzk_1_1BaseBuilder" ],

@@ -124,6 +124,8 @@ var hierarchy =
       [ "PolyDialectLinkTests", "classPolyDialectLinkTests.html", null ],
       [ "PolyOperationLinkTests", "classPolyOperationLinkTests.html", null ],
       [ "PolyTypeLinkTests", "classPolyTypeLinkTests.html", null ],
+      [ "RamDialectLinkTests", "classRamDialectLinkTests.html", null ],
+      [ "RamOperationLinkTests", "classRamOperationLinkTests.html", null ],
       [ "StringDialectLinkTests", "classStringDialectLinkTests.html", null ],
       [ "StringOperationLinkTests", "classStringOperationLinkTests.html", null ],
       [ "StringTypeLinkTests", "classStringTypeLinkTests.html", null ],
@@ -258,6 +260,7 @@ var hierarchy =
       [ "llzk::include::IncludeDialect", "classllzk_1_1include_1_1IncludeDialect.html", null ],
       [ "llzk::pod::PODDialect", "classllzk_1_1pod_1_1PODDialect.html", null ],
       [ "llzk::polymorphic::PolymorphicDialect", "classllzk_1_1polymorphic_1_1PolymorphicDialect.html", null ],
+      [ "llzk::ram::RAMDialect", "classllzk_1_1ram_1_1RAMDialect.html", null ],
       [ "llzk::string::StringDialect", "classllzk_1_1string_1_1StringDialect.html", null ]
     ] ],
     [ "mlir::DialectVersion", null, [
@@ -434,6 +437,13 @@ var hierarchy =
     [ "LlzkRecordValue", "structLlzkRecordValue.html", null ],
     [ "LlzkSymbolLookupResult", "structLlzkSymbolLookupResult.html", null ],
     [ "llzk::LLZKTypeSwitch< Derived, ResultType >", "structllzk_1_1LLZKTypeSwitch.html", null ],
+    [ "llzk::ram::detail::LoadOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1LoadOpGenericAdaptorBase.html", [
+      [ "llzk::ram::LoadOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", null ],
+      [ "llzk::ram::LoadOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", [
+        [ "llzk::ram::LoadOpAdaptor", "classllzk_1_1ram_1_1LoadOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::ram::LoadOpGenericAdaptor< RangeT >", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::LocationComparator", "structllzk_1_1LocationComparator.html", null ],
     [ "MapOperandsHelper< N >", "classMapOperandsHelper.html", null ],
     [ "llzk::component::detail::MemberDefOpGenericAdaptorBase", "classllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase.html", [
@@ -570,6 +580,8 @@ var hierarchy =
       [ "llzk::polymorphic::TemplateParamOp", "classllzk_1_1polymorphic_1_1TemplateParamOp.html", null ],
       [ "llzk::polymorphic::UnifiableCastOp", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html", null ],
       [ "llzk::polymorphic::YieldOp", "classllzk_1_1polymorphic_1_1YieldOp.html", null ],
+      [ "llzk::ram::LoadOp", "classllzk_1_1ram_1_1LoadOp.html", null ],
+      [ "llzk::ram::StoreOp", "classllzk_1_1ram_1_1StoreOp.html", null ],
       [ "llzk::string::LitStringOp", "classllzk_1_1string_1_1LitStringOp.html", null ]
     ] ],
     [ "mlir::OperationPass", null, [
@@ -745,6 +757,13 @@ var hierarchy =
     ] ],
     [ "llzk::SourceRef", "classllzk_1_1SourceRef.html", null ],
     [ "llzk::SourceRefIndex", "classllzk_1_1SourceRefIndex.html", null ],
+    [ "llzk::ram::detail::StoreOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1StoreOpGenericAdaptorBase.html", [
+      [ "llzk::ram::StoreOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", null ],
+      [ "llzk::ram::StoreOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", [
+        [ "llzk::ram::StoreOpAdaptor", "classllzk_1_1ram_1_1StoreOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::ram::StoreOpGenericAdaptor< RangeT >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::StructAnalysis< Result, Context >", "classllzk_1_1StructAnalysis.html", null ],
     [ "llzk::StructAnalysis< ConstraintDependencyGraph, CDGAnalysisContext >", "classllzk_1_1StructAnalysis.html", [
       [ "llzk::ConstraintDependencyGraphStructAnalysis", "classllzk_1_1ConstraintDependencyGraphStructAnalysis.html", null ]
@@ -821,6 +840,7 @@ var hierarchy =
       [ "IntToFeltOpBuildFuncHelper", "structIntToFeltOpBuildFuncHelper.html", null ],
       [ "InvFeltOpBuildFuncHelper", "structInvFeltOpBuildFuncHelper.html", null ],
       [ "LitStringOpBuildFuncHelper", "structLitStringOpBuildFuncHelper.html", null ],
+      [ "LoadOpBuildFuncHelper", "structLoadOpBuildFuncHelper.html", null ],
       [ "MemberWriteOpBuildFuncHelper", "structMemberWriteOpBuildFuncHelper.html", null ],
       [ "MulFeltOpBuildFuncHelper", "structMulFeltOpBuildFuncHelper.html", null ],
       [ "NegFeltOpBuildFuncHelper", "structNegFeltOpBuildFuncHelper.html", null ],
@@ -837,6 +857,7 @@ var hierarchy =
       [ "ShrFeltOpBuildFuncHelper", "structShrFeltOpBuildFuncHelper.html", null ],
       [ "SignedIntDivFeltOpBuildFuncHelper", "structSignedIntDivFeltOpBuildFuncHelper.html", null ],
       [ "SignedModFeltOpBuildFuncHelper", "structSignedModFeltOpBuildFuncHelper.html", null ],
+      [ "StoreOpBuildFuncHelper", "structStoreOpBuildFuncHelper.html", null ],
       [ "StructDefOpBuildFuncHelper", "structStructDefOpBuildFuncHelper.html", null ],
       [ "SubFeltOpBuildFuncHelper", "structSubFeltOpBuildFuncHelper.html", null ],
       [ "TemplateExprOpBuildFuncHelper", "structTemplateExprOpBuildFuncHelper.html", null ],

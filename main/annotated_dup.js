@@ -383,6 +383,19 @@ var annotated_dup =
         [ "YieldOpAdaptor", "classllzk_1_1polymorphic_1_1YieldOpAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpAdaptor" ],
         [ "YieldOpGenericAdaptor", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor" ]
       ] ],
+      [ "ram", "namespacellzk_1_1ram.html", [
+        [ "detail", "namespacellzk_1_1ram_1_1detail.html", [
+          [ "LoadOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1LoadOpGenericAdaptorBase.html", "classllzk_1_1ram_1_1detail_1_1LoadOpGenericAdaptorBase" ],
+          [ "StoreOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1StoreOpGenericAdaptorBase.html", "classllzk_1_1ram_1_1detail_1_1StoreOpGenericAdaptorBase" ]
+        ] ],
+        [ "LoadOp", "classllzk_1_1ram_1_1LoadOp.html", "classllzk_1_1ram_1_1LoadOp" ],
+        [ "LoadOpAdaptor", "classllzk_1_1ram_1_1LoadOpAdaptor.html", "classllzk_1_1ram_1_1LoadOpAdaptor" ],
+        [ "LoadOpGenericAdaptor", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", "classllzk_1_1ram_1_1LoadOpGenericAdaptor" ],
+        [ "RAMDialect", "classllzk_1_1ram_1_1RAMDialect.html", "classllzk_1_1ram_1_1RAMDialect" ],
+        [ "StoreOp", "classllzk_1_1ram_1_1StoreOp.html", "classllzk_1_1ram_1_1StoreOp" ],
+        [ "StoreOpAdaptor", "classllzk_1_1ram_1_1StoreOpAdaptor.html", "classllzk_1_1ram_1_1StoreOpAdaptor" ],
+        [ "StoreOpGenericAdaptor", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", "classllzk_1_1ram_1_1StoreOpGenericAdaptor" ]
+      ] ],
       [ "string", "namespacellzk_1_1string.html", [
         [ "detail", "namespacellzk_1_1string_1_1detail.html", [
           [ "LitStringOpGenericAdaptorBase", "classllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase.html", "classllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase" ]
@@ -558,6 +571,7 @@ var annotated_dup =
     [ "LlzkOperationLinkTests", "classLlzkOperationLinkTests.html", null ],
     [ "LlzkRecordValue", "structLlzkRecordValue.html", "structLlzkRecordValue" ],
     [ "LlzkSymbolLookupResult", "structLlzkSymbolLookupResult.html", "structLlzkSymbolLookupResult" ],
+    [ "LoadOpBuildFuncHelper", "structLoadOpBuildFuncHelper.html", "structLoadOpBuildFuncHelper" ],
     [ "MapOperandsHelper", "classMapOperandsHelper.html", "classMapOperandsHelper" ],
     [ "MemberWriteOpBuildFuncHelper", "structMemberWriteOpBuildFuncHelper.html", "structMemberWriteOpBuildFuncHelper" ],
     [ "MethodParameter", "structMethodParameter.html", "structMethodParameter" ],
@@ -581,6 +595,8 @@ var annotated_dup =
     [ "PolyOperationLinkTests", "classPolyOperationLinkTests.html", null ],
     [ "PolyTypeLinkTests", "classPolyTypeLinkTests.html", null ],
     [ "PowFeltOpBuildFuncHelper", "structPowFeltOpBuildFuncHelper.html", "structPowFeltOpBuildFuncHelper" ],
+    [ "RamDialectLinkTests", "classRamDialectLinkTests.html", null ],
+    [ "RamOperationLinkTests", "classRamOperationLinkTests.html", null ],
     [ "ReadArrayOpBuildFuncHelper", "structReadArrayOpBuildFuncHelper.html", "structReadArrayOpBuildFuncHelper" ],
     [ "ReadPodOpBuildFuncHelper", "structReadPodOpBuildFuncHelper.html", "structReadPodOpBuildFuncHelper" ],
     [ "ReturnOpBuildFuncHelper", "structReturnOpBuildFuncHelper.html", "structReturnOpBuildFuncHelper" ],
@@ -588,6 +604,7 @@ var annotated_dup =
     [ "ShrFeltOpBuildFuncHelper", "structShrFeltOpBuildFuncHelper.html", "structShrFeltOpBuildFuncHelper" ],
     [ "SignedIntDivFeltOpBuildFuncHelper", "structSignedIntDivFeltOpBuildFuncHelper.html", "structSignedIntDivFeltOpBuildFuncHelper" ],
     [ "SignedModFeltOpBuildFuncHelper", "structSignedModFeltOpBuildFuncHelper.html", "structSignedModFeltOpBuildFuncHelper" ],
+    [ "StoreOpBuildFuncHelper", "structStoreOpBuildFuncHelper.html", "structStoreOpBuildFuncHelper" ],
     [ "StringDialectLinkTests", "classStringDialectLinkTests.html", null ],
     [ "StringOperationLinkTests", "classStringOperationLinkTests.html", null ],
     [ "StringTypeLinkTests", "classStringTypeLinkTests.html", null ],
