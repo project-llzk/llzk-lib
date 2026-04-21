@@ -20,9 +20,9 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.LLZK_APP_ID }}
+          client-id: ${{ secrets.LLZK_APP_ID }}
           private-key: ${{ secrets.LLZK_APP_PRIVATE_KEY }}
           owner: project-llzk
           repositories: llzk-rs
@@ -80,17 +80,23 @@ jobs:
           git config user.name "project-llzk[bot]"
           git config user.email "project-llzk[bot]@users.noreply.github.com"
 
-      - name: Create bump branch if needed
+      - name: Create or reset bump branch if needed
         if: steps.existing-pr.outputs.pr_number == ''
         working-directory: llzk-rs
         run: |
-          git checkout -b bot/bump-llzk-lib
+          # If there is no open PR but the branch still exists, just delete it
+          # and recreate it.
+          if git ls-remote --exit-code --heads origin bot/bump-llzk-lib; then
+            git push origin --delete bot/bump-llzk-lib
+          fi
+
+          git checkout -B bot/bump-llzk-lib origin/main
 
       - name: Update llzk-lib flake input
         id: update
         working-directory: llzk-rs
         run: |
-          nix flake lock --update-input llzk-lib
+          nix flake update llzk-lib
           if git diff --quiet -- flake.lock; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
