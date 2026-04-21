@@ -328,12 +328,10 @@ public:
     return mlir::failure();
   }
 
-  /* Builder methods */
-
   TemplateBuilder &
   insertParam(std::string_view name,
               mlir::Location loc,
-              mlir::TypeAttr type = nullptr) {
+              mlir::TypeAttr type = {}) {
 
     mlir::OpBuilder builder(context);
     builder.setInsertionPointToEnd(&getBodyRegion().front());
@@ -344,6 +342,11 @@ public:
         loc, nameAttr, type);
 
     return *this;
+  }
+
+  inline TemplateBuilder &
+  insertParam(std::string_view name) {
+    return insertParam(name, getUnknownLoc());
   }
 
   TemplateBuilder &
@@ -359,6 +362,11 @@ public:
         loc, nameAttr);
 
     return *this;
+  }
+
+  inline TemplateBuilder &
+  insertExpr(std::string_view name) {
+    return insertExpr(name, getUnknownLoc());
   }
 };
 
