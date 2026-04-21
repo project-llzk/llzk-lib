@@ -55,6 +55,40 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @T {
+    poly.expr @P {
+      %nondet = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+      %felt_const_0 = felt.const 0 : !felt.type<"bn128">
+      %array = array.new %felt_const_0, %felt_const_0 : <2 x !felt.type<"bn128">>
+      %felt_const_123 = felt.const 123 : !felt.type<"bn128">
+      %felt_const_675 = felt.const 675 : !felt.type<"bn128">
+      %array_0 = array.new %felt_const_123, %felt_const_675 : <2 x !felt.type<"bn128">>
+      %felt_const_1 = felt.const 1 : !felt.type<"bn128">
+      %0 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      %1 = array.read %array_0[%0] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      poly.yield %1 : !felt.type<"bn128">
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.expr @P {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_3]], %[[VAL_4]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_6]] : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_8]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @template_f {
     poly.param @In
     poly.param @Out

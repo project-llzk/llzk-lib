@@ -1256,3 +1256,40 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     %self[@case10] in Degenerate(7)
 // CHECK-NEXT:     %self[@case11] in Degenerate(8)
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayNewMemberWrite {
+    struct.member @out : !array.type<2 x !felt.type>
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@ArrayNewMemberWrite> {
+      %self = struct.new : !struct.type<@ArrayNewMemberWrite>
+
+      %5 = felt.const 5
+      %6 = felt.const 6
+      %0 = felt.const 0
+
+      %cmp0 = bool.cmp ge(%a, %5)
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %6)
+      bool.assert %cmp1
+
+      %arr = array.new %0, %a : !array.type<2 x !felt.type>
+      struct.writem %self[@out] = %arr : !struct.type<@ArrayNewMemberWrite>, !array.type<2 x !felt.type>
+
+      function.return %self : !struct.type<@ArrayNewMemberWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayNewMemberWrite>, %a: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayNewMemberWrite StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self[@out][0] in Degenerate(0)
+// CHECK-NEXT:     %self[@out][1] in TypeA:[ 5, 6 ]
+// CHECK-NEXT: }

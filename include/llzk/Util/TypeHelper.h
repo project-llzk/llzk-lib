@@ -80,11 +80,11 @@ public:
 // of this function should be updated.
 void assertValidAttrForParamOfType(mlir::Attribute attr);
 
-/// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType}
+/// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType, PodType}
 bool isValidType(mlir::Type type);
 
 /// valid types: {FeltType, StructType (with columns), ArrayType (that contains a valid column
-/// type)}
+/// type), TypeVarType, PodType}
 bool isValidColumnType(
     mlir::Type type, mlir::SymbolTableCollection &symbolTable, mlir::Operation *op
 );

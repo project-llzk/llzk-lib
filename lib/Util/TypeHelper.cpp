@@ -542,7 +542,7 @@ bool isValidEmitEqType(Type type) {
 
 // Allowed types must be a subset of StructParamTypes (defined below)
 bool isValidConstReadType(Type type) {
-  return AllowedTypes().noString().noStruct().noArray().isValidTypeImpl(type);
+  return AllowedTypes().noString().noStruct().noArray().noPod().isValidTypeImpl(type);
 }
 
 bool isValidArrayElemType(Type type) { return AllowedTypes().isValidArrayElemTypeImpl(type); }

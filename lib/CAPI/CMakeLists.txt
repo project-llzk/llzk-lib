@@ -20,8 +20,9 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/Include.cpp 
   Dialect/LLZK.cpp 
   Dialect/POD.cpp
-  Dialect/Poly.cpp 
-  Dialect/String.cpp 
+  Dialect/Poly.cpp
+  Dialect/RAM.cpp
+  Dialect/String.cpp
   Dialect/Struct.cpp
   Target/PCL.cpp)
 target_link_libraries(

@@ -34,6 +34,10 @@ protected:
   IntervalTests()
       : f(Field::getField("babybear")), empty(Interval::Empty(f)), entire(Interval::Entire(f)) {}
 
+  Interval degen(int64_t i) const { return Interval::Degenerate(f, DynamicAPInt(i)); }
+
+  Interval interval(int64_t a, int64_t b) const { return UnreducedInterval(a, b).reduce(f); }
+
   inline static void
   AssertUnreducedIntervalEq(const UnreducedInterval &expected, const UnreducedInterval &actual) {
     ASSERT_TRUE(checkCond(expected, actual, expected == actual));
@@ -273,6 +277,20 @@ TEST_F(IntervalTests, SignedIntDivByZero) {
   ASSERT_TRUE(failed(res));
 }
 
+TEST_F(IntervalTests, Mod) {
+  AssertIntervalEq(interval(0, 7), entire % degen(8));
+  AssertIntervalEq(interval(0, 9), interval(0, 100) % interval(1, 10));
+  AssertIntervalEq(entire, degen(7) % interval(0, 1000));
+  AssertIntervalEq(empty, empty % empty);
+  AssertIntervalEq(empty, entire % empty);
+  AssertIntervalEq(empty, empty % entire);
+  AssertIntervalEq(entire, degen(1) % entire);
+  // any % typeF == entire
+  auto typeF = UnreducedInterval(f.half() + f.one(), f.prime() + f.one()).reduce(f);
+  ASSERT_TRUE(typeF.isTypeF());
+  AssertIntervalEq(entire, interval(7, 8) % typeF);
+}
+
 class IntervalAnalysisAPITests : public LLZKTest {
 protected:
   static constexpr auto kArrayIntervalModule = R"mlir(
@@ -299,6 +317,34 @@ module attributes {llzk.lang} {
       constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
       constrain.eq %2, %felt_const_2 : !felt.type, !felt.type
       constrain.eq %3, %felt_const_3 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kComputeArrayMemberWriteModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ComputeArrayMemberWrite {
+    struct.member @out : !array.type<2 x !felt.type> {llzk.pub, signal}
+
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@ComputeArrayMemberWrite>
+        attributes {function.allow_witness} {
+      %self = struct.new : <@ComputeArrayMemberWrite>
+      %felt_const_0 = felt.const  0
+      %felt_const_5 = felt.const  5
+      %felt_const_6 = felt.const  6
+      %cmp0 = bool.cmp ge(%arg0, %felt_const_5) : !felt.type, !felt.type
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%arg0, %felt_const_6) : !felt.type, !felt.type
+      bool.assert %cmp1
+      %0 = array.new %felt_const_0, %arg0 : <2 x !felt.type>
+      struct.writem %self[@out] = %0 : <@ComputeArrayMemberWrite>, !array.type<2 x !felt.type>
+      function.return %self : !struct.type<@ComputeArrayMemberWrite>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@ComputeArrayMemberWrite>, %arg1: !felt.type)
+        attributes {function.allow_constraint} {
       function.return
     }
   }
@@ -357,4 +403,52 @@ TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
         << buildStringViaPrint(*elemRef) << " -> " << buildStringViaPrint(it->second);
     ASSERT_EQ(it->second.lhs(), field.felt(i + 1)) << buildStringViaPrint(*elemRef);
   }
+}
+
+TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) {
+  auto mod = parseModule(kComputeArrayMemberWriteModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  const auto &intervals = analysis.getResult(structDef).getComputeIntervals();
+  ASSERT_FALSE(intervals.empty());
+
+  MemberDefOp outMember;
+  for (auto member : structDef.getOps<MemberDefOp>()) {
+    if (member.getName() == "out") {
+      outMember = member;
+      break;
+    }
+  }
+  ASSERT_TRUE(outMember != nullptr);
+
+  SourceRef outRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(outMember)}
+  );
+  auto out0Ref = outRef.createChild(SourceRefIndex(0));
+  auto out1Ref = outRef.createChild(SourceRefIndex(1));
+  ASSERT_TRUE(succeeded(out0Ref));
+  ASSERT_TRUE(succeeded(out1Ref));
+
+  auto out0It = intervals.find(*out0Ref);
+  ASSERT_NE(out0It, intervals.end())
+      << "missing compute interval for " << buildStringViaPrint(*out0Ref);
+  ASSERT_TRUE(out0It->second.isDegenerate())
+      << buildStringViaPrint(*out0Ref) << " -> " << buildStringViaPrint(out0It->second);
+  ASSERT_EQ(out0It->second.lhs(), field.zero()) << buildStringViaPrint(*out0Ref);
+
+  auto out1It = intervals.find(*out1Ref);
+  ASSERT_NE(out1It, intervals.end())
+      << "missing compute interval for " << buildStringViaPrint(*out1Ref);
+  auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
+  ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
+      << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
 }
