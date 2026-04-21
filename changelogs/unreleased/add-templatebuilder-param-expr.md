@@ -1,0 +1,3 @@
+### Added
+
+Add getters and builders for TemplateParamOp and TemplateExprOp in TemplateBuilder.
