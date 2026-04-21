@@ -310,11 +310,56 @@ public:
   /// Get the associated template of this builder.
   polymorphic::TemplateOp &getTemplate() { return myTemplate; }
 
-  // TODO: other getters for template-specific ops like param/expr
+  mlir::FailureOr<polymorphic::TemplateParamOp>
+  getParam(std::string_view name) const {
+    auto op =
+        myTemplate.getConstNamed<polymorphic::TemplateParamOp>(name);
+    if (op)
+      return op;
+    return mlir::failure();
+  }
+
+  mlir::FailureOr<polymorphic::TemplateExprOp>
+  getExpr(std::string_view name) const {
+    auto op =
+        myTemplate.getConstNamed<polymorphic::TemplateExprOp>(name);
+    if (op)
+      return op;
+    return mlir::failure();
+  }
 
   /* Builder methods */
 
-  // TODO: other builders for template-specific ops like param/expr
+  TemplateBuilder &
+  insertParam(std::string_view name,
+              mlir::Location loc,
+              mlir::TypeAttr type = nullptr) {
+
+    mlir::OpBuilder builder(context);
+    builder.setInsertionPointToEnd(&getBodyRegion().front());
+
+    auto nameAttr = builder.getStringAttr(name);
+
+    builder.create<polymorphic::TemplateParamOp>(
+        loc, nameAttr, type);
+
+    return *this;
+  }
+
+  TemplateBuilder &
+  insertExpr(std::string_view name,
+            mlir::Location loc) {
+
+    mlir::OpBuilder builder(context);
+    builder.setInsertionPointToEnd(&getBodyRegion().front());
+
+    auto nameAttr = builder.getStringAttr(name);
+
+    builder.create<polymorphic::TemplateExprOp>(
+        loc, nameAttr);
+
+    return *this;
+  }
 };
 
 /// @brief Builds out a LLZK-compliant module and provides utilities for populating
