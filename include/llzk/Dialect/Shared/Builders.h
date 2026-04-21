@@ -310,62 +310,64 @@ public:
   /// Get the associated template of this builder.
   polymorphic::TemplateOp &getTemplate() { return myTemplate; }
 
-  mlir::FailureOr<polymorphic::TemplateParamOp>
-  getParam(std::string_view name) const {
-    auto op =
-        myTemplate.getConstNamed<polymorphic::TemplateParamOp>(name);
-    if (op)
+  mlir::FailureOr<polymorphic::TemplateParamOp> getParam(std::string_view name) const {
+    auto op = myTemplate.getConstNamed<polymorphic::TemplateParamOp>(name);
+    if (op) {
       return op;
+    }
     return mlir::failure();
   }
 
-  mlir::FailureOr<polymorphic::TemplateExprOp>
-  getExpr(std::string_view name) const {
-    auto op =
-        myTemplate.getConstNamed<polymorphic::TemplateExprOp>(name);
-    if (op)
+  mlir::FailureOr<polymorphic::TemplateExprOp> getExpr(std::string_view name) const {
+    auto op = myTemplate.getConstNamed<polymorphic::TemplateExprOp>(name);
+    if (op) {
       return op;
+    }
     return mlir::failure();
   }
 
   TemplateBuilder &
-  insertParam(std::string_view name,
-              mlir::Location loc,
-              mlir::TypeAttr type = {}) {
+  insertParam(std::string_view name, mlir::Location loc, mlir::TypeAttr type = {}) {
 
     mlir::OpBuilder builder(context);
-    builder.setInsertionPointToEnd(&getBodyRegion().front());
+
+    auto &region = getBodyRegion();
+    if (region.empty()) {
+      region.emplaceBlock();
+    }
+
+    builder.setInsertionPointToEnd(&region.front());
 
     auto nameAttr = builder.getStringAttr(name);
 
-    builder.create<polymorphic::TemplateParamOp>(
-        loc, nameAttr, type);
+    builder.create<polymorphic::TemplateParamOp>(loc, nameAttr, type);
 
     return *this;
   }
 
-  inline TemplateBuilder &
-  insertParam(std::string_view name) {
+  inline TemplateBuilder &insertParam(std::string_view name) {
     return insertParam(name, getUnknownLoc());
   }
 
-  TemplateBuilder &
-  insertExpr(std::string_view name,
-            mlir::Location loc) {
+  TemplateBuilder &insertExpr(std::string_view name, mlir::Location loc) {
 
     mlir::OpBuilder builder(context);
-    builder.setInsertionPointToEnd(&getBodyRegion().front());
+
+    auto &region = getBodyRegion();
+    if (region.empty()) {
+      region.emplaceBlock();
+    }
+
+    builder.setInsertionPointToEnd(&region.front());
 
     auto nameAttr = builder.getStringAttr(name);
 
-    builder.create<polymorphic::TemplateExprOp>(
-        loc, nameAttr);
+    builder.create<polymorphic::TemplateExprOp>(loc, nameAttr);
 
     return *this;
   }
 
-  inline TemplateBuilder &
-  insertExpr(std::string_view name) {
+  inline TemplateBuilder &insertExpr(std::string_view name) {
     return insertExpr(name, getUnknownLoc());
   }
 };
