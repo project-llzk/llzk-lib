@@ -310,7 +310,7 @@ public:
   /// Get the associated template of this builder.
   polymorphic::TemplateOp &getTemplate() { return myTemplate; }
 
-  mlir::FailureOr<polymorphic::TemplateParamOp> getParam(std::string_view name) const {
+  mlir::FailureOr<polymorphic::TemplateParamOp> getParam(std::string_view name) {
     auto op = myTemplate.getConstNamed<polymorphic::TemplateParamOp>(name);
     if (op) {
       return op;
@@ -318,7 +318,7 @@ public:
     return mlir::failure();
   }
 
-  mlir::FailureOr<polymorphic::TemplateExprOp> getExpr(std::string_view name) const {
+  mlir::FailureOr<polymorphic::TemplateExprOp> getExpr(std::string_view name) {
     auto op = myTemplate.getConstNamed<polymorphic::TemplateExprOp>(name);
     if (op) {
       return op;
