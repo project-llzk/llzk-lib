@@ -22,6 +22,7 @@ var llzk_c_2Support_8h =
     [ "llzkAffineMapOperandsBuilderSetDimsPerMapFromAttr", "llzk-c_2Support_8h.html#ad56cf642d75a86d9ab20915e6fb45e29", null ],
     [ "llzkSymbolLookupResultDestroy", "llzk-c_2Support_8h.html#a65222be23e6214178dd9d27d04ebf062", null ],
     [ "LlzkSymbolLookupResultGetOperation", "llzk-c_2Support_8h.html#a687896e987d2a868581460949b79b43a", null ],
+    [ "llzkSymbolTableInsert", "llzk-c_2Support_8h.html#a543125aeb8c86157cf0b40e373ee668b", null ],
     [ "mlirOperationReplaceUsesOfWith", "llzk-c_2Support_8h.html#af380385a60c2b2533959a6243c7423f5", null ],
     [ "mlirOperationWalkReverse", "llzk-c_2Support_8h.html#a2defadae90276899d0e3843b76d3c383", null ]
 ];

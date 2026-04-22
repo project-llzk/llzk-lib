@@ -1,5 +1,6 @@
 var NAVTREEINDEX68 =
 {
+"classllzk_1_1string_1_1LitStringOpAdaptor.html#a1736303bf02ce311f94ddcaaf5b656ff":[10,0,2,19,2,2],
 "classllzk_1_1string_1_1LitStringOpAdaptor.html#a1736303bf02ce311f94ddcaaf5b656ff":[12,0,1,16,2,2],
 "classllzk_1_1string_1_1LitStringOpAdaptor.html#a19fc6e24ef744682060ce3ca4bff4b01":[10,0,2,19,2,0],
 "classllzk_1_1string_1_1LitStringOpAdaptor.html#a19fc6e24ef744682060ce3ca4bff4b01":[12,0,1,16,2,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX68 =
 "dialects.html#operations":[7,0,0],
 "dialects.html#operations-1":[7,1,0],
 "dialects.html#operations-10":[7,10,0],
-"dialects.html#operations-11":[7,11,0],
-"dialects.html#operations-12":[7,12,0]
+"dialects.html#operations-11":[7,11,0]
 };

@@ -11,6 +11,7 @@ var Support_8cpp =
     [ "llzkAffineMapOperandsBuilderSetDimsPerMapFromAttr", "Support_8cpp.html#a0da376366eb3147a3d82a37d71cfc6b2", null ],
     [ "llzkSymbolLookupResultDestroy", "Support_8cpp.html#a07244a30f3cfd8c5bbbd445902eda7f2", null ],
     [ "LlzkSymbolLookupResultGetOperation", "Support_8cpp.html#a4372ae0f04b6144eb2a0a5016ff3838e", null ],
+    [ "llzkSymbolTableInsert", "Support_8cpp.html#a52c8fdc78aef208744f0d6578ea52466", null ],
     [ "mlirOperationReplaceUsesOfWith", "Support_8cpp.html#ab51e0de50021bc4a252f61104a03afb1", null ],
     [ "mlirOperationWalkReverse", "Support_8cpp.html#a746f4290e2b636ad190226538f2ea79c", null ]
 ];
