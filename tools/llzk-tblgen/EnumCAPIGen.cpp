@@ -36,15 +36,18 @@ struct EnumHeaderGenerator : public HeaderGenerator {
     std::string classNamePascal = toPascalCase(enumClassName);
     this->cEnumName = toPascalCase(FunctionPrefix) + toPascalCase(DialectName) + classNamePascal;
     this->cEnumAltName = toPascalCase(enumCppNamespace) + classNamePascal;
+    this->cppQualifiedPrefix = enumCppNamespace.str() + "::" + enumClassName.str() + "::";
     // Reset case labels for next enum
     caseLabels.clear();
   }
 
   void genCaseLabel(const EnumAttrCase &enumCase) {
-    static constexpr char fmt[] = "  {0}_{1} = {2}";
+    static constexpr char fmt[] = "  /// `{0}{2}`\n  {1}_{2} = {3}";
     assert(!cEnumName.empty() && "cEnumName must be set");
+    assert(!cppQualifiedPrefix.empty() && "cppQualifiedPrefix must be set");
     this->caseLabels.push_back(
-        llvm::formatv(fmt, cEnumName, enumCase.getSymbol().upper(), enumCase.getValue()).str()
+        llvm::formatv(fmt, cppQualifiedPrefix, cEnumName, enumCase.getSymbol(), enumCase.getValue())
+            .str()
     );
   }
 
@@ -68,6 +71,8 @@ protected:
   /// the final line in `mapCppTypeToCapiType()` where the full C++ type with namespace
   /// is known but the dialect name and function prefix of that type are not.
   std::string cEnumAltName;
+  /// C++ qualified prefix used in documentation comments, e.g. "llzk::boolean::FeltCmpPredicate::"
+  std::string cppQualifiedPrefix;
   /// Collects generated enum case labels until `genEnumDeclaration()` is called.
   SmallVector<std::string> caseLabels;
 };
