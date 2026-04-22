@@ -215,7 +215,7 @@ Functions</h2></td></tr>
 <div class="line">  MLIR_CAPI_EXPORTED MlirOpBuilder <a class="code hl_function" href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a>##suffix##WithListener(                      \</div>
 <div class="line">      __VA_ARGS__, MlirOpBuilderListener                                                           \</div>
 <div class="line">  );</div>
-<div class="ttc" id="aBuilder_8cpp_html_a3b0d4556e70ed87d310933c909132c23"><div class="ttname"><a href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a></div><div class="ttdeci">MlirOpBuilder mlirOpBuilderCreate(MlirContext ctx)</div><div class="ttdef"><b>Definition</b> <a href="Builder_8cpp_source.html#l00055">Builder.cpp:55</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_a3b0d4556e70ed87d310933c909132c23"><div class="ttname"><a href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a></div><div class="ttdeci">MlirOpBuilder mlirOpBuilderCreate(MlirContext ctx)</div><div class="ttdoc">Creates a new OpBuilder for the given MLIR context.</div><div class="ttdef"><b>Definition</b> <a href="Builder_8cpp_source.html#l00062">Builder.cpp:62</a></div></div>
 </div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="llzk-c_2Builder_8h_source.html#l00061">61</a> of file <a class="el" href="llzk-c_2Builder_8h_source.html">Builder.h</a>.</p>
 
@@ -365,8 +365,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Destroys the given builder. </p>
+<p>Destroys the given builder. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00064">64</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00074">74</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -386,8 +387,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns the context. </p>
+<p>Returns the context. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00068">68</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00079">79</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -407,8 +409,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns the current insertion block in the builder. </p>
+<p>Returns the current insertion block in the builder. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00087">87</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00103">103</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -428,8 +431,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns the current insertion point in the builder. </p>
+<p>Returns the current insertion point in the builder. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00076">76</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00091">91</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -453,8 +457,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Insert the given operation at the current insertion point and return it. </p>
+<p>Insert the given operation at the current insertion point and return it. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00091">91</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00108">108</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -467,7 +472,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">MLIR_CAPI_EXPORTED MlirOpBuilderListener mlirOpBuilderListenerCreate </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a></td>          <td class="paramname"><span class="paramname"><em>operationCb</em></span>, </td>
+          <td class="paramtype"><a class="el" href="#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a></td>          <td class="paramname"><span class="paramname"><em>opCb</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -483,9 +488,11 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a new mlir::OpBuilder::Listener. </p>
-<p>Takes one callback for each method of the Listener interface and a pointer to user defined data. </p>
+<p>Takes one callback for each method of the Listener interface and a pointer to user defined data.</p>
+<p>Creates a new mlir::OpBuilder::Listener.</p>
+<p><span class="tt">userData</span> is an opaque pointer forwarded unchanged to each callback. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00099">99</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00119">119</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -505,8 +512,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Destroys the given listener. </p>
+<p>Destroys the given listener. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00105">105</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00126">126</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -530,8 +538,9 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Sets the insertion point to the beginning of the given block. </p>
+<p>Sets the insertion point to the beginning of the given block. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00072">72</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00085">85</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>

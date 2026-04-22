@@ -132,118 +132,118 @@ $(function(){initNavTree('Builder_8cpp_source.html','',''); });
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">   23</a></span><span class="keyword">using </span><a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a> = OpBuilder;</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">class </span>ListenerT : <span class="keyword">public</span> OpBuilder::Listener {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  ListenerT(<a class="code hl_typedef" href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a> op, <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a> block, <span class="keywordtype">void</span> *data)</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>      : opInsertedCb(op), blockInsertedCb(block), userData(data) {}</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordtype">void</span> notifyOperationInserted(Operation *op, OpBuilder::InsertPoint previous) <span class="keyword">final</span> {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <a class="code hl_struct" href="structMlirOpBuilderInsertPoint.html">MlirOpBuilderInsertPoint</a> i {</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>        .block = wrap(previous.getBlock()), .point = wrap(&amp;*previous.getPoint())</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    };</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    opInsertedCb(wrap(op), i, userData);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  }</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">void</span> notifyBlockInserted(Block *block, Region *previous, Region::iterator previousIt) <span class="keyword">final</span> {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    blockInsertedCb(wrap(block), wrap(previous), wrap(&amp;*previousIt), userData);</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">class </span>ListenerT : <span class="keyword">public</span> OpBuilder::Listener {</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  ListenerT(<a class="code hl_typedef" href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a> op, <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a> block, <span class="keywordtype">void</span> *data)</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>      : opInsertedCb(op), blockInsertedCb(block), userData(data) {}</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">void</span> notifyOperationInserted(Operation *op, OpBuilder::InsertPoint previous) <span class="keyword">final</span> {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    <a class="code hl_struct" href="structMlirOpBuilderInsertPoint.html">MlirOpBuilderInsertPoint</a> i {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>        .block = wrap(previous.getBlock()), .point = wrap(&amp;*previous.getPoint())</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    };</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    opInsertedCb(wrap(op), i, userData);</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a> opInsertedCb;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a> blockInsertedCb;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">void</span> *userData = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>};</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span> notifyBlockInserted(Block *block, Region *previous, Region::iterator previousIt) <span class="keyword">final</span> {</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    blockInsertedCb(wrap(block), wrap(previous), wrap(&amp;*previousIt), userData);</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  }</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>} <span class="comment">// namespace</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment">// MlirOpBuilder</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a> opInsertedCb;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a> blockInsertedCb;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">void</span> *userData = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>};</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="foldopen" id="foldopen00055" data-start="{" data-end="}">
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">   55</a></span>MlirOpBuilder <a class="code hl_function" href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a>(MlirContext ctx) {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordflow">return</span> MlirOpBuilder {.ptr = <span class="keyword">new</span> <a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a>(unwrap(ctx))};</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>}</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="comment">// MlirOpBuilder</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
+<div class="foldopen" id="foldopen00062" data-start="{" data-end="}">
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">   62</a></span>MlirOpBuilder <a class="code hl_function" href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a>(MlirContext ctx) {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordflow">return</span> MlirOpBuilder {.ptr = <span class="keyword">new</span> <a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a>(unwrap(ctx))};</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
 </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="foldopen" id="foldopen00059" data-start="{" data-end="}">
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a52c43594563ea1949ae7f358e1953ba7">   59</a></span>MlirOpBuilder <a class="code hl_function" href="Builder_8cpp.html#a52c43594563ea1949ae7f358e1953ba7">mlirOpBuilderCreateWithListener</a>(MlirContext ctx, MlirOpBuilderListener listener) {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">auto</span> *l = <span class="keyword">reinterpret_cast&lt;</span>ListenerT *<span class="keyword">&gt;</span>(listener.ptr);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordflow">return</span> MlirOpBuilder {.ptr = <span class="keyword">new</span> <a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a>(unwrap(ctx), l)};</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
-</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="foldopen" id="foldopen00064" data-start="{" data-end="}">
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a34712855d6028d6cd716980cb29a47a5">   64</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Builder_8cpp.html#a34712855d6028d6cd716980cb29a47a5">mlirOpBuilderDestroy</a>(MlirOpBuilder builder) {</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">delete</span> <span class="keyword">reinterpret_cast&lt;</span><a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a> *<span class="keyword">&gt;</span>(builder.ptr);</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
-</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span></div>
 <div class="foldopen" id="foldopen00068" data-start="{" data-end="}">
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ad83c5bf0544fd2339e064ba21e666687">   68</a></span>MlirContext <a class="code hl_function" href="Builder_8cpp.html#ad83c5bf0544fd2339e064ba21e666687">mlirOpBuilderGetContext</a>(MlirOpBuilder builder) {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">return</span> wrap(unwrap(builder)-&gt;getContext());</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>}</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a52c43594563ea1949ae7f358e1953ba7">   68</a></span>MlirOpBuilder <a class="code hl_function" href="Builder_8cpp.html#a52c43594563ea1949ae7f358e1953ba7">mlirOpBuilderCreateWithListener</a>(MlirContext ctx, MlirOpBuilderListener listener) {</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">auto</span> *l = <span class="keyword">reinterpret_cast&lt;</span>ListenerT *<span class="keyword">&gt;</span>(listener.ptr);</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordflow">return</span> MlirOpBuilder {.ptr = <span class="keyword">new</span> <a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a>(unwrap(ctx), l)};</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
 </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="foldopen" id="foldopen00072" data-start="{" data-end="}">
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a540cdc88064575df2efa5b0f8aa36f0c">   72</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Builder_8cpp.html#a540cdc88064575df2efa5b0f8aa36f0c">mlirOpBuilderSetInsertionPointToStart</a>(MlirOpBuilder builder, MlirBlock block) {</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  unwrap(builder)-&gt;setInsertionPointToStart(unwrap(block));</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>}</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span></div>
+<div class="foldopen" id="foldopen00074" data-start="{" data-end="}">
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a34712855d6028d6cd716980cb29a47a5">   74</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Builder_8cpp.html#a34712855d6028d6cd716980cb29a47a5">mlirOpBuilderDestroy</a>(MlirOpBuilder builder) {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">delete</span> <span class="keyword">reinterpret_cast&lt;</span><a class="code hl_typedef" href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a> *<span class="keyword">&gt;</span>(builder.ptr);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
 </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="foldopen" id="foldopen00076" data-start="{" data-end="}">
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a93aa434937eb5c89e92974a87eb426e5">   76</a></span>MlirOperation <a class="code hl_function" href="Builder_8cpp.html#a93aa434937eb5c89e92974a87eb426e5">mlirOpBuilderGetInsertionPoint</a>(MlirOpBuilder builder) {</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keyword">auto</span> it = unwrap(builder)-&gt;getInsertionPoint();</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keyword">auto</span> *blk = unwrap(builder)-&gt;getInsertionBlock();</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordflow">if</span> (!blk) {</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    <span class="keywordflow">return</span> MlirOperation {<span class="keyword">nullptr</span>};</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  }</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keywordflow">return</span> wrap(it != blk-&gt;end() ? &amp;*it : <span class="keyword">nullptr</span>);</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>}</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span></div>
+<div class="foldopen" id="foldopen00079" data-start="{" data-end="}">
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ad83c5bf0544fd2339e064ba21e666687">   79</a></span>MlirContext <a class="code hl_function" href="Builder_8cpp.html#ad83c5bf0544fd2339e064ba21e666687">mlirOpBuilderGetContext</a>(MlirOpBuilder builder) {</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keywordflow">return</span> wrap(unwrap(builder)-&gt;getContext());</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>}</div>
 </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span></div>
-<div class="foldopen" id="foldopen00087" data-start="{" data-end="}">
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ac441404c01a06c1fc8134f1ed238d57b">   87</a></span>MlirBlock <a class="code hl_function" href="Builder_8cpp.html#ac441404c01a06c1fc8134f1ed238d57b">mlirOpBuilderGetInsertionBlock</a>(MlirOpBuilder builder) {</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordflow">return</span> wrap(unwrap(builder)-&gt;getInsertionBlock());</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>}</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span></div>
+<div class="foldopen" id="foldopen00085" data-start="{" data-end="}">
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a540cdc88064575df2efa5b0f8aa36f0c">   85</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Builder_8cpp.html#a540cdc88064575df2efa5b0f8aa36f0c">mlirOpBuilderSetInsertionPointToStart</a>(MlirOpBuilder builder, MlirBlock block) {</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  unwrap(builder)-&gt;setInsertionPointToStart(unwrap(block));</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>}</div>
 </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span></div>
 <div class="foldopen" id="foldopen00091" data-start="{" data-end="}">
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">   91</a></span>MlirOperation <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(MlirOpBuilder builder, MlirOperation op) {</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordflow">return</span> wrap(unwrap(builder)-&gt;insert(unwrap(op)));</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>}</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#a93aa434937eb5c89e92974a87eb426e5">   91</a></span>MlirOperation <a class="code hl_function" href="Builder_8cpp.html#a93aa434937eb5c89e92974a87eb426e5">mlirOpBuilderGetInsertionPoint</a>(MlirOpBuilder builder) {</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keyword">auto</span> it = unwrap(builder)-&gt;getInsertionPoint();</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keyword">auto</span> *blk = unwrap(builder)-&gt;getInsertionBlock();</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordflow">if</span> (!blk) {</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    <span class="keywordflow">return</span> MlirOperation {<span class="keyword">nullptr</span>};</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  }</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordflow">return</span> wrap(it != blk-&gt;end() ? &amp;*it : <span class="keyword">nullptr</span>);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>}</div>
 </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span><span class="comment">// MlirOpBuilderListener</span></div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="foldopen" id="foldopen00099" data-start="{" data-end="}">
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ac8e42bf0b737106ced68fd679ec14e47">   99</a></span>MlirOpBuilderListener <a class="code hl_function" href="Builder_8cpp.html#ac8e42bf0b737106ced68fd679ec14e47">mlirOpBuilderListenerCreate</a>(</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a> opCb, <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a> blockCb, <span class="keywordtype">void</span> *userData</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>) {</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordflow">return</span> MlirOpBuilderListener {.ptr = <span class="keyword">new</span> ListenerT(opCb, blockCb, userData)};</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>}</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span></div>
+<div class="foldopen" id="foldopen00103" data-start="{" data-end="}">
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ac441404c01a06c1fc8134f1ed238d57b">  103</a></span>MlirBlock <a class="code hl_function" href="Builder_8cpp.html#ac441404c01a06c1fc8134f1ed238d57b">mlirOpBuilderGetInsertionBlock</a>(MlirOpBuilder builder) {</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordflow">return</span> wrap(unwrap(builder)-&gt;getInsertionBlock());</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>}</div>
 </div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
-<div class="foldopen" id="foldopen00105" data-start="{" data-end="}">
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ac3ade84d91ed9b752beeb581fd36a92c">  105</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Builder_8cpp.html#ac3ade84d91ed9b752beeb581fd36a92c">mlirOpBuilderListenerDestroy</a>(MlirOpBuilderListener listener) {</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keyword">delete</span> <span class="keyword">reinterpret_cast&lt;</span>ListenerT *<span class="keyword">&gt;</span>(listener.ptr);</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span></div>
+<div class="foldopen" id="foldopen00108" data-start="{" data-end="}">
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">  108</a></span>MlirOperation <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(MlirOpBuilder builder, MlirOperation op) {</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordflow">return</span> wrap(unwrap(builder)-&gt;insert(unwrap(op)));</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>}</div>
 </div>
-<div class="ttc" id="aBuilder_8cpp_html_a34712855d6028d6cd716980cb29a47a5"><div class="ttname"><a href="Builder_8cpp.html#a34712855d6028d6cd716980cb29a47a5">mlirOpBuilderDestroy</a></div><div class="ttdeci">void mlirOpBuilderDestroy(MlirOpBuilder builder)</div><div class="ttdoc">Destroys the given builder.</div><div class="ttdef"><b>Definition</b> <a href="#l00064">Builder.cpp:64</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_a3b0d4556e70ed87d310933c909132c23"><div class="ttname"><a href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a></div><div class="ttdeci">MlirOpBuilder mlirOpBuilderCreate(MlirContext ctx)</div><div class="ttdef"><b>Definition</b> <a href="#l00055">Builder.cpp:55</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_a52c43594563ea1949ae7f358e1953ba7"><div class="ttname"><a href="Builder_8cpp.html#a52c43594563ea1949ae7f358e1953ba7">mlirOpBuilderCreateWithListener</a></div><div class="ttdeci">MlirOpBuilder mlirOpBuilderCreateWithListener(MlirContext ctx, MlirOpBuilderListener listener)</div><div class="ttdef"><b>Definition</b> <a href="#l00059">Builder.cpp:59</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_a540cdc88064575df2efa5b0f8aa36f0c"><div class="ttname"><a href="Builder_8cpp.html#a540cdc88064575df2efa5b0f8aa36f0c">mlirOpBuilderSetInsertionPointToStart</a></div><div class="ttdeci">void mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block)</div><div class="ttdoc">Sets the insertion point to the beginning of the given block.</div><div class="ttdef"><b>Definition</b> <a href="#l00072">Builder.cpp:72</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_a93aa434937eb5c89e92974a87eb426e5"><div class="ttname"><a href="Builder_8cpp.html#a93aa434937eb5c89e92974a87eb426e5">mlirOpBuilderGetInsertionPoint</a></div><div class="ttdeci">MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder)</div><div class="ttdoc">Returns the current insertion point in the builder.</div><div class="ttdef"><b>Definition</b> <a href="#l00076">Builder.cpp:76</a></div></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span><span class="comment">// MlirOpBuilderListener</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span></div>
+<div class="foldopen" id="foldopen00119" data-start="{" data-end="}">
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ac8e42bf0b737106ced68fd679ec14e47">  119</a></span>MlirOpBuilderListener <a class="code hl_function" href="Builder_8cpp.html#ac8e42bf0b737106ced68fd679ec14e47">mlirOpBuilderListenerCreate</a>(</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a> opCb, <a class="code hl_typedef" href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a> blockCb, <span class="keywordtype">void</span> *userData</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>) {</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keywordflow">return</span> MlirOpBuilderListener {.ptr = <span class="keyword">new</span> ListenerT(opCb, blockCb, userData)};</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>}</div>
+</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span></div>
+<div class="foldopen" id="foldopen00126" data-start="{" data-end="}">
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno"><a class="line" href="Builder_8cpp.html#ac3ade84d91ed9b752beeb581fd36a92c">  126</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Builder_8cpp.html#ac3ade84d91ed9b752beeb581fd36a92c">mlirOpBuilderListenerDestroy</a>(MlirOpBuilderListener listener) {</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keyword">delete</span> <span class="keyword">reinterpret_cast&lt;</span>ListenerT *<span class="keyword">&gt;</span>(listener.ptr);</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>}</div>
+</div>
+<div class="ttc" id="aBuilder_8cpp_html_a34712855d6028d6cd716980cb29a47a5"><div class="ttname"><a href="Builder_8cpp.html#a34712855d6028d6cd716980cb29a47a5">mlirOpBuilderDestroy</a></div><div class="ttdeci">void mlirOpBuilderDestroy(MlirOpBuilder builder)</div><div class="ttdoc">Destroys builder and frees the underlying OpBuilder object.</div><div class="ttdef"><b>Definition</b> <a href="#l00074">Builder.cpp:74</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_a3b0d4556e70ed87d310933c909132c23"><div class="ttname"><a href="Builder_8cpp.html#a3b0d4556e70ed87d310933c909132c23">mlirOpBuilderCreate</a></div><div class="ttdeci">MlirOpBuilder mlirOpBuilderCreate(MlirContext ctx)</div><div class="ttdoc">Creates a new OpBuilder for the given MLIR context.</div><div class="ttdef"><b>Definition</b> <a href="#l00062">Builder.cpp:62</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_a52c43594563ea1949ae7f358e1953ba7"><div class="ttname"><a href="Builder_8cpp.html#a52c43594563ea1949ae7f358e1953ba7">mlirOpBuilderCreateWithListener</a></div><div class="ttdeci">MlirOpBuilder mlirOpBuilderCreateWithListener(MlirContext ctx, MlirOpBuilderListener listener)</div><div class="ttdoc">Creates a new OpBuilder for the given MLIR context and attaches listener so that operation and block ...</div><div class="ttdef"><b>Definition</b> <a href="#l00068">Builder.cpp:68</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_a540cdc88064575df2efa5b0f8aa36f0c"><div class="ttname"><a href="Builder_8cpp.html#a540cdc88064575df2efa5b0f8aa36f0c">mlirOpBuilderSetInsertionPointToStart</a></div><div class="ttdeci">void mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block)</div><div class="ttdoc">Sets the insertion point of builder to the beginning of block so that subsequent insertions prepend t...</div><div class="ttdef"><b>Definition</b> <a href="#l00085">Builder.cpp:85</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_a93aa434937eb5c89e92974a87eb426e5"><div class="ttname"><a href="Builder_8cpp.html#a93aa434937eb5c89e92974a87eb426e5">mlirOpBuilderGetInsertionPoint</a></div><div class="ttdeci">MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder)</div><div class="ttdoc">Returns the operation before which new operations will be inserted, or a null MlirOperation if there ...</div><div class="ttdef"><b>Definition</b> <a href="#l00091">Builder.cpp:91</a></div></div>
 <div class="ttc" id="aBuilder_8cpp_html_a9b717fd843ba6aa9fdf8b06a07212f96"><div class="ttname"><a href="Builder_8cpp.html#a9b717fd843ba6aa9fdf8b06a07212f96">OpBuilderT</a></div><div class="ttdeci">OpBuilder OpBuilderT</div><div class="ttdef"><b>Definition</b> <a href="#l00023">Builder.cpp:23</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_ac3ade84d91ed9b752beeb581fd36a92c"><div class="ttname"><a href="Builder_8cpp.html#ac3ade84d91ed9b752beeb581fd36a92c">mlirOpBuilderListenerDestroy</a></div><div class="ttdeci">void mlirOpBuilderListenerDestroy(MlirOpBuilderListener listener)</div><div class="ttdoc">Destroys the given listener.</div><div class="ttdef"><b>Definition</b> <a href="#l00105">Builder.cpp:105</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_ac441404c01a06c1fc8134f1ed238d57b"><div class="ttname"><a href="Builder_8cpp.html#ac441404c01a06c1fc8134f1ed238d57b">mlirOpBuilderGetInsertionBlock</a></div><div class="ttdeci">MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder builder)</div><div class="ttdoc">Returns the current insertion block in the builder.</div><div class="ttdef"><b>Definition</b> <a href="#l00087">Builder.cpp:87</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_ac8e42bf0b737106ced68fd679ec14e47"><div class="ttname"><a href="Builder_8cpp.html#ac8e42bf0b737106ced68fd679ec14e47">mlirOpBuilderListenerCreate</a></div><div class="ttdeci">MlirOpBuilderListener mlirOpBuilderListenerCreate(MlirNotifyOperationInserted opCb, MlirNotifyBlockInserted blockCb, void *userData)</div><div class="ttdoc">Creates a new mlir::OpBuilder::Listener.</div><div class="ttdef"><b>Definition</b> <a href="#l00099">Builder.cpp:99</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_ad83c5bf0544fd2339e064ba21e666687"><div class="ttname"><a href="Builder_8cpp.html#ad83c5bf0544fd2339e064ba21e666687">mlirOpBuilderGetContext</a></div><div class="ttdeci">MlirContext mlirOpBuilderGetContext(MlirOpBuilder builder)</div><div class="ttdoc">Returns the context.</div><div class="ttdef"><b>Definition</b> <a href="#l00068">Builder.cpp:68</a></div></div>
-<div class="ttc" id="aBuilder_8cpp_html_ae83ea6c8112a8f7042f9962b06443d1c"><div class="ttname"><a href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a></div><div class="ttdeci">MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op)</div><div class="ttdoc">Insert the given operation at the current insertion point and return it.</div><div class="ttdef"><b>Definition</b> <a href="#l00091">Builder.cpp:91</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_ac3ade84d91ed9b752beeb581fd36a92c"><div class="ttname"><a href="Builder_8cpp.html#ac3ade84d91ed9b752beeb581fd36a92c">mlirOpBuilderListenerDestroy</a></div><div class="ttdeci">void mlirOpBuilderListenerDestroy(MlirOpBuilderListener listener)</div><div class="ttdoc">Destroys listener and frees the underlying ListenerT object.</div><div class="ttdef"><b>Definition</b> <a href="#l00126">Builder.cpp:126</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_ac441404c01a06c1fc8134f1ed238d57b"><div class="ttname"><a href="Builder_8cpp.html#ac441404c01a06c1fc8134f1ed238d57b">mlirOpBuilderGetInsertionBlock</a></div><div class="ttdeci">MlirBlock mlirOpBuilderGetInsertionBlock(MlirOpBuilder builder)</div><div class="ttdoc">Returns the block that builder is currently inserting into, or a null MlirBlock if no insertion point...</div><div class="ttdef"><b>Definition</b> <a href="#l00103">Builder.cpp:103</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_ac8e42bf0b737106ced68fd679ec14e47"><div class="ttname"><a href="Builder_8cpp.html#ac8e42bf0b737106ced68fd679ec14e47">mlirOpBuilderListenerCreate</a></div><div class="ttdeci">MlirOpBuilderListener mlirOpBuilderListenerCreate(MlirNotifyOperationInserted opCb, MlirNotifyBlockInserted blockCb, void *userData)</div><div class="ttdoc">Creates a new OpBuilder::Listener that calls opCb whenever an operation is inserted and blockCb whene...</div><div class="ttdef"><b>Definition</b> <a href="#l00119">Builder.cpp:119</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_ad83c5bf0544fd2339e064ba21e666687"><div class="ttname"><a href="Builder_8cpp.html#ad83c5bf0544fd2339e064ba21e666687">mlirOpBuilderGetContext</a></div><div class="ttdeci">MlirContext mlirOpBuilderGetContext(MlirOpBuilder builder)</div><div class="ttdoc">Returns the MLIR context associated with builder.</div><div class="ttdef"><b>Definition</b> <a href="#l00079">Builder.cpp:79</a></div></div>
+<div class="ttc" id="aBuilder_8cpp_html_ae83ea6c8112a8f7042f9962b06443d1c"><div class="ttname"><a href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a></div><div class="ttdeci">MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op)</div><div class="ttdoc">Inserts op at the current insertion point of builder and returns it.</div><div class="ttdef"><b>Definition</b> <a href="#l00108">Builder.cpp:108</a></div></div>
 <div class="ttc" id="allzk-c_2Builder_8h_html"><div class="ttname"><a href="llzk-c_2Builder_8h.html">Builder.h</a></div></div>
 <div class="ttc" id="allzk-c_2Builder_8h_html_a46e45fc93ddbc76257881ab5b8d5050c"><div class="ttname"><a href="llzk-c_2Builder_8h.html#a46e45fc93ddbc76257881ab5b8d5050c">MlirNotifyOperationInserted</a></div><div class="ttdeci">void(* MlirNotifyOperationInserted)(MlirOperation, MlirOpBuilderInsertPoint, void *)</div><div class="ttdoc">Callback type for listening to operation insertions in an mlir::OpBuilder.</div><div class="ttdef"><b>Definition</b> <a href="llzk-c_2Builder_8h_source.html#l00050">Builder.h:50</a></div></div>
 <div class="ttc" id="allzk-c_2Builder_8h_html_af601f81e5ee4099f75969c33abcb585e"><div class="ttname"><a href="llzk-c_2Builder_8h.html#af601f81e5ee4099f75969c33abcb585e">MlirNotifyBlockInserted</a></div><div class="ttdeci">void(* MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *)</div><div class="ttdoc">Callback type for listening to block insertions in an mlir::OpBuilder.</div><div class="ttdef"><b>Definition</b> <a href="llzk-c_2Builder_8h_source.html#l00052">Builder.h:52</a></div></div>
