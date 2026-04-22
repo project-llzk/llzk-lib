@@ -1,0 +1,4 @@
+added:
+  - "`Pure` trait on `poly.read_const` op"
+  - "`AlwaysSpeculatable` trait on `llzk.nondet` op"
+  - "canonicalizer for `llzk.nondet` op to remove it when its result is not used"

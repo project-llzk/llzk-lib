@@ -1,0 +1,173 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='any(canonicalize,sccp,canonicalize,remove-dead-values,canonicalize)' %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "circom"} {
+  poly.template @T {
+    poly.expr @"a[1]@307" {
+      %felt_const_1 = felt.const  1 : <"bn128">
+      %felt_const_675 = felt.const  675 : <"bn128">
+      %felt_const_123 = felt.const  123 : <"bn128">
+      %nondet = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+      %array = array.new %felt_const_123, %felt_const_675 : <2 x !felt.type<"bn128">>
+      %0 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      %1 = array.read %array[%0] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      poly.yield %1 : !felt.type<"bn128">
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom"} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.expr @"a[1]@307" {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]], %[[VAL_1]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_2]] : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_6]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang = "circom"} {
+  poly.template @T {
+    poly.param @N
+    poly.expr @"N_Greater_12?a[0]_Add_a[1]:0@411" {
+      %felt_const_1 = felt.const  1 : <"bn128">
+      %felt_const_6 = felt.const  6 : <"bn128">
+      %felt_const_675 = felt.const  675 : <"bn128">
+      %felt_const_123 = felt.const  123 : <"bn128">
+      %felt_const_0 = felt.const  0 : <"bn128">
+      %felt_const_12 = felt.const  12 : <"bn128">
+      %0 = poly.read_const @N : !felt.type<"bn128">
+      %nondet = llzk.nondet : !felt.type<"bn128">
+      %nondet_0 = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+      %array = array.new %felt_const_123, %felt_const_675 : <2 x !felt.type<"bn128">>
+      %1 = felt.add %0, %felt_const_6 : !felt.type<"bn128">, !felt.type<"bn128">
+      %2 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      array.write %array[%2] = %1 : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %3 = bool.cmp gt(%0, %felt_const_12) : !felt.type<"bn128">, !felt.type<"bn128">
+      %4 = scf.if %3 -> (!felt.type<"bn128">) {
+        %5 = cast.toindex %felt_const_0 : !felt.type<"bn128">
+        %6 = array.read %array[%5] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %7 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+        %8 = array.read %array[%7] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %9 = felt.add %6, %8 : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %9 : !felt.type<"bn128">
+      } else {
+        scf.yield %felt_const_0 : !felt.type<"bn128">
+      }
+      poly.yield %4 : !felt.type<"bn128">
+    }
+    poly.expr @"a[1]@381" {
+      %felt_const_1 = felt.const  1 : <"bn128">
+      %felt_const_6 = felt.const  6 : <"bn128">
+      %felt_const_675 = felt.const  675 : <"bn128">
+      %felt_const_123 = felt.const  123 : <"bn128">
+      %0 = poly.read_const @N : !felt.type<"bn128">
+      %nondet = llzk.nondet : !felt.type<"bn128">
+      %nondet_0 = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+      %array = array.new %felt_const_123, %felt_const_675 : <2 x !felt.type<"bn128">>
+      %1 = felt.add %0, %felt_const_6 : !felt.type<"bn128">, !felt.type<"bn128">
+      %2 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      array.write %array[%2] = %1 : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %3 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      %4 = array.read %array[%3] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      poly.yield %4 : !felt.type<"bn128">
+    }
+    poly.expr @x {
+      %felt_const_6 = felt.const  6 : <"bn128">
+      %0 = poly.read_const @N : !felt.type<"bn128">
+      %nondet = llzk.nondet : !felt.type<"bn128">
+      %nondet_0 = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+      poly.yield %felt_const_6 : !felt.type<"bn128">
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom"} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @"N_Greater_12?a[0]_Add_a[1]:0@411" {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  12 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  6 : <"bn128">
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_3]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_5]] : !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_9]]{{\[}}%[[VAL_11]]] = %[[VAL_10]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_6]], %[[VAL_0]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_12]] -> (!felt.type<"bn128">) {
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_14]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_5]] : !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_16]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_15]], %[[VAL_17]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          scf.yield %[[VAL_18]] : !felt.type<"bn128">
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:        }
+// CHECK-NEXT:        poly.yield %[[VAL_13]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.expr @"a[1]@381" {
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.const  123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.const  6 : <"bn128">
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_19]], %[[VAL_20]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_23]], %[[VAL_21]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_22]] : !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_26]]{{\[}}%[[VAL_28]]] = %[[VAL_27]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_22]] : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_29]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_30]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.expr @x {
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = felt.const  6 : <"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_31]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang = "circom"} {
+  poly.template @T {
+    poly.param @N
+    poly.expr @UnusedIfResult {
+      %felt_const_1 = felt.const  1 : <"bn128">
+      %felt_const_6 = felt.const  6 : <"bn128">
+      %felt_const_675 = felt.const  675 : <"bn128">
+      %felt_const_123 = felt.const  123 : <"bn128">
+      %felt_const_0 = felt.const  0 : <"bn128">
+      %felt_const_12 = felt.const  12 : <"bn128">
+      %0 = poly.read_const @N : !felt.type<"bn128">
+      %array = array.new %felt_const_123, %felt_const_675 : <2 x !felt.type<"bn128">>
+      %1 = felt.add %0, %felt_const_6 : !felt.type<"bn128">, !felt.type<"bn128">
+      %2 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      %3 = bool.cmp gt(%0, %felt_const_12) : !felt.type<"bn128">, !felt.type<"bn128">
+      %4 = scf.if %3 -> (!felt.type<"bn128">) {
+        %5 = cast.toindex %felt_const_0 : !felt.type<"bn128">
+        %7 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+        %9 = felt.add %felt_const_675, %felt_const_123 : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %9 : !felt.type<"bn128">
+      } else {
+        scf.yield %felt_const_0 : !felt.type<"bn128">
+      }
+      %5 = poly.read_const @N : !felt.type<"bn128">
+      poly.yield %5 : !felt.type<"bn128">
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom"} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @UnusedIfResult {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -26,8 +26,9 @@ class LLZKDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<LLZKDialect, mnemonic, traits>;
 
 def LLZK_NonDetOp
-    : LLZKDialectOp<"nondet", [DeclareOpInterfaceMethods<
-                                  OpAsmOpInterface, ["getAsmResultNames"]>]> {
+    : LLZKDialectOp<"nondet", [AlwaysSpeculatable,
+                               DeclareOpInterfaceMethods<
+                                   OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "uninitialized variable";
   let description = [{
     This operation produces an SSA variable of the specified type but with
@@ -80,6 +81,7 @@ def LLZK_NonDetOp
 
   let results = (outs AnyLLZKType:$res);
   let assemblyFormat = [{ `:` type($res) attr-dict }];
+  let hasCanonicalizer = 1;
 }
 
 #endif // LLZK_OPS
