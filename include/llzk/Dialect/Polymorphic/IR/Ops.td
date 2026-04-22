@@ -209,7 +209,7 @@ def LLZK_TemplateExprOp
 
 def LLZK_YieldOp
     : PolymorphicDialectOp<
-          "yield", [HasParent<"::llzk::polymorphic::TemplateExprOp">, Pure,
+          "yield", [HasParent<"::llzk::polymorphic::TemplateExprOp">,
                     ReturnLike, Terminator]> {
   let summary = "expr initialization yield and termination operation";
   let description = [{
