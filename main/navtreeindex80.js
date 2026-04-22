@@ -1,7 +1,5 @@
 var NAVTREEINDEX80 =
 {
-"tools.html#autotoc_md-llzk-array-to-scalar":[3,0,0,2,0],
-"tools.html#autotoc_md-llzk-compute-constrain-to-product":[3,0,0,1,0],
 "tools.html#autotoc_md-llzk-drop-empty-templates":[3,0,0,3,0],
 "tools.html#autotoc_md-llzk-duplicate-op-elim":[3,0,0,1,1],
 "tools.html#autotoc_md-llzk-duplicate-read-write-elim":[3,0,0,1,2],

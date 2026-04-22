@@ -1,7 +1,5 @@
 var NAVTREEINDEX69 =
 {
-"dialects.html#operations-12":[7,12,0],
-"dialects.html#operations-2":[7,2,0],
 "dialects.html#operations-3":[7,3,0],
 "dialects.html#operations-4":[7,4,0],
 "dialects.html#operations-5":[7,5,0],
@@ -249,5 +247,7 @@ var NAVTREEINDEX69 =
 "functions_func_b.html":[12,3,1,1],
 "functions_func_c.html":[12,3,1,2],
 "functions_func_d.html":[12,3,1,3],
-"functions_func_e.html":[12,3,1,4]
+"functions_func_e.html":[12,3,1,4],
+"functions_func_f.html":[12,3,1,5],
+"functions_func_g.html":[12,3,1,6]
 };

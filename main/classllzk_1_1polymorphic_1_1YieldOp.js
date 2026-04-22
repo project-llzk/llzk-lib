@@ -4,7 +4,6 @@ var classllzk_1_1polymorphic_1_1YieldOp =
     [ "FoldAdaptor", "classllzk_1_1polymorphic_1_1YieldOp.html#a70534eb1e79e652babdd107a091a2dda", null ],
     [ "GenericAdaptor", "classllzk_1_1polymorphic_1_1YieldOp.html#acd6c3553131e3fa5619c33e8d12841ee", null ],
     [ "getAttributeNames", "classllzk_1_1polymorphic_1_1YieldOp.html#a439367a4857e35b023407bc37a1d1180", null ],
-    [ "getEffects", "classllzk_1_1polymorphic_1_1YieldOp.html#a585c911d7d325998f7183536e79b2df4", null ],
     [ "getMutableSuccessorOperands", "classllzk_1_1polymorphic_1_1YieldOp.html#a3426f802cad0755048437eeef1e88f7b", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1polymorphic_1_1YieldOp.html#a5f2d9dedf12218b3ec1d76b7b613b46e", null ],
     [ "getODSOperands", "classllzk_1_1polymorphic_1_1YieldOp.html#adbe3af723555563c8e4155c0a014c1af", null ],

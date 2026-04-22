@@ -1,7 +1,5 @@
 var NAVTREEINDEX73 =
 {
-"namespacellzk_1_1pod.html#a9678c1dad3ae46e70e68a69ccbe896fc":[10,0,2,15,23],
-"namespacellzk_1_1pod.html#aa6edda63769f7ef2a7fd425862a5989c":[10,0,2,15,19],
 "namespacellzk_1_1pod.html#ac95a45465e12385f397245e452f4e935":[10,0,2,15,21],
 "namespacellzk_1_1pod.html#acf560a49ec623df5912e30035fd18116":[10,0,2,15,18],
 "namespacellzk_1_1pod.html#ad4c7ef9fed601bc13ef71fbe9faa6e5c":[10,0,2,15,26],
@@ -249,5 +247,7 @@ var NAVTREEINDEX73 =
 "structGenerator.html#ae08ac0d490ed19be36ac349a90eae656":[12,0,42,8],
 "structGlobalDefOpBuildFuncHelper.html":[12,0,44],
 "structGlobalDefOpBuildFuncHelper.html#a12a1784c50b66c81e972fb4a081f6d58":[12,0,44,1],
-"structGlobalDefOpBuildFuncHelper.html#ab72eaa9b2f839b17b3d0b7c12c53758d":[12,0,44,0]
+"structGlobalDefOpBuildFuncHelper.html#ab72eaa9b2f839b17b3d0b7c12c53758d":[12,0,44,0],
+"structGlobalReadOpBuildFuncHelper.html":[12,0,47],
+"structGlobalReadOpBuildFuncHelper.html#a56019653e244a2a47958f0a712b38427":[12,0,47,1]
 };
