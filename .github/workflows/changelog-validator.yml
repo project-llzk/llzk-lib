@@ -2,6 +2,12 @@ name: Changelog
 on:
   # Require a changelog for any PR going to main.
   pull_request:
+    types: 
+      - opened
+      - reopened
+      - synchronize
+      - review_requested
+      - ready_for_review
     branches:
       - main
     paths-ignore:
@@ -15,3 +21,4 @@ jobs:
     with:
       branch_name: ${{ github.head_ref }}
     secrets: inherit
+    if: github.event.pull_request.draft == false
