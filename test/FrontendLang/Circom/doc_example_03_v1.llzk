@@ -1,0 +1,122 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+//////////////////////////////////////////////////////////////////////////////////
+// Circom source:
+//
+// template A(N){
+//    signal input in;
+//    signal output out;
+//    out <== in;
+// }
+// template B(N){
+//   signal output out;
+//   component a;
+//   if(N > 0){
+//      a = A(N);
+//   } else {
+//      a = A(0);
+//   }
+//   a.in <== 1;
+//   a.out ==> out;
+// }
+//
+// component main = B(1);
+//////////////////////////////////////////////////////////////////////////////////
+
+// One possible LLZK translation of the above Circom code, using only affine_map for the heterogeneous component type.
+#id = affine_map<(s0) -> (s0)>
+!AAnyN = !struct.type<@TA::@A<[#id]>>
+
+module attributes {llzk.lang = "circom"} {
+  poly.template @TA {
+    poly.param @N
+
+    struct.def @A {
+      struct.member @out : !felt.type {llzk.pub}
+
+      function.def @compute(%in: !felt.type) -> !struct.type<@TA::@A<[@N]>> {
+        %self = struct.new : !struct.type<@TA::@A<[@N]>>
+        struct.writem %self[@out] = %in : !struct.type<@TA::@A<[@N]>>, !felt.type
+        function.return %self : !struct.type<@TA::@A<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TA::@A<[@N]>>, %in: !felt.type) {
+        %out = struct.readm %self[@out] : !struct.type<@TA::@A<[@N]>>, !felt.type
+        constrain.eq %out, %in : !felt.type
+        function.return
+      }
+    }
+  }
+
+  poly.template @TB {
+    poly.param @N
+
+    struct.def @B {
+      struct.member @a : !AAnyN
+      struct.member @out : !felt.type {llzk.pub}
+
+      function.def @compute() -> !struct.type<@TB::@B<[@N]>> {
+        %self = struct.new : !struct.type<@TB::@B<[@N]>>
+
+        %n_felt = poly.read_const @N : !felt.type
+        %n_idx = poly.read_const @N : index
+        %zero_felt = felt.const 0
+        %one_felt = felt.const 1
+        %zero_idx = arith.constant 0 : index
+
+        %cond = bool.cmp gt(%n_felt, %zero_felt) : !felt.type, !felt.type
+        %a = scf.if %cond -> (!AAnyN) {
+          %a_then = function.call @TA::@A::@compute(%one_felt) {(%n_idx)} : (!felt.type) -> !AAnyN
+          scf.yield %a_then : !AAnyN
+        } else {
+          %a_else = function.call @TA::@A::@compute(%one_felt) {(%zero_idx)} : (!felt.type) -> !AAnyN
+          scf.yield %a_else : !AAnyN
+        }
+
+        struct.writem %self[@a] = %a : !struct.type<@TB::@B<[@N]>>, !AAnyN
+
+        %a_out = struct.readm %a[@out] : !AAnyN, !felt.type
+        struct.writem %self[@out] = %a_out : !struct.type<@TB::@B<[@N]>>, !felt.type
+
+        function.return %self : !struct.type<@TB::@B<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TB::@B<[@N]>>) {
+        %a = struct.readm %self[@a] : !struct.type<@TB::@B<[@N]>>, !AAnyN
+        %out = struct.readm %self[@out] : !struct.type<@TB::@B<[@N]>>, !felt.type
+
+        %n_felt = poly.read_const @N : !felt.type
+        %n_idx = poly.read_const @N : index
+        %zero_felt = felt.const 0
+        %one_felt = felt.const 1
+        %zero_idx = arith.constant 0 : index
+
+        // No matter the condition, the constrain function signature is the same
+        function.call @TA::@A::@constrain(%a, %one_felt) : (!AAnyN, !felt.type) -> ()
+
+        %a_out = struct.readm %a[@out] : !AAnyN, !felt.type
+        constrain.eq %out, %a_out : !felt.type
+
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @sub : !struct.type<@TB::@B<[1]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %sub = function.call @TB::@B::@compute() : () -> !struct.type<@TB::@B<[1]>>
+      struct.writem %self[@sub] = %sub : !struct.type<@Main>, !struct.type<@TB::@B<[1]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %sub = struct.readm %self[@sub] : !struct.type<@Main>, !struct.type<@TB::@B<[1]>>
+      function.call @TB::@B::@constrain(%sub) : (!struct.type<@TB::@B<[1]>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom"} {
