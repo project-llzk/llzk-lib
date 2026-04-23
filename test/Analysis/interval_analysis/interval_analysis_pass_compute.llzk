@@ -542,12 +542,16 @@ module attributes {llzk.lang} {
       %0 = arith.constant 0 : index
       %1 = arith.constant 1 : index
       %f0 = felt.const 0
+      // COM: It would seem that the loop always yields "3",
+      // but we actually don't know if the loop will run in practice (in which
+      // case it would yield "0" based on `iter_args` initialization).
+      // We could get a tighter band (as we currently overapproximate to Entire),
+      // but it's likely not worth optimizing for this case, since yielding
+      // a constant from a loop is likely not a common case.
       %c = scf.for %i = %0 to %x step %1 iter_args (%unused = %f0) -> (!felt.type) {
         %3 = felt.const 3
         scf.yield %3 : !felt.type
       }
-      // COM: This is currently unsound, as it doesn't account for whether
-      // or not the loop will run.
       struct.writem %self[@a] = %c : !struct.type<@YieldForConst>, !felt.type
       function.return %self : !struct.type<@YieldForConst>
     }
@@ -561,7 +565,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @YieldForConst StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in Degenerate(3)
+// CHECK-NEXT:    %self[@a] in Entire
 // CHECK-NEXT:  }
 
 // -----

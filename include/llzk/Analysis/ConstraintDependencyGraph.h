@@ -12,6 +12,7 @@
 #include "llzk/Analysis/AnalysisWrappers.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Analysis/SourceRefLattice.h"
+#include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 
 #include <mlir/Pass/AnalysisManager.h>
@@ -32,42 +33,43 @@ using SourceRefRemappings = std::vector<std::pair<SourceRef, SourceRefLatticeVal
 /// LLZK operations use and produce. The analysis is simple: any operation will
 /// simply output a union of its input references, regardless of what type of
 /// operation it performs, as the analysis is operator-insensitive.
-class SourceRefAnalysis : public mlir::dataflow::DenseForwardDataFlowAnalysis<SourceRefLattice> {
+class SourceRefAnalysis : public dataflow::SparseForwardDataFlowAnalysis<SourceRefLattice> {
 public:
-  using mlir::dataflow::DenseForwardDataFlowAnalysis<
-      SourceRefLattice>::DenseForwardDataFlowAnalysis;
+  using Lattice = SourceRefLattice;
+  using OperandValues = mlir::DenseMap<mlir::Value, const Lattice *>;
+  using Base = dataflow::SparseForwardDataFlowAnalysis<Lattice>;
+  using Base::SparseForwardDataFlowAnalysis;
 
-  void visitCallControlFlowTransfer(
-      mlir::CallOpInterface call, mlir::dataflow::CallControlFlowAction action,
-      const SourceRefLattice &before, SourceRefLattice *after
-  ) override;
+  static const Lattice *getLattice(mlir::DataFlowSolver &solver, mlir::Value val);
+  static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
+  static mlir::FailureOr<SourceRefLatticeValue>
+  getWriteTargetState(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
   /// @brief Propagate `SourceRef` lattice values from operands to results.
   /// @param op
-  /// @param before
-  /// @param after
   mlir::LogicalResult visitOperation(
-      mlir::Operation *op, const SourceRefLattice &before, SourceRefLattice *after
+      mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
+      mlir::ArrayRef<Lattice *> results
+  ) override;
+
+  void visitExternalCall(
+      mlir::CallOpInterface call, mlir::ArrayRef<const Lattice *> argumentLattices,
+      mlir::ArrayRef<Lattice *> resultLattices
   ) override;
 
 protected:
-  void setToEntryState(SourceRefLattice *lattice) override {
-    // the entry state is empty, so do nothing.
-  }
+  void setToEntryState(Lattice *lattice) override;
 
   // Perform a standard union of operands into the results value.
-  mlir::ChangeResult fallbackOpUpdate(
-      mlir::Operation *op, const SourceRefLattice::ValueMap &operandVals,
-      const SourceRefLattice &before, SourceRefLattice *after
+  static mlir::ChangeResult fallbackOpUpdate(
+      mlir::Operation *op, const OperandValues &operandVals, mlir::ArrayRef<Lattice *> results
   );
 
-  // Perform the update for either a array.read op or an array.extract op, which
+  // Create the references for either an array.read op or an array.extract op, which
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
-  void arraySubdivisionOpUpdate(
-      array::ArrayAccessOpInterface op, const SourceRefLattice::ValueMap &operandVals,
-      const SourceRefLattice &before, SourceRefLattice *after
-  );
+  static SourceRefLatticeValue
+  arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
 
 private:
   mlir::SymbolTableCollection tables;
@@ -251,7 +253,12 @@ class ConstraintDependencyGraphModuleAnalysis
           ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis> {
 
 public:
-  using ModuleAnalysis::ModuleAnalysis;
+  // We set the SourceRef analysis as intraprocedural so that calls are treated as "external"
+  // calls, and we can leverage the `visitExternalCall` hook to translate `SourceRef`s
+  // between function contexts.
+  ConstraintDependencyGraphModuleAnalysis(mlir::Operation *op)
+      : ModuleAnalysis(op, mlir::DataFlowConfig().setInterprocedural(false)) {}
+
   ~ConstraintDependencyGraphModuleAnalysis() override = default;
 
   void setIntraprocedural(bool runIntraprocedural) {
@@ -264,6 +271,8 @@ protected:
   const CDGAnalysisContext &getContext() const override { return ctx; }
 
 private:
+  // This "intraprocedural" option is related to the CDG construction, not the dataflow analysis
+  // itself.
   CDGAnalysisContext ctx = {.runIntraprocedural = false};
 };
 
