@@ -144,7 +144,7 @@ Static Public Member Functions</h2></td></tr>
 <p>For example, a CDG of the form: { {arg1, arg2, arg3[@foo]} } Means that arg1, arg2, and member @foo of arg3, are connected via some constraints. These constraints could take the form of (in Circom notation): arg1 + arg3[@foo] === arg2 Or arg2 === arg2 / arg3[@foo] Or any other form of constraint including those values.</p>
 <p>The CDG also records information about constant values (e.g., felt.const) that are included in constraints, but does not compute a transitive closure over constant values, as constant value usage in constraints does not imply any dependency between signal values (e.g., constraints a + b === 0 and c + d === 0 both use constant 0, but does not enforce a dependency between a, b, c, and d). </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00121">121</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00123">123</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="aca0acba8e00a833eb9c0f33e1ccfa5c5" name="aca0acba8e00a833eb9c0f33e1ccfa5c5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aca0acba8e00a833eb9c0f33e1ccfa5c5">&#9670;&#160;</a></span>ConstraintDependencyGraph()</h2>
@@ -169,7 +169,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00171">171</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00173">173</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -254,7 +254,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00299">299</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00297">297</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -275,7 +275,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Dumps the CDG to stderr. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00310">310</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00308">308</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -303,7 +303,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The set of references that are connected to ref via constraints. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00610">610</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00602">602</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -330,7 +330,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00163">163</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00165">165</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -357,7 +357,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00175">175</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00177">177</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -385,7 +385,7 @@ Static Public Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00313">313</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00311">311</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -413,7 +413,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A CDG that contains only translated references. Non-constant references with no translation are omitted. This omissions allows calling components to ignore internal references within subcomponents that are inaccessible to the caller. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00516">516</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00508">508</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>

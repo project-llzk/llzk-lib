@@ -242,9 +242,9 @@ Classes</h2></td></tr>
 <tr class="memitem:SourceRefIndex" id="r_SourceRefIndex"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SourceRefIndex.html">SourceRefIndex</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defines an index into an LLZK object.  <a href="classllzk_1_1SourceRefIndex.html#details">More...</a><br /></td></tr>
 <tr class="memitem:SourceRefLattice" id="r_SourceRefLattice"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SourceRefLattice.html">SourceRefLattice</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A lattice for use in dense analysis.  <a href="classllzk_1_1SourceRefLattice.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sparse SSA-value lattice for <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> propagation.  <a href="classllzk_1_1SourceRefLattice.html#details">More...</a><br /></td></tr>
 <tr class="memitem:SourceRefLatticeValue" id="r_SourceRefLatticeValue"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A value at a given point of the <a class="el" href="classllzk_1_1SourceRefLattice.html" title="A lattice for use in dense analysis.">SourceRefLattice</a>.  <a href="classllzk_1_1SourceRefLatticeValue.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A value at a given point of the <a class="el" href="classllzk_1_1SourceRefLattice.html" title="Sparse SSA-value lattice for SourceRef propagation.">SourceRefLattice</a>.  <a href="classllzk_1_1SourceRefLatticeValue.html#details">More...</a><br /></td></tr>
 <tr class="memitem:SourceRefSet" id="r_SourceRefSet"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SourceRefSet.html">SourceRefSet</a></td></tr>
 <tr class="memitem:StructAnalysis" id="r_StructAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1StructAnalysis.html">StructAnalysis</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the base class for a dataflow analysis designed to run on a single struct (i.e., a single component).  <a href="classllzk_1_1StructAnalysis.html#details">More...</a><br /></td></tr>
@@ -378,7 +378,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a81905d7681e7da8a711f7f47c5c58010" id="r_a81905d7681e7da8a711f7f47c5c58010"><td class="memItemLeft" align="right" valign="top">raw_ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a81905d7681e7da8a711f7f47c5c58010">operator&lt;&lt;</a> (raw_ostream &amp;os, const <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;rhs)</td></tr>
 <tr class="memitem:a447bbb953a832bd45da3eaef39a7575c" id="r_a447bbb953a832bd45da3eaef39a7575c"><td class="memItemLeft" align="right" valign="top">raw_ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a447bbb953a832bd45da3eaef39a7575c">operator&lt;&lt;</a> (raw_ostream &amp;os, const <a class="el" href="classllzk_1_1SourceRefSet.html">SourceRefSet</a> &amp;rhs)</td></tr>
 <tr class="memitem:afa48de8546ad8c80839a2697159d702a" id="r_afa48de8546ad8c80839a2697159d702a"><td class="memItemLeft" align="right" valign="top">mlir::raw_ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa48de8546ad8c80839a2697159d702a">operator&lt;&lt;</a> (mlir::raw_ostream &amp;os, const <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;v)</td></tr>
-<tr class="memitem:aa8028c0b7603f6aa0f5e31a949b57cda" id="r_aa8028c0b7603f6aa0f5e31a949b57cda"><td class="memItemLeft" align="right" valign="top">llvm::raw_ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa8028c0b7603f6aa0f5e31a949b57cda">operator&lt;&lt;</a> (llvm::raw_ostream &amp;os, const <a class="el" href="classllzk_1_1SourceRefLattice.html">SourceRefLattice</a> &amp;lattice)</td></tr>
 <tr class="memitem:a7aca315ac77fe19630b92a9efa66451e" id="r_a7aca315ac77fe19630b92a9efa66451e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7aca315ac77fe19630b92a9efa66451e">createSymbolDefTreePrinterPass</a> ()</td></tr>
 <tr class="memitem:a4dad20cd356b00c9fad2ef7450535a95" id="r_a4dad20cd356b00c9fad2ef7450535a95"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4dad20cd356b00c9fad2ef7450535a95">createSymbolUseGraphPrinterPass</a> ()</td></tr>
 <tr class="memitem:a9338ef0435a6cb734c7aebea355d4a36" id="r_a9338ef0435a6cb734c7aebea355d4a36"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9338ef0435a6cb734c7aebea355d4a36">registerAllDialects</a> (mlir::DialectRegistry &amp;registry)</td></tr>
@@ -927,7 +926,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00029">29</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00030">30</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -943,7 +942,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00023">23</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00024">24</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
 
 </div>
 </div>
@@ -6208,7 +6207,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="a029cf882e023f3e2797531d09b8271bf" name="a029cf882e023f3e2797531d09b8271bf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a029cf882e023f3e2797531d09b8271bf">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[1/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a029cf882e023f3e2797531d09b8271bf">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[1/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6231,7 +6230,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="a5e4f88183c04d290fa8ffde7bfe4afd6" name="a5e4f88183c04d290fa8ffde7bfe4afd6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5e4f88183c04d290fa8ffde7bfe4afd6">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[2/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e4f88183c04d290fa8ffde7bfe4afd6">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[2/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6254,7 +6253,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="a619bc971771be50cd90fe6219aa47aa2" name="a619bc971771be50cd90fe6219aa47aa2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a619bc971771be50cd90fe6219aa47aa2">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[3/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a619bc971771be50cd90fe6219aa47aa2">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[3/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6275,7 +6274,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="add592d534cc4ade61c13439c17f480fd" name="add592d534cc4ade61c13439c17f480fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add592d534cc4ade61c13439c17f480fd">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[4/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#add592d534cc4ade61c13439c17f480fd">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[4/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6306,7 +6305,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="af577599d1b29a0347b4009191e02d514" name="af577599d1b29a0347b4009191e02d514"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af577599d1b29a0347b4009191e02d514">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[5/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af577599d1b29a0347b4009191e02d514">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[5/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6328,31 +6327,8 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 
 </div>
 </div>
-<a id="aa8028c0b7603f6aa0f5e31a949b57cda" name="aa8028c0b7603f6aa0f5e31a949b57cda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa8028c0b7603f6aa0f5e31a949b57cda">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[6/10]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::raw_ostream &amp; llzk::operator&lt;&lt; </td>
-          <td>(</td>
-          <td class="paramtype">llvm::raw_ostream &amp;</td>          <td class="paramname"><span class="paramname"><em>os</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classllzk_1_1SourceRefLattice.html">SourceRefLattice</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>lattice</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00314">314</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
-
-</div>
-</div>
 <a id="ac5aad07d4f58b4d6a45460663ab7a732" name="ac5aad07d4f58b4d6a45460663ab7a732"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac5aad07d4f58b4d6a45460663ab7a732">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[7/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5aad07d4f58b4d6a45460663ab7a732">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[6/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6373,7 +6349,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="afa48de8546ad8c80839a2697159d702a" name="afa48de8546ad8c80839a2697159d702a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afa48de8546ad8c80839a2697159d702a">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[8/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#afa48de8546ad8c80839a2697159d702a">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[7/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6396,7 +6372,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="a81905d7681e7da8a711f7f47c5c58010" name="a81905d7681e7da8a711f7f47c5c58010"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a81905d7681e7da8a711f7f47c5c58010">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[9/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a81905d7681e7da8a711f7f47c5c58010">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[8/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -6419,7 +6395,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </div>
 </div>
 <a id="a447bbb953a832bd45da3eaef39a7575c" name="a447bbb953a832bd45da3eaef39a7575c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a447bbb953a832bd45da3eaef39a7575c">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[10/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a447bbb953a832bd45da3eaef39a7575c">&#9670;&#160;</a></span>operator&lt;&lt;() <span class="overload">[9/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">

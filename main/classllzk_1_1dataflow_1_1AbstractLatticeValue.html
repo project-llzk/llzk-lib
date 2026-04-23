@@ -129,9 +129,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7274fb3c993a86717c7eaa6a59062ff5" id="r_a7274fb3c993a86717c7eaa6a59062ff5"><td class="memItemLeft" align="right" valign="top">ScalarTy &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7274fb3c993a86717c7eaa6a59062ff5">getScalarValue</a> ()</td></tr>
 <tr class="memitem:ad444c34dc1742e86f8522b350d726c79" id="r_ad444c34dc1742e86f8522b350d726c79"><td class="memItemLeft" align="right" valign="top">const ArrayTy &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad444c34dc1742e86f8522b350d726c79">getArrayValue</a> () const</td></tr>
 <tr class="memitem:ad96141e77b45c035d57c52de49bfa0c1" id="r_ad96141e77b45c035d57c52de49bfa0c1"><td class="memItemLeft" align="right" valign="top">ArrayTy &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad96141e77b45c035d57c52de49bfa0c1">getArrayValue</a> ()</td></tr>
-<tr class="memitem:ac815b90db5c85c3c882bf6db05df14f8" id="r_ac815b90db5c85c3c882bf6db05df14f8"><td class="memItemLeft" align="right" valign="top">const Derived &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac815b90db5c85c3c882bf6db05df14f8">getElemFlatIdx</a> (unsigned i) const</td></tr>
-<tr class="memdesc:ac815b90db5c85c3c882bf6db05df14f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Directly index into the flattened array using a single index.  <br /></td></tr>
-<tr class="memitem:a3a99b7436fcb89ac601746035d3b771e" id="r_a3a99b7436fcb89ac601746035d3b771e"><td class="memItemLeft" align="right" valign="top">Derived &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3a99b7436fcb89ac601746035d3b771e">getElemFlatIdx</a> (unsigned i)</td></tr>
+<tr class="memitem:ace20934ec6a717b0204bb1da2a9e523d" id="r_ace20934ec6a717b0204bb1da2a9e523d"><td class="memItemLeft" align="right" valign="top">const Derived &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ace20934ec6a717b0204bb1da2a9e523d">getElemFlatIdx</a> (size_t i) const</td></tr>
+<tr class="memdesc:ace20934ec6a717b0204bb1da2a9e523d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Directly index into the flattened array using a single index.  <br /></td></tr>
+<tr class="memitem:a43810996e43a929367bd7b3cafdfb20e" id="r_a43810996e43a929367bd7b3cafdfb20e"><td class="memItemLeft" align="right" valign="top">Derived &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a43810996e43a929367bd7b3cafdfb20e">getElemFlatIdx</a> (size_t i)</td></tr>
 <tr class="memitem:a2ce644e334055b2234ec6e77d44dbdf8" id="r_a2ce644e334055b2234ec6e77d44dbdf8"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2ce644e334055b2234ec6e77d44dbdf8">getArraySize</a> () const</td></tr>
 <tr class="memitem:a231f841347545fbcec675f4467f4716e" id="r_a231f841347545fbcec675f4467f4716e"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a231f841347545fbcec675f4467f4716e">getNumArrayDims</a> () const</td></tr>
 <tr class="memitem:af4576ce8a84418911dd53434ae639f79" id="r_af4576ce8a84418911dd53434ae639f79"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af4576ce8a84418911dd53434ae639f79">print</a> (mlir::raw_ostream &amp;os) const</td></tr>
@@ -515,8 +515,8 @@ template&lt;typename Derived, ScalarLatticeValue ScalarTy&gt; </div>
 
 </div>
 </div>
-<a id="a3a99b7436fcb89ac601746035d3b771e" name="a3a99b7436fcb89ac601746035d3b771e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3a99b7436fcb89ac601746035d3b771e">&#9670;&#160;</a></span>getElemFlatIdx() <span class="overload">[1/2]</span></h2>
+<a id="a43810996e43a929367bd7b3cafdfb20e" name="a43810996e43a929367bd7b3cafdfb20e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a43810996e43a929367bd7b3cafdfb20e">&#9670;&#160;</a></span>getElemFlatIdx() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -529,7 +529,7 @@ template&lt;typename Derived, ScalarLatticeValue ScalarTy&gt; </div>
         <tr>
           <td class="memname">Derived &amp; <a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">llzk::dataflow::AbstractLatticeValue</a>&lt; Derived, ScalarTy &gt;::getElemFlatIdx </td>
           <td>(</td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -544,8 +544,8 @@ template&lt;typename Derived, ScalarLatticeValue ScalarTy&gt; </div>
 
 </div>
 </div>
-<a id="ac815b90db5c85c3c882bf6db05df14f8" name="ac815b90db5c85c3c882bf6db05df14f8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac815b90db5c85c3c882bf6db05df14f8">&#9670;&#160;</a></span>getElemFlatIdx() <span class="overload">[2/2]</span></h2>
+<a id="ace20934ec6a717b0204bb1da2a9e523d" name="ace20934ec6a717b0204bb1da2a9e523d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace20934ec6a717b0204bb1da2a9e523d">&#9670;&#160;</a></span>getElemFlatIdx() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -558,7 +558,7 @@ template&lt;typename Derived, ScalarLatticeValue ScalarTy&gt; </div>
         <tr>
           <td class="memname">const Derived &amp; <a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">llzk::dataflow::AbstractLatticeValue</a>&lt; Derived, ScalarTy &gt;::getElemFlatIdx </td>
           <td>(</td>
-          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
           <td> const</td>
         </tr>
       </table>

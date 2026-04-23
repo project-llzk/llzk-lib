@@ -2,8 +2,7 @@ var hierarchy =
 [
     [ "mlir::dataflow::AbstractDenseLattice", null, [
       [ "llzk::MemberOverwriteLattice", "classllzk_1_1MemberOverwriteLattice.html", null ],
-      [ "llzk::PredecessorLattice", "classllzk_1_1PredecessorLattice.html", null ],
-      [ "llzk::SourceRefLattice", "classllzk_1_1SourceRefLattice.html", null ]
+      [ "llzk::PredecessorLattice", "classllzk_1_1PredecessorLattice.html", null ]
     ] ],
     [ "llzk::dataflow::AbstractLatticeValue< Derived, ScalarTy >", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", null ],
     [ "llzk::dataflow::AbstractLatticeValue< IntervalAnalysisLatticeValue, ExpressionValue >", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", [
@@ -13,7 +12,8 @@ var hierarchy =
       [ "llzk::SourceRefLatticeValue", "classllzk_1_1SourceRefLatticeValue.html", null ]
     ] ],
     [ "dataflow::AbstractSparseLattice", null, [
-      [ "llzk::IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", null ]
+      [ "llzk::IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", null ],
+      [ "llzk::SourceRefLattice", "classllzk_1_1SourceRefLattice.html", null ]
     ] ],
     [ "llzk::felt::detail::AddFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1AddFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::AddFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1AddFeltOpGenericAdaptor.html", null ],
@@ -409,8 +409,12 @@ var hierarchy =
     ] ],
     [ "mlir::DataFlowAnalysis", null, [
       [ "llzk::dataflow::AbstractSparseForwardDataFlowAnalysis", "classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html", [
+        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< Lattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ],
         [ "llzk::dataflow::SparseForwardDataFlowAnalysis< IntervalAnalysisLattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", [
           [ "llzk::IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", null ]
+        ] ],
+        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< SourceRefLattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", [
+          [ "llzk::SourceRefAnalysis", "classllzk_1_1SourceRefAnalysis.html", null ]
         ] ],
         [ "llzk::dataflow::SparseForwardDataFlowAnalysis< StateT >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ]
       ] ]
@@ -432,8 +436,7 @@ var hierarchy =
     ] ],
     [ "mlir::dataflow::DenseForwardDataFlowAnalysis", null, [
       [ "llzk::MemberOverwriteAnalysis", "classllzk_1_1MemberOverwriteAnalysis.html", null ],
-      [ "llzk::PredecessorAnalysis", "classllzk_1_1PredecessorAnalysis.html", null ],
-      [ "llzk::SourceRefAnalysis", "classllzk_1_1SourceRefAnalysis.html", null ]
+      [ "llzk::PredecessorAnalysis", "classllzk_1_1PredecessorAnalysis.html", null ]
     ] ],
     [ "llvm::DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
     [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", null ],

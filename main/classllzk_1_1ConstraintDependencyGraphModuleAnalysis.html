@@ -129,13 +129,12 @@ Collaboration diagram for llzk::ConstraintDependencyGraphModuleAnalysis:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a08fa189874513fd483a22d84c98145ea" id="r_a08fa189874513fd483a22d84c98145ea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a08fa189874513fd483a22d84c98145ea">ConstraintDependencyGraphModuleAnalysis</a> (mlir::Operation *op)</td></tr>
 <tr class="memitem:a5bfd892b8a4444a352457042a26412a7" id="r_a5bfd892b8a4444a352457042a26412a7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5bfd892b8a4444a352457042a26412a7">~ConstraintDependencyGraphModuleAnalysis</a> () override=default</td></tr>
 <tr class="memitem:a68f0cbbbc4a9ccc70b183d6143735c6b" id="r_a68f0cbbbc4a9ccc70b183d6143735c6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a68f0cbbbc4a9ccc70b183d6143735c6b">setIntraprocedural</a> (bool runIntraprocedural)</td></tr>
-<tr class="memitem:a2c8ae3c9dc09a722fd4f9637a0581ef9" id="r_a2c8ae3c9dc09a722fd4f9637a0581ef9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2c8ae3c9dc09a722fd4f9637a0581ef9">ModuleAnalysis</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:a2c8ae3c9dc09a722fd4f9637a0581ef9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asserts that the analysis is being run on a <span class="tt">ModuleOp</span>.  <br /></td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1ModuleAnalysis"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllzk_1_1ModuleAnalysis')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Member Functions inherited from <a class="el" href="classllzk_1_1ModuleAnalysis.html">llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;</a></td></tr>
-<tr class="memitem:a2c8ae3c9dc09a722fd4f9637a0581ef9 inherit pub_methods_classllzk_1_1ModuleAnalysis" id="r_a2c8ae3c9dc09a722fd4f9637a0581ef9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleAnalysis.html#a2c8ae3c9dc09a722fd4f9637a0581ef9">ModuleAnalysis</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:a2c8ae3c9dc09a722fd4f9637a0581ef9 inherit pub_methods_classllzk_1_1ModuleAnalysis"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asserts that the analysis is being run on a <span class="tt">ModuleOp</span>.  <br /></td></tr>
+<tr class="memitem:aed232eafd07e6a7acc193f859ecc145c inherit pub_methods_classllzk_1_1ModuleAnalysis" id="r_aed232eafd07e6a7acc193f859ecc145c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleAnalysis.html#aed232eafd07e6a7acc193f859ecc145c">ModuleAnalysis</a> (mlir::Operation *op, const mlir::DataFlowConfig &amp;config=mlir::DataFlowConfig())</td></tr>
+<tr class="memdesc:aed232eafd07e6a7acc193f859ecc145c inherit pub_methods_classllzk_1_1ModuleAnalysis"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asserts that the analysis is being run on a <span class="tt">ModuleOp</span>.  <br /></td></tr>
 <tr class="memitem:a2edcea80d80f13a128719b561dd5f082 inherit pub_methods_classllzk_1_1ModuleAnalysis" id="r_a2edcea80d80f13a128719b561dd5f082"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleAnalysis.html#a2edcea80d80f13a128719b561dd5f082">~ModuleAnalysis</a> ()=default</td></tr>
 <tr class="memitem:a65543d467e67daa76e29d2edbd5b8089 inherit pub_methods_classllzk_1_1ModuleAnalysis" id="r_a65543d467e67daa76e29d2edbd5b8089"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleAnalysis.html#a65543d467e67daa76e29d2edbd5b8089">runAnalysis</a> (mlir::AnalysisManager &amp;am)</td></tr>
 <tr class="memdesc:a65543d467e67daa76e29d2edbd5b8089 inherit pub_methods_classllzk_1_1ModuleAnalysis"><td class="mdescLeft">&#160;</td><td class="mdescRight">Run the <span class="tt">StructAnalysisTy</span> struct analysis on all child structs.  <br /></td></tr>
@@ -169,8 +168,35 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A module-level analysis for constructing <a class="el" href="classllzk_1_1ConstraintDependencyGraph.html" title="A dependency graph of constraints enforced by an LLZK struct.">ConstraintDependencyGraph</a> objects for all structs in the given LLZK module. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00249">249</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00251">251</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a08fa189874513fd483a22d84c98145ea" name="a08fa189874513fd483a22d84c98145ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a08fa189874513fd483a22d84c98145ea">&#9670;&#160;</a></span>ConstraintDependencyGraphModuleAnalysis()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llzk::ConstraintDependencyGraphModuleAnalysis::ConstraintDependencyGraphModuleAnalysis </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00259">259</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+
+</div>
+</div>
 <a id="a5bfd892b8a4444a352457042a26412a7" name="a5bfd892b8a4444a352457042a26412a7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5bfd892b8a4444a352457042a26412a7">&#9670;&#160;</a></span>~ConstraintDependencyGraphModuleAnalysis()</h2>
 
@@ -225,7 +251,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a7c526fe089c335516927f44f6d16fd82">llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00264">264</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00271">271</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -262,37 +288,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a611afa38b4248519d6284c5adc643099">llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00262">262</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
-
-</div>
-</div>
-<a id="a2c8ae3c9dc09a722fd4f9637a0581ef9" name="a2c8ae3c9dc09a722fd4f9637a0581ef9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c8ae3c9dc09a722fd4f9637a0581ef9">&#9670;&#160;</a></span>ModuleAnalysis()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1ModuleAnalysis.html">llzk::ModuleAnalysis</a>&lt; Result, Context, StructAnalysisTy &gt;::ModuleAnalysis </td>
-          <td>(</td>
-          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Asserts that the analysis is being run on a <span class="tt">ModuleOp</span>. </p>
-<dl class="section note"><dt>Note</dt><dd>Derived classes may also use the <span class="tt">Analysis(mlir::Operation*, mlir::AnalysisManager&amp;)</span> constructor that is allowed by classes that are constructed using the <span class="tt">AnalysisManager::getAnalysis&lt;Analysis&gt;()</span> method. </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="AnalysisWrappers_8h_source.html#l00154">154</a> of file <a class="el" href="AnalysisWrappers_8h_source.html">AnalysisWrappers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00269">269</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -319,7 +315,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00257">257</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00264">264</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
