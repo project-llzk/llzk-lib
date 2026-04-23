@@ -146,4 +146,103 @@ module attributes {llzk.lang = "circom"} {
     }
   }
 }
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+//
 // CHECK-LABEL: module attributes {llzk.lang = "circom"} {
+// CHECK-NEXT:    poly.template @TA {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @A {
+// CHECK-NEXT:        struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TA::@A<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TA::@A<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@out] = %[[VAL_0]] : <@TA::@A<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TA::@A<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TA::@A<[@N]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@out] : <@TA::@A<[@N]>>, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_4]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TB {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @EN {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_5]], %[[VAL_6]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_7]] -> (!felt.type) {
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_9]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        poly.yield %[[VAL_8]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.expr @E0 {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_10]], %[[VAL_11]]) : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_12]] -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_14]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_11]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        poly.yield %[[VAL_13]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @B {
+// CHECK-NEXT:        struct.member @a : !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TB::@B<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@TB::@B<[@N]>>
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_16]], %[[VAL_18]]) : !felt.type, !felt.type
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_21]] -> (!struct.type<@TA::@A<[#[[$ATTR_0]]]>>) {
+// CHECK-NEXT:            %[[VAL_23:[0-9a-zA-Z_\.]+]] = function.call @TA::@A::@compute(%[[VAL_19]]) : (!felt.type) -> !struct.type<@TA::@A<[@EN]>>
+// CHECK-NEXT:            %[[VAL_24:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_23]] : (!struct.type<@TA::@A<[@EN]>>) -> !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:            scf.yield %[[VAL_24]] : !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            %[[VAL_25:[0-9a-zA-Z_\.]+]] = function.call @TA::@A::@compute(%[[VAL_19]]) : (!felt.type) -> !struct.type<@TA::@A<[@E0]>>
+// CHECK-NEXT:            %[[VAL_26:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_25]] : (!struct.type<@TA::@A<[@E0]>>) -> !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:            scf.yield %[[VAL_26]] : !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          struct.writem %[[VAL_15]][@a] = %[[VAL_22]] : <@TB::@B<[@N]>>, !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          %[[VAL_27:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_22]][@out] : <@TA::@A<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_15]][@out] = %[[VAL_27]] : <@TB::@B<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_15]] : !struct.type<@TB::@B<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_28:[0-9a-zA-Z_\.]+]]: !struct.type<@TB::@B<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_29:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_28]][@a] : <@TB::@B<[@N]>>, !struct.type<@TA::@A<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:          %[[VAL_30:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_28]][@out] : <@TB::@B<[@N]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_31:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:          %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          %[[VAL_34:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          %[[VAL_35:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          function.call @TA::@A::@constrain(%[[VAL_29]], %[[VAL_34]]) : (!struct.type<@TA::@A<[#[[$ATTR_0]]]>>, !felt.type) -> ()
+// CHECK-NEXT:          %[[VAL_36:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_29]][@out] : <@TA::@A<[#[[$ATTR_0]]]>>, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_30]], %[[VAL_36]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @sub : !struct.type<@TB::@B<[1]>>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = function.call @TB::@B::@compute() : () -> !struct.type<@TB::@B<[1]>>
+// CHECK-NEXT:        struct.writem %[[VAL_37]][@sub] = %[[VAL_38]] : <@Main>, !struct.type<@TB::@B<[1]>>
+// CHECK-NEXT:        function.return %[[VAL_37]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@sub] : <@Main>, !struct.type<@TB::@B<[1]>>
+// CHECK-NEXT:        function.call @TB::@B::@constrain(%[[VAL_40]]) : (!struct.type<@TB::@B<[1]>>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
