@@ -1,5 +1,15 @@
 var NAVTREEINDEX69 =
 {
+"dialects.html#parameters-3":[7,4,1,1,0],
+"dialects.html#parameters-4":[7,4,2,0,0],
+"dialects.html#parameters-5":[7,8,1,0,0],
+"dialects.html#parameters-6":[7,9,1,0,0],
+"dialects.html#parameters-7":[7,9,2,0,0],
+"dialects.html#parameters-8":[7,10,1,0,0],
+"dialects.html#parameters-9":[7,12,1,0,0],
+"dialects.html#pod-dialect":[7,9],
+"dialects.html#podnew-llzkpodnewpodop":[7,9,0,0],
+"dialects.html#podread-llzkpodreadpodop":[7,9,0,1],
 "dialects.html#podtype":[7,9,2,0],
 "dialects.html#podwrite-llzkpodwritepodop":[7,9,0,2],
 "dialects.html#poly-dialect":[7,10],
@@ -239,15 +249,5 @@ var NAVTREEINDEX69 =
 "functions_func_o.html":[12,3,1,13],
 "functions_func_p.html":[12,3,1,14],
 "functions_func_r.html":[12,3,1,15],
-"functions_func_s.html":[12,3,1,16],
-"functions_func_t.html":[12,3,1,17],
-"functions_func_u.html":[12,3,1,18],
-"functions_func_v.html":[12,3,1,19],
-"functions_func_w.html":[12,3,1,20],
-"functions_func_x.html":[12,3,1,21],
-"functions_func_y.html":[12,3,1,22],
-"functions_func_z.html":[12,3,1,23],
-"functions_func_~.html":[12,3,1,24],
-"functions_g.html":[12,3,0,7],
-"functions_h.html":[12,3,0,8]
+"functions_func_s.html":[12,3,1,16]
 };

@@ -105,6 +105,8 @@ $(function(){initNavTree('llzk-opt_8cpp.html','',''); });
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">llzk-opt.cpp File Reference</div></div>
 </div><!--header-->
@@ -131,6 +133,7 @@ $(function(){initNavTree('llzk-opt_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="LLZKValidationPasses_8h_source.html">llzk/Validators/LLZKValidationPasses.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</code><br />
+<code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
 <code>#include &lt;mlir/IR/DialectRegistry.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassManager.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassRegistry.h&gt;</code><br />
@@ -143,11 +146,20 @@ $(function(){initNavTree('llzk-opt_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for llzk-opt.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-opt_8cpp__incl.svg" width="5379" height="443"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-opt_8cpp__incl.svg" width="5432" height="443"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="llzk-opt_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:mlir_5Fhotfix_3A_3ARemoveDeadValuesWorkaroundPass" id="r_mlir_5Fhotfix_3A_3ARemoveDeadValuesWorkaroundPass"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html">mlir_hotfix::RemoveDeadValuesWorkaroundPass</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:mlir_5Fhotfix" id="r_mlir_5Fhotfix"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacemlir__hotfix.html">mlir_hotfix</a></td></tr>
+<tr class="memdesc:namespacemlir__hotfix"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace <span class="tt">mlir::registerTransformsPasses()</span> to register a custom <span class="tt">remove-dead-values</span> pass because MLIR version 20 has a bug in that pass which causes an assertion failure when it encounters an <span class="tt">scf.if</span> op with an empty else region. <br /></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a3c04138a5bfe5d72780bb7e82a18e627" id="r_a3c04138a5bfe5d72780bb7e82a18e627"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3c04138a5bfe5d72780bb7e82a18e627">main</a> (int argc, char **argv)</td></tr>
@@ -176,7 +188,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00064">64</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00144">144</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
 
 </div>
 </div>

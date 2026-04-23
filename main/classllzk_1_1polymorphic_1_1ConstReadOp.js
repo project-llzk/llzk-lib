@@ -8,6 +8,7 @@ var classllzk_1_1polymorphic_1_1ConstReadOp =
     [ "getConstName", "classllzk_1_1polymorphic_1_1ConstReadOp.html#afb49a5ca979290269b6a9570bf32f7fb", null ],
     [ "getConstNameAttr", "classllzk_1_1polymorphic_1_1ConstReadOp.html#abed6b0d779f50d634cfdf4b08249a8f8", null ],
     [ "getConstNameAttrName", "classllzk_1_1polymorphic_1_1ConstReadOp.html#a60f8639261fe1fabfca7323f9219a372", null ],
+    [ "getEffects", "classllzk_1_1polymorphic_1_1ConstReadOp.html#aa51e2a78dc5bbe93c1f53cb56a8ac9b8", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1polymorphic_1_1ConstReadOp.html#a25cac0454f5e63acbdcb43fd4a3728c3", null ],
     [ "getODSOperands", "classllzk_1_1polymorphic_1_1ConstReadOp.html#a2c86dccb90439bfc1f068886d1ed2ac6", null ],
     [ "getODSResultIndexAndLength", "classllzk_1_1polymorphic_1_1ConstReadOp.html#aa0cfdab5c1adfb6d8f557e97dbc6f9b3", null ],

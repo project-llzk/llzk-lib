@@ -752,6 +752,9 @@ var annotated_dup =
       [ "FieldParser<::llzk::smt::BVCmpPredicate, ::llzk::smt::BVCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1BVCmpPredicate_00_01_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
       [ "FieldParser<::llzk::smt::IntPredicate, ::llzk::smt::IntPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1IntPredicate_00_01_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ]
     ] ],
+    [ "mlir_hotfix", "namespacemlir__hotfix.html", [
+      [ "RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass" ]
+    ] ],
     [ "std", null, [
       [ "hash< llzk::CDGAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4" ],
       [ "hash< llzk::IntervalAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4.html", "structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4" ]

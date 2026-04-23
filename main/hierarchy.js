@@ -1066,6 +1066,9 @@ var hierarchy =
     [ "PassPipelineOptions", null, [
       [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", null ]
     ] ],
+    [ "mlir::PassWrapper", null, [
+      [ "mlir_hotfix::RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", null ]
+    ] ],
     [ "llzk::PolyLoweringPassOptions", "structllzk_1_1PolyLoweringPassOptions.html", null ],
     [ "llzk::smt::detail::PopOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase.html", [
       [ "llzk::smt::PopOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1PopOpGenericAdaptor.html", null ],
