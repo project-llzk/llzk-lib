@@ -46,9 +46,11 @@ def LLZK_NonDetOp
     %0 = llzk.nondet : !felt.type
     ```
 
-    Note that `llzk.nondet` is not `ConstantLike` or `Pure` because different SSA
-    variables initialized with `llzk.nondet` may be constrained in different ways
-    so they cannot be treated as identical values.
+    Note that `llzk.nondet` does not have the `ConstantLike` or `NoMemoryEffect`
+    traits because different SSA variables initialized with `llzk.nondet` may be
+    constrained in different ways so they cannot be treated as identical values.
+    However, it does have the `AlwaysSpeculatable` trait to denote that it is
+    free to move, hoist, and sick without changing the semantics.
 
     Example:
 
