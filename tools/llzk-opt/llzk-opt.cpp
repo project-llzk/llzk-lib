@@ -16,6 +16,7 @@
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
 #include "r1cs/Transforms/TransformationPasses.h"
+#include "smt/Conversions/ConversionPasses.h"
 #include "tools/config.h"
 #include "zklean/Conversions/Passes.h"
 #include "zklean/DialectRegistration.h"
@@ -31,6 +32,8 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
+#include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
+#include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
@@ -76,6 +79,7 @@ int main(int argc, char **argv) {
   llzk::registerAllDialects(registry);
   r1cs::registerAllDialects(registry);
   zklean::registerAllDialects(registry);
+  mlir::func::registerInlinerExtension(registry);
 #if LLZK_WITH_PCL
   pcl::registerAllDialects(registry);
 #endif // LLZK_WITH_PCL
@@ -96,6 +100,7 @@ int main(int argc, char **argv) {
 
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
+  llzk::smt::registerConversionPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

@@ -12,6 +12,7 @@
 #include "CAPITestBase.h"
 
 #include <mlir-c/BuiltinAttributes.h>
+#include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
 
 #include <llvm/ADT/ArrayRef.h>
@@ -109,6 +110,69 @@ TEST_F(CAPITest, MlirOperationWalkReverse) {
   EXPECT_TRUE(mlirOperationEqual(visitedOps[3], const1));
   // Clean up
   mlirOperationDestroy(parentOp);
+}
+
+TEST_F(CAPITest, LlzkSymbolTableInsert) {
+  MlirOperationState moduleState = mlirOperationStateGet(
+      mlirStringRefCreateFromCString("builtin.module"), mlirLocationUnknownGet(context)
+  );
+  MlirRegion moduleRegion = mlirRegionCreate();
+  MlirBlock moduleBlock = mlirBlockCreate(0, nullptr, nullptr);
+  mlirRegionAppendOwnedBlock(moduleRegion, moduleBlock);
+  mlirOperationStateAddOwnedRegions(&moduleState, 1, &moduleRegion);
+  MlirOperation moduleOp = mlirOperationCreate(&moduleState);
+
+  MlirOperationState symbolState1 = mlirOperationStateGet(
+      mlirStringRefCreateFromCString("func.func"), mlirLocationUnknownGet(context)
+  );
+  MlirNamedAttribute symName1 = mlirNamedAttributeGet(
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("sym_name")),
+      mlirStringAttrGet(context, mlirStringRefCreateFromCString("foo"))
+  );
+  MlirType funcType = mlirFunctionTypeGet(context, 0, nullptr, 0, nullptr);
+  MlirNamedAttribute funcTypeAttr1 = mlirNamedAttributeGet(
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("function_type")),
+      mlirTypeAttrGet(funcType)
+  );
+  MlirNamedAttribute symbolAttrs1[2] = {symName1, funcTypeAttr1};
+  mlirOperationStateAddAttributes(&symbolState1, 2, symbolAttrs1);
+  MlirRegion symbolRegion1 = mlirRegionCreate();
+  MlirBlock symbolBlock1 = mlirBlockCreate(0, nullptr, nullptr);
+  mlirRegionAppendOwnedBlock(symbolRegion1, symbolBlock1);
+  mlirOperationStateAddOwnedRegions(&symbolState1, 1, &symbolRegion1);
+  MlirOperation symbol1 = mlirOperationCreate(&symbolState1);
+  mlirBlockAppendOwnedOperation(moduleBlock, symbol1);
+
+  MlirOperationState symbolState2 = mlirOperationStateGet(
+      mlirStringRefCreateFromCString("func.func"), mlirLocationUnknownGet(context)
+  );
+  MlirNamedAttribute symName2 = mlirNamedAttributeGet(
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("sym_name")),
+      mlirStringAttrGet(context, mlirStringRefCreateFromCString("foo"))
+  );
+  MlirNamedAttribute funcTypeAttr2 = mlirNamedAttributeGet(
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("function_type")),
+      mlirTypeAttrGet(funcType)
+  );
+  MlirNamedAttribute symbolAttrs2[2] = {symName2, funcTypeAttr2};
+  mlirOperationStateAddAttributes(&symbolState2, 2, symbolAttrs2);
+  MlirRegion symbolRegion2 = mlirRegionCreate();
+  MlirBlock symbolBlock2 = mlirBlockCreate(0, nullptr, nullptr);
+  mlirRegionAppendOwnedBlock(symbolRegion2, symbolBlock2);
+  mlirOperationStateAddOwnedRegions(&symbolState2, 1, &symbolRegion2);
+  MlirOperation symbol2 = mlirOperationCreate(&symbolState2);
+
+  llzkSymbolTableInsert(moduleOp, symbol2);
+
+  EXPECT_TRUE(mlirOperationEqual(mlirOperationGetParentOperation(symbol2), moduleOp));
+  MlirAttribute insertedNameAttr =
+      mlirOperationGetAttributeByName(symbol2, mlirStringRefCreateFromCString("sym_name"));
+  EXPECT_TRUE(mlirAttributeIsAString(insertedNameAttr));
+  EXPECT_FALSE(mlirStringRefEqual(
+      mlirStringAttrGetValue(insertedNameAttr), mlirStringRefCreateFromCString("foo")
+  ));
+
+  mlirOperationDestroy(moduleOp);
 }
 
 class LlzkAffineMapOperandsBuilderTests : public ::testing::Test {

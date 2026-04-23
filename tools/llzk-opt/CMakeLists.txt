@@ -3,8 +3,10 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       LLZK::DialectRegistration R1CS::DialectRegistration
                       LLZKDialectHeaders MLIRIR R1CSDialectHeaders
                       LLZKUtil LLZKAnalysis LLZKValidators LLZKTransforms R1CSTransforms
+                      SMTConversions SMTDialectHeaders
                       ZKLean::DialectRegistration ZKLeanDialectHeaders
 		                  ZKLeanTransforms ZKLean::Conversions
+                      MLIRFuncDialect MLIRFuncInlinerExtension
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvDialectHeaders>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLTransforms>

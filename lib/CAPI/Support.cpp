@@ -21,6 +21,7 @@
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/Iterators.h>
+#include <mlir/IR/SymbolTable.h>
 
 #include <cstdint>
 #include <cstring>
@@ -75,6 +76,11 @@ void mlirOperationWalkReverse(
       return unwrap(callback(wrap(op), userData));
     });
   }
+}
+
+void llzkSymbolTableInsert(MlirOperation symTableOp, MlirOperation newSymbolOp) {
+  SymbolTableCollection symTables;
+  symTables.getSymbolTable(unwrap(symTableOp)).insert(unwrap(newSymbolOp));
 }
 
 //===----------------------------------------------------------------------===//
