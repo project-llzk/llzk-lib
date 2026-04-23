@@ -223,8 +223,8 @@ def LLZK_YieldOp
 }
 
 def LLZK_ConstReadOp
-    : PolymorphicDialectOp<
-          "read_const", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    : PolymorphicDialectOp<"read_const", [Pure, DeclareOpInterfaceMethods<
+                                                    SymbolUserOpInterface>]> {
   let summary = "read value of a struct parameter";
   let description = [{
     This operation reads the value from the named constant parameter of
