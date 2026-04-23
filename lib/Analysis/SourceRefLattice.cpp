@@ -105,7 +105,7 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
     }
     std::vector<int64_t> newArrayDims;
     size_t chunkSz = 1;
-    for (unsigned i = indices.size(); i < getNumArrayDims(); i++) {
+    for (size_t i = indices.size(); i < getNumArrayDims(); i++) {
       auto dim = getArrayDim(i);
       newArrayDims.push_back(dim);
       chunkSz *= dim;

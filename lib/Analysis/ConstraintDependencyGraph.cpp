@@ -221,7 +221,7 @@ void SourceRefAnalysis::visitExternalCall(
   const auto returnSites = predecessors->getKnownPredecessors();
 
   std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
-  for (size_t i = 0; i < funcOp.getNumArguments(); i++) {
+  for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
     translation[SourceRef(funcOp.getArgument(i))] =
         static_cast<const Lattice *>(operandLattices[i])->getValue();
   }
