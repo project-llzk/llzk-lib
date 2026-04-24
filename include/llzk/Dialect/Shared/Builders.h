@@ -328,9 +328,8 @@ public:
 
   TemplateBuilder &
   insertParam(std::string_view name, mlir::Location loc, mlir::TypeAttr type = {}) {
-
     mlir::OpBuilder builder(context);
-
+    
     auto &region = getBodyRegion();
     if (region.empty()) {
       region.emplaceBlock();
@@ -350,7 +349,6 @@ public:
   }
 
   TemplateBuilder &insertExpr(std::string_view name, mlir::Location loc) {
-
     mlir::OpBuilder builder(context);
 
     auto &region = getBodyRegion();
