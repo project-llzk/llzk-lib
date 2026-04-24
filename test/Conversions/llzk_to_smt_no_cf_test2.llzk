@@ -1,0 +1,37 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !felt.type
+        function.def @product(%a: !felt.type, %b: !felt.type) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+
+            %0 = felt.const 0
+            %lt = bool.cmp lt (%a, %0)
+            %1 = scf.if %lt -> !felt.type {
+                scf.yield %a : !felt.type
+                
+            } else {
+                scf.yield %b : !felt.type
+            }
+
+            struct.writem %self[@foo] = %1 : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int, %[[B:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK-DAG: %[[FOOW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "foo_w" : !smt.int
+// CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[CMP:[0-9a-zA-Z_\.]+]] = smt.int.cmp lt %[[A]], %[[ZERO]]
+// CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[CMP]] : !smt.bool to i1
+// CHECK: %[[SEL:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!smt.int) {
+// CHECK:   scf.yield %[[A]] : !smt.int
+// CHECK: } else {
+// CHECK:   scf.yield %[[B]] : !smt.int
+// CHECK: }
+// CHECK: %[[MOD:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// CHECK: smt.assert
+// CHECK: return

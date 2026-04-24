@@ -416,9 +416,8 @@ private:
   /// are currently tracking the same storage location.
   void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
 
-  /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
-  /// if `val` has no associated SourceRefLattice.
-  const SourceRefLattice *getSourceRefLattice(mlir::Operation *baseOp, mlir::Value val);
+  /// @brief Get the SourceRef state that defines `val`.
+  SourceRefLatticeValue getSourceRefState(mlir::Value val);
 };
 
 /* StructIntervals */
@@ -546,7 +545,9 @@ class ModuleIntervalAnalysis
     : public ModuleAnalysis<StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis> {
 
 public:
-  ModuleIntervalAnalysis(mlir::Operation *op) : ModuleAnalysis(op), ctx {} {
+  // We set intraprocedural to false for the sake of the SourceRefAnalysis
+  ModuleIntervalAnalysis(mlir::Operation *op)
+      : ModuleAnalysis(op, mlir::DataFlowConfig().setInterprocedural(false)), ctx {} {
     ctx.smtSolver = llvm::CreateZ3Solver();
   }
   ~ModuleIntervalAnalysis() override = default;

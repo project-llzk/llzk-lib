@@ -11,6 +11,7 @@
 
 #include "llzk/Analysis/AbstractLatticeValue.h"
 #include "llzk/Analysis/SourceRef.h"
+#include "llzk/Analysis/SparseAnalysis.h"
 #include "llzk/Util/ErrorHelper.h"
 
 #include <mlir/Analysis/DataFlow/DenseAnalysis.h>
@@ -88,18 +89,14 @@ protected:
   ) const;
 };
 
-/// A lattice for use in dense analysis.
-class SourceRefLattice : public mlir::dataflow::AbstractDenseLattice {
+/// Sparse SSA-value lattice for SourceRef propagation.
+class SourceRefLattice : public dataflow::AbstractSparseLattice {
 public:
+  using LatticeValue = SourceRefLatticeValue;
   // mlir::Value is used for read-like operations that create references in their results,
   // mlir::Operation* is used for write-like operations that reference values as their destinations
   using ValueTy = llvm::PointerUnion<mlir::Value, mlir::Operation *>;
-  using ValueMap = mlir::DenseMap<ValueTy, SourceRefLatticeValue>;
-  // Used to lookup MLIR values/operations from a given SourceRef (all values that a ref is
-  // referenced by)
-  using ValueSet = mlir::DenseSet<ValueTy>;
   using Ref2Val = mlir::DenseMap<SourceRef, mlir::DenseSet<ValueTy>>;
-  using AbstractDenseLattice::AbstractDenseLattice;
 
   /* Static utilities */
 
@@ -108,52 +105,21 @@ public:
   /// return failure.
   /// Our lattice values must originate from somewhere.
   static mlir::FailureOr<SourceRef> getSourceRef(mlir::Value val);
+  static SourceRefLatticeValue getDefaultValue(ValueTy v);
 
-  /* Required methods */
+  using AbstractSparseLattice::AbstractSparseLattice;
 
-  /// Maximum upper bound
-  mlir::ChangeResult join(const AbstractDenseLattice &rhs) override {
-    return setValues(static_cast<const SourceRefLattice &>(rhs).valMap);
-  }
-
-  /// Minimum lower bound
-  mlir::ChangeResult meet(const AbstractDenseLattice & /*rhs*/) override {
-    llvm::report_fatal_error("meet operation is not supported for SourceRefLattice");
-    return mlir::ChangeResult::NoChange;
-  }
-
+  mlir::ChangeResult join(const AbstractSparseLattice &rhs) override;
+  mlir::ChangeResult meet(const AbstractSparseLattice &rhs) override;
   void print(mlir::raw_ostream &os) const override;
 
-  /* Update utility methods */
+  const LatticeValue &getValue() const { return value; }
 
-  mlir::ChangeResult setValues(const ValueMap &rhs);
-
-  mlir::ChangeResult setValue(ValueTy v, const SourceRefLatticeValue &rhs);
-
-  mlir::ChangeResult setValue(ValueTy v, const SourceRef &ref);
-
-  SourceRefLatticeValue getOrDefault(ValueTy v) const;
-
-  SourceRefLatticeValue getReturnValue(unsigned i) const;
-
-  ValueSet lookupValues(const SourceRef &r) const;
-
-  size_t size() const { return valMap.size(); }
-
-  const ValueMap &getMap() const { return valMap; }
-
-  const Ref2Val &getRef2Val() const { return refMap; }
-
-  ValueMap::iterator begin() { return valMap.begin(); }
-  ValueMap::iterator end() { return valMap.end(); }
-  ValueMap::const_iterator begin() const { return valMap.begin(); }
-  ValueMap::const_iterator end() const { return valMap.end(); }
-
-  friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRefLattice &v);
+  mlir::ChangeResult setValue(const LatticeValue &newValue);
+  mlir::ChangeResult setValue(const SourceRef &ref);
 
 private:
-  ValueMap valMap;
-  Ref2Val refMap;
+  LatticeValue value;
 };
 
 } // namespace llzk

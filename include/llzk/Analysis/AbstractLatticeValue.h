@@ -125,14 +125,14 @@ public:
   }
 
   /// @brief Directly index into the flattened array using a single index.
-  const Derived &getElemFlatIdx(unsigned i) const {
+  const Derived &getElemFlatIdx(size_t i) const {
     ensure(isArray() && !isDynamicArray(), "not a static array value");
     auto &arr = getArrayValue();
     ensure(i < arr.size(), "index out of range");
     return *arr.at(i);
   }
 
-  Derived &getElemFlatIdx(unsigned i) {
+  Derived &getElemFlatIdx(size_t i) {
     ensure(isArray() && !isDynamicArray(), "not a static array value");
     auto &arr = getArrayValue();
     ensure(i < arr.size(), "index out of range");

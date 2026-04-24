@@ -219,10 +219,10 @@ private:
   const DenseMap<Attribute, Attribute> &paramNameToValue;
 
   SymbolUserHelper(
-      TypeConverter &converter, MLIRContext *ctx, unsigned benefit,
+      TypeConverter &converter, MLIRContext *ctx, unsigned patternBenefit,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
   )
-      : OpConversionPattern<Op>(converter, ctx, benefit),
+      : OpConversionPattern<Op>(converter, ctx, patternBenefit),
         paramNameToValue(paramNameToInstantiatedValue) {}
 
 public:
@@ -274,7 +274,7 @@ public:
       SmallVector<Diagnostic> &instantiationDiagnostics
   )
       // benefit>0 so this applies instead of GeneralTypeReplacePattern<ConstReadOp>
-      : super(converter, ctx, /*benefit=*/1, paramNameToInstantiatedValue),
+      : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue),
         diagnostics(instantiationDiagnostics) {}
 
   Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
@@ -553,7 +553,7 @@ class StructCloner {
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
         // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberReadOp>
-        : super(converter, ctx, /*benefit=*/1, paramNameToInstantiatedValue) {}
+        : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue) {}
 
     Attribute getNameAttr(MemberReadOp op) const override {
       return op.getTableOffset().value_or(nullptr);

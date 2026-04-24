@@ -1,0 +1,47 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=A' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"babybear">
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        
+        struct.member @sum : !F {llzk.pub}
+        struct.member @diff: !F {llzk.pub}
+
+        function.def @compute(%a: !F, %b: !F) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            %sum = felt.add %a, %b : !F, !F
+            %diff = felt.sub %a, %b: !F, !F
+            struct.writem %self[@sum] = %sum : <@A>, !F
+            struct.writem %self[@diff] = %diff : <@A>, !F
+            function.return %self : !struct.type<@A>
+        }
+        function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F) {
+            %sum = struct.readm %self[@sum] : <@A>, !F
+            %diff = struct.readm %self[@diff] : <@A>, !F
+
+            %sum_ab = felt.add %a, %b : !F, !F
+            %diff_ab = felt.sub %a, %b : !F, !F
+
+            constrain.eq %sum, %sum_ab : !F
+            constrain.eq %diff, %diff_ab : !F
+
+            function.return
+        }
+    }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int, %[[B:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK-DAG: %[[SUMC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "sum_c" : !smt.int
+// CHECK-DAG: %[[SUMW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "sum_w" : !smt.int
+// CHECK-DAG: %[[DIFFC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "diff_c" : !smt.int
+// CHECK-DAG: %[[DIFFW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "diff_w" : !smt.int
+// CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[A]], %[[B]]
+// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[A]], %[[B]]
+// CHECK: smt.assert
+// CHECK: smt.assert
+// CHECK: %[[SUM2:[0-9a-zA-Z_\.]+]] = smt.int.add %[[A]], %[[B]]
+// CHECK: %[[DIFF2:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[A]], %[[B]]
+// CHECK: smt.assert
+// CHECK: smt.assert
