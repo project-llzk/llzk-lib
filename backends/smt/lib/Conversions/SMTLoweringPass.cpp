@@ -479,6 +479,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
         BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
         BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
+        BasicConverter<felt::SignedModFeltOp, smt::IntModOp>,
         BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>, FeltConstConverter,
         BoolCmpConverter, FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter>(
         typeConverter, context
