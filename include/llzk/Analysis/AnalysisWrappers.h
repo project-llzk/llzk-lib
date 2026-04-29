@@ -151,7 +151,8 @@ public:
   /// @note Derived classes may also use the `Analysis(mlir::Operation*, mlir::AnalysisManager&)`
   /// constructor that is allowed by classes that are constructed using the
   /// `AnalysisManager::getAnalysis<Analysis>()` method.
-  ModuleAnalysis(mlir::Operation *op) {
+  ModuleAnalysis(mlir::Operation *op, const mlir::DataFlowConfig &config = mlir::DataFlowConfig())
+      : solver(config) {
     if (modOp = llvm::dyn_cast<mlir::ModuleOp>(op); !modOp) {
       const auto *error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
       op->emitError(error_message).report();

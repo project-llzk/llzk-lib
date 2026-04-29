@@ -56,7 +56,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@"TZip_f_f_\1A"::@Zip<[@N]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@"TZip_f_f_\1A"::@Zip<[@N]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

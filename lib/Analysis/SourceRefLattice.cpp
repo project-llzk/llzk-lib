@@ -105,7 +105,7 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
     }
     std::vector<int64_t> newArrayDims;
     size_t chunkSz = 1;
-    for (unsigned i = indices.size(); i < getNumArrayDims(); i++) {
+    for (size_t i = indices.size(); i < getNumArrayDims(); i++) {
       auto dim = getArrayDim(i);
       newArrayDims.push_back(dim);
       chunkSz *= dim;
@@ -235,55 +235,7 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
   return mlir::failure();
 }
 
-void SourceRefLattice::print(mlir::raw_ostream &os) const {
-  os << "SourceRefLattice { ";
-  for (auto mit = valMap.begin(); mit != valMap.end();) {
-    const auto &[val, latticeVal] = *mit;
-    os << "\n    (";
-    if (auto asVal = llvm::dyn_cast<Value>(val)) {
-      os << asVal;
-    } else if (auto *asOp = llvm::dyn_cast<Operation *>(val)) {
-      os << *asOp;
-    } else {
-      llvm_unreachable("unhandled ValueTy print case");
-    }
-    os << ") => " << latticeVal;
-    mit++;
-    if (mit != valMap.end()) {
-      os << ',';
-    } else {
-      os << '\n';
-    }
-  }
-  os << "}\n";
-}
-
-mlir::ChangeResult SourceRefLattice::setValues(const ValueMap &rhs) {
-  auto res = mlir::ChangeResult::NoChange;
-  for (const auto &[v, s] : rhs) {
-    res |= setValue(v, s);
-  }
-  return res;
-}
-
-mlir::ChangeResult SourceRefLattice::setValue(ValueTy v, const SourceRefLatticeValue &rhs) {
-  for (const SourceRef &ref : rhs.foldToScalar()) {
-    refMap[ref].insert(v);
-  }
-  return valMap[v].setValue(rhs);
-}
-
-mlir::ChangeResult SourceRefLattice::setValue(ValueTy v, const SourceRef &ref) {
-  refMap[ref].insert(v);
-  return valMap[v].setValue(SourceRefLatticeValue(ref));
-}
-
-SourceRefLatticeValue SourceRefLattice::getOrDefault(SourceRefLattice::ValueTy v) const {
-  auto it = valMap.find(v);
-  if (it != valMap.end()) {
-    return it->second;
-  }
-
+SourceRefLatticeValue SourceRefLattice::getDefaultValue(SourceRefLattice::ValueTy v) {
   if (auto asVal = llvm::dyn_cast_if_present<Value>(v)) {
     auto sourceRef = getSourceRef(asVal);
     if (mlir::succeeded(sourceRef)) {
@@ -293,27 +245,25 @@ SourceRefLatticeValue SourceRefLattice::getOrDefault(SourceRefLattice::ValueTy v
   return SourceRefLatticeValue();
 }
 
-SourceRefLatticeValue SourceRefLattice::getReturnValue(unsigned i) const {
-  ProgramPoint *pp = llvm::cast<ProgramPoint *>(this->getAnchor());
-  if (auto retOp = mlir::dyn_cast_if_present<function::ReturnOp>(pp->getPrevOp())) {
-    if (i >= retOp.getNumOperands()) {
-      llvm::report_fatal_error("return value requested is out of range");
-    }
-    return this->getOrDefault(retOp.getOperand(i));
-  }
-  return SourceRefLatticeValue();
+ChangeResult SourceRefLattice::join(const AbstractSparseLattice &rhs) {
+  return value.update(static_cast<const SourceRefLattice &>(rhs).value);
 }
 
-SourceRefLattice::ValueSet SourceRefLattice::lookupValues(const SourceRef &ref) const {
-  if (auto it = refMap.find(ref); it != refMap.end()) {
-    return it->second;
-  }
-  return SourceRefLattice::ValueSet();
+ChangeResult SourceRefLattice::meet(const AbstractSparseLattice & /*rhs*/) {
+  llvm::report_fatal_error("meet operation is not supported for SourceRefLattice");
+  return ChangeResult::NoChange;
 }
 
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const SourceRefLattice &lattice) {
-  lattice.print(os);
-  return os;
+void SourceRefLattice::print(mlir::raw_ostream &os) const {
+  os << "SourceRefLattice { " << value << " }";
+}
+
+ChangeResult SourceRefLattice::setValue(const LatticeValue &newValue) {
+  return value.setValue(newValue);
+}
+
+ChangeResult SourceRefLattice::setValue(const SourceRef &ref) {
+  return value.setValue(LatticeValue(ref));
 }
 
 } // namespace llzk

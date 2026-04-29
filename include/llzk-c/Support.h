@@ -87,6 +87,13 @@ void mlirOperationWalkReverse(
     MlirOperation from, MlirOperationWalkCallback callback, void *userData, MlirWalkOrder walkOrder
 );
 
+/// Inserts `newSymbolOp` into the symbol table owned by `symTableOp`. Insertion via the
+/// SymbolTable automatically renames `symTableOp` if necessary to avoid name collisions.
+///
+/// Requires that `symTableOp` implements the SymbolTable op interface and that `newSymbolOp`
+/// has a `sym_name` attribute.
+MLIR_CAPI_EXPORTED void llzkSymbolTableInsert(MlirOperation symTableOp, MlirOperation newSymbolOp);
+
 //===----------------------------------------------------------------------===//
 // Helper types and functions for map operands constructor arguments.
 //===----------------------------------------------------------------------===//
