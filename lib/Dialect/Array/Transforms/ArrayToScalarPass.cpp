@@ -55,6 +55,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -327,9 +328,8 @@ public:
 
   LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
 
-  void rewrite(
-      ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -626,9 +626,8 @@ public:
 
   LogicalResult match(MemberRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(
-      MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  void rewrite(MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
@@ -702,7 +701,7 @@ static void baseTargetSetup(ConversionTarget &target) {
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, constrain::ConstrainDialect,
       component::StructDialect, felt::FeltDialect, function::FunctionDialect, global::GlobalDialect,
       include::IncludeDialect, polymorphic::PolymorphicDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      cast::CastDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
 }
 
