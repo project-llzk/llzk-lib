@@ -9,9 +9,11 @@
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/STLExtras.h>
@@ -19,7 +21,7 @@
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
-
+using namespace mlir;
 namespace llzk::cast {
 
 bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs) {
@@ -44,4 +46,16 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
     return lhsType == rhsType;
   });
 }
+
+LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
+  if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
+    auto value = constOp.getValue().getValue();
+    if (value.getBitWidth() <= 64) {
+      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
+      return success();
+    }
+  }
+  return failure();
+}
+
 } // namespace llzk::cast

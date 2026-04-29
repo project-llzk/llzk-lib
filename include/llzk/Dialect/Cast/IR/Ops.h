@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 
 // MLIR interfaces used by generated ops
+#include <mlir/IR/PatternMatch.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations
