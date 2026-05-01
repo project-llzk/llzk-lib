@@ -47,12 +47,16 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
   });
 }
 
+<<<<<<< Updated upstream
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, PatternRewriter &rewriter) {
   // For some reason building an 'arith.constant' op doesn't work e.g. inside 'poly.expr', so this
   // just conservatively bails out if the rewrite would later fail
   // if (!op->getContext()->isOperationRegistered(arith::ConstantIndexOp::getOperationName())) {
   //   return failure();
   // }
+=======
+LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
+>>>>>>> Stashed changes
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     auto value = constOp.getValue().getValue();
     if (value.getBitWidth() <= 64) {
