@@ -153,6 +153,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a54106ec42b4959c81bd0a375e41a8d36" id="r_a54106ec42b4959c81bd0a375e41a8d36"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a54106ec42b4959c81bd0a375e41a8d36">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value value)</td></tr>
 <tr class="memitem:a31b5d300fc5fb11f1efc68c39425bd36" id="r_a31b5d300fc5fb11f1efc68c39425bd36"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a31b5d300fc5fb11f1efc68c39425bd36">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
 <tr class="memitem:ad8c6164591501696bfc19abca14a2e6d" id="r_ad8c6164591501696bfc19abca14a2e6d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad8c6164591501696bfc19abca14a2e6d">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
+<tr class="memitem:aaf5d38449a1d7c84eb00375d49567fae" id="r_aaf5d38449a1d7c84eb00375d49567fae"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf5d38449a1d7c84eb00375d49567fae">canonicalize</a> (<a class="el" href="classllzk_1_1cast_1_1FeltToIndexOp.html">FeltToIndexOp</a> op, ::mlir::PatternRewriter &amp;rewriter)</td></tr>
+<tr class="memitem:ab613d545dfcad1bb13d24273debcf3d4" id="r_ab613d545dfcad1bb13d24273debcf3d4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab613d545dfcad1bb13d24273debcf3d4">getCanonicalizationPatterns</a> (::mlir::RewritePatternSet &amp;results, ::mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:aca0ec0804f6b10d1759b491b9a173fa5" id="r_aca0ec0804f6b10d1759b491b9a173fa5"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aca0ec0804f6b10d1759b491b9a173fa5">inferReturnTypes</a> (::mlir::MLIRContext *context, ::std::optional&lt;::mlir::Location &gt; location, ::mlir::ValueRange operands, ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties, ::mlir::RegionRange regions, ::llvm::SmallVectorImpl&lt;::mlir::Type &gt; &amp;inferredReturnTypes)</td></tr>
 <tr class="memitem:aeaf7e062f734c04ee4b7702aae00c895" id="r_aeaf7e062f734c04ee4b7702aae00c895"><td class="memItemLeft" align="right" valign="top">::mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeaf7e062f734c04ee4b7702aae00c895">parse</a> (::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</td></tr>
 </table>
@@ -416,6 +418,37 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="aaf5d38449a1d7c84eb00375d49567fae" name="aaf5d38449a1d7c84eb00375d49567fae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaf5d38449a1d7c84eb00375d49567fae">&#9670;&#160;</a></span>canonicalize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::cast::FeltToIndexOp::canonicalize </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1cast_1_1FeltToIndexOp.html">FeltToIndexOp</a></td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::PatternRewriter &amp;</td>          <td class="paramname"><span class="paramname"><em>rewriter</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_source.html#l00050">50</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a3db9a90d953bc0c83df6a891bbac843b" name="a3db9a90d953bc0c83df6a891bbac843b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3db9a90d953bc0c83df6a891bbac843b">&#9670;&#160;</a></span>getAttributeNames()</h2>
 
@@ -443,6 +476,37 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="ab613d545dfcad1bb13d24273debcf3d4" name="ab613d545dfcad1bb13d24273debcf3d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab613d545dfcad1bb13d24273debcf3d4">&#9670;&#160;</a></span>getCanonicalizationPatterns()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::cast::FeltToIndexOp::getCanonicalizationPatterns </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::RewritePatternSet &amp;</td>          <td class="paramname"><span class="paramname"><em>results</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::MLIRContext *</td>          <td class="paramname"><span class="paramname"><em>context</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00152">152</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a41ba2b01b55490d7a30431cf933b80f4" name="a41ba2b01b55490d7a30431cf933b80f4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a41ba2b01b55490d7a30431cf933b80f4">&#9670;&#160;</a></span>getEffects()</h2>
 
@@ -458,7 +522,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00194">194</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00198">198</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -730,7 +794,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00152">152</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00156">156</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -761,7 +825,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00160">160</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00164">164</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -780,7 +844,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00186">186</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html#l00190">190</a> of file <a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -824,6 +888,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>build/include/llzk/Dialect/Cast/IR/<a class="el" href="Cast_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a></li>
+<li>lib/Dialect/Cast/IR/<a class="el" href="Cast_2IR_2Ops_8cpp_source.html">Ops.cpp</a></li>
 <li>build/include/llzk/Dialect/Cast/IR/<a class="el" href="Cast_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a></li>
 </ul>
 </div><!-- contents -->
