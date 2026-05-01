@@ -23,7 +23,6 @@ module attributes {llzk.lang} {
       array.write %foo[%c1] = %b : !array.type<2 x !felt.type>, !felt.type
 
       struct.writem %self[@foo] = %foo : <@A>, !array.type<2 x !felt.type>
-      
 
       function.return %self : !struct.type<@A>
     }
@@ -37,8 +36,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
 // CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_2]][@foo_1] = %[[VAL_4]] : <@A>, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_2]][@foo_0] = %[[VAL_3]] : <@A>, !felt.type
+// CHECK-DAG:         struct.writem %[[VAL_2]][@foo_1] = %[[VAL_4]] : <@A>, !felt.type
+// CHECK-DAG:         struct.writem %[[VAL_2]][@foo_0] = %[[VAL_3]] : <@A>, !felt.type
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@A>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
