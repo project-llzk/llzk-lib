@@ -12,6 +12,9 @@
 ///
 /// The steps of this transformation are as follows:
 ///
+/// 0. Scan to find `llzk.nondet` ops that allocate uninitialized arrays and replace them with
+///    an equivalent `array.new`
+///
 /// 1. Run a dialect conversion that replaces `ArrayType` members with `N` scalar members.
 ///
 /// 2. Run a dialect conversion that does the following:
@@ -53,6 +56,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
@@ -60,6 +64,7 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
@@ -328,9 +333,8 @@ public:
 
   LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
 
-  void rewrite(
-      ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -627,9 +631,8 @@ public:
 
   LogicalResult match(MemberRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(
-      MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  void rewrite(MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
+      const override {
     StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
@@ -705,6 +708,30 @@ static void baseTargetSetup(ConversionTarget &target) {
       include::IncludeDialect, polymorphic::PolymorphicDialect, arith::ArithDialect,
       cast::CastDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
+}
+
+class NondetToNewArray : public OpConversionPattern<NonDetOp> {
+  using OpConversionPattern<NonDetOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter)
+      const override {
+    if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
+      rewriter.replaceOpWithNewOp<CreateArrayOp>(nondetOp, at);
+      return success();
+    }
+    return failure();
+  }
+};
+
+static LogicalResult step0(ModuleOp modOp) {
+  MLIRContext *ctx = modOp.getContext();
+  RewritePatternSet patterns {ctx};
+  patterns.add<NondetToNewArray>(ctx);
+  ConversionTarget target {*ctx};
+
+  baseTargetSetup(target);
+  target.addDynamicallyLegalOp<NonDetOp>([](NonDetOp op) { return !isa<ArrayType>(op.getType()); });
+
+  return applyFullConversion(modOp, target, std::move(patterns));
 }
 
 static LogicalResult
@@ -791,6 +818,12 @@ LogicalResult splitArrayCreateInit(ModuleOp modOp) {
 class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
+
+    // Prepare the module by replacing llzk.nondet array allocation ops with array.new
+    if (failed(step0(module))) {
+      return signalPassFailure();
+    }
+
     // Separate array initialization from creation by removing the initialization list from
     // CreateArrayOp and inserting the corresponding WriteArrayOp following it.
     if (failed(splitArrayCreateInit(module))) {
