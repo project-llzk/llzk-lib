@@ -70,6 +70,8 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
   let results = (outs Index:$result);
   let assemblyFormat =
       [{ $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
+
+  let hasCanonicalizeMethod = 1;
 }
 
 #endif // LLZK_CAST_OPS
