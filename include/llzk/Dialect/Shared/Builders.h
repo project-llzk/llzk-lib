@@ -328,6 +328,10 @@ public:
 
   TemplateBuilder &
   insertParam(std::string_view name, mlir::Location loc, mlir::TypeAttr type = {}) {
+    if (succeeded(getParam(name))) {
+      llvm::report_fatal_error("Duplicate TemplateParamOp insertion attempted");
+    }
+
     mlir::OpBuilder builder(context);
 
     auto &region = getBodyRegion();
@@ -349,6 +353,10 @@ public:
   }
 
   TemplateBuilder &insertExpr(std::string_view name, mlir::Location loc) {
+    if (succeeded(getExpr(name))) {
+      llvm::report_fatal_error("Duplicate TemplateExprOp insertion attempted");
+    }
+
     mlir::OpBuilder builder(context);
 
     auto &region = getBodyRegion();

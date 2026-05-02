@@ -9,6 +9,7 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include <gtest/gtest.h>
@@ -34,6 +35,21 @@ protected:
     // Create a new module and builder for each test.
     mod = createLLZKModule(&ctx);
     builder = ModuleBuilder(mod.get());
+  }
+};
+
+class TemplateBuilderTests : public LLZKTest {
+protected:
+  mlir::OwningOpRef<mlir::ModuleOp> mod;
+
+  TemplateBuilderTests() : LLZKTest(), mod(createLLZKModule(&ctx)) {}
+
+  polymorphic::TemplateOp createTemplate(mlir::Location loc) {
+    mlir::OpBuilder builder(&ctx);
+
+    builder.setInsertionPointToStart(mod->getBody());
+
+    return builder.create<polymorphic::TemplateOp>(loc, builder.getStringAttr("testTemplate"));
   }
 };
 
@@ -81,4 +97,59 @@ TEST_F(ModuleBuilderTests, testConstruction) {
     numOps++;
   }
   ASSERT_EQ(numOps, 2);
+}
+
+TEST_F(TemplateBuilderTests, testInsertAndLookupParam) {
+  auto loc = mlir::UnknownLoc::get(&ctx);
+
+  auto tmpl = createTemplate(loc);
+  TemplateBuilder builder(tmpl);
+
+  builder.insertParam("x", loc);
+
+  auto param = builder.getParam("x");
+
+  ASSERT_TRUE(mlir::succeeded(param));
+}
+
+TEST_F(TemplateBuilderTests, testInsertAndLookupExpr) {
+  auto loc = mlir::UnknownLoc::get(&ctx);
+
+  auto tmpl = createTemplate(loc);
+  TemplateBuilder builder(tmpl);
+
+  builder.insertExpr("y", loc);
+
+  auto expr = builder.getExpr("y");
+
+  ASSERT_TRUE(mlir::succeeded(expr));
+}
+
+TEST_F(TemplateBuilderTests, testDuplicateParamInsertion) {
+  auto loc = mlir::UnknownLoc::get(&ctx);
+
+  auto tmpl = createTemplate(loc);
+  TemplateBuilder builder(tmpl);
+
+  builder.insertParam("x", loc);
+
+  builder.insertParam("x", loc);
+
+  auto param = builder.getParam("x");
+
+  ASSERT_TRUE(mlir::succeeded(param));
+}
+
+TEST_F(TemplateBuilderTests, testDuplicateExprInsertion) {
+  auto loc = mlir::UnknownLoc::get(&ctx);
+
+  auto tmpl = createTemplate(loc);
+  TemplateBuilder builder(tmpl);
+
+  builder.insertExpr("z", loc);
+  builder.insertExpr("z", loc);
+
+  auto expr = builder.getExpr("z");
+
+  ASSERT_TRUE(mlir::succeeded(expr));
 }
