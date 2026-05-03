@@ -100,12 +100,12 @@ TEST_F(ModuleBuilderTests, testConstruction) {
 }
 
 TEST_F(TemplateBuilderTests, testInsertAndLookupParam) {
-  auto loc = mlir::UnknownLoc::get(&ctx);
+  auto location = mlir::UnknownLoc::get(&ctx);
 
-  auto tmpl = createTemplate(loc);
+  auto tmpl = createTemplate(location);
   TemplateBuilder builder(tmpl);
 
-  builder.insertParam("x", loc);
+  builder.insertParam("x", location);
 
   auto param = builder.getParam("x");
 
@@ -113,12 +113,12 @@ TEST_F(TemplateBuilderTests, testInsertAndLookupParam) {
 }
 
 TEST_F(TemplateBuilderTests, testInsertAndLookupExpr) {
-  auto loc = mlir::UnknownLoc::get(&ctx);
+  auto location = mlir::UnknownLoc::get(&ctx);
 
-  auto tmpl = createTemplate(loc);
+  auto tmpl = createTemplate(location);
   TemplateBuilder builder(tmpl);
 
-  builder.insertExpr("y", loc);
+  builder.insertExpr("y", location);
 
   auto expr = builder.getExpr("y");
 
@@ -126,14 +126,14 @@ TEST_F(TemplateBuilderTests, testInsertAndLookupExpr) {
 }
 
 TEST_F(TemplateBuilderTests, testDuplicateParamInsertion) {
-  auto loc = mlir::UnknownLoc::get(&ctx);
+  auto location = mlir::UnknownLoc::get(&ctx);
 
-  auto tmpl = createTemplate(loc);
+  auto tmpl = createTemplate(location);
   TemplateBuilder builder(tmpl);
 
-  builder.insertParam("x", loc);
+  builder.insertParam("x", location);
 
-  builder.insertParam("x", loc);
+  ASSERT_DEATH(builder.insertParam("x", location), "Duplicate TemplateParamOp insertion attempted");
 
   auto param = builder.getParam("x");
 
@@ -141,13 +141,14 @@ TEST_F(TemplateBuilderTests, testDuplicateParamInsertion) {
 }
 
 TEST_F(TemplateBuilderTests, testDuplicateExprInsertion) {
-  auto loc = mlir::UnknownLoc::get(&ctx);
+  auto location = mlir::UnknownLoc::get(&ctx);
 
-  auto tmpl = createTemplate(loc);
+  auto tmpl = createTemplate(location);
   TemplateBuilder builder(tmpl);
 
-  builder.insertExpr("z", loc);
-  builder.insertExpr("z", loc);
+  builder.insertExpr("z", location);
+
+  ASSERT_DEATH(builder.insertExpr("z", location), "Duplicate TemplateExprOp insertion attempted");
 
   auto expr = builder.getExpr("z");
 
