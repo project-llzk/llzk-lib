@@ -44,12 +44,12 @@ protected:
 
   TemplateBuilderTests() : LLZKTest(), mod(createLLZKModule(&ctx)) {}
 
-  polymorphic::TemplateOp createTemplate(mlir::Location loc) {
+  polymorphic::TemplateOp createTemplate(mlir::Location location) {
     mlir::OpBuilder builder(&ctx);
 
     builder.setInsertionPointToStart(mod->getBody());
 
-    return builder.create<polymorphic::TemplateOp>(loc, builder.getStringAttr("testTemplate"));
+    return builder.create<polymorphic::TemplateOp>(location, builder.getStringAttr("testTemplate"));
   }
 };
 
