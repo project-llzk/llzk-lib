@@ -1,5 +1,17 @@
 var NAVTREEINDEX69 =
 {
+"dialects.html#operations-12":[7,12,0],
+"dialects.html#operations-2":[7,2,0],
+"dialects.html#operations-3":[7,3,0],
+"dialects.html#operations-4":[7,4,0],
+"dialects.html#operations-5":[7,5,0],
+"dialects.html#operations-6":[7,6,0],
+"dialects.html#operations-7":[7,7,0],
+"dialects.html#operations-8":[7,8,0],
+"dialects.html#operations-9":[7,9,0],
+"dialects.html#parameters":[7,0,1,0,0],
+"dialects.html#parameters-1":[7,1,1,0,0],
+"dialects.html#parameters-2":[7,4,1,0,0],
 "dialects.html#parameters-3":[7,4,1,1,0],
 "dialects.html#parameters-4":[7,4,2,0,0],
 "dialects.html#parameters-5":[7,8,1,0,0],
@@ -237,17 +249,5 @@ var NAVTREEINDEX69 =
 "functions_func_b.html":[12,3,1,1],
 "functions_func_c.html":[12,3,1,2],
 "functions_func_d.html":[12,3,1,3],
-"functions_func_e.html":[12,3,1,4],
-"functions_func_f.html":[12,3,1,5],
-"functions_func_g.html":[12,3,1,6],
-"functions_func_h.html":[12,3,1,7],
-"functions_func_i.html":[12,3,1,8],
-"functions_func_j.html":[12,3,1,9],
-"functions_func_l.html":[12,3,1,10],
-"functions_func_m.html":[12,3,1,11],
-"functions_func_n.html":[12,3,1,12],
-"functions_func_o.html":[12,3,1,13],
-"functions_func_p.html":[12,3,1,14],
-"functions_func_r.html":[12,3,1,15],
-"functions_func_s.html":[12,3,1,16]
+"functions_func_e.html":[12,3,1,4]
 };

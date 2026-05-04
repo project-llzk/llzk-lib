@@ -1,5 +1,17 @@
 var NAVTREEINDEX80 =
 {
+"tools.html#autotoc_md-llzk-array-to-scalar":[3,0,0,2,0],
+"tools.html#autotoc_md-llzk-compute-constrain-to-product":[3,0,0,1,0],
+"tools.html#autotoc_md-llzk-drop-empty-templates":[3,0,0,3,0],
+"tools.html#autotoc_md-llzk-duplicate-op-elim":[3,0,0,1,1],
+"tools.html#autotoc_md-llzk-duplicate-read-write-elim":[3,0,0,1,2],
+"tools.html#autotoc_md-llzk-enforce-no-overwrite":[3,0,0,1,3],
+"tools.html#autotoc_md-llzk-flatten":[3,0,0,3,1],
+"tools.html#autotoc_md-llzk-fuse-product-loops":[3,0,0,1,4],
+"tools.html#autotoc_md-llzk-inline-structs":[3,0,0,1,5],
+"tools.html#autotoc_md-llzk-poly-lowering-pass":[3,0,0,1,6],
+"tools.html#autotoc_md-llzk-print-call-graph":[3,0,0,0,0],
+"tools.html#autotoc_md-llzk-print-call-graph-sccs":[3,0,0,0,1],
 "tools.html#autotoc_md-llzk-print-constraint-dependency-graphs":[3,0,0,0,2],
 "tools.html#autotoc_md-llzk-print-interval-analysis":[3,0,0,0,3],
 "tools.html#autotoc_md-llzk-print-predecessors":[3,0,0,0,4],

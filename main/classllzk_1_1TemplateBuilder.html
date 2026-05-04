@@ -132,6 +132,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6e32baca85fce74c12b3ff4f29e7710e" id="r_a6e32baca85fce74c12b3ff4f29e7710e"><td class="memItemLeft" align="right" valign="top">mlir::Region &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6e32baca85fce74c12b3ff4f29e7710e">getBodyRegion</a> ()</td></tr>
 <tr class="memitem:af845e9c6cb8b5af0a8d0a2bde0d5f222" id="r_af845e9c6cb8b5af0a8d0a2bde0d5f222"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">polymorphic::TemplateOp</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af845e9c6cb8b5af0a8d0a2bde0d5f222">getTemplate</a> ()</td></tr>
 <tr class="memdesc:af845e9c6cb8b5af0a8d0a2bde0d5f222"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the associated template of this builder.  <br /></td></tr>
+<tr class="memitem:a3ae7ebf6fce1271e9ac070e8ff14fd52" id="r_a3ae7ebf6fce1271e9ac070e8ff14fd52"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ae7ebf6fce1271e9ac070e8ff14fd52">getParam</a> (std::string_view name)</td></tr>
+<tr class="memitem:ae3362b244d53d01a65f2cc59c12cb637" id="r_ae3362b244d53d01a65f2cc59c12cb637"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">polymorphic::TemplateExprOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae3362b244d53d01a65f2cc59c12cb637">getExpr</a> (std::string_view name)</td></tr>
+<tr class="memitem:a05602e5c63ebd6b871c01f67dd802e87" id="r_a05602e5c63ebd6b871c01f67dd802e87"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a05602e5c63ebd6b871c01f67dd802e87">insertParam</a> (std::string_view name, mlir::Location loc, mlir::TypeAttr type={})</td></tr>
+<tr class="memitem:abcfcdb8e422efb179836c3bb64bf9d83" id="r_abcfcdb8e422efb179836c3bb64bf9d83"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abcfcdb8e422efb179836c3bb64bf9d83">insertParam</a> (std::string_view name)</td></tr>
+<tr class="memitem:af75423e6b4b9daa99c019bfd2aeffeaf" id="r_af75423e6b4b9daa99c019bfd2aeffeaf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af75423e6b4b9daa99c019bfd2aeffeaf">insertExpr</a> (std::string_view name, mlir::Location loc)</td></tr>
+<tr class="memitem:a10b3c9aaaf206cc23bda35feeb81226a" id="r_a10b3c9aaaf206cc23bda35feeb81226a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a10b3c9aaaf206cc23bda35feeb81226a">insertExpr</a> (std::string_view name)</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1ModuleLikeBuilder"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllzk_1_1ModuleLikeBuilder')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Member Functions inherited from <a class="el" href="classllzk_1_1ModuleLikeBuilder.html">llzk::ModuleLikeBuilder&lt; TemplateBuilder &gt;</a></td></tr>
 <tr class="memitem:ae1511b462fa5f779667ccb4b083974f2 inherit pub_methods_classllzk_1_1ModuleLikeBuilder" id="r_ae1511b462fa5f779667ccb4b083974f2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html#ae1511b462fa5f779667ccb4b083974f2">ModuleLikeBuilder</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memitem:a09d69d5bd04ff4fe14aa6de503203456 inherit pub_methods_classllzk_1_1ModuleLikeBuilder" id="r_a09d69d5bd04ff4fe14aa6de503203456"><td class="memItemLeft" align="right" valign="top">mlir::Region &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html#a09d69d5bd04ff4fe14aa6de503203456">getBodyRegion</a> ()</td></tr>
@@ -258,6 +264,60 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="ae3362b244d53d01a65f2cc59c12cb637" name="ae3362b244d53d01a65f2cc59c12cb637"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3362b244d53d01a65f2cc59c12cb637">&#9670;&#160;</a></span>getExpr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">polymorphic::TemplateExprOp</a> &gt; llzk::TemplateBuilder::getExpr </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00321">321</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+
+</div>
+</div>
+<a id="a3ae7ebf6fce1271e9ac070e8ff14fd52" name="a3ae7ebf6fce1271e9ac070e8ff14fd52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ae7ebf6fce1271e9ac070e8ff14fd52">&#9670;&#160;</a></span>getParam()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> &gt; llzk::TemplateBuilder::getParam </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00313">313</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+
+</div>
+</div>
 <a id="af845e9c6cb8b5af0a8d0a2bde0d5f222" name="af845e9c6cb8b5af0a8d0a2bde0d5f222"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af845e9c6cb8b5af0a8d0a2bde0d5f222">&#9670;&#160;</a></span>getTemplate()</h2>
 
@@ -284,6 +344,127 @@ Additional Inherited Members</h2></td></tr>
 <p>Get the associated template of this builder. </p>
 
 <p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00311">311</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+
+</div>
+</div>
+<a id="a10b3c9aaaf206cc23bda35feeb81226a" name="a10b3c9aaaf206cc23bda35feeb81226a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a10b3c9aaaf206cc23bda35feeb81226a">&#9670;&#160;</a></span>insertExpr() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp; llzk::TemplateBuilder::insertExpr </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00376">376</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+
+</div>
+</div>
+<a id="af75423e6b4b9daa99c019bfd2aeffeaf" name="af75423e6b4b9daa99c019bfd2aeffeaf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af75423e6b4b9daa99c019bfd2aeffeaf">&#9670;&#160;</a></span>insertExpr() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp; llzk::TemplateBuilder::insertExpr </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Location</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00355">355</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+
+</div>
+</div>
+<a id="abcfcdb8e422efb179836c3bb64bf9d83" name="abcfcdb8e422efb179836c3bb64bf9d83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abcfcdb8e422efb179836c3bb64bf9d83">&#9670;&#160;</a></span>insertParam() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp; llzk::TemplateBuilder::insertParam </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00351">351</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+
+</div>
+</div>
+<a id="a05602e5c63ebd6b871c01f67dd802e87" name="a05602e5c63ebd6b871c01f67dd802e87"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a05602e5c63ebd6b871c01f67dd802e87">&#9670;&#160;</a></span>insertParam() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp; llzk::TemplateBuilder::insertParam </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Location</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::TypeAttr</td>          <td class="paramname"><span class="paramname"><em>type</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00330">330</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
