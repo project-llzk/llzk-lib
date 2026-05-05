@@ -293,6 +293,15 @@ def CallOp : FunctionDialectOp<
     #M = affine_map<(i)[] -> (5*i+1)>
     %r = function.call @A::@compute(%x){(%i)} : (!felt.type) -> !struct.type<@A<[#M]>>
     ```
+
+    When the call targets a free function within a `poly.template` region, the optional
+    template parameter list can be used to instantiate all `poly.param` symbols within
+    the template. If all `poly.param` symbols are used within the function signature,
+    this can be elided. Otherwise, it is required to instantiate the function. The `?`
+    wildcard can be used for any `poly.param` with a `poly.tvar` type restriction, even
+    those that cannot be inferred from the function signature. The wildcard allows for
+    inferrence of the type within the function body itself during the flattening pass
+    but may fail if the type cannot be inferred from the function body.
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
@@ -302,9 +311,7 @@ def CallOp : FunctionDialectOp<
       // List of arguments to call the target function.
       Variadic<AnyLLZKType>:$argOperands,
       // List of parameters to instantiate all `poly.param` symbols when the
-      // callee is a free function inside a `poly.template` region. If all
-      // `poly.param` symbols are used within the function signature, this can
-      // be elided. Otherwise, it is required to instantiate the function.
+      // callee is a free function inside a `poly.template` region.
       OptionalAttr<ArrayAttr>:$templateParams,
       // List of AffineMap operand groups where each group provides the
       // arguments to instantiate the next (left-to-right) AffineMap used as a
