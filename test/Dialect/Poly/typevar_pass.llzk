@@ -946,7 +946,7 @@ module attributes {llzk.lang} {
   poly.template @synth {
     poly.param @T_return : !poly.tvar<@T_return>
     function.def @synth() {
-      // original call goes here
+      %0 = function.call @f::@f() : () -> !poly.tvar<@T_return>
       function.return
     }
   }
@@ -975,15 +975,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @synth {
 // CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
 // CHECK-NEXT:      function.def @synth() {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @f::@f() : () -> !poly.tvar<@T_return>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @ComponentC {
 // CHECK-NEXT:      struct.def @ComponentC {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@ComponentC::@ComponentC<[]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC::@ComponentC<[]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC::@ComponentC<[]>>
 // CHECK-NEXT:          function.call @synth::@synth<[?]>() : () -> ()
-// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@ComponentC::@ComponentC<[]>>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@ComponentC::@ComponentC<[]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentC::@ComponentC<[]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
