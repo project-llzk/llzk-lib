@@ -15,6 +15,7 @@
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
@@ -159,19 +160,34 @@ inline void printAttrDictWithWarnings(
 }
 
 inline mlir::ParseResult parseTemplateParams(mlir::AsmParser &parser, mlir::ArrayAttr &value) {
-  auto parseResult = mlir::FieldParser<mlir::ArrayAttr>::parse(parser);
-  if (mlir::failed(parseResult)) {
-    return parser.emitError(parser.getCurrentLocation(), "failed to parse template parameters");
-  }
-  auto emitError = [&parser] {
-    return llzk::InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
+  mlir::SmallVector<mlir::Attribute> elements;
+  auto parseElement = [&]() -> mlir::ParseResult {
+    // `?` is a wildcard meaning "infer this parameter"; only valid for tvar-restricted params.
+    if (mlir::succeeded(parser.parseOptionalQuestion())) {
+      elements.push_back(parser.getBuilder().getIndexAttr(mlir::ShapedType::kDynamic));
+      return mlir::success();
+    }
+    auto attrParseResult = mlir::FieldParser<mlir::Attribute>::parse(parser);
+    if (mlir::failed(attrParseResult)) {
+      return parser.emitError(
+          parser.getCurrentLocation(), "failed to parse template parameter attribute"
+      );
+    }
+    auto emitError = [&parser] {
+      return llzk::InFlightDiagnosticWrapper(parser.emitError(parser.getCurrentLocation()));
+    };
+    mlir::FailureOr<mlir::Attribute> forced = forceIntAttrType(*attrParseResult, emitError);
+    if (mlir::failed(forced)) {
+      return mlir::failure();
+    }
+    elements.push_back(*forced);
+    return mlir::success();
   };
-  mlir::FailureOr<mlir::SmallVector<mlir::Attribute>> res =
-      forceIntAttrTypes(parseResult->getValue(), emitError);
+  auto res = parser.parseCommaSeparatedList(mlir::AsmParser::Delimiter::Square, parseElement);
   if (mlir::failed(res)) {
-    return mlir::failure();
+    return res; // parseElement() already emits a sufficient error message
   }
-  value = parser.getBuilder().getArrayAttr(*res);
+  value = parser.getBuilder().getArrayAttr(elements);
   return mlir::success();
 }
 

@@ -522,6 +522,27 @@ void CallOp::build(
 
 LogicalResult
 CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplateParamOp targetParam) {
+  // A wildcard `?` (represented as kDynamic) defers inference to a later pass.
+  // It is only valid for parameters with a `!poly.tvar` type restriction.
+  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(paramFromCallOp)) {
+    if (isDynamic(intAttr)) {
+      std::optional<Type> declaredType = targetParam.getTypeOpt();
+      if (!declaredType || !llvm::isa<TypeVarType>(*declaredType)) {
+        auto diag = this->emitOpError().append(
+            "wildcard `?` can only be used for template parameters with `!poly.tvar` "
+            "type restriction, but parameter \"@",
+            targetParam.getName(), "\" has "
+        );
+        if (declaredType) {
+          diag.append("type restriction ", *declaredType);
+        } else {
+          diag.append("no type restriction");
+        }
+        return diag;
+      }
+      return success();
+    }
+  }
   if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
     // Note: `declaredType` is restricted by `isValidConstReadType()`
     bool compatible = false;
@@ -574,6 +595,12 @@ LogicalResult CallOp::verifyTemplateParamsMatchInferred(
   assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
 
   for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
+    // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+      if (isDynamic(intAttr)) {
+        continue;
+      }
+    }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
     if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
       // Tested in call_with_template_params_fail.llzk

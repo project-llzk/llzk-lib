@@ -604,10 +604,10 @@ module attributes {llzk.lang} {
           !struct.type<@TDeepInvalidArrayTypeA::@DeepInvalidArrayTypeA<[
             !struct.type<@TDeepInvalidArrayTypeA::@DeepInvalidArrayTypeA<[
               !array.type<2 x !array.type<4 x i1>> // expected-error {{'array.type' element type cannot be 'array.type'}}
-            ]>> // expected-error {{failed to parse template parameters}}
-          ]>> // expected-error {{failed to parse template parameters}}
+            ]>> // expected-error {{failed to parse template parameter attribute}}
+          ]>> // expected-error {{failed to parse template parameter attribute}}
         > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
-      ]>> // expected-error {{failed to parse template parameters}}
+      ]>> // expected-error {{failed to parse template parameter attribute}}
     > // expected-error {{failed to parse LLZK_ArrayType parameter 'elementType' which is to be a `::mlir::Type`}}
 }
 
