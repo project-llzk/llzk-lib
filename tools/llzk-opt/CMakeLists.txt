@@ -4,6 +4,7 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       LLZKDialectHeaders MLIRIR R1CSDialectHeaders
                       LLZKUtil LLZKAnalysis LLZKValidators LLZKTransforms R1CSTransforms
                       SMTConversions SMTDialectHeaders
+                      LLVMConversions
                       ZKLean::DialectRegistration ZKLeanDialectHeaders
 		                  ZKLeanTransforms ZKLean::Conversions
                       MLIRFuncDialect MLIRFuncInlinerExtension
@@ -14,7 +15,7 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       )
 llzk_target_add_mlir_link_settings(llzk-opt)
 include_directories(${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR}
-                    ${ZKLEAN_INCLUDE_DIR})
+                    ${LLVM_CONV_INCLUDE_DIR} ${ZKLEAN_INCLUDE_DIR})
 
 set_target_properties(llzk-opt PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                           ${CMAKE_BINARY_DIR}/bin)

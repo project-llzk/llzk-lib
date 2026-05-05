@@ -1,5 +1,6 @@
 # backends/CMakeLists.txt
 
+add_subdirectory(llvm-conv)
 add_subdirectory(r1cs)
 add_subdirectory(zklean)
 add_subdirectory(smt)

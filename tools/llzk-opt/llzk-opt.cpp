@@ -13,6 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llvm-conv/Conversions/ConversionPasses.h"
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
 #include "r1cs/Transforms/TransformationPasses.h"
@@ -181,6 +182,7 @@ int main(int argc, char **argv) {
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
   llzk::smt::registerConversionPasses();
+  llzk::llvm_conv::registerLLVMConversionPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

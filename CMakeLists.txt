@@ -196,6 +196,9 @@ set(LLZK_MLIR_DOC_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIRECTORY}/mlir")
 # We need the include dir so we can pass it to mlir-tblgen
 set(LLZK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+# We need the llvm-conv include dir so we can pass it to mlir-tblgen
+set(LLVM_CONV_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/llvm-conv/include")
+
 # We need the r1cs include dir so we can pass it to mlir-tblgen
 set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/r1cs/include")
 
