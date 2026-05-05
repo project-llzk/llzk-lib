@@ -300,7 +300,7 @@ def CallOp : FunctionDialectOp<
     this can be elided. Otherwise, it is required to instantiate the function. The `?`
     wildcard can be used for any `poly.param` with a `poly.tvar` type restriction, even
     those that cannot be inferred from the function signature. The wildcard allows for
-    inferrence of the type within the function body itself during the flattening pass
+    inference of the type within the function body itself during the flattening pass
     but may fail if the type cannot be inferred from the function body.
   }];
 
