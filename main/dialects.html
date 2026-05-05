@@ -2252,7 +2252,8 @@ Operations</h2>
 </div><!-- fragment --><p>When the return StructType of a <span class="tt">compute()</span> function uses AffineMapAttr to express struct parameter(s) that depend on a loop variable, the optional instantiation parameter list of this operation must be used to instatiate all AffineMap used as parameters to the StructType.</p>
 <p>Examples: </p><div class="fragment"><div class="line">#M = affine_map&lt;(i)[] -&gt; (5*i+1)&gt;</div>
 <div class="line">%r = function.call @A::@compute(%x){(%i)} : (!felt.type) -&gt; !struct.type&lt;@A&lt;[#M]&gt;&gt;</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">MemRefsNormalizable</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
+</div><!-- fragment --><p>When the call targets a free function within a <span class="tt">poly.template</span> region, the optional template parameter list can be used to instantiate all <span class="tt">poly.param</span> symbols within the template. If all <span class="tt">poly.param</span> symbols are used within the function signature, this can be elided. Otherwise, it is required to instantiate the function. The <span class="tt">?</span> wildcard can be used for any <span class="tt">poly.param</span> with a <span class="tt">poly.tvar</span> type restriction, even those that cannot be inferred from the function signature. The wildcard allows for inference of the type within the function body itself during the flattening pass but may fail if the type cannot be inferred from the function body.</p>
+<p>Traits: <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">MemRefsNormalizable</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
 <p>Interfaces: <span class="tt">CallOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-6"></a>
 Attributes:</h4>
