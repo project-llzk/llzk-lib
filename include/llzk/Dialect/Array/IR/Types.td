@@ -29,7 +29,7 @@ def LLZK_ArrayType
   let description = [{
     Array type with a ranked shape and homogeneous element type.
     It can only be instantiated with the following element types:
-      - Any LLZK type
+      - Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)
       - IndexType
       - Unsigned integers of 1 bit (aka booleans)
 
