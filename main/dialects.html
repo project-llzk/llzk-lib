@@ -1246,7 +1246,7 @@ ArrayType</h3>
 <div class="line">  ::llvm::ArrayRef&lt;int64_t&gt;   # shape</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>Array type with a ranked shape and homogeneous element type. It can only be instantiated with the following element types:</p><ul>
-<li>Any LLZK type</li>
+<li>Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)</li>
 <li>IndexType</li>
 <li>Unsigned integers of 1 bit (aka booleans)</li>
 </ul>

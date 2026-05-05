@@ -233,7 +233,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">MlirType llzkArray_ArrayTypeGetWithDims </td>
           <td>(</td>
-          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>elementType</em></span>, </td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -249,6 +249,16 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates an <a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> using a list of attributes as dimensions. </p>
+<p>It can only be instantiated with the following element types:</p><ul>
+<li>Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)</li>
+<li>IndexType</li>
+<li>Unsigned integers of 1 bit (aka booleans)</li>
+</ul>
+<p>The dimensions of the array are specified using a list of attributes, one per dimension. Each attribute must be one of the following:</p><ul>
+<li>IntegerAttr (with IndexType), specifying a fixed dimension size</li>
+<li>SymbolRefAttr, specifying a dimension size defined by a struct parameter or global constant</li>
+<li>AffineMapAttr, specifying a dimension size computed from surrounding loop induction variables </li>
+</ul>
 
 <p class="definition">Definition at line <a class="el" href="Array_8cpp_source.html#l00046">46</a> of file <a class="el" href="Array_8cpp_source.html">Array.cpp</a>.</p>
 
