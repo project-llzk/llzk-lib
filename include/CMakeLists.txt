@@ -22,6 +22,7 @@ install(
 # subdirectories will add their IncGen targets as deps to the header folder
 add_subdirectory(llzk/Analysis)
 add_subdirectory(llzk/Config)
+add_subdirectory(llzk/Conversions)
 add_subdirectory(llzk/Dialect/Array/IR)
 add_subdirectory(llzk/Dialect/Array/Transforms)
 add_subdirectory(llzk/Dialect/Bool/IR)

@@ -30,9 +30,6 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -41,6 +38,8 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
+#include <mlir/Dialect/LLVMIR/LLVMTypes.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
@@ -63,7 +62,7 @@ using namespace mlir;
 
 class LLVMLoweringPass : public llvm_conv::impl::LLVMLoweringPassBase<LLVMLoweringPass> {
   void getDependentDialects(::mlir::DialectRegistry &registry) const override {
-    // registry.insert<smt::SMTDialect, mlir::func::FuncDialect>();
+    registry.insert<LLVM::LLVMDialect>();
   }
 
   void runOnOperation() override { llvm::errs() << "hello!\n"; }
