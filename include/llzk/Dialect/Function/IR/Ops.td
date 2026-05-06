@@ -58,22 +58,34 @@ def FuncDefOp
 
     Modules and `struct.def` ops are not allowed to be nested within functions.
 
+    Function arguments may carry an optional `function.arg_name` attribute to
+    preserve the source-level argument name independently from the printed SSA
+    block argument name. The value must be a non-empty `StringAttr`, and all
+    attached `function.arg_name` values must be unique within the function.
+    The attribute is only valid on function arguments.
+    Argument-splitting transforms preserve this metadata by deriving unique
+    names for generated arguments, such as `input[0]` for array elements or
+    `self.member` for struct members.
+
     Example:
 
     ```llzk
     // External function definitions.
     function.def private @abort()
-    function.def private @scribble(!array.type<5 x !felt.type>, !struct.type<@Hello>) -> i1
+    function.def private @scribble(
+      !array.type<5 x !felt.type> {function.arg_name = "input"},
+      !struct.type<@Hello> {function.arg_name = "state"}) -> i1
 
     // A function that returns its argument twice:
-    function.def @count(%x: !felt.type) -> (!felt.type, !felt.type) {
-      return %x, %x: !felt.type, !felt.type
+    function.def @count(%x: !felt.type {function.arg_name = "x"})
+        -> (!felt.type, !felt.type) {
+      function.return %x, %x: !felt.type, !felt.type
     }
 
     // Function definition within a component
     struct.def @NonZero {
-      function.def @compute(%a: !felt.type) { return }
-      function.def @constrain(%a: !felt.type) { return }
+      function.def @compute(%a: !felt.type {function.arg_name = "a"}) { function.return }
+      function.def @constrain(%a: !felt.type {function.arg_name = "a"}) { function.return }
     }
     ```
   }];
@@ -87,6 +99,8 @@ def FuncDefOp
   //    ```llzk
   //    // Argument attribute
   //    function.def private @example_fn_arg(%x: i1 {llzk.pub})
+  //    function.def private @example_fn_arg_name(%x: i1 {function.arg_name =
+  //    "x"})
   //
   //    // Result attribute
   //    function.def @example_fn_result() -> (i1 {dialectName.attrName = 0 :

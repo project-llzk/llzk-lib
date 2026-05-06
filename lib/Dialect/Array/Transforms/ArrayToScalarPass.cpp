@@ -388,14 +388,31 @@ public:
   // copies of `origAttrs[i]` are appended in its place.
   static ArrayAttr replicateAttributesAsNeeded(
       ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize,
-      const SmallVector<Type> &newTypes
+      const SmallVector<Type> &newTypes, bool deriveArgNamesForCopies = false
   ) {
     if (origAttrs) {
       assert(originalIdxToSize.size() == origAttrs.size());
       if (originalIdxToSize.size() != newTypes.size()) {
         SmallVector<Attribute> newArgAttrs;
+        llvm::StringSet<> usedArgNames;
+        if (deriveArgNamesForCopies) {
+          collectFunctionArgNames(origAttrs, usedArgNames);
+        }
         for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
-          newArgAttrs.append(s, origAttrs[i]);
+          Attribute attr = origAttrs[i];
+          if (deriveArgNamesForCopies && s != 1) {
+            auto dictAttr = llvm::cast<DictionaryAttr>(attr);
+            if (StringAttr argName = getFunctionArgNameAttr(dictAttr)) {
+              for (size_t j = 0; j < s; ++j) {
+                std::string desiredName = (argName.getValue() + "[" + llvm::Twine(j) + "]").str();
+                newArgAttrs.push_back(setFunctionArgNameAttr(
+                    dictAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
+                ));
+              }
+              continue;
+            }
+          }
+          newArgAttrs.append(s, attr);
         }
         return ArrayAttr::get(origAttrs.getContext(), newArgAttrs);
       }
@@ -418,7 +435,9 @@ public:
         return splitArrayType(origTypes, &originalResultIdxToSize);
       }
       ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateAttributesAsNeeded(origAttrs, originalInputIdxToSize, newTypes);
+        return replicateAttributesAsNeeded(
+            origAttrs, originalInputIdxToSize, newTypes, /*deriveArgNamesForCopies=*/true
+        );
       }
       ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
         return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);

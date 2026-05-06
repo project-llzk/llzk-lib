@@ -243,6 +243,48 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
+
+  if ((*this)->hasAttr(ARG_NAME_ATTR_NAME)) {
+    return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
+  }
+
+  if (ArrayAttr resAttrs = getAllResultAttrs()) {
+    for (auto [i, attr] : llvm::enumerate(resAttrs)) {
+      auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attr);
+      if (dictAttr && dictAttr.contains(ARG_NAME_ATTR_NAME)) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME
+                             << "' is only valid on function arguments but found on result " << i;
+      }
+    }
+  }
+
+  if (ArrayAttr argAttrs = getAllArgAttrs()) {
+    llvm::DenseSet<StringAttr> seenNames;
+    for (auto [i, attr] : llvm::enumerate(argAttrs)) {
+      auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attr);
+      if (!dictAttr) {
+        continue;
+      }
+      Attribute argNameAttr = dictAttr.get(ARG_NAME_ATTR_NAME);
+      if (!argNameAttr) {
+        continue;
+      }
+      auto argName = llvm::dyn_cast<StringAttr>(argNameAttr);
+      if (!argName) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+                             << " must be a string attribute";
+      }
+      if (argName.getValue().empty()) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+                             << " must not be empty";
+      }
+      if (!seenNames.insert(argName).second) {
+        return emitOpError() << "duplicate '" << ARG_NAME_ATTR_NAME << "' value \""
+                             << argName.getValue() << "\" on argument " << i;
+      }
+    }
+  }
+
   // Ensure that only valid LLZK types are used for arguments and return. Additionally, the struct
   // functions may not use AffineMapAttrs in their parameter types. If such a scenario seems to make
   // sense when generating LLZK IR, it's likely better to introduce a struct parameter to use

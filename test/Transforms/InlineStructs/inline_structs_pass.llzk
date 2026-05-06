@@ -92,7 +92,10 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
       function.return %self : !struct.type<@Component2A>
     }
 
-    function.def @constrain(%self: !struct.type<@Component2A>, %a: index, %b: i1) {
+    function.def @constrain(
+        %self: !struct.type<@Component2A> {function.arg_name = "self"},
+        %a: index,
+        %b: i1) {
       %x = struct.readm %self[@f1] : !struct.type<@Component2A>, index
       constrain.eq %a, %x : index
       %y = struct.readm %self[@f2] : !struct.type<@Component2A>, i1
@@ -903,6 +906,60 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      constrain.eq %[[V8]], %[[V9]] : !felt.type, !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// TESTS: splitting a function parameter that came from a split struct.member derives arg names
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @PairForArgName {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@PairForArgName> {
+      %self = struct.new : !struct.type<@PairForArgName>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@PairForArgName>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@PairForArgName>, !felt.type
+      function.return %self : !struct.type<@PairForArgName>
+    }
+
+    function.def @constrain(%self: !struct.type<@PairForArgName>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def @consume_pair(%input: !struct.type<@PairForArgName> {function.arg_name = "input"}) {
+    %lhs = struct.readm %input[@lhs] : !struct.type<@PairForArgName>, !felt.type
+    %rhs = struct.readm %input[@rhs] : !struct.type<@PairForArgName>, !felt.type
+    function.return
+  }
+
+  struct.def @Main {
+    struct.member @pair : !struct.type<@PairForArgName>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %lhs = felt.const 1
+      %rhs = felt.const 2
+      %self = struct.new : !struct.type<@Main>
+      %pair = function.call @PairForArgName::@compute(%lhs, %rhs) : (!felt.type, !felt.type) -> !struct.type<@PairForArgName>
+      struct.writem %self[@pair] = %pair : !struct.type<@Main>, !struct.type<@PairForArgName>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %lhs = felt.const 1
+      %rhs = felt.const 2
+      %pair = struct.readm %self[@pair] : !struct.type<@Main>, !struct.type<@PairForArgName>
+      function.call @PairForArgName::@constrain(%pair, %lhs, %rhs) : (!struct.type<@PairForArgName>, !felt.type, !felt.type) -> ()
+      function.call @consume_pair(%pair) : (!struct.type<@PairForArgName>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: function.def @consume_pair(
+// CHECK-SAME:    %[[ARG0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "input.lhs"},
+// CHECK-SAME:    %[[ARG1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "input.rhs"})
+// CHECK-NEXT:    function.return
 // CHECK-NEXT:  }
 // -----
 

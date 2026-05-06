@@ -729,7 +729,24 @@ private:
         if (origAttrs) {
           // Replicate the value at `origAttrs[inputIdx]` to have `newMembers.size()`
           SmallVector<Attribute> newAttrs(origAttrs.getValue());
-          newAttrs.insert(newAttrs.begin() + inputIdx, newMembers.size() - 1, origAttrs[inputIdx]);
+          auto splitAttr = llvm::cast<DictionaryAttr>(origAttrs[inputIdx]);
+          SmallVector<Attribute> splitAttrs;
+          if (StringAttr argName = getFunctionArgNameAttr(splitAttr)) {
+            llvm::StringSet<> usedArgNames;
+            collectFunctionArgNames(origAttrs, usedArgNames);
+            for (auto [memberName, _] : newMembers) {
+              std::string desiredName = (argName.getValue() + "." + memberName).str();
+              splitAttrs.push_back(setFunctionArgNameAttr(
+                  splitAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
+              ));
+            }
+          } else {
+            splitAttrs.append(newMembers.size(), splitAttr);
+          }
+          newAttrs[inputIdx] = splitAttrs.front();
+          newAttrs.insert(
+              newAttrs.begin() + inputIdx + 1, splitAttrs.begin() + 1, splitAttrs.end()
+          );
           return ArrayAttr::get(origAttrs.getContext(), newAttrs);
         }
         return nullptr;

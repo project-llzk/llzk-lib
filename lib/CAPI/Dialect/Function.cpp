@@ -62,6 +62,29 @@ MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
   );
 }
 
+bool llzkFunction_FuncDefOpHasArgNameAttr(MlirOperation op, unsigned index) {
+  return !mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, index));
+}
+
+MlirAttribute llzkFunction_FuncDefOpGetArgNameAttr(MlirOperation op, unsigned index) {
+  FuncDefOp func = llvm::cast<FuncDefOp>(unwrap(op));
+  if (index >= func.getNumArguments()) {
+    return wrap(Attribute());
+  }
+  Attribute argNameAttr = func.getArgAttrOfType<StringAttr>(index, ARG_NAME_ATTR_NAME);
+  return wrap(argNameAttr);
+}
+
+void llzkFunction_FuncDefOpSetArgNameAttr(MlirOperation op, unsigned index, MlirAttribute attr) {
+  FuncDefOp func = llvm::cast<FuncDefOp>(unwrap(op));
+  func.setArgAttr(index, ARG_NAME_ATTR_NAME, llvm::cast<StringAttr>(unwrap(attr)));
+}
+
+void llzkFunction_FuncDefOpSetArgName(MlirOperation op, unsigned index, MlirStringRef name) {
+  FuncDefOp func = llvm::cast<FuncDefOp>(unwrap(op));
+  func.setArgAttr(index, ARG_NAME_ATTR_NAME, StringAttr::get(func.getContext(), unwrap(name)));
+}
+
 //===----------------------------------------------------------------------===//
 // CallOp
 //===----------------------------------------------------------------------===//
