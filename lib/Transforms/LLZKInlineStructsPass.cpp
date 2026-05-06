@@ -45,6 +45,7 @@
 #include <llvm/Support/Debug.h>
 
 #include <concepts>
+#include <optional>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -707,10 +708,21 @@ private:
     class Impl : public FunctionTypeConverter {
       unsigned inputIdx;
       const SrcStructMemberToCloneInDest &newMembers;
+      std::optional<std::string> originalArgName;
+      SmallVector<std::string> existingArgNames;
 
     public:
-      Impl(unsigned paramIdx, const SrcStructMemberToCloneInDest &nameToNewMember)
-          : inputIdx(paramIdx), newMembers(nameToNewMember) {}
+      Impl(FuncDefOp func, unsigned paramIdx, const SrcStructMemberToCloneInDest &nameToNewMember)
+          : inputIdx(paramIdx), newMembers(nameToNewMember) {
+        for (unsigned i = 0, e = func.getNumArguments(); i < e; ++i) {
+          if (std::optional<StringAttr> argName = func.getArgNameAttr(i)) {
+            existingArgNames.push_back(argName->getValue().str());
+            if (i == inputIdx) {
+              originalArgName = argName->getValue().str();
+            }
+          }
+        }
+      }
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
@@ -731,11 +743,13 @@ private:
           SmallVector<Attribute> newAttrs(origAttrs.getValue());
           auto splitAttr = llvm::cast<DictionaryAttr>(origAttrs[inputIdx]);
           SmallVector<Attribute> splitAttrs;
-          if (StringAttr argName = getFunctionArgNameAttr(splitAttr)) {
+          if (originalArgName) {
             llvm::StringSet<> usedArgNames;
-            collectFunctionArgNames(origAttrs, usedArgNames);
+            for (StringRef argName : existingArgNames) {
+              usedArgNames.insert(argName);
+            }
             for (auto [memberName, _] : newMembers) {
-              std::string desiredName = (argName.getValue() + "." + memberName).str();
+              std::string desiredName = (*originalArgName + "." + memberName).str();
               splitAttrs.push_back(setFunctionArgNameAttr(
                   splitAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
               ));
@@ -791,7 +805,7 @@ private:
       }
     };
     IRRewriter rewriter(func.getContext());
-    Impl(paramIdx, nameToNewMember).convert(func, rewriter);
+    Impl(func, paramIdx, nameToNewMember).convert(func, rewriter);
   }
 };
 

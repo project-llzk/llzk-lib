@@ -22,28 +22,6 @@
 
 namespace llzk {
 
-/// Return the `function.arg_name` attribute from the given argument attribute dictionary.
-inline mlir::StringAttr getFunctionArgNameAttr(mlir::DictionaryAttr attrs) {
-  if (!attrs) {
-    return {};
-  }
-  return llvm::dyn_cast_or_null<mlir::StringAttr>(attrs.get(function::ARG_NAME_ATTR_NAME));
-}
-
-/// Return a copy of the given argument attribute dictionary without `function.arg_name`.
-inline mlir::DictionaryAttr removeFunctionArgNameAttr(mlir::DictionaryAttr attrs) {
-  if (!attrs || !attrs.contains(function::ARG_NAME_ATTR_NAME)) {
-    return attrs;
-  }
-  llvm::SmallVector<mlir::NamedAttribute> newAttrs;
-  for (mlir::NamedAttribute attr : attrs) {
-    if (attr.getName().getValue() != function::ARG_NAME_ATTR_NAME) {
-      newAttrs.push_back(attr);
-    }
-  }
-  return mlir::DictionaryAttr::get(attrs.getContext(), newAttrs);
-}
-
 /// Return a copy of the given argument attribute dictionary with `function.arg_name` set to `name`.
 inline mlir::DictionaryAttr
 setFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
@@ -65,19 +43,6 @@ reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desir
     if (!usedNames.contains(candidate)) {
       usedNames.insert(candidate);
       return candidate;
-    }
-  }
-}
-
-/// Add all valid `function.arg_name` values in `argAttrs` to `usedNames`.
-inline void collectFunctionArgNames(mlir::ArrayAttr argAttrs, llvm::StringSet<> &usedNames) {
-  if (!argAttrs) {
-    return;
-  }
-  for (mlir::Attribute attr : argAttrs) {
-    auto dictAttr = llvm::dyn_cast<mlir::DictionaryAttr>(attr);
-    if (mlir::StringAttr argName = getFunctionArgNameAttr(dictAttr)) {
-      usedNames.insert(argName.getValue());
     }
   }
 }

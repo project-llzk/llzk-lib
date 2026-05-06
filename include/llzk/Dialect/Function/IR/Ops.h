@@ -22,6 +22,7 @@
 #include <mlir/Interfaces/FunctionInterfaces.h>
 
 #include <cstdint>
+#include <optional>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES

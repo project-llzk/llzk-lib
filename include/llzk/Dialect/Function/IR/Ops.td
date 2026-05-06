@@ -173,6 +173,18 @@ def FuncDefOp
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 
+    /// Return `true` iff the argument at the given index has a `function.arg_name` attribute.
+    bool hasArgName(unsigned index);
+
+    /// Return the `function.arg_name` attribute for the argument at the given index.
+    ::std::optional<::mlir::StringAttr> getArgNameAttr(unsigned index);
+
+    /// Set the `function.arg_name` attribute for the argument at the given index.
+    void setArgNameAttr(unsigned index, const ::mlir::StringAttr &attr);
+
+    /// Set the `function.arg_name` attribute for the argument at the given index from a string.
+    void setArgName(unsigned index, ::llvm::StringRef name);
+
     /// Required by FunctionOpInterface.
     /// Returns the region on the current operation that is callable. This may
     /// return null in the case of an external callable object, e.g. an external

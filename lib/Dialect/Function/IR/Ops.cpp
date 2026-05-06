@@ -241,6 +241,27 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
   }
 }
 
+bool FuncDefOp::hasArgName(unsigned index) { return static_cast<bool>(getArgNameAttr(index)); }
+
+std::optional<StringAttr> FuncDefOp::getArgNameAttr(unsigned index) {
+  if (index >= getNumArguments()) {
+    return std::nullopt;
+  }
+  if (StringAttr attr = getArgAttrOfType<StringAttr>(index, ARG_NAME_ATTR_NAME)) {
+    return attr;
+  }
+  return std::nullopt;
+}
+
+void FuncDefOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
+  assert(index < getNumArguments() && "argument index out of range");
+  setArgAttr(index, ARG_NAME_ATTR_NAME, attr);
+}
+
+void FuncDefOp::setArgName(unsigned index, StringRef name) {
+  setArgNameAttr(index, StringAttr::get(getContext(), name));
+}
+
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
 

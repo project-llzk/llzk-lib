@@ -9,6 +9,7 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
@@ -70,6 +71,27 @@ TEST_F(ModuleBuilderTests, testFnInsertion) {
   auto constrainFn = builder.getConstrainFn(structAName);
   ASSERT_TRUE(mlir::succeeded(constrainFn));
   ASSERT_EQ(constrainFn->getBody().getArguments().size(), 1);
+}
+
+TEST_F(ModuleBuilderTests, testFuncDefOpArgNameAccessors) {
+  mlir::OpBuilder opBuilder(&ctx);
+  opBuilder.setInsertionPointToStart(mod->getBody());
+
+  auto funcType = opBuilder.getFunctionType({opBuilder.getI1Type(), opBuilder.getI1Type()}, {});
+  auto func = opBuilder.create<function::FuncDefOp>(loc, "test", funcType);
+
+  ASSERT_FALSE(func.hasArgName(0));
+  ASSERT_FALSE(func.getArgNameAttr(0));
+
+  func.setArgName(0, "input");
+  func.setArgNameAttr(1, opBuilder.getStringAttr("input/1"));
+
+  ASSERT_TRUE(func.hasArgName(0));
+  ASSERT_EQ(func.getArgNameAttr(0)->getValue(), "input");
+  ASSERT_TRUE(func.hasArgName(1));
+  ASSERT_EQ(func.getArgNameAttr(1)->getValue(), "input/1");
+  ASSERT_FALSE(func.hasArgName(2));
+  ASSERT_FALSE(func.getArgNameAttr(2));
 }
 
 TEST_F(ModuleBuilderTests, testConstruction) {
