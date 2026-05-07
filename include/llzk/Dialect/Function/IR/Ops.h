@@ -22,12 +22,16 @@
 #include <mlir/Interfaces/FunctionInterfaces.h>
 
 #include <cstdint>
+#include <optional>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Function/IR/Ops.h.inc"
 
 namespace llzk::function {
+
+/// Attribute name for source-level function argument names.
+constexpr char ARG_NAME_ATTR_NAME[] = "function.arg_name";
 
 /// @brief Kinds of functions in LLZK.
 enum class FunctionKind : std::uint8_t {

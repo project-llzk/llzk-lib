@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -699,4 +700,29 @@ TEST_F(OpTests, test_calleeIs_withGlobalConstrain) {
 
   ASSERT_FALSE(call.calleeIsStructCompute());
   ASSERT_FALSE(call.calleeIsStructConstrain());
+}
+
+//===------------------------------------------------------------------===//
+// FuncDefOp function.arg_name attribute tests
+//===------------------------------------------------------------------===//
+
+TEST_F(OpTests, testFuncDefOpArgNameAccessors) {
+  mlir::OpBuilder opBuilder(&ctx);
+  opBuilder.setInsertionPointToStart(mod->getBody());
+
+  auto funcType = opBuilder.getFunctionType({opBuilder.getI1Type(), opBuilder.getI1Type()}, {});
+  auto func = opBuilder.create<function::FuncDefOp>(loc, "test", funcType);
+
+  ASSERT_FALSE(func.hasArgName(0));
+  ASSERT_FALSE(func.getArgNameAttr(0));
+
+  func.setArgName(0, "input");
+  func.setArgNameAttr(1, opBuilder.getStringAttr("input/1"));
+
+  ASSERT_TRUE(func.hasArgName(0));
+  ASSERT_EQ(func.getArgNameAttr(0)->getValue(), "input");
+  ASSERT_TRUE(func.hasArgName(1));
+  ASSERT_EQ(func.getArgNameAttr(1)->getValue(), "input/1");
+  ASSERT_FALSE(func.hasArgName(2));
+  ASSERT_FALSE(func.getArgNameAttr(2));
 }

@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 // Adapted from the LLVM Project's lib/Dialect/Func/IR/FuncOps.cpp
@@ -241,8 +242,75 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
   }
 }
 
+bool FuncDefOp::hasArgName(unsigned index) { return static_cast<bool>(getArgNameAttr(index)); }
+
+std::optional<StringAttr> FuncDefOp::getArgNameAttr(unsigned index) {
+  if (index >= getNumArguments()) {
+    return std::nullopt;
+  }
+  if (StringAttr attr = getArgAttrOfType<StringAttr>(index, ARG_NAME_ATTR_NAME)) {
+    return attr;
+  }
+  return std::nullopt;
+}
+
+void FuncDefOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
+  assert(index < getNumArguments() && "argument index out of range");
+  setArgAttr(index, ARG_NAME_ATTR_NAME, attr);
+}
+
+void FuncDefOp::setArgName(unsigned index, StringRef name) {
+  setArgNameAttr(index, StringAttr::get(getContext(), name));
+}
+
 LogicalResult FuncDefOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
+
+  if ((*this)->hasAttr(ARG_NAME_ATTR_NAME)) {
+    return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
+  }
+
+  if (ArrayAttr resAttrs = getAllResultAttrs()) {
+    for (auto [i, attr] : llvm::enumerate(resAttrs)) {
+      auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attr);
+      if (dictAttr && dictAttr.contains(ARG_NAME_ATTR_NAME)) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME
+                             << "' is only valid on function arguments but found on result " << i;
+      }
+    }
+  }
+
+  if (ArrayAttr argAttrs = getAllArgAttrs()) {
+    llvm::DenseSet<StringAttr> seenNames;
+    for (auto [i, attr] : llvm::enumerate(argAttrs)) {
+      auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attr);
+      if (!dictAttr) {
+        continue;
+      }
+      Attribute argNameAttr = dictAttr.get(ARG_NAME_ATTR_NAME);
+      if (!argNameAttr) {
+        continue;
+      }
+      auto argName = llvm::dyn_cast<StringAttr>(argNameAttr);
+      if (!argName) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+                             << " must be a string attribute";
+      }
+      if (!llvm::isa<NoneType>(argName.getType())) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+                             << " must not have an explicit type";
+      }
+      if (argName.getValue().empty()) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+                             << " must not be empty";
+      }
+      if (!seenNames.insert(argName).second) {
+        return emitOpError() << "duplicate '" << ARG_NAME_ATTR_NAME << "' value \""
+                             << argName.getValue() << "\" on argument " << i;
+      }
+    }
+  }
+
   // Ensure that only valid LLZK types are used for arguments and return. Additionally, the struct
   // functions may not use AffineMapAttrs in their parameter types. If such a scenario seems to make
   // sense when generating LLZK IR, it's likely better to introduce a struct parameter to use

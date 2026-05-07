@@ -76,6 +76,8 @@
 
 #include <llvm/Support/Debug.h>
 
+#include <optional>
+
 // Include the generated base pass class definitions.
 namespace llzk::array {
 #define GEN_PASS_DEF_ARRAYTOSCALARPASS
@@ -388,14 +390,33 @@ public:
   // copies of `origAttrs[i]` are appended in its place.
   static ArrayAttr replicateAttributesAsNeeded(
       ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize,
-      const SmallVector<Type> &newTypes
+      const SmallVector<Type> &newTypes, ArrayRef<std::optional<std::string>> origArgNames = {},
+      ArrayRef<std::string> existingArgNames = {}
   ) {
     if (origAttrs) {
       assert(originalIdxToSize.size() == origAttrs.size());
       if (originalIdxToSize.size() != newTypes.size()) {
         SmallVector<Attribute> newArgAttrs;
+        llvm::StringSet<> usedArgNames;
+        if (!origArgNames.empty()) {
+          for (StringRef argName : existingArgNames) {
+            usedArgNames.insert(argName);
+          }
+        }
         for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
-          newArgAttrs.append(s, origAttrs[i]);
+          Attribute attr = origAttrs[i];
+          if (!origArgNames.empty() && s != 1 && origArgNames[i]) {
+            auto dictAttr = llvm::cast<DictionaryAttr>(attr);
+            StringRef argName = *origArgNames[i];
+            for (size_t j = 0; j < s; ++j) {
+              std::string desiredName = (argName + "[" + llvm::Twine(j) + "]").str();
+              newArgAttrs.push_back(withFunctionArgNameAttr(
+                  dictAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
+              ));
+            }
+            continue;
+          }
+          newArgAttrs.append(s, attr);
         }
         return ArrayAttr::get(origAttrs.getContext(), newArgAttrs);
       }
@@ -409,6 +430,8 @@ public:
     // Update in/out types of the function to replace arrays with scalars
     class Impl : public FunctionTypeConverter {
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+      SmallVector<std::optional<std::string>> originalInputArgNames;
+      SmallVector<std::string> existingInputArgNames;
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
@@ -418,7 +441,10 @@ public:
         return splitArrayType(origTypes, &originalResultIdxToSize);
       }
       ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateAttributesAsNeeded(origAttrs, originalInputIdxToSize, newTypes);
+        return replicateAttributesAsNeeded(
+            origAttrs, originalInputIdxToSize, newTypes, originalInputArgNames,
+            existingInputArgNames
+        );
       }
       ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
         return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);
@@ -456,8 +482,21 @@ public:
           }
         }
       }
+
+    public:
+      Impl(FuncDefOp op) {
+        originalInputArgNames.reserve(op.getNumArguments());
+        for (unsigned i = 0, e = op.getNumArguments(); i < e; ++i) {
+          if (std::optional<StringAttr> argName = op.getArgNameAttr(i)) {
+            originalInputArgNames.push_back(argName->getValue().str());
+            existingInputArgNames.push_back(argName->getValue().str());
+          } else {
+            originalInputArgNames.push_back(std::nullopt);
+          }
+        }
+      }
     };
-    Impl().convert(op, rewriter);
+    Impl(op).convert(op, rewriter);
   }
 };
 

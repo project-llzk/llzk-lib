@@ -9,6 +9,7 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 
