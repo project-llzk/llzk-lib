@@ -28,6 +28,9 @@ function.def private @bad_arg_name_non_string(%x: i1 {function.arg_name = 7 : i6
 // expected-error@+1 {{'function.def' op 'function.arg_name' on argument 0 must not be empty}}
 function.def private @bad_arg_name_empty(%x: i1 {function.arg_name = ""})
 // -----
+// expected-error@+1 {{'function.def' op 'function.arg_name' on argument 0 must not have an explicit type}}
+function.def private @bad_arg_name_typed_string(%x: i1 {function.arg_name = "x" : i1})
+// -----
 // expected-error@+1 {{'function.def' op duplicate 'function.arg_name' value "x" on argument 1}}
 function.def private @bad_arg_name_duplicate(%x: i1 {function.arg_name = "x"}, %y: index {function.arg_name = "x"})
 // -----

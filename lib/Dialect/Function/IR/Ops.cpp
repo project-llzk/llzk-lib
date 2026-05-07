@@ -296,6 +296,10 @@ LogicalResult FuncDefOp::verify() {
         return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must be a string attribute";
       }
+      if (!llvm::isa<NoneType>(argName.getType())) {
+        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+                             << " must not have an explicit type";
+      }
       if (argName.getValue().empty()) {
         return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must not be empty";

@@ -60,9 +60,10 @@ def FuncDefOp
 
     Function arguments may carry an optional `function.arg_name` attribute to
     preserve the source-level argument name independently from the printed SSA
-    block argument name. The value must be a non-empty `StringAttr`, and all
-    attached `function.arg_name` values must be unique within the function.
-    The attribute is only valid on function arguments.
+    block argument name. The value must be a non-empty, untyped `StringAttr`,
+    and all attached `function.arg_name` values must be unique within the
+    function. Typed string attributes such as `"x" : i1` are rejected. The
+    attribute is only valid on function arguments.
     Argument-splitting transforms preserve this metadata by deriving unique
     names for generated arguments, such as `input[0]` for array elements or
     `self.member` for struct members.
