@@ -310,11 +310,72 @@ public:
   /// Get the associated template of this builder.
   polymorphic::TemplateOp &getTemplate() { return myTemplate; }
 
-  // TODO: other getters for template-specific ops like param/expr
+  mlir::FailureOr<polymorphic::TemplateParamOp> getParam(std::string_view name) {
+    auto op = myTemplate.getConstNamed<polymorphic::TemplateParamOp>(name);
+    if (op) {
+      return op;
+    }
+    return mlir::failure();
+  }
 
-  /* Builder methods */
+  mlir::FailureOr<polymorphic::TemplateExprOp> getExpr(std::string_view name) {
+    auto op = myTemplate.getConstNamed<polymorphic::TemplateExprOp>(name);
+    if (op) {
+      return op;
+    }
+    return mlir::failure();
+  }
 
-  // TODO: other builders for template-specific ops like param/expr
+  TemplateBuilder &
+  insertParam(std::string_view name, mlir::Location loc, mlir::TypeAttr type = {}) {
+    if (succeeded(getParam(name))) {
+      llvm::report_fatal_error("Duplicate TemplateParamOp insertion attempted");
+    }
+
+    mlir::OpBuilder builder(context);
+
+    auto &region = getBodyRegion();
+    if (region.empty()) {
+      region.emplaceBlock();
+    }
+
+    builder.setInsertionPointToEnd(&region.front());
+
+    auto nameAttr = builder.getStringAttr(name);
+
+    builder.create<polymorphic::TemplateParamOp>(loc, nameAttr, type);
+
+    return *this;
+  }
+
+  inline TemplateBuilder &insertParam(std::string_view name) {
+    return insertParam(name, getUnknownLoc());
+  }
+
+  TemplateBuilder &insertExpr(std::string_view name, mlir::Location loc) {
+    if (succeeded(getExpr(name))) {
+      llvm::report_fatal_error("Duplicate TemplateExprOp insertion attempted");
+    }
+
+    mlir::OpBuilder builder(context);
+
+    auto &region = getBodyRegion();
+    if (region.empty()) {
+      region.emplaceBlock();
+    }
+
+    builder.setInsertionPointToEnd(&region.front());
+
+    auto nameAttr = builder.getStringAttr(name);
+
+    builder.create<polymorphic::TemplateExprOp>(loc, nameAttr);
+
+    return *this;
+  }
+
+  inline TemplateBuilder &insertExpr(std::string_view name) {
+    return insertExpr(name, getUnknownLoc());
+  }
 };
 
 /// @brief Builds out a LLZK-compliant module and provides utilities for populating

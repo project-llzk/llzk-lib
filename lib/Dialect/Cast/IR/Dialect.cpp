@@ -12,6 +12,8 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
+
 // TableGen'd implementation files
 #include "llzk/Dialect/Cast/IR/Dialect.cpp.inc"
 

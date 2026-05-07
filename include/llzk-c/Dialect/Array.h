@@ -41,6 +41,19 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Array, llzk__array);
 //===----------------------------------------------------------------------===//
 
 /// Creates an llzk::array::ArrayType using a list of attributes as dimensions.
+///
+/// It can only be instantiated with the following element types:
+///   - Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)
+///   - IndexType
+///   - Unsigned integers of 1 bit (aka booleans)
+///
+/// The dimensions of the array are specified using a list of attributes, one
+/// per dimension. Each attribute must be one of the following:
+///   - IntegerAttr (with IndexType), specifying a fixed dimension size
+///   - SymbolRefAttr, specifying a dimension size defined by a struct parameter or
+///     global constant
+///   - AffineMapAttr, specifying a dimension size computed from surrounding loop
+///     induction variables
 MLIR_CAPI_EXPORTED MlirType
 llzkArray_ArrayTypeGetWithDims(MlirType type, intptr_t nDims, MlirAttribute const *dims);
 
