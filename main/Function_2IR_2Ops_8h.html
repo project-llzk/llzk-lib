@@ -108,7 +108,8 @@ $(function(){initNavTree('Function_2IR_2Ops_8h.html','',''); });
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#define-members">Macros</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">Ops.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -123,11 +124,12 @@ $(function(){initNavTree('Function_2IR_2Ops_8h.html','',''); });
 <code>#include &lt;mlir/Interfaces/ControlFlowInterfaces.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/FunctionInterfaces.h&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">llzk/Dialect/Function/IR/Ops.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Ops.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Function_2IR_2Ops_8h__incl.svg" width="3350" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Function_2IR_2Ops_8h__incl.svg" width="3542" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -159,6 +161,11 @@ Enumerations</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:ac523b22a13798e5cef8a134bc03ac61d" id="r_ac523b22a13798e5cef8a134bc03ac61d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9">FunctionKind</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1function.html#ac523b22a13798e5cef8a134bc03ac61d">llzk::function::fnNameToKind</a> (mlir::StringRef name)</td></tr>
 <tr class="memdesc:ac523b22a13798e5cef8a134bc03ac61d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given a function name, return the corresponding <span class="tt"><a class="el" href="namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9" title="Kinds of functions in LLZK.">FunctionKind</a></span>.  <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a24bb122df980745567375500af3c2efb" id="r_a24bb122df980745567375500af3c2efb"><td class="memItemLeft" align="right" valign="top">constexpr char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb">llzk::function::ARG_NAME_ATTR_NAME</a> [] = &quot;function.arg_name&quot;</td></tr>
+<tr class="memdesc:a24bb122df980745567375500af3c2efb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attribute name for source-level function argument names.  <br /></td></tr>
 </table>
 <a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a52c883a38e577b8b12282ff70c95a16d" name="a52c883a38e577b8b12282ff70c95a16d"></a>
@@ -173,7 +180,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_source.html#l00027">27</a> of file <a class="el" href="Function_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_source.html#l00028">28</a> of file <a class="el" href="Function_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>

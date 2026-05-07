@@ -41,6 +41,7 @@ var Function_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkFunction_FuncDefOpHasAllowConstraintAttr", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a7827a6a5c11fffcd8b578e6ca098c786", null ],
     [ "llzkFunction_FuncDefOpHasAllowNonNativeFieldOpsAttr", "Function_2IR_2Ops_8capi_8cpp_8inc.html#ac9a0c68f9e8dc5ec46e2a2e5e3902615", null ],
     [ "llzkFunction_FuncDefOpHasAllowWitnessAttr", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a490f12b76a246a23dfbbc62828f3e605", null ],
+    [ "llzkFunction_FuncDefOpHasArgName", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a848fb7806d1367eb359430d9881bebe1", null ],
     [ "llzkFunction_FuncDefOpHasArgPublicAttr", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a89f996d4fbdcc67e8c254b6ee66ee60c", null ],
     [ "llzkFunction_FuncDefOpIsDeclaration", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a6d61c52ecc365a015765b5ab7ae00dbf", null ],
     [ "llzkFunction_FuncDefOpIsInStruct", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a7a87414642c710764444a61f2fce96e1", null ],

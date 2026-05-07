@@ -552,6 +552,10 @@ Functions</h2></td></tr>
 <tr class="memitem:aaa4a11b9841dc711843a40d178fea482 template"><td class="memItemLeft" align="right" valign="top">mlir::RewritePatternSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
 <tr class="memdesc:aaa4a11b9841dc711843a40d178fea482"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> covering all LLZK op types that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a>.  <br /></td></tr>
 <tr class="memitem:a4f2a7298c40bf845f96f54b518a68dfe" id="r_a4f2a7298c40bf845f96f54b518a68dfe"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4f2a7298c40bf845f96f54b518a68dfe">alignStartingAt</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> root, mlir::SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a> &amp;equivalence)</td></tr>
+<tr class="memitem:a5a7bc348eb78ffc98dd0bf358764e58f" id="r_a5a7bc348eb78ffc98dd0bf358764e58f"><td class="memItemLeft" align="right" valign="top">mlir::DictionaryAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a7bc348eb78ffc98dd0bf358764e58f">withFunctionArgNameAttr</a> (mlir::DictionaryAttr attrs, llvm::StringRef name)</td></tr>
+<tr class="memdesc:a5a7bc348eb78ffc98dd0bf358764e58f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a copy of the given argument attribute dictionary with <span class="tt">function.arg_name</span> set to <span class="tt">name</span>.  <br /></td></tr>
+<tr class="memitem:a8ca8c0cae84ceef2801e4aea559bde37" id="r_a8ca8c0cae84ceef2801e4aea559bde37"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8ca8c0cae84ceef2801e4aea559bde37">reserveUniqueFunctionArgName</a> (llvm::StringSet&lt;&gt; &amp;usedNames, llvm::StringRef desiredName)</td></tr>
+<tr class="memdesc:a8ca8c0cae84ceef2801e4aea559bde37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve and return a unique function argument name based on <span class="tt">desiredName</span>.  <br /></td></tr>
 <tr class="memitem:ad809d2a8931e263f7879703211032d0d" id="r_ad809d2a8931e263f7879703211032d0d"><td class="memItemLeft" align="right" valign="top">mlir::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad809d2a8931e263f7879703211032d0d">rebuildExprInCompute</a> (mlir::Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> computeFunc, mlir::OpBuilder &amp;builder, llvm::DenseMap&lt; mlir::Value, mlir::Value &gt; &amp;memo)</td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
 <tr class="memitem:a520c8c09dbbe575a7e8708ed8f6f7c44" id="r_a520c8c09dbbe575a7e8708ed8f6f7c44"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a520c8c09dbbe575a7e8708ed8f6f7c44">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name)</td></tr>
@@ -2522,7 +2526,7 @@ template&lt;typename OpTy, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l01090">1090</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l01121">1121</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -8448,6 +8452,39 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
 
 </div>
 </div>
+<a id="a8ca8c0cae84ceef2801e4aea559bde37" name="a8ca8c0cae84ceef2801e4aea559bde37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ca8c0cae84ceef2801e4aea559bde37">&#9670;&#160;</a></span>reserveUniqueFunctionArgName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llzk::reserveUniqueFunctionArgName </td>
+          <td>(</td>
+          <td class="paramtype">llvm::StringSet&lt;&gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>usedNames</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>desiredName</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reserve and return a unique function argument name based on <span class="tt">desiredName</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00035">35</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+
+</div>
+</div>
 <a id="a043fe7093faebb4db2da50ae89f82b71" name="a043fe7093faebb4db2da50ae89f82b71"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a043fe7093faebb4db2da50ae89f82b71">&#9670;&#160;</a></span>resolveCallable() <span class="overload">[1/2]</span></h2>
 
@@ -10256,6 +10293,39 @@ template&lt;std::ranges::input_range Range&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00447">447</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5a7bc348eb78ffc98dd0bf358764e58f" name="a5a7bc348eb78ffc98dd0bf358764e58f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a7bc348eb78ffc98dd0bf358764e58f">&#9670;&#160;</a></span>withFunctionArgNameAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::DictionaryAttr llzk::withFunctionArgNameAttr </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return a copy of the given argument attribute dictionary with <span class="tt">function.arg_name</span> set to <span class="tt">name</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00027">27</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>

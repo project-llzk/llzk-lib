@@ -2293,20 +2293,24 @@ Results:</h4>
 <p>Operations within the function cannot implicitly capture values defined outside of the function, i.e., functions are <span class="tt">IsolatedFromAbove</span>. All external references must use function arguments (which are passed by value) or reference external members or globals by symbol name.</p>
 <p>Functions appearing within a <span class="tt">struct.def</span> have specific semantics and must be named <span class="tt">compute</span>, <span class="tt">constrain</span>, or <span class="tt">product</span>. Functions appearing at the module level (i.e. not within a <span class="tt">struct.def</span>) have no name restrictions and their body may be elided to denote an external function declaration.</p>
 <p>Modules and <span class="tt">struct.def</span> ops are not allowed to be nested within functions.</p>
+<p>Function arguments may carry an optional <span class="tt">function.arg_name</span> attribute to preserve the source-level argument name independently from the printed SSA block argument name. The value must be a non-empty, untyped <span class="tt">StringAttr</span>, and all attached <span class="tt">function.arg_name</span> values must be unique within the function. Typed string attributes such as <span class="tt">"x" : i1</span> are rejected. The attribute is only valid on function arguments. Argument-splitting transforms preserve this metadata by deriving unique names for generated arguments, such as <span class="tt">input[0]</span> for array elements or <span class="tt">self.member</span> for struct members.</p>
 <p>Example:</p>
 <div class="fragment"><div class="line">// External function definitions.</div>
 <div class="line">function.def private @abort()</div>
-<div class="line">function.def private @scribble(!array.type&lt;5 x !felt.type&gt;, !struct.type&lt;@Hello&gt;) -&gt; i1</div>
+<div class="line">function.def private @scribble(</div>
+<div class="line">  !array.type&lt;5 x !felt.type&gt; {function.arg_name = &quot;input&quot;},</div>
+<div class="line">  !struct.type&lt;@Hello&gt; {function.arg_name = &quot;state&quot;}) -&gt; i1</div>
 <div class="line"> </div>
 <div class="line">// A function that returns its argument twice:</div>
-<div class="line">function.def @count(%x: !felt.type) -&gt; (!felt.type, !felt.type) {</div>
-<div class="line">  return %x, %x: !felt.type, !felt.type</div>
+<div class="line">function.def @count(%x: !felt.type {function.arg_name = &quot;x&quot;})</div>
+<div class="line">    -&gt; (!felt.type, !felt.type) {</div>
+<div class="line">  function.return %x, %x: !felt.type, !felt.type</div>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">// Function definition within a component</div>
 <div class="line">struct.def @NonZero {</div>
-<div class="line">  function.def @compute(%a: !felt.type) { return }</div>
-<div class="line">  function.def @constrain(%a: !felt.type) { return }</div>
+<div class="line">  function.def @compute(%a: !felt.type {function.arg_name = &quot;a&quot;}) { function.return }</div>
+<div class="line">  function.def @constrain(%a: !felt.type {function.arg_name = &quot;a&quot;}) { function.return }</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>Traits: <span class="tt">AffineScope</span>, <span class="tt">AutomaticAllocationScope</span>, <span class="tt">HasParent&lt;::mlir::ModuleOp, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a>, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">llzk::polymorphic::TemplateOp</a>&gt;</span>, <span class="tt">IsolatedFromAbove</span></p>
 <p>Interfaces: <span class="tt">CallableOpInterface</span>, <span class="tt">FunctionOpInterface</span>, <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>

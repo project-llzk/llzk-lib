@@ -106,16 +106,19 @@ $(function(){initNavTree('LLZKConversionUtils_8h.html','',''); });
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">LLZKConversionUtils.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/PatternMatch.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/StringSet.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/Twine.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKConversionUtils.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKConversionUtils_8h__incl.svg" width="3223" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKConversionUtils_8h__incl.svg" width="3338" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -133,6 +136,13 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a5a7bc348eb78ffc98dd0bf358764e58f" id="r_a5a7bc348eb78ffc98dd0bf358764e58f"><td class="memItemLeft" align="right" valign="top">mlir::DictionaryAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a5a7bc348eb78ffc98dd0bf358764e58f">llzk::withFunctionArgNameAttr</a> (mlir::DictionaryAttr attrs, llvm::StringRef name)</td></tr>
+<tr class="memdesc:a5a7bc348eb78ffc98dd0bf358764e58f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a copy of the given argument attribute dictionary with <span class="tt">function.arg_name</span> set to <span class="tt">name</span>.  <br /></td></tr>
+<tr class="memitem:a8ca8c0cae84ceef2801e4aea559bde37" id="r_a8ca8c0cae84ceef2801e4aea559bde37"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a8ca8c0cae84ceef2801e4aea559bde37">llzk::reserveUniqueFunctionArgName</a> (llvm::StringSet&lt;&gt; &amp;usedNames, llvm::StringRef desiredName)</td></tr>
+<tr class="memdesc:a8ca8c0cae84ceef2801e4aea559bde37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve and return a unique function argument name based on <span class="tt">desiredName</span>.  <br /></td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

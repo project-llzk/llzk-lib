@@ -197,46 +197,48 @@ Functions</h2></td></tr>
 <tr class="memdesc:a09227be9f6f5b5d5fcca56ebc32b48d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set ResAttrs attribute of <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ad21500f3eea27e75822325151be7f255" id="r_ad21500f3eea27e75822325151be7f255"><td class="memItemLeft" align="right" valign="top">MlirRegion&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad21500f3eea27e75822325151be7f255">llzkFunction_FuncDefOpGetBody</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:ad21500f3eea27e75822325151be7f255"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Body region from <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation.  <br /></td></tr>
-<tr class="memitem:a193ff11032206632a96d3171f37b783c" id="r_a193ff11032206632a96d3171f37b783c"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a193ff11032206632a96d3171f37b783c">llzkFunction_FuncDefOpGetFullyQualifiedName</a> (MlirOperation inp, bool requireParent)</td></tr>
-<tr class="memdesc:a193ff11032206632a96d3171f37b783c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the full name for this function from the root module, including all surrounding symbol table names (i.e., modules and structs).  <br /></td></tr>
+<tr class="memitem:a17601d05085274c6c259b26a21581a42" id="r_a17601d05085274c6c259b26a21581a42"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a17601d05085274c6c259b26a21581a42">llzkFunction_FuncDefOpIsStructProduct</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a17601d05085274c6c259b26a21581a42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_PRODUCT</span>.  <br /></td></tr>
 <tr class="memitem:a8b56aafd969183f24d55c7fd5a20be9e" id="r_a8b56aafd969183f24d55c7fd5a20be9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8b56aafd969183f24d55c7fd5a20be9e">llzkFunction_FuncDefOpSetAllowNonNativeFieldOpsAttr</a> (MlirOperation inp, bool newValue)</td></tr>
 <tr class="memdesc:a8b56aafd969183f24d55c7fd5a20be9e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add (resp. remove) the <span class="tt">allow_non_native_field_ops</span> attribute to (resp. from) the function def.  <br /></td></tr>
-<tr class="memitem:a6d61c52ecc365a015765b5ab7ae00dbf" id="r_a6d61c52ecc365a015765b5ab7ae00dbf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6d61c52ecc365a015765b5ab7ae00dbf">llzkFunction_FuncDefOpIsDeclaration</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a6d61c52ecc365a015765b5ab7ae00dbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by SymbolOpInterface.  <br /></td></tr>
 <tr class="memitem:ac9a0c68f9e8dc5ec46e2a2e5e3902615" id="r_ac9a0c68f9e8dc5ec46e2a2e5e3902615"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac9a0c68f9e8dc5ec46e2a2e5e3902615">llzkFunction_FuncDefOpHasAllowNonNativeFieldOpsAttr</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:ac9a0c68f9e8dc5ec46e2a2e5e3902615"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_non_native_field_ops</span> attribute.  <br /></td></tr>
 <tr class="memitem:a000185726a8442249e903e7b7bb01e2f" id="r_a000185726a8442249e903e7b7bb01e2f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a000185726a8442249e903e7b7bb01e2f">llzkFunction_FuncDefOpNameIsProduct</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a000185726a8442249e903e7b7bb01e2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_PRODUCT</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately).  <br /></td></tr>
 <tr class="memitem:a89f996d4fbdcc67e8c254b6ee66ee60c" id="r_a89f996d4fbdcc67e8c254b6ee66ee60c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a89f996d4fbdcc67e8c254b6ee66ee60c">llzkFunction_FuncDefOpHasArgPublicAttr</a> (MlirOperation inp, unsigned index)</td></tr>
 <tr class="memdesc:a89f996d4fbdcc67e8c254b6ee66ee60c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the argument at the given index has <span class="tt">pub</span> attribute.  <br /></td></tr>
-<tr class="memitem:a17601d05085274c6c259b26a21581a42" id="r_a17601d05085274c6c259b26a21581a42"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a17601d05085274c6c259b26a21581a42">llzkFunction_FuncDefOpIsStructProduct</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a17601d05085274c6c259b26a21581a42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_PRODUCT</span>.  <br /></td></tr>
-<tr class="memitem:a4b66bdd248d3c40e455bb08993635470" id="r_a4b66bdd248d3c40e455bb08993635470"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4b66bdd248d3c40e455bb08993635470">llzkFunction_FuncDefOpGetSelfValueFromConstrain</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a4b66bdd248d3c40e455bb08993635470"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the "self" value (i.e.  <br /></td></tr>
-<tr class="memitem:a9a62ce06d8693c84cc841371b23d2251" id="r_a9a62ce06d8693c84cc841371b23d2251"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9a62ce06d8693c84cc841371b23d2251">llzkFunction_FuncDefOpGetSingleResultTypeOfCompute</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a9a62ce06d8693c84cc841371b23d2251"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assuming the name is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single StructType result.  <br /></td></tr>
 <tr class="memitem:a490f12b76a246a23dfbbc62828f3e605" id="r_a490f12b76a246a23dfbbc62828f3e605"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a490f12b76a246a23dfbbc62828f3e605">llzkFunction_FuncDefOpHasAllowWitnessAttr</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a490f12b76a246a23dfbbc62828f3e605"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_witness</span> attribute.  <br /></td></tr>
+<tr class="memitem:a9609103fd17f462d0247b24383b2cc04" id="r_a9609103fd17f462d0247b24383b2cc04"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9609103fd17f462d0247b24383b2cc04">llzkFunction_FuncDefOpIsStructConstrain</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a9609103fd17f462d0247b24383b2cc04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_CONSTRAIN</span>.  <br /></td></tr>
+<tr class="memitem:ae7c5379c41f8d295820901ce80c1d55a" id="r_ae7c5379c41f8d295820901ce80c1d55a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae7c5379c41f8d295820901ce80c1d55a">llzkFunction_FuncDefOpNameIsCompute</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ae7c5379c41f8d295820901ce80c1d55a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_COMPUTE</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately).  <br /></td></tr>
+<tr class="memitem:a6d61c52ecc365a015765b5ab7ae00dbf" id="r_a6d61c52ecc365a015765b5ab7ae00dbf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6d61c52ecc365a015765b5ab7ae00dbf">llzkFunction_FuncDefOpIsDeclaration</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a6d61c52ecc365a015765b5ab7ae00dbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by SymbolOpInterface.  <br /></td></tr>
+<tr class="memitem:a9a62ce06d8693c84cc841371b23d2251" id="r_a9a62ce06d8693c84cc841371b23d2251"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9a62ce06d8693c84cc841371b23d2251">llzkFunction_FuncDefOpGetSingleResultTypeOfCompute</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a9a62ce06d8693c84cc841371b23d2251"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assuming the name is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single StructType result.  <br /></td></tr>
+<tr class="memitem:a4b66bdd248d3c40e455bb08993635470" id="r_a4b66bdd248d3c40e455bb08993635470"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4b66bdd248d3c40e455bb08993635470">llzkFunction_FuncDefOpGetSelfValueFromConstrain</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a4b66bdd248d3c40e455bb08993635470"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the "self" value (i.e.  <br /></td></tr>
 <tr class="memitem:ab8374a64fee7c0f7a1603426ac28e0cc" id="r_ab8374a64fee7c0f7a1603426ac28e0cc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab8374a64fee7c0f7a1603426ac28e0cc">llzkFunction_FuncDefOpNameIsConstrain</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:ab8374a64fee7c0f7a1603426ac28e0cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately).  <br /></td></tr>
+<tr class="memitem:ac443e9c83d39f83c4468a83162dbfbbb" id="r_ac443e9c83d39f83c4468a83162dbfbbb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac443e9c83d39f83c4468a83162dbfbbb">llzkFunction_FuncDefOpIsStructCompute</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ac443e9c83d39f83c4468a83162dbfbbb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_COMPUTE</span>.  <br /></td></tr>
 <tr class="memitem:a01a9a4c486484384617edda1276137cb" id="r_a01a9a4c486484384617edda1276137cb"><td class="memItemLeft" align="right" valign="top">MlirRegion&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a01a9a4c486484384617edda1276137cb">llzkFunction_FuncDefOpGetCallableRegion</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a01a9a4c486484384617edda1276137cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by FunctionOpInterface.  <br /></td></tr>
 <tr class="memitem:a7c3f9d9cb52c7b1f68f5942c35f9b00c" id="r_a7c3f9d9cb52c7b1f68f5942c35f9b00c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c3f9d9cb52c7b1f68f5942c35f9b00c">llzkFunction_FuncDefOpSetAllowConstraintAttr</a> (MlirOperation inp, bool newValue)</td></tr>
 <tr class="memdesc:a7c3f9d9cb52c7b1f68f5942c35f9b00c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add (resp. remove) the <span class="tt">allow_constraint</span> attribute to (resp. from) the function def.  <br /></td></tr>
-<tr class="memitem:abad63ffaf0fd2cafcc23d045f95d65cc" id="r_abad63ffaf0fd2cafcc23d045f95d65cc"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abad63ffaf0fd2cafcc23d045f95d65cc">llzkFunction_FuncDefOpGetSelfValueFromCompute</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:abad63ffaf0fd2cafcc23d045f95d65cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the "self" value (i.e.  <br /></td></tr>
 <tr class="memitem:a7827a6a5c11fffcd8b578e6ca098c786" id="r_a7827a6a5c11fffcd8b578e6ca098c786"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7827a6a5c11fffcd8b578e6ca098c786">llzkFunction_FuncDefOpHasAllowConstraintAttr</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a7827a6a5c11fffcd8b578e6ca098c786"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_constraint</span> attribute.  <br /></td></tr>
 <tr class="memitem:a7a87414642c710764444a61f2fce96e1" id="r_a7a87414642c710764444a61f2fce96e1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7a87414642c710764444a61f2fce96e1">llzkFunction_FuncDefOpIsInStruct</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a7a87414642c710764444a61f2fce96e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp.  <br /></td></tr>
 <tr class="memitem:ac673a047dca1e1a7c39405a84a07f681" id="r_ac673a047dca1e1a7c39405a84a07f681"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac673a047dca1e1a7c39405a84a07f681">llzkFunction_FuncDefOpSetAllowWitnessAttr</a> (MlirOperation inp, bool newValue)</td></tr>
 <tr class="memdesc:ac673a047dca1e1a7c39405a84a07f681"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add (resp. remove) the <span class="tt">allow_witness</span> attribute to (resp. from) the function def.  <br /></td></tr>
-<tr class="memitem:ae7c5379c41f8d295820901ce80c1d55a" id="r_ae7c5379c41f8d295820901ce80c1d55a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae7c5379c41f8d295820901ce80c1d55a">llzkFunction_FuncDefOpNameIsCompute</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:ae7c5379c41f8d295820901ce80c1d55a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_COMPUTE</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately).  <br /></td></tr>
-<tr class="memitem:a9609103fd17f462d0247b24383b2cc04" id="r_a9609103fd17f462d0247b24383b2cc04"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9609103fd17f462d0247b24383b2cc04">llzkFunction_FuncDefOpIsStructConstrain</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a9609103fd17f462d0247b24383b2cc04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_CONSTRAIN</span>.  <br /></td></tr>
-<tr class="memitem:ac443e9c83d39f83c4468a83162dbfbbb" id="r_ac443e9c83d39f83c4468a83162dbfbbb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac443e9c83d39f83c4468a83162dbfbbb">llzkFunction_FuncDefOpIsStructCompute</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:ac443e9c83d39f83c4468a83162dbfbbb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_COMPUTE</span>.  <br /></td></tr>
+<tr class="memitem:abad63ffaf0fd2cafcc23d045f95d65cc" id="r_abad63ffaf0fd2cafcc23d045f95d65cc"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abad63ffaf0fd2cafcc23d045f95d65cc">llzkFunction_FuncDefOpGetSelfValueFromCompute</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:abad63ffaf0fd2cafcc23d045f95d65cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the "self" value (i.e.  <br /></td></tr>
+<tr class="memitem:a848fb7806d1367eb359430d9881bebe1" id="r_a848fb7806d1367eb359430d9881bebe1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a848fb7806d1367eb359430d9881bebe1">llzkFunction_FuncDefOpHasArgName</a> (MlirOperation inp, unsigned index)</td></tr>
+<tr class="memdesc:a848fb7806d1367eb359430d9881bebe1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute.  <br /></td></tr>
+<tr class="memitem:a193ff11032206632a96d3171f37b783c" id="r_a193ff11032206632a96d3171f37b783c"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a193ff11032206632a96d3171f37b783c">llzkFunction_FuncDefOpGetFullyQualifiedName</a> (MlirOperation inp, bool requireParent)</td></tr>
+<tr class="memdesc:a193ff11032206632a96d3171f37b783c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the full name for this function from the root module, including all surrounding symbol table names (i.e., modules and structs).  <br /></td></tr>
 <tr class="memitem:a684fde0c1f3d21291506870fce7454c5" id="r_a684fde0c1f3d21291506870fce7454c5"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a684fde0c1f3d21291506870fce7454c5">llzkFunction_ReturnOpBuild</a> (MlirOpBuilder builder, MlirLocation location, intptr_t operandsSize, MlirValue const *operands)</td></tr>
 <tr class="memdesc:a684fde0c1f3d21291506870fce7454c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:aaa2b2db01f0c8b32f25dbe66684afeee" id="r_aaa2b2db01f0c8b32f25dbe66684afeee"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa2b2db01f0c8b32f25dbe66684afeee">llzkOperationIsA_Function_ReturnOp</a> (MlirOperation inp)</td></tr>
@@ -970,7 +972,7 @@ Functions</h2></td></tr>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the region on the current operation that is callable. This may return null in the case of an external callable object, e.g. an external function. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00299">299</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00307">307</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -995,7 +997,7 @@ Functions</h2></td></tr>
 
 <p>Return the full name for this function from the root module, including all surrounding symbol table names (i.e., modules and structs). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00255">255</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00335">335</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1059,7 +1061,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the return value) from the function (which must be named <span class="tt">FUNC_NAME_COMPUTE</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00307">307</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00327">327</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1081,7 +1083,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the function (which must be named <span class="tt">FUNC_NAME_CONSTRAIN</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00283">283</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00295">295</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1102,7 +1104,7 @@ Functions</h2></td></tr>
 
 <p>Assuming the name is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single StructType result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00287">287</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00291">291</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1144,7 +1146,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_constraint</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00311">311</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00315">315</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1165,7 +1167,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_non_native_field_ops</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00267">267</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00263">263</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1186,7 +1188,32 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_witness</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00291">291</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00275">275</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a848fb7806d1367eb359430d9881bebe1" name="a848fb7806d1367eb359430d9881bebe1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a848fb7806d1367eb359430d9881bebe1">&#9670;&#160;</a></span>llzkFunction_FuncDefOpHasArgName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkFunction_FuncDefOpHasArgName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt">true</span> iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00331">331</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1211,7 +1238,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has <span class="tt">pub</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00275">275</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00271">271</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1232,7 +1259,7 @@ Functions</h2></td></tr>
 
 <p>Required by SymbolOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00263">263</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00287">287</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1253,7 +1280,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00315">315</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00319">319</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1274,7 +1301,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_COMPUTE</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00331">331</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00303">303</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1295,7 +1322,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_CONSTRAIN</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00327">327</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00279">279</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1316,7 +1343,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_PRODUCT</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00279">279</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00255">255</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1337,7 +1364,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_COMPUTE</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00323">323</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00283">283</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1358,7 +1385,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00295">295</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00299">299</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1379,7 +1406,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_PRODUCT</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00271">271</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00267">267</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1404,7 +1431,7 @@ Functions</h2></td></tr>
 
 <p>Add (resp. remove) the <span class="tt">allow_constraint</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00303">303</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00311">311</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1454,7 +1481,7 @@ Functions</h2></td></tr>
 
 <p>Add (resp. remove) the <span class="tt">allow_witness</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00319">319</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00323">323</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1589,7 +1616,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00335">335</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00339">339</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1614,7 +1641,7 @@ Functions</h2></td></tr>
 
 <p>Get Operands operand at index from <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00352">352</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00356">356</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1635,7 +1662,7 @@ Functions</h2></td></tr>
 
 <p>Get number of Operands operands in <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00346">346</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00350">350</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1665,7 +1692,7 @@ Functions</h2></td></tr>
 
 <p>Set Operands operands of <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00356">356</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00360">360</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1728,7 +1755,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00342">342</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00346">346</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

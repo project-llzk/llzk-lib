@@ -108,7 +108,8 @@ $(function(){initNavTree('namespacellzk_1_1function.html','',''); });
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">llzk::function Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -155,6 +156,11 @@ Functions</h2></td></tr>
 <tr class="memitem:ac38e676a8a06dd59ae4e8226a972e962" id="r_ac38e676a8a06dd59ae4e8226a972e962"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac38e676a8a06dd59ae4e8226a972e962">verifyConstraintGenTraitImpl</a> (mlir::Operation *op)</td></tr>
 <tr class="memitem:acdb3662acbe5dfc265921ce88d2758ca" id="r_acdb3662acbe5dfc265921ce88d2758ca"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acdb3662acbe5dfc265921ce88d2758ca">verifyWitnessGenTraitImpl</a> (mlir::Operation *op)</td></tr>
 <tr class="memitem:a782be5634a60fbbceadec62068f350bf" id="r_a782be5634a60fbbceadec62068f350bf"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a782be5634a60fbbceadec62068f350bf">verifyNotFieldNativeTraitImpl</a> (mlir::Operation *op)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a24bb122df980745567375500af3c2efb" id="r_a24bb122df980745567375500af3c2efb"><td class="memItemLeft" align="right" valign="top">constexpr char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24bb122df980745567375500af3c2efb">ARG_NAME_ATTR_NAME</a> [] = &quot;function.arg_name&quot;</td></tr>
+<tr class="memdesc:a24bb122df980745567375500af3c2efb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attribute name for source-level function argument names.  <br /></td></tr>
 </table>
 <a name="doc-enum-members" id="doc-enum-members"></a><h2 id="header-doc-enum-members" class="groupheader">Enumeration Type Documentation</h2>
 <a id="af06d600ccce5f2a82dcf17c5437f1ac9" name="af06d600ccce5f2a82dcf17c5437f1ac9"></a>
@@ -189,7 +195,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_source.html#l00033">33</a> of file <a class="el" href="Function_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_source.html#l00037">37</a> of file <a class="el" href="Function_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>
@@ -212,7 +218,7 @@ Functions</h2></td></tr>
 <p>Given a function name, return the corresponding <span class="tt"><a class="el" href="#af06d600ccce5f2a82dcf17c5437f1ac9" title="Kinds of functions in LLZK.">FunctionKind</a></span>. </p>
 <p>One caveat to note is that this cannot check if the function is actually within a struct (it only checks if the name is one of the special names for struct functions defined in <span class="tt"><a class="el" href="llzk_2Util_2Constants_8h.html">include/llzk/Util/Constants.h</a></span>) so, regardless of the <span class="tt"><a class="el" href="#af06d600ccce5f2a82dcf17c5437f1ac9" title="Kinds of functions in LLZK.">FunctionKind</a></span> returned, the function may still be a free function and additional checks may be necessary. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00051">51</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00052">52</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -321,6 +327,33 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00040">40</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-var-members" id="doc-var-members"></a><h2 id="header-doc-var-members" class="groupheader">Variable Documentation</h2>
+<a id="a24bb122df980745567375500af3c2efb" name="a24bb122df980745567375500af3c2efb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24bb122df980745567375500af3c2efb">&#9670;&#160;</a></span>ARG_NAME_ATTR_NAME</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">char llzk::function::ARG_NAME_ATTR_NAME[] = &quot;function.arg_name&quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Attribute name for source-level function argument names. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_source.html#l00034">34</a> of file <a class="el" href="Function_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>
