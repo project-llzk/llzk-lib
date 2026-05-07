@@ -144,7 +144,7 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   return wrap(
       create<NewPodOp>(
           builder, location, unwrap_cast<PodType>(type), *mapOps,
-          unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
+          unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap), recordValues
       )
   );
 }
