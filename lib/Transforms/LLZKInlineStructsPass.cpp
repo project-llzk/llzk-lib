@@ -750,7 +750,7 @@ private:
             }
             for (auto [memberName, _] : newMembers) {
               std::string desiredName = (*originalArgName + "." + memberName).str();
-              splitAttrs.push_back(setFunctionArgNameAttr(
+              splitAttrs.push_back(withFunctionArgNameAttr(
                   splitAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
               ));
             }

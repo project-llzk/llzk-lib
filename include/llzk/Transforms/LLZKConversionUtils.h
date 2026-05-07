@@ -24,7 +24,7 @@ namespace llzk {
 
 /// Return a copy of the given argument attribute dictionary with `function.arg_name` set to `name`.
 inline mlir::DictionaryAttr
-setFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+withFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
   mlir::NamedAttrList newAttrs(attrs);
   newAttrs.set(function::ARG_NAME_ATTR_NAME, mlir::StringAttr::get(attrs.getContext(), name));
   return newAttrs.getDictionary(attrs.getContext());

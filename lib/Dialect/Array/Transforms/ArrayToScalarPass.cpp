@@ -410,7 +410,7 @@ public:
             StringRef argName = *origArgNames[i];
             for (size_t j = 0; j < s; ++j) {
               std::string desiredName = (argName + "[" + llvm::Twine(j) + "]").str();
-              newArgAttrs.push_back(setFunctionArgNameAttr(
+              newArgAttrs.push_back(withFunctionArgNameAttr(
                   dictAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
               ));
             }
