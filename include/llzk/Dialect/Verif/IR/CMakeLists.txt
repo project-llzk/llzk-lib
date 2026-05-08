@@ -5,13 +5,6 @@ mlir_tablegen(Dialect.h.inc -gen-dialect-decls -dialect=verif)
 mlir_tablegen(Dialect.cpp.inc -gen-dialect-defs -dialect=verif)
 llzk_tablegen(Dialect.capi.test.cpp.inc -gen-dialect-capi-tests -prefix=llzk -dialect=verif)
 
-set(LLVM_TARGET_DEFINITIONS "Types.td")
-mlir_tablegen(Types.h.inc -gen-typedef-decls -typedefs-dialect=verif)
-mlir_tablegen(Types.cpp.inc -gen-typedef-defs -typedefs-dialect=verif)
-llzk_tablegen(Types.capi.h.inc -gen-type-capi-header -prefix=llzk -dialect=verif)
-llzk_tablegen(Types.capi.cpp.inc -gen-type-capi-impl -prefix=llzk -dialect=verif)
-llzk_tablegen(Types.capi.test.cpp.inc -gen-type-capi-tests -prefix=llzk -dialect=verif)
-
 set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
 mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
 mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)

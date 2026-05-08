@@ -46,6 +46,21 @@ public:
   }
 };
 
+/// See `HasAncestor` ODS documentation for details.
+template <typename... Ancestors> struct HasAncestor {
+  template <typename ConcreteType>
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
+  struct Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
+    static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
+      if (op->getParentOfType<Ancestors...>()) {
+        return mlir::success();
+      }
+      return mlir::failure();
+    }
+  };
+};
+
 /// Get the operation name, like "constrain.eq" for the given OpClass.
 /// This function can be used when the compiler would complain about
 /// incomplete types if `OpClass::getOperationName()` were called directly.

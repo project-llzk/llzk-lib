@@ -20,6 +20,7 @@ add_subdirectory(Polymorphic)
 add_subdirectory(SMT)
 add_subdirectory(String)
 add_subdirectory(Struct)
+add_subdirectory(Verif)
 
 # Registration of dialects
 add_library(LLZKDialectRegistration)

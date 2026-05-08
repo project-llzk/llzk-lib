@@ -12,14 +12,12 @@
 
 include "mlir/IR/DialectBase.td"
 
-def ArrayDialect : Dialect {
+def VerifDialect : Dialect {
   let name = "verif";
   let summary = "LLZK verification dialect for encoding specifications for "
                 "functions and structs.";
 
   let cppNamespace = "::llzk::verif";
-
-  let useDefaultTypePrinterParser = true;
 }
 
 #endif // LLZK_VERIF_DIALECT
