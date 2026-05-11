@@ -59,7 +59,10 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, op](auto constOp) {
     auto type = op->getResultTypes().front();
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, type, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()))
+        op, type,
+        felt::FeltConstAttr::get(
+            op->getContext(), toAPInt(constOp.value()), dyn_cast<felt::FeltType>(type)
+        )
     );
     return success();
   }).Default([](auto) { return failure(); });
