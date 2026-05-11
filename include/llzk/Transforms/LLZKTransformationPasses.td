@@ -129,4 +129,11 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   let options = [];
 }
 
+def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
+  let summary = "Converts scf.while loops with constant bounds to equivalent "
+                "scf.for loops";
+  let constructor = "llzk::createWhileToForPass()";
+  let options = [];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
