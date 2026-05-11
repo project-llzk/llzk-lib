@@ -13,6 +13,8 @@
 
 #include "llzk/Util/Compare.h"
 
+#include <mlir-c/BuiltinAttributes.h>
+
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
@@ -42,10 +44,47 @@ static MlirOperation create_func_def_op(
   );
 }
 
+static MlirOperation create_module_with_owned_op(MlirContext ctx, MlirOperation op) {
+  MlirRegion region = mlirRegionCreate();
+  MlirBlock block = mlirBlockCreate(0, nullptr, nullptr);
+  mlirBlockAppendOwnedOperation(block, op);
+  mlirRegionAppendOwnedBlock(region, block);
+
+  MlirOperationState moduleState = mlirOperationStateGet(
+      mlirStringRefCreateFromCString("builtin.module"), mlirLocationUnknownGet(ctx)
+  );
+  mlirOperationStateAddOwnedRegions(&moduleState, 1, &region);
+  return mlirOperationCreate(&moduleState);
+}
+
 template <int64_t N> static llvm::SmallVector<MlirAttribute, N> empty_arg_attrs(MlirContext ctx) {
   return llvm::SmallVector<MlirAttribute, N>(
       N, mlirDictionaryAttrGet(ctx, 0, (const MlirNamedAttribute *)NULL)
   );
+}
+
+static MlirStringRef to_mlir_string_ref(llvm::StringRef value) {
+  return mlirStringRefCreate(value.data(), value.size());
+}
+
+static MlirNamedAttribute create_arg_name_named_attr(MlirContext ctx, llvm::StringRef value) {
+  return mlirNamedAttributeGet(
+      mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("function.arg_name")),
+      mlirStringAttrGet(ctx, to_mlir_string_ref(value))
+  );
+}
+
+static MlirNamedAttribute create_private_visibility_attr(MlirContext ctx) {
+  return mlirNamedAttributeGet(
+      mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("sym_visibility")),
+      mlirStringAttrGet(ctx, mlirStringRefCreateFromCString("private"))
+  );
+}
+
+static void expect_string_attr_value(MlirAttribute attr, llvm::StringRef expected) {
+  ASSERT_FALSE(mlirAttributeIsNull(attr));
+  ASSERT_TRUE(mlirAttributeIsAString(attr));
+  EXPECT_TRUE(mlirStringRefEqual(mlirStringAttrGetValue(attr), to_mlir_string_ref(expected)));
 }
 
 struct TestFuncDefOp {
@@ -152,6 +191,59 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_allow_non_native_field_ops_attr) {
 TEST_F(FuncDialectTest, llzk_func_def_op_has_arg_is_pub) {
   auto f = test_function();
   EXPECT_TRUE(!llzkFunction_FuncDefOpHasArgPublicAttr(f.op, 0));
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_get_arg_name_attr) {
+  MlirType in_types[] = {createIndexType(), createIndexType()};
+  MlirNamedAttribute arg0Attrs[] = {create_arg_name_named_attr(context, "input 0")};
+  MlirAttribute in_attrs[] = {
+      mlirDictionaryAttrGet(context, 1, arg0Attrs),
+      mlirDictionaryAttrGet(context, 0, (const MlirNamedAttribute *)NULL)
+  };
+  MlirNamedAttribute attrs[] = {create_private_visibility_attr(context)};
+  auto op = create_func_def_op(
+      context, "foo",
+      create_func_type(context, llvm::ArrayRef(in_types, 2), llvm::ArrayRef<MlirType>()),
+      llvm::ArrayRef(attrs, 1), llvm::ArrayRef(in_attrs, 2)
+  );
+  MlirOperation module = create_module_with_owned_op(context, op);
+
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 0), "input 0");
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, 1)));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 2));
+  EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, 2)));
+  EXPECT_TRUE(mlirOperationVerify(op));
+
+  mlirOperationDestroy(module);
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_set_arg_name_attr) {
+  MlirType in_types[] = {createIndexType(), createIndexType()};
+  auto in_attrs = empty_arg_attrs<2>(context);
+  MlirNamedAttribute attrs[] = {create_private_visibility_attr(context)};
+  auto op = create_func_def_op(
+      context, "foo",
+      create_func_type(context, llvm::ArrayRef(in_types, 2), llvm::ArrayRef<MlirType>()),
+      llvm::ArrayRef(attrs, 1), in_attrs
+  );
+  MlirOperation module = create_module_with_owned_op(context, op);
+
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+
+  llzkFunction_FuncDefOpSetArgName(op, 0, to_mlir_string_ref("x"));
+  MlirAttribute arg1Name = mlirStringAttrGet(context, to_mlir_string_ref("a/b"));
+  llzkFunction_FuncDefOpSetArgNameAttr(op, 1, arg1Name);
+
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 0), "x");
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 1), "a/b");
+  EXPECT_TRUE(mlirOperationVerify(op));
+
+  mlirOperationDestroy(module);
 }
 
 TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {

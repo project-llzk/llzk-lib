@@ -17,7 +17,35 @@
 
 #include <mlir/IR/PatternMatch.h>
 
+#include <llvm/ADT/StringSet.h>
+#include <llvm/ADT/Twine.h>
+
 namespace llzk {
+
+/// Return a copy of the given argument attribute dictionary with `function.arg_name` set to `name`.
+inline mlir::DictionaryAttr
+withFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+  mlir::NamedAttrList newAttrs(attrs);
+  newAttrs.set(function::ARG_NAME_ATTR_NAME, mlir::StringAttr::get(attrs.getContext(), name));
+  return newAttrs.getDictionary(attrs.getContext());
+}
+
+/// Reserve and return a unique function argument name based on `desiredName`.
+inline std::string
+reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desiredName) {
+  if (!usedNames.contains(desiredName)) {
+    usedNames.insert(desiredName);
+    return desiredName.str();
+  }
+
+  for (unsigned suffix = 1;; ++suffix) {
+    std::string candidate = (desiredName + "#" + llvm::Twine(suffix)).str();
+    if (!usedNames.contains(candidate)) {
+      usedNames.insert(candidate);
+      return candidate;
+    }
+  }
+}
 
 /// General helper for converting a `FuncDefOp` by changing its input and/or result types and the
 /// associated attributes for those types.

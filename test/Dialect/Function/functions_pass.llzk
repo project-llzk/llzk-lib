@@ -49,3 +49,23 @@ function.def private @example_arg_attr2(
 //CHECK-NEXT:     function.return
 //CHECK-NEXT:   }
 // -----
+
+function.def private @example_arg_name_external(
+    i1 {function.arg_name = "lhs"},
+    index {function.arg_name = "rhs"})
+//CHECK-LABEL:  function.def private @example_arg_name_external(i1 {function.arg_name = "lhs"}, index {function.arg_name = "rhs"})
+// -----
+
+function.def @example_arg_name_body(
+    %source_name: i1 {function.arg_name = "input 0"},
+    %path_name: index {function.arg_name = "a/b"}) {
+  function.return
+}
+//CHECK-LABEL:  function.def @example_arg_name_body(%arg0: i1 {function.arg_name = "input 0"}, %arg1: index {function.arg_name = "a/b"}) {
+//CHECK-NEXT:     function.return
+//CHECK-NEXT:   }
+// -----
+
+function.def private @example_arg_name_with_pub(%x: i1 {function.arg_name = "public", llzk.pub})
+//CHECK-LABEL:  function.def private @example_arg_name_with_pub(i1 {function.arg_name = "public", llzk.pub})
+// -----
