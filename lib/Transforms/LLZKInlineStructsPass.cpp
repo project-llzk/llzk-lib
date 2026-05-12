@@ -20,7 +20,6 @@
 
 #include "llzk/Transforms/LLZKInlineStructsPass.h"
 
-#include "llzk/Analysis/GraphUtil.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -37,7 +36,7 @@
 #include <mlir/Transforms/InliningUtils.h>
 #include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
-#include <llvm/ADT/PostOrderIterator.h>
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
@@ -946,16 +945,25 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return complexity;
   }
 
-  static FailureOr<FuncDefOp>
-  getIfStructConstrain(const SymbolUseGraphNode *node, SymbolTableCollection &tables) {
-    auto lookupRes = node->lookupSymbol(tables, false);
-    assert(succeeded(lookupRes) && "graph contains node with invalid path");
-    if (FuncDefOp f = llvm::dyn_cast<FuncDefOp>(lookupRes->get())) {
-      if (f.isStructConstrain()) {
-        return f;
-      }
+  /// Return the struct "@constrain" function represented by `node`, or nullptr.
+  ///
+  /// The SymbolUseGraph can also contain member defs, templates, and helper functions. This helper
+  /// is intentionally non-asserting so graph filtering never turns an unrelated symbol into a pass
+  /// crash.
+  static FuncDefOp
+  getIfResolvableStructConstrain(const SymbolUseGraphNode *node, SymbolTableCollection &tables) {
+    if (!node || !node->isRealNode() || node->isTemplateSymbolBinding()) {
+      return nullptr;
     }
-    return failure();
+    auto lookupRes = node->lookupSymbol(tables, /*reportMissing=*/false);
+    if (failed(lookupRes)) {
+      return nullptr;
+    }
+    FuncDefOp func = llvm::dyn_cast<FuncDefOp>(lookupRes->get());
+    if (!func || !func.isStructConstrain()) {
+      return nullptr;
+    }
+    return func;
   }
 
   /// Return the parent StructDefOp for the given Function (which is known to be a struct
@@ -998,6 +1006,129 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return res.wasInterrupted();
   }
 
+  static LogicalResult
+  verifyNoTemplateSymbolBindings(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
+    for (const SymbolUseGraphNode *node : useGraph.nodesIter()) {
+      if (!node->isTemplateSymbolBinding()) {
+        continue;
+      }
+
+      // Try to get the location of the TemplateOp to report an error.
+      Operation *lookupFrom = node->getSymbolPathRoot().getOperation();
+      SymbolRefAttr prefix = getPrefixAsSymbolRefAttr(node->getSymbolPath());
+      auto res = lookupSymbolIn<TemplateOp>(tables, prefix, lookupFrom, lookupFrom, false);
+      // If that lookup did not work for some reason, report at the path root location.
+      Operation *reportLoc = succeeded(res) ? res->get() : lookupFrom;
+      return reportLoc->emitError() << "Cannot inline struct within a template. Run "
+                                       "`llzk-flatten` to instantiate templated structs.";
+    }
+    return success();
+  }
+
+  static LogicalResult emitConstrainReachableCycleError(
+      ArrayRef<const SymbolUseGraphNode *> dfsStack, const SymbolUseGraphNode *cycleHead,
+      SymbolTableCollection &tables
+  ) {
+    SmallVector<const SymbolUseGraphNode *, 8> cycle;
+    bool inCycle = false;
+    for (const SymbolUseGraphNode *node : dfsStack) {
+      if (node == cycleHead) {
+        inCycle = true;
+      }
+      if (inCycle) {
+        cycle.push_back(node);
+      }
+    }
+    if (cycle.empty()) {
+      cycle.push_back(cycleHead);
+    }
+
+    Operation *reportOp = cycleHead->getSymbolPathRoot().getOperation();
+    for (const SymbolUseGraphNode *node : cycle) {
+      if (!node->isRealNode()) {
+        continue;
+      }
+      auto lookupRes = node->lookupSymbol(tables, /*reportMissing=*/false);
+      if (failed(lookupRes)) {
+        continue;
+      }
+      Operation *op = lookupRes->get();
+      reportOp = op;
+      if (llvm::isa<FuncDefOp>(op)) {
+        break;
+      }
+    }
+
+    InFlightDiagnostic diag = reportOp->emitError();
+    diag << "Cannot inline structs when a symbol-use cycle is reachable from a struct "
+            "\"@constrain\" function. Prover-side recursion is allowed only when "
+            "\"@constrain\" cannot reach it.";
+
+    for (const SymbolUseGraphNode *node : cycle) {
+      if (!node->isRealNode()) {
+        continue;
+      }
+      if (auto lookupRes = node->lookupSymbol(tables, /*reportMissing=*/false);
+          succeeded(lookupRes)) {
+        diag.attachNote(lookupRes->get()->getLoc()) << "cycle contains " << node->getSymbolPath();
+      } else {
+        diag.attachNote(node->getSymbolPathRoot().getLoc())
+            << "cycle contains " << node->getSymbolPath();
+      }
+    }
+
+    return failure();
+  }
+
+  /// Build a post-order traversal of the exact symbol-use slice reachable from struct
+  /// "@constrain" functions. Return failure if that slice has a cycle.
+  ///
+  /// The inlining planner is a dynamic program on this slice. Cycles outside it are prover-only for
+  /// this pass and are deliberately ignored.
+  static LogicalResult computeConstrainReachablePostOrder(
+      const SymbolUseGraph &useGraph, SymbolTableCollection &tables,
+      SmallVectorImpl<const SymbolUseGraphNode *> &postOrder
+  ) {
+    enum class VisitState { Active, Done };
+
+    DenseMap<const SymbolUseGraphNode *, VisitState> state;
+    SmallVector<const SymbolUseGraphNode *, 32> dfsStack;
+
+    auto dfs = [&](auto &&self, const SymbolUseGraphNode *node) -> LogicalResult {
+      auto seen = state.find(node);
+      if (seen != state.end()) {
+        if (seen->second == VisitState::Active) {
+          return emitConstrainReachableCycleError(dfsStack, node, tables);
+        }
+        return success();
+      }
+
+      state[node] = VisitState::Active;
+      dfsStack.push_back(node);
+      for (const SymbolUseGraphNode *successor : node->successorIter()) {
+        if (failed(self(self, successor))) {
+          return failure();
+        }
+      }
+      dfsStack.pop_back();
+
+      state[node] = VisitState::Done;
+      postOrder.push_back(node);
+      return success();
+    };
+
+    for (const SymbolUseGraphNode *node : useGraph.nodesIter()) {
+      if (!getIfResolvableStructConstrain(node, tables)) {
+        continue;
+      }
+      if (failed(dfs(dfs, node))) {
+        return failure();
+      }
+    }
+
+    return success();
+  }
+
   /// Perform a bottom-up traversal of the "constrain" function nodes in the SymbolUseGraph to
   /// determine which ones can be inlined to their callers while respecting the `maxComplexity`
   /// option. Using a bottom-up traversal may give a better result than top-down because the latter
@@ -1016,36 +1147,24 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     InliningPlan retVal;
     DenseMap<const SymbolUseGraphNode *, uint64_t> complexityMemo;
 
-    // NOTE: The assumption that the use graph has no cycles allows `complexityMemo` to only
-    // store the result for relevant nodes and assume nodes without a mapped value are `0`. This
-    // must be true of the "compute"/"constrain" function uses and member defs because circuits
-    // must be acyclic. This is likely true to for the symbol use graph is general but if a
-    // counterexample is ever found, the algorithm below must be re-evaluated.
-    assert(!hasCycle(&useGraph));
+    if (failed(verifyNoTemplateSymbolBindings(useGraph, tables))) {
+      return failure();
+    }
+
+    SmallVector<const SymbolUseGraphNode *, 32> constrainPostOrder;
+    if (failed(computeConstrainReachablePostOrder(useGraph, tables, constrainPostOrder))) {
+      return failure();
+    }
 
     // Traverse "constrain" function nodes to compute their complexity and an inlining plan. Use
     // post-order traversal so the complexity of all successor nodes is computed before computing
     // the current node's complexity.
-    for (const SymbolUseGraphNode *currentNode : llvm::post_order(&useGraph)) {
+    for (const SymbolUseGraphNode *currentNode : constrainPostOrder) {
       LLVM_DEBUG(llvm::dbgs() << "\ncurrentNode = " << currentNode->toString());
-      if (!currentNode->isRealNode()) {
+      FuncDefOp currentFunc = getIfResolvableStructConstrain(currentNode, tables);
+      if (!currentFunc) {
         continue;
       }
-      if (currentNode->isTemplateSymbolBinding()) {
-        // Try to get the location of the TemplateOp to report an error.
-        Operation *lookupFrom = currentNode->getSymbolPathRoot().getOperation();
-        SymbolRefAttr prefix = getPrefixAsSymbolRefAttr(currentNode->getSymbolPath());
-        auto res = lookupSymbolIn<TemplateOp>(tables, prefix, lookupFrom, lookupFrom, false);
-        // If that lookup didn't work for some reason, report at the path root location.
-        Operation *reportLoc = succeeded(res) ? res->get() : lookupFrom;
-        return reportLoc->emitError() << "Cannot inline struct within a template. Run "
-                                         "`llzk-flatten` to instantiate templated structs.";
-      }
-      FailureOr<FuncDefOp> currentFuncOpt = getIfStructConstrain(currentNode, tables);
-      if (failed(currentFuncOpt)) {
-        continue;
-      }
-      FuncDefOp currentFunc = currentFuncOpt.value();
       uint64_t currentComplexity = complexity(currentFunc);
       // If the current complexity is already too high, store it and continue.
       if (exceedsMaxComplexity(currentComplexity)) {
@@ -1070,9 +1189,10 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
         uint64_t potentialComplexity = currentComplexity + sComplexity;
         if (!exceedsMaxComplexity(potentialComplexity)) {
           currentComplexity = potentialComplexity;
-          FailureOr<FuncDefOp> successorFuncOpt = getIfStructConstrain(successor, tables);
-          assert(succeeded(successorFuncOpt)); // follows from the Note above
-          FuncDefOp successorFunc = successorFuncOpt.value();
+          FuncDefOp successorFunc = getIfResolvableStructConstrain(successor, tables);
+          if (!successorFunc) {
+            continue;
+          }
           if (canInline(currentFunc, successorFunc)) {
             successorsToMerge.push_back(getParentStruct(successorFunc));
           }
