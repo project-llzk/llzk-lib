@@ -381,6 +381,58 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
   helper.run(*this);
 }
 
+TEST_F(FuncDialectTest, llzk_call_op_build_with_template_params) {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    MlirAttribute templateParam;
+
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
+      templateParam = testClass.createIndexAttribute(42);
+      return llzkFunction_CallOpBuildWithTemplateParams(
+          builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
+          callee_name, 1, &templateParam, 0, (const MlirValue *)NULL
+      );
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      MlirAttribute templateParams = llzkFunction_CallOpGetTemplateParams(op);
+      ASSERT_FALSE(mlirAttributeIsNull(templateParams));
+      ASSERT_TRUE(mlirAttributeIsAArray(templateParams));
+      ASSERT_EQ(mlirArrayAttrGetNumElements(templateParams), 1);
+      EXPECT_TRUE(mlirAttributeEqual(mlirArrayAttrGetElement(templateParams, 0), templateParam));
+    }
+  } helper;
+  helper.run(*this);
+}
+
+TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_template_params) {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    MlirAttribute templateParam;
+
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      templateParam = testClass.createIndexAttribute(42);
+      return llzkFunction_CallOpBuildToCalleeWithTemplateParams(
+          builder, location, f.op, 1, &templateParam, 0, (const MlirValue *)NULL
+      );
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      MlirAttribute templateParams = llzkFunction_CallOpGetTemplateParams(op);
+      ASSERT_FALSE(mlirAttributeIsNull(templateParams));
+      ASSERT_TRUE(mlirAttributeIsAArray(templateParams));
+      ASSERT_EQ(mlirArrayAttrGetNumElements(templateParams), 1);
+      EXPECT_TRUE(mlirAttributeEqual(mlirArrayAttrGetElement(templateParams, 0), templateParam));
+    }
+  } helper;
+  helper.run(*this);
+}
+
 TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   struct : CallOpBuildFuncHelper {
     MlirType func_type;
