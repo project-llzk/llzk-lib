@@ -464,6 +464,7 @@ intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op) {{
 
 MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index) {{
   auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
+  assert(index >= 0 && index < range.second && "variadic operand index out of range");
   return mlirOperationGetOperand(op, static_cast<intptr_t>(range.first) + index);
 }
 )";
@@ -531,9 +532,11 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values)
   assert(mlirAttributeIsADenseI32Array(segSizes) &&
          "expected operandSegmentSizes to be a DenseI32ArrayAttr");
   intptr_t numSegments = mlirDenseArrayGetNumElements(segSizes);
+  assert(numSegments > {0} && "operandSegmentSizes has fewer segments than expected");
   std::vector<int32_t> newSegSizes(numSegments);
   for (intptr_t i = 0; i < numSegments; ++i)
     newSegSizes[i] = mlirDenseI32ArrayGetElement(segSizes, i);
+  assert(count <= static_cast<intptr_t>(std::numeric_limits<int32_t>::max()) && "count exceeds int32_t range");
   newSegSizes[{0}] = static_cast<int32_t>(count);
   MlirContext ctx = mlirOperationGetContext(op);
   MlirAttribute newSegSizesAttr = mlirDenseI32ArrayGet(ctx, numSegments, newSegSizes.data());
