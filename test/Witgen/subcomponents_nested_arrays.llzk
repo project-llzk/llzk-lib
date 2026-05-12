@@ -1,0 +1,108 @@
+//===-- subcomponents_nested_arrays.llzk ----------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+// RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Store {
+    struct.member @buf : !array.type<4 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(
+      %values: !array.type<4 x !felt.type<"babybear">>
+    ) -> !struct.type<@Store> {
+      %self = struct.new : !struct.type<@Store>
+      struct.writem %self[@buf] = %values
+          : !struct.type<@Store>, !array.type<4 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Store>
+    }
+    function.def @constrain(%self: !struct.type<@Store>, %values: !array.type<4 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+
+  struct.def @CheckDiff {
+    function.def @compute(
+      %lhs: !array.type<4 x !felt.type<"babybear">>,
+      %rhs: !array.type<4 x !felt.type<"babybear">>
+    ) -> !struct.type<@CheckDiff> {
+      %self = struct.new : !struct.type<@CheckDiff>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %c3 = arith.constant 3 : index
+      %zero = felt.const 0 <"babybear">
+
+      %l0 = array.read %lhs[%c0] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %r0 = array.read %rhs[%c0] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %d0 = felt.sub %l0, %r0 : !felt.type<"babybear">, !felt.type<"babybear">
+      %b0 = bool.cmp eq(%d0, %zero) : !felt.type<"babybear">, !felt.type<"babybear">
+
+      %l1 = array.read %lhs[%c1] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %r1 = array.read %rhs[%c1] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %d1 = felt.sub %l1, %r1 : !felt.type<"babybear">, !felt.type<"babybear">
+      %b1 = bool.cmp eq(%d1, %zero) : !felt.type<"babybear">, !felt.type<"babybear">
+
+      %l2 = array.read %lhs[%c2] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %r2 = array.read %rhs[%c2] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %d2 = felt.sub %l2, %r2 : !felt.type<"babybear">, !felt.type<"babybear">
+      %b2 = bool.cmp eq(%d2, %zero) : !felt.type<"babybear">, !felt.type<"babybear">
+
+      %l3 = array.read %lhs[%c3] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %r3 = array.read %rhs[%c3] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %d3 = felt.sub %l3, %r3 : !felt.type<"babybear">, !felt.type<"babybear">
+      %b3 = bool.cmp eq(%d3, %zero) : !felt.type<"babybear">, !felt.type<"babybear">
+
+      bool.assert %b0, "stored values must match the original input at index 0"
+      bool.assert %b1, "stored values must match the original input at index 1"
+      bool.assert %b2, "stored values must match the original input at index 2"
+      bool.assert %b3, "stored values must match the original input at index 3"
+      function.return %self : !struct.type<@CheckDiff>
+    }
+    function.def @constrain(
+      %self: !struct.type<@CheckDiff>,
+      %lhs: !array.type<4 x !felt.type<"babybear">>,
+      %rhs: !array.type<4 x !felt.type<"babybear">>
+    ) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !array.type<4 x !felt.type<"babybear">> {llzk.pub}
+    struct.member @stored : !struct.type<@Store>
+    struct.member @checked : !struct.type<@CheckDiff>
+    function.def @compute(
+      %values: !array.type<4 x !felt.type<"babybear">> {function.arg_name = "values"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %stored = function.call @Store::@compute(%values)
+          : (!array.type<4 x !felt.type<"babybear">>) -> !struct.type<@Store>
+      struct.writem %self[@stored] = %stored : !struct.type<@Main>, !struct.type<@Store>
+      %buf = struct.readm %stored[@buf]
+          : !struct.type<@Store>, !array.type<4 x !felt.type<"babybear">>
+      %checked = function.call @CheckDiff::@compute(%buf, %values)
+          : (!array.type<4 x !felt.type<"babybear">>, !array.type<4 x !felt.type<"babybear">>) -> !struct.type<@CheckDiff>
+      struct.writem %self[@checked] = %checked : !struct.type<@Main>, !struct.type<@CheckDiff>
+      struct.writem %self[@out] = %buf
+          : !struct.type<@Main>, !array.type<4 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %values: !array.type<4 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": [
+// CHECK-NEXT:     "2",
+// CHECK-NEXT:     "5",
+// CHECK-NEXT:     "7",
+// CHECK-NEXT:     "11"
+// CHECK-NEXT:   ]
+// CHECK-NEXT: }

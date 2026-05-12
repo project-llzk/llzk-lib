@@ -13,7 +13,9 @@
 #include "Interpreter.h"
 #include "JSON.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Pass/PassManager.h>
@@ -23,6 +25,26 @@
 using namespace mlir;
 
 namespace llzk::witgen {
+
+/// Return whether the module needs template/affine flattening before execution.
+static bool requiresFlattening(ModuleOp moduleOp) {
+  bool needsFlattening = false;
+  moduleOp->walk([&](Operation *op) {
+    if (isa<function::CallOp>(op)) {
+      auto callOp = cast<function::CallOp>(op);
+      if (callOp.getTemplateParams() || !callOp.getMapOperands().empty()) {
+        needsFlattening = true;
+        return WalkResult::interrupt();
+      }
+    }
+    if (op->getName().getStringRef().starts_with("poly.")) {
+      needsFlattening = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return needsFlattening;
+}
 
 /// Build a driver around one parsed module and field.
 Interpreter::Interpreter(ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field)
@@ -113,11 +135,16 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
 /// Run include preprocessing, field validation, and main compute execution.
 llvm::Expected<llvm::json::Value>
 runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, bool inlineIncludes) {
-  if (inlineIncludes) {
+  {
     PassManager pm(moduleOp.getContext());
-    pm.addPass(llzk::include::createInlineIncludesPass());
+    if (inlineIncludes) {
+      pm.addPass(llzk::include::createInlineIncludesPass());
+    }
+    if (requiresFlattening(moduleOp)) {
+      pm.addPass(llzk::polymorphic::createFlatteningPass());
+    }
     if (failed(pm.run(moduleOp))) {
-      return makeError("failed to inline includes");
+      return makeError("failed to preprocess LLZK module for llzk-witgen");
     }
   }
 

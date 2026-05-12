@@ -857,22 +857,23 @@ private:
       if (!step) {
         return step.takeError();
       }
-      auto iterValues = collectOperands(forOp.getInitArgs(), scope);
-      if (!iterValues) {
-        return iterValues.takeError();
+      auto iterValuesOrErr = collectOperands(forOp.getInitArgs(), scope);
+      if (!iterValuesOrErr) {
+        return iterValuesOrErr.takeError();
       }
+      llvm::SmallVector<Value> iterValues = std::move(*iterValuesOrErr);
 
       for (int64_t iv = *lowerBound; iv < *upperBound; iv += *step) {
         llvm::SmallVector<Value> regionArgs;
         regionArgs.push_back(Value(iv));
-        regionArgs.append(iterValues->begin(), iterValues->end());
+        regionArgs.append(iterValues.begin(), iterValues.end());
         auto result = runRegion(forOp.getRegion(), regionArgs, scope);
         if (!result) {
           return result.takeError();
         }
         iterValues = std::move(result->values);
       }
-      return bind(*iterValues);
+      return bind(iterValues);
     }
 
     if (isa<scf::WhileOp>(op)) {

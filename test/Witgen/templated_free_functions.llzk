@@ -1,0 +1,61 @@
+//===-- templated_free_functions.llzk -------------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+// RUN: llzk-witgen %s --inputs %S/Inputs/templated_free_functions.json | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @TFAddN {
+    poly.param @N
+
+    function.def @f(%inp: !array.type<@N x !felt.type<"babybear">>) -> !felt.type<"babybear"> {
+      %c0 = arith.constant 0 : index
+      %v = array.read %inp[%c0] : !array.type<@N x !felt.type<"babybear">>, !felt.type<"babybear">
+      %n = poly.read_const @N : !felt.type<"babybear">
+      %sum = felt.add %v, %n : !felt.type<"babybear">, !felt.type<"babybear">
+      function.return %sum : !felt.type<"babybear">
+    }
+  }
+
+  poly.template @TFForward {
+    poly.param @N
+
+    function.def @g(%inp: !array.type<@N x !felt.type<"babybear">>) -> !felt.type<"babybear"> {
+      %base = function.call @TFAddN::@f(%inp)
+          : (!array.type<@N x !felt.type<"babybear">>) -> !felt.type<"babybear">
+      %one = felt.const 1 <"babybear">
+      %out = felt.add %base, %one : !felt.type<"babybear">, !felt.type<"babybear">
+      function.return %out : !felt.type<"babybear">
+    }
+  }
+
+  struct.def @Main {
+    struct.member @direct : !felt.type<"babybear"> {llzk.pub}
+    struct.member @forwarded : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %y: !array.type<3 x !felt.type<"babybear">> {function.arg_name = "y"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %direct = function.call @TFAddN::@f(%y)
+          : (!array.type<3 x !felt.type<"babybear">>) -> !felt.type<"babybear">
+      %forwarded = function.call @TFForward::@g(%y)
+          : (!array.type<3 x !felt.type<"babybear">>) -> !felt.type<"babybear">
+      struct.writem %self[@direct] = %direct : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@forwarded] = %forwarded : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %y: !array.type<3 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "direct": "4",
+// CHECK-NEXT:   "forwarded": "5"
+// CHECK-NEXT: }

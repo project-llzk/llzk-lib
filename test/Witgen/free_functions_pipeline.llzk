@@ -1,0 +1,93 @@
+//===-- free_functions_pipeline.llzk --------------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+// RUN: llzk-witgen %s --inputs %S/Inputs/free_functions_pipeline.json | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  function.def @producer() -> !array.type<2,2 x !felt.type<"babybear">> {
+    %a = felt.const 1 <"babybear">
+    %b = felt.const 2 <"babybear">
+    %c = felt.const 3 <"babybear">
+    %d = felt.const 4 <"babybear">
+    %matrix = array.new %a, %b, %c, %d : !array.type<2,2 x !felt.type<"babybear">>
+    function.return %matrix : !array.type<2,2 x !felt.type<"babybear">>
+  }
+
+  function.def @row_sum(
+    %matrix: !array.type<2,2 x !felt.type<"babybear">>,
+    %row: index,
+    %bias: !felt.type<"babybear">
+  ) -> !felt.type<"babybear"> {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c2 = arith.constant 2 : index
+    %sum = scf.for %col = %c0 to %c2 step %c1
+        iter_args(%acc = %bias) -> (!felt.type<"babybear">) {
+      %v = array.read %matrix[%row, %col]
+          : !array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %next = felt.add %acc, %v : !felt.type<"babybear">, !felt.type<"babybear">
+      scf.yield %next : !felt.type<"babybear">
+    }
+    function.return %sum : !felt.type<"babybear">
+  }
+
+  function.def @sum_rows(
+    %matrix: !array.type<2,2 x !felt.type<"babybear">>,
+    %bias: !felt.type<"babybear">
+  ) -> !array.type<2 x !felt.type<"babybear">> {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %rows = array.new : !array.type<2 x !felt.type<"babybear">>
+    %r0 = function.call @row_sum(%matrix, %c0, %bias)
+        : (!array.type<2,2 x !felt.type<"babybear">>, index, !felt.type<"babybear">) -> !felt.type<"babybear">
+    array.write %rows[%c0] = %r0 : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    %r1 = function.call @row_sum(%matrix, %c1, %bias)
+        : (!array.type<2,2 x !felt.type<"babybear">>, index, !felt.type<"babybear">) -> !felt.type<"babybear">
+    array.write %rows[%c1] = %r1 : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    function.return %rows : !array.type<2 x !felt.type<"babybear">>
+  }
+
+  function.def @total_rows(%rows: !array.type<2 x !felt.type<"babybear">>) -> !felt.type<"babybear"> {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %r0 = array.read %rows[%c0] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    %r1 = array.read %rows[%c1] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    %total = felt.add %r0, %r1 : !felt.type<"babybear">, !felt.type<"babybear">
+    function.return %total : !felt.type<"babybear">
+  }
+
+  struct.def @Main {
+    struct.member @rows : !array.type<2 x !felt.type<"babybear">> {llzk.pub}
+    struct.member @total : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %bias: !felt.type<"babybear"> {function.arg_name = "bias"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %matrix = function.call @producer() : () -> !array.type<2,2 x !felt.type<"babybear">>
+      %rows = function.call @sum_rows(%matrix, %bias)
+          : (!array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">) -> !array.type<2 x !felt.type<"babybear">>
+      %total = function.call @total_rows(%rows)
+          : (!array.type<2 x !felt.type<"babybear">>) -> !felt.type<"babybear">
+      struct.writem %self[@rows] = %rows : !struct.type<@Main>, !array.type<2 x !felt.type<"babybear">>
+      struct.writem %self[@total] = %total : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %bias: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "rows": [
+// CHECK-NEXT:     "13",
+// CHECK-NEXT:     "17"
+// CHECK-NEXT:   ],
+// CHECK-NEXT:   "total": "30"
+// CHECK-NEXT: }
