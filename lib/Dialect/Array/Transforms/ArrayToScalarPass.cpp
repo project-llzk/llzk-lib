@@ -335,8 +335,9 @@ public:
 
   LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
 
-  void rewrite(ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -670,8 +671,9 @@ public:
 
   LogicalResult match(MemberRefOpClass op) const override { return failure(ImplClass::legal(op)); }
 
-  void rewrite(MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  void rewrite(
+      MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
@@ -751,8 +753,9 @@ static void baseTargetSetup(ConversionTarget &target) {
 
 class NondetToNewArray : public OpConversionPattern<NonDetOp> {
   using OpConversionPattern<NonDetOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter)
-      const override {
+  LogicalResult matchAndRewrite(
+      NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
       rewriter.replaceOpWithNewOp<CreateArrayOp>(nondetOp, at);
       return success();
