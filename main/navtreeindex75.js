@@ -1,5 +1,7 @@
 var NAVTREEINDEX75 =
 {
+"structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html":[10,0,1,1],
+"structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html":[12,0,0,1],
 "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html":[10,0,1,2],
 "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html":[12,0,0,2],
 "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html#a9aeee883f66cfeac116bf9daafdfb0d6":[10,0,1,2,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX75 =
 "structllzk_1_1SymbolDefTreePrinterPassOptions.html#a1c05e742d3433a17880b14cbf25c9733":[10,0,2,97,1],
 "structllzk_1_1SymbolDefTreePrinterPassOptions.html#a1c05e742d3433a17880b14cbf25c9733":[12,0,1,94,1],
 "structllzk_1_1SymbolDefTreePrinterPassOptions.html#a27860796666f61f7d6919c085827a272":[10,0,2,97,0],
-"structllzk_1_1SymbolDefTreePrinterPassOptions.html#a27860796666f61f7d6919c085827a272":[12,0,1,94,0],
-"structllzk_1_1SymbolUseGraphPrinterPassOptions.html":[10,0,2,103],
-"structllzk_1_1SymbolUseGraphPrinterPassOptions.html":[12,0,1,100]
+"structllzk_1_1SymbolDefTreePrinterPassOptions.html#a27860796666f61f7d6919c085827a272":[12,0,1,94,0]
 };

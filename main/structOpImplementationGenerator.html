@@ -133,6 +133,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac1c861972ab5d8b9b30d0c9b28891a6b" id="r_ac1c861972ab5d8b9b30d0c9b28891a6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac1c861972ab5d8b9b30d0c9b28891a6b">genOperandSetterImpl</a> (int index) const</td></tr>
 <tr class="memitem:a085f4e1c4aeb5195dc6dac2c49b3c2eb" id="r_a085f4e1c4aeb5195dc6dac2c49b3c2eb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a085f4e1c4aeb5195dc6dac2c49b3c2eb">genVariadicOperandGetterImpl</a> (int startIdx) const</td></tr>
 <tr class="memitem:a10002a345c87312cb8e2f62c8aef2f87" id="r_a10002a345c87312cb8e2f62c8aef2f87"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a10002a345c87312cb8e2f62c8aef2f87">genVariadicOperandSetterImpl</a> (int startIdx) const</td></tr>
+<tr class="memitem:a3d1af2bf4ae1b9b7d5f17b579c9ab160" id="r_a3d1af2bf4ae1b9b7d5f17b579c9ab160"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d1af2bf4ae1b9b7d5f17b579c9ab160">genVariadicOperandGetterImplDynamic</a> (int segmentIdx) const</td></tr>
+<tr class="memdesc:a3d1af2bf4ae1b9b7d5f17b579c9ab160"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate getter for a variadic operand whose start index must be determined at runtime by consulting the <span class="tt">operandSegmentSizes</span> attribute (because another operand is also variadic).  <br /></td></tr>
+<tr class="memitem:af92cc3d41498fbdbf692401d21179190" id="r_af92cc3d41498fbdbf692401d21179190"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af92cc3d41498fbdbf692401d21179190">genVariadicOperandSetterImplDynamic</a> (int segmentIdx) const</td></tr>
+<tr class="memdesc:af92cc3d41498fbdbf692401d21179190"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate setter for a variadic operand whose start index must be determined at runtime by consulting the <span class="tt">operandSegmentSizes</span> attribute (because another operand is also variadic).  <br /></td></tr>
 <tr class="memitem:a1d2696abd6ea27be4a4af28db45a57cd" id="r_a1d2696abd6ea27be4a4af28db45a57cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d2696abd6ea27be4a4af28db45a57cd">genAttributeGetterImpl</a> (mlir::StringRef attrName) const</td></tr>
 <tr class="memitem:ae7eb3904998644a9c3a70db0d02d0f88" id="r_ae7eb3904998644a9c3a70db0d02d0f88"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae7eb3904998644a9c3a70db0d02d0f88">genAttributeSetterImpl</a> (mlir::StringRef attrName) const</td></tr>
 <tr class="memitem:a91eb6c0882b01e151d82a515bbddc228" id="r_a91eb6c0882b01e151d82a515bbddc228"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a91eb6c0882b01e151d82a515bbddc228">genResultGetterImpl</a> (int index) const</td></tr>
@@ -226,7 +230,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00468">468</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00500">500</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -253,7 +257,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00482">482</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00514">514</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -380,7 +384,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00524">524</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00556">556</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -407,7 +411,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00496">496</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00528">528</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -438,6 +442,35 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a3d1af2bf4ae1b9b7d5f17b579c9ab160" name="a3d1af2bf4ae1b9b7d5f17b579c9ab160"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d1af2bf4ae1b9b7d5f17b579c9ab160">&#9670;&#160;</a></span>genVariadicOperandGetterImplDynamic()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void OpImplementationGenerator::genVariadicOperandGetterImplDynamic </td>
+          <td>(</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>segmentIdx</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Generate getter for a variadic operand whose start index must be determined at runtime by consulting the <span class="tt">operandSegmentSizes</span> attribute (because another operand is also variadic). </p>
+
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00470">470</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a10002a345c87312cb8e2f62c8aef2f87" name="a10002a345c87312cb8e2f62c8aef2f87"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a10002a345c87312cb8e2f62c8aef2f87">&#9670;&#160;</a></span>genVariadicOperandSetterImpl()</h2>
 
@@ -465,6 +498,35 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="af92cc3d41498fbdbf692401d21179190" name="af92cc3d41498fbdbf692401d21179190"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af92cc3d41498fbdbf692401d21179190">&#9670;&#160;</a></span>genVariadicOperandSetterImplDynamic()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void OpImplementationGenerator::genVariadicOperandSetterImplDynamic </td>
+          <td>(</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>segmentIdx</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Generate setter for a variadic operand whose start index must be determined at runtime by consulting the <span class="tt">operandSegmentSizes</span> attribute (because another operand is also variadic). </p>
+
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00486">486</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a54559b2687f8ba2040b896ac0722f284" name="a54559b2687f8ba2040b896ac0722f284"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a54559b2687f8ba2040b896ac0722f284">&#9670;&#160;</a></span>genVariadicRegionGetterImpl()</h2>
 
@@ -488,7 +550,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00538">538</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00570">570</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -515,7 +577,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00510">510</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00542">542</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
