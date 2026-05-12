@@ -514,22 +514,7 @@ std::unique_ptr<ReturnOpBuildFuncHelper> ReturnOpBuildFuncHelper::get() {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
-      {
-        this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
-        llzk::ModuleBuilder cppBldr(this->parentModule.get());
-        const auto *name = "func_name";
-        cppBldr.insertFreeFunc(
-            name,
-            mlir::FunctionType::get(
-                unwrap(testClass.context), mlir::TypeRange {}, mlir::TypeRange {}
-            ),
-            unwrap(location)
-        );
-        auto func = cppBldr.getFreeFunc(name);
-        assert(succeeded(func) && "Failed to retrieve the function just inserted into the module");
-        unwrap(builder)->setInsertionPointToStart(&func->getBody().emplaceBlock());
-      }
+      this->parentModule = testClass.cppGenFreeFuncAndSetInsertionPoint(builder, location);
       llvm::SmallVector<MlirValue> vals {};
       return llzkFunction_ReturnOpBuild(
           builder, location, llzk::checkedCast<intptr_t>(vals.size()), vals.data()
