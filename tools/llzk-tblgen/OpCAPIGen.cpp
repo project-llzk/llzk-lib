@@ -524,6 +524,86 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values)
     );
   }
 
+  /// Generate getter for a variadic operand whose start index must be determined at runtime by
+  /// consulting the `operandSegmentSizes` attribute (because another operand is also variadic).
+  void genVariadicOperandGetterImplDynamic(int segmentIdx) const {
+    static constexpr char fmt[] = R"(
+intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op) {{
+  MlirAttribute segSizes = mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("operandSegmentSizes"));
+  return mlirDenseI32ArrayGetElement(segSizes, {4});
+}
+
+MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index) {{
+  MlirAttribute segSizes = mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("operandSegmentSizes"));
+  intptr_t startIdx = 0;
+  for (int i = 0; i < {4}; ++i)
+    startIdx += mlirDenseI32ArrayGetElement(segSizes, i);
+  return mlirOperationGetOperand(op, startIdx + index);
+}
+)";
+    assert(!className.empty() && "className must be set");
+    assert(!operandNameCapitalized.empty() && "operandName must be set");
+    os << llvm::formatv(
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        segmentIdx              // {4}
+    );
+  }
+
+  /// Generate setter for a variadic operand whose start index must be determined at runtime by
+  /// consulting the `operandSegmentSizes` attribute (because another operand is also variadic).
+  void genVariadicOperandSetterImplDynamic(int segmentIdx) const {
+    static constexpr char fmt[] = R"(
+void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values) {{
+  MlirAttribute segSizes = mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("operandSegmentSizes"));
+  intptr_t startIdx = 0;
+  for (int i = 0; i < {4}; ++i)
+    startIdx += mlirDenseI32ArrayGetElement(segSizes, i);
+  intptr_t numOperands = mlirOperationGetNumOperands(op);
+  intptr_t oldCount = mlirDenseI32ArrayGetElement(segSizes, {4});
+
+  // Validate bounds
+  if (count < 0 || count > (std::numeric_limits<intptr_t>::max() - startIdx)) {{
+    return;
+  }
+
+  intptr_t newNumOperands = numOperands - oldCount + count;
+
+  std::vector<MlirValue> newOperands(newNumOperands);
+
+  // Copy operands before this variadic group
+  for (intptr_t i = 0; i < startIdx; ++i) {{
+    newOperands[i] = mlirOperationGetOperand(op, i);
+  }
+
+  // Copy new variadic operands
+  for (intptr_t i = 0; i < count; ++i) {{
+    newOperands[startIdx + i] = values[i];
+  }
+
+  // Copy operands after this variadic group
+  for (intptr_t i = startIdx + oldCount; i < numOperands; ++i) {{
+    newOperands[i - oldCount + count] = mlirOperationGetOperand(op, i);
+  }
+
+  mlirOperationSetOperands(op, newNumOperands, newOperands.data());
+}
+)";
+    assert(!className.empty() && "className must be set");
+    assert(!operandNameCapitalized.empty() && "operandName must be set");
+    os << llvm::formatv(
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        segmentIdx              // {4}
+    );
+  }
+
   void genAttributeGetterImpl(mlir::StringRef attrName) const {
     static constexpr char fmt[] = R"(
 MlirAttribute {0}{1}_{2}Get{3}(MlirOperation op) {{
@@ -750,16 +830,29 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
       generator.genIsAImpl();
     }
 
+    // If the op has AttrSizedOperandSegments, each segment's count must be read from the
+    // `operandSegmentSizes` attribute at runtime rather than derived from total operand count.
+    bool hasAttrSizedOperandSegments =
+        op.getTrait("::mlir::OpTrait::AttrSizedOperandSegments") != nullptr;
+
     // Generate operand getters and setters
     for (int i = 0, e = op.getNumOperands(); i < e; ++i) {
       const auto &operand = op.getOperand(i);
       generator.setOperandName(operand.name);
       if (operand.isVariadic()) {
         if (GenOpOperandGetters) {
-          generator.genVariadicOperandGetterImpl(i);
+          if (hasAttrSizedOperandSegments) {
+            generator.genVariadicOperandGetterImplDynamic(i);
+          } else {
+            generator.genVariadicOperandGetterImpl(i);
+          }
         }
         if (GenOpOperandSetters) {
-          generator.genVariadicOperandSetterImpl(i);
+          if (hasAttrSizedOperandSegments) {
+            generator.genVariadicOperandSetterImplDynamic(i);
+          } else {
+            generator.genVariadicOperandSetterImpl(i);
+          }
         }
       } else {
         if (GenOpOperandGetters) {

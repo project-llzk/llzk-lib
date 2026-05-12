@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/Pass.h>
 
