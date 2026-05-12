@@ -596,6 +596,16 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values)
   }
 
   mlirOperationSetOperands(op, newNumOperands, newOperands.data());
+
+  // Update operandSegmentSizes to reflect the new count for this segment
+  intptr_t numSegments = mlirDenseArrayGetNumElements(segSizes);
+  std::vector<int32_t> newSegSizes(numSegments);
+  for (intptr_t i = 0; i < numSegments; ++i)
+    newSegSizes[i] = mlirDenseI32ArrayGetElement(segSizes, i);
+  newSegSizes[{4}] = static_cast<int32_t>(count);
+  MlirContext ctx = mlirOperationGetContext(op);
+  MlirAttribute newSegSizesAttr = mlirDenseI32ArrayGet(ctx, numSegments, newSegSizes.data());
+  mlirOperationSetAttributeByName(op, mlirStringRefCreateFromCString("operandSegmentSizes"), newSegSizesAttr);
 }
 )";
     assert(!className.empty() && "className must be set");
