@@ -266,6 +266,67 @@ std::unique_ptr<WriteArrayOpBuildFuncHelper> WriteArrayOpBuildFuncHelper::get() 
   return std::make_unique<Impl>();
 }
 
+/// Regression test for ops with a fixed operand after a variadic operand segment.
+///
+/// `array.write` has operands laid out as:
+///   [arr_ref, indices..., rvalue]
+/// The C API accessors must use MLIR's generated ODS segment index/length logic so that `rvalue`
+/// is found after however many `indices` operands are present, not at the static ODS index 2.
+TEST_F(ArrayDialectTests, write_array_op_accessors_handle_fixed_operand_after_variadic_indices) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto eltType = createIndexType();
+
+  int64_t dims[2] = {1, 1};
+  auto arrType = test_array(eltType, llvm::ArrayRef(dims, 2));
+  auto arrState = mlirOperationStateGet(mlirStringRefCreateFromCString("array.new"), location);
+  mlirOperationStateAddResults(&arrState, 1, &arrType);
+  MlirOperation arrOp = mlirOperationCreate(&arrState);
+  ASSERT_NE(arrOp.ptr, nullptr);
+
+  auto auxOps = create_n_ops(5, eltType);
+  MlirValue indices[2] = {
+      mlirOperationGetResult(auxOps[0], 0),
+      mlirOperationGetResult(auxOps[1], 0),
+  };
+  MlirValue rvalue = mlirOperationGetResult(auxOps[2], 0);
+
+  MlirOperation op = llzkArray_WriteArrayOpBuild(
+      builder, location, mlirOperationGetResult(arrOp, 0), 2, indices, rvalue
+  );
+  ASSERT_NE(op.ptr, nullptr);
+
+  EXPECT_EQ(mlirOperationGetNumOperands(op), 4);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetIndicesCount(op), 2);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetIndicesAt(op, 0).ptr, indices[0].ptr);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetIndicesAt(op, 1).ptr, indices[1].ptr);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetRvalue(op).ptr, rvalue.ptr);
+
+  // Updating the fixed trailing operand should touch the physical operand after the variadic
+  // segment, not the static ODS index.
+  MlirValue newRvalue = mlirOperationGetResult(auxOps[4], 0);
+  llzkArray_WriteArrayOpSetRvalue(op, newRvalue);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetIndicesAt(op, 1).ptr, indices[1].ptr);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetRvalue(op).ptr, newRvalue.ptr);
+  EXPECT_EQ(mlirOperationGetOperand(op, 3).ptr, newRvalue.ptr);
+
+  // Resizing the variadic segment should keep the trailing fixed operand accessible at its new
+  // physical position.
+  MlirValue newIndices[1] = {mlirOperationGetResult(auxOps[3], 0)};
+  llzkArray_WriteArrayOpSetIndices(op, 1, newIndices);
+  EXPECT_EQ(mlirOperationGetNumOperands(op), 3);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetIndicesCount(op), 1);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetIndicesAt(op, 0).ptr, newIndices[0].ptr);
+  EXPECT_EQ(llzkArray_WriteArrayOpGetRvalue(op).ptr, newRvalue.ptr);
+
+  mlirOperationDestroy(op);
+  mlirOperationDestroy(arrOp);
+  for (auto auxOp : auxOps) {
+    mlirOperationDestroy(auxOp);
+  }
+  mlirOpBuilderDestroy(builder);
+}
+
 // Implementation for `InsertArrayOp_build_pass` test
 std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get() {
   struct Impl : public InsertArrayOpBuildFuncHelper {
