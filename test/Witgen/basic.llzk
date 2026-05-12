@@ -1,0 +1,36 @@
+//===-- basic.llzk --------------------------------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    struct.member @secret : !felt.type<"babybear">
+    function.def @compute(
+      %lhs: !felt.type<"babybear"> {function.arg_name = "lhs"},
+      %rhs: !felt.type<"babybear"> {function.arg_name = "rhs"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %sum = felt.add %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@sum] = %sum : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@secret] = %lhs : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>, %lhs: !felt.type<"babybear">, %rhs: !felt.type<"babybear">
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "sum": "9"
+// CHECK-NEXT: }

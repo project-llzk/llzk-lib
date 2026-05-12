@@ -1,0 +1,894 @@
+//===-- Interpreter.cpp - llzk-witgen compute interpreter ------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#include "Interpreter.h"
+
+#include "Errors.h"
+
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/SymbolLookup.h"
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/Operation.h>
+
+#include <llvm/ADT/SmallVector.h>
+
+using namespace mlir;
+
+namespace llzk::witgen {
+
+namespace {
+
+/// Represent the values yielded by a block or region along with termination state.
+struct BlockResult {
+  bool terminated = false;
+  llvm::SmallVector<Value> values;
+};
+
+/// Linearize multi-dimensional indices into the flattened array storage offset.
+llvm::Expected<size_t> linearize(llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<int64_t> indices) {
+  if (shape.size() != indices.size()) {
+    return makeError("wrong number of array indices");
+  }
+  size_t offset = 0;
+  size_t stride = 1;
+  for (int64_t i = static_cast<int64_t>(shape.size()) - 1; i >= 0; --i) {
+    if (indices[static_cast<size_t>(i)] < 0 ||
+        indices[static_cast<size_t>(i)] >= shape[static_cast<size_t>(i)]) {
+      return makeError("array index out of bounds");
+    }
+    offset += static_cast<size_t>(indices[static_cast<size_t>(i)]) * stride;
+    stride *= static_cast<size_t>(shape[static_cast<size_t>(i)]);
+  }
+  return offset;
+}
+
+} // namespace
+
+/// Build an interpreter for a specific module and field.
+FunctionInterpreter::FunctionInterpreter(
+    ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field
+)
+    : moduleOp(moduleOp), tables(tables), field(field) {}
+
+namespace {
+
+/// Execute one function invocation over a mutable SSA environment.
+class InvocationInterpreter {
+public:
+  /// Create an invocation interpreter that shares module-level state.
+  InvocationInterpreter(ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field)
+      : moduleOp(moduleOp), tables(tables), field(field) {}
+
+  /// Execute a function body with the provided arguments.
+  llvm::Expected<llvm::SmallVector<Value>> run(function::FuncDefOp funcOp, ArrayRef<Value> args) {
+    if (funcOp.isExternal()) {
+      return makeError("extern functions are not supported in llzk-witgen");
+    }
+    if (!funcOp.getBody().hasOneBlock()) {
+      return makeError("multi-block functions are not supported in llzk-witgen");
+    }
+    if (funcOp.getNumArguments() != args.size()) {
+      return makeError("wrong number of arguments passed to function");
+    }
+
+    llvm::DenseMap<mlir::Value, Value> scope;
+    Block &entry = funcOp.getBody().front();
+    for (auto [arg, value] : llvm::zip(entry.getArguments(), args)) {
+      scope[arg] = value;
+    }
+
+    auto result = runBlock(entry, scope);
+    if (!result) {
+      return result.takeError();
+    }
+    return result->values;
+  }
+
+private:
+  ModuleOp moduleOp;
+  SymbolTableCollection &tables;
+  const Field &field;
+
+  /// Execute every operation in a block until termination or fallthrough.
+  llvm::Expected<BlockResult> runBlock(Block &block, llvm::DenseMap<mlir::Value, Value> &scope) {
+    for (Operation &op : block) {
+      auto handled = runOperation(op, scope);
+      if (!handled) {
+        return handled.takeError();
+      }
+      if (handled->terminated) {
+        return *handled;
+      }
+    }
+    return BlockResult {};
+  }
+
+  /// Execute a single-block region with explicit block arguments.
+  llvm::Expected<BlockResult>
+  runRegion(Region &region, ArrayRef<Value> args, llvm::DenseMap<mlir::Value, Value> scope) {
+    if (!region.hasOneBlock()) {
+      return makeError("multi-block regions are not supported in llzk-witgen");
+    }
+    Block &block = region.front();
+    if (block.getNumArguments() != args.size()) {
+      return makeError("region argument count mismatch");
+    }
+    for (auto [arg, value] : llvm::zip(block.getArguments(), args)) {
+      scope[arg] = value;
+    }
+    return runBlock(block, scope);
+  }
+
+  /// Look up the runtime value bound to an SSA value.
+  llvm::Expected<Value> lookup(mlir::Value value, llvm::DenseMap<mlir::Value, Value> &scope) {
+    auto it = scope.find(value);
+    if (it == scope.end()) {
+      return makeError("failed to find SSA value during interpretation");
+    }
+    return it->second;
+  }
+
+  /// Materialize operand values for an operation in source order.
+  llvm::Expected<llvm::SmallVector<Value>>
+  collectOperands(OperandRange operands, llvm::DenseMap<mlir::Value, Value> &scope) {
+    llvm::SmallVector<Value> values;
+    values.reserve(operands.size());
+    for (mlir::Value operand : operands) {
+      auto value = lookup(operand, scope);
+      if (!value) {
+        return value.takeError();
+      }
+      values.push_back(*value);
+    }
+    return values;
+  }
+
+  /// Execute one supported operation and bind its result values.
+  llvm::Expected<BlockResult>
+  runOperation(Operation &op, llvm::DenseMap<mlir::Value, Value> &scope) {
+    if (auto returnOp = dyn_cast<function::ReturnOp>(op)) {
+      auto values = collectOperands(returnOp.getOperands(), scope);
+      if (!values) {
+        return values.takeError();
+      }
+      return BlockResult {true, std::move(*values)};
+    }
+    if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
+      auto values = collectOperands(yieldOp.getOperands(), scope);
+      if (!values) {
+        return values.takeError();
+      }
+      return BlockResult {true, std::move(*values)};
+    }
+
+    auto bind = [&](ArrayRef<Value> results) -> llvm::Expected<BlockResult> {
+      if (results.size() != op.getNumResults()) {
+        return makeError("internal result count mismatch");
+      }
+      for (auto [result, value] : llvm::zip(op.getResults(), results)) {
+        scope[result] = value;
+      }
+      return BlockResult {};
+    };
+
+    if (auto constantOp = dyn_cast<arith::ConstantOp>(op)) {
+      Attribute valueAttr = constantOp.getValue();
+      if (auto integerAttr = dyn_cast<IntegerAttr>(valueAttr)) {
+        if (integerAttr.getType().isInteger(1)) {
+          return bind({Value(integerAttr.getValue().getBoolValue())});
+        }
+        return bind({Value(integerAttr.getValue().getSExtValue())});
+      }
+      return makeError("unsupported arith.constant value");
+    }
+
+    if (auto nondetOp = dyn_cast<llzk::NonDetOp>(op)) {
+      auto value = defaultValue(nondetOp.getType(), tables, nondetOp.getOperation(), field);
+      if (!value) {
+        return value.takeError();
+      }
+      return bind({*value});
+    }
+
+    if (auto assertOp = dyn_cast<boolean::AssertOp>(op)) {
+      auto condition = lookup(assertOp.getCondition(), scope);
+      if (!condition) {
+        return condition.takeError();
+      }
+      auto boolValue = asBool(*condition);
+      if (!boolValue) {
+        return boolValue.takeError();
+      }
+      if (!*boolValue) {
+        std::string msg = "bool.assert failed";
+        if (auto attr = assertOp.getMsg()) {
+          msg = attr->str();
+        }
+        return makeError(msg);
+      }
+      return BlockResult {};
+    }
+
+    if (auto andOp = dyn_cast<boolean::AndBoolOp>(op)) {
+      auto lhsValue = lookup(andOp.getLhs(), scope);
+      auto rhsValue = lookup(andOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asBool(*lhsValue);
+      auto rhs = asBool(*rhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      return bind({Value(*lhs && *rhs)});
+    }
+    if (auto orOp = dyn_cast<boolean::OrBoolOp>(op)) {
+      auto lhsValue = lookup(orOp.getLhs(), scope);
+      auto rhsValue = lookup(orOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asBool(*lhsValue);
+      auto rhs = asBool(*rhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      return bind({Value(*lhs || *rhs)});
+    }
+    if (auto xorOp = dyn_cast<boolean::XorBoolOp>(op)) {
+      auto lhsValue = lookup(xorOp.getLhs(), scope);
+      auto rhsValue = lookup(xorOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asBool(*lhsValue);
+      auto rhs = asBool(*rhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      return bind({Value(*lhs != *rhs)});
+    }
+    if (auto notOp = dyn_cast<boolean::NotBoolOp>(op)) {
+      auto operand = lookup(notOp.getOperand(), scope);
+      if (!operand) {
+        return operand.takeError();
+      }
+      auto boolValue = asBool(*operand);
+      if (!boolValue) {
+        return boolValue.takeError();
+      }
+      return bind({Value(!*boolValue)});
+    }
+    if (auto cmpOp = dyn_cast<boolean::CmpOp>(op)) {
+      auto lhs = lookup(cmpOp.getLhs(), scope);
+      auto rhs = lookup(cmpOp.getRhs(), scope);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      auto lhsValue = asFelt(*lhs);
+      auto rhsValue = asFelt(*rhs);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      bool result = false;
+      switch (cmpOp.getPredicate()) {
+      case boolean::FeltCmpPredicate::EQ:
+        result = *lhsValue == *rhsValue;
+        break;
+      case boolean::FeltCmpPredicate::NE:
+        result = *lhsValue != *rhsValue;
+        break;
+      case boolean::FeltCmpPredicate::LT:
+        result = *lhsValue < *rhsValue;
+        break;
+      case boolean::FeltCmpPredicate::LE:
+        result = *lhsValue <= *rhsValue;
+        break;
+      case boolean::FeltCmpPredicate::GT:
+        result = *lhsValue > *rhsValue;
+        break;
+      case boolean::FeltCmpPredicate::GE:
+        result = *lhsValue >= *rhsValue;
+        break;
+      }
+      return bind({Value(result)});
+    }
+
+    if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
+      return bind({Value(field.reduce(feltConst.getValue().getValue()))});
+    }
+
+    auto handleBinaryFelt = [&](auto feltOp, auto fn) -> llvm::Expected<BlockResult> {
+      auto lhsValue = lookup(feltOp.getLhs(), scope);
+      auto rhsValue = lookup(feltOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      auto rhs = asFelt(*rhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      return bind({Value(field.reduce(fn(*lhs, *rhs)))});
+    };
+
+    if (auto addOp = dyn_cast<felt::AddFeltOp>(op)) {
+      return handleBinaryFelt(addOp, [](const auto &lhs, const auto &rhs) { return lhs + rhs; });
+    }
+    if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
+      return handleBinaryFelt(subOp, [](const auto &lhs, const auto &rhs) { return lhs - rhs; });
+    }
+    if (auto mulOp = dyn_cast<felt::MulFeltOp>(op)) {
+      return handleBinaryFelt(mulOp, [](const auto &lhs, const auto &rhs) { return lhs * rhs; });
+    }
+    if (auto divOp = dyn_cast<felt::DivFeltOp>(op)) {
+      return handleBinaryFelt(divOp, [&](const auto &lhs, const auto &rhs) {
+        return lhs * field.inv(rhs);
+      });
+    }
+    if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
+      auto operand = lookup(negOp.getOperand(), scope);
+      if (!operand) {
+        return operand.takeError();
+      }
+      auto feltValue = asFelt(*operand);
+      if (!feltValue) {
+        return feltValue.takeError();
+      }
+      return bind({Value(field.reduce(-*feltValue))});
+    }
+    if (auto invOp = dyn_cast<felt::InvFeltOp>(op)) {
+      auto operand = lookup(invOp.getOperand(), scope);
+      if (!operand) {
+        return operand.takeError();
+      }
+      auto feltValue = asFelt(*operand);
+      if (!feltValue) {
+        return feltValue.takeError();
+      }
+      return bind({Value(field.inv(*feltValue))});
+    }
+
+    if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
+      auto operand = lookup(intToFeltOp.getValue(), scope);
+      if (!operand) {
+        return operand.takeError();
+      }
+      if (std::holds_alternative<bool>(*operand)) {
+        return bind({Value(field.reduce(std::get<bool>(*operand) ? 1 : 0))});
+      }
+      auto integer = asIndex(*operand);
+      if (!integer) {
+        return integer.takeError();
+      }
+      return bind({Value(field.reduce(*integer))});
+    }
+    if (auto feltToIndexOp = dyn_cast<cast::FeltToIndexOp>(op)) {
+      auto operand = lookup(feltToIndexOp.getValue(), scope);
+      if (!operand) {
+        return operand.takeError();
+      }
+      auto feltValue = asFelt(*operand);
+      if (!feltValue) {
+        return feltValue.takeError();
+      }
+      return bind({Value(static_cast<int64_t>(toAPSInt(*feltValue).getExtValue()))});
+    }
+
+    if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
+      auto value = defaultValue(structNewOp.getType(), tables, structNewOp.getOperation(), field);
+      if (!value) {
+        return value.takeError();
+      }
+      return bind({*value});
+    }
+    if (auto readMemberOp = dyn_cast<component::MemberReadOp>(op)) {
+      auto componentValue = lookup(readMemberOp.getComponent(), scope);
+      if (!componentValue) {
+        return componentValue.takeError();
+      }
+      auto structValue = asStruct(*componentValue);
+      if (!structValue) {
+        return structValue.takeError();
+      }
+      auto it = (*structValue)->members.find(readMemberOp.getMemberName());
+      if (it == (*structValue)->members.end()) {
+        return makeError("missing struct member");
+      }
+      return bind({it->second});
+    }
+    if (auto writeMemberOp = dyn_cast<component::MemberWriteOp>(op)) {
+      auto componentValue = lookup(writeMemberOp.getComponent(), scope);
+      auto memberValue = lookup(writeMemberOp.getVal(), scope);
+      if (!componentValue) {
+        return componentValue.takeError();
+      }
+      if (!memberValue) {
+        return memberValue.takeError();
+      }
+      auto structValue = asStruct(*componentValue);
+      if (!structValue) {
+        return structValue.takeError();
+      }
+      (*structValue)->members[writeMemberOp.getMemberName()] = *memberValue;
+      return BlockResult {};
+    }
+
+    if (auto newPodOp = dyn_cast<pod::NewPodOp>(op)) {
+      auto podValue = defaultValue(newPodOp.getType(), tables, newPodOp.getOperation(), field);
+      if (!podValue) {
+        return podValue.takeError();
+      }
+      auto podRef = asPod(*podValue);
+      if (!podRef) {
+        return podRef.takeError();
+      }
+      auto initValues = newPodOp.getInitializedRecordValues();
+      for (pod::RecordValue init : initValues) {
+        auto value = lookup(init.value, scope);
+        if (!value) {
+          return value.takeError();
+        }
+        (*podRef)->records[init.name] = *value;
+      }
+      return bind({*podRef});
+    }
+    if (auto readPodOp = dyn_cast<pod::ReadPodOp>(op)) {
+      auto podValue = lookup(readPodOp.getPodRef(), scope);
+      if (!podValue) {
+        return podValue.takeError();
+      }
+      auto podRef = asPod(*podValue);
+      if (!podRef) {
+        return podRef.takeError();
+      }
+      auto it = (*podRef)->records.find(readPodOp.getRecordName());
+      if (it == (*podRef)->records.end()) {
+        return makeError("missing pod record");
+      }
+      return bind({it->second});
+    }
+    if (auto writePodOp = dyn_cast<pod::WritePodOp>(op)) {
+      auto podValue = lookup(writePodOp.getPodRef(), scope);
+      auto recordValue = lookup(writePodOp.getValue(), scope);
+      if (!podValue) {
+        return podValue.takeError();
+      }
+      if (!recordValue) {
+        return recordValue.takeError();
+      }
+      auto podRef = asPod(*podValue);
+      if (!podRef) {
+        return podRef.takeError();
+      }
+      (*podRef)->records[writePodOp.getRecordName()] = *recordValue;
+      return BlockResult {};
+    }
+
+    if (auto arrayNewOp = dyn_cast<array::CreateArrayOp>(op)) {
+      auto arrayValue = std::make_shared<ArrayValue>();
+      arrayValue->type = arrayNewOp.getType();
+      if (arrayNewOp.getElements().empty()) {
+        arrayValue->elements.reserve(arrayValue->type.getNumElements());
+        for (int64_t i = 0; i < arrayValue->type.getNumElements(); ++i) {
+          auto elem = defaultValue(
+              arrayValue->type.getElementType(), tables, arrayNewOp.getOperation(), field
+          );
+          if (!elem) {
+            return elem.takeError();
+          }
+          arrayValue->elements.push_back(*elem);
+        }
+      } else {
+        auto values = collectOperands(arrayNewOp.getElements(), scope);
+        if (!values) {
+          return values.takeError();
+        }
+        arrayValue->elements.assign(values->begin(), values->end());
+      }
+      return bind({arrayValue});
+    }
+    if (auto readArrayOp = dyn_cast<array::ReadArrayOp>(op)) {
+      auto arrayValue = lookup(readArrayOp.getArrRef(), scope);
+      if (!arrayValue) {
+        return arrayValue.takeError();
+      }
+      auto arrayRef = asArray(*arrayValue);
+      if (!arrayRef) {
+        return arrayRef.takeError();
+      }
+      llvm::SmallVector<int64_t> indices;
+      for (mlir::Value indexVal : readArrayOp.getIndices()) {
+        auto value = lookup(indexVal, scope);
+        if (!value) {
+          return value.takeError();
+        }
+        auto index = asIndex(*value);
+        if (!index) {
+          return index.takeError();
+        }
+        indices.push_back(*index);
+      }
+      auto offset = linearize((*arrayRef)->type.getShape(), indices);
+      if (!offset) {
+        return offset.takeError();
+      }
+      return bind({(*arrayRef)->elements[*offset]});
+    }
+    if (auto writeArrayOp = dyn_cast<array::WriteArrayOp>(op)) {
+      auto arrayValue = lookup(writeArrayOp.getArrRef(), scope);
+      auto rvalue = lookup(writeArrayOp.getRvalue(), scope);
+      if (!arrayValue) {
+        return arrayValue.takeError();
+      }
+      if (!rvalue) {
+        return rvalue.takeError();
+      }
+      auto arrayRef = asArray(*arrayValue);
+      if (!arrayRef) {
+        return arrayRef.takeError();
+      }
+      llvm::SmallVector<int64_t> indices;
+      for (mlir::Value indexVal : writeArrayOp.getIndices()) {
+        auto value = lookup(indexVal, scope);
+        if (!value) {
+          return value.takeError();
+        }
+        auto index = asIndex(*value);
+        if (!index) {
+          return index.takeError();
+        }
+        indices.push_back(*index);
+      }
+      auto offset = linearize((*arrayRef)->type.getShape(), indices);
+      if (!offset) {
+        return offset.takeError();
+      }
+      (*arrayRef)->elements[*offset] = *rvalue;
+      return BlockResult {};
+    }
+    if (auto extractArrayOp = dyn_cast<array::ExtractArrayOp>(op)) {
+      auto arrayValue = lookup(extractArrayOp.getArrRef(), scope);
+      if (!arrayValue) {
+        return arrayValue.takeError();
+      }
+      auto arrayRef = asArray(*arrayValue);
+      if (!arrayRef) {
+        return arrayRef.takeError();
+      }
+      llvm::SmallVector<int64_t> indices;
+      for (mlir::Value indexVal : extractArrayOp.getIndices()) {
+        auto value = lookup(indexVal, scope);
+        if (!value) {
+          return value.takeError();
+        }
+        auto index = asIndex(*value);
+        if (!index) {
+          return index.takeError();
+        }
+        indices.push_back(*index);
+      }
+      llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
+      if (indices.size() >= shape.size()) {
+        return makeError("array.extract indices exceed array rank");
+      }
+      size_t subArraySize = 1;
+      for (size_t i = indices.size(); i < shape.size(); ++i) {
+        subArraySize *= static_cast<size_t>(shape[i]);
+      }
+      auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
+      if (!prefixOffset) {
+        return prefixOffset.takeError();
+      }
+      size_t prefixStride = subArraySize;
+      auto subArray = std::make_shared<ArrayValue>();
+      subArray->type = extractArrayOp.getType();
+      subArray->elements.reserve(subArraySize);
+      size_t base = *prefixOffset * prefixStride;
+      for (size_t i = 0; i < subArraySize; ++i) {
+        subArray->elements.push_back((*arrayRef)->elements[base + i]);
+      }
+      return bind({subArray});
+    }
+    if (auto insertArrayOp = dyn_cast<array::InsertArrayOp>(op)) {
+      auto arrayValue = lookup(insertArrayOp.getArrRef(), scope);
+      auto subArrayValue = lookup(insertArrayOp.getRvalue(), scope);
+      if (!arrayValue) {
+        return arrayValue.takeError();
+      }
+      if (!subArrayValue) {
+        return subArrayValue.takeError();
+      }
+      auto arrayRef = asArray(*arrayValue);
+      auto subArrayRef = asArray(*subArrayValue);
+      if (!arrayRef) {
+        return arrayRef.takeError();
+      }
+      if (!subArrayRef) {
+        return subArrayRef.takeError();
+      }
+      llvm::SmallVector<int64_t> indices;
+      for (mlir::Value indexVal : insertArrayOp.getIndices()) {
+        auto value = lookup(indexVal, scope);
+        if (!value) {
+          return value.takeError();
+        }
+        auto index = asIndex(*value);
+        if (!index) {
+          return index.takeError();
+        }
+        indices.push_back(*index);
+      }
+      llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
+      size_t subArraySize = static_cast<size_t>((*subArrayRef)->elements.size());
+      auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
+      if (!prefixOffset) {
+        return prefixOffset.takeError();
+      }
+      size_t base = *prefixOffset * subArraySize;
+      for (size_t i = 0; i < subArraySize; ++i) {
+        (*arrayRef)->elements[base + i] = (*subArrayRef)->elements[i];
+      }
+      return BlockResult {};
+    }
+    if (auto arrayLenOp = dyn_cast<array::ArrayLengthOp>(op)) {
+      auto dimValue = lookup(arrayLenOp.getDim(), scope);
+      if (!dimValue) {
+        return dimValue.takeError();
+      }
+      auto dim = asIndex(*dimValue);
+      if (!dim) {
+        return dim.takeError();
+      }
+      llvm::ArrayRef<int64_t> shape = arrayLenOp.getArrRefType().getShape();
+      if (*dim < 0 || static_cast<size_t>(*dim) >= shape.size()) {
+        return makeError("array.len dimension out of bounds");
+      }
+      return bind({Value(shape[static_cast<size_t>(*dim)])});
+    }
+
+    if (auto callOp = dyn_cast<function::CallOp>(op)) {
+      if (callOp.getTemplateParams() || !callOp.getMapOperands().empty()) {
+        return makeError("templated or affine-instantiated calls are not supported in llzk-witgen");
+      }
+      auto callee = lookupTopLevelSymbol<function::FuncDefOp>(tables, callOp.getCalleeAttr(), &op);
+      if (failed(callee)) {
+        return makeError("could not resolve called function");
+      }
+      auto args = collectOperands(callOp.getArgOperands(), scope);
+      if (!args) {
+        return args.takeError();
+      }
+      auto results = run(callee->get(), *args);
+      if (!results) {
+        return results.takeError();
+      }
+      return bind(*results);
+    }
+
+    if (auto cmpIOp = dyn_cast<arith::CmpIOp>(op)) {
+      auto lhs = lookup(cmpIOp.getLhs(), scope);
+      auto rhs = lookup(cmpIOp.getRhs(), scope);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      auto lhsValue = asIndex(*lhs);
+      auto rhsValue = asIndex(*rhs);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      bool result = false;
+      switch (cmpIOp.getPredicate()) {
+      case arith::CmpIPredicate::eq:
+        result = *lhsValue == *rhsValue;
+        break;
+      case arith::CmpIPredicate::ne:
+        result = *lhsValue != *rhsValue;
+        break;
+      case arith::CmpIPredicate::slt:
+        result = *lhsValue < *rhsValue;
+        break;
+      case arith::CmpIPredicate::sle:
+        result = *lhsValue <= *rhsValue;
+        break;
+      case arith::CmpIPredicate::sgt:
+        result = *lhsValue > *rhsValue;
+        break;
+      case arith::CmpIPredicate::sge:
+        result = *lhsValue >= *rhsValue;
+        break;
+      case arith::CmpIPredicate::ult:
+        result = static_cast<uint64_t>(*lhsValue) < static_cast<uint64_t>(*rhsValue);
+        break;
+      case arith::CmpIPredicate::ule:
+        result = static_cast<uint64_t>(*lhsValue) <= static_cast<uint64_t>(*rhsValue);
+        break;
+      case arith::CmpIPredicate::ugt:
+        result = static_cast<uint64_t>(*lhsValue) > static_cast<uint64_t>(*rhsValue);
+        break;
+      case arith::CmpIPredicate::uge:
+        result = static_cast<uint64_t>(*lhsValue) >= static_cast<uint64_t>(*rhsValue);
+        break;
+      }
+      return bind({Value(result)});
+    }
+
+    auto handleBinaryIndex = [&](auto arithOp, auto fn) -> llvm::Expected<BlockResult> {
+      auto lhs = lookup(arithOp.getLhs(), scope);
+      auto rhs = lookup(arithOp.getRhs(), scope);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      auto lhsValue = asIndex(*lhs);
+      auto rhsValue = asIndex(*rhs);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      return bind({Value(fn(*lhsValue, *rhsValue))});
+    };
+
+    if (auto addIOp = dyn_cast<arith::AddIOp>(op)) {
+      return handleBinaryIndex(addIOp, [](int64_t lhs, int64_t rhs) { return lhs + rhs; });
+    }
+    if (auto subIOp = dyn_cast<arith::SubIOp>(op)) {
+      return handleBinaryIndex(subIOp, [](int64_t lhs, int64_t rhs) { return lhs - rhs; });
+    }
+    if (auto mulIOp = dyn_cast<arith::MulIOp>(op)) {
+      return handleBinaryIndex(mulIOp, [](int64_t lhs, int64_t rhs) { return lhs * rhs; });
+    }
+    if (auto divUIOp = dyn_cast<arith::DivUIOp>(op)) {
+      return handleBinaryIndex(divUIOp, [](int64_t lhs, int64_t rhs) { return lhs / rhs; });
+    }
+    if (auto selectOp = dyn_cast<arith::SelectOp>(op)) {
+      auto cond = lookup(selectOp.getCondition(), scope);
+      auto trueValue = lookup(selectOp.getTrueValue(), scope);
+      auto falseValue = lookup(selectOp.getFalseValue(), scope);
+      if (!cond) {
+        return cond.takeError();
+      }
+      if (!trueValue) {
+        return trueValue.takeError();
+      }
+      if (!falseValue) {
+        return falseValue.takeError();
+      }
+      auto condition = asBool(*cond);
+      if (!condition) {
+        return condition.takeError();
+      }
+      return bind({*condition ? *trueValue : *falseValue});
+    }
+
+    if (auto ifOp = dyn_cast<scf::IfOp>(op)) {
+      auto cond = lookup(ifOp.getCondition(), scope);
+      if (!cond) {
+        return cond.takeError();
+      }
+      auto condition = asBool(*cond);
+      if (!condition) {
+        return condition.takeError();
+      }
+      Region &region = *condition ? ifOp.getThenRegion() : ifOp.getElseRegion();
+      auto result = runRegion(region, {}, scope);
+      if (!result) {
+        return result.takeError();
+      }
+      return bind(result->values);
+    }
+
+    if (auto forOp = dyn_cast<scf::ForOp>(op)) {
+      auto lowerBoundValue = lookup(forOp.getLowerBound(), scope);
+      auto upperBoundValue = lookup(forOp.getUpperBound(), scope);
+      auto stepValue = lookup(forOp.getStep(), scope);
+      if (!lowerBoundValue) {
+        return lowerBoundValue.takeError();
+      }
+      if (!upperBoundValue) {
+        return upperBoundValue.takeError();
+      }
+      if (!stepValue) {
+        return stepValue.takeError();
+      }
+      auto lowerBound = asIndex(*lowerBoundValue);
+      auto upperBound = asIndex(*upperBoundValue);
+      auto step = asIndex(*stepValue);
+      if (!lowerBound) {
+        return lowerBound.takeError();
+      }
+      if (!upperBound) {
+        return upperBound.takeError();
+      }
+      if (!step) {
+        return step.takeError();
+      }
+      auto iterValues = collectOperands(forOp.getInitArgs(), scope);
+      if (!iterValues) {
+        return iterValues.takeError();
+      }
+
+      for (int64_t iv = *lowerBound; iv < *upperBound; iv += *step) {
+        llvm::SmallVector<Value> regionArgs;
+        regionArgs.push_back(Value(iv));
+        regionArgs.append(iterValues->begin(), iterValues->end());
+        auto result = runRegion(forOp.getRegion(), regionArgs, scope);
+        if (!result) {
+          return result.takeError();
+        }
+        iterValues = std::move(result->values);
+      }
+      return bind(*iterValues);
+    }
+
+    if (isa<scf::WhileOp>(op)) {
+      return makeError("scf.while is not supported in llzk-witgen");
+    }
+
+    return makeError(llvm::Twine("unsupported op in llzk-witgen: ") + op.getName().getStringRef());
+  }
+};
+
+} // namespace
+
+/// Execute a function body with concrete runtime values.
+llvm::Expected<llvm::SmallVector<Value>>
+FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<Value> args) {
+  return InvocationInterpreter(moduleOp, tables, field).run(funcOp, args);
+}
+
+} // namespace llzk::witgen

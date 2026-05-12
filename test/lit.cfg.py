@@ -52,7 +52,7 @@ llvm_config.with_environment('PATH', config.llvm_tools_dir, append_path=True)
 
 tool_dirs = [config.llzk_tools_dir, config.llvm_tools_dir]
 tools = [
-    "llzk-opt", "r1cs-opt"
+    "llzk-opt", "llzk-witgen", "r1cs-opt"
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

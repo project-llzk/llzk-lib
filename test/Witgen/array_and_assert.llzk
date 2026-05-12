@@ -1,0 +1,44 @@
+//===-- array_and_assert.llzk ---------------------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+// RUN: llzk-witgen %s --inputs %S/Inputs/array_and_assert.json | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !array.type<3 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(
+      %input: !array.type<3 x !felt.type<"babybear">> {function.arg_name = "input"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %a0 = array.read %input[%c0] : !array.type<3 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %a1 = array.read %input[%c1] : !array.type<3 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %a2 = array.read %input[%c2] : !array.type<3 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %cmp = bool.cmp lt(%a0, %a1) : !felt.type<"babybear">, !felt.type<"babybear">
+      bool.assert %cmp, "input[0] must be less than input[1]"
+      %sum = felt.add %a0, %a2 : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = array.new %a0, %a1, %sum : !array.type<3 x !felt.type<"babybear">>
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !array.type<3 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<3 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": [
+// CHECK-NEXT:     "2",
+// CHECK-NEXT:     "5",
+// CHECK-NEXT:     "9"
+// CHECK-NEXT:   ]
+// CHECK-NEXT: }

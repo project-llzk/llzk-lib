@@ -1,0 +1,31 @@
+//===-- assert_fail.llzk --------------------------------------------------===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+// RUN: not llzk-witgen %s --inputs %S/Inputs/assert_fail.json 2>&1 | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %x: !felt.type<"babybear"> {function.arg_name = "x"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c3 = felt.const 3 <"babybear">
+      %cond = bool.cmp lt(%x, %c3) : !felt.type<"babybear">, !felt.type<"babybear">
+      bool.assert %cond, "x must be less than 3"
+      struct.writem %self[@out] = %x : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK: llzk-witgen error: x must be less than 3
