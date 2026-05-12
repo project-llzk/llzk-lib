@@ -148,6 +148,26 @@ public:
     return newModule;
   }
 
+  /// Generate a new `ModuleOp` containing a free (non-struct) `FuncDefOp` with an empty
+  /// signature, using C++ API to avoid indirectly testing other LLZK C API functions within
+  /// the tests, and set the insertion point to the start of the function body.
+  mlir::OwningOpRef<mlir::ModuleOp>
+  cppGenFreeFuncAndSetInsertionPoint(MlirOpBuilder builder, MlirLocation location) const {
+    auto newModule = this->cppNewModuleAndSetInsertionPoint(builder, location);
+    llzk::ModuleBuilder cppBldr(newModule.get());
+    const auto *name = "func_name";
+    cppBldr.insertFreeFunc(
+        name, mlir::FunctionType::get(unwrap(context), mlir::TypeRange {}, mlir::TypeRange {}),
+        unwrap(location)
+    );
+    auto func = cppBldr.getFreeFunc(name);
+    assert(
+        mlir::succeeded(func) && "Failed to retrieve the function just inserted into the module"
+    );
+    unwrap(builder)->setInsertionPointToStart(&func->getBody().emplaceBlock());
+    return newModule;
+  }
+
   /// If the insertion point of the builder is within a `FuncDefOp`, set the
   /// 'allow_non_native_field_ops' attribute to avoid the following type of errors:
   ///

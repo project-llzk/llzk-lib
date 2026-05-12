@@ -302,6 +302,85 @@ std::unique_ptr<InsertArrayOpBuildFuncHelper> InsertArrayOpBuildFuncHelper::get(
   return std::make_unique<Impl>();
 }
 
+/// Test that SetElements (a variadic operand setter using the dynamic operandSegmentSizes path)
+/// correctly updates the `operandSegmentSizes` attribute so that a subsequent read of the
+/// *other* variadic operand (mapOperands) still returns the correct value.
+///
+/// Before the fix, SetElements would update the operand list but leave `operandSegmentSizes`
+/// stale (still [2, 1]). GetMapOperandsAt would then compute startIdx=2 from the stale
+/// attribute and access operand[2], which no longer exists, returning the wrong value.
+/// After the fix, `operandSegmentSizes` is updated to [1, 1], so startIdx=1 is correct.
+TEST_F(ArrayDialectTests, create_array_op_set_elements_updates_operand_segment_sizes) {
+  auto location = mlirLocationUnknownGet(context);
+  auto elt_type = createIndexType();
+
+  // Create three index-typed constant ops to serve as operands: e0, e1, m0
+  auto auxOps = create_n_ops(3, elt_type);
+  MlirValue e0 = mlirOperationGetResult(auxOps[0], 0);
+  MlirValue e1 = mlirOperationGetResult(auxOps[1], 0);
+  MlirValue m0 = mlirOperationGetResult(auxOps[2], 0);
+
+  // Manually build an `array.new` op with:
+  //   operands:            [e0, e1, m0]
+  //   operandSegmentSizes: [2, 1]  (elements=2, mapOperands=1)
+  //   mapOpGroupSizes:     [1]
+  //   numDimsPerMap:       [0]
+  //   result:              !array.type<2 x index>
+  // mlirOperationCreate does not run the verifier, so the op does not need to be
+  // semantically valid - we just need the right operand / attribute layout.
+  int64_t dims[1] = {2};
+  auto arr_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
+
+  auto op_state = mlirOperationStateGet(mlirStringRefCreateFromCString("array.new"), location);
+
+  MlirValue operands[3] = {e0, e1, m0};
+  mlirOperationStateAddOperands(&op_state, 3, operands);
+  mlirOperationStateAddResults(&op_state, 1, &arr_type);
+
+  int32_t segSizes[2] = {2, 1};
+  int32_t groupSizes[1] = {1};
+  int32_t numDims[1] = {0};
+  MlirNamedAttribute attrs[3] = {
+      mlirNamedAttributeGet(
+          mlirIdentifierGet(context, mlirStringRefCreateFromCString("operandSegmentSizes")),
+          mlirDenseI32ArrayGet(context, 2, segSizes)
+      ),
+      mlirNamedAttributeGet(
+          mlirIdentifierGet(context, mlirStringRefCreateFromCString("mapOpGroupSizes")),
+          mlirDenseI32ArrayGet(context, 1, groupSizes)
+      ),
+      mlirNamedAttributeGet(
+          mlirIdentifierGet(context, mlirStringRefCreateFromCString("numDimsPerMap")),
+          mlirDenseI32ArrayGet(context, 1, numDims)
+      ),
+  };
+  mlirOperationStateAddAttributes(&op_state, 3, attrs);
+
+  auto op = mlirOperationCreate(&op_state);
+  ASSERT_NE(op.ptr, nullptr);
+
+  // Verify the initial operand layout is as expected.
+  EXPECT_EQ(llzkArray_CreateArrayOpGetElementsCount(op), 2);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsCount(op), 1);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 0).ptr, m0.ptr);
+
+  // Update elements from [e0, e1] to [e0] only.
+  // This setter must also update operandSegmentSizes from [2,1] to [1,1].
+  MlirValue newElements[1] = {e0};
+  llzkArray_CreateArrayOpSetElements(op, 1, newElements);
+
+  // mapOperands was not touched, so it should still report count=1 and return m0.
+  // Before the fix, operandSegmentSizes was not updated (still [2,1]), so
+  // GetMapOperandsAt would compute startIdx=2 and access the now-nonexistent operand[2].
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsCount(op), 1);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 0).ptr, m0.ptr);
+
+  mlirOperationDestroy(op);
+  for (auto auxOp : auxOps) {
+    mlirOperationDestroy(auxOp);
+  }
+}
+
 // Implementation for `ExtractArrayOp_build_pass` test
 std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::get() {
   struct Impl : public ExtractArrayOpBuildFuncHelper {
