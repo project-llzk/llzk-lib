@@ -8,10 +8,8 @@ var structOpImplementationGenerator =
     [ "genOperandSetterImpl", "structOpImplementationGenerator.html#ac1c861972ab5d8b9b30d0c9b28891a6b", null ],
     [ "genRegionGetterImpl", "structOpImplementationGenerator.html#a19fbe7c2faea0d3d64b3914faaeb7242", null ],
     [ "genResultGetterImpl", "structOpImplementationGenerator.html#a91eb6c0882b01e151d82a515bbddc228", null ],
-    [ "genVariadicOperandGetterImpl", "structOpImplementationGenerator.html#a085f4e1c4aeb5195dc6dac2c49b3c2eb", null ],
-    [ "genVariadicOperandGetterImplDynamic", "structOpImplementationGenerator.html#a3d1af2bf4ae1b9b7d5f17b579c9ab160", null ],
-    [ "genVariadicOperandSetterImpl", "structOpImplementationGenerator.html#a10002a345c87312cb8e2f62c8aef2f87", null ],
-    [ "genVariadicOperandSetterImplDynamic", "structOpImplementationGenerator.html#af92cc3d41498fbdbf692401d21179190", null ],
+    [ "genVariadicOperandGetterImpl", "structOpImplementationGenerator.html#ac69df75784c30f46db1441c4a77885f3", null ],
+    [ "genVariadicOperandSetterImpl", "structOpImplementationGenerator.html#a89b9bbf67ac0df27ab1e7fae674fa0d9", null ],
     [ "genVariadicRegionGetterImpl", "structOpImplementationGenerator.html#a54559b2687f8ba2040b896ac0722f284", null ],
     [ "genVariadicResultGetterImpl", "structOpImplementationGenerator.html#a7411c2e33f5ba3678d855edc003cc9bf", null ]
 ];
