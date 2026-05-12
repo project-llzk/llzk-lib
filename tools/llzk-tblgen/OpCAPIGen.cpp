@@ -530,11 +530,17 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values)
     static constexpr char fmt[] = R"(
 intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op) {{
   MlirAttribute segSizes = mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("operandSegmentSizes"));
+  assert(!mlirAttributeIsNull(segSizes) && "expected operandSegmentSizes attribute");
+  assert(mlirAttributeIsADenseI32Array(segSizes) &&
+         "expected operandSegmentSizes to be a DenseI32ArrayAttr");
   return mlirDenseI32ArrayGetElement(segSizes, {4});
 }
 
 MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index) {{
   MlirAttribute segSizes = mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("operandSegmentSizes"));
+  assert(!mlirAttributeIsNull(segSizes) && "expected operandSegmentSizes attribute");
+  assert(mlirAttributeIsADenseI32Array(segSizes) &&
+         "expected operandSegmentSizes to be a DenseI32ArrayAttr");
   intptr_t startIdx = 0;
   for (int i = 0; i < {4}; ++i)
     startIdx += mlirDenseI32ArrayGetElement(segSizes, i);
