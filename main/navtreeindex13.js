@@ -1,5 +1,9 @@
 var NAVTREEINDEX13 =
 {
+"backend-dialects.html#r1csconst-r1csconstop":[8,0,0,2],
+"backend-dialects.html#r1csconstrain-r1csconstrainop":[8,0,0,3],
+"backend-dialects.html#r1csdef-r1cssignaldefop":[8,0,0,4],
+"backend-dialects.html#r1csmul_const-r1csmulconstop":[8,0,0,5],
 "backend-dialects.html#r1csneg-r1csnegop":[8,0,0,6],
 "backend-dialects.html#r1csto_linear-r1cstolinearop":[8,0,0,7],
 "backend-dialects.html#results-40":[8,0,0,0,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX13 =
 "classllzk_1_1ExpressionValue.html#a271316b130771e48d355e0cb0eeecf35":[12,0,1,37,34],
 "classllzk_1_1ExpressionValue.html#a2c821eaeba3a565befc77ff660f126d5":[10,0,2,40,26],
 "classllzk_1_1ExpressionValue.html#a2c821eaeba3a565befc77ff660f126d5":[12,0,1,37,26],
-"classllzk_1_1ExpressionValue.html#a331f1f28f025622986c77a6d444ae874":[10,0,2,40,37],
-"classllzk_1_1ExpressionValue.html#a331f1f28f025622986c77a6d444ae874":[12,0,1,37,37],
-"classllzk_1_1ExpressionValue.html#a346e37f8c2007ceb26c0cf90a029805a":[10,0,2,40,8],
-"classllzk_1_1ExpressionValue.html#a346e37f8c2007ceb26c0cf90a029805a":[12,0,1,37,8],
-"classllzk_1_1ExpressionValue.html#a3b3601e66b7fb7de0faca0c5eb68559a":[10,0,2,40,29]
+"classllzk_1_1ExpressionValue.html#a331f1f28f025622986c77a6d444ae874":[10,0,2,40,37]
 };

@@ -145,11 +145,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a04e5f152eb35f77bfda7fde557bcd2c1" id="r_a04e5f152eb35f77bfda7fde557bcd2c1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a04e5f152eb35f77bfda7fde557bcd2c1">LLZK_DECLARE_OP_BUILD_METHOD</a> (Function, CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands, MlirValue const *operands)</td></tr>
 <tr class="memdesc:a04e5f152eb35f77bfda7fde557bcd2c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp.  <br /></td></tr>
 <tr class="memitem:a3ed7feebe12d89ad7f4e831353626aa3" id="r_a3ed7feebe12d89ad7f4e831353626aa3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ed7feebe12d89ad7f4e831353626aa3">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Function, CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands)</td></tr>
-<tr class="memdesc:a3ed7feebe12d89ad7f4e831353626aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp that calls the given FuncDefOp.  <br /></td></tr>
+<tr class="memdesc:a3ed7feebe12d89ad7f4e831353626aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp targeting the given FuncDefOp.  <br /></td></tr>
 <tr class="memitem:a83e409c26cadb96fc23221dac0c9ea88" id="r_a83e409c26cadb96fc23221dac0c9ea88"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a83e409c26cadb96fc23221dac0c9ea88">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Function, CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name, <a class="el" href="structLlzkAffineMapOperandsBuilder.html">LlzkAffineMapOperandsBuilder</a> mapOperands, intptr_t numArgOperands, MlirValue const *argOperands)</td></tr>
 <tr class="memdesc:a83e409c26cadb96fc23221dac0c9ea88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp with affine map operands.  <br /></td></tr>
 <tr class="memitem:ad4906c66dfccd3e7443c36e1bca7cdf5" id="r_ad4906c66dfccd3e7443c36e1bca7cdf5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4906c66dfccd3e7443c36e1bca7cdf5">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee, <a class="el" href="structLlzkAffineMapOperandsBuilder.html">LlzkAffineMapOperandsBuilder</a> mapOperands, intptr_t numArgOperands, MlirValue const *argOperands)</td></tr>
-<tr class="memdesc:ad4906c66dfccd3e7443c36e1bca7cdf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp with affine map operands to the given FuncDefOp.  <br /></td></tr>
+<tr class="memdesc:ad4906c66dfccd3e7443c36e1bca7cdf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp targeting the given FuncDefOp with affine map operands.  <br /></td></tr>
+<tr class="memitem:a87c6ac2cc46f1f573ca3bac279814c54" id="r_a87c6ac2cc46f1f573ca3bac279814c54"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a87c6ac2cc46f1f573ca3bac279814c54">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Function, CallOp, WithTemplateParams, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numTemplateParams, MlirAttribute const *templateParams, intptr_t numArgOperands, MlirValue const *argOperands)</td></tr>
+<tr class="memdesc:a87c6ac2cc46f1f573ca3bac279814c54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp with <span class="tt">templateParams</span> attributes.  <br /></td></tr>
+<tr class="memitem:a571c14c8729c96e0372049045098a1c3" id="r_a571c14c8729c96e0372049045098a1c3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a571c14c8729c96e0372049045098a1c3">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Function, CallOp, ToCalleeWithTemplateParams, MlirOperation callee, intptr_t numTemplateParams, MlirAttribute const *templateParams, intptr_t numArgOperands, MlirValue const *argOperands)</td></tr>
+<tr class="memdesc:a571c14c8729c96e0372049045098a1c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp targeting the given FuncDefOp with <span class="tt">templateParams</span> attributes.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a04e5f152eb35f77bfda7fde557bcd2c1" name="a04e5f152eb35f77bfda7fde557bcd2c1"></a>
@@ -201,7 +205,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a3ed7feebe12d89ad7f4e831353626aa3" name="a3ed7feebe12d89ad7f4e831353626aa3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3ed7feebe12d89ad7f4e831353626aa3">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ed7feebe12d89ad7f4e831353626aa3">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -239,12 +243,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a CallOp that calls the given FuncDefOp. </p>
+<p>Creates a CallOp targeting the given FuncDefOp. </p>
 
 </div>
 </div>
 <a id="ad4906c66dfccd3e7443c36e1bca7cdf5" name="ad4906c66dfccd3e7443c36e1bca7cdf5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4906c66dfccd3e7443c36e1bca7cdf5">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4906c66dfccd3e7443c36e1bca7cdf5">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -287,12 +291,65 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a CallOp with affine map operands to the given FuncDefOp. </p>
+<p>Creates a CallOp targeting the given FuncDefOp with affine map operands. </p>
+
+</div>
+</div>
+<a id="a571c14c8729c96e0372049045098a1c3" name="a571c14c8729c96e0372049045098a1c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a571c14c8729c96e0372049045098a1c3">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Function</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CallOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ToCalleeWithTemplateParams</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>callee</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numTemplateParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute const *</td>          <td class="paramname"><span class="paramname"><em>templateParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numArgOperands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue const *</td>          <td class="paramname"><span class="paramname"><em>argOperands</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a CallOp targeting the given FuncDefOp with <span class="tt">templateParams</span> attributes. </p>
 
 </div>
 </div>
 <a id="a83e409c26cadb96fc23221dac0c9ea88" name="a83e409c26cadb96fc23221dac0c9ea88"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83e409c26cadb96fc23221dac0c9ea88">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a83e409c26cadb96fc23221dac0c9ea88">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[4/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -346,6 +403,69 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a CallOp with affine map operands. </p>
+
+</div>
+</div>
+<a id="a87c6ac2cc46f1f573ca3bac279814c54" name="a87c6ac2cc46f1f573ca3bac279814c54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87c6ac2cc46f1f573ca3bac279814c54">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[5/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Function</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CallOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithTemplateParams</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numResults</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType const *</td>          <td class="paramname"><span class="paramname"><em>results</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numTemplateParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute const *</td>          <td class="paramname"><span class="paramname"><em>templateParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numArgOperands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue const *</td>          <td class="paramname"><span class="paramname"><em>argOperands</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a CallOp with <span class="tt">templateParams</span> attributes. </p>
 
 </div>
 </div>
