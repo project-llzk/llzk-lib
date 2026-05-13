@@ -1,8 +1,8 @@
 // RUN: llzk-opt -llzk-inline-structs -verify-diagnostics %s
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  // expected-error @+2 {{Cannot inline structs when a symbol-use cycle is reachable from a struct "@constrain" function.}}
-  // expected-note @+1 {{cycle contains @loop}}
+  // expected-error@+2 {{Cannot inline structs when a symbol-use cycle is reachable from a struct "@constrain" function.}}
+  // expected-note@+1 {{cycle contains @loop}}
   function.def @loop() -> () attributes {function.allow_constraint} {
     function.call @loop() : () -> ()
     function.return
