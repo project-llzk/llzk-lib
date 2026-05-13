@@ -117,7 +117,6 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp.html','',''); });
 <p>This file implements the <span class="tt">-llzk-inline-structs</span> pass.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="LLZKInlineStructsPass_8h_source.html">llzk/Transforms/LLZKInlineStructsPass.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="GraphUtil_8h_source.html">llzk/Analysis/GraphUtil.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolUseGraph_8h_source.html">llzk/Analysis/SymbolUseGraph.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Ops_8h_source.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</code><br />
@@ -132,7 +131,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp.html','',''); });
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/InliningUtils.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/WalkPatternRewriteDriver.h&gt;</code><br />
-<code>#include &lt;llvm/ADT/PostOrderIterator.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallPtrSet.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/StringMap.h&gt;</code><br />
@@ -144,7 +143,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKInlineStructsPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKInlineStructsPass_8cpp__incl.svg" width="4747" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKInlineStructsPass_8cpp__incl.svg" width="5046" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="LLZKInlineStructsPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -192,7 +191,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00064">64</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00063">63</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -208,7 +207,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00053">53</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00052">52</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -224,7 +223,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00054">54</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00053">53</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -248,7 +247,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00900">900</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKInlineStructsPass_8cpp_source.html#l00899">899</a> of file <a class="el" href="LLZKInlineStructsPass_8cpp_source.html">LLZKInlineStructsPass.cpp</a>.</p>
 
 </div>
 </div>
