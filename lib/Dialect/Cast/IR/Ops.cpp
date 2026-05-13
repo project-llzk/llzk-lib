@@ -51,18 +51,15 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
 }
 
 LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter &rewriter) {
+  // Instead of casting an arith.constant to felt, just generate a felt.const
   if (!op.getValue().getDefiningOp()) {
     return failure();
   }
 
   return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
-      .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, op](auto constOp) {
-    auto type = op->getResultTypes().front();
+      .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, type,
-        felt::FeltConstAttr::get(
-            op->getContext(), toAPInt(constOp.value()), dyn_cast<felt::FeltType>(type)
-        )
+        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
     );
     return success();
   }).Default([](auto) { return failure(); });
