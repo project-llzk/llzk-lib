@@ -544,57 +544,6 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values)
 )",
           index
       );
-      if (operandNameCapitalized == "MapOperands") {
-        updateOs << R"(
-
-  // If mapOpGroupSizes exists, keep it consistent with the mapOperands segment.
-  // Setter API accepts only a flat operand list, so represent it as a single group.
-  MlirAttribute mapGroupSizes =
-      mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("mapOpGroupSizes"));
-  if (!mlirAttributeIsNull(mapGroupSizes)) {
-    assert(mlirAttributeIsADenseI32Array(mapGroupSizes) &&
-           "expected mapOpGroupSizes to be a DenseI32ArrayAttr");
-    std::vector<int32_t> newMapGroupSizes;
-    if (count > 0) {
-      assert(count <= static_cast<intptr_t>(std::numeric_limits<int32_t>::max()) &&
-             "count exceeds int32_t range");
-      newMapGroupSizes.push_back(static_cast<int32_t>(count));
-    }
-    MlirAttribute newMapGroupSizesAttr =
-        mlirDenseI32ArrayGet(ctx, newMapGroupSizes.size(), newMapGroupSizes.data());
-    mlirOperationSetAttributeByName(
-        op, mlirStringRefCreateFromCString("mapOpGroupSizes"), newMapGroupSizesAttr
-    );
-
-    // Keep numDimsPerMap length aligned with mapOpGroupSizes when present.
-    MlirAttribute numDimsPerMap =
-        mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("numDimsPerMap"));
-    if (!mlirAttributeIsNull(numDimsPerMap)) {
-      assert(mlirAttributeIsADenseI32Array(numDimsPerMap) &&
-             "expected numDimsPerMap to be a DenseI32ArrayAttr");
-      std::vector<int32_t> newNumDimsPerMap;
-      if (count > 0) {
-        int32_t nDims = 0;
-        intptr_t oldLen = mlirDenseArrayGetNumElements(numDimsPerMap);
-        if (oldLen > 0) {
-          nDims = mlirDenseI32ArrayGetElement(numDimsPerMap, 0);
-        }
-        if (nDims < 0) {
-          nDims = 0;
-        } else if (nDims > static_cast<int32_t>(count)) {
-          nDims = static_cast<int32_t>(count);
-        }
-        newNumDimsPerMap.push_back(nDims);
-      }
-      MlirAttribute newNumDimsPerMapAttr =
-          mlirDenseI32ArrayGet(ctx, newNumDimsPerMap.size(), newNumDimsPerMap.data());
-      mlirOperationSetAttributeByName(
-          op, mlirStringRefCreateFromCString("numDimsPerMap"), newNumDimsPerMapAttr
-      );
-    }
-  }
-)";
-      }
     }
     os << llvm::formatv(
         fmt,
