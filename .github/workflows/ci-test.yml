@@ -39,7 +39,7 @@ jobs:
         run: "nix --print-build-logs build '${{ matrix.compiler.derivation }}'"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "Test results (${{ matrix.compiler.name }})"
           path: "result/artifacts/${{ matrix.compiler.report }}"
@@ -51,7 +51,7 @@ jobs:
     if: ${{ !cancelled() }}
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
       - name: Publish Test Results
