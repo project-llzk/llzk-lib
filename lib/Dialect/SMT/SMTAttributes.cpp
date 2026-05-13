@@ -25,8 +25,8 @@ using namespace llzk::smt;
 
 LogicalResult BitVectorAttr::verify(
     function_ref<InFlightDiagnostic()> emitError,
-    APInt value
-) { // NOLINT(performance-unnecessary-value-param)
+    APInt value // NOLINT(performance-unnecessary-value-param)
+) {
   if (value.getBitWidth() < 1) {
     return emitError() << "bit-width must be at least 1, but got " << value.getBitWidth();
   }
