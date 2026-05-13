@@ -296,11 +296,11 @@ class IntervalDataFlowAnalysis
 public:
   explicit IntervalDataFlowAnalysis(
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
-      bool propInputConstraints, bool trackUnreducedIntervals
+      bool propInputConstraints, bool shouldTrackUnreducedIntervals
   )
       : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
         smtSolver(std::move(smt)), field(f), propagateInputConstraints(propInputConstraints),
-        trackUnreducedIntervals(trackUnreducedIntervals) {}
+        trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
 
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
