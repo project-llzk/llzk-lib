@@ -1,0 +1,35 @@
+// RUN: llzk-opt --llzk-while-to-for --canonicalize %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @sum : !felt.type
+        function.def @product() -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
+            %self = struct.new : <@A>
+            %f0 = felt.const 0
+            %f1 = felt.const 1
+            %f10 = felt.const 10
+            %end, %total = scf.while (%i = %f1, %sum = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+                %cond = bool.cmp lt(%i, %f10)
+                scf.condition(%cond) %i, %sum : !felt.type, !felt.type
+            } do {
+            ^bb0(%i: !felt.type, %sum: !felt.type):
+                %next_sum = felt.add %sum, %i
+                %next_i = felt.mul %i, %i
+                scf.yield %next_i, %next_sum : !felt.type, !felt.type
+            }
+            struct.writem %self[@sum] = %total : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+
+// CHECK-LABEL: function.def @product()
+// CHECK:         %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new
+// CHECK-NOT:     scf.for
+// CHECK:         %[[WHILE:[0-9a-zA-Z_\.]+]]:2 = scf.while
+// CHECK:         %[[COND:[0-9a-zA-Z_\.]+]] = bool.cmp lt
+// CHECK:         scf.condition(%[[COND]])
+// CHECK:         %[[NEXT_I:[0-9a-zA-Z_\.]+]] = felt.mul
+// CHECK:         scf.yield %[[NEXT_I]]
+// CHECK-NOT:     scf.for
+// CHECK:         struct.writem %[[SELF]][@sum] = %[[WHILE]]#1
