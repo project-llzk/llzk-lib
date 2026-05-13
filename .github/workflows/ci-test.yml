@@ -31,8 +31,7 @@ jobs:
           git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
           git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
           git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
-      # v16
-      - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
+      - uses: cachix/cachix-action@v17
         with:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
@@ -40,7 +39,7 @@ jobs:
         run: "nix --print-build-logs build '${{ matrix.compiler.derivation }}'"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "Test results (${{ matrix.compiler.name }})"
           path: "result/artifacts/${{ matrix.compiler.report }}"
@@ -52,7 +51,7 @@ jobs:
     if: ${{ !cancelled() }}
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
       - name: Publish Test Results
