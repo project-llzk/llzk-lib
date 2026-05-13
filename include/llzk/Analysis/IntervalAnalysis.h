@@ -25,7 +25,6 @@
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Util/Compare.h"
-
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>
@@ -112,7 +111,7 @@ public:
 
   bool operator==(const ExpressionValue &rhs) const;
 
-  bool isBoolSort(llvm::SMTSolverRef solver) const {
+  bool isBoolSort(const llvm::SMTSolverRef &solver) const {
     return solver->getBoolSort() == solver->getSort(expr);
   }
 
@@ -122,8 +121,9 @@ public:
   /// @param lhs
   /// @param rhs
   /// @return
-  friend ExpressionValue
-  intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  friend ExpressionValue intersection(
+      const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+  );
 
   /// @brief Compute the union of the lhs and rhs intervals, and create a solver
   /// expression that constrains both sides to be equal.
@@ -132,69 +132,64 @@ public:
   /// @param rhs
   /// @return
   friend ExpressionValue
-  join(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  join(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   // arithmetic ops
 
   friend ExpressionValue
-  add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  add(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  sub(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  div(llvm::SMTSolverRef solver, felt::DivFeltOp op, const ExpressionValue &lhs,
+  div(const llvm::SMTSolverRef &solver, felt::DivFeltOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
   friend ExpressionValue
-  mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  bitAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+
+  friend ExpressionValue shiftLeft(
+      const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+  );
+
+  friend ExpressionValue shiftRight(
+      const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+  );
 
   friend ExpressionValue
-  shiftLeft(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
-
-  friend ExpressionValue
-  shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
-
-  friend ExpressionValue
-  cmp(llvm::SMTSolverRef solver, boolean::CmpOp op, const ExpressionValue &lhs,
+  cmp(const llvm::SMTSolverRef &solver, boolean::CmpOp op, const ExpressionValue &lhs,
       const ExpressionValue &rhs);
 
   friend ExpressionValue
-  boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  boolAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  boolOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   friend ExpressionValue
-  boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
+  boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
-  /// @brief Computes a solver expression based on the operation, but computes a fallback
-  /// interval (which is just Entire, or unknown). Used for currently unsupported compute-only
-  /// operations.
-  /// @param solver
-  /// @param op
-  /// @param lhs
-  /// @param rhs
-  /// @return
   friend ExpressionValue fallbackBinaryOp(
-      llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &lhs,
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
       const ExpressionValue &rhs
   );
 
-  friend ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val);
+  friend ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
-  friend ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val);
+  friend ExpressionValue notOp(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
-  friend ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val);
+  friend ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
-  friend ExpressionValue
-  fallbackUnaryOp(llvm::SMTSolverRef solver, mlir::Operation *op, const ExpressionValue &val);
+  friend ExpressionValue fallbackUnaryOp(
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &val
+  );
 
   /* Utility */
 
@@ -221,6 +216,7 @@ private:
 
 /* IntervalAnalysisLatticeValue */
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class IntervalAnalysisLatticeValue
     : public dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue> {
 public:
@@ -255,9 +251,9 @@ public:
   const LatticeValue &getValue() const { return val; }
 
   mlir::ChangeResult setValue(const LatticeValue &val);
-  mlir::ChangeResult setValue(ExpressionValue e);
+  mlir::ChangeResult setValue(const ExpressionValue &e);
 
-  mlir::ChangeResult addSolverConstraint(ExpressionValue e);
+  mlir::ChangeResult addSolverConstraint(const ExpressionValue &e);
 
   friend mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const IntervalAnalysisLattice &l) {
     l.print(os);
@@ -282,7 +278,7 @@ class IntervalDataFlowAnalysis
   using Lattice = IntervalAnalysisLattice;
   using LatticeValue = IntervalAnalysisLattice::LatticeValue;
 
-  // Map fields to their symbols
+  // Map SourceRefs to their symbols.
   using SymbolMap = mlir::DenseMap<SourceRef, llvm::SMTExprRef>;
 
 public:
@@ -324,7 +320,7 @@ private:
 
   // Track field reads so that propagations to fields can be all updated efficiently.
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> fieldReadResults;
-  // Track field writes values. For now, we'll overapproximate this.
+  // Track field write values. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> fieldWriteResults;
 
   void setToEntryState(Lattice *lattice) override {
@@ -332,11 +328,16 @@ private:
     (void)lattice->setValue(ExpressionValue(field.get()));
   }
 
-  llvm::SMTExprRef createFeltSymbol(const SourceRef &r) const;
+  static bool isBooleanType(mlir::Type ty) {
+    if (auto intTy = llvm::dyn_cast<mlir::IntegerType>(ty)) {
+      return intTy.getWidth() == 1;
+    }
+    return false;
+  }
 
-  llvm::SMTExprRef createFeltSymbol(mlir::Value val) const;
-
-  llvm::SMTExprRef createFeltSymbol(const char *name) const;
+  Interval getDefaultIntervalForType(mlir::Type ty) const {
+    return isBooleanType(ty) ? Interval::Boolean(field.get()) : Interval::Entire(field.get());
+  }
 
   std::optional<UnreducedInterval> getDefaultUnreducedIntervalForType(mlir::Type ty) const;
 
@@ -360,6 +361,15 @@ private:
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
+  inline bool isBoolConstOp(mlir::Operation *op) const {
+    if (auto constIntOp = llvm::dyn_cast<mlir::arith::ConstantIntOp>(op)) {
+      auto valAttr = dyn_cast<mlir::IntegerAttr>(constIntOp.getValue());
+      ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
+      return valAttr.getValue().getBitWidth() == 1;
+    }
+    return false;
+  }
+
   llvm::DynamicAPInt getConst(mlir::Operation *op) const;
 
   inline llvm::SMTExprRef createConstBitvectorExpr(const llvm::DynamicAPInt &v) const {
@@ -370,16 +380,14 @@ private:
     return smtSolver->mkBitvector(v, field.get().bitWidth());
   }
 
-  llvm::SMTExprRef createConstBoolExpr(bool v) const {
-    return smtSolver->mkBitvector(mlir::APSInt((int)v), field.get().bitWidth());
-  }
+  llvm::SMTExprRef createConstBoolExpr(bool v) const { return smtSolver->mkBoolean(v); }
 
   bool isArithmeticOp(mlir::Operation *op) const {
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::ModFeltOp,
         felt::NegFeltOp, felt::InvFeltOp, felt::AndFeltOp, felt::OrFeltOp, felt::XorFeltOp,
-        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp, boolean::AndBoolOp,
-        boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
+        felt::NotFeltOp, felt::ShlFeltOp, felt::ShrFeltOp, boolean::CmpOp,
+        boolean::AndBoolOp, boolean::OrBoolOp, boolean::XorBoolOp, boolean::NotBoolOp>(op);
   }
 
   ExpressionValue
@@ -411,9 +419,33 @@ private:
 
   bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
 
-  /// @brief Get the SourceRefLattice that defines `val`, or the SourceRefLattice after `baseOp`
-  /// if `val` has no associated SourceRefLattice.
-  const SourceRefLattice *getSourceRefLattice(mlir::Operation *baseOp, mlir::Value val);
+  /// @brief Convert an array access op's indices into SourceRef path components.
+  /// Constant indices are tracked precisely, while dynamic indices are widened to
+  /// the full valid range for that array dimension.
+  std::vector<SourceRefIndex>
+  getArrayAccessIndices(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
+
+  /// @brief Build the SourceRef addressed by an array access op when its base is a
+  /// block argument or rooted SSA value.
+  mlir::FailureOr<SourceRef>
+  getArrayAccessRef(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
+
+  /// @brief Compute the best known interval for a SourceRef from writes, constants,
+  /// or an already-initialized root lattice value.
+  Interval getRefInterval(const SourceRef &ref);
+
+  /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
+  /// written value when available and otherwise pairing a fresh SSA symbol with the
+  /// SourceRef's current interval.
+  ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
+
+  /// @brief Record a write to the given SourceRef and eagerly refine any reads that
+  /// are currently tracking the same storage location.
+  void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
+
+  /// @brief Get the SourceRef state that defines `val`, or the state after
+  /// `baseOp` when `val` has no defining op.
+  SourceRefLatticeValue getSourceRefState(mlir::Operation *baseOp, mlir::Value val);
 };
 
 /* StructIntervals */
@@ -455,6 +487,8 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
 
 namespace llzk {
 
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-exception-escape)
 class StructIntervals {
 public:
   /// @brief Compute the struct intervals.
@@ -486,7 +520,7 @@ public:
   ) const;
 
   const llvm::MapVector<SourceRef, Interval> &getConstrainIntervals() const {
-    return constrainFieldRanges;
+    return constrainMemberRanges;
   }
 
   const llvm::MapVector<SourceRef, UnreducedInterval> &getConstrainUnreducedIntervals() const {
@@ -498,7 +532,7 @@ public:
   }
 
   const llvm::MapVector<SourceRef, Interval> &getComputeIntervals() const {
-    return computeFieldRanges;
+    return computeMemberRanges;
   }
 
   const llvm::MapVector<SourceRef, UnreducedInterval> &getComputeUnreducedIntervals() const {
@@ -535,7 +569,7 @@ class ModuleIntervalAnalysis;
 class StructIntervalAnalysis : public StructAnalysis<StructIntervals, IntervalAnalysisContext> {
 public:
   using StructAnalysis::StructAnalysis;
-  virtual ~StructIntervalAnalysis() = default;
+  ~StructIntervalAnalysis() override = default;
 
   mlir::LogicalResult runAnalysis(
       mlir::DataFlowSolver &solver, mlir::AnalysisManager &, const IntervalAnalysisContext &ctx
@@ -558,7 +592,7 @@ public:
   ModuleIntervalAnalysis(mlir::Operation *op) : ModuleAnalysis(op), ctx {} {
     ctx.smtSolver = llvm::CreateZ3Solver();
   }
-  virtual ~ModuleIntervalAnalysis() = default;
+  ~ModuleIntervalAnalysis() override = default;
 
   void setField(const Field &f) { ctx.field = f; }
   void setPropagateInputConstraints(bool prop) { ctx.propagateInputConstraints = prop; }
@@ -595,11 +629,11 @@ namespace llvm {
 template <> struct DenseMapInfo<llzk::ExpressionValue> {
 
   static SMTExprRef getEmptyExpr() {
-    static auto emptyPtr = reinterpret_cast<SMTExprRef>(1);
+    static const auto *emptyPtr = reinterpret_cast<SMTExprRef>(1);
     return emptyPtr;
   }
   static SMTExprRef getTombstoneExpr() {
-    static auto tombstonePtr = reinterpret_cast<SMTExprRef>(2);
+    static const auto *tombstonePtr = reinterpret_cast<SMTExprRef>(2);
     return tombstonePtr;
   }
 

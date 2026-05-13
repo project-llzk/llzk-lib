@@ -8,8 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
@@ -68,6 +70,34 @@ std::optional<UnreducedInterval> getBooleanUnreducedInterval(const Interval &int
 
 /* ExpressionValue */
 
+llvm::SMTExprRef createFieldInverseExpr(
+    const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val,
+    StringRef suffix = ""
+) {
+  const Field &field = val.getField();
+  const Interval &iv = val.getInterval();
+  if (iv.isDegenerate() && iv.lhs() != field.zero()) {
+    DynamicAPInt invVal = field.inv(iv.lhs());
+    return solver->mkBitvector(toAPSInt(invVal), field.bitWidth());
+  }
+
+  // The definition of an inverse X^-1 is Y s.t. XY % prime = 1.
+  // To create this expression, we create a new symbol for Y and add the
+  // XY % prime = 1 constraint to the solver.
+  std::string symName = buildStringViaInsertionOp(*op);
+  if (!suffix.empty()) {
+    symName += suffix.str();
+  }
+  llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
+  llvm::SMTExprRef one = solver->mkBitvector(APSInt::get(1), field.bitWidth());
+  llvm::SMTExprRef prime = solver->mkBitvector(toAPSInt(field.prime()), field.bitWidth());
+  llvm::SMTExprRef mult = solver->mkBVMul(val.getExpr(), invSym);
+  llvm::SMTExprRef mod = solver->mkBVURem(mult, prime);
+  llvm::SMTExprRef constraint = solver->mkEqual(mod, one);
+  solver->addConstraint(constraint);
+  return invSym;
+}
+
 bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
   if (expr == nullptr && rhs.expr == nullptr) {
     return i == rhs.i && unreduced == rhs.unreduced;
@@ -79,17 +109,13 @@ bool ExpressionValue::operator==(const ExpressionValue &rhs) const {
 }
 
 ExpressionValue
-boolToFelt(llvm::SMTSolverRef solver, const ExpressionValue &expr, unsigned bitwidth) {
+boolToFelt(const llvm::SMTSolverRef &solver, const ExpressionValue &expr, unsigned bitwidth) {
   llvm::SMTExprRef zero = solver->mkBitvector(mlir::APSInt::get(0), bitwidth);
   llvm::SMTExprRef one = solver->mkBitvector(mlir::APSInt::get(1), bitwidth);
   llvm::SMTExprRef boolToFeltConv = solver->mkIte(expr.getExpr(), one, zero);
   return expr.withExpression(boolToFeltConv);
 }
 
-<<<<<<< HEAD
-ExpressionValue
-intersection(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
-=======
 ExpressionValue selectValue(
     const llvm::SMTSolverRef &solver, const ExpressionValue &cond, const ExpressionValue &trueVal,
     const ExpressionValue &falseVal
@@ -126,14 +152,13 @@ ExpressionValue selectValue(
 ExpressionValue intersection(
     const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
 ) {
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
   Interval res = lhs.i.intersect(rhs.i);
-  auto exprEq = solver->mkEqual(lhs.expr, rhs.expr);
+  const auto *exprEq = solver->mkEqual(lhs.expr, rhs.expr);
   return ExpressionValue(exprEq, res);
 }
 
 ExpressionValue
-add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+add(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i + rhs.i;
   res.expr = solver->mkBVAdd(lhs.expr, rhs.expr);
@@ -142,7 +167,7 @@ add(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+sub(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i - rhs.i;
   res.expr = solver->mkBVSub(lhs.expr, rhs.expr);
@@ -151,7 +176,7 @@ sub(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i * rhs.i;
   res.expr = solver->mkBVMul(lhs.expr, rhs.expr);
@@ -160,7 +185,7 @@ mul(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
+div(const llvm::SMTSolverRef &solver, DivFeltOp op, const ExpressionValue &lhs,
     const ExpressionValue &rhs) {
   ExpressionValue res;
   auto divRes = lhs.i / rhs.i;
@@ -174,12 +199,12 @@ div(llvm::SMTSolverRef solver, DivFeltOp op, const ExpressionValue &lhs,
   } else {
     res.i = *divRes;
   }
-  res.expr = solver->mkBVUDiv(lhs.expr, rhs.expr);
+  res.expr = solver->mkBVSDiv(lhs.expr, rhs.expr);
   return res;
 }
 
 ExpressionValue
-mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i % rhs.i;
   res.expr = solver->mkBVURem(lhs.expr, rhs.expr);
@@ -187,23 +212,43 @@ mod(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue
 }
 
 ExpressionValue
-bitAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i & rhs.i;
   res.expr = solver->mkBVAnd(lhs.expr, rhs.expr);
   return res;
 }
 
-ExpressionValue
-shiftLeft(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+ExpressionValue fallbackBinaryOp(
+    const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &lhs,
+    const ExpressionValue &rhs
+) {
+  ExpressionValue res;
+  res.i = Interval::Entire(lhs.getField());
+  res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
+                 .Case<OrFeltOp>([&](auto) { return solver->mkBVOr(lhs.expr, rhs.expr); })
+                 .Case<XorFeltOp>([&](auto) { return solver->mkBVXor(lhs.expr, rhs.expr); })
+                 .Default([&](auto *unsupported) {
+    llvm::report_fatal_error(
+        "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
+    );
+    return nullptr;
+  });
+  return res;
+}
+
+ExpressionValue shiftLeft(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
   ExpressionValue res;
   res.i = lhs.i << rhs.i;
   res.expr = solver->mkBVShl(lhs.expr, rhs.expr);
   return res;
 }
 
-ExpressionValue
-shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+ExpressionValue shiftRight(
+    const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs
+) {
   ExpressionValue res;
   res.i = lhs.i >> rhs.i;
   res.expr = solver->mkBVLshr(lhs.expr, rhs.expr);
@@ -211,7 +256,8 @@ shiftRight(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const Expressi
 }
 
 ExpressionValue
-cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+cmp(const llvm::SMTSolverRef &solver, CmpOp op, const ExpressionValue &lhs,
+    const ExpressionValue &rhs) {
   ExpressionValue res;
   const Field &f = lhs.getField();
   // Default result is any boolean output for when we are unsure about the comparison result.
@@ -275,7 +321,7 @@ cmp(llvm::SMTSolverRef solver, CmpOp op, const ExpressionValue &lhs, const Expre
 }
 
 ExpressionValue
-boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+boolAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = boolAnd(lhs.i, rhs.i);
   res.expr = solver->mkAnd(lhs.expr, rhs.expr);
@@ -284,7 +330,7 @@ boolAnd(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionV
 }
 
 ExpressionValue
-boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+boolOr(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = boolOr(lhs.i, rhs.i);
   res.expr = solver->mkOr(lhs.expr, rhs.expr);
@@ -293,7 +339,7 @@ boolOr(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionVa
 }
 
 ExpressionValue
-boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+boolXor(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = boolXor(lhs.i, rhs.i);
   // There's no Xor, so we do (L || R) && !(L && R)
@@ -304,26 +350,7 @@ boolXor(llvm::SMTSolverRef solver, const ExpressionValue &lhs, const ExpressionV
   return res;
 }
 
-ExpressionValue fallbackBinaryOp(
-    llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &lhs, const ExpressionValue &rhs
-) {
-  ExpressionValue res;
-  res.i = Interval::Entire(lhs.getField());
-  res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
-                 .Case<OrFeltOp>([&](auto) { return solver->mkBVOr(lhs.expr, rhs.expr); })
-                 .Case<XorFeltOp>([&](auto) {
-    return solver->mkBVXor(lhs.expr, rhs.expr);
-  }).Default([&](auto *unsupported) {
-    llvm::report_fatal_error(
-        "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
-    );
-    return nullptr;
-  });
-
-  return res;
-}
-
-ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = -val.i;
   res.expr = solver->mkBVNeg(val.expr);
@@ -333,14 +360,14 @@ ExpressionValue neg(llvm::SMTSolverRef solver, const ExpressionValue &val) {
   return res;
 }
 
-ExpressionValue notOp(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+ExpressionValue notOp(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = ~val.i;
   res.expr = solver->mkBVNot(val.expr);
   return res;
 }
 
-ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
+ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val) {
   ExpressionValue res;
   res.i = boolNot(val.i);
   res.expr = solver->mkNot(val.expr);
@@ -349,24 +376,13 @@ ExpressionValue boolNot(llvm::SMTSolverRef solver, const ExpressionValue &val) {
 }
 
 ExpressionValue
-fallbackUnaryOp(llvm::SMTSolverRef solver, Operation *op, const ExpressionValue &val) {
+fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const ExpressionValue &val) {
   const Field &field = val.getField();
   ExpressionValue res;
   res.i = Interval::Entire(field);
   res.expr = TypeSwitch<Operation *, llvm::SMTExprRef>(op)
                  .Case<InvFeltOp>([&](auto) {
-    // The definition of an inverse X^-1 is Y s.t. XY % prime = 1.
-    // To create this expression, we create a new symbol for Y and add the
-    // XY % prime = 1 constraint to the solver.
-    std::string symName = buildStringViaInsertionOp(*op);
-    llvm::SMTExprRef invSym = field.createSymbol(solver, symName.c_str());
-    llvm::SMTExprRef one = solver->mkBitvector(APSInt::get(1), field.bitWidth());
-    llvm::SMTExprRef prime = solver->mkBitvector(toAPSInt(field.prime()), field.bitWidth());
-    llvm::SMTExprRef mult = solver->mkBVMul(val.getExpr(), invSym);
-    llvm::SMTExprRef mod = solver->mkBVURem(mult, prime);
-    llvm::SMTExprRef constraint = solver->mkEqual(mod, one);
-    solver->addConstraint(constraint);
-    return invSym;
+    return createFieldInverseExpr(solver, op, val);
   }).Default([](Operation *unsupported) {
     llvm::report_fatal_error(
         "no fallback provided for " + mlir::Twine(unsupported->getName().getStringRef())
@@ -392,38 +408,16 @@ void ExpressionValue::print(mlir::raw_ostream &os) const {
 
 /* IntervalAnalysisLattice */
 
-ChangeResult IntervalAnalysisLattice::join(const AbstractSparseLattice &other) {
-  const auto *rhs = dynamic_cast<const IntervalAnalysisLattice *>(&other);
-  if (!rhs) {
-    llvm::report_fatal_error("invalid join lattice type");
-  }
-  ChangeResult res = val.update(rhs->getValue());
-  for (auto &v : rhs->constraints) {
-    if (!constraints.contains(v)) {
-      constraints.insert(v);
-      res |= ChangeResult::Change;
-    }
-  }
-  return res;
+ChangeResult IntervalAnalysisLattice::join(const AbstractSparseLattice & /*other*/) {
+  // The update logic is handled in visitOperation; we don't support a generic
+  // join operation, as it may override valid intervals.
+  return ChangeResult::NoChange;
 }
 
-ChangeResult IntervalAnalysisLattice::meet(const AbstractSparseLattice &other) {
-  const auto *rhs = dynamic_cast<const IntervalAnalysisLattice *>(&other);
-  if (!rhs) {
-    llvm::report_fatal_error("invalid join lattice type");
-  }
-  // Intersect the intervals
-  ExpressionValue lhsExpr = val.getScalarValue();
-  ExpressionValue rhsExpr = rhs->getValue().getScalarValue();
-  Interval newInterval = lhsExpr.getInterval().intersect(rhsExpr.getInterval());
-  ChangeResult res = setValue(lhsExpr.withInterval(newInterval));
-  for (auto &v : rhs->constraints) {
-    if (!constraints.contains(v)) {
-      constraints.insert(v);
-      res |= ChangeResult::Change;
-    }
-  }
-  return res;
+ChangeResult IntervalAnalysisLattice::meet(const AbstractSparseLattice & /*other*/) {
+  // The update logic is handled in visitOperation; we don't support a generic
+  // meet operation, as it may override valid intervals.
+  return ChangeResult::NoChange;
 }
 
 void IntervalAnalysisLattice::print(mlir::raw_ostream &os) const {
@@ -438,12 +432,12 @@ ChangeResult IntervalAnalysisLattice::setValue(const LatticeValue &newVal) {
   return ChangeResult::Change;
 }
 
-ChangeResult IntervalAnalysisLattice::setValue(ExpressionValue e) {
+ChangeResult IntervalAnalysisLattice::setValue(const ExpressionValue &e) {
   LatticeValue newVal(e);
   return setValue(newVal);
 }
 
-ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
+ChangeResult IntervalAnalysisLattice::addSolverConstraint(const ExpressionValue &e) {
   if (!constraints.contains(e)) {
     constraints.insert(e);
     return ChangeResult::Change;
@@ -453,20 +447,17 @@ ChangeResult IntervalAnalysisLattice::addSolverConstraint(ExpressionValue e) {
 
 /* IntervalDataFlowAnalysis */
 
-<<<<<<< HEAD
-const SourceRefLattice *
-IntervalDataFlowAnalysis::getSourceRefLattice(Operation *baseOp, Value val) {
+SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Operation *baseOp, Value val) {
   ProgramPoint *pp = _dataflowSolver.getProgramPointAfter(baseOp);
   auto defaultSourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(pp);
-  ensure(defaultSourceRefLattice, "failed to get lattice");
+  ensure(defaultSourceRefLattice, "failed to get SourceRef lattice");
   if (Operation *defOp = val.getDefiningOp()) {
     ProgramPoint *defPoint = _dataflowSolver.getProgramPointAfter(defOp);
     auto sourceRefLattice = _dataflowSolver.lookupState<SourceRefLattice>(defPoint);
-    ensure(sourceRefLattice, "failed to get SourceRefLattice for value");
-    return sourceRefLattice;
-=======
-SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
-  return SourceRefAnalysis::getValueState(_dataflowSolver, val);
+    ensure(sourceRefLattice, "failed to get SourceRef lattice for value");
+    return sourceRefLattice->getOrDefault(val);
+  }
+  return defaultSourceRefLattice->getOrDefault(val);
 }
 
 std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
@@ -479,11 +470,11 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
 
   for (size_t i = 0; i < numIndices; ++i) {
     Value idxOperand = arrayAccessOp.getIndices()[i];
-    SourceRefLatticeValue idxVals = getSourceRefState(idxOperand);
+    SourceRefLatticeValue idxVals = getSourceRefState(baseOp, idxOperand);
 
     // Only exact constant indices get tracked precisely.
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+      indices.emplace_back(idxVals.getSingleValue().getConstantValue());
     } else {
       auto lower = APInt::getZero(64);
       APInt upper(64, arrayType.getDimSize(i));
@@ -499,31 +490,32 @@ mlir::FailureOr<SourceRef> IntervalDataFlowAnalysis::getArrayAccessRef(
 ) {
   std::vector<SourceRefIndex> indices = getArrayAccessIndices(baseOp, arrayAccessOp);
   Value arrayVal = arrayAccessOp.getArrRef();
-  if (auto blockArg = llvm::dyn_cast<BlockArgument>(arrayVal)) {
-    return SourceRef(blockArg, std::move(indices));
-  }
-  if (auto result = llvm::dyn_cast<OpResult>(arrayVal)) {
-    return SourceRef(result, std::move(indices));
+  SourceRefLatticeValue arrayVals = getSourceRefState(baseOp, arrayVal);
+  auto extracted = arrayVals.extract(indices);
+  if (extracted.first.isScalar() && extracted.first.isSingleValue()) {
+    return extracted.first.getSingleValue();
   }
   return failure();
 }
 
 Interval IntervalDataFlowAnalysis::getRefInterval(const SourceRef &ref) {
-  if (auto it = writeResults.find(ref); it != writeResults.end()) {
+  if (auto it = fieldWriteResults.find(ref); it != fieldWriteResults.end()) {
     return it->second.getInterval();
   }
 
   if (ref.isConstantInt()) {
-    auto constVal = ref.getConstantValue();
-    if (succeeded(constVal)) {
-      return Interval::Degenerate(field.get(), *constVal);
-    }
+    return Interval::Degenerate(field.get(), ref.getConstantValue());
   }
 
-  if (ref.isRooted() && ref.getPath().empty()) {
-    auto rootVal = ref.getRoot();
-    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType>(rootVal->getType())) {
-      const ExpressionValue &rootExpr = getLatticeElement(*rootVal)->getValue().getScalarValue();
+  if (ref.getPieces().empty()) {
+    Value rootVal = nullptr;
+    if (ref.isBlockArgument()) {
+      rootVal = ref.getBlockArgument();
+    } else if (ref.isCreateStructOp()) {
+      rootVal = ref.getCreateStructOp().getResult();
+    }
+    if (rootVal != nullptr && !llvm::isa<ArrayType, StructType>(rootVal.getType())) {
+      const ExpressionValue &rootExpr = getLatticeElement(rootVal)->getValue().getScalarValue();
       if (rootExpr.getExpr() != nullptr) {
         return rootExpr.getInterval();
       }
@@ -550,21 +542,24 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
     return std::nullopt;
   }
 
-  if (auto it = writeResults.find(ref); it != writeResults.end()) {
+  if (auto it = fieldWriteResults.find(ref); it != fieldWriteResults.end()) {
     return it->second.getOptionalUnreducedInterval();
   }
 
   if (ref.isConstantInt()) {
     auto constVal = ref.getConstantValue();
-    if (succeeded(constVal)) {
-      return UnreducedInterval(*constVal, *constVal);
-    }
+    return UnreducedInterval(constVal, constVal);
   }
 
-  if (ref.isRooted() && ref.getPath().empty()) {
-    auto rootVal = ref.getRoot();
-    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType>(rootVal->getType())) {
-      const ExpressionValue &rootExpr = getLatticeElement(*rootVal)->getValue().getScalarValue();
+  if (ref.getPieces().empty()) {
+    Value rootVal = nullptr;
+    if (ref.isBlockArgument()) {
+      rootVal = ref.getBlockArgument();
+    } else if (ref.isCreateStructOp()) {
+      rootVal = ref.getCreateStructOp().getResult();
+    }
+    if (rootVal != nullptr && !llvm::isa<ArrayType, StructType>(rootVal.getType())) {
+      const ExpressionValue &rootExpr = getLatticeElement(rootVal)->getValue().getScalarValue();
       if (rootExpr.hasUnreducedInterval()) {
         return rootExpr.getUnreducedInterval();
       }
@@ -575,7 +570,7 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
 }
 
 ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
-  if (auto it = writeResults.find(ref); it != writeResults.end()) {
+  if (auto it = fieldWriteResults.find(ref); it != fieldWriteResults.end()) {
     return it->second;
   }
   return createUnknownValue(val)
@@ -588,7 +583,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
 ) {
   ExpressionValue written = writeVal;
 
-  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
+  if (auto it = fieldWriteResults.find(writtenRef); it != fieldWriteResults.end()) {
     const ExpressionValue &old = it->second;
     Interval combinedWrite = old.getInterval().join(written.getInterval());
     auto combinedUnreduced = mergeUnreducedIntervals(
@@ -596,24 +591,23 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     );
     if (old.getExpr() != nullptr && written.getExpr() != nullptr &&
         *old.getExpr() == *written.getExpr()) {
-      writeResults[writtenRef] =
+      fieldWriteResults[writtenRef] =
           old.withInterval(combinedWrite).withOptionalUnreducedInterval(combinedUnreduced);
     } else {
       llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
-      writeResults[writtenRef] = ExpressionValue(expr, combinedWrite, std::move(combinedUnreduced));
+      fieldWriteResults[writtenRef] =
+          ExpressionValue(expr, combinedWrite, std::move(combinedUnreduced));
     }
   } else {
-    writeResults[writtenRef] = written;
+    fieldWriteResults[writtenRef] = written;
   }
 
-  for (Lattice *readerLattice : readResults[writtenRef]) {
+  for (Lattice *readerLattice : fieldReadResults[writtenRef]) {
     ExpressionValue prior = readerLattice->getValue().getScalarValue();
     Interval intersection = prior.getInterval().intersect(written.getInterval());
     ExpressionValue newVal = refineReducedInterval(prior, intersection);
     propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
   }
-  return defaultSourceRefLattice;
 }
 
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
@@ -635,7 +629,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   llvm::SmallVector<std::optional<SourceRef>> operandRefs;
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
-    SourceRefLatticeValue refSet = getSourceRefLattice(op, val)->getOrDefault(val);
+    SourceRefLatticeValue refSet = getSourceRefState(op, val);
     if (refSet.isSingleValue()) {
       operandRefs.push_back(refSet.getSingleValue());
     } else {
@@ -648,12 +642,24 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
+    if (auto readArr = llvm::dyn_cast_if_present<ReadArrayOp>(val.getDefiningOp())) {
+      auto arrayRef = getArrayAccessRef(op, readArr);
+      if (succeeded(arrayRef)) {
+        if (auto it = fieldWriteResults.find(*arrayRef); it != fieldWriteResults.end()) {
+          operandVals.emplace_back(it->second);
+          Lattice *operandLattice = getLatticeElement(val);
+          (void)operandLattice->setValue(it->second);
+          continue;
+        }
+      }
+    }
+
     // Else, look up the stored value by `SourceRef`.
-    // We only care about scalar type values, so we ignore composite types, which
-    // are currently limited to non-Signal structs and arrays.
+    // We only care about scalar type values, so we ignore composite types,
+    // with the exception of Signals, which are modeled through their reg field.
     Type valTy = val.getType();
     if (llvm::isa<ArrayType, StructType>(valTy) && !isSignalType(valTy)) {
-      ExpressionValue anyVal(field.get(), createFeltSymbol(val));
+      ExpressionValue anyVal(field.get(), createSymbol(valTy, buildStringViaPrint(val).c_str()));
       operandVals.emplace_back(anyVal);
       continue;
     }
@@ -673,23 +679,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       // results to the user.
       return success();
     } else if (!refSet.isSingleValue()) {
-      std::string warning;
-      debug::Appender(warning) << "operand " << val << " is not a single value " << refSet
-                               << ", overapproximating";
-      op->emitWarning(warning).report();
-      // Here, we will override the prior lattice value with a new symbol, representing
-      // "any" value, then use that value for the operands.
-      ExpressionValue anyVal(field.get(), createFeltSymbol(val));
+      Interval joinedInterval = Interval::Empty(field.get());
+      for (const SourceRef &ref : refSet.getScalarValue()) {
+        joinedInterval = joinedInterval.join(getRefInterval(ref));
+      }
+      ExpressionValue anyVal = createUnknownValue(val).withInterval(joinedInterval);
       operandVals.emplace_back(anyVal);
     } else {
       const SourceRef &ref = refSet.getSingleValue();
-      // See if we've written the value before. If so, use that.
-      if (auto it = fieldWriteResults.find(ref); it != fieldWriteResults.end()) {
-        operandVals.emplace_back(it->second);
-      } else {
-        ExpressionValue exprVal(field.get(), getOrCreateSymbol(ref));
-        operandVals.emplace_back(exprVal);
-      }
+      operandVals.emplace_back(getRefValue(ref, val));
     }
 
     // Since we initialized a value that was not found in the before lattice,
@@ -702,7 +700,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   // Now, the way we update is dependent on the type of the operation.
   if (isConstOp(op)) {
     llvm::DynamicAPInt constVal = getConst(op);
-    llvm::SMTExprRef expr = createConstBitvectorExpr(constVal);
+    llvm::SMTExprRef expr;
+    if (isBoolConstOp(op)) {
+      expr = createConstBoolExpr(constVal != 0);
+    } else {
+      expr = createConstBitvectorExpr(constVal);
+    }
+
     ExpressionValue latticeVal(field.get(), expr, constVal);
     if (trackUnreducedIntervals) {
       latticeVal = latticeVal.withUnreducedInterval(UnreducedInterval(constVal, constVal));
@@ -715,14 +719,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     } else {
       result = performUnaryArithmetic(op, operandVals[0]);
     }
+
     // Also intersect with prior interval, if it's initialized
     const ExpressionValue &prior = results[0]->getValue().getScalarValue();
     if (prior.getExpr()) {
       result = refineReducedInterval(result, result.getInterval().intersect(prior.getInterval()));
     }
     propagateIfChanged(results[0], results[0]->setValue(result));
-<<<<<<< HEAD
-=======
   } else if (auto selectOp = llvm::dyn_cast<arith::SelectOp>(op)) {
     ExpressionValue result = selectValue(
         smtSolver, operandVals[0].getScalarValue(), operandVals[1].getScalarValue(),
@@ -733,7 +736,6 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       result = refineReducedInterval(result, result.getInterval().intersect(prior.getInterval()));
     }
     propagateIfChanged(results[0], results[0]->setValue(result));
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
   } else if (EmitEqualityOp emitEq = llvm::dyn_cast<EmitEqualityOp>(op)) {
     Value lhsVal = emitEq.getLhs(), rhsVal = emitEq.getRhs();
     ExpressionValue lhsExpr = operandVals[0].getScalarValue();
@@ -766,8 +768,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   } else if (auto readf = llvm::dyn_cast<FieldReadOp>(op)) {
     Value cmp = readf.getComponent();
     if (isSignalType(cmp.getType())) {
-      // The reg value read from the signal type is equal to the value of the Signal
-      // struct overall.
+      // The reg value read from a Signal is equal to the Signal value itself.
       propagateIfChanged(results[0], results[0]->setValue(operandVals[0]));
     }
   } else if (auto writef = llvm::dyn_cast<FieldWriteOp>(op)) {
@@ -775,30 +776,32 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     ExpressionValue writeVal = operandVals[1].getScalarValue();
     auto cmp = writef.getComponent();
     // We also need to update the interval on the assigned symbol
-    SourceRefLatticeValue refSet = getSourceRefLattice(op, cmp)->getOrDefault(cmp);
+    SourceRefLatticeValue refSet = getSourceRefState(op, cmp);
     if (refSet.isSingleValue()) {
       auto fieldDefRes = writef.getFieldDefOp(tables);
       if (succeeded(fieldDefRes)) {
         SourceRefIndex idx(fieldDefRes.value());
         SourceRef fieldRef = refSet.getSingleValue().createChild(idx);
-        llvm::SMTExprRef expr = getOrCreateSymbol(fieldRef);
-        ExpressionValue written(expr, writeVal.getInterval());
-
-        if (auto it = fieldWriteResults.find(fieldRef); it != fieldWriteResults.end()) {
-          const ExpressionValue &old = it->second;
-          Interval combinedWrite = old.getInterval().join(written.getInterval());
-          fieldWriteResults[fieldRef] = old.withInterval(combinedWrite);
-        } else {
-          fieldWriteResults[fieldRef] = written;
+        Type fieldTy = writef.getVal().getType();
+        if (!llvm::isa<ArrayType, StructType>(fieldTy)) {
+          recordRefWrite(fieldRef, writeVal);
         }
+      }
+    }
+  } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
+    ExpressionValue writeVal = operandVals.back().getScalarValue();
+    auto arrayRef = getArrayAccessRef(op, writeArr);
+    if (succeeded(arrayRef)) {
+      recordRefWrite(*arrayRef, writeVal);
+    }
 
-        // Propagate to all field readers we've collected so far.
-        for (Lattice *readerLattice : fieldReadResults[fieldRef]) {
-          ExpressionValue prior = readerLattice->getValue().getScalarValue();
-          Interval intersection = prior.getInterval().intersect(written.getInterval());
-          ExpressionValue newVal = prior.withInterval(intersection);
-          propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
-        }
+    SourceRefLatticeValue arrayVals = getSourceRefState(op, writeArr.getArrRef());
+    if (arrayVals.isScalar()) {
+      std::vector<SourceRefIndex> indices = getArrayAccessIndices(op, writeArr);
+      auto [targetRefs, _] = arrayVals.extract(indices);
+      ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
+      for (const SourceRef &ref : targetRefs.getScalarValue()) {
+        recordRefWrite(ref, writeVal);
       }
     }
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
@@ -831,28 +834,24 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
                     exprVal.getOptionalUnreducedInterval(), newResVal.getOptionalUnreducedInterval()
                 ));
       } else {
-<<<<<<< HEAD
-        newResVal = ExpressionValue(createFeltSymbol(parentRes), newResVal.getInterval());
-=======
         newResVal = ExpressionValue(
             createSymbol(parentRes), newResVal.getInterval(),
             newResVal.getOptionalUnreducedInterval()
         );
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
       }
       propagateIfChanged(resLattice, resLattice->setValue(newResVal));
     }
   } else if (
       // We do not need to explicitly handle read ops since they are resolved at the operand value
-      // step where `SourceRef`s are queries (with the exception of the Signal struct, see above).
+      // step where `SourceRef`s are queries.
       !isReadOp(op)
       // We do not currently handle return ops as the analysis is currently limited to constrain
       // functions, which return no value.
       && !isReturnOp(op)
       // The analysis ignores definition ops.
       && !isDefinitionOp(op)
-      // We do not need to analyze the creation of structs.
-      && !llvm::isa<CreateStructOp>(op)
+      // We do not need to analyze storage creation directly.
+      && !llvm::isa<CreateArrayOp, CreateStructOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }
@@ -865,43 +864,53 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(const SourceRef &r)
   if (it != refSymbols.end()) {
     return it->second;
   }
-  llvm::SMTExprRef sym = createFeltSymbol(r);
+  llvm::SMTExprRef sym = createSymbol(r);
   refSymbols[r] = sym;
   return sym;
 }
 
-llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const SourceRef &r) const {
-  return createFeltSymbol(buildStringViaPrint(r).c_str());
-}
-
-llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(Value v) const {
-  return createFeltSymbol(buildStringViaPrint(v).c_str());
-}
-
-llvm::SMTExprRef IntervalDataFlowAnalysis::createFeltSymbol(const char *name) const {
+llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(mlir::Type ty, const char *name) const {
+  if (isBooleanType(ty)) {
+    return smtSolver->mkSymbol(name, smtSolver->getBoolSort());
+  }
   return field.get().createSymbol(smtSolver, name);
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(const SourceRef &r) const {
+  std::string name = buildStringViaPrint(r);
+  return createSymbol(r.getType(), name.c_str());
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::createSymbol(Value v) const {
+  std::string name = buildStringViaPrint(v);
+  return createSymbol(v.getType(), name.c_str());
 }
 
 llvm::DynamicAPInt IntervalDataFlowAnalysis::getConst(Operation *op) const {
   ensure(isConstOp(op), "op is not a const op");
 
-  llvm::DynamicAPInt fieldConst =
-      TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
-          .Case<FeltConstantOp>([&](FeltConstantOp feltConst) {
-    llvm::APSInt constOpVal(feltConst.getValue());
-    return field.get().reduce(constOpVal);
-  })
-          .Case<arith::ConstantIndexOp>([&](arith::ConstantIndexOp indexConst) {
-    return DynamicAPInt(indexConst.value());
-  })
-          .Case<arith::ConstantIntOp>([&](arith::ConstantIntOp intConst) {
-    return DynamicAPInt(intConst.value());
-  }).Default([](Operation *illegalOp) {
-    std::string err;
-    debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
-    llvm::report_fatal_error(Twine(err));
-    return llvm::DynamicAPInt();
-  });
+  // NOTE: I think clang-format makes these hard to read by default
+  // clang-format off
+  llvm::DynamicAPInt fieldConst = TypeSwitch<Operation *, llvm::DynamicAPInt>(op)
+      .Case<FeltConstantOp>([&](auto feltConst) {
+        llvm::APSInt constOpVal(feltConst.getValue());
+        return field.get().reduce(constOpVal);
+      })
+      .Case<arith::ConstantIndexOp>([&](auto indexConst) {
+        return DynamicAPInt(indexConst.value());
+      })
+      .Case<arith::ConstantIntOp>([&](auto intConst) {
+        auto valAttr = dyn_cast<IntegerAttr>(intConst.getValue());
+        ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
+        return toDynamicAPInt(valAttr.getValue());
+      })
+      .Default([](auto *illegalOp) {
+        std::string err;
+        debug::Appender(err) << "unhandled getConst case: " << *illegalOp;
+        llvm::report_fatal_error(Twine(err));
+        return llvm::DynamicAPInt();
+      });
+  // clang-format on
   return fieldConst;
 }
 
@@ -914,21 +923,21 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
   ensure(lhs.getExpr(), "cannot perform arithmetic over null lhs smt expr");
   ensure(rhs.getExpr(), "cannot perform arithmetic over null rhs smt expr");
 
+  // clang-format off
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
-                 .Case<AddFeltOp>([&](auto _) { return add(smtSolver, lhs, rhs); })
-                 .Case<SubFeltOp>([&](auto _) { return sub(smtSolver, lhs, rhs); })
-                 .Case<MulFeltOp>([&](auto _) { return mul(smtSolver, lhs, rhs); })
+                 .Case<AddFeltOp>([&](auto) { return add(smtSolver, lhs, rhs); })
+                 .Case<SubFeltOp>([&](auto) { return sub(smtSolver, lhs, rhs); })
+                 .Case<MulFeltOp>([&](auto) { return mul(smtSolver, lhs, rhs); })
                  .Case<DivFeltOp>([&](auto divOp) { return div(smtSolver, divOp, lhs, rhs); })
-                 .Case<ModFeltOp>([&](auto _) { return mod(smtSolver, lhs, rhs); })
-                 .Case<AndFeltOp>([&](auto _) { return bitAnd(smtSolver, lhs, rhs); })
-                 .Case<ShlFeltOp>([&](auto _) { return shiftLeft(smtSolver, lhs, rhs); })
-                 .Case<ShrFeltOp>([&](auto _) { return shiftRight(smtSolver, lhs, rhs); })
+                 .Case<ModFeltOp>([&](auto) { return mod(smtSolver, lhs, rhs); })
+                 .Case<AndFeltOp>([&](auto) { return bitAnd(smtSolver, lhs, rhs); })
+                 .Case<ShlFeltOp>([&](auto) { return shiftLeft(smtSolver, lhs, rhs); })
+                 .Case<ShrFeltOp>([&](auto) { return shiftRight(smtSolver, lhs, rhs); })
                  .Case<CmpOp>([&](auto cmpOp) { return cmp(smtSolver, cmpOp, lhs, rhs); })
-                 .Case<AndBoolOp>([&](auto _) { return boolAnd(smtSolver, lhs, rhs); })
-                 .Case<OrBoolOp>([&](auto _) { return boolOr(smtSolver, lhs, rhs); })
-                 .Case<XorBoolOp>([&](auto _) {
-    return boolXor(smtSolver, lhs, rhs);
-  }).Default([&](auto *unsupported) {
+                 .Case<AndBoolOp>([&](auto) { return boolAnd(smtSolver, lhs, rhs); })
+                 .Case<OrBoolOp>([&](auto) { return boolOr(smtSolver, lhs, rhs); })
+                 .Case<XorBoolOp>([&](auto) { return boolXor(smtSolver, lhs, rhs); })
+  .Default([&](auto *unsupported) {
     unsupported
         ->emitWarning(
             "unsupported binary arithmetic operation, defaulting to over-approximated intervals"
@@ -936,6 +945,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
         .report();
     return fallbackBinaryOp(smtSolver, unsupported, lhs, rhs);
   });
+  // clang-format on
 
   ensure(res.getExpr(), "arithmetic produced null smt expr");
   return res;
@@ -949,9 +959,9 @@ IntervalDataFlowAnalysis::performUnaryArithmetic(Operation *op, const LatticeVal
   ensure(val.getExpr(), "cannot perform arithmetic over null smt expr");
 
   auto res = TypeSwitch<Operation *, ExpressionValue>(op)
-                 .Case<NegFeltOp>([&](auto _) { return neg(smtSolver, val); })
-                 .Case<NotFeltOp>([&](auto _) { return notOp(smtSolver, val); })
-                 .Case<NotBoolOp>([&](auto _) { return boolNot(smtSolver, val); })
+                 .Case<NegFeltOp>([&](auto) { return neg(smtSolver, val); })
+                 .Case<NotFeltOp>([&](auto) { return notOp(smtSolver, val); })
+                 .Case<NotBoolOp>([&](auto) { return boolNot(smtSolver, val); })
                  // The inverse op is currently overapproximated
                  .Case<InvFeltOp>([&](auto inv) {
     return fallbackUnaryOp(smtSolver, inv, val);
@@ -1192,15 +1202,53 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     applyInterval(subOp, rhs, finalRhsInt);
   };
 
-  auto readfCase = [&](FieldReadOp readfOp) {
-    const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
-    SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
+  auto selectCase = [&](arith::SelectOp selectOp) {
+    Value cond = selectOp.getCondition();
+    Value trueVal = selectOp.getTrueValue();
+    Value falseVal = selectOp.getFalseValue();
+
+    ExpressionValue condExpr = getLatticeElement(cond)->getValue().getScalarValue();
+    ExpressionValue trueExpr = getLatticeElement(trueVal)->getValue().getScalarValue();
+    ExpressionValue falseExpr = getLatticeElement(falseVal)->getValue().getScalarValue();
+
+    const Interval &condInterval = condExpr.getInterval();
+    if (condInterval.isDegenerate() && condInterval.rhs() == f.one()) {
+      applyInterval(selectOp, trueVal, newInterval);
+      return;
+    }
+    if (condInterval.isDegenerate() && condInterval.rhs() == f.zero()) {
+      applyInterval(selectOp, falseVal, newInterval);
+      return;
+    }
+
+    Interval trueOverlap = trueExpr.getInterval().intersect(newInterval);
+    Interval falseOverlap = falseExpr.getInterval().intersect(newInterval);
+    bool truePossible = trueOverlap.isNotEmpty();
+    bool falsePossible = falseOverlap.isNotEmpty();
+
+    if (truePossible && !falsePossible) {
+      applyInterval(selectOp, cond, Interval::True(f));
+      applyInterval(selectOp, trueVal, newInterval);
+      return;
+    }
+    if (!truePossible && falsePossible) {
+      applyInterval(selectOp, cond, Interval::False(f));
+      applyInterval(selectOp, falseVal, newInterval);
+      return;
+    }
+    if (!truePossible && !falsePossible) {
+      applyInterval(selectOp, cond, Interval::Empty(f));
+    }
+  };
+
+  auto readmCase = [&](FieldReadOp readfOp) {
+    SourceRefLatticeValue sourceRefVal = getSourceRefState(valUser, val);
 
     if (sourceRefVal.isSingleValue()) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       fieldReadResults[ref].insert(valLattice);
 
-      // Also propagate to all other field read results for this field
+      // Also propagate to all other field read results for this field.
       for (Lattice *l : fieldReadResults[ref]) {
         if (l != valLattice) {
           propagateIfChanged(l, l->setValue(newLatticeVal));
@@ -1208,24 +1256,33 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
       }
     }
 
-    // We have a special case for the Signal struct: if this value is created
-    // from reading a Signal struct's reg field, we also apply the interval to
-    // the struct itself.
+    // If this is a read from a Signal's reg field, also propagate the interval
+    // back to the enclosing Signal value.
     Value comp = readfOp.getComponent();
     if (isSignalType(comp.getType())) {
       applyInterval(readfOp, comp, newInterval);
     }
   };
 
-  auto readArrCase = [&](ReadArrayOp _) {
-    const SourceRefLattice *sourceRefLattice = getSourceRefLattice(valUser, val);
-    SourceRefLatticeValue sourceRefVal = sourceRefLattice->getOrDefault(val);
+  auto readArrCase = [&](ReadArrayOp) {
+    auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
+    if (succeeded(arrayRef)) {
+      fieldReadResults[*arrayRef].insert(valLattice);
+
+      for (Lattice *l : fieldReadResults[*arrayRef]) {
+        if (l != valLattice) {
+          propagateIfChanged(l, l->setValue(newLatticeVal));
+        }
+      }
+    }
+
+    SourceRefLatticeValue sourceRefVal = getSourceRefState(valUser, val);
 
     if (sourceRefVal.isSingleValue()) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       fieldReadResults[ref].insert(valLattice);
 
-      // Also propagate to all other field read results for this field
+      // Also propagate to all other field read results for this field.
       for (Lattice *l : fieldReadResults[ref]) {
         if (l != valLattice) {
           propagateIfChanged(l, l->setValue(newLatticeVal));
@@ -1246,7 +1303,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
             .Case<AddFeltOp>([&](auto op) { return addCase(op); })
             .Case<SubFeltOp>([&](auto op) { return subCase(op); })
             .Case<MulFeltOp>([&](auto op) { mulCase(op); })
-            .Case<FieldReadOp>([&](auto op){ readfCase(op); })
+            .Case<arith::SelectOp>([&](auto op) { selectCase(op); })
+            .Case<FieldReadOp>([&](auto op){ readmCase(op); })
             .Case<ReadArrayOp>([&](auto op){ readArrCase(op); })
             .Case<IntToFeltOp, FeltToIndexOp>([&](auto op) { castCase(op); })
             .Default([&](Operation *) { });
@@ -1290,9 +1348,8 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value 
 
     FeltConstantOp c;
     Value signalVal;
-    auto handleRefValue = [this, &baseOp, &signalRef, &signalVal, &signalVals]() {
-      SourceRefLatticeValue refSet =
-          getSourceRefLattice(baseOp, signalVal)->getOrDefault(signalVal);
+    auto handleRefValue = [this, baseOp, &signalRef, &signalVal, &signalVals]() {
+      SourceRefLatticeValue refSet = getSourceRefState(baseOp, signalVal);
       if (!refSet.isScalar() || !refSet.isSingleValue()) {
         return failure();
       }
@@ -1346,14 +1403,13 @@ LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
 ) {
 
-<<<<<<< HEAD
   auto validSourceRefType = [](const SourceRef &ref) {
-    // We only want to compute intervals for field elements and not composite types,
-    // with the exception of the Signal struct.
+    // We only want to compute intervals for field elements and not composite
+    // types, with the exception of the Signal struct.
     if (!ref.isScalar() && !ref.isSignal()) {
       return false;
     }
-    // We also don't want to show the interval for a Signal and its internal reg.
+    // Avoid printing both a Signal and its internal reg path.
     if (auto parentOr = ref.getParentPrefix(); succeeded(parentOr) && parentOr->isSignal()) {
       return false;
     }
@@ -1361,14 +1417,9 @@ LogicalResult StructIntervals::computeIntervals(
   };
 
   auto computeIntervalsImpl = [&solver, &ctx, &validSourceRefType, this](
-                                  FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &fieldRanges,
-                                  llvm::SetVector<ExpressionValue> &solverConstraints
-=======
-  auto computeIntervalsImpl = [&solver, &ctx, this](
                                   FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &memberRanges,
                                   llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
                                   llvm::SetVector<ExpressionValue> & /*solverConstraints*/
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
                               ) {
     auto setUnreducedRange =
         [&memberUnreducedRanges](const SourceRef &ref, const UnreducedInterval &interval) {
@@ -1382,8 +1433,6 @@ LogicalResult StructIntervals::computeIntervals(
 
     SourceRefSet searchSet;
     for (const auto &ref : SourceRef::getAllSourceRefs(structDef, fn)) {
-      // We only want to compute intervals for field elements and not composite types,
-      // with the exception of the Signal struct.
       if (validSourceRefType(ref)) {
         searchSet.insert(ref);
       }
@@ -1402,28 +1451,19 @@ LogicalResult StructIntervals::computeIntervals(
             expr = expr.withUnreducedInterval(expr.getInterval().firstUnreduced());
           }
         }
-<<<<<<< HEAD
-        fieldRanges[ref] = expr.getInterval();
-        assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");
-=======
         memberRanges[ref] = expr.getInterval();
         if (expr.hasUnreducedInterval()) {
           setUnreducedRange(ref, expr.getUnreducedInterval());
         }
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
       }
     }
 
-    // Iterate over fields that were touched by the analysis
+    // Aggregate all read intervals for a ref. A single ref may be read at multiple program
+    // points with different precision, so picking an arbitrary lattice from the DenseSet is
+    // nondeterministic. Joining preserves the overapproximation regardless of iteration order.
     for (const auto &[ref, lattices] : ctx.intervalDFA->getFieldReadResults()) {
-      // All lattices should have the same value, so we can get the front.
       if (!lattices.empty() && searchSet.erase(ref)) {
-<<<<<<< HEAD
-        const IntervalAnalysisLattice *lattice = *lattices.begin();
-        fieldRanges[ref] = lattice->getValue().getScalarValue().getInterval();
-        assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");
-=======
         Interval joinedInterval = Interval::Empty(ctx.getField());
         std::optional<UnreducedInterval> joinedUnreduced = std::nullopt;
         bool sawFirst = false;
@@ -1443,39 +1483,21 @@ LogicalResult StructIntervals::computeIntervals(
           setUnreducedRange(ref, *joinedUnreduced);
         }
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
       }
     }
 
     for (const auto &[ref, val] : ctx.intervalDFA->getFieldWriteResults()) {
       if (searchSet.erase(ref)) {
-<<<<<<< HEAD
-        fieldRanges[ref] = val.getInterval();
-        assert(fieldRanges[ref].getField() == ctx.getField() && "bad interval defaults");
-=======
         memberRanges[ref] = val.getInterval();
         if (val.hasUnreducedInterval()) {
           setUnreducedRange(ref, val.getUnreducedInterval());
         }
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
       }
     }
 
     // For all unfound refs, default to the entire range.
     for (const auto &ref : searchSet) {
-<<<<<<< HEAD
-      fieldRanges[ref] = Interval::Entire(ctx.getField());
-    }
-
-    // Sort the outputs since we assembled things out of order.
-    llvm::sort(fieldRanges, [](auto a, auto b) { return std::get<0>(a) < std::get<0>(b); });
-  };
-
-  computeIntervalsImpl(structDef.getComputeFuncOp(), computeFieldRanges, computeSolverConstraints);
-  computeIntervalsImpl(
-      structDef.getConstrainFuncOp(), constrainFieldRanges, constrainSolverConstraints
-=======
       memberRanges[ref] = Interval::Entire(ctx.getField());
       if (ctx.doTrackUnreducedIntervals()) {
         setUnreducedRange(ref, memberRanges[ref].firstUnreduced());
@@ -1518,7 +1540,6 @@ LogicalResult StructIntervals::computeIntervals(
   computeIntervalsImpl(
       structDef.getConstrainFuncOp(), constrainMemberRanges, constrainMemberUnreducedRanges,
       constrainSolverConstraints
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
   );
 
   return success();
@@ -1528,14 +1549,9 @@ void StructIntervals::print(
     mlir::raw_ostream &os, bool withConstraints, bool printCompute, bool printUnreduced
 ) const {
   auto writeIntervals =
-<<<<<<< HEAD
-      [&os, &withConstraints](
-          const char *fnName, const llvm::MapVector<SourceRef, Interval> &fieldRanges,
-=======
       [&os, &withConstraints, &printUnreduced](
           const char *fnName, const llvm::MapVector<SourceRef, Interval> &memberRanges,
           const llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
           const llvm::SetVector<ExpressionValue> &solverConstraints, bool printName
       ) {
     int indent = 4;
@@ -1545,12 +1561,12 @@ void StructIntervals::print(
       indent += 4;
     }
 
-    if (fieldRanges.empty()) {
+    if (memberRanges.empty()) {
       os << "}\n";
       return;
     }
 
-    for (auto &[ref, interval] : fieldRanges) {
+    for (const auto &[ref, interval] : memberRanges) {
       os << '\n';
       os.indent(indent) << ref << " in " << interval;
       if (printUnreduced) {
@@ -1583,18 +1599,12 @@ void StructIntervals::print(
   };
 
   os << "StructIntervals { ";
-  if (constrainFieldRanges.empty() && (!printCompute || computeFieldRanges.empty())) {
+  if (constrainMemberRanges.empty() && (!printCompute || computeMemberRanges.empty())) {
     os << "}\n";
     return;
   }
 
   if (printCompute) {
-<<<<<<< HEAD
-    writeIntervals(FUNC_NAME_COMPUTE, computeFieldRanges, computeSolverConstraints, printCompute);
-  }
-  writeIntervals(
-      FUNC_NAME_CONSTRAIN, constrainFieldRanges, constrainSolverConstraints, printCompute
-=======
     writeIntervals(
         FUNC_NAME_COMPUTE, computeMemberRanges, computeMemberUnreducedRanges,
         computeSolverConstraints, printCompute
@@ -1603,7 +1613,6 @@ void StructIntervals::print(
   writeIntervals(
       FUNC_NAME_CONSTRAIN, constrainMemberRanges, constrainMemberUnreducedRanges,
       constrainSolverConstraints, printCompute
->>>>>>> 1231397f (extend interval analysis pass to keep track of unreduced intervals)
   );
 
   os << "\n}\n";

@@ -1,8 +1,8 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
 
-module attributes {llzk.lang} {
+module attributes {veridise.lang = "llzk"} {
   struct.def @TrackUnreducedArithmetic {
-    struct.member @out : !felt.type
+    struct.field @out : !felt.type
 
     function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreducedArithmetic>
         attributes {function.allow_witness, function.allow_non_native_field_ops} {
@@ -10,7 +10,7 @@ module attributes {llzk.lang} {
       %five = felt.const 5
       %sum = felt.add %a, %five : !felt.type, !felt.type
       %neg = felt.neg %sum : !felt.type
-      struct.writem %self[@out] = %neg : !struct.type<@TrackUnreducedArithmetic>, !felt.type
+      struct.writef %self[@out] = %neg : !struct.type<@TrackUnreducedArithmetic>, !felt.type
       function.return %self : !struct.type<@TrackUnreducedArithmetic>
     }
 
@@ -29,13 +29,13 @@ module attributes {llzk.lang} {
 
 // -----
 
-module attributes {llzk.lang} {
+module attributes {veridise.lang = "llzk"} {
   struct.def @TrackUnreducedBoolSelect {
-    struct.member @xor : i1
-    struct.member @not : i1
-    struct.member @sel_true : !felt.type
-    struct.member @sel_false : !felt.type
-    struct.member @sel_flag : !felt.type
+    struct.field @xor : i1
+    struct.field @not : i1
+    struct.field @sel_true : !felt.type
+    struct.field @sel_false : !felt.type
+    struct.field @sel_flag : !felt.type
 
     function.def @compute(%flag: i1) -> !struct.type<@TrackUnreducedBoolSelect>
         attributes {function.allow_witness, function.allow_non_native_field_ops} {
@@ -49,11 +49,11 @@ module attributes {llzk.lang} {
       %sel_true = arith.select %true, %three, %nine : !felt.type
       %sel_false = arith.select %false, %three, %nine : !felt.type
       %sel_flag = arith.select %flag, %three, %nine : !felt.type
-      struct.writem %self[@xor] = %xor : !struct.type<@TrackUnreducedBoolSelect>, i1
-      struct.writem %self[@not] = %not : !struct.type<@TrackUnreducedBoolSelect>, i1
-      struct.writem %self[@sel_true] = %sel_true : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
-      struct.writem %self[@sel_false] = %sel_false : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
-      struct.writem %self[@sel_flag] = %sel_flag : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
+      struct.writef %self[@xor] = %xor : !struct.type<@TrackUnreducedBoolSelect>, i1
+      struct.writef %self[@not] = %not : !struct.type<@TrackUnreducedBoolSelect>, i1
+      struct.writef %self[@sel_true] = %sel_true : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
+      struct.writef %self[@sel_false] = %sel_false : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
+      struct.writef %self[@sel_flag] = %sel_flag : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
       function.return %self : !struct.type<@TrackUnreducedBoolSelect>
     }
 
@@ -76,7 +76,7 @@ module attributes {llzk.lang} {
 
 // -----
 
-module attributes {llzk.lang} {
+module attributes {veridise.lang = "llzk"} {
   struct.def @TrackUnreducedTypeFPropagation {
     function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreducedTypeFPropagation>
         attributes {function.allow_witness, function.allow_non_native_field_ops} {
@@ -88,7 +88,7 @@ module attributes {llzk.lang} {
         attributes {function.allow_constraint, function.allow_non_native_field_ops} {
       %one = felt.const 1
       %sum = felt.add %a, %one : !felt.type, !felt.type
-      %cmp = bool.cmp le(%sum, %one) : !felt.type, !felt.type
+      %cmp = bool.cmp le(%sum, %one)
       bool.assert %cmp
       function.return
     }
