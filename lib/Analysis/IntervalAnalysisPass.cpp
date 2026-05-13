@@ -50,6 +50,7 @@ protected:
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
     mia.setField(Field::getField(fieldName.c_str()));
     mia.setPropagateInputConstraints(propagateInputConstraints);
+    mia.setTrackUnreducedIntervals(printUnreducedIntervals);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
@@ -65,7 +66,9 @@ protected:
           "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
       );
       os << fullName.value() << ' ';
-      si.get().print(os, printSolverConstraints, printComputeIntervals);
+      si.get().print(
+          os, printSolverConstraints, printComputeIntervals, printUnreducedIntervals
+      );
     }
   }
 };

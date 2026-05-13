@@ -36,6 +36,7 @@
 
 #include <array>
 #include <mutex>
+#include <optional>
 
 namespace llzk {
 
@@ -46,22 +47,35 @@ namespace llzk {
 class ExpressionValue {
 public:
   /* Must be default initializable to be a ScalarLatticeValue. */
-  ExpressionValue() : i(), expr(nullptr) {}
+  ExpressionValue() : i(), expr(nullptr), unreduced(std::nullopt) {}
 
-  explicit ExpressionValue(const Field &f) : i(Interval::Entire(f)), expr(nullptr) {}
+  explicit ExpressionValue(const Field &f)
+      : i(Interval::Entire(f)), expr(nullptr), unreduced(std::nullopt) {}
 
   ExpressionValue(const Field &f, llvm::SMTExprRef exprRef)
-      : i(Interval::Entire(f)), expr(exprRef) {}
+      : i(Interval::Entire(f)), expr(exprRef), unreduced(std::nullopt) {}
 
   ExpressionValue(const Field &f, llvm::SMTExprRef exprRef, const llvm::DynamicAPInt &singleVal)
-      : i(Interval::Degenerate(f, singleVal)), expr(exprRef) {}
+      : i(Interval::Degenerate(f, singleVal)), expr(exprRef), unreduced(std::nullopt) {}
 
-  ExpressionValue(llvm::SMTExprRef exprRef, const Interval &interval)
-      : i(interval), expr(exprRef) {}
+  ExpressionValue(
+      llvm::SMTExprRef exprRef, const Interval &interval,
+      std::optional<UnreducedInterval> unreducedInterval = std::nullopt
+  )
+      : i(interval), expr(exprRef), unreduced(std::move(unreducedInterval)) {}
 
   llvm::SMTExprRef getExpr() const { return expr; }
 
   const Interval &getInterval() const { return i; }
+
+  bool hasUnreducedInterval() const { return unreduced.has_value(); }
+
+  const std::optional<UnreducedInterval> &getOptionalUnreducedInterval() const { return unreduced; }
+
+  const UnreducedInterval &getUnreducedInterval() const {
+    ensure(unreduced.has_value(), "unreduced interval not set");
+    return *unreduced;
+  }
 
   const Field &getField() const { return i.getField(); }
 
@@ -69,18 +83,30 @@ public:
   /// @param newInterval
   /// @return
   ExpressionValue withInterval(const Interval &newInterval) const {
-    return ExpressionValue(expr, newInterval);
+    return ExpressionValue(expr, newInterval, unreduced);
   }
 
   /// @brief Return the current expression with a new SMT expression.
   ExpressionValue withExpression(const llvm::SMTExprRef &newExpr) const {
-    return ExpressionValue(newExpr, i);
+    return ExpressionValue(newExpr, i, unreduced);
   }
+
+  ExpressionValue withUnreducedInterval(const UnreducedInterval &newUnreducedInterval) const {
+    return ExpressionValue(expr, i, newUnreducedInterval);
+  }
+
+  ExpressionValue
+  withOptionalUnreducedInterval(std::optional<UnreducedInterval> newUnreducedInterval) const {
+    return ExpressionValue(expr, i, std::move(newUnreducedInterval));
+  }
+
+  ExpressionValue dropUnreducedInterval() const { return ExpressionValue(expr, i, std::nullopt); }
 
   /* Required to be a ScalarLatticeValue. */
   /// @brief Fold two expressions together when overapproximating array elements.
   ExpressionValue &join(const ExpressionValue & /*rhs*/) {
     i = Interval::Entire(getField());
+    unreduced = std::nullopt;
     return *this;
   }
 
@@ -181,13 +207,16 @@ public:
 
   struct Hash {
     unsigned operator()(const ExpressionValue &e) const {
-      return Interval::Hash {}(e.i) ^ llvm::hash_value(e.expr);
+      return Interval::Hash {}(e.i) ^ llvm::hash_value(e.expr) ^
+             std::hash<bool> {}(e.unreduced.has_value()) ^
+             (e.unreduced.has_value() ? UnreducedInterval::Hash {}(*e.unreduced) : 0U);
     }
   };
 
 private:
   Interval i;
   llvm::SMTExprRef expr;
+  std::optional<UnreducedInterval> unreduced;
 };
 
 /* IntervalAnalysisLatticeValue */
@@ -259,10 +288,11 @@ class IntervalDataFlowAnalysis
 public:
   explicit IntervalDataFlowAnalysis(
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
-      bool propInputConstraints
+      bool propInputConstraints, bool trackUnreducedIntervals
   )
       : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
-        smtSolver(smt), field(f), propagateInputConstraints(propInputConstraints) {}
+        smtSolver(std::move(smt)), field(f), propagateInputConstraints(propInputConstraints),
+        trackUnreducedIntervals(trackUnreducedIntervals) {}
 
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
@@ -289,6 +319,7 @@ private:
   SymbolMap refSymbols;
   std::reference_wrapper<const Field> field;
   bool propagateInputConstraints;
+  bool trackUnreducedIntervals;
   mlir::SymbolTableCollection tables;
 
   // Track field reads so that propagations to fields can be all updated efficiently.
@@ -307,7 +338,24 @@ private:
 
   llvm::SMTExprRef createFeltSymbol(const char *name) const;
 
-  bool isConstOp(mlir::Operation *op) const {
+  std::optional<UnreducedInterval> getDefaultUnreducedIntervalForType(mlir::Type ty) const;
+
+  std::optional<UnreducedInterval> getRefUnreducedInterval(const SourceRef &ref);
+
+  llvm::SMTExprRef createSymbol(mlir::Type ty, const char *name) const;
+
+  llvm::SMTExprRef createSymbol(const SourceRef &r) const;
+
+  llvm::SMTExprRef createSymbol(mlir::Value val) const;
+
+  ExpressionValue createUnknownValue(mlir::Value val) const {
+    return ExpressionValue(
+        createSymbol(val), getDefaultIntervalForType(val.getType()),
+        getDefaultUnreducedIntervalForType(val.getType())
+    );
+  }
+
+  inline bool isConstOp(mlir::Operation *op) const {
     return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
@@ -375,7 +423,8 @@ struct IntervalAnalysisContext {
   IntervalDataFlowAnalysis *intervalDFA;
   llvm::SMTSolverRef smtSolver;
   std::optional<std::reference_wrapper<const Field>> field;
-  bool propagateInputConstraints;
+  bool propagateInputConstraints = false;
+  bool trackUnreducedIntervals = false;
 
   llvm::SMTExprRef getSymbol(const SourceRef &r) const { return intervalDFA->getOrCreateSymbol(r); }
   bool hasField() const { return field.has_value(); }
@@ -384,6 +433,7 @@ struct IntervalAnalysisContext {
     return field->get();
   }
   bool doInputConstraintPropagation() const { return propagateInputConstraints; }
+  bool doTrackUnreducedIntervals() const { return trackUnreducedIntervals; }
 
   friend bool
   operator==(const IntervalAnalysisContext &a, const IntervalAnalysisContext &b) = default;
@@ -397,7 +447,8 @@ template <> struct std::hash<llzk::IntervalAnalysisContext> {
         std::hash<const llzk::IntervalDataFlowAnalysis *> {}(c.intervalDFA),
         std::hash<const llvm::SMTSolver *> {}(c.smtSolver.get()),
         std::hash<const llzk::Field *> {}(&c.getField()),
-        std::hash<bool> {}(c.propagateInputConstraints)
+        std::hash<bool> {}(c.propagateInputConstraints),
+        std::hash<bool> {}(c.trackUnreducedIntervals)
     );
   }
 };
@@ -429,10 +480,17 @@ public:
   mlir::LogicalResult
   computeIntervals(mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx);
 
-  void print(mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false) const;
+  void print(
+      mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false,
+      bool printUnreduced = false
+  ) const;
 
   const llvm::MapVector<SourceRef, Interval> &getConstrainIntervals() const {
     return constrainFieldRanges;
+  }
+
+  const llvm::MapVector<SourceRef, UnreducedInterval> &getConstrainUnreducedIntervals() const {
+    return constrainMemberUnreducedRanges;
   }
 
   const llvm::SetVector<ExpressionValue> getConstrainSolverConstraints() const {
@@ -441,6 +499,10 @@ public:
 
   const llvm::MapVector<SourceRef, Interval> &getComputeIntervals() const {
     return computeFieldRanges;
+  }
+
+  const llvm::MapVector<SourceRef, UnreducedInterval> &getComputeUnreducedIntervals() const {
+    return computeMemberUnreducedRanges;
   }
 
   const llvm::SetVector<ExpressionValue> getComputeSolverConstraints() const {
@@ -457,7 +519,9 @@ private:
   component::StructDefOp structDef;
   llvm::SMTSolverRef smtSolver;
   // llvm::MapVector keeps insertion order for consistent iteration
-  llvm::MapVector<SourceRef, Interval> constrainFieldRanges, computeFieldRanges;
+  llvm::MapVector<SourceRef, Interval> constrainMemberRanges, computeMemberRanges;
+  llvm::MapVector<SourceRef, UnreducedInterval> constrainMemberUnreducedRanges,
+      computeMemberUnreducedRanges;
   // llvm::SetVector for the same reasons as above
   llvm::SetVector<ExpressionValue> constrainSolverConstraints, computeSolverConstraints;
 
@@ -498,6 +562,7 @@ public:
 
   void setField(const Field &f) { ctx.field = f; }
   void setPropagateInputConstraints(bool prop) { ctx.propagateInputConstraints = prop; }
+  void setTrackUnreducedIntervals(bool track) { ctx.trackUnreducedIntervals = track; }
 
 protected:
   void initializeSolver() override {
@@ -505,9 +570,12 @@ protected:
     (void)solver.load<SourceRefAnalysis>();
     auto smtSolverRef = ctx.smtSolver;
     bool prop = ctx.propagateInputConstraints;
+    bool track = ctx.trackUnreducedIntervals;
     ctx.intervalDFA =
-        solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool>(
-            std::move(smtSolverRef), ctx.getField(), std::move(prop)
+        solver.load<IntervalDataFlowAnalysis, llvm::SMTSolverRef, const Field &, bool, bool>(
+            std::move(smtSolverRef), ctx.getField(),
+            std::move(prop), // NOLINT(performance-move-const-arg)
+            std::move(track) // NOLINT(performance-move-const-arg)
         );
   }
 

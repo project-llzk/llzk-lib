@@ -93,6 +93,10 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
               /* default */ "false",
               "Whether to print compute function intervals (default only "
               "prints constrain function intervals).">,
+       Option<"printUnreducedIntervals", "print-unreduced-intervals", "bool",
+              /* default */ "false",
+              "Whether to print tracked unreduced intervals alongside reduced "
+              "interval summaries.">,
   ];
 }
 
