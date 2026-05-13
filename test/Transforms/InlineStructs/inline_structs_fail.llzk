@@ -129,6 +129,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // -----
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  // expected-error@+1 {{Cannot inline struct within a template. Run `llzk-flatten` to instantiate templated structs.}}
   poly.template @TComponentY {
     poly.param @A
     poly.param @B
@@ -142,7 +143,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     }
   }
 
-  // expected-error@+1 {{Cannot inline struct within a template. Run `llzk-flatten` to instantiate templated structs.}}
   poly.template @TComponentX {
     poly.param @C
 
