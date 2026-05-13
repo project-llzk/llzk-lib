@@ -460,6 +460,63 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kUnreducedSignalReadDefaultModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedSignalReadDefault {
+    struct.member @sig : !felt.type {signal}
+
+    function.def @compute() -> !struct.type<@TrackUnreducedSignalReadDefault>
+        attributes {function.allow_witness} {
+      %self = struct.new : <@TrackUnreducedSignalReadDefault>
+      function.return %self : !struct.type<@TrackUnreducedSignalReadDefault>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedSignalReadDefault>)
+        attributes {function.allow_constraint} {
+      %sig = struct.readm %self[@sig] : <@TrackUnreducedSignalReadDefault>, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kUnreducedIsZeroModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @IsZero {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @inv : !felt.type
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@IsZero>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@IsZero>
+      %const_1 = felt.const 1
+      %inv = felt.inv %in
+      struct.writem %self[@inv] = %inv : <@IsZero>, !felt.type
+      %neg_in = felt.neg %in : !felt.type
+      %mul = felt.mul %neg_in, %inv : !felt.type, !felt.type
+      %out = felt.add %mul, %const_1 : !felt.type, !felt.type
+      struct.writem %self[@out] = %out : <@IsZero>, !felt.type
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(%self: !struct.type<@IsZero>, %in: !felt.type)
+        attributes {function.allow_constraint} {
+      %const_0 = felt.const 0
+      %const_1 = felt.const 1
+      %out = struct.readm %self[@out] : <@IsZero>, !felt.type
+      %inv = struct.readm %self[@inv] : <@IsZero>, !felt.type
+      %neg_in = felt.neg %in : !felt.type
+      %mul = felt.mul %neg_in, %inv : !felt.type, !felt.type
+      %sum = felt.add %mul, %const_1 : !felt.type, !felt.type
+      constrain.eq %out, %sum : !felt.type, !felt.type
+      %zero_prod = felt.mul %in, %out : !felt.type, !felt.type
+      constrain.eq %zero_prod, %const_0 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
   static constexpr auto kProductFunctionIntervalModule = R"mlir(
 module attributes {llzk.lang} {
   struct.def @ProductIntervals {
@@ -901,6 +958,121 @@ TEST_F(IntervalAnalysisAPITests, TypeFConstraintPropagationUsesFirstUnreducedInt
   ASSERT_TRUE(argExpr.getInterval().isTypeF());
   ASSERT_TRUE(argExpr.hasUnreducedInterval());
   AssertUnreducedIntervalEq(UnreducedInterval(-1, 0), argExpr.getUnreducedInterval());
+}
+
+TEST_F(IntervalAnalysisAPITests, UnconstrainedSignalReadsDefaultToCanonicalUnreducedInterval) {
+  auto mod = parseModule(kUnreducedSignalReadDefaultModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  ASSERT_TRUE(constrainFn != nullptr);
+
+  component::MemberReadOp readOp;
+  constrainFn.walk([&](component::MemberReadOp op) { readOp = op; });
+  ASSERT_TRUE(readOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *readLattice = lookupLattice(analysis, readOp.getResult());
+  ASSERT_NE(readLattice, nullptr);
+  const ExpressionValue &readExpr = readLattice->getValue().getScalarValue();
+  ASSERT_TRUE(readExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.zero(), field.maxVal()), readExpr.getUnreducedInterval()
+  );
+}
+
+TEST_F(IntervalAnalysisAPITests, IsZeroTracksWideUnreducedMulAndSumIntervals) {
+  auto mod = parseModule(kUnreducedIsZeroModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+  ASSERT_TRUE(constrainFn != nullptr);
+
+  llvm::SmallVector<felt::InvFeltOp> computeInvOps;
+  llvm::SmallVector<felt::NegFeltOp> computeNegOps;
+  llvm::SmallVector<felt::MulFeltOp> computeMulOps;
+  llvm::SmallVector<felt::AddFeltOp> computeAddOps;
+  computeFn.walk([&](Operation *op) {
+    if (auto inv = dyn_cast<felt::InvFeltOp>(op)) {
+      computeInvOps.push_back(inv);
+    } else if (auto neg = dyn_cast<felt::NegFeltOp>(op)) {
+      computeNegOps.push_back(neg);
+    } else if (auto mul = dyn_cast<felt::MulFeltOp>(op)) {
+      computeMulOps.push_back(mul);
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      computeAddOps.push_back(add);
+    }
+  });
+  ASSERT_EQ(computeInvOps.size(), 1U);
+  ASSERT_EQ(computeNegOps.size(), 1U);
+  ASSERT_EQ(computeMulOps.size(), 1U);
+  ASSERT_EQ(computeAddOps.size(), 1U);
+
+  llvm::SmallVector<felt::NegFeltOp> constrainNegOps;
+  llvm::SmallVector<felt::MulFeltOp> constrainMulOps;
+  llvm::SmallVector<felt::AddFeltOp> constrainAddOps;
+  constrainFn.walk([&](Operation *op) {
+    if (auto neg = dyn_cast<felt::NegFeltOp>(op)) {
+      constrainNegOps.push_back(neg);
+    } else if (auto mul = dyn_cast<felt::MulFeltOp>(op)) {
+      constrainMulOps.push_back(mul);
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      constrainAddOps.push_back(add);
+    }
+  });
+  ASSERT_EQ(constrainNegOps.size(), 1U);
+  ASSERT_EQ(constrainMulOps.size(), 2U);
+  ASSERT_EQ(constrainAddOps.size(), 1U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  auto pMinusOne = field.maxVal();
+  auto square = pMinusOne * pMinusOne;
+  auto oneMinusSquare = field.one() - square;
+
+  auto assertValueHasUnreduced = [&](Value value, const UnreducedInterval &expected) {
+    const IntervalAnalysisLattice *lattice = lookupLattice(analysis, value);
+    ASSERT_NE(lattice, nullptr);
+    const ExpressionValue &expr = lattice->getValue().getScalarValue();
+    ASSERT_TRUE(expr.hasUnreducedInterval());
+    AssertUnreducedIntervalEq(expected, expr.getUnreducedInterval());
+  };
+
+  assertValueHasUnreduced(
+      computeInvOps.front().getResult(), UnreducedInterval(field.zero(), field.maxVal())
+  );
+  assertValueHasUnreduced(
+      computeNegOps.front().getResult(), UnreducedInterval(-pMinusOne, field.zero())
+  );
+  assertValueHasUnreduced(
+      computeMulOps.front().getResult(), UnreducedInterval(-square, field.zero())
+  );
+  assertValueHasUnreduced(
+      computeAddOps.front().getResult(), UnreducedInterval(oneMinusSquare, field.one())
+  );
+
+  assertValueHasUnreduced(
+      constrainNegOps.front().getResult(), UnreducedInterval(-pMinusOne, field.zero())
+  );
+  assertValueHasUnreduced(
+      constrainMulOps.front().getResult(), UnreducedInterval(-square, field.zero())
+  );
+  assertValueHasUnreduced(
+      constrainAddOps.front().getResult(), UnreducedInterval(oneMinusSquare, field.one())
+  );
 }
 
 TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackReducedIntervals) {

@@ -101,6 +101,10 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
               /* default */ "false",
               "Whether to print tracked unreduced intervals alongside reduced "
               "interval summaries.">,
+       Option<"printSSAIntervals", "print-ssa-intervals", "bool",
+              /* default */ "false",
+              "Whether to print per-SSA intervals for function arguments and "
+              "scalar op results.">,
   ];
 }
 

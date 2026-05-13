@@ -453,6 +453,10 @@ fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const Expressio
     return nullptr;
   });
 
+  if (llvm::isa<InvFeltOp>(op)) {
+    res = res.withUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()));
+  }
+
   return res;
 }
 
@@ -676,6 +680,45 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   // Get the values or defaults from the operand lattices
   llvm::SmallVector<LatticeValue> operandVals;
   llvm::SmallVector<std::optional<SourceRef>> operandRefs;
+  auto resolveRefStateValue =
+      [&](Value value, const SourceRefLatticeValue &refSet) -> std::optional<LatticeValue> {
+    ensure(refSet.isScalar(), "should have ruled out array values already");
+
+    if (refSet.getScalarValue().empty()) {
+      // If we can't compute the reference, then there must be some unsupported
+      // op the reference analysis cannot handle. We emit a warning and return
+      // early, since there's no meaningful computation we can do for this op.
+      op->emitWarning()
+          .append(
+              "state of ", value,
+              " is empty; defining operation is unsupported by SourceRef analysis"
+          )
+          .report();
+      return std::nullopt;
+    }
+
+    if (!refSet.isSingleValue()) {
+      Interval joinedInterval = Interval::Empty(field.get());
+      std::optional<UnreducedInterval> joinedUnreduced = std::nullopt;
+      bool sawFirst = false;
+      for (const SourceRef &ref : refSet.getScalarValue()) {
+        joinedInterval = joinedInterval.join(getRefInterval(ref));
+        auto refUnreduced = getRefUnreducedInterval(ref);
+        if (!sawFirst) {
+          joinedUnreduced = refUnreduced;
+          sawFirst = true;
+        } else {
+          joinedUnreduced = mergeUnreducedIntervals(joinedUnreduced, refUnreduced);
+        }
+      }
+      ExpressionValue anyVal = createUnknownValue(value)
+                                   .withInterval(joinedInterval)
+                                   .withOptionalUnreducedInterval(joinedUnreduced);
+      return LatticeValue(anyVal);
+    }
+
+    return LatticeValue(getRefValue(refSet.getSingleValue(), value));
+  };
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
     SourceRefLatticeValue refSet = getSourceRefState(val);
@@ -713,37 +756,30 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
-    ensure(refSet.isScalar(), "should have ruled out array values already");
-
-    if (refSet.getScalarValue().empty()) {
-      // If we can't compute the reference, then there must be some unsupported
-      // op the reference analysis cannot handle. We emit a warning and return
-      // early, since there's no meaningful computation we can do for this op.
-      op->emitWarning()
-          .append(
-              "state of ", val, " is empty; defining operation is unsupported by SourceRef analysis"
-          )
-          .report();
+    auto resolvedValue = resolveRefStateValue(val, refSet);
+    if (!resolvedValue.has_value()) {
       // We still return success so we can return overapproximated and partial
       // results to the user.
       return success();
-    } else if (!refSet.isSingleValue()) {
-      Interval joinedInterval = Interval::Empty(field.get());
-      for (const SourceRef &ref : refSet.getScalarValue()) {
-        joinedInterval = joinedInterval.join(getRefInterval(ref));
-      }
-      ExpressionValue anyVal = createUnknownValue(val).withInterval(joinedInterval);
-      operandVals.emplace_back(anyVal);
-    } else {
-      const SourceRef &ref = refSet.getSingleValue();
-      operandVals.emplace_back(getRefValue(ref, val));
     }
+    operandVals.push_back(*resolvedValue);
 
     // Since we initialized a value that was not found in the before lattice,
     // update that value in the lattice so we can find it later, but we don't
     // need to propagate the changes, since we already have what we need.
     Lattice *operandLattice = getLatticeElement(val);
     (void)operandLattice->setValue(operandVals[opNum]);
+  }
+
+  if (isReadOp(op) && op->getNumResults() == 1) {
+    Value resultVal = op->getResult(0);
+    if (!llvm::isa<ArrayType, StructType>(resultVal.getType())) {
+      auto resolvedValue = resolveRefStateValue(resultVal, getSourceRefState(resultVal));
+      if (resolvedValue.has_value()) {
+        propagateIfChanged(results[0], results[0]->setValue(*resolvedValue));
+      }
+    }
+    return success();
   }
 
   // Now, the way we update is dependent on the type of the operation.
@@ -1508,16 +1544,17 @@ LogicalResult StructIntervals::computeIntervals(
     mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
 ) {
 
-  auto computeIntervalsImpl = [&solver, &ctx, this](
-                                  FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &memberRanges,
-                                  llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
-                                  llvm::SetVector<ExpressionValue> & /*solverConstraints*/
-                              ) {
+  auto computeIntervalsImpl =
+      [&solver, &ctx, this](
+          FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &memberRanges,
+          llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
+          llvm::SetVector<ExpressionValue> & /*solverConstraints*/
+      ) {
     auto setUnreducedRange =
         [&memberUnreducedRanges](const SourceRef &ref, const UnreducedInterval &interval) {
-          memberUnreducedRanges.erase(ref);
-          memberUnreducedRanges.insert({ref, interval});
-        };
+      memberUnreducedRanges.erase(ref);
+      memberUnreducedRanges.insert({ref, interval});
+    };
     // Since every lattice value does not contain every value, we will traverse
     // the function backwards (from most up-to-date to least-up-to-date lattices)
     // searching for the source refs. Once a source ref is found, we remove it
@@ -1614,9 +1651,9 @@ LogicalResult StructIntervals::computeIntervals(
     for (const auto &[ref, interval] : memberUnreducedRanges) {
       sortedUnreducedRanges.emplace_back(ref, interval);
     }
-    llvm::sort(
-        sortedUnreducedRanges, [](const auto &a, const auto &b) { return a.first < b.first; }
-    );
+    llvm::sort(sortedUnreducedRanges, [](const auto &a, const auto &b) {
+      return a.first < b.first;
+    });
     memberRanges.clear();
     memberUnreducedRanges.clear();
     for (auto &[ref, interval] : sortedRanges) {
