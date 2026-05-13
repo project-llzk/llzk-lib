@@ -8,22 +8,22 @@
 
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 
-#include "llvm/ADT/APSInt.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/OpImplementation.h"
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/OpImplementation.h>
+
+#include <llvm/ADT/APSInt.h>
 
 using namespace mlir;
 using namespace llzk::smt;
-using namespace mlir;
 
 //===----------------------------------------------------------------------===//
 // BVConstantOp
 //===----------------------------------------------------------------------===//
 
 LogicalResult BVConstantOp::inferReturnTypes(
-    mlir::MLIRContext *context, std::optional<mlir::Location> location, ::mlir::ValueRange operands,
-    ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties,
-    ::mlir::RegionRange regions, ::llvm::SmallVectorImpl<::mlir::Type> &inferredReturnTypes
+    MLIRContext * /*context*/, std::optional<Location> /*location*/, ValueRange /*operands*/,
+    DictionaryAttr /*attributes*/, OpaqueProperties properties, RegionRange /*regions*/,
+    SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.push_back(properties.as<Properties *>()->getValue().getType());
   return success();

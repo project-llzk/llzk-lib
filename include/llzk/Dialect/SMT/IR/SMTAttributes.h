@@ -9,19 +9,15 @@
 #ifndef MLIR_DIALECT_SMT_IR_SMTATTRIBUTES_H
 #define MLIR_DIALECT_SMT_IR_SMTATTRIBUTES_H
 
-#include "mlir/IR/Attributes.h"
-#include "mlir/IR/BuiltinAttributeInterfaces.h"
-#include "mlir/IR/BuiltinAttributes.h"
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinAttributeInterfaces.h>
+#include <mlir/IR/BuiltinAttributes.h>
 
-namespace llzk {
-namespace smt {
-namespace detail {
+namespace llzk::smt::detail {
 
 struct BitVectorAttrStorage;
 
-} // namespace detail
-} // namespace smt
-} // namespace llzk
+} // namespace llzk::smt::detail
 
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/SMT/IR/SMTAttributes.h.inc"

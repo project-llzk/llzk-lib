@@ -13,12 +13,11 @@
 #ifndef MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 #define MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 
-#include "llvm/ADT/TypeSwitch.h"
-
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 
-namespace llzk {
-namespace smt {
+#include <llvm/ADT/TypeSwitch.h>
+
+namespace llzk::smt {
 
 /// This helps visit SMT nodes.
 template <typename ConcreteType, typename ResultType = void, typename... ExtraArgs>
@@ -183,7 +182,6 @@ public:
 #undef HANDLE
 };
 
-} // namespace smt
-} // namespace llzk
+} // namespace llzk::smt
 
 #endif // MLIR_DIALECT_SMT_IR_SMTVISITORS_H

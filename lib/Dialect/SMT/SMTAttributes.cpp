@@ -8,12 +8,13 @@
 
 #include "llzk/Dialect/SMT/IR/SMTAttributes.h"
 
-#include "llvm/ADT/TypeSwitch.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/DialectImplementation.h"
-
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/SMT/IR/SMTTypes.h"
+
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/DialectImplementation.h>
+
+#include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
 using namespace llzk::smt;

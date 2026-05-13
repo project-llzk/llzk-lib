@@ -9,14 +9,13 @@
 #ifndef MLIR_DIALECT_SMT_IR_SMTTYPES_H
 #define MLIR_DIALECT_SMT_IR_SMTTYPES_H
 
-#include "mlir/IR/BuiltinTypes.h"
-#include "mlir/IR/Types.h"
+#include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/Types.h>
 
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/SMT/IR/SMTTypes.h.inc"
 
-namespace llzk {
-namespace smt {
+namespace llzk::smt {
 
 /// Returns whether the given type is an SMT value type.
 bool isAnySMTValueType(mlir::Type type);
@@ -24,7 +23,6 @@ bool isAnySMTValueType(mlir::Type type);
 /// Returns whether the given type is an SMT value type (excluding functions).
 bool isAnyNonFuncSMTValueType(mlir::Type type);
 
-} // namespace smt
-} // namespace llzk
+} // namespace llzk::smt
 
 #endif // MLIR_DIALECT_SMT_IR_SMTTYPES_H
