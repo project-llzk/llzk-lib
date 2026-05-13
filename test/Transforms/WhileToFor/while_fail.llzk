@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-while-to-for --canonicalize %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt --llzk-while-to-for --canonicalize -split-input-file %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
     struct.def @A {
@@ -33,3 +33,26 @@ module attributes {llzk.lang} {
 // CHECK:         scf.yield %[[NEXT_I]]
 // CHECK-NOT:     scf.for
 // CHECK:         struct.writem %[[SELF]][@sum] = %[[WHILE]]#1
+// -----
+
+module attributes {llzk.lang} {
+    function.def private @use_felt(%f: !felt.type)
+    
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+        %f0 = felt.const 0
+        %f1 = felt.const 1
+        
+        // This looks like a proper for loop, but the upper bound is not constant so it can't be converted
+        scf.while (%i = %f0, %ub = %f1) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+            %cond = bool.cmp lt(%i, %ub)
+            scf.condition(%cond) %i, %ub : !felt.type, !felt.type
+        } do {
+        ^bb0(%i: !felt.type, %ub: !felt.type):
+            %next_i = felt.add %i, %f1
+            %next_ub = felt.add %ub, %f1
+            scf.yield %next_i, %next_ub : !felt.type, !felt.type
+        }
+
+        function.return
+    }
+}

@@ -12,8 +12,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk-c/Constants.h"
-
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -56,6 +54,16 @@ struct ForOpInfo {
 
 static inline ForOpInfo parseInfo(WhileOp op) {
   ForOpInfo info;
+
+  auto isRuntimeConstant = [&op](Value val) -> bool {
+    // The value can't come from a block argument owned by the while loop
+    if (auto blockArg = dyn_cast<BlockArgument>(val)) {
+      return blockArg.getParentBlock()->getParentOp() != op;
+    }
+    return true;
+  };
+
+  (void)isRuntimeConstant;
 
   auto condition = op.getConditionOp().getCondition();
   Value ivarBefore;
@@ -127,6 +135,14 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     }
   }
 
+  // Make sure the bounds aren't loop-carried, making this not a legal for loop
+  // We don't actually need to check the LB because its always passed in via an init block arg
+  if (!isRuntimeConstant(*info.ub)) {
+    info.ub.reset();
+  }
+  if (!isRuntimeConstant(*info.step)) {
+    info.step.reset();
+  }
   return info;
 }
 
