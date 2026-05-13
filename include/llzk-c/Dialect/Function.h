@@ -105,7 +105,7 @@ LLZK_DECLARE_OP_BUILD_METHOD(
     intptr_t numOperands, MlirValue const *operands
 );
 
-/// Creates a CallOp that calls the given FuncDefOp.
+/// Creates a CallOp targeting the given FuncDefOp.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     Function, CallOp, ToCallee, MlirOperation callee, intptr_t numOperands,
     MlirValue const *operands
@@ -118,10 +118,23 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     MlirValue const *argOperands
 );
 
-/// Creates a CallOp with affine map operands to the given FuncDefOp.
+/// Creates a CallOp targeting the given FuncDefOp with affine map operands.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee,
     LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
+);
+
+/// Creates a CallOp with `templateParams` attributes.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Function, CallOp, WithTemplateParams, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, intptr_t numTemplateParams, MlirAttribute const *templateParams,
+    intptr_t numArgOperands, MlirValue const *argOperands
+);
+
+/// Creates a CallOp targeting the given FuncDefOp with `templateParams` attributes.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Function, CallOp, ToCalleeWithTemplateParams, MlirOperation callee, intptr_t numTemplateParams,
+    MlirAttribute const *templateParams, intptr_t numArgOperands, MlirValue const *argOperands
 );
 
 #ifdef __cplusplus

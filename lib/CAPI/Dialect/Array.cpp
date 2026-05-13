@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 
+#include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/Pass.h>
 
