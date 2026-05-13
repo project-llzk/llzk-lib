@@ -1,0 +1,36 @@
+// RUN: llzk-opt %s --canonicalize | FileCheck --enable-var-scope %s
+
+function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
+    %f0 = felt.const 0
+    
+    // cast.toindex(felt.const(n)) == arith.constant n
+    %c0 = cast.toindex %f0
+
+    %c1 = arith.constant 1 : index
+
+    %arr1 = array.new : !array.type<10 x !felt.type>
+    %arr2 = array.new : !array.type<10 x !felt.type<"babybear">>
+
+    scf.for %i = %c0 to %c1 step %c1 {
+        // cast.tofelt(cast.toindex(%x)) == %x
+        %index_a = cast.toindex %a
+        %felt_a = cast.tofelt %index_a : index, !felt.type
+
+        // cast.toindex(cast.tofelt(%x)) == %x
+        %felt_i = cast.tofelt %i : index
+        %index_i = cast.toindex %felt_i 
+        array.write %arr1[%index_i] = %felt_a : !array.type<10 x !felt.type>, !felt.type 
+
+        // cast.tofelt(cast.toindex(%x)) != %x if the felt types don't match before/after the cast
+        %felt_a_prime = cast.tofelt %index_a : index, !felt.type<"babybear">
+        array.write %arr2[%index_i] = %felt_a_prime : !array.type<10 x !felt.type<"babybear">>, !felt.type<"babybear">
+
+        // cast.tofelt(arith.constant(n)) == felt.const n
+        %f1 = cast.tofelt %c1 : index, !felt.type
+        array.write %arr1[%i] = %f1 : !array.type<10 x !felt.type>, !felt.type
+        
+        scf.yield
+    }
+    
+    function.return
+}
