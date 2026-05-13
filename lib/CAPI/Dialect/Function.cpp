@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/Pass.h>
 
@@ -146,6 +147,38 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
       create<CallOp>(
           builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
           unwrapList(numArgOperands, argOperands, argOperandsSto)
+      )
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, CallOp, WithTemplateParams, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, intptr_t numTemplateParams, MlirAttribute const *templateParams,
+    intptr_t numArgOperands, MlirValue const *argOperands
+) {
+  SmallVector<Type> resultsSto;
+  SmallVector<Value> argOperandsSto;
+  SmallVector<Attribute> templateParamsSto;
+  return wrap(
+      create<CallOp>(
+          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
+          unwrapList(numArgOperands, argOperands, argOperandsSto),
+          unwrapList(numTemplateParams, templateParams, templateParamsSto)
+      )
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, CallOp, ToCalleeWithTemplateParams, MlirOperation callee, intptr_t numTemplateParams,
+    MlirAttribute const *templateParams, intptr_t numArgOperands, MlirValue const *argOperands
+) {
+  SmallVector<Value> argOperandsSto;
+  SmallVector<Attribute> templateParamsSto;
+  return wrap(
+      create<CallOp>(
+          builder, location, unwrapCallee(callee),
+          unwrapList(numArgOperands, argOperands, argOperandsSto),
+          unwrapList(numTemplateParams, templateParams, templateParamsSto)
       )
   );
 }
