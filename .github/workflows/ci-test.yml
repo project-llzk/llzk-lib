@@ -52,7 +52,7 @@ jobs:
     if: ${{ !cancelled() }}
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.3
         with:
           path: artifacts
       - name: Publish Test Results
