@@ -88,7 +88,8 @@ LogicalResult SMTFuncType::verify(
 //===----------------------------------------------------------------------===//
 
 LogicalResult SortType::verify(
-    function_ref<InFlightDiagnostic()> emitError, StringAttr identifier, ArrayRef<Type> sortParams
+    function_ref<InFlightDiagnostic()> emitError, StringAttr /*identifier*/,
+    ArrayRef<Type> sortParams
 ) {
   if (!llvm::all_of(sortParams, isAnyNonFuncSMTValueType)) {
     return emitError() << "sort parameter types must be any non-function SMT type";

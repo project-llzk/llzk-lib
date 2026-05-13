@@ -217,7 +217,7 @@ llvm::SmallVector<UnreducedInterval, 2> getSignedCanonicalParts(const Interval &
 bool containsZero(const UnreducedInterval &iv) { return iv.getLHS() <= 0 && iv.getRHS() >= 0; }
 
 Interval joinDivisionPiece(
-    const Field &f, Interval acc, const llvm::DynamicAPInt &q0, const llvm::DynamicAPInt &q1,
+    const Field &f, const Interval &acc, const llvm::DynamicAPInt &q0, const llvm::DynamicAPInt &q1,
     const llvm::DynamicAPInt &q2, const llvm::DynamicAPInt &q3
 ) {
   DynamicAPInt minQ = std::min({q0, q1, q2, q3});

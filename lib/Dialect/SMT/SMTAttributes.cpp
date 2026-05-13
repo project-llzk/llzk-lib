@@ -54,12 +54,19 @@ std::string BitVectorAttr::getValueAsString(bool prefix) const {
 /// Parse an SMT-LIB formatted bit-vector string.
 static FailureOr<APInt>
 parseBitVectorString(function_ref<InFlightDiagnostic()> emitError, StringRef value) {
+  auto reportError = [&](StringRef msg) -> FailureOr<APInt> {
+    if (emitError) {
+      return emitError() << msg;
+    }
+    return failure();
+  };
+
   if (value[0] != '#') {
-    return emitError() << "expected '#'";
+    return reportError("expected '#'");
   }
 
   if (value.size() < 3) {
-    return emitError() << "expected at least one digit";
+    return reportError("expected at least one digit");
   }
 
   if (value[1] == 'b') {
@@ -70,7 +77,7 @@ parseBitVectorString(function_ref<InFlightDiagnostic()> emitError, StringRef val
     return APInt((value.size() - 2) * 4, std::string(value.begin() + 2, value.end()), 16);
   }
 
-  return emitError() << "expected either 'b' or 'x'";
+  return reportError("expected either 'b' or 'x'");
 }
 
 BitVectorAttr BitVectorAttr::get(MLIRContext *context, StringRef value) {
