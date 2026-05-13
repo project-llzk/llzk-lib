@@ -9,11 +9,15 @@
 
 #pragma once
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/Interfaces/CallInterfaces.h>
+#include <mlir/Interfaces/ControlFlowInterfaces.h>
+#include <mlir/Interfaces/FunctionInterfaces.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 
 // Include TableGen'd declarations

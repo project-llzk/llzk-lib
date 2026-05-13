@@ -1,0 +1,33 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute(%a : !felt.type) -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>, %a : !felt.type)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>, %a: !felt.type) {
+  }
+}
