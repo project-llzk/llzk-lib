@@ -266,23 +266,15 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
           argListStream << ", ::llvm::ArrayRef<" << cppElemType << ">(" << pName << ", " << pName
                         << "Count)";
         } else {
-          std::string storageCppType;
-          if (capiElemType == "MlirAttribute") {
-            storageCppType = "Attribute";
-          } else if (capiElemType == "MlirType") {
-            storageCppType = "Type";
-          } else {
-            storageCppType = cppElemType.str();
-          }
-
-          prefixStream << "SmallVector<" << storageCppType << "> storage;";
-          argListStream << ", ";
-          if (storageCppType == cppElemType.str()) {
-            argListStream << "unwrapList(" << pName << "Count, " << pName << ", storage)";
-          } else {
-            argListStream << "llvm::map_to_vector(unwrapList(" << pName << "Count, " << pName
+          std::optional<std::string> storageCppType = mapCapiTypeToBasicCppType(capiElemType);
+          if (storageCppType.has_value()) {
+            prefixStream << "SmallVector<" << storageCppType.value() << "> storage;";
+            argListStream << ", llvm::map_to_vector(unwrapList(" << pName << "Count, " << pName
                           << ", storage), [](auto a) {return llvm::cast<" << cppElemType
                           << ">(a);})";
+          } else {
+            prefixStream << "SmallVector<" << cppElemType << "> storage;";
+            argListStream << ", unwrapList(" << pName << "Count, " << pName << ", storage)";
           }
         }
       } else {
