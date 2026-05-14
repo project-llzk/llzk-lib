@@ -1122,7 +1122,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l01089" name="l01089"></a><span class="lineno"> 1089</span>      <span class="keyword">const</span> SymbolUseGraph &amp;useGraph, SymbolTableCollection &amp;tables,</div>
 <div class="line"><a id="l01090" name="l01090"></a><span class="lineno"> 1090</span>      SmallVectorImpl&lt;const SymbolUseGraphNode *&gt; &amp;postOrder</div>
 <div class="line"><a id="l01091" name="l01091"></a><span class="lineno"> 1091</span>  ) {</div>
-<div class="line"><a id="l01092" name="l01092"></a><span class="lineno"> 1092</span>    <span class="keyword">enum class</span> VisitState { Active, Done };</div>
+<div class="line"><a id="l01092" name="l01092"></a><span class="lineno"> 1092</span>    <span class="keyword">enum class</span> VisitState : std::uint8_t { Active, Done };</div>
 <div class="line"><a id="l01093" name="l01093"></a><span class="lineno"> 1093</span> </div>
 <div class="line"><a id="l01094" name="l01094"></a><span class="lineno"> 1094</span>    DenseMap&lt;const SymbolUseGraphNode *, VisitState&gt; state;</div>
 <div class="line"><a id="l01095" name="l01095"></a><span class="lineno"> 1095</span>    SmallVector&lt;const SymbolUseGraphNode *, 32&gt; dfsStack;</div>
