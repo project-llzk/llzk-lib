@@ -438,7 +438,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
   }
 
   // Convert the body and signature of a @product function to SMT
-  Operation *convertBodies(Operation *op, const SignalSymbols &signalSymbols, APSInt prime) {
+  Operation *convertBodies(Operation *op, const SignalSymbols &signalSymbols, const APSInt &prime) {
     if (op == nullptr) {
       return op;
     }
@@ -536,7 +536,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     auto selectedField = *(fields.begin());
     auto prime = toAPSInt(selectedField.get().prime());
 
-    mod.walk([this, prime](component::StructDefOp structDef) {
+    mod.walk([this, &prime](component::StructDefOp structDef) {
       // Start by adding declare-funcs for each signal
       IRRewriter rewriter {&getContext()};
       rewriter.setInsertionPointToStart(&structDef.getProductFuncOp().getFunctionBody().front());

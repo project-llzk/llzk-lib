@@ -137,7 +137,7 @@ private:
   // Sort in the following order:
   // block arg < struct.new < nondet < other rooted result < template const < const index <
   // const felt.
-  enum class SortCategory {
+  enum class SortCategory : std::uint8_t {
     BlockArgument,
     CreateStruct,
     NonDet,
@@ -198,22 +198,23 @@ public:
 
   /* Rooted constructors */
 
-  SourceRef(mlir::BlockArgument b, Path p = {}) : SourceRef(b, /*constant=*/false, p) {}
+  SourceRef(mlir::BlockArgument b, Path p = {})
+      : SourceRef(b, /*isConstantStorage=*/false, std::move(p)) {}
   SourceRef(component::CreateStructOp createOp, Path p = {})
-      : SourceRef(getSingleResultValue(createOp), /*constant=*/false, p) {}
+      : SourceRef(getSingleResultValue(createOp), /*isConstantStorage=*/false, std::move(p)) {}
   SourceRef(NonDetOp nondet, Path p = {})
-      : SourceRef(getSingleResultValue(nondet), /*constant=*/false, p) {}
+      : SourceRef(getSingleResultValue(nondet), /*isConstantStorage=*/false, std::move(p)) {}
   SourceRef(mlir::OpResult rootResult, Path p = {})
-      : SourceRef(getRootResultValue(rootResult), /*constant=*/false, p) {}
+      : SourceRef(getRootResultValue(rootResult), /*isConstantStorage=*/false, std::move(p)) {}
 
   /* Constant constructors */
 
   explicit SourceRef(felt::FeltConstantOp c)
-      : SourceRef(getSingleResultValue(c), /*constant=*/true) {}
+      : SourceRef(getSingleResultValue(c), /*isConstantStorage=*/true) {}
   explicit SourceRef(mlir::arith::ConstantIndexOp c)
-      : SourceRef(getSingleResultValue(c), /*constant=*/true) {}
+      : SourceRef(getSingleResultValue(c), /*isConstantStorage=*/true) {}
   explicit SourceRef(polymorphic::ConstReadOp c)
-      : SourceRef(getSingleResultValue(c), /*constant=*/true) {}
+      : SourceRef(getSingleResultValue(c), /*isConstantStorage=*/true) {}
 
   mlir::Type getType() const;
 

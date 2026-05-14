@@ -8,12 +8,13 @@
 
 #include "llzk/Dialect/SMT/IR/SMTAttributes.h"
 
-#include "llvm/ADT/TypeSwitch.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/DialectImplementation.h"
-
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/SMT/IR/SMTTypes.h"
+
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/DialectImplementation.h>
+
+#include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
 using namespace llzk::smt;
@@ -24,8 +25,8 @@ using namespace llzk::smt;
 
 LogicalResult BitVectorAttr::verify(
     function_ref<InFlightDiagnostic()> emitError,
-    APInt value
-) { // NOLINT(performance-unnecessary-value-param)
+    APInt value // NOLINT(performance-unnecessary-value-param)
+) {
   if (value.getBitWidth() < 1) {
     return emitError() << "bit-width must be at least 1, but got " << value.getBitWidth();
   }
@@ -53,12 +54,19 @@ std::string BitVectorAttr::getValueAsString(bool prefix) const {
 /// Parse an SMT-LIB formatted bit-vector string.
 static FailureOr<APInt>
 parseBitVectorString(function_ref<InFlightDiagnostic()> emitError, StringRef value) {
+  auto reportError = [&](StringRef msg) -> FailureOr<APInt> {
+    if (emitError) {
+      return emitError() << msg;
+    }
+    return failure();
+  };
+
   if (value[0] != '#') {
-    return emitError() << "expected '#'";
+    return reportError("expected '#'");
   }
 
   if (value.size() < 3) {
-    return emitError() << "expected at least one digit";
+    return reportError("expected at least one digit");
   }
 
   if (value[1] == 'b') {
@@ -69,7 +77,7 @@ parseBitVectorString(function_ref<InFlightDiagnostic()> emitError, StringRef val
     return APInt((value.size() - 2) * 4, std::string(value.begin() + 2, value.end()), 16);
   }
 
-  return emitError() << "expected either 'b' or 'x'";
+  return reportError("expected either 'b' or 'x'");
 }
 
 BitVectorAttr BitVectorAttr::get(MLIRContext *context, StringRef value) {

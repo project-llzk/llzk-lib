@@ -452,7 +452,7 @@ SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
 }
 
 std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
-    Operation *baseOp, ArrayAccessOpInterface arrayAccessOp
+    Operation * /*baseOp*/, ArrayAccessOpInterface arrayAccessOp
 ) {
   std::vector<SourceRefIndex> indices;
   ArrayType arrayType = arrayAccessOp.getArrRefType();
@@ -525,25 +525,23 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
 void IntervalDataFlowAnalysis::recordRefWrite(
     const SourceRef &writtenRef, const ExpressionValue &writeVal
 ) {
-  ExpressionValue written = writeVal;
-
   if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
     const ExpressionValue &old = it->second;
-    Interval combinedWrite = old.getInterval().join(written.getInterval());
-    if (old.getExpr() != nullptr && written.getExpr() != nullptr &&
-        *old.getExpr() == *written.getExpr()) {
+    Interval combinedWrite = old.getInterval().join(writeVal.getInterval());
+    if (old.getExpr() != nullptr && writeVal.getExpr() != nullptr &&
+        *old.getExpr() == *writeVal.getExpr()) {
       writeResults[writtenRef] = old.withInterval(combinedWrite);
     } else {
       llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
       writeResults[writtenRef] = ExpressionValue(expr, combinedWrite);
     }
   } else {
-    writeResults[writtenRef] = written;
+    writeResults[writtenRef] = writeVal;
   }
 
   for (Lattice *readerLattice : readResults[writtenRef]) {
     ExpressionValue prior = readerLattice->getValue().getScalarValue();
-    Interval intersection = prior.getInterval().intersect(written.getInterval());
+    Interval intersection = prior.getInterval().intersect(writeVal.getInterval());
     ExpressionValue newVal = prior.withInterval(intersection);
     propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
   }
@@ -713,7 +711,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         SourceRefIndex idx(memberDefRes.value());
         auto memberRefRes = refSet.getSingleValue().createChild(idx);
         ensure(succeeded(memberRefRes), "could not create SourceRef child for member write");
-        SourceRef memberRef = *memberRefRes;
+        const SourceRef &memberRef = *memberRefRes;
         Type memberTy = writem.getVal().getType();
         if (!llvm::isa<ArrayType, StructType>(memberTy)) {
           // Simple scalar update
@@ -1296,7 +1294,9 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 }
 
 FailureOr<std::pair<DenseSet<Value>, Interval>>
-IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value lhs, Value rhs) {
+IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
+    Operation * /*baseOp*/, Value lhs, Value rhs
+) {
   auto isZeroConst = [this](Value v) {
     Operation *op = v.getDefiningOp();
     if (!op) {

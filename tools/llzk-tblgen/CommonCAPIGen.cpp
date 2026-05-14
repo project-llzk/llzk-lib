@@ -798,3 +798,19 @@ std::string mapCppTypeToCapiType(StringRef cppType) {
   // Otherwise assume it's a type where the C name is a direct translation from the C++ name.
   return toPascalCase(cppType);
 }
+
+// Map C API type to corresponding basic (not dialect-defined) C++ type (for `unwrapList()` calls)
+std::optional<std::string> mapCapiTypeToBasicCppType(StringRef capiType) {
+  if (capiType == "MlirValue") {
+    return "Value";
+  } else if (capiType == "MlirType") {
+    return "Type";
+  } else if (capiType == "MlirAttribute") {
+    return "Attribute";
+  } else if (capiType == "MlirNamedAttribute") {
+    return "NamedAttribute";
+  } else if (capiType == "MlirStringRef") {
+    return "StringRef";
+  }
+  return std::nullopt;
+}
