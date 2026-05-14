@@ -412,6 +412,15 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
   using ImplementationGenerator::ImplementationGenerator;
   ~OpImplementationGenerator() override = default;
 
+  void genPrologue() const override {
+    os << R"(
+#include <limits>
+
+using namespace mlir;
+using namespace llvm;
+)";
+  }
+
   /// @brief Generate operation "Build" function implementation
   /// @param operationName The full operation name (e.g., "dialect.opname")
   /// @param params The parameter list for the "Build" function
@@ -794,6 +803,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
   emitSourceFileHeader("Op C API Definitions", os, records);
 
   OpImplementationGenerator generator("Operation", os);
+  generator.genPrologue();
 
   for (const auto *def : records.getAllDerivedDefinitions("Op")) {
     const Operator op(def);

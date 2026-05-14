@@ -452,6 +452,8 @@ struct ImplementationGenerator : public Generator {
   using Generator::Generator;
   ~ImplementationGenerator() override = default;
 
+  virtual void genPrologue() const {}
+
   virtual void genIsAImpl() const {
     static constexpr char fmt[] = R"(
 bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{

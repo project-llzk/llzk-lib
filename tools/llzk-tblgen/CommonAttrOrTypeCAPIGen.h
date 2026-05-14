@@ -174,7 +174,7 @@ struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
     this->paramNameCapitalized = toPascalCase(name);
   }
 
-  virtual void genPrologue() const {
+  void genPrologue() const override {
     os << R"(
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
