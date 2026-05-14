@@ -72,6 +72,8 @@ static polymorphic::TemplateExprOp buildPolyExpr(MLIRContext *ctx, bool includeD
   auto const12 = felt::FeltConstAttr::get(ctx, APInt(64, 12), feltTy);
   if (includeDeadValue) {
     // Create a dead value that should be eliminated by the DVE pass.
+    // Suppress `clang-tidy` since it's intentional.
+    // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
     auto _ = bldr.create<felt::FeltConstantOp>(loc, const12);
   }
   auto constOp = bldr.create<felt::FeltConstantOp>(loc, const12);

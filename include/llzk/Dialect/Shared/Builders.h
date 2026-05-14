@@ -43,6 +43,11 @@ public:
 };
 
 template <typename Derived> class ModuleLikeBuilder : public BaseBuilder {
+private:
+  friend Derived;
+
+  ModuleLikeBuilder(mlir::MLIRContext *ctx) : BaseBuilder(ctx) {}
+
 protected:
   // keyed on function name
   std::unordered_map<std::string_view, function::FuncDefOp> freeFuncMap;
@@ -106,8 +111,6 @@ protected:
   void ensureProductFnExists(std::string_view structName);
 
 public:
-  ModuleLikeBuilder(mlir::MLIRContext *ctx) : BaseBuilder(ctx) {}
-
   /* Getter methods */
 
   inline mlir::Region &getBodyRegion() { return static_cast<Derived *>(this)->getBodyRegion(); }

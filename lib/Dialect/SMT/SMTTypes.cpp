@@ -8,15 +8,15 @@
 
 #include "llzk/Dialect/SMT/IR/SMTTypes.h"
 
-#include "llvm/ADT/TypeSwitch.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/DialectImplementation.h"
-
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
+
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/DialectImplementation.h>
+
+#include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
 using namespace llzk::smt;
-using namespace mlir;
 
 #define GET_TYPEDEF_CLASSES
 #include "llzk/Dialect/SMT/IR/SMTTypes.cpp.inc"
@@ -88,7 +88,8 @@ LogicalResult SMTFuncType::verify(
 //===----------------------------------------------------------------------===//
 
 LogicalResult SortType::verify(
-    function_ref<InFlightDiagnostic()> emitError, StringAttr identifier, ArrayRef<Type> sortParams
+    function_ref<InFlightDiagnostic()> emitError, StringAttr /*identifier*/,
+    ArrayRef<Type> sortParams
 ) {
   if (!llvm::all_of(sortParams, isAnyNonFuncSMTValueType)) {
     return emitError() << "sort parameter types must be any non-function SMT type";
