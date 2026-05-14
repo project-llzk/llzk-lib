@@ -38,6 +38,12 @@ std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);
 
 std::unique_ptr<mlir::Pass> createInlineStructsPass();
 
+std::unique_ptr<mlir::Pass> createLowerComputeToCorePass();
+
+std::unique_ptr<mlir::Pass> createCreateWitgenEntryPass();
+
+void addWitgenPreparePipeline(mlir::OpPassManager &pm);
+
 void registerTransformationPassPipelines();
 
 void registerInliningExtensions(mlir::DialectRegistry &registry);

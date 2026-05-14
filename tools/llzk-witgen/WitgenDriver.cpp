@@ -9,6 +9,7 @@
 
 #include "WitgenDriver.h"
 
+#include "ExecutionEngineBackend.h"
 #include "Errors.h"
 #include "Interpreter.h"
 #include "JSON.h"
@@ -16,8 +17,10 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/Pass/PassManager.h>
 
 #include <llvm/ADT/SmallVector.h>
@@ -132,20 +135,29 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
   );
 }
 
-/// Run include preprocessing, field validation, and main compute execution.
+/// Run include preprocessing and flattening before backend execution.
+static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &options) {
+  normalizeCallOpProperties(moduleOp);
+  PassManager pm(moduleOp.getContext());
+  if (options.inlineIncludes) {
+    pm.addPass(llzk::include::createInlineIncludesPass());
+  }
+  if (options.backend == Backend::ExecutionEngine) {
+    llzk::addWitgenPreparePipeline(pm);
+  } else if (requiresFlattening(moduleOp)) {
+    pm.addPass(llzk::polymorphic::createFlatteningPass());
+  }
+  if (failed(pm.run(moduleOp))) {
+    return makeError("failed to preprocess LLZK module for llzk-witgen");
+  }
+  return llvm::Error::success();
+}
+
+/// Run include preprocessing, field validation, and backend execution.
 llvm::Expected<llvm::json::Value>
-runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, bool inlineIncludes) {
-  {
-    PassManager pm(moduleOp.getContext());
-    if (inlineIncludes) {
-      pm.addPass(llzk::include::createInlineIncludesPass());
-    }
-    if (requiresFlattening(moduleOp)) {
-      pm.addPass(llzk::polymorphic::createFlatteningPass());
-    }
-    if (failed(pm.run(moduleOp))) {
-      return makeError("failed to preprocess LLZK module for llzk-witgen");
-    }
+runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions &options) {
+  if (auto err = preprocessModule(moduleOp, options)) {
+    return std::move(err);
   }
 
   FieldSet fields;
@@ -157,6 +169,9 @@ runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, bool inlineIncludes
   }
 
   SymbolTableCollection tables;
+  if (options.backend == Backend::ExecutionEngine) {
+    return runWithExecutionEngine(moduleOp, tables, *fields.begin(), input, options);
+  }
   Interpreter interpreter(moduleOp, tables, *fields.begin());
   return interpreter.runMainFromJSON(input);
 }

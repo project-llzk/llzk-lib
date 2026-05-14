@@ -165,6 +165,7 @@
 
                   # clang-tidy and clang-format
                   llzk-llvmPackages.clang-tools
+                  llzk-llvmPackages.clang
 
                   # git-clang-format
                   libclang.python

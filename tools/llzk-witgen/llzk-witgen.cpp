@@ -12,11 +12,31 @@
 
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/Bool/IR/Dialect.h"
+#include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Constrain/IR/Dialect.h"
+#include "llzk/Dialect/Felt/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Dialect.h"
+#include "llzk/Dialect/Global/IR/Dialect.h"
+#include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
+#include "llzk/Dialect/SMT/IR/SMTDialect.h"
+#include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Dialect.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/BuiltinDialect.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/DialectRegistry.h>
 #include <mlir/Parser/Parser.h>
 
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormatVariadic.h>
@@ -34,6 +54,14 @@ static llvm::cl::list<std::string> IncludeDirs(
     "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
     llvm::cl::Prefix
 );
+static llvm::cl::opt<std::string> BackendName(
+    "backend", llvm::cl::desc("Execution backend: interpreter or execution-engine"),
+    llvm::cl::init("interpreter")
+);
+static llvm::cl::opt<bool>
+    DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));
+static llvm::cl::opt<bool>
+    DumpJITLLVM("dump-jit-llvm", llvm::cl::desc("Print the post-LLVM JIT module"));
 
 /// Execute the llzk-witgen command-line tool.
 int main(int argc, char **argv) {
@@ -51,14 +79,41 @@ int main(int argc, char **argv) {
 
   DialectRegistry registry;
   llzk::registerAllDialects(registry);
-  MLIRContext context(registry);
+  MLIRContext context;
+  context.appendDialectRegistry(registry);
   context.loadAllAvailableDialects();
-
+  context.getOrLoadDialect<mlir::BuiltinDialect>();
+  context.getOrLoadDialect<llzk::LLZKDialect>();
+  context.getOrLoadDialect<llzk::array::ArrayDialect>();
+  context.getOrLoadDialect<llzk::boolean::BoolDialect>();
+  context.getOrLoadDialect<llzk::cast::CastDialect>();
+  context.getOrLoadDialect<llzk::component::StructDialect>();
+  context.getOrLoadDialect<llzk::constrain::ConstrainDialect>();
+  context.getOrLoadDialect<llzk::felt::FeltDialect>();
+  context.getOrLoadDialect<llzk::function::FunctionDialect>();
+  context.getOrLoadDialect<llzk::global::GlobalDialect>();
+  context.getOrLoadDialect<llzk::ram::RAMDialect>();
+  context.getOrLoadDialect<llzk::include::IncludeDialect>();
+  context.getOrLoadDialect<llzk::string::StringDialect>();
+  context.getOrLoadDialect<llzk::pod::PODDialect>();
+  context.getOrLoadDialect<llzk::polymorphic::PolymorphicDialect>();
+  context.getOrLoadDialect<llzk::smt::SMTDialect>();
+  context.getOrLoadDialect<mlir::arith::ArithDialect>();
+  context.getOrLoadDialect<mlir::func::FuncDialect>();
+  context.getOrLoadDialect<mlir::scf::SCFDialect>();
   if (failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
   }
 
-  OwningOpRef<ModuleOp> moduleOp = parseSourceFile<ModuleOp>(InputFilename, &context);
+  auto sourceBuffer = llvm::MemoryBuffer::getFileOrSTDIN(InputFilename);
+  if (!sourceBuffer) {
+    llvm::errs() << sourceBuffer.getError().message() << '\n';
+    return EXIT_FAILURE;
+  }
+
+  ParserConfig parserConfig(&context);
+  OwningOpRef<ModuleOp> moduleOp =
+      parseSourceString<ModuleOp>(sourceBuffer.get()->getBuffer(), parserConfig, InputFilename);
   if (!moduleOp) {
     return EXIT_FAILURE;
   }
@@ -75,7 +130,20 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  auto result = llzk::witgen::runWitgen(*moduleOp, *parsed, /*inlineIncludes=*/true);
+  llzk::witgen::WitgenOptions options;
+  if (BackendName == "execution-engine") {
+    options.backend = llzk::witgen::Backend::ExecutionEngine;
+  } else if (BackendName == "interpreter") {
+    options.backend = llzk::witgen::Backend::Interpreter;
+  } else {
+    llvm::errs() << "unknown backend: " << BackendName << '\n';
+    return EXIT_FAILURE;
+  }
+  options.inlineIncludes = true;
+  options.dumpJITCore = DumpJITCore;
+  options.dumpJITLLVM = DumpJITLLVM;
+
+  auto result = llzk::witgen::runWitgen(*moduleOp, *parsed, options);
   if (!result) {
     llvm::errs() << "llzk-witgen error: " << llvm::toString(result.takeError()) << '\n';
     return EXIT_FAILURE;

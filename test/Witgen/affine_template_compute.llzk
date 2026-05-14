@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 // RUN: llzk-witgen %s --inputs %S/Inputs/empty_object.json | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/empty_object.json --backend=execution-engine | FileCheck %s
 
 #sum = affine_map<()[s0, s1] -> (s0 + s1)>
 

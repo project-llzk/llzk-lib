@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 // RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json --backend=execution-engine | FileCheck %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Store {

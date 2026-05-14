@@ -18,6 +18,20 @@
 
 namespace llzk::witgen {
 
+/// Select the execution backend used by `llzk-witgen`.
+enum class Backend {
+  Interpreter,
+  ExecutionEngine,
+};
+
+/// Configure one `llzk-witgen` execution.
+struct WitgenOptions {
+  Backend backend = Backend::Interpreter;
+  bool inlineIncludes = true;
+  bool dumpJITCore = false;
+  bool dumpJITLLVM = false;
+};
+
 /// Drive witness generation for the concrete `llzk.main` instance.
 class Interpreter {
 public:
@@ -37,6 +51,6 @@ private:
 
 /// Run the full llzk-witgen pipeline on a parsed module.
 llvm::Expected<llvm::json::Value>
-runWitgen(mlir::ModuleOp moduleOp, const llvm::json::Value &input, bool inlineIncludes);
+runWitgen(mlir::ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions &options);
 
 } // namespace llzk::witgen

@@ -13,7 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 
+#include <mlir/Conversion/AffineToStandard/AffineToStandard.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Transforms/Passes.h>
@@ -33,6 +35,14 @@ void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
   pm.addPass(llzk::createRedundantReadAndWriteEliminationPass());
   pm.addPass(llzk::createRedundantOperationEliminationPass());
   pm.addPass(llzk::createUnusedDeclarationEliminationPass());
+}
+
+void addWitgenPreparePipeline(OpPassManager &pm) {
+  pm.addPass(llzk::polymorphic::createFlatteningPass());
+  pm.addPass(mlir::createLowerAffinePass());
+  pm.addPass(llzk::createInlineStructsPass());
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createCSEPass());
 }
 
 void registerTransformationPassPipelines() {
@@ -71,6 +81,12 @@ void registerTransformationPassPipelines() {
     pm.addPass(llzk::createComputeConstrainToProductPass());
     pm.addPass(llzk::createFuseProductLoopsPass());
   }
+  );
+
+  PassPipelineRegistration<>(
+      "llzk-witgen-prepare",
+      "Prepare LLZK witness-generation IR for interpreter or execution-engine execution",
+      [](OpPassManager &pm) { addWitgenPreparePipeline(pm); }
   );
 }
 

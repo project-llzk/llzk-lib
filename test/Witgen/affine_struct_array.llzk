@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 // RUN: llzk-witgen %s --inputs %S/Inputs/empty_object.json | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/empty_object.json --backend=execution-engine | FileCheck %s
 
 #IdxToLen = affine_map<(i) -> (2 * i)>
 #Values = affine_map<(i, j) -> (5 * j + i)>

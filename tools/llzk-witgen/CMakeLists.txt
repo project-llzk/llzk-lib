@@ -2,6 +2,7 @@ add_library(LLZKWitgenTool STATIC)
 target_sources(
   LLZKWitgenTool
   PRIVATE
+    ExecutionEngineBackend.cpp
     Interpreter.cpp
     JSON.cpp
     ValueModel.cpp
@@ -16,14 +17,32 @@ target_link_libraries(
     LLZKDialectHeaders
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRArithDialect
+    MLIRControlFlowDialect
+    MLIRFuncDialect
+    MLIRAffineToStandard
     MLIRIR
+    MLIRPass
     MLIRParser
+    MLIRMemRefDialect
     MLIRSCFDialect
   PRIVATE
     LLZK::DialectRegistration
     LLZK::LLZKUtil
     LLZKIncludeDialect
     LLZKTransforms
+    MLIRArithToLLVM
+    MLIRBuiltinToLLVMIRTranslation
+    MLIRControlFlowToLLVM
+    MLIRConvertToLLVMPass
+    MLIRExecutionEngine
+    MLIRFuncToLLVM
+    MLIRIndexToLLVM
+    MLIRLLVMToLLVMIRTranslation
+    MLIRMemRefToLLVM
+    MLIRReconcileUnrealizedCasts
+    MLIRTargetLLVMIRExport
+    MLIRTransforms
+    MLIRUBToLLVM
 )
 llzk_target_add_mlir_link_settings(LLZKWitgenTool)
 

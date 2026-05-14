@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 // RUN: llzk-witgen %s --inputs %S/Inputs/free_functions_pipeline.json | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/free_functions_pipeline.json --backend=execution-engine | FileCheck %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   function.def @producer() -> !array.type<2,2 x !felt.type<"babybear">> {
