@@ -1,6 +1,5 @@
 var classllzk_1_1ModuleLikeBuilder =
 [
-    [ "ModuleLikeBuilder", "classllzk_1_1ModuleLikeBuilder.html#ae1511b462fa5f779667ccb4b083974f2", null ],
     [ "ensureComputeFnExists", "classllzk_1_1ModuleLikeBuilder.html#acc35dba118b24d3f0ec787fd42c14481", null ],
     [ "ensureConstrainFnExists", "classllzk_1_1ModuleLikeBuilder.html#acee0b9c0fc61c7e2bcdbb8b73661a969", null ],
     [ "ensureFreeFnExists", "classllzk_1_1ModuleLikeBuilder.html#a87e3989679560dc4df40c96798d0a24c", null ],

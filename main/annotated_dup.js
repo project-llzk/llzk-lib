@@ -681,7 +681,7 @@ var annotated_dup =
       [ "Interval", "classllzk_1_1Interval.html", "classllzk_1_1Interval" ],
       [ "IntervalAnalysisContext", "structllzk_1_1IntervalAnalysisContext.html", "structllzk_1_1IntervalAnalysisContext" ],
       [ "IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", "classllzk_1_1IntervalAnalysisLattice" ],
-      [ "IntervalAnalysisLatticeValue", "classllzk_1_1IntervalAnalysisLatticeValue.html", null ],
+      [ "IntervalAnalysisLatticeValue", "classllzk_1_1IntervalAnalysisLatticeValue.html", "classllzk_1_1IntervalAnalysisLatticeValue" ],
       [ "IntervalAnalysisPrinterPass", "classllzk_1_1IntervalAnalysisPrinterPass.html", "classllzk_1_1IntervalAnalysisPrinterPass" ],
       [ "IntervalAnalysisPrinterPassOptions", "structllzk_1_1IntervalAnalysisPrinterPassOptions.html", "structllzk_1_1IntervalAnalysisPrinterPassOptions" ],
       [ "IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", "classllzk_1_1IntervalDataFlowAnalysis" ],

@@ -929,7 +929,7 @@ $(function(){initNavTree('Function_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span>  }</div>
 <div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span> </div>
 <div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span>  LogicalResult verifyTemplateParams()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>    <span class="keyword">auto</span> tgtOp = tgt.getOperation();</div>
+<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>    Operation *tgtOp = tgt.getOperation();</div>
 <div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk_1_1component.html#a55863b7196078dde148d600f54dc8852">isInStruct</a>(tgtOp)) {</div>
 <div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span>      <span class="comment">// Struct function calls cannot contain template parameter instantiations.</span></div>
 <div class="line"><a id="l00793" name="l00793"></a><span class="lineno">  793</span>      <span class="keywordflow">return</span> verifyNoTemplateInstantiations();</div>

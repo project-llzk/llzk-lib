@@ -132,6 +132,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:adedf57d615f1184978567d5de41e5f7d" id="r_adedf57d615f1184978567d5de41e5f7d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adedf57d615f1184978567d5de41e5f7d">SourceRefLatticeValue</a> (<a class="el" href="classllzk_1_1SourceRefSet.html">ScalarTy</a> s)</td></tr>
 <tr class="memitem:af1fa4e0f52ece55441306e17db2b9aff" id="r_af1fa4e0f52ece55441306e17db2b9aff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af1fa4e0f52ece55441306e17db2b9aff">SourceRefLatticeValue</a> (<a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a> r)</td></tr>
 <tr class="memitem:ad75e2666c5ce101edb812f9aee8212a8" id="r_ad75e2666c5ce101edb812f9aee8212a8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad75e2666c5ce101edb812f9aee8212a8">SourceRefLatticeValue</a> ()</td></tr>
+<tr class="memitem:acb17d2fe9bb4463a4df87741cf0b42d1" id="r_acb17d2fe9bb4463a4df87741cf0b42d1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acb17d2fe9bb4463a4df87741cf0b42d1">SourceRefLatticeValue</a> (const <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;)=default</td></tr>
+<tr class="memitem:a85c81a7ca7c9954cc83cd8456e65a5a6" id="r_a85c81a7ca7c9954cc83cd8456e65a5a6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a85c81a7ca7c9954cc83cd8456e65a5a6">SourceRefLatticeValue</a> (<a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;&amp;)=default</td></tr>
+<tr class="memitem:a4b0bb21d7996e8ff92c0edeb579a7839" id="r_a4b0bb21d7996e8ff92c0edeb579a7839"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4b0bb21d7996e8ff92c0edeb579a7839">operator=</a> (const <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;)=default</td></tr>
+<tr class="memitem:af02cd749d74125555242a461ea73ae84" id="r_af02cd749d74125555242a461ea73ae84"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af02cd749d74125555242a461ea73ae84">operator=</a> (<a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;&amp;)=default</td></tr>
 <tr class="memitem:a3b6e7250c3cbbe63bb0e6358ce253630" id="r_a3b6e7250c3cbbe63bb0e6358ce253630"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3b6e7250c3cbbe63bb0e6358ce253630">~SourceRefLatticeValue</a> ()=default</td></tr>
 <tr class="memitem:a90d168a36b6ed7a65d02ed9a7eed9b68" id="r_a90d168a36b6ed7a65d02ed9a7eed9b68"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a90d168a36b6ed7a65d02ed9a7eed9b68">SourceRefLatticeValue</a> (mlir::ArrayRef&lt; int64_t &gt; shape)</td></tr>
 <tr class="memitem:ab984f151d8a9b39183bdbe5739d3518b" id="r_ab984f151d8a9b39183bdbe5739d3518b"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab984f151d8a9b39183bdbe5739d3518b">getSingleValue</a> () const</td></tr>
@@ -144,11 +148,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad2f0505aa8214df17ad4bea2ba680f2f" id="r_ad2f0505aa8214df17ad4bea2ba680f2f"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; std::pair&lt; <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a>, mlir::ChangeResult &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad2f0505aa8214df17ad4bea2ba680f2f">extract</a> (const std::vector&lt; <a class="el" href="classllzk_1_1SourceRefIndex.html">SourceRefIndex</a> &gt; &amp;indices) const</td></tr>
 <tr class="memdesc:ad2f0505aa8214df17ad4bea2ba680f2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform an array.extract or array.read operation, depending on how many indices are provided.  <br /></td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Member Functions inherited from <a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">llzk::dataflow::AbstractLatticeValue&lt; SourceRefLatticeValue, SourceRefSet &gt;</a></td></tr>
-<tr class="memitem:a7008bd327f1f20dcaf5f96117dae1a31 inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_a7008bd327f1f20dcaf5f96117dae1a31"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a7008bd327f1f20dcaf5f96117dae1a31">AbstractLatticeValue</a> (ScalarTy s)</td></tr>
-<tr class="memitem:a6a703b17a763ed670bec7e4096600b4f inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_a6a703b17a763ed670bec7e4096600b4f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a6a703b17a763ed670bec7e4096600b4f">AbstractLatticeValue</a> ()</td></tr>
-<tr class="memitem:a6a20bc9084257521ad7432f7609715d7 inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_a6a20bc9084257521ad7432f7609715d7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a6a20bc9084257521ad7432f7609715d7">AbstractLatticeValue</a> (const mlir::ArrayRef&lt; int64_t &gt; shape)</td></tr>
-<tr class="memitem:a15c665cb742b22c4339216b488e19d62 inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_a15c665cb742b22c4339216b488e19d62"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a15c665cb742b22c4339216b488e19d62">AbstractLatticeValue</a> (const <a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">AbstractLatticeValue</a> &amp;rhs)</td></tr>
-<tr class="memitem:afdbf3ed23dbcef4ae88b3810e4046b20 inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_afdbf3ed23dbcef4ae88b3810e4046b20"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">AbstractLatticeValue</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#afdbf3ed23dbcef4ae88b3810e4046b20">operator=</a> (const <a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">AbstractLatticeValue</a> &amp;rhs)</td></tr>
 <tr class="memitem:a22de2cb873fc214090ac442fc933ab66 inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_a22de2cb873fc214090ac442fc933ab66"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a22de2cb873fc214090ac442fc933ab66">isScalar</a> () const</td></tr>
 <tr class="memitem:ac5873a28a17ac1531745d8d4ff56940c inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_ac5873a28a17ac1531745d8d4ff56940c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#ac5873a28a17ac1531745d8d4ff56940c">isSingleValue</a> () const</td></tr>
 <tr class="memitem:a229fb51bdffd5fd7a017cbc4ded6017f inherit pub_methods_classllzk_1_1dataflow_1_1AbstractLatticeValue" id="r_a229fb51bdffd5fd7a017cbc4ded6017f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a229fb51bdffd5fd7a017cbc4ded6017f">isArray</a> () const</td></tr>
@@ -195,7 +194,7 @@ Protected Member Functions</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00027">27</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="adedf57d615f1184978567d5de41e5f7d" name="adedf57d615f1184978567d5de41e5f7d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adedf57d615f1184978567d5de41e5f7d">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[1/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#adedf57d615f1184978567d5de41e5f7d">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[1/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -222,7 +221,7 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="af1fa4e0f52ece55441306e17db2b9aff" name="af1fa4e0f52ece55441306e17db2b9aff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af1fa4e0f52ece55441306e17db2b9aff">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[2/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af1fa4e0f52ece55441306e17db2b9aff">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[2/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -249,7 +248,7 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="ad75e2666c5ce101edb812f9aee8212a8" name="ad75e2666c5ce101edb812f9aee8212a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad75e2666c5ce101edb812f9aee8212a8">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[3/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad75e2666c5ce101edb812f9aee8212a8">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[3/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -272,6 +271,56 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00044">44</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
+
+</div>
+</div>
+<a id="acb17d2fe9bb4463a4df87741cf0b42d1" name="acb17d2fe9bb4463a4df87741cf0b42d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb17d2fe9bb4463a4df87741cf0b42d1">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[4/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llzk::SourceRefLatticeValue::SourceRefLatticeValue </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a85c81a7ca7c9954cc83cd8456e65a5a6" name="a85c81a7ca7c9954cc83cd8456e65a5a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85c81a7ca7c9954cc83cd8456e65a5a6">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[5/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llzk::SourceRefLatticeValue::SourceRefLatticeValue </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;&amp;</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -301,7 +350,7 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="a90d168a36b6ed7a65d02ed9a7eed9b68" name="a90d168a36b6ed7a65d02ed9a7eed9b68"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a90d168a36b6ed7a65d02ed9a7eed9b68">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[4/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a90d168a36b6ed7a65d02ed9a7eed9b68">&#9670;&#160;</a></span>SourceRefLatticeValue() <span class="overload">[6/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -323,7 +372,7 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00048">48</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00052">52</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
 
 </div>
 </div>
@@ -401,7 +450,7 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00050">50</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8h_source.html#l00054">54</a> of file <a class="el" href="SourceRefLattice_8h_source.html">SourceRefLattice.h</a>.</p>
 
 </div>
 </div>
@@ -424,6 +473,56 @@ Protected Member Functions</h2></td></tr>
 <p>If this is a scalar value, insert the ref into the value's set. If this is an array value, the array is folded into a single scalar, then the ref is inserted. </p>
 
 <p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00040">40</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4b0bb21d7996e8ff92c0edeb579a7839" name="a4b0bb21d7996e8ff92c0edeb579a7839"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b0bb21d7996e8ff92c0edeb579a7839">&#9670;&#160;</a></span>operator=() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp; llzk::SourceRefLatticeValue::operator= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af02cd749d74125555242a461ea73ae84" name="af02cd749d74125555242a461ea73ae84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af02cd749d74125555242a461ea73ae84">&#9670;&#160;</a></span>operator=() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp; llzk::SourceRefLatticeValue::operator= </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &amp;&amp;</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>

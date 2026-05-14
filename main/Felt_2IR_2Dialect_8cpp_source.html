@@ -314,15 +314,17 @@ $(function(){initNavTree('Felt_2IR_2Dialect_8cpp_source.html','',''); });
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Types_8cpp_8inc.html">llzk/Dialect/Felt/IR/Types.cpp.inc</a>&quot;</span></div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  &gt;();</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  addAttributes&lt;</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Felt/IR/Attrs.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  &gt;();</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;FeltDialect&gt;&gt;();</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>}</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>} <span class="comment">// namespace llzk::felt</span></div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)</span></div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  addAttributes&lt;</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="preprocessor">    #include &quot;<a class="code" href="Felt_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Felt/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  &gt;();</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;FeltDialect&gt;&gt;();</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>}</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span> </div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>} <span class="comment">// namespace llzk::felt</span></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aErrorHelper_8h_html"><div class="ttname"><a href="ErrorHelper_8h.html">ErrorHelper.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Attrs_8cpp_8inc_html"><div class="ttname"><a href="Felt_2IR_2Attrs_8cpp_8inc.html">Attrs.cpp.inc</a></div></div>

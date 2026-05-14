@@ -118,27 +118,25 @@ $(function(){initNavTree('SMTTypes_8h_source.html','',''); });
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#ifndef MLIR_DIALECT_SMT_IR_SMTTYPES_H</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#define MLIR_DIALECT_SMT_IR_SMTTYPES_H</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;mlir/IR/BuiltinTypes.h&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;mlir/IR/Types.h&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinTypes.h&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;mlir/IR/Types.h&gt;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="SMTTypes_8h.html#a69e2a4688847620f9e0b19eb7d719156">   15</a></span><span class="preprocessor">#define GET_TYPEDEF_CLASSES</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="SMTTypes_8h_8inc.html">llzk/Dialect/SMT/IR/SMTTypes.h.inc</a>&quot;</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">namespace </span>smt {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="namespacellzk_1_1smt.html#abf333dd6b273e714a9a7f4c9d3a2d5e4">   22</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1smt.html#abf333dd6b273e714a9a7f4c9d3a2d5e4">isAnySMTValueType</a>(mlir::Type type);</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">   25</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">isAnyNonFuncSMTValueType</a>(mlir::Type type);</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>} <span class="comment">// namespace smt</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#endif </span><span class="comment">// MLIR_DIALECT_SMT_IR_SMTTYPES_H</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt.html">llzk::smt</a> {</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="namespacellzk_1_1smt.html#abf333dd6b273e714a9a7f4c9d3a2d5e4">   21</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1smt.html#abf333dd6b273e714a9a7f4c9d3a2d5e4">isAnySMTValueType</a>(mlir::Type type);</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">   24</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">isAnyNonFuncSMTValueType</a>(mlir::Type type);</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>} <span class="comment">// namespace llzk::smt</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#endif </span><span class="comment">// MLIR_DIALECT_SMT_IR_SMTTYPES_H</span></div>
 <div class="ttc" id="aSMTTypes_8h_8inc_html"><div class="ttname"><a href="SMTTypes_8h_8inc.html">SMTTypes.h.inc</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1smt_html"><div class="ttname"><a href="namespacellzk_1_1smt.html">llzk::smt</a></div><div class="ttdef"><b>Definition</b> <a href="SMT_8cpp_8inc_source.html#l00079">SMT.cpp.inc:79</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1smt_html_a0e0c459e7b2c9fa4a262fc53dd7023e4"><div class="ttname"><a href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">llzk::smt::isAnyNonFuncSMTValueType</a></div><div class="ttdeci">bool isAnyNonFuncSMTValueType(mlir::Type type)</div><div class="ttdoc">Returns whether the given type is an SMT value type (excluding functions).</div></div>
 <div class="ttc" id="anamespacellzk_1_1smt_html_abf333dd6b273e714a9a7f4c9d3a2d5e4"><div class="ttname"><a href="namespacellzk_1_1smt.html#abf333dd6b273e714a9a7f4c9d3a2d5e4">llzk::smt::isAnySMTValueType</a></div><div class="ttdeci">bool isAnySMTValueType(mlir::Type type)</div><div class="ttdoc">Returns whether the given type is an SMT value type.</div></div>
-<div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

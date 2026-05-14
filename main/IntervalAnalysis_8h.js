@@ -2,7 +2,7 @@ var IntervalAnalysis_8h =
 [
     [ "llzk::ExpressionValue", "classllzk_1_1ExpressionValue.html", "classllzk_1_1ExpressionValue" ],
     [ "llzk::ExpressionValue::Hash", "structllzk_1_1ExpressionValue_1_1Hash.html", "structllzk_1_1ExpressionValue_1_1Hash" ],
-    [ "llzk::IntervalAnalysisLatticeValue", "classllzk_1_1IntervalAnalysisLatticeValue.html", null ],
+    [ "llzk::IntervalAnalysisLatticeValue", "classllzk_1_1IntervalAnalysisLatticeValue.html", "classllzk_1_1IntervalAnalysisLatticeValue" ],
     [ "llzk::IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", "classllzk_1_1IntervalAnalysisLattice" ],
     [ "llzk::IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", "classllzk_1_1IntervalDataFlowAnalysis" ],
     [ "llzk::IntervalAnalysisContext", "structllzk_1_1IntervalAnalysisContext.html", "structllzk_1_1IntervalAnalysisContext" ],

@@ -117,15 +117,15 @@ $(function(){initNavTree('SMTTypes_8cpp_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="SMTTypes_8h.html">llzk/Dialect/SMT/IR/SMTTypes.h</a>&quot;</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;llvm/ADT/TypeSwitch.h&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;mlir/IR/Builders.h&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;mlir/IR/DialectImplementation.h&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="SMTDialect_8h.html">llzk/Dialect/SMT/IR/SMTDialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt.html">llzk::smt</a>;</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="SMTDialect_8h.html">llzk/Dialect/SMT/IR/SMTDialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;mlir/IR/Builders.h&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;mlir/IR/DialectImplementation.h&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;llvm/ADT/TypeSwitch.h&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt.html">llzk::smt</a>;</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="SMTTypes_8cpp.html#a69e2a4688847620f9e0b19eb7d719156">   21</a></span><span class="preprocessor">#define GET_TYPEDEF_CLASSES</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="SMTTypes_8cpp_8inc.html">llzk/Dialect/SMT/IR/SMTTypes.cpp.inc</a>&quot;</span></div>
@@ -204,14 +204,15 @@ $(function(){initNavTree('SMTTypes_8cpp_source.html','',''); });
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
 <div class="foldopen" id="foldopen00090" data-start="{" data-end="}">
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno"><a class="line" href="classllzk_1_1smt_1_1SortType.html#ace35a1bb4b5455553fdfc2806597d9f6">   90</a></span>LogicalResult <a class="code hl_function" href="classllzk_1_1smt_1_1SortType.html#ace35a1bb4b5455553fdfc2806597d9f6">SortType::verify</a>(</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    function_ref&lt;InFlightDiagnostic()&gt; emitError, StringAttr identifier, ArrayRef&lt;Type&gt; sortParams</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>) {</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordflow">if</span> (!llvm::all_of(sortParams, <a class="code hl_function" href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">isAnyNonFuncSMTValueType</a>)) {</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    <span class="keywordflow">return</span> emitError() &lt;&lt; <span class="stringliteral">&quot;sort parameter types must be any non-function SMT type&quot;</span>;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  }</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>}</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    function_ref&lt;InFlightDiagnostic()&gt; emitError, StringAttr <span class="comment">/*identifier*/</span>,</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    ArrayRef&lt;Type&gt; sortParams</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>) {</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordflow">if</span> (!llvm::all_of(sortParams, <a class="code hl_function" href="namespacellzk_1_1smt.html#a0e0c459e7b2c9fa4a262fc53dd7023e4">isAnyNonFuncSMTValueType</a>)) {</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    <span class="keywordflow">return</span> emitError() &lt;&lt; <span class="stringliteral">&quot;sort parameter types must be any non-function SMT type&quot;</span>;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  }</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>}</div>
 </div>
 <div class="ttc" id="aSMTDialect_8h_html"><div class="ttname"><a href="SMTDialect_8h.html">SMTDialect.h</a></div></div>
 <div class="ttc" id="aSMTTypes_8cpp_8inc_html"><div class="ttname"><a href="SMTTypes_8cpp_8inc.html">SMTTypes.cpp.inc</a></div></div>

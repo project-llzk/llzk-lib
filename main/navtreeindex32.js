@@ -1,5 +1,15 @@
 var NAVTREEINDEX32 =
 {
+"classllzk_1_1felt_1_1PowFeltOpAdaptor.html#af75ac858482bd67de246af681c45ee24":[12,0,1,7,32,1],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html":[10,0,2,10,33],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html":[12,0,1,7,33],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a1520d00f7dba2dc34ee932d9a5c435b7":[10,0,2,10,33,0],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a1520d00f7dba2dc34ee932d9a5c435b7":[12,0,1,7,33,0],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a1654bdde0279298150fb9dae2f2d7111":[10,0,2,10,33,8],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a1654bdde0279298150fb9dae2f2d7111":[12,0,1,7,33,8],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a975410b270c162140e24c5410721e247":[10,0,2,10,33,3],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a975410b270c162140e24c5410721e247":[12,0,1,7,33,3],
+"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a9d0ab465c2329106c54908b613e3b792":[10,0,2,10,33,2],
 "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a9d0ab465c2329106c54908b613e3b792":[12,0,1,7,33,2],
 "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#acba963489a09736f156c3abeb2deef7e":[10,0,2,10,33,6],
 "classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#acba963489a09736f156c3abeb2deef7e":[12,0,1,7,33,6],
@@ -239,15 +249,5 @@ var NAVTREEINDEX32 =
 "classllzk_1_1felt_1_1SignedModFeltOp.html#a4bc17df2e217b38a597b0cd61c5da73d":[12,0,1,7,43,0],
 "classllzk_1_1felt_1_1SignedModFeltOp.html#a51f8a33b257c8742964d7c5c81688b18":[10,0,2,10,43,10],
 "classllzk_1_1felt_1_1SignedModFeltOp.html#a51f8a33b257c8742964d7c5c81688b18":[12,0,1,7,43,10],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a5acdcc45aefda78033acbced94335031":[10,0,2,10,43,13],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a5acdcc45aefda78033acbced94335031":[12,0,1,7,43,13],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a6ee4260bc3c1cf3f0a93d20f4ee25387":[10,0,2,10,43,3],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a6ee4260bc3c1cf3f0a93d20f4ee25387":[12,0,1,7,43,3],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a864074f0f2c23f80fb76e0acc32d8ecf":[10,0,2,10,43,4],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a864074f0f2c23f80fb76e0acc32d8ecf":[12,0,1,7,43,4],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a8ef6d67f0a086370740309450b07857d":[10,0,2,10,43,5],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a8ef6d67f0a086370740309450b07857d":[12,0,1,7,43,5],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a8fb30e7142c0bdd6c5209a98ae8325db":[10,0,2,10,43,15],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a8fb30e7142c0bdd6c5209a98ae8325db":[12,0,1,7,43,15],
-"classllzk_1_1felt_1_1SignedModFeltOp.html#ac47f383c58c4105b3d62ce0f500e2101":[10,0,2,10,43,6]
+"classllzk_1_1felt_1_1SignedModFeltOp.html#a5acdcc45aefda78033acbced94335031":[10,0,2,10,43,13]
 };
