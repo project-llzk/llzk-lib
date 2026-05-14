@@ -134,7 +134,7 @@ $(function(){initNavTree('POD_2IR_2Types_8capi_8cpp_8inc_source.html','',''); })
 <div class="foldopen" id="foldopen00023" data-start="{" data-end="}">
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="POD_2IR_2Types_8capi_8cpp_8inc.html#a3fb6ded43430b9d534cf158fa4811bec">   23</a></span>MlirType <a class="code hl_function" href="POD_2IR_2Types_8capi_8cpp_8inc.html#a3fb6ded43430b9d534cf158fa4811bec">llzkPod_PodTypeGet</a>(MlirContext ctx, intptr_t recordsCount, MlirAttribute <span class="keyword">const</span> *records) {</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  SmallVector&lt;Attribute&gt; storage;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordflow">return</span> wrap(PodType::get(unwrap(ctx), llvm::map_to_vector(unwrapList(recordsCount, records, storage), [](<span class="keyword">auto</span> a) {<span class="keywordflow">return</span> llvm::cast&lt;RecordAttr&gt;(a);})));</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordflow">return</span> wrap(PodType::get(unwrap(ctx), llvm::map_to_vector(unwrapList(recordsCount, records, storage), [](<span class="keyword">auto</span> a) {<span class="keywordflow">return</span> llvm::cast&lt;::llzk::pod::RecordAttr&gt;(a);})));</div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>}</div>
 </div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>

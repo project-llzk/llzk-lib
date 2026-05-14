@@ -1,5 +1,7 @@
 var NAVTREEINDEX13 =
 {
+"backend-dialects.html#r1csadd-r1csaddop":[8,0,0,0],
+"backend-dialects.html#r1cscircuit-r1cscircuitdefop":[8,0,0,1],
 "backend-dialects.html#r1csconst-r1csconstop":[8,0,0,2],
 "backend-dialects.html#r1csconstrain-r1csconstrainop":[8,0,0,3],
 "backend-dialects.html#r1csdef-r1cssignaldefop":[8,0,0,4],
@@ -247,7 +249,5 @@ var NAVTREEINDEX13 =
 "classllzk_1_1ExpressionValue.html#a239e788eadbb8b40dbfa1bc924431830":[12,0,1,37,31],
 "classllzk_1_1ExpressionValue.html#a271316b130771e48d355e0cb0eeecf35":[10,0,2,40,34],
 "classllzk_1_1ExpressionValue.html#a271316b130771e48d355e0cb0eeecf35":[12,0,1,37,34],
-"classllzk_1_1ExpressionValue.html#a2c821eaeba3a565befc77ff660f126d5":[10,0,2,40,26],
-"classllzk_1_1ExpressionValue.html#a2c821eaeba3a565befc77ff660f126d5":[12,0,1,37,26],
-"classllzk_1_1ExpressionValue.html#a331f1f28f025622986c77a6d444ae874":[10,0,2,40,37]
+"classllzk_1_1ExpressionValue.html#a2c821eaeba3a565befc77ff660f126d5":[10,0,2,40,26]
 };

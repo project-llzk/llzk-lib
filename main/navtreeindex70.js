@@ -1,5 +1,7 @@
 var NAVTREEINDEX70 =
 {
+"dir_e2d38a9077faca27c215fe2a1d8b8a09.html":[13,0,2,0,2,11],
+"dir_e3285b3b3ad640ac4f5dc995c7176fbf.html":[13,0,3,3,4,0],
 "dir_e68e8157741866f444e17edd764ebbae.html":[13,0,1],
 "dir_eaf6f78923417f2b8c724e66e043489e.html":[13,0,2,0,2,8,0],
 "dir_eb82103dcc149a6c60866abd7bb0bab0.html":[13,0,2,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX70 =
 "namespaceStep3__InstantiateAffineMaps.html":[10,0,8],
 "namespaceStep4__PropagateTypes.html":[10,0,9],
 "namespaceStep5__Cleanup.html":[10,0,10],
-"namespaceclang.html":[10,0,0],
-"namespacellvm.html":[10,0,1],
-"namespacellvm.html#a0fc2145917e31225cbcd377de7b88080":[10,0,1,27]
+"namespaceclang.html":[10,0,0]
 };

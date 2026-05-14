@@ -14,6 +14,7 @@ var CommonCAPIGen_8h =
     [ "isCppModifierKeyword", "CommonCAPIGen_8h.html#a6457691390dddbc5923e5c2d1cea025a", null ],
     [ "isIntegerType", "CommonCAPIGen_8h.html#a991b2313368129538e13d0914f7d82a4", null ],
     [ "isPrimitiveType", "CommonCAPIGen_8h.html#a18b437050f432e32bf831b12acc01e73", null ],
+    [ "mapCapiTypeToBasicCppType", "CommonCAPIGen_8h.html#aa7ee8dfebc65c5c554e41fad6be415cb", null ],
     [ "mapCppTypeToCapiType", "CommonCAPIGen_8h.html#a45711649c7304893d32369db4f8d4996", null ],
     [ "matchesMLIRClass", "CommonCAPIGen_8h.html#a9f70780e17e17eb242dcf04dea692a95", null ],
     [ "parseExtraMethods", "CommonCAPIGen_8h.html#ae542bf7ea1ee9b07c78d580993c7033c", null ],

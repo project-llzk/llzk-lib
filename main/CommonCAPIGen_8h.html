@@ -186,6 +186,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8bfc30afa0e19ff1501209861ab87c7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert C++ type to MLIR C API type.  <br /></td></tr>
 <tr class="memitem:a45711649c7304893d32369db4f8d4996" id="r_a45711649c7304893d32369db4f8d4996"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a45711649c7304893d32369db4f8d4996">mapCppTypeToCapiType</a> (mlir::StringRef cppType)</td></tr>
 <tr class="memdesc:a45711649c7304893d32369db4f8d4996"><td class="mdescLeft">&#160;</td><td class="mdescRight">Map C++ type to corresponding C API type.  <br /></td></tr>
+<tr class="memitem:aa7ee8dfebc65c5c554e41fad6be415cb" id="r_aa7ee8dfebc65c5c554e41fad6be415cb"><td class="memItemLeft" align="right" valign="top">std::optional&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa7ee8dfebc65c5c554e41fad6be415cb">mapCapiTypeToBasicCppType</a> (mlir::StringRef capiType)</td></tr>
+<tr class="memdesc:aa7ee8dfebc65c5c554e41fad6be415cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Map C API type to corresponding basic (not dialect-defined) C++ type.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -449,6 +451,33 @@ Variables</h2></td></tr>
 <dl class="section note"><dt>Note</dt><dd>This function must be called on the CPP type because after converting to CAPI type, some things like APInt become primitive which can lead to missing wrap/unwrap functions. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00136">136</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+
+</div>
+</div>
+<a id="aa7ee8dfebc65c5c554e41fad6be415cb" name="aa7ee8dfebc65c5c554e41fad6be415cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7ee8dfebc65c5c554e41fad6be415cb">&#9670;&#160;</a></span>mapCapiTypeToBasicCppType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; std::string &gt; mapCapiTypeToBasicCppType </td>
+          <td>(</td>
+          <td class="paramtype">mlir::StringRef</td>          <td class="paramname"><span class="paramname"><em>capiType</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Map C API type to corresponding basic (not dialect-defined) C++ type. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">capiType</td><td>The C API type to map </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The corresponding C++ type string if convertible, std::nullopt otherwise</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The parameter to this function should be something returned from <span class="tt"><a class="el" href="#a8bfc30afa0e19ff1501209861ab87c7f" title="Convert C++ type to MLIR C API type.">tryCppTypeToCapiType()</a></span>. </dd></dl>
 
 </div>
 </div>

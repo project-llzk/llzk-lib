@@ -19,6 +19,7 @@ var CommonCAPIGen_8cpp =
     [ "GenOpResultGetters", "CommonCAPIGen_8cpp.html#a82af421fb0c61cd097eb0ccf441ee3af", null ],
     [ "GenTypeOrAttrGet", "CommonCAPIGen_8cpp.html#a3278b4081f592a854e71625252767e7a", null ],
     [ "GenTypeOrAttrParamGetters", "CommonCAPIGen_8cpp.html#a5149c52488bfc9f817d626f09a1738fb", null ],
+    [ "mapCapiTypeToBasicCppType", "CommonCAPIGen_8cpp.html#a870712c84df0d4b276017fbd28522772", null ],
     [ "mapCppTypeToCapiType", "CommonCAPIGen_8cpp.html#a2a7e98a2dbfa729cf62f565bb486651c", null ],
     [ "matchesMLIRClass", "CommonCAPIGen_8cpp.html#acde048cc9424dacd52d57f59360a288d", null ],
     [ "OpGenCat", "CommonCAPIGen_8cpp.html#a415e179adc15f1a72239657b60d84dec", null ],

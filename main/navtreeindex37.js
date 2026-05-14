@@ -1,5 +1,7 @@
 var NAVTREEINDEX37 =
 {
+"classllzk_1_1function_1_1FunctionDialect.html#a733bb738f8aeb8fbc24e573be4a98452":[12,0,1,8,8,0],
+"classllzk_1_1function_1_1NotFieldNative.html":[10,0,2,11,9],
 "classllzk_1_1function_1_1NotFieldNative.html":[12,0,1,8,9],
 "classllzk_1_1function_1_1ReturnOp.html":[10,0,2,11,10],
 "classllzk_1_1function_1_1ReturnOp.html":[12,0,1,8,10],
@@ -247,7 +249,5 @@ var NAVTREEINDEX37 =
 "classllzk_1_1global_1_1GlobalDefOpAdaptor.html#ab0f5e75deb131a5f35d656b9aed7f319":[12,0,1,9,2,5],
 "classllzk_1_1global_1_1GlobalDefOpAdaptor.html#ab818ba5c8312c120b35021c07bd674e6":[10,0,2,12,2,3],
 "classllzk_1_1global_1_1GlobalDefOpAdaptor.html#ab818ba5c8312c120b35021c07bd674e6":[12,0,1,9,2,3],
-"classllzk_1_1global_1_1GlobalDefOpAdaptor.html#ae3ab123b9e65ff6f2116bce2372c80ff":[10,0,2,12,2,2],
-"classllzk_1_1global_1_1GlobalDefOpAdaptor.html#ae3ab123b9e65ff6f2116bce2372c80ff":[12,0,1,9,2,2],
-"classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html":[10,0,2,12,3]
+"classllzk_1_1global_1_1GlobalDefOpAdaptor.html#ae3ab123b9e65ff6f2116bce2372c80ff":[10,0,2,12,2,2]
 };

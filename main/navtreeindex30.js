@@ -1,5 +1,7 @@
 var NAVTREEINDEX30 =
 {
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html":[12,0,1,7,10],
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html#a500dfac8856dfd25ff2a53e26915e7d7":[10,0,2,10,10,2],
 "classllzk_1_1felt_1_1FeltBinaryOpInterface.html#a500dfac8856dfd25ff2a53e26915e7d7":[12,0,1,7,10,2],
 "classllzk_1_1felt_1_1FeltBinaryOpInterface.html#aea6b9fe7a3f498b6a63647d1d6afe907":[10,0,2,10,10,1],
 "classllzk_1_1felt_1_1FeltBinaryOpInterface.html#aea6b9fe7a3f498b6a63647d1d6afe907":[12,0,1,7,10,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX30 =
 "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#afbb60c044d205e3f024ee2ff778ce8ca":[12,0,1,7,21,2],
 "classllzk_1_1felt_1_1NegFeltOp.html":[10,0,2,10,22],
 "classllzk_1_1felt_1_1NegFeltOp.html":[12,0,1,7,22],
-"classllzk_1_1felt_1_1NegFeltOp.html#a03f32cd04fd307f24a8e36dcf01c0796":[10,0,2,10,22,15],
-"classllzk_1_1felt_1_1NegFeltOp.html#a03f32cd04fd307f24a8e36dcf01c0796":[12,0,1,7,22,15],
-"classllzk_1_1felt_1_1NegFeltOp.html#a07ea37e0579487797c06f905b9c1513a":[10,0,2,10,22,4]
+"classllzk_1_1felt_1_1NegFeltOp.html#a03f32cd04fd307f24a8e36dcf01c0796":[10,0,2,10,22,15]
 };
