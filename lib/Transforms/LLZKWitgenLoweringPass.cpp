@@ -798,7 +798,13 @@ private:
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
       auto intType = IntegerType::get(builder.getContext(), getFeltBitWidth(field));
-      Value lowered = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, feltConst.getValue().getValue()));
+      // Do a safe conversion to an APInt of the right bitwidth: mod prime before truncation
+      auto constVal = toDynamicAPInt(feltConst.getValue().getValue());
+      auto modVal = constVal % field.prime();
+      auto intVal = toAPSInt(modVal);
+      intVal.setIsUnsigned(true);
+      intVal = intVal.trunc(field.bitWidth());
+      Value lowered = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, intVal));
       return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
     }
 

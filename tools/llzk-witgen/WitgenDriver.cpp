@@ -137,7 +137,7 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
 
 /// Run include preprocessing and flattening before backend execution.
 static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &options) {
-  normalizeCallOpProperties(moduleOp);
+  // normalizeCallOpProperties(moduleOp);
   PassManager pm(moduleOp.getContext());
   if (options.inlineIncludes) {
     pm.addPass(llzk::include::createInlineIncludesPass());
