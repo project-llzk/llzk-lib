@@ -12,6 +12,8 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    %1 = arith.constant true
+    verif.ensure_compute %1
   }
 }
 
@@ -29,5 +31,24 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>, %a: !felt.type) {
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    struct.def @Top {
+      function.def @compute(%a : !felt.type) -> !struct.type<@T::@Top> {
+        %self = struct.new : !struct.type<@T::@Top>
+        function.return %self : !struct.type<@T::@Top>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Top>, %a : !felt.type)  {
+        function.return
+      }
+    }
+
+    verif.contract @Foo for @T::@Top (%self: !struct.type<@T::@Top>, %a: !felt.type) {
+    }
   }
 }

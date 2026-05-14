@@ -32,6 +32,8 @@ class ConditionOp<string mnemonic, list<Trait> traits = []>
   let arguments = (ins I1:$condition);
   let results = (outs);
 
+  let assemblyFormat = [{ $condition attr-dict }];
+
   let extraClassDefinition = [{
     // This side effect models "program termination". Based on
     // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
@@ -104,8 +106,8 @@ def ContractOp
     }
   }];
 
-  let arguments = (ins SymbolNameAttr:$sym_name,
-      SymbolNameAttr:$target_sym_name, TypeAttrOf<FunctionType>:$function_type,
+  let arguments = (ins SymbolNameAttr:$sym_name, SymbolRefAttr:$target,
+      TypeAttrOf<FunctionType>:$function_type,
       OptionalAttr<DictArrayAttr>:$arg_attrs);
 
   let regions = (region AnyRegion:$body);

@@ -65,16 +65,20 @@ ParseResult parseContractOp(
   }
 
   // Parse the target symbol
-  StringAttr targetAttr;
-  if (parser.parseKeyword("for") || parser.parseSymbolName(
-                                        targetAttr,
-                                        ContractOp::getTargetSymNameAttrName(OperationName(
-                                            ContractOp::getOperationName(), parser.getContext()
-                                        )),
-                                        result.attributes
-                                    )) {
+  if (parser.parseKeyword("for")) {
     return failure();
   }
+
+  SymbolRefAttr targetAttr;
+  if (parser.parseCustomAttributeWithFallback(
+          targetAttr, parser.getBuilder().getType<::mlir::NoneType>()
+      )) {
+    return failure();
+  }
+  if (!targetAttr) {
+    return failure();
+  }
+  result.getOrAddProperties<ContractOp::Properties>().target = targetAttr;
 
   // Parse the function signature.
   SMLoc signatureLocation = parser.getCurrentLocation();
@@ -163,10 +167,14 @@ namespace llzk::verif {
 
 LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Verify the target of the contract
-  SymbolRefAttr targetSym = SymbolRefAttr::get(getTargetSymNameAttr());
-  FailureOr<SymbolLookupResultUntyped> targetRes = lookupTopLevelSymbol(tables, targetSym, *this);
+  FailureOr<ModuleOp> rootRes = getRootModule(getOperation());
+  if (failed(rootRes)) {
+    return emitOpError().append("could not lookup root module");
+  }
+  FailureOr<SymbolLookupResultUntyped> targetRes =
+      lookupTopLevelSymbol(tables, getTargetAttr(), rootRes->getOperation());
   if (failed(targetRes)) {
-    return emitOpError().append("could not find target \"@", getTargetSymName(), "\"");
+    return emitOpError().append("could not find target \"@", getTarget(), "\"");
   }
 
   FunctionType contractTy = getFunctionType();
@@ -248,7 +256,7 @@ void ContractOp::print(OpAsmPrinter &p) {
 
   // Print the name of the contract's target.
   p << " for ";
-  p.printSymbolName(getTargetSymName());
+  p.printAttributeWithoutType(getTarget());
   p << ' ';
 
   ArrayRef<Type> argTypes = getArgumentTypes();
@@ -257,7 +265,7 @@ void ContractOp::print(OpAsmPrinter &p) {
   );
   function_interface_impl::printFunctionAttributes(
       p, *this,
-      /*elided*/ {getFunctionTypeAttrName(), getArgAttrsAttrName(), getTargetSymNameAttrName()}
+      /*elided*/ {getFunctionTypeAttrName(), getArgAttrsAttrName(), getTargetAttrName()}
   );
   // Print the body.
   Region &body = getRegion();
@@ -623,7 +631,9 @@ LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &tables) {
 
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
   // checks against the known target function.
-  auto tgtOpt = lookupTopLevelSymbol<ContractOp>(tables, calleeAttr, *this);
+  auto tgtOpt = lookupTopLevelSymbol<ContractOp>(
+      tables, calleeAttr, getParentOfType<ModuleOp>(getOperation())
+  );
   if (failed(tgtOpt)) {
     return this->emitError() << "expected '" << ContractOp::getOperationName() << "' named \""
                              << calleeAttr << '"';
