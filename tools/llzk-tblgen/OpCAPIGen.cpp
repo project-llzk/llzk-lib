@@ -551,15 +551,17 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t groupCount, MlirValueRange cons
     return;
 
   ::llvm::SmallVector<::mlir::Value> vals;
-  for (intptr_t g = 0; g < groupCount; ++g)
-    for (intptr_t i = 0; i < groups[g].size; ++i)
+  for (intptr_t g = 0; g < groupCount; ++g) {{
+    assert(groups[g].size >= 0 && "group size must be non-negative");
+    for (intptr_t i = 0; i < groups[g].size; ++i) {{
       vals.push_back(unwrap(groups[g].values[i]));
+    }
+  }
   ::llvm::cast<{2}>(unwrap(op)).get{3}Mutable().join().assign(vals);
 
   ::llvm::SmallVector<int32_t> newGroupSizes;
   newGroupSizes.reserve(static_cast<size_t>(groupCount));
   for (intptr_t g = 0; g < groupCount; ++g) {{
-    assert(groups[g].size >= 0 && "group size must be non-negative");
     assert(
         groups[g].size <= static_cast<intptr_t>(std::numeric_limits<int32_t>::max()) &&
         "group size exceeds int32_t range"
