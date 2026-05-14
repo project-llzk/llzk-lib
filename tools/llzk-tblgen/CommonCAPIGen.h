@@ -118,8 +118,8 @@ inline bool isIntegerType(mlir::StringRef type) {
     if (type == "max" || type == "ptr") {
       return true;
     }
-    // Optional "_fast" or "_least" and finally bit width to cover the rest
-    type.consume_back("_fast") || type.consume_back("_least");
+    // Optional "_fast" or "_least" followed by bit width to cover the rest
+    type.consume_front("_fast") || type.consume_front("_least");
     if (type == "8" || type == "16" || type == "32" || type == "64") {
       return true;
     }
