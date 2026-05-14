@@ -46,6 +46,12 @@ struct ForOpInfo {
   // Block argument index of the induction variable in the *after* block
   std::optional<size_t> ivarIndexAfter;
 
+  void reset() {
+    lb.reset();
+    ub.reset();
+    step.reset();
+  }
+
   bool success() const {
     return lb.has_value() && ub.has_value() && step.has_value() && ivarIndexBefore.has_value() &&
            ivarIndexAfter.has_value();
@@ -91,6 +97,14 @@ static inline ForOpInfo parseInfo(WhileOp op) {
 
   if (!info.ivarIndexBefore.has_value() || !info.ivarIndexAfter.has_value()) {
     return info;
+  }
+
+  // If the yielded final value of the induction variable has any uses, we can't cleanly transform
+  // this to an scf.for (which doesn't explicitly yield its induction var) without doing some extra
+  // computation. Lets just conservatively bail out in that case
+  auto yieldedIVar = op->getResults().drop_front(*info.ivarIndexAfter).front();
+  if (!yieldedIVar.use_empty()) {
+    return ForOpInfo {};
   }
 
   Value ivarAfter = op.getAfterArguments().drop_front(*info.ivarIndexAfter).front();
@@ -248,9 +262,10 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
   llvm::SmallVector<mlir::Value> replacedValues;
   for (auto [i, result] : llvm::enumerate(op.getResults())) {
     if (i == info.ivarIndexBefore) {
-      // TODO: this might not actually be correct if, e.g., `step` doesn't divide `(ub - lb)`
-      // So it would be better to explicitly compute what the final value will be when the loop
-      // terminates and yield that instead
+      // Note that the final value of the induction variable might not actually be the upper bound
+      // (e.g. if `step` doesn't divide `(ub - lb)`), but we've already guaranteed earlier that this
+      // value isn't being used so it doesn't matter what gets yielded here (the canonicalizer can
+      // clean it up). But we still have to yield something to preserve the shape of the op.
       replacedValues.push_back(*info.ub);
       continue;
     }
