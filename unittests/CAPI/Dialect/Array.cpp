@@ -544,27 +544,33 @@ TEST_F(ArrayDialectTests, create_array_op_set_map_operands_updates_attributes) {
   EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 0).ptr, m0.ptr);
   EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 1).ptr, m1.ptr);
 
-  // Replace the two map operands with a single new one, expressed as one group of size 1.
-  MlirValueRange newGroups[1] = {{&m_new, 1}};
-  llzkArray_CreateArrayOpSetMapOperands(op, 1, newGroups);
+  // Replace the two map operands with multiple groups so the VariadicOfVariadic
+  // setter must preserve group boundaries, not just flatten operands.
+  MlirValue secondGroupVals[2] = {m0, m1};
+  MlirValueRange newGroups[2] = {{&m_new, 1}, {secondGroupVals, 2}};
+  llzkArray_CreateArrayOpSetMapOperands(op, 2, newGroups);
 
-  // Physical operand count must reflect the removal.
-  EXPECT_EQ(mlirOperationGetNumOperands(op), 2);
+  // Physical operand count must reflect the replacement: one element plus three
+  // flattened map operands across two groups.
+  EXPECT_EQ(mlirOperationGetNumOperands(op), 4);
 
-  // mapOperands should now report count=1 and return m_new.
-  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsCount(op), 1);
+  // mapOperands should flatten to [m_new, m0, m1].
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsCount(op), 3);
   EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 0).ptr, m_new.ptr);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 1).ptr, m0.ptr);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 2).ptr, m1.ptr);
 
   // operandSegmentSizes[0] must be intact so the elements operand is still reachable.
   // This verifies that join().assign() updated only slot 1, not slot 0.
   EXPECT_EQ(llzkArray_CreateArrayOpGetElementsCount(op), 1);
   EXPECT_EQ(llzkArray_CreateArrayOpGetElementsAt(op, 0).ptr, e0.ptr);
 
-  // mapOpGroupSizes must have been updated to [1] (one group of 1 operand).
+  // mapOpGroupSizes must have been updated to [1, 2], preserving both groups.
   MlirAttribute mapGroupSizesAttr = llzkArray_CreateArrayOpGetMapOpGroupSizes(op);
   ASSERT_FALSE(mlirAttributeIsNull(mapGroupSizesAttr));
-  EXPECT_EQ(mlirDenseArrayGetNumElements(mapGroupSizesAttr), 1);
+  EXPECT_EQ(mlirDenseArrayGetNumElements(mapGroupSizesAttr), 2);
   EXPECT_EQ(mlirDenseI32ArrayGetElement(mapGroupSizesAttr, 0), 1);
+  EXPECT_EQ(mlirDenseI32ArrayGetElement(mapGroupSizesAttr, 1), 2);
 
   // numDimsPerMap is NOT updated by the generated setter (it is LLZK-specific and the
   // caller's responsibility), so it must remain unchanged at [1].
