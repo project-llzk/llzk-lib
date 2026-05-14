@@ -117,30 +117,37 @@ $(function(){initNavTree('LLZK_2IR_2Ops_8capi_8cpp_8inc_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">\*===----------------------------------------------------------------------===*/</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="foldopen" id="foldopen00011" data-start="{" data-end="}">
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#aaa6cb6c3e13beb622bec4ea34b511ce5">   11</a></span>MlirOperation <a class="code hl_function" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#aaa6cb6c3e13beb622bec4ea34b511ce5">llzkLlzk_NonDetOpBuild</a>(MlirOpBuilder builder, MlirLocation location, MlirType resType) {</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString(<span class="stringliteral">&quot;llzk.nondet&quot;</span>), location);</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>  mlirOperationStateAddResults(&amp;state, 1, &amp;resType);</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(builder, mlirOperationCreate(&amp;state));</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>}</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;limits&gt;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellvm.html">llvm</a>;</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="foldopen" id="foldopen00016" data-start="{" data-end="}">
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#aaa6cb6c3e13beb622bec4ea34b511ce5">   16</a></span>MlirOperation <a class="code hl_function" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#aaa6cb6c3e13beb622bec4ea34b511ce5">llzkLlzk_NonDetOpBuild</a>(MlirOpBuilder builder, MlirLocation location, MlirType resType) {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString(<span class="stringliteral">&quot;llzk.nondet&quot;</span>), location);</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>  mlirOperationStateAddResults(&amp;state, 1, &amp;resType);</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(builder, mlirOperationCreate(&amp;state));</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
 </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="foldopen" id="foldopen00018" data-start="{" data-end="}">
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a61b1e8c3fc4d7d32d19586616620ecbc">   18</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a61b1e8c3fc4d7d32d19586616620ecbc">llzkOperationIsA_Llzk_NonDetOp</a>(MlirOperation inp) {</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  <span class="keywordflow">return</span> llvm::isa&lt;NonDetOp&gt;(unwrap(inp));</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>}</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="foldopen" id="foldopen00023" data-start="{" data-end="}">
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a61b1e8c3fc4d7d32d19586616620ecbc">   23</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a61b1e8c3fc4d7d32d19586616620ecbc">llzkOperationIsA_Llzk_NonDetOp</a>(MlirOperation inp) {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  <span class="keywordflow">return</span> llvm::isa&lt;NonDetOp&gt;(unwrap(inp));</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>}</div>
 </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="foldopen" id="foldopen00022" data-start="{" data-end="}">
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a578546c654d21c2ecc813328ef32d0ed">   22</a></span>MlirValue <a class="code hl_function" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a578546c654d21c2ecc813328ef32d0ed">llzkLlzk_NonDetOpGetRes</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keywordflow">return</span> mlirOperationGetResult(op, 0);</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>}</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="foldopen" id="foldopen00027" data-start="{" data-end="}">
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a578546c654d21c2ecc813328ef32d0ed">   27</a></span>MlirValue <a class="code hl_function" href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a578546c654d21c2ecc813328ef32d0ed">llzkLlzk_NonDetOpGetRes</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keywordflow">return</span> mlirOperationGetResult(op, 0);</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>}</div>
 </div>
 <div class="ttc" id="aBuilder_8cpp_html_ae83ea6c8112a8f7042f9962b06443d1c"><div class="ttname"><a href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a></div><div class="ttdeci">MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op)</div><div class="ttdoc">Inserts op at the current insertion point of builder and returns it.</div><div class="ttdef"><b>Definition</b> <a href="Builder_8cpp_source.html#l00108">Builder.cpp:108</a></div></div>
-<div class="ttc" id="aLLZK_2IR_2Ops_8capi_8cpp_8inc_html_a578546c654d21c2ecc813328ef32d0ed"><div class="ttname"><a href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a578546c654d21c2ecc813328ef32d0ed">llzkLlzk_NonDetOpGetRes</a></div><div class="ttdeci">MlirValue llzkLlzk_NonDetOpGetRes(MlirOperation op)</div><div class="ttdoc">Get Res result from llzk::NonDetOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00022">Ops.capi.cpp.inc:22</a></div></div>
-<div class="ttc" id="aLLZK_2IR_2Ops_8capi_8cpp_8inc_html_a61b1e8c3fc4d7d32d19586616620ecbc"><div class="ttname"><a href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a61b1e8c3fc4d7d32d19586616620ecbc">llzkOperationIsA_Llzk_NonDetOp</a></div><div class="ttdeci">bool llzkOperationIsA_Llzk_NonDetOp(MlirOperation inp)</div><div class="ttdoc">Returns true if the Operation is a llzk::NonDetOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00018">Ops.capi.cpp.inc:18</a></div></div>
-<div class="ttc" id="aLLZK_2IR_2Ops_8capi_8cpp_8inc_html_aaa6cb6c3e13beb622bec4ea34b511ce5"><div class="ttname"><a href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#aaa6cb6c3e13beb622bec4ea34b511ce5">llzkLlzk_NonDetOpBuild</a></div><div class="ttdeci">MlirOperation llzkLlzk_NonDetOpBuild(MlirOpBuilder builder, MlirLocation location, MlirType resType)</div><div class="ttdoc">Build a llzk::NonDetOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00011">Ops.capi.cpp.inc:11</a></div></div>
+<div class="ttc" id="aLLZK_2IR_2Ops_8capi_8cpp_8inc_html_a578546c654d21c2ecc813328ef32d0ed"><div class="ttname"><a href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a578546c654d21c2ecc813328ef32d0ed">llzkLlzk_NonDetOpGetRes</a></div><div class="ttdeci">MlirValue llzkLlzk_NonDetOpGetRes(MlirOperation op)</div><div class="ttdoc">Get Res result from llzk::NonDetOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00027">Ops.capi.cpp.inc:27</a></div></div>
+<div class="ttc" id="aLLZK_2IR_2Ops_8capi_8cpp_8inc_html_a61b1e8c3fc4d7d32d19586616620ecbc"><div class="ttname"><a href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#a61b1e8c3fc4d7d32d19586616620ecbc">llzkOperationIsA_Llzk_NonDetOp</a></div><div class="ttdeci">bool llzkOperationIsA_Llzk_NonDetOp(MlirOperation inp)</div><div class="ttdoc">Returns true if the Operation is a llzk::NonDetOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00023">Ops.capi.cpp.inc:23</a></div></div>
+<div class="ttc" id="aLLZK_2IR_2Ops_8capi_8cpp_8inc_html_aaa6cb6c3e13beb622bec4ea34b511ce5"><div class="ttname"><a href="LLZK_2IR_2Ops_8capi_8cpp_8inc.html#aaa6cb6c3e13beb622bec4ea34b511ce5">llzkLlzk_NonDetOpBuild</a></div><div class="ttdeci">MlirOperation llzkLlzk_NonDetOpBuild(MlirOpBuilder builder, MlirLocation location, MlirType resType)</div><div class="ttdoc">Build a llzk::NonDetOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00016">Ops.capi.cpp.inc:16</a></div></div>
+<div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00271">SourceRefLattice.cpp:271</a></div></div>
+<div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

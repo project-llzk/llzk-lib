@@ -8,6 +8,7 @@ var structOpHeaderGenerator =
     [ "genOperandSetterDecl", "structOpHeaderGenerator.html#a65528049bf947680634ad8f5d207207f", null ],
     [ "genRegionGetterDecl", "structOpHeaderGenerator.html#a94d944fe3c44c7c7409a0f396d88ae15", null ],
     [ "genResultGetterDecl", "structOpHeaderGenerator.html#ac596732934f3bae0725eae106ad51356", null ],
+    [ "genVariadicOfVariadicOperandSetterDecl", "structOpHeaderGenerator.html#a27bf51f703651ebf064b95821515455f", null ],
     [ "genVariadicOperandGetterDecl", "structOpHeaderGenerator.html#ab00ceb5e88c9a16a2e3f36faa189363b", null ],
     [ "genVariadicOperandSetterDecl", "structOpHeaderGenerator.html#a74f059a57c1e6264f4e3ad55e1cf16f5", null ],
     [ "genVariadicRegionGetterDecl", "structOpHeaderGenerator.html#a1ec7afd6a1387d0ca768bb13dcc99e85", null ],

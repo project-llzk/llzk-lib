@@ -23,7 +23,7 @@ var Function_2IR_2Ops_8capi_8h_8inc =
     [ "llzkFunction_CallOpResolveCallable", "Function_2IR_2Ops_8capi_8h_8inc.html#aea5764a807db8d85bcb38eb5cfc00299", null ],
     [ "llzkFunction_CallOpSetArgOperands", "Function_2IR_2Ops_8capi_8h_8inc.html#aa97ba14f6ce159f7f60ab7375ae16c34", null ],
     [ "llzkFunction_CallOpSetCallee", "Function_2IR_2Ops_8capi_8h_8inc.html#aa608b3c7d535c98d460989d392ce948c", null ],
-    [ "llzkFunction_CallOpSetMapOperands", "Function_2IR_2Ops_8capi_8h_8inc.html#a57743a138d6def783f7c1bc24d07fafa", null ],
+    [ "llzkFunction_CallOpSetMapOperands", "Function_2IR_2Ops_8capi_8h_8inc.html#a91d3a842f29027602bdfcc88529f1211", null ],
     [ "llzkFunction_CallOpSetMapOpGroupSizes", "Function_2IR_2Ops_8capi_8h_8inc.html#abacacc640ac9a540337ccdd216306960", null ],
     [ "llzkFunction_CallOpSetNumDimsPerMap", "Function_2IR_2Ops_8capi_8h_8inc.html#ac6443bfd66f353528a8e079cd6340d3a", null ],
     [ "llzkFunction_CallOpSetTemplateParams", "Function_2IR_2Ops_8capi_8h_8inc.html#ab55b3038363c24c0febf5a48c3009469", null ],

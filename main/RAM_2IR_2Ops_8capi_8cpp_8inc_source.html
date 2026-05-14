@@ -117,103 +117,134 @@ $(function(){initNavTree('RAM_2IR_2Ops_8capi_8cpp_8inc_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">\*===----------------------------------------------------------------------===*/</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="foldopen" id="foldopen00011" data-start="{" data-end="}">
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a4b181ec47ed0788de57a1dcccf3a3c6d">   11</a></span>MlirOperation <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a4b181ec47ed0788de57a1dcccf3a3c6d">llzkRam_LoadOpBuild</a>(MlirOpBuilder builder, MlirLocation location, MlirType valType, MlirValue addr) {</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString(<span class="stringliteral">&quot;ram.load&quot;</span>), location);</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>  mlirOperationStateAddResults(&amp;state, 1, &amp;valType);</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>  mlirOperationStateAddOperands(&amp;state, 1, &amp;addr);</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;limits&gt;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellvm.html">llvm</a>;</div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(builder, mlirOperationCreate(&amp;state));</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>}</div>
+<div class="foldopen" id="foldopen00016" data-start="{" data-end="}">
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a4b181ec47ed0788de57a1dcccf3a3c6d">   16</a></span>MlirOperation <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a4b181ec47ed0788de57a1dcccf3a3c6d">llzkRam_LoadOpBuild</a>(MlirOpBuilder builder, MlirLocation location, MlirType valType, MlirValue addr) {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString(<span class="stringliteral">&quot;ram.load&quot;</span>), location);</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>  mlirOperationStateAddResults(&amp;state, 1, &amp;valType);</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  mlirOperationStateAddOperands(&amp;state, 1, &amp;addr);</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(builder, mlirOperationCreate(&amp;state));</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>}</div>
 </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="foldopen" id="foldopen00019" data-start="{" data-end="}">
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a56b46f50627fe93c2fd9f43ea5647822">   19</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a56b46f50627fe93c2fd9f43ea5647822">llzkOperationIsA_Ram_LoadOp</a>(MlirOperation inp) {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <span class="keywordflow">return</span> llvm::isa&lt;LoadOp&gt;(unwrap(inp));</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="foldopen" id="foldopen00024" data-start="{" data-end="}">
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a56b46f50627fe93c2fd9f43ea5647822">   24</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a56b46f50627fe93c2fd9f43ea5647822">llzkOperationIsA_Ram_LoadOp</a>(MlirOperation inp) {</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordflow">return</span> llvm::isa&lt;LoadOp&gt;(unwrap(inp));</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>}</div>
 </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="foldopen" id="foldopen00023" data-start="{" data-end="}">
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a23cb6472e5a48a8fbcdc94978a25b879">   23</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a23cb6472e5a48a8fbcdc94978a25b879">llzkRam_LoadOpGetAddr</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  <span class="keyword">auto</span> range = llvm::cast&lt;LoadOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <span class="keywordflow">return</span> mlirOperationGetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first));</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>}</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="}">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a23cb6472e5a48a8fbcdc94978a25b879">   28</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a23cb6472e5a48a8fbcdc94978a25b879">llzkRam_LoadOpGetAddr</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">auto</span> range = llvm::cast&lt;LoadOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  assert(</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>      <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(range.first) &lt;= <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(std::numeric_limits&lt;intptr_t&gt;::max()) &amp;&amp;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>      <span class="stringliteral">&quot;operand index exceeds intptr_t range&quot;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  );</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordflow">return</span> mlirOperationGetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first));</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>}</div>
 </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="foldopen" id="foldopen00029" data-start="{" data-end="}">
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a8809adf05e3e42b283a19faed3f88981">   29</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a8809adf05e3e42b283a19faed3f88981">llzkRam_LoadOpSetAddr</a>(MlirOperation op, MlirValue value) {</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keyword">auto</span> range = llvm::cast&lt;LoadOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  mlirOperationSetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first), value);</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>}</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="foldopen" id="foldopen00038" data-start="{" data-end="}">
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a8809adf05e3e42b283a19faed3f88981">   38</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a8809adf05e3e42b283a19faed3f88981">llzkRam_LoadOpSetAddr</a>(MlirOperation op, MlirValue value) {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">auto</span> range = llvm::cast&lt;LoadOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  assert(</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>      <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(range.first) &lt;= <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(std::numeric_limits&lt;intptr_t&gt;::max()) &amp;&amp;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>      <span class="stringliteral">&quot;operand index exceeds intptr_t range&quot;</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  );</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  mlirOperationSetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first), value);</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>}</div>
 </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="foldopen" id="foldopen00035" data-start="{" data-end="}">
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a10552cc13390b3843e432ecffd02eb8b">   35</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a10552cc13390b3843e432ecffd02eb8b">llzkRam_LoadOpGetVal</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordflow">return</span> mlirOperationGetResult(op, 0);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>}</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="foldopen" id="foldopen00048" data-start="{" data-end="}">
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a10552cc13390b3843e432ecffd02eb8b">   48</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a10552cc13390b3843e432ecffd02eb8b">llzkRam_LoadOpGetVal</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordflow">return</span> mlirOperationGetResult(op, 0);</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>}</div>
 </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="foldopen" id="foldopen00039" data-start="{" data-end="}">
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a21d19bcd0d6710b79d12e2a799e7a333">   39</a></span>MlirOperation <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a21d19bcd0d6710b79d12e2a799e7a333">llzkRam_StoreOpBuild</a>(MlirOpBuilder builder, MlirLocation location, MlirValue addr, MlirValue val) {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString(<span class="stringliteral">&quot;ram.store&quot;</span>), location);</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  mlirOperationStateAddOperands(&amp;state, 1, &amp;addr);</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  mlirOperationStateAddOperands(&amp;state, 1, &amp;val);</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(builder, mlirOperationCreate(&amp;state));</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>}</div>
-</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="foldopen" id="foldopen00047" data-start="{" data-end="}">
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a170a7a4ea2bce2122a6c0405e0b1ba82">   47</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a170a7a4ea2bce2122a6c0405e0b1ba82">llzkOperationIsA_Ram_StoreOp</a>(MlirOperation inp) {</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordflow">return</span> llvm::isa&lt;StoreOp&gt;(unwrap(inp));</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>}</div>
-</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="foldopen" id="foldopen00051" data-start="{" data-end="}">
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad54e3eb7c41ae9fc52451655d6cd862a">   51</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad54e3eb7c41ae9fc52451655d6cd862a">llzkRam_StoreOpGetAddr</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">return</span> mlirOperationGetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first));</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>}</div>
-</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="foldopen" id="foldopen00052" data-start="{" data-end="}">
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a21d19bcd0d6710b79d12e2a799e7a333">   52</a></span>MlirOperation <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a21d19bcd0d6710b79d12e2a799e7a333">llzkRam_StoreOpBuild</a>(MlirOpBuilder builder, MlirLocation location, MlirValue addr, MlirValue val) {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString(<span class="stringliteral">&quot;ram.store&quot;</span>), location);</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  mlirOperationStateAddOperands(&amp;state, 1, &amp;addr);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  mlirOperationStateAddOperands(&amp;state, 1, &amp;val);</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="foldopen" id="foldopen00057" data-start="{" data-end="}">
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a28f9f9d3a763c6246775f8e555a9586d">   57</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a28f9f9d3a763c6246775f8e555a9586d">llzkRam_StoreOpSetAddr</a>(MlirOperation op, MlirValue value) {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  mlirOperationSetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first), value);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>}</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(builder, mlirOperationCreate(&amp;state));</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
 </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="foldopen" id="foldopen00063" data-start="{" data-end="}">
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad63c3ce9ae5f38005ebfe7a42020e9bd">   63</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad63c3ce9ae5f38005ebfe7a42020e9bd">llzkRam_StoreOpGetVal</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(1);</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordflow">return</span> mlirOperationGetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first));</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>}</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="foldopen" id="foldopen00060" data-start="{" data-end="}">
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a170a7a4ea2bce2122a6c0405e0b1ba82">   60</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a170a7a4ea2bce2122a6c0405e0b1ba82">llzkOperationIsA_Ram_StoreOp</a>(MlirOperation inp) {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordflow">return</span> llvm::isa&lt;StoreOp&gt;(unwrap(inp));</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="foldopen" id="foldopen00069" data-start="{" data-end="}">
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a159f8d655308abf62e5c3a4e8edfcc2e">   69</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a159f8d655308abf62e5c3a4e8edfcc2e">llzkRam_StoreOpSetVal</a>(MlirOperation op, MlirValue value) {</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(1);</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  mlirOperationSetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first), value);</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>}</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="foldopen" id="foldopen00064" data-start="{" data-end="}">
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad54e3eb7c41ae9fc52451655d6cd862a">   64</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad54e3eb7c41ae9fc52451655d6cd862a">llzkRam_StoreOpGetAddr</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  assert(</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(range.first) &lt;= <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(std::numeric_limits&lt;intptr_t&gt;::max()) &amp;&amp;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      <span class="stringliteral">&quot;operand index exceeds intptr_t range&quot;</span></div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  );</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordflow">return</span> mlirOperationGetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first));</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>}</div>
+</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="foldopen" id="foldopen00074" data-start="{" data-end="}">
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a28f9f9d3a763c6246775f8e555a9586d">   74</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a28f9f9d3a763c6246775f8e555a9586d">llzkRam_StoreOpSetAddr</a>(MlirOperation op, MlirValue value) {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(0);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  assert(</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>      <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(range.first) &lt;= <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(std::numeric_limits&lt;intptr_t&gt;::max()) &amp;&amp;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>      <span class="stringliteral">&quot;operand index exceeds intptr_t range&quot;</span></div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  );</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  mlirOperationSetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first), value);</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>}</div>
+</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
+<div class="foldopen" id="foldopen00084" data-start="{" data-end="}">
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad63c3ce9ae5f38005ebfe7a42020e9bd">   84</a></span>MlirValue <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad63c3ce9ae5f38005ebfe7a42020e9bd">llzkRam_StoreOpGetVal</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(1);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  assert(</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(range.first) &lt;= <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(std::numeric_limits&lt;intptr_t&gt;::max()) &amp;&amp;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>      <span class="stringliteral">&quot;operand index exceeds intptr_t range&quot;</span></div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  );</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordflow">return</span> mlirOperationGetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first));</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>}</div>
+</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="foldopen" id="foldopen00094" data-start="{" data-end="}">
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno"><a class="line" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a159f8d655308abf62e5c3a4e8edfcc2e">   94</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a159f8d655308abf62e5c3a4e8edfcc2e">llzkRam_StoreOpSetVal</a>(MlirOperation op, MlirValue value) {</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keyword">auto</span> range = llvm::cast&lt;StoreOp&gt;(unwrap(op)).getODSOperandIndexAndLength(1);</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  assert(range.second == 1 &amp;&amp; <span class="stringliteral">&quot;expected fixed operand segment size&quot;</span>);</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  assert(</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(range.first) &lt;= <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(std::numeric_limits&lt;intptr_t&gt;::max()) &amp;&amp;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      <span class="stringliteral">&quot;operand index exceeds intptr_t range&quot;</span></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  );</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  mlirOperationSetOperand(op, <span class="keyword">static_cast&lt;</span>intptr_t<span class="keyword">&gt;</span>(range.first), value);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>}</div>
 </div>
 <div class="ttc" id="aBuilder_8cpp_html_ae83ea6c8112a8f7042f9962b06443d1c"><div class="ttname"><a href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a></div><div class="ttdeci">MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op)</div><div class="ttdoc">Inserts op at the current insertion point of builder and returns it.</div><div class="ttdef"><b>Definition</b> <a href="Builder_8cpp_source.html#l00108">Builder.cpp:108</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a10552cc13390b3843e432ecffd02eb8b"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a10552cc13390b3843e432ecffd02eb8b">llzkRam_LoadOpGetVal</a></div><div class="ttdeci">MlirValue llzkRam_LoadOpGetVal(MlirOperation op)</div><div class="ttdoc">Get Val result from llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00035">Ops.capi.cpp.inc:35</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a159f8d655308abf62e5c3a4e8edfcc2e"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a159f8d655308abf62e5c3a4e8edfcc2e">llzkRam_StoreOpSetVal</a></div><div class="ttdeci">void llzkRam_StoreOpSetVal(MlirOperation op, MlirValue value)</div><div class="ttdoc">Set Val operand of llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00069">Ops.capi.cpp.inc:69</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a170a7a4ea2bce2122a6c0405e0b1ba82"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a170a7a4ea2bce2122a6c0405e0b1ba82">llzkOperationIsA_Ram_StoreOp</a></div><div class="ttdeci">bool llzkOperationIsA_Ram_StoreOp(MlirOperation inp)</div><div class="ttdoc">Returns true if the Operation is a llzk::ram::StoreOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00047">Ops.capi.cpp.inc:47</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a21d19bcd0d6710b79d12e2a799e7a333"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a21d19bcd0d6710b79d12e2a799e7a333">llzkRam_StoreOpBuild</a></div><div class="ttdeci">MlirOperation llzkRam_StoreOpBuild(MlirOpBuilder builder, MlirLocation location, MlirValue addr, MlirValue val)</div><div class="ttdoc">Build a llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00039">Ops.capi.cpp.inc:39</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a23cb6472e5a48a8fbcdc94978a25b879"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a23cb6472e5a48a8fbcdc94978a25b879">llzkRam_LoadOpGetAddr</a></div><div class="ttdeci">MlirValue llzkRam_LoadOpGetAddr(MlirOperation op)</div><div class="ttdoc">Get Addr operand from llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00023">Ops.capi.cpp.inc:23</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a28f9f9d3a763c6246775f8e555a9586d"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a28f9f9d3a763c6246775f8e555a9586d">llzkRam_StoreOpSetAddr</a></div><div class="ttdeci">void llzkRam_StoreOpSetAddr(MlirOperation op, MlirValue value)</div><div class="ttdoc">Set Addr operand of llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00057">Ops.capi.cpp.inc:57</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a4b181ec47ed0788de57a1dcccf3a3c6d"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a4b181ec47ed0788de57a1dcccf3a3c6d">llzkRam_LoadOpBuild</a></div><div class="ttdeci">MlirOperation llzkRam_LoadOpBuild(MlirOpBuilder builder, MlirLocation location, MlirType valType, MlirValue addr)</div><div class="ttdoc">Build a llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00011">Ops.capi.cpp.inc:11</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a56b46f50627fe93c2fd9f43ea5647822"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a56b46f50627fe93c2fd9f43ea5647822">llzkOperationIsA_Ram_LoadOp</a></div><div class="ttdeci">bool llzkOperationIsA_Ram_LoadOp(MlirOperation inp)</div><div class="ttdoc">Returns true if the Operation is a llzk::ram::LoadOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00019">Ops.capi.cpp.inc:19</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a8809adf05e3e42b283a19faed3f88981"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a8809adf05e3e42b283a19faed3f88981">llzkRam_LoadOpSetAddr</a></div><div class="ttdeci">void llzkRam_LoadOpSetAddr(MlirOperation op, MlirValue value)</div><div class="ttdoc">Set Addr operand of llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00029">Ops.capi.cpp.inc:29</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_ad54e3eb7c41ae9fc52451655d6cd862a"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad54e3eb7c41ae9fc52451655d6cd862a">llzkRam_StoreOpGetAddr</a></div><div class="ttdeci">MlirValue llzkRam_StoreOpGetAddr(MlirOperation op)</div><div class="ttdoc">Get Addr operand from llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00051">Ops.capi.cpp.inc:51</a></div></div>
-<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_ad63c3ce9ae5f38005ebfe7a42020e9bd"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad63c3ce9ae5f38005ebfe7a42020e9bd">llzkRam_StoreOpGetVal</a></div><div class="ttdeci">MlirValue llzkRam_StoreOpGetVal(MlirOperation op)</div><div class="ttdoc">Get Val operand from llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00063">Ops.capi.cpp.inc:63</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a10552cc13390b3843e432ecffd02eb8b"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a10552cc13390b3843e432ecffd02eb8b">llzkRam_LoadOpGetVal</a></div><div class="ttdeci">MlirValue llzkRam_LoadOpGetVal(MlirOperation op)</div><div class="ttdoc">Get Val result from llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00048">Ops.capi.cpp.inc:48</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a159f8d655308abf62e5c3a4e8edfcc2e"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a159f8d655308abf62e5c3a4e8edfcc2e">llzkRam_StoreOpSetVal</a></div><div class="ttdeci">void llzkRam_StoreOpSetVal(MlirOperation op, MlirValue value)</div><div class="ttdoc">Set Val operand of llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00094">Ops.capi.cpp.inc:94</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a170a7a4ea2bce2122a6c0405e0b1ba82"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a170a7a4ea2bce2122a6c0405e0b1ba82">llzkOperationIsA_Ram_StoreOp</a></div><div class="ttdeci">bool llzkOperationIsA_Ram_StoreOp(MlirOperation inp)</div><div class="ttdoc">Returns true if the Operation is a llzk::ram::StoreOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00060">Ops.capi.cpp.inc:60</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a21d19bcd0d6710b79d12e2a799e7a333"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a21d19bcd0d6710b79d12e2a799e7a333">llzkRam_StoreOpBuild</a></div><div class="ttdeci">MlirOperation llzkRam_StoreOpBuild(MlirOpBuilder builder, MlirLocation location, MlirValue addr, MlirValue val)</div><div class="ttdoc">Build a llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00052">Ops.capi.cpp.inc:52</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a23cb6472e5a48a8fbcdc94978a25b879"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a23cb6472e5a48a8fbcdc94978a25b879">llzkRam_LoadOpGetAddr</a></div><div class="ttdeci">MlirValue llzkRam_LoadOpGetAddr(MlirOperation op)</div><div class="ttdoc">Get Addr operand from llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00028">Ops.capi.cpp.inc:28</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a28f9f9d3a763c6246775f8e555a9586d"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a28f9f9d3a763c6246775f8e555a9586d">llzkRam_StoreOpSetAddr</a></div><div class="ttdeci">void llzkRam_StoreOpSetAddr(MlirOperation op, MlirValue value)</div><div class="ttdoc">Set Addr operand of llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00074">Ops.capi.cpp.inc:74</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a4b181ec47ed0788de57a1dcccf3a3c6d"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a4b181ec47ed0788de57a1dcccf3a3c6d">llzkRam_LoadOpBuild</a></div><div class="ttdeci">MlirOperation llzkRam_LoadOpBuild(MlirOpBuilder builder, MlirLocation location, MlirType valType, MlirValue addr)</div><div class="ttdoc">Build a llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00016">Ops.capi.cpp.inc:16</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a56b46f50627fe93c2fd9f43ea5647822"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a56b46f50627fe93c2fd9f43ea5647822">llzkOperationIsA_Ram_LoadOp</a></div><div class="ttdeci">bool llzkOperationIsA_Ram_LoadOp(MlirOperation inp)</div><div class="ttdoc">Returns true if the Operation is a llzk::ram::LoadOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00024">Ops.capi.cpp.inc:24</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_a8809adf05e3e42b283a19faed3f88981"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#a8809adf05e3e42b283a19faed3f88981">llzkRam_LoadOpSetAddr</a></div><div class="ttdeci">void llzkRam_LoadOpSetAddr(MlirOperation op, MlirValue value)</div><div class="ttdoc">Set Addr operand of llzk::ram::LoadOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00038">Ops.capi.cpp.inc:38</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_ad54e3eb7c41ae9fc52451655d6cd862a"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad54e3eb7c41ae9fc52451655d6cd862a">llzkRam_StoreOpGetAddr</a></div><div class="ttdeci">MlirValue llzkRam_StoreOpGetAddr(MlirOperation op)</div><div class="ttdoc">Get Addr operand from llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00064">Ops.capi.cpp.inc:64</a></div></div>
+<div class="ttc" id="aRAM_2IR_2Ops_8capi_8cpp_8inc_html_ad63c3ce9ae5f38005ebfe7a42020e9bd"><div class="ttname"><a href="RAM_2IR_2Ops_8capi_8cpp_8inc.html#ad63c3ce9ae5f38005ebfe7a42020e9bd">llzkRam_StoreOpGetVal</a></div><div class="ttdeci">MlirValue llzkRam_StoreOpGetVal(MlirOperation op)</div><div class="ttdoc">Get Val operand from llzk::ram::StoreOp Operation.</div><div class="ttdef"><b>Definition</b> <a href="#l00084">Ops.capi.cpp.inc:84</a></div></div>
+<div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00271">SourceRefLattice.cpp:271</a></div></div>
+<div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00039">AnalysisPassEnums.h.inc:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -109,7 +109,13 @@ $(function(){initNavTree('Function_2IR_2Ops_8capi_8cpp_8inc.html','',''); });
   <div class="headertitle"><div class="title">Ops.capi.cpp.inc File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><div class="dynheader">
+<div class="textblock"><code>#include &lt;limits&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Include dependency graph for Ops.capi.cpp.inc:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Function_2IR_2Ops_8capi_8cpp_8inc__incl.svg" width="159" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Function_2IR_2Ops_8capi_8cpp_8inc__dep__incl.svg" width="219" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
@@ -131,8 +137,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a391e4ea442aab6fd1450a80dbfefed10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get number of MapOperands operands in <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ac83fa0774141f0744c00e9416cd06a39" id="r_ac83fa0774141f0744c00e9416cd06a39"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac83fa0774141f0744c00e9416cd06a39">llzkFunction_CallOpGetMapOperandsAt</a> (MlirOperation op, intptr_t index)</td></tr>
 <tr class="memdesc:ac83fa0774141f0744c00e9416cd06a39"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get MapOperands operand at index from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation.  <br /></td></tr>
-<tr class="memitem:a0c6f0ffcb0f608d05e5642e61613b768" id="r_a0c6f0ffcb0f608d05e5642e61613b768"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0c6f0ffcb0f608d05e5642e61613b768">llzkFunction_CallOpSetMapOperands</a> (MlirOperation op, intptr_t count, MlirValue const *values)</td></tr>
-<tr class="memdesc:a0c6f0ffcb0f608d05e5642e61613b768"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set MapOperands operands of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a3d7c0997edc7d39f545b114f79025b55" id="r_a3d7c0997edc7d39f545b114f79025b55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d7c0997edc7d39f545b114f79025b55">llzkFunction_CallOpSetMapOperands</a> (MlirOperation op, intptr_t groupCount, <a class="el" href="structMlirValueRange.html">MlirValueRange</a> const *groups)</td></tr>
+<tr class="memdesc:a3d7c0997edc7d39f545b114f79025b55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set MapOperands operand groups of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:aac42404fd4251995b75ddef031e7782a" id="r_aac42404fd4251995b75ddef031e7782a"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aac42404fd4251995b75ddef031e7782a">llzkFunction_CallOpGetCallee</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:aac42404fd4251995b75ddef031e7782a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Callee attribute from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a710936b7409994f420e04bc71fa3c67e" id="r_a710936b7409994f420e04bc71fa3c67e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a710936b7409994f420e04bc71fa3c67e">llzkFunction_CallOpSetCallee</a> (MlirOperation op, MlirAttribute attr)</td></tr>
@@ -268,7 +274,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the callee function can contain witness generation code (this does not check if the callee function is located within a StructDefOp) </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00185">185</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00135">135</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -289,7 +295,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_COMPUTE</span> (this does not check if the callee function is located within a StructDefOp). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00209">209</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00159">159</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -310,7 +316,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> (this does not check if the callee function is located within a StructDefOp). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00213">213</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00163">163</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -331,7 +337,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_COMPUTE</span> within a StructDefOp. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00189">189</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00139">139</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -352,7 +358,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> within a StructDefOp. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00197">197</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00147">147</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -377,7 +383,7 @@ Functions</h2></td></tr>
 
 <p>Get ArgOperands operand at index from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00020">20</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00025">25</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -398,7 +404,7 @@ Functions</h2></td></tr>
 
 <p>Get number of ArgOperands operands in <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00015">15</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00020">20</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -419,7 +425,7 @@ Functions</h2></td></tr>
 
 <p>Get Callee attribute from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00143">143</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00093">93</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -444,7 +450,7 @@ Functions</h2></td></tr>
 
 <p>Get MapOperands operand at index from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00084">84</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00050">50</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -465,7 +471,7 @@ Functions</h2></td></tr>
 
 <p>Get number of MapOperands operands in <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00079">79</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00045">45</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -486,7 +492,7 @@ Functions</h2></td></tr>
 
 <p>Get MapOpGroupSizes attribute from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00167">167</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00117">117</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -507,7 +513,7 @@ Functions</h2></td></tr>
 
 <p>Get NumDimsPerMap attribute from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00159">159</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00109">109</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -532,7 +538,7 @@ Functions</h2></td></tr>
 
 <p>Get Result0 result at index from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00181">181</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00131">131</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -553,7 +559,7 @@ Functions</h2></td></tr>
 
 <p>Get number of Result0 results in <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00175">175</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00125">125</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -575,7 +581,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the return value) from the callee function (which must be named <span class="tt">FUNC_NAME_COMPUTE</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00221">221</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00171">171</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -597,7 +603,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the callee function (which must be named <span class="tt">FUNC_NAME_CONSTRAIN</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00201">201</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00151">151</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -618,7 +624,7 @@ Functions</h2></td></tr>
 
 <p>Assuming the callee is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single StructType result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00193">193</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00143">143</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -639,7 +645,7 @@ Functions</h2></td></tr>
 
 <p>Assuming the callee contains witness generation code, return the single StructType result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00225">225</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00175">175</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -660,7 +666,7 @@ Functions</h2></td></tr>
 
 <p>Get TemplateParams attribute from <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00151">151</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00101">101</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -682,7 +688,7 @@ Functions</h2></td></tr>
 <p>Return the FunctionType inferred from the arg operands and result types of this CallOp. </p>
 <p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00205">205</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00155">155</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -703,7 +709,7 @@ Functions</h2></td></tr>
 
 <p>Required by CallOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00217">217</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00167">167</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -733,7 +739,7 @@ Functions</h2></td></tr>
 
 <p>Set ArgOperands operands of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00026">26</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00035">35</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -758,12 +764,12 @@ Functions</h2></td></tr>
 
 <p>Set Callee attribute of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00147">147</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00097">97</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a0c6f0ffcb0f608d05e5642e61613b768" name="a0c6f0ffcb0f608d05e5642e61613b768"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c6f0ffcb0f608d05e5642e61613b768">&#9670;&#160;</a></span>llzkFunction_CallOpSetMapOperands()</h2>
+<a id="a3d7c0997edc7d39f545b114f79025b55" name="a3d7c0997edc7d39f545b114f79025b55"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d7c0997edc7d39f545b114f79025b55">&#9670;&#160;</a></span>llzkFunction_CallOpSetMapOperands()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -776,19 +782,20 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>count</em></span>, </td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>groupCount</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">MlirValue const *</td>          <td class="paramname"><span class="paramname"><em>values</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="structMlirValueRange.html">MlirValueRange</a> const *</td>          <td class="paramname"><span class="paramname"><em>groups</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Set MapOperands operands of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
+<p>Set MapOperands operand groups of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
+<p>Each element of <span class="tt">groups</span> represents one group; its <span class="tt">size</span> field drives the per-group segment-size attribute and <span class="tt">values</span> supplies the operands for that group. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00090">90</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00060">60</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -813,7 +820,7 @@ Functions</h2></td></tr>
 
 <p>Set MapOpGroupSizes attribute of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00171">171</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00121">121</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -838,7 +845,7 @@ Functions</h2></td></tr>
 
 <p>Set NumDimsPerMap attribute of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00163">163</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00113">113</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -863,7 +870,7 @@ Functions</h2></td></tr>
 
 <p>Set TemplateParams attribute of <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00155">155</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00105">105</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -908,7 +915,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00229">229</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00179">179</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -929,7 +936,7 @@ Functions</h2></td></tr>
 
 <p>Get ArgAttrs attribute from <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00273">273</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00223">223</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -950,7 +957,7 @@ Functions</h2></td></tr>
 
 <p>Get Body region from <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00289">289</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00239">239</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -972,7 +979,7 @@ Functions</h2></td></tr>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the region on the current operation that is callable. This may return null in the case of an external callable object, e.g. an external function. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00345">345</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00295">295</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -997,7 +1004,7 @@ Functions</h2></td></tr>
 
 <p>Return the full name for this function from the root module, including all surrounding symbol table names (i.e., modules and structs). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00373">373</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00323">323</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1018,7 +1025,7 @@ Functions</h2></td></tr>
 
 <p>Get FunctionType attribute from <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00265">265</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00215">215</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1039,7 +1046,7 @@ Functions</h2></td></tr>
 
 <p>Get ResAttrs attribute from <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00281">281</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00231">231</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1061,7 +1068,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the return value) from the function (which must be named <span class="tt">FUNC_NAME_COMPUTE</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00365">365</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00315">315</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1083,7 +1090,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the function (which must be named <span class="tt">FUNC_NAME_CONSTRAIN</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00333">333</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00283">283</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1104,7 +1111,7 @@ Functions</h2></td></tr>
 
 <p>Assuming the name is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single StructType result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00329">329</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00279">279</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1125,7 +1132,7 @@ Functions</h2></td></tr>
 
 <p>Get SymName attribute from <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00257">257</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00207">207</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1146,7 +1153,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_constraint</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00353">353</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00303">303</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1167,7 +1174,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_non_native_field_ops</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00301">301</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00251">251</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1188,7 +1195,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function def has the <span class="tt">allow_witness</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00313">313</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00263">263</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1213,7 +1220,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00369">369</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00319">319</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1238,7 +1245,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has <span class="tt">pub</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00309">309</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00259">259</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1259,7 +1266,7 @@ Functions</h2></td></tr>
 
 <p>Required by SymbolOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00325">325</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00275">275</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1280,7 +1287,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00357">357</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00307">307</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1301,7 +1308,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_COMPUTE</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00341">341</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00291">291</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1322,7 +1329,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_CONSTRAIN</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00317">317</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00267">267</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1343,7 +1350,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function is within a StructDefOp and named <span class="tt">FUNC_NAME_PRODUCT</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00293">293</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00243">243</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1364,7 +1371,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_COMPUTE</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00321">321</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00271">271</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1385,7 +1392,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00337">337</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00287">287</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1406,7 +1413,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_PRODUCT</span> (if needed, a check that this FuncDefOp is located within a StructDefOp must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00305">305</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00255">255</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1431,7 +1438,7 @@ Functions</h2></td></tr>
 
 <p>Add (resp. remove) the <span class="tt">allow_constraint</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00349">349</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00299">299</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1456,7 +1463,7 @@ Functions</h2></td></tr>
 
 <p>Add (resp. remove) the <span class="tt">allow_non_native_field_ops</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00297">297</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00247">247</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1481,7 +1488,7 @@ Functions</h2></td></tr>
 
 <p>Add (resp. remove) the <span class="tt">allow_witness</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00361">361</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00311">311</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1506,7 +1513,7 @@ Functions</h2></td></tr>
 
 <p>Set ArgAttrs attribute of <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00277">277</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00227">227</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1531,7 +1538,7 @@ Functions</h2></td></tr>
 
 <p>Set FunctionType attribute of <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00269">269</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00219">219</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1556,7 +1563,7 @@ Functions</h2></td></tr>
 
 <p>Set ResAttrs attribute of <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00285">285</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00235">235</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1581,7 +1588,7 @@ Functions</h2></td></tr>
 
 <p>Set SymName attribute of <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00261">261</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00211">211</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1616,7 +1623,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00377">377</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00327">327</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1641,7 +1648,7 @@ Functions</h2></td></tr>
 
 <p>Get Operands operand at index from <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00393">393</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00343">343</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1662,7 +1669,7 @@ Functions</h2></td></tr>
 
 <p>Get number of Operands operands in <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00388">388</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00338">338</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1692,7 +1699,7 @@ Functions</h2></td></tr>
 
 <p>Set Operands operands of <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00399">399</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00353">353</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1713,7 +1720,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1function_1_1CallOp.html">llzk::function::CallOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00011">11</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00016">16</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1734,7 +1741,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00253">253</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00203">203</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1755,7 +1762,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00384">384</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html#l00334">334</a> of file <a class="el" href="Function_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

@@ -132,7 +132,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a898c953abb02d920b8ea071707fcf788" id="r_a898c953abb02d920b8ea071707fcf788"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a898c953abb02d920b8ea071707fcf788">~AttrOrTypeImplementationGenerator</a> () override=default</td></tr>
 <tr class="memitem:a2ed556510cc9ffd5fba817e595e4c5a3" id="r_a2ed556510cc9ffd5fba817e595e4c5a3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2ed556510cc9ffd5fba817e595e4c5a3">setParamName</a> (mlir::StringRef name)</td></tr>
 <tr class="memdesc:a2ed556510cc9ffd5fba817e595e4c5a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the parameter name for code generation.  <br /></td></tr>
-<tr class="memitem:a5daa81ccd514661d4b923d786a580ad1" id="r_a5daa81ccd514661d4b923d786a580ad1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5daa81ccd514661d4b923d786a580ad1">genPrologue</a> () const</td></tr>
+<tr class="memitem:a4e6d278e3f9d7c6468814c278b05dd3d" id="r_a4e6d278e3f9d7c6468814c278b05dd3d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4e6d278e3f9d7c6468814c278b05dd3d">genPrologue</a> () const override</td></tr>
 <tr class="memitem:a7c83b4bed9c5290d0a97a7be1bbe26b5" id="r_a7c83b4bed9c5290d0a97a7be1bbe26b5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c83b4bed9c5290d0a97a7be1bbe26b5">genArrayRefParameterImpls</a> (mlir::StringRef cppType) const</td></tr>
 <tr class="memitem:aee8268d7a76303b7c6fc1667796dacd2" id="r_aee8268d7a76303b7c6fc1667796dacd2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aee8268d7a76303b7c6fc1667796dacd2">genParameterGetterImpl</a> (mlir::StringRef cppType) const</td></tr>
 <tr class="memitem:a513ec325f09394f4010394f0f6198db8" id="r_a513ec325f09394f4010394f0f6198db8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a513ec325f09394f4010394f0f6198db8">genDefaultGetBuilderImpl</a> (const mlir::tblgen::AttrOrTypeDef &amp;def) const</td></tr>
@@ -305,8 +305,8 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a5daa81ccd514661d4b923d786a580ad1" name="a5daa81ccd514661d4b923d786a580ad1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5daa81ccd514661d4b923d786a580ad1">&#9670;&#160;</a></span>genPrologue()</h2>
+<a id="a4e6d278e3f9d7c6468814c278b05dd3d" name="a4e6d278e3f9d7c6468814c278b05dd3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4e6d278e3f9d7c6468814c278b05dd3d">&#9670;&#160;</a></span>genPrologue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -315,7 +315,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void AttrOrTypeImplementationGenerator::genPrologue </td>
+          <td class="memname">void AttrOrTypeImplementationGenerator::genPrologue </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -323,10 +323,12 @@ Protected Attributes</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel virtual">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="structImplementationGenerator.html#aac0f6588789d2903a4c775530270c561">ImplementationGenerator</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="CommonAttrOrTypeCAPIGen_8h_source.html#l00177">177</a> of file <a class="el" href="CommonAttrOrTypeCAPIGen_8h_source.html">CommonAttrOrTypeCAPIGen.h</a>.</p>
 

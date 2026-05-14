@@ -132,6 +132,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a65528049bf947680634ad8f5d207207f" id="r_a65528049bf947680634ad8f5d207207f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a65528049bf947680634ad8f5d207207f">genOperandSetterDecl</a> () const</td></tr>
 <tr class="memitem:ab00ceb5e88c9a16a2e3f36faa189363b" id="r_ab00ceb5e88c9a16a2e3f36faa189363b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab00ceb5e88c9a16a2e3f36faa189363b">genVariadicOperandGetterDecl</a> () const</td></tr>
 <tr class="memitem:a74f059a57c1e6264f4e3ad55e1cf16f5" id="r_a74f059a57c1e6264f4e3ad55e1cf16f5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74f059a57c1e6264f4e3ad55e1cf16f5">genVariadicOperandSetterDecl</a> () const</td></tr>
+<tr class="memitem:a27bf51f703651ebf064b95821515455f" id="r_a27bf51f703651ebf064b95821515455f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a27bf51f703651ebf064b95821515455f">genVariadicOfVariadicOperandSetterDecl</a> () const</td></tr>
 <tr class="memitem:a81039659c15319f0ecb1af9c3eb8e12b" id="r_a81039659c15319f0ecb1af9c3eb8e12b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a81039659c15319f0ecb1af9c3eb8e12b">genAttributeGetterDecl</a> () const</td></tr>
 <tr class="memitem:aa76176e53e0a3775919a02d875fc57d6" id="r_aa76176e53e0a3775919a02d875fc57d6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa76176e53e0a3775919a02d875fc57d6">genAttributeSetterDecl</a> () const</td></tr>
 <tr class="memitem:ac596732934f3bae0725eae106ad51356" id="r_ac596732934f3bae0725eae106ad51356"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac596732934f3bae0725eae106ad51356">genResultGetterDecl</a> () const</td></tr>
@@ -227,7 +228,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00128">128</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00142">142</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -254,7 +255,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00142">142</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00156">156</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -362,7 +363,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00184">184</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00198">198</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -389,7 +390,34 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00156">156</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00170">170</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a27bf51f703651ebf064b95821515455f" name="a27bf51f703651ebf064b95821515455f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27bf51f703651ebf064b95821515455f">&#9670;&#160;</a></span>genVariadicOfVariadicOperandSetterDecl()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void OpHeaderGenerator::genVariadicOfVariadicOperandSetterDecl </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00128">128</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -470,7 +498,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00198">198</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00212">212</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
@@ -497,7 +525,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00170">170</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpCAPIGen_8cpp_source.html#l00184">184</a> of file <a class="el" href="OpCAPIGen_8cpp_source.html">OpCAPIGen.cpp</a>.</p>
 
 </div>
 </div>
