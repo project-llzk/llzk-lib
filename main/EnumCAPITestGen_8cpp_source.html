@@ -198,8 +198,8 @@ $(function(){initNavTree('EnumCAPITestGen_8cpp_source.html','',''); });
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                            <a class="code hl_function" href="CommonCAPIGen_8h.html#ae7b67e75239015f879f2e7ffa336f699">toPascalCase</a>(enumInfo.getEnumClassName());</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="comment">// Get first enum case for testing</span></div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    std::string firstCase = enumCases[0].getSymbol().upper();</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    std::string firstCaseValue = llvm::formatv(<span class="stringliteral">&quot;{0}_{1}&quot;</span>, cEnumName, firstCase).str();</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    std::string firstCaseValue =</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>        llvm::formatv(<span class="stringliteral">&quot;{0}_{1}&quot;</span>, cEnumName, enumCases[0].getSymbol()).str();</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="comment">// Generate enum usage test</span></div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    this-&gt;genEnumUsageTest(cEnumName, firstCaseValue);</div>
