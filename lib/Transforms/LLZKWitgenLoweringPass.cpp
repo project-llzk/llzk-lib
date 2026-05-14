@@ -1,0 +1,1402 @@
+//===-- LLZKWitgenLoweringPass.cpp -----------------------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#include "llzk/Transforms/LLZKTransformationPasses.h"
+
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
+#include "llzk/Util/SymbolHelper.h"
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
+#include <mlir/Dialect/MemRef/IR/MemRef.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/SymbolTable.h>
+
+#include <llvm/ADT/APInt.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/StringMap.h>
+#include <llvm/ADT/TypeSwitch.h>
+
+using namespace mlir;
+
+namespace llzk {
+#define GEN_PASS_DECL_LOWERCOMPUTETOCOREPASS
+#define GEN_PASS_DECL_CREATEWITGENENTRYPASS
+#define GEN_PASS_DEF_LOWERCOMPUTETOCOREPASS
+#define GEN_PASS_DEF_CREATEWITGENENTRYPASS
+#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
+} // namespace llzk
+
+namespace llzk {
+namespace {
+
+/// Hold the flattened lowered SSA values for one original LLZK value.
+struct LoweredValue {
+  Type sourceType;
+  llvm::SmallVector<Value> leaves;
+};
+
+/// Describe one ordered public main output.
+struct PublicOutput {
+  StringAttr name;
+  Type type;
+};
+
+/// Return the only field used by the module or emit an error.
+static FailureOr<std::reference_wrapper<const Field>> getModuleField(ModuleOp moduleOp) {
+  FieldSet fields;
+  if (failed(collectFields(moduleOp.getOperation(), fields, false))) {
+    moduleOp.emitError("failed to collect fields for llzk-witgen lowering");
+    return failure();
+  }
+  if (fields.size() != 1) {
+    moduleOp.emitError("llzk-witgen execution-engine lowering requires exactly one field");
+    return failure();
+  }
+  return *fields.begin();
+}
+
+/// Return a sanitized symbol name for one lowered helper or function.
+static std::string mangleFunctionName(function::FuncDefOp funcOp) {
+  auto symbolRef = funcOp.getFullyQualifiedName(false);
+  llvm::SmallString<128> result("__llzk_witgen_");
+  for (StringRef piece : getNames(symbolRef)) {
+    if (!result.empty() && result.back() != '_') {
+      result += "__";
+    }
+    for (char c : piece) {
+      result += llvm::isAlnum(static_cast<unsigned char>(c)) ? c : '_';
+    }
+  }
+  return std::string(result);
+}
+
+/// Return the byte width needed to materialize one field element as `iN`.
+static unsigned getFeltBitWidth(const Field &field) { return field.bitWidth(); }
+
+/// Return a constant index value.
+static Value makeIndexConstant(OpBuilder &builder, Location loc, int64_t value) {
+  return builder.create<arith::ConstantIndexOp>(loc, value).getResult();
+}
+
+/// Return a one constant of the lowered field integer type.
+static Value makeOneFelt(OpBuilder &builder, Location loc, const Field &field) {
+  return builder.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(IntegerType::get(builder.getContext(), getFeltBitWidth(field)), 1)
+  );
+}
+
+/// Return the field modulus at the requested width.
+static llvm::APInt toExactWidthAPInt(const llvm::DynamicAPInt &value, unsigned width) {
+  SmallString<64> rendered;
+  llvm::raw_svector_ostream(rendered) << value;
+  return llvm::APInt(width, rendered, 10);
+}
+
+/// Return the field modulus at the requested width.
+static IntegerAttr getModulusAttr(MLIRContext *context, const Field &field, unsigned width) {
+  return IntegerAttr::get(IntegerType::get(context, width), toExactWidthAPInt(field.prime(), width));
+}
+
+/// Return the lowered scalar type for a non-aggregate LLZK type.
+static FailureOr<Type> lowerScalarType(MLIRContext *context, Type type, const Field &field) {
+  if (isa<felt::FeltType>(type)) {
+    return IntegerType::get(context, getFeltBitWidth(field));
+  }
+  if (isa<IndexType>(type)) {
+    return type;
+  }
+  if (auto intType = dyn_cast<IntegerType>(type)) {
+    if (intType.getWidth() == 1) {
+      return intType;
+    }
+  }
+  return failure();
+}
+
+/// Return true iff the type lowers as a scalar SSA value.
+static bool isScalarType(Type type) {
+  return isa<felt::FeltType, IndexType>(type) ||
+         (isa<IntegerType>(type) && mlir::cast<IntegerType>(type).getWidth() == 1);
+}
+
+/// Flatten one LLZK type into its ordered lowered leaf types.
+static LogicalResult flattenTypeLeaves(
+    Type type, SymbolTableCollection &tables, Operation *origin, const Field &field,
+    SmallVectorImpl<Type> &out, llvm::ArrayRef<int64_t> prefixShape = {}, bool storage = false
+) {
+  auto emitScalarLeaf = [&](Type leafType) {
+    auto lowered = lowerScalarType(origin->getContext(), leafType, field);
+    if (failed(lowered)) {
+      return failure();
+    }
+    if (!storage && prefixShape.empty()) {
+      out.push_back(*lowered);
+      return success();
+    }
+    llvm::SmallVector<int64_t> shape(prefixShape.begin(), prefixShape.end());
+    if (shape.empty()) {
+      shape.push_back(1);
+    }
+    out.push_back(MemRefType::get(shape, *lowered));
+    return success();
+  };
+
+  if (isScalarType(type)) {
+    return emitScalarLeaf(type);
+  }
+
+  if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
+    llvm::SmallVector<int64_t> newPrefix(prefixShape.begin(), prefixShape.end());
+    newPrefix.append(arrayType.getShape().begin(), arrayType.getShape().end());
+    return flattenTypeLeaves(arrayType.getElementType(), tables, origin, field, out, newPrefix, true);
+  }
+
+  if (auto podType = dyn_cast<pod::PodType>(type)) {
+    for (pod::RecordAttr record : podType.getRecords()) {
+      if (failed(flattenTypeLeaves(record.getType(), tables, origin, field, out, prefixShape, true))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  if (auto structType = dyn_cast<component::StructType>(type)) {
+    auto def = structType.getDefinition(tables, origin);
+    if (failed(def)) {
+      origin->emitError("could not resolve struct type during witgen lowering");
+      return failure();
+    }
+    for (component::MemberDefOp member : def->get().getMemberDefs()) {
+      if (failed(flattenTypeLeaves(member.getType(), tables, origin, field, out, prefixShape, true))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  origin->emitError("unsupported type in llzk-witgen lowering: ") << type;
+  return failure();
+}
+
+/// Return the number of flattened lowered leaves for one LLZK type.
+static FailureOr<size_t>
+getLeafCount(Type type, SymbolTableCollection &tables, Operation *origin, const Field &field) {
+  SmallVector<Type> leaves;
+  if (failed(flattenTypeLeaves(type, tables, origin, field, leaves))) {
+    return failure();
+  }
+  return leaves.size();
+}
+
+/// Return the lowered leaf types for one LLZK type.
+static FailureOr<SmallVector<Type>>
+getLeafTypes(Type type, SymbolTableCollection &tables, Operation *origin, const Field &field) {
+  SmallVector<Type> leaves;
+  if (failed(flattenTypeLeaves(type, tables, origin, field, leaves))) {
+    return failure();
+  }
+  return leaves;
+}
+
+/// Return the ordered member span for one pod record or struct member.
+static FailureOr<std::pair<size_t, size_t>> getNamedLeafSpan(
+    Type ownerType, StringRef name, SymbolTableCollection &tables, Operation *origin, const Field &field
+) {
+  if (auto podType = dyn_cast<pod::PodType>(ownerType)) {
+    size_t running = 0;
+    for (pod::RecordAttr record : podType.getRecords()) {
+      auto count = getLeafCount(record.getType(), tables, origin, field);
+      if (failed(count)) {
+        return failure();
+      }
+      if (record.getName().getValue() == name) {
+        return std::pair<size_t, size_t> {running, *count};
+      }
+      running += *count;
+    }
+  }
+
+  if (auto structType = dyn_cast<component::StructType>(ownerType)) {
+    auto def = structType.getDefinition(tables, origin);
+    if (failed(def)) {
+      origin->emitError("could not resolve struct type during witgen lowering");
+      return failure();
+    }
+    size_t running = 0;
+    for (component::MemberDefOp member : def->get().getMemberDefs()) {
+      auto count = getLeafCount(member.getType(), tables, origin, field);
+      if (failed(count)) {
+        return failure();
+      }
+      if (member.getSymName() == name) {
+        return std::pair<size_t, size_t> {running, *count};
+      }
+      running += *count;
+    }
+  }
+
+  origin->emitError("could not resolve aggregate member/record @") << name;
+  return failure();
+}
+
+/// Return the type of one pod record or struct member.
+static FailureOr<Type> getNamedSubType(
+    Type ownerType, StringRef name, SymbolTableCollection &tables, Operation *origin
+) {
+  if (auto podType = dyn_cast<pod::PodType>(ownerType)) {
+    for (pod::RecordAttr record : podType.getRecords()) {
+      if (record.getName().getValue() == name) {
+        return record.getType();
+      }
+    }
+  }
+  if (auto structType = dyn_cast<component::StructType>(ownerType)) {
+    auto def = structType.getDefinition(tables, origin);
+    if (failed(def)) {
+      origin->emitError("could not resolve struct type during witgen lowering");
+      return failure();
+    }
+    for (component::MemberDefOp member : def->get().getMemberDefs()) {
+      if (member.getSymName() == name) {
+        return member.getType();
+      }
+    }
+  }
+  origin->emitError("could not resolve aggregate member/record @") << name;
+  return failure();
+}
+
+/// Unravel one flat element offset into row-major static indices.
+static SmallVector<int64_t> delinearizeIndices(ArrayRef<int64_t> shape, size_t flatIndex) {
+  SmallVector<int64_t> indices(shape.size(), 0);
+  size_t carry = flatIndex;
+  for (int64_t dim = static_cast<int64_t>(shape.size()) - 1; dim >= 0; --dim) {
+    size_t size = static_cast<size_t>(shape[static_cast<size_t>(dim)]);
+    indices[static_cast<size_t>(dim)] = static_cast<int64_t>(carry % size);
+    carry /= size;
+  }
+  return indices;
+}
+
+/// Return the static element count for one shaped memref.
+static size_t getNumElements(ArrayRef<int64_t> shape) {
+  size_t count = 1;
+  for (int64_t dim : shape) {
+    count *= static_cast<size_t>(dim);
+  }
+  return count;
+}
+
+/// Create one static memref filled with zeros.
+static Value createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
+  Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
+  auto elementType = memrefType.getElementType();
+  Value zero;
+  if (isa<IndexType>(elementType)) {
+    zero = builder.create<arith::ConstantIndexOp>(loc, 0);
+  } else {
+    zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(mlir::cast<IntegerType>(elementType), 0));
+  }
+  size_t elementCount = getNumElements(memrefType.getShape());
+  for (size_t flat = 0; flat < elementCount; ++flat) {
+    SmallVector<Value> indices;
+    for (int64_t index : delinearizeIndices(memrefType.getShape(), flat)) {
+      indices.push_back(makeIndexConstant(builder, loc, index));
+    }
+    builder.create<memref::StoreOp>(loc, zero, alloc, indices);
+  }
+  return alloc;
+}
+
+/// Build the deterministic default lowered value for one LLZK type.
+static FailureOr<LoweredValue> createDefaultValue(
+    OpBuilder &builder, Location loc, Type type, SymbolTableCollection &tables, Operation *origin,
+    const Field &field
+) {
+  LoweredValue lowered {type, {}};
+  auto leafTypes = getLeafTypes(type, tables, origin, field);
+  if (failed(leafTypes)) {
+    return failure();
+  }
+  for (Type leafType : *leafTypes) {
+    if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
+      lowered.leaves.push_back(createZeroMemRef(builder, loc, memrefType, field));
+      continue;
+    }
+    if (isa<IndexType>(leafType)) {
+      lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, 0));
+      continue;
+    }
+    lowered.leaves.push_back(builder.create<arith::ConstantOp>(loc, IntegerAttr::get(mlir::cast<IntegerType>(leafType), 0)));
+  }
+  return lowered;
+}
+
+/// Normalize a widened integer back into the field modulus and truncate it.
+static Value
+normalizeWideValue(OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field) {
+  auto wideType = mlir::cast<IntegerType>(wideValue.getType());
+  Value modulus =
+      builder.create<arith::ConstantOp>(loc, getModulusAttr(builder.getContext(), field, wideType.getWidth()));
+  Value reduced = builder.create<arith::RemUIOp>(loc, wideValue, modulus);
+  return builder.create<arith::TruncIOp>(loc, IntegerType::get(builder.getContext(), dstWidth), reduced);
+}
+
+/// Lower field addition with explicit modular reduction.
+static Value lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = getFeltBitWidth(field);
+  unsigned wideWidth = width + 1;
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
+  Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
+  Value sum = builder.create<arith::AddIOp>(loc, lhsWide, rhsWide);
+  return normalizeWideValue(builder, loc, sum, width, field);
+}
+
+/// Lower field subtraction with explicit modular reduction.
+static Value lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = getFeltBitWidth(field);
+  unsigned wideWidth = width + 1;
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
+  Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
+  Value modulus =
+      builder.create<arith::ConstantOp>(loc, getModulusAttr(builder.getContext(), field, wideWidth));
+  Value lhsPlusMod = builder.create<arith::AddIOp>(loc, lhsWide, modulus);
+  Value diff = builder.create<arith::SubIOp>(loc, lhsPlusMod, rhsWide);
+  return normalizeWideValue(builder, loc, diff, width, field);
+}
+
+/// Lower field negation with explicit modular reduction.
+static Value lowerFeltNeg(OpBuilder &builder, Location loc, Value operand, const Field &field) {
+  unsigned width = getFeltBitWidth(field);
+  unsigned wideWidth = width + 1;
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value operandWide = builder.create<arith::ExtUIOp>(loc, wideType, operand);
+  Value modulus =
+      builder.create<arith::ConstantOp>(loc, getModulusAttr(builder.getContext(), field, wideWidth));
+  Value diff = builder.create<arith::SubIOp>(loc, modulus, operandWide);
+  return normalizeWideValue(builder, loc, diff, width, field);
+}
+
+/// Lower field multiplication with widening and modular reduction.
+static Value lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = getFeltBitWidth(field);
+  unsigned wideWidth = width * 2;
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
+  Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
+  Value product = builder.create<arith::MulIOp>(loc, lhsWide, rhsWide);
+  return normalizeWideValue(builder, loc, product, width, field);
+}
+
+/// Lower a field inversion through exponentiation by `p - 2`.
+static Value lowerFeltInv(OpBuilder &builder, Location loc, Value operand, const Field &field) {
+  llvm::APInt exponent = toExactWidthAPInt(field.prime() - 2, getFeltBitWidth(field));
+  Value result = makeOneFelt(builder, loc, field);
+  Value base = operand;
+  for (unsigned bit = 0; bit < exponent.getBitWidth(); ++bit) {
+    if (exponent[bit]) {
+      result = lowerFeltMul(builder, loc, result, base, field);
+    }
+    if (bit + 1 < exponent.getBitWidth()) {
+      base = lowerFeltMul(builder, loc, base, base, field);
+    }
+  }
+  return result;
+}
+
+/// Lower field division as multiplication by the modular inverse.
+static Value lowerFeltDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  return lowerFeltMul(builder, loc, lhs, lowerFeltInv(builder, loc, rhs, field), field);
+}
+
+/// Load one scalar leaf from aggregate storage.
+static Value loadStorageScalar(OpBuilder &builder, Location loc, Value storageLeaf) {
+  auto memrefType = mlir::cast<MemRefType>(storageLeaf.getType());
+  SmallVector<Value> indices;
+  indices.reserve(memrefType.getRank());
+  for (int64_t dim = 0; dim < memrefType.getRank(); ++dim) {
+    indices.push_back(makeIndexConstant(builder, loc, 0));
+  }
+  return builder.create<memref::LoadOp>(loc, storageLeaf, indices);
+}
+
+/// Store one scalar value into aggregate storage.
+static void storeStorageScalar(OpBuilder &builder, Location loc, Value scalar, Value storageLeaf) {
+  auto memrefType = mlir::cast<MemRefType>(storageLeaf.getType());
+  SmallVector<Value> indices;
+  indices.reserve(memrefType.getRank());
+  for (int64_t dim = 0; dim < memrefType.getRank(); ++dim) {
+    indices.push_back(makeIndexConstant(builder, loc, 0));
+  }
+  builder.create<memref::StoreOp>(loc, scalar, storageLeaf, indices);
+}
+
+/// Copy the flattened source value into aggregate storage leaves.
+static LogicalResult copyIntoStorage(
+    OpBuilder &builder, Location loc, Type sourceType, ArrayRef<Value> destLeaves,
+    ArrayRef<Value> sourceLeaves, SymbolTableCollection &tables, Operation *origin, const Field &field
+) {
+  auto leafTypes = getLeafTypes(sourceType, tables, origin, field);
+  if (failed(leafTypes)) {
+    return failure();
+  }
+  if (destLeaves.size() != sourceLeaves.size() || destLeaves.size() != leafTypes->size()) {
+    origin->emitError("flattened leaf mismatch while copying aggregate storage");
+    return failure();
+  }
+  for (auto [leafType, destLeaf, srcLeaf] : llvm::zip(*leafTypes, destLeaves, sourceLeaves)) {
+    if (isa<MemRefType>(leafType)) {
+      builder.create<memref::CopyOp>(loc, srcLeaf, destLeaf);
+      continue;
+    }
+    storeStorageScalar(builder, loc, srcLeaf, destLeaf);
+  }
+  return success();
+}
+
+/// Return the flattened lowered sub-value slice for one member or record.
+static FailureOr<LoweredValue> readNamedAggregateValue(
+    OpBuilder &builder, Location loc, Type ownerType, StringRef name, const LoweredValue &owner,
+    SymbolTableCollection &tables, Operation *origin, const Field &field
+) {
+  auto subType = getNamedSubType(ownerType, name, tables, origin);
+  if (failed(subType)) {
+    return failure();
+  }
+  auto span = getNamedLeafSpan(ownerType, name, tables, origin, field);
+  if (failed(span)) {
+    return failure();
+  }
+  LoweredValue result {*subType, {}};
+  auto leafTypes = getLeafTypes(*subType, tables, origin, field);
+  if (failed(leafTypes)) {
+    return failure();
+  }
+  auto leaves = ArrayRef<Value>(owner.leaves).slice(span->first, span->second);
+  for (auto [leafType, leafValue] : llvm::zip(*leafTypes, leaves)) {
+    if (isa<MemRefType>(leafType)) {
+      result.leaves.push_back(leafValue);
+    } else {
+      result.leaves.push_back(loadStorageScalar(builder, loc, leafValue));
+    }
+  }
+  return result;
+}
+
+/// Write one member or record into aggregate storage.
+static LogicalResult writeNamedAggregateValue(
+    OpBuilder &builder, Location loc, Type ownerType, StringRef name, LoweredValue &owner,
+    const LoweredValue &value, SymbolTableCollection &tables, Operation *origin, const Field &field
+) {
+  auto subType = getNamedSubType(ownerType, name, tables, origin);
+  if (failed(subType)) {
+    return failure();
+  }
+  auto span = getNamedLeafSpan(ownerType, name, tables, origin, field);
+  if (failed(span)) {
+    return failure();
+  }
+  return copyIntoStorage(
+      builder, loc, *subType, ArrayRef<Value>(owner.leaves).slice(span->first, span->second), value.leaves, tables,
+      origin, field
+  );
+}
+
+/// Create a static subview representing one aggregate array element leaf.
+static Value createElementSubview(
+    OpBuilder &builder, Location loc, Value source, MemRefType resultType, ValueRange outerIndices
+) {
+  auto sourceType = mlir::cast<MemRefType>(source.getType());
+  SmallVector<Value> offsets(outerIndices.begin(), outerIndices.end());
+  SmallVector<Value> sizes;
+  SmallVector<Value> strides;
+  for (int64_t dim = static_cast<int64_t>(outerIndices.size()); dim < sourceType.getRank(); ++dim) {
+    offsets.push_back(makeIndexConstant(builder, loc, 0));
+  }
+  for (int64_t size : resultType.getShape()) {
+    sizes.push_back(makeIndexConstant(builder, loc, size));
+  }
+  for (int64_t dim = 0; dim < sourceType.getRank(); ++dim) {
+    strides.push_back(makeIndexConstant(builder, loc, 1));
+  }
+  return builder.create<memref::SubViewOp>(loc, resultType, source, offsets, sizes, strides);
+}
+
+/// Read one LLZK array element.
+static FailureOr<LoweredValue> readArrayElement(
+    OpBuilder &builder, Location loc, array::ArrayType arrayType, const LoweredValue &arrayValue,
+    ArrayRef<Value> indices, SymbolTableCollection &tables, Operation *origin, const Field &field
+) {
+  Type elementType = arrayType.getElementType();
+  LoweredValue result {elementType, {}};
+  if (isScalarType(elementType)) {
+    result.leaves.push_back(builder.create<memref::LoadOp>(loc, arrayValue.leaves.front(), indices));
+    return result;
+  }
+
+  auto leafTypes = getLeafTypes(elementType, tables, origin, field);
+  if (failed(leafTypes)) {
+    return failure();
+  }
+  for (auto [sourceLeaf, resultLeafType] : llvm::zip(arrayValue.leaves, *leafTypes)) {
+    result.leaves.push_back(
+        createElementSubview(builder, loc, sourceLeaf, mlir::cast<MemRefType>(resultLeafType), indices)
+    );
+  }
+  return result;
+}
+
+/// Write one LLZK array element.
+static LogicalResult writeArrayElement(
+    OpBuilder &builder, Location loc, array::ArrayType arrayType, LoweredValue &arrayValue,
+    ArrayRef<Value> indices, const LoweredValue &elementValue, SymbolTableCollection &tables,
+    Operation *origin, const Field &field
+) {
+  Type elementType = arrayType.getElementType();
+  if (isScalarType(elementType)) {
+    builder.create<memref::StoreOp>(loc, elementValue.leaves.front(), arrayValue.leaves.front(), indices);
+    return success();
+  }
+
+  auto leafTypes = getLeafTypes(elementType, tables, origin, field);
+  if (failed(leafTypes)) {
+    return failure();
+  }
+  for (auto [destLeaf, srcLeaf, resultLeafType] :
+       llvm::zip(arrayValue.leaves, elementValue.leaves, *leafTypes)) {
+    Value subview = createElementSubview(builder, loc, destLeaf, mlir::cast<MemRefType>(resultLeafType), indices);
+    builder.create<memref::CopyOp>(loc, srcLeaf, subview);
+  }
+  return success();
+}
+
+/// Flatten one lowered value into its callee argument/result leaf list.
+static LogicalResult appendFlatLeaves(
+    const LoweredValue &value, SmallVectorImpl<Value> &out, SymbolTableCollection &tables,
+    Operation *origin, const Field &field
+) {
+  auto leafTypes = getLeafTypes(value.sourceType, tables, origin, field);
+  if (failed(leafTypes) || leafTypes->size() != value.leaves.size()) {
+    origin->emitError("flattened leaf mismatch during call lowering");
+    return failure();
+  }
+  out.append(value.leaves.begin(), value.leaves.end());
+  return success();
+}
+
+/// Build the ordered public outputs for the concrete main struct.
+static FailureOr<SmallVector<PublicOutput>> collectPublicOutputs(
+    component::StructDefOp mainDef, SymbolTableCollection &tables, const Field &field
+) {
+  SmallVector<PublicOutput> outputs;
+  for (component::MemberDefOp member : mainDef.getMemberDefs()) {
+    if (!member.hasPublicAttr()) {
+      continue;
+    }
+    SmallVector<Type> leaves;
+    if (failed(flattenTypeLeaves(member.getType(), tables, member.getOperation(), field, leaves))) {
+      return failure();
+    }
+    if (leaves.size() != 1 || (!isa<MemRefType>(leaves.front()) && !isScalarType(member.getType()))) {
+      member.emitError("execution-engine backend only supports public felt or felt-array outputs");
+      return failure();
+    }
+    outputs.push_back(PublicOutput {member.getSymNameAttr(), member.getType()});
+  }
+  return outputs;
+}
+
+/// Lower one LLZK compute/free function body into `func.func`.
+class BodyLowerer {
+public:
+  /// Create a lowerer that appends new `func.func` operations into the module.
+  BodyLowerer(ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field)
+      : moduleOp(moduleOp), tables(tables), field(field) {}
+
+  /// Lower one LLZK function into `func.func`.
+  FailureOr<func::FuncOp> lowerFunction(function::FuncDefOp funcOp) {
+    if (funcOp.isExternal()) {
+      funcOp.emitError("execution-engine backend does not lower extern functions");
+      return failure();
+    }
+    if (!funcOp.getBody().hasOneBlock()) {
+      funcOp.emitError("execution-engine backend only supports single-block functions");
+      return failure();
+    }
+
+    SmallVector<Type> loweredArgTypes;
+    for (Type argType : funcOp.getArgumentTypes()) {
+      if (failed(flattenTypeLeaves(argType, tables, funcOp.getOperation(), field, loweredArgTypes))) {
+        return failure();
+      }
+    }
+    SmallVector<Type> loweredResultTypes;
+    for (Type resultType : funcOp.getResultTypes()) {
+      if (failed(flattenTypeLeaves(resultType, tables, funcOp.getOperation(), field, loweredResultTypes))) {
+        return failure();
+      }
+    }
+
+    OpBuilder moduleBuilder(moduleOp.getContext());
+    moduleBuilder.setInsertionPointToEnd(moduleOp.getBody());
+    auto loweredFunc = moduleBuilder.create<func::FuncOp>(
+        funcOp.getLoc(), mangleFunctionName(funcOp),
+        moduleBuilder.getFunctionType(loweredArgTypes, loweredResultTypes)
+    );
+    Block *entry = loweredFunc.addEntryBlock();
+    OpBuilder builder(entry, entry->begin());
+
+    DenseMap<Value, LoweredValue> valueMap;
+    unsigned cursor = 0;
+    for (auto [arg, argType] : llvm::zip(funcOp.getBody().front().getArguments(), funcOp.getArgumentTypes())) {
+      auto leafCount = getLeafCount(argType, tables, funcOp.getOperation(), field);
+      if (failed(leafCount)) {
+        loweredFunc.erase();
+        return failure();
+      }
+      LoweredValue lowered {argType, {}};
+      lowered.leaves.append(entry->getArguments().begin() + cursor, entry->getArguments().begin() + cursor + *leafCount);
+      cursor += *leafCount;
+      valueMap[arg] = std::move(lowered);
+    }
+
+    if (failed(lowerBlock(builder, funcOp.getBody().front(), valueMap))) {
+      loweredFunc.erase();
+      return failure();
+    }
+    return loweredFunc;
+  }
+
+private:
+  ModuleOp moduleOp;
+  SymbolTableCollection &tables;
+  const Field &field;
+
+  /// Look up one already-lowered SSA value.
+  FailureOr<LoweredValue> lookup(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
+    auto it = valueMap.find(value);
+    if (it == valueMap.end()) {
+      origin->emitError("failed to find lowered SSA value");
+      return failure();
+    }
+    return it->second;
+  }
+
+  /// Require a scalar lowered value.
+  FailureOr<Value> lookupScalar(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
+    auto lowered = lookup(value, valueMap, origin);
+    if (failed(lowered) || lowered->leaves.size() != 1 || isa<MemRefType>(lowered->leaves.front().getType())) {
+      origin->emitError("expected scalar lowered value");
+      return failure();
+    }
+    return lowered->leaves.front();
+  }
+
+  /// Lower every operation in a single block.
+  LogicalResult lowerBlock(OpBuilder &builder, Block &block, DenseMap<Value, LoweredValue> &valueMap) {
+    for (Operation &op : block) {
+      if (failed(lowerOperation(builder, op, valueMap))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  /// Lower one field comparison predicate.
+  FailureOr<Value> lowerFeltCmp(
+      OpBuilder &builder, Location loc, boolean::CmpOp cmpOp, Value lhs, Value rhs
+  ) {
+    arith::CmpIPredicate predicate;
+    switch (cmpOp.getPredicate()) {
+    case boolean::FeltCmpPredicate::EQ:
+      predicate = arith::CmpIPredicate::eq;
+      break;
+    case boolean::FeltCmpPredicate::NE:
+      predicate = arith::CmpIPredicate::ne;
+      break;
+    case boolean::FeltCmpPredicate::LT:
+      predicate = arith::CmpIPredicate::ult;
+      break;
+    case boolean::FeltCmpPredicate::LE:
+      predicate = arith::CmpIPredicate::ule;
+      break;
+    case boolean::FeltCmpPredicate::GT:
+      predicate = arith::CmpIPredicate::ugt;
+      break;
+    case boolean::FeltCmpPredicate::GE:
+      predicate = arith::CmpIPredicate::uge;
+      break;
+    }
+    return builder.create<arith::CmpIOp>(loc, predicate, lhs, rhs).getResult();
+  }
+
+  /// Lower one LLZK operation into core MLIR dialects.
+  LogicalResult lowerOperation(OpBuilder &builder, Operation &op, DenseMap<Value, LoweredValue> &valueMap) {
+    Location loc = op.getLoc();
+
+    auto bind = [&](Value result, LoweredValue lowered) {
+      valueMap[result] = std::move(lowered);
+      return success();
+    };
+
+    if (auto returnOp = dyn_cast<function::ReturnOp>(op)) {
+      SmallVector<Value> results;
+      for (Value operand : returnOp.getOperands()) {
+        auto lowered = lookup(operand, valueMap, returnOp.getOperation());
+        if (failed(lowered) ||
+            failed(appendFlatLeaves(*lowered, results, tables, returnOp.getOperation(), field))) {
+          return failure();
+        }
+      }
+      builder.create<func::ReturnOp>(loc, results);
+      return success();
+    }
+
+    if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
+      SmallVector<Value> results;
+      for (Value operand : yieldOp.getOperands()) {
+        auto lowered = lookup(operand, valueMap, yieldOp.getOperation());
+        if (failed(lowered) ||
+            failed(appendFlatLeaves(*lowered, results, tables, yieldOp.getOperation(), field))) {
+          return failure();
+        }
+      }
+      builder.create<scf::YieldOp>(loc, results);
+      return success();
+    }
+
+    if (auto constantOp = dyn_cast<arith::ConstantOp>(op)) {
+      Operation *clone = builder.clone(op);
+      return bind(constantOp.getResult(), LoweredValue {constantOp.getType(), {clone->getResult(0)}});
+    }
+
+    if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
+      auto intType = IntegerType::get(builder.getContext(), getFeltBitWidth(field));
+      Value lowered = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, feltConst.getValue().getValue()));
+      return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
+    }
+
+    if (auto nondetOp = dyn_cast<llzk::NonDetOp>(op)) {
+      auto lowered = createDefaultValue(builder, loc, nondetOp.getType(), tables, nondetOp.getOperation(), field);
+      if (failed(lowered)) {
+        return failure();
+      }
+      return bind(nondetOp.getResult(), std::move(*lowered));
+    }
+
+    if (auto addOp = dyn_cast<felt::AddFeltOp>(op)) {
+      auto lhs = lookupScalar(addOp.getLhs(), valueMap, addOp.getOperation());
+      auto rhs = lookupScalar(addOp.getRhs(), valueMap, addOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(addOp.getResult(), LoweredValue {addOp.getType(), {lowerFeltAdd(builder, loc, *lhs, *rhs, field)}});
+    }
+    if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
+      auto lhs = lookupScalar(subOp.getLhs(), valueMap, subOp.getOperation());
+      auto rhs = lookupScalar(subOp.getRhs(), valueMap, subOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(subOp.getResult(), LoweredValue {subOp.getType(), {lowerFeltSub(builder, loc, *lhs, *rhs, field)}});
+    }
+    if (auto mulOp = dyn_cast<felt::MulFeltOp>(op)) {
+      auto lhs = lookupScalar(mulOp.getLhs(), valueMap, mulOp.getOperation());
+      auto rhs = lookupScalar(mulOp.getRhs(), valueMap, mulOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(mulOp.getResult(), LoweredValue {mulOp.getType(), {lowerFeltMul(builder, loc, *lhs, *rhs, field)}});
+    }
+    if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
+      auto operand = lookupScalar(negOp.getOperand(), valueMap, negOp.getOperation());
+      if (failed(operand)) {
+        return failure();
+      }
+      return bind(negOp.getResult(), LoweredValue {negOp.getType(), {lowerFeltNeg(builder, loc, *operand, field)}});
+    }
+    if (auto invOp = dyn_cast<felt::InvFeltOp>(op)) {
+      auto operand = lookupScalar(invOp.getOperand(), valueMap, invOp.getOperation());
+      if (failed(operand)) {
+        return failure();
+      }
+      return bind(invOp.getResult(), LoweredValue {invOp.getType(), {lowerFeltInv(builder, loc, *operand, field)}});
+    }
+    if (auto divOp = dyn_cast<felt::DivFeltOp>(op)) {
+      auto lhs = lookupScalar(divOp.getLhs(), valueMap, divOp.getOperation());
+      auto rhs = lookupScalar(divOp.getRhs(), valueMap, divOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(divOp.getResult(), LoweredValue {divOp.getType(), {lowerFeltDiv(builder, loc, *lhs, *rhs, field)}});
+    }
+
+    if (auto cmpOp = dyn_cast<boolean::CmpOp>(op)) {
+      auto lhs = lookupScalar(cmpOp.getLhs(), valueMap, cmpOp.getOperation());
+      auto rhs = lookupScalar(cmpOp.getRhs(), valueMap, cmpOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      auto lowered = lowerFeltCmp(builder, loc, cmpOp, *lhs, *rhs);
+      if (failed(lowered)) {
+        return failure();
+      }
+      return bind(cmpOp.getResult(), LoweredValue {cmpOp.getType(), {*lowered}});
+    }
+    if (auto assertOp = dyn_cast<boolean::AssertOp>(op)) {
+      auto condition = lookupScalar(assertOp.getCondition(), valueMap, assertOp.getOperation());
+      if (failed(condition)) {
+        return failure();
+      }
+      builder.create<cf::AssertOp>(
+          loc, *condition, assertOp.getMsg() ? assertOp.getMsg()->str() : "bool.assert failed"
+      );
+      return success();
+    }
+    if (auto andOp = dyn_cast<boolean::AndBoolOp>(op)) {
+      auto lhs = lookupScalar(andOp.getLhs(), valueMap, andOp.getOperation());
+      auto rhs = lookupScalar(andOp.getRhs(), valueMap, andOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(andOp.getResult(), LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}});
+    }
+    if (auto orOp = dyn_cast<boolean::OrBoolOp>(op)) {
+      auto lhs = lookupScalar(orOp.getLhs(), valueMap, orOp.getOperation());
+      auto rhs = lookupScalar(orOp.getRhs(), valueMap, orOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(orOp.getResult(), LoweredValue {orOp.getType(), {builder.create<arith::OrIOp>(loc, *lhs, *rhs)}});
+    }
+    if (auto xorOp = dyn_cast<boolean::XorBoolOp>(op)) {
+      auto lhs = lookupScalar(xorOp.getLhs(), valueMap, xorOp.getOperation());
+      auto rhs = lookupScalar(xorOp.getRhs(), valueMap, xorOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(xorOp.getResult(), LoweredValue {xorOp.getType(), {builder.create<arith::XOrIOp>(loc, *lhs, *rhs)}});
+    }
+    if (auto notOp = dyn_cast<boolean::NotBoolOp>(op)) {
+      auto operand = lookupScalar(notOp.getOperand(), valueMap, notOp.getOperation());
+      if (failed(operand)) {
+        return failure();
+      }
+      Value one = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(IntegerType::get(builder.getContext(), 1), 1));
+      return bind(notOp.getResult(), LoweredValue {notOp.getType(), {builder.create<arith::XOrIOp>(loc, *operand, one)}});
+    }
+
+    if (auto intToFelt = dyn_cast<cast::IntToFeltOp>(op)) {
+      auto operand = lookupScalar(intToFelt.getValue(), valueMap, intToFelt.getOperation());
+      if (failed(operand)) {
+        return failure();
+      }
+      auto dstType = IntegerType::get(builder.getContext(), getFeltBitWidth(field));
+      Value lowered;
+      if (isa<IndexType>((*operand).getType())) {
+        lowered = builder.create<arith::IndexCastUIOp>(loc, dstType, *operand);
+      } else {
+        auto intType = mlir::cast<IntegerType>((*operand).getType());
+        if (intType.getWidth() < dstType.getWidth()) {
+          lowered = builder.create<arith::ExtUIOp>(loc, dstType, *operand);
+        } else if (intType.getWidth() > dstType.getWidth()) {
+          lowered = normalizeWideValue(builder, loc, *operand, dstType.getWidth(), field);
+        } else {
+          lowered = *operand;
+        }
+      }
+      return bind(intToFelt.getResult(), LoweredValue {intToFelt.getType(), {lowered}});
+    }
+    if (auto feltToIndex = dyn_cast<cast::FeltToIndexOp>(op)) {
+      auto operand = lookupScalar(feltToIndex.getValue(), valueMap, feltToIndex.getOperation());
+      if (failed(operand)) {
+        return failure();
+      }
+      return bind(feltToIndex.getResult(), LoweredValue {feltToIndex.getType(), {builder.create<arith::IndexCastUIOp>(loc, builder.getIndexType(), *operand)}});
+    }
+
+    if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
+      auto lowered = createDefaultValue(builder, loc, structNewOp.getType(), tables, structNewOp.getOperation(), field);
+      if (failed(lowered)) {
+        return failure();
+      }
+      return bind(structNewOp.getResult(), std::move(*lowered));
+    }
+    if (auto readMemberOp = dyn_cast<component::MemberReadOp>(op)) {
+      auto componentValue = lookup(readMemberOp.getComponent(), valueMap, readMemberOp.getOperation());
+      if (failed(componentValue)) {
+        return failure();
+      }
+      auto lowered = readNamedAggregateValue(
+          builder, loc, readMemberOp.getComponent().getType(), readMemberOp.getMemberName(),
+          *componentValue, tables, readMemberOp.getOperation(), field
+      );
+      if (failed(lowered)) {
+        return failure();
+      }
+      return bind(readMemberOp.getResult(), std::move(*lowered));
+    }
+    if (auto writeMemberOp = dyn_cast<component::MemberWriteOp>(op)) {
+      auto componentValue = lookup(writeMemberOp.getComponent(), valueMap, writeMemberOp.getOperation());
+      auto memberValue = lookup(writeMemberOp.getVal(), valueMap, writeMemberOp.getOperation());
+      if (failed(componentValue) || failed(memberValue)) {
+        return failure();
+      }
+      return writeNamedAggregateValue(
+          builder, loc, writeMemberOp.getComponent().getType(), writeMemberOp.getMemberName(),
+          valueMap[writeMemberOp.getComponent()], *memberValue, tables, writeMemberOp.getOperation(), field
+      );
+    }
+
+    if (auto newPodOp = dyn_cast<pod::NewPodOp>(op)) {
+      auto lowered = createDefaultValue(builder, loc, newPodOp.getType(), tables, newPodOp.getOperation(), field);
+      if (failed(lowered)) {
+        return failure();
+      }
+      for (pod::RecordValue init : newPodOp.getInitializedRecordValues()) {
+        auto value = lookup(init.value, valueMap, newPodOp.getOperation());
+        if (failed(value) ||
+            failed(writeNamedAggregateValue(
+                builder, loc, newPodOp.getType(), init.name, *lowered, *value, tables,
+                newPodOp.getOperation(), field
+            ))) {
+          return failure();
+        }
+      }
+      return bind(newPodOp.getResult(), std::move(*lowered));
+    }
+    if (auto readPodOp = dyn_cast<pod::ReadPodOp>(op)) {
+      auto podValue = lookup(readPodOp.getPodRef(), valueMap, readPodOp.getOperation());
+      if (failed(podValue)) {
+        return failure();
+      }
+      auto lowered = readNamedAggregateValue(
+          builder, loc, readPodOp.getPodRef().getType(), readPodOp.getRecordName(),
+          *podValue, tables, readPodOp.getOperation(), field
+      );
+      if (failed(lowered)) {
+        return failure();
+      }
+      return bind(readPodOp.getResult(), std::move(*lowered));
+    }
+    if (auto writePodOp = dyn_cast<pod::WritePodOp>(op)) {
+      auto recordValue = lookup(writePodOp.getValue(), valueMap, writePodOp.getOperation());
+      if (failed(recordValue)) {
+        return failure();
+      }
+      return writeNamedAggregateValue(
+          builder, loc, writePodOp.getPodRef().getType(), writePodOp.getRecordName(),
+          valueMap[writePodOp.getPodRef()], *recordValue, tables, writePodOp.getOperation(), field
+      );
+    }
+
+    if (auto arrayNewOp = dyn_cast<array::CreateArrayOp>(op)) {
+      auto lowered = createDefaultValue(builder, loc, arrayNewOp.getType(), tables, arrayNewOp.getOperation(), field);
+      if (failed(lowered)) {
+        return failure();
+      }
+      if (!arrayNewOp.getElements().empty()) {
+        size_t elementCount = arrayNewOp.getType().getNumElements();
+        if (arrayNewOp.getElements().size() != elementCount) {
+          arrayNewOp.emitError("expected one explicit element per array slot in witgen lowering");
+          return failure();
+        }
+        auto shape = arrayNewOp.getType().getShape();
+        for (auto [flatIndex, operand] : llvm::enumerate(arrayNewOp.getElements())) {
+          auto elementValue = lookup(operand, valueMap, arrayNewOp.getOperation());
+          if (failed(elementValue)) {
+            return failure();
+          }
+          SmallVector<Value> indices;
+          for (int64_t index : delinearizeIndices(shape, flatIndex)) {
+            indices.push_back(makeIndexConstant(builder, loc, index));
+          }
+          if (failed(writeArrayElement(
+                  builder, loc, arrayNewOp.getType(), *lowered, indices, *elementValue, tables,
+                  arrayNewOp.getOperation(), field
+              ))) {
+            return failure();
+          }
+        }
+      }
+      return bind(arrayNewOp.getResult(), std::move(*lowered));
+    }
+    if (auto readArrayOp = dyn_cast<array::ReadArrayOp>(op)) {
+      SmallVector<Value> indices;
+      for (Value indexValue : readArrayOp.getIndices()) {
+        auto loweredIndex = lookupScalar(indexValue, valueMap, readArrayOp.getOperation());
+        if (failed(loweredIndex)) {
+          return failure();
+        }
+        indices.push_back(*loweredIndex);
+      }
+      auto arrayValue = lookup(readArrayOp.getArrRef(), valueMap, readArrayOp.getOperation());
+      if (failed(arrayValue)) {
+        return failure();
+      }
+      auto lowered = readArrayElement(
+          builder, loc, mlir::cast<array::ArrayType>(readArrayOp.getArrRef().getType()), *arrayValue,
+          indices, tables, readArrayOp.getOperation(), field
+      );
+      if (failed(lowered)) {
+        return failure();
+      }
+      return bind(readArrayOp.getResult(), std::move(*lowered));
+    }
+    if (auto writeArrayOp = dyn_cast<array::WriteArrayOp>(op)) {
+      SmallVector<Value> indices;
+      for (Value indexValue : writeArrayOp.getIndices()) {
+        auto loweredIndex = lookupScalar(indexValue, valueMap, writeArrayOp.getOperation());
+        if (failed(loweredIndex)) {
+          return failure();
+        }
+        indices.push_back(*loweredIndex);
+      }
+      auto elementValue = lookup(writeArrayOp.getRvalue(), valueMap, writeArrayOp.getOperation());
+      if (failed(elementValue)) {
+        return failure();
+      }
+      return writeArrayElement(
+          builder, loc, mlir::cast<array::ArrayType>(writeArrayOp.getArrRef().getType()),
+          valueMap[writeArrayOp.getArrRef()], indices, *elementValue, tables,
+          writeArrayOp.getOperation(), field
+      );
+    }
+
+    if (auto selectOp = dyn_cast<arith::SelectOp>(op)) {
+      auto cond = lookupScalar(selectOp.getCondition(), valueMap, selectOp.getOperation());
+      auto trueValue = lookupScalar(selectOp.getTrueValue(), valueMap, selectOp.getOperation());
+      auto falseValue = lookupScalar(selectOp.getFalseValue(), valueMap, selectOp.getOperation());
+      if (failed(cond) || failed(trueValue) || failed(falseValue)) {
+        return failure();
+      }
+      return bind(selectOp.getResult(), LoweredValue {selectOp.getType(), {builder.create<arith::SelectOp>(loc, *cond, *trueValue, *falseValue)}});
+    }
+    if (auto addiOp = dyn_cast<arith::AddIOp>(op)) {
+      auto lhs = lookupScalar(addiOp.getLhs(), valueMap, addiOp.getOperation());
+      auto rhs = lookupScalar(addiOp.getRhs(), valueMap, addiOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(addiOp.getResult(), LoweredValue {addiOp.getType(), {builder.create<arith::AddIOp>(loc, *lhs, *rhs)}});
+    }
+    if (auto subiOp = dyn_cast<arith::SubIOp>(op)) {
+      auto lhs = lookupScalar(subiOp.getLhs(), valueMap, subiOp.getOperation());
+      auto rhs = lookupScalar(subiOp.getRhs(), valueMap, subiOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(subiOp.getResult(), LoweredValue {subiOp.getType(), {builder.create<arith::SubIOp>(loc, *lhs, *rhs)}});
+    }
+
+    if (auto callOp = dyn_cast<function::CallOp>(op)) {
+      if (callOp.getTemplateParams() || !callOp.getMapOperands().empty()) {
+        callOp.emitError("execution-engine backend encountered an unflattened function.call");
+        return failure();
+      }
+      auto *callable = callOp.resolveCallableInTable(&tables);
+      auto callee = dyn_cast_or_null<function::FuncDefOp>(callable);
+      if (!callee) {
+        callOp.emitError("failed to resolve callee during execution-engine lowering");
+        return failure();
+      }
+      SmallVector<Type> resultTypes;
+      for (Type resultType : callOp.getResultTypes()) {
+        if (failed(flattenTypeLeaves(resultType, tables, callOp.getOperation(), field, resultTypes))) {
+          return failure();
+        }
+      }
+      SmallVector<Value> flatArgs;
+      for (Value operand : callOp.getArgOperands()) {
+        auto lowered = lookup(operand, valueMap, callOp.getOperation());
+        if (failed(lowered) ||
+            failed(appendFlatLeaves(*lowered, flatArgs, tables, callOp.getOperation(), field))) {
+          return failure();
+        }
+      }
+      auto loweredCall = builder.create<func::CallOp>(loc, mangleFunctionName(callee), resultTypes, flatArgs);
+      unsigned cursor = 0;
+      for (auto [oldResult, oldType] : llvm::zip(callOp.getResults(), callOp.getResultTypes())) {
+        auto leafCount = getLeafCount(oldType, tables, callOp.getOperation(), field);
+        if (failed(leafCount)) {
+          return failure();
+        }
+        LoweredValue lowered {oldType, {}};
+        lowered.leaves.append(
+            loweredCall.getResults().begin() + cursor, loweredCall.getResults().begin() + cursor + *leafCount
+        );
+        cursor += *leafCount;
+        valueMap[oldResult] = std::move(lowered);
+      }
+      return success();
+    }
+
+    if (auto forOp = dyn_cast<scf::ForOp>(op)) {
+      auto lb = lookupScalar(forOp.getLowerBound(), valueMap, forOp.getOperation());
+      auto ub = lookupScalar(forOp.getUpperBound(), valueMap, forOp.getOperation());
+      auto step = lookupScalar(forOp.getStep(), valueMap, forOp.getOperation());
+      if (failed(lb) || failed(ub) || failed(step)) {
+        return failure();
+      }
+
+      SmallVector<Value> initArgs;
+      SmallVector<unsigned> initLeafCounts;
+      for (auto [init, resultType] : llvm::zip(forOp.getInitArgs(), forOp.getResultTypes())) {
+        auto lowered = lookup(init, valueMap, forOp.getOperation());
+        if (failed(lowered) ||
+            failed(appendFlatLeaves(*lowered, initArgs, tables, forOp.getOperation(), field))) {
+          return failure();
+        }
+        auto count = getLeafCount(resultType, tables, forOp.getOperation(), field);
+        if (failed(count)) {
+          return failure();
+        }
+        initLeafCounts.push_back(*count);
+      }
+
+      auto newFor = builder.create<scf::ForOp>(loc, *lb, *ub, *step, initArgs);
+      DenseMap<Value, LoweredValue> bodyMap(valueMap.begin(), valueMap.end());
+      bodyMap[forOp.getInductionVar()] = LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};
+      unsigned cursor = 0;
+      for (auto [oldIterArg, oldType, leafCount] :
+           llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {
+        LoweredValue lowered {oldType, {}};
+        lowered.leaves.append(
+            newFor.getRegionIterArgs().begin() + cursor,
+            newFor.getRegionIterArgs().begin() + cursor + leafCount
+        );
+        bodyMap[oldIterArg] = std::move(lowered);
+        cursor += leafCount;
+      }
+      newFor.getBody()->clear();
+      OpBuilder bodyBuilder = OpBuilder::atBlockBegin(newFor.getBody());
+      if (failed(lowerBlock(bodyBuilder, *forOp.getBody(), bodyMap))) {
+        return failure();
+      }
+
+      cursor = 0;
+      for (auto [oldResult, oldType, leafCount] : llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
+        LoweredValue lowered {oldType, {}};
+        lowered.leaves.append(newFor.getResults().begin() + cursor, newFor.getResults().begin() + cursor + leafCount);
+        valueMap[oldResult] = std::move(lowered);
+        cursor += leafCount;
+      }
+      return success();
+    }
+
+    op.emitError("unsupported operation in execution-engine lowering: ") << op.getName();
+    return failure();
+  }
+};
+
+/// Lower all free functions and compute functions into top-level `func.func`s.
+class LowerComputeToCorePass : public impl::LowerComputeToCorePassBase<LowerComputeToCorePass> {
+public:
+  /// Run the pass over one module.
+  void runOnOperation() override {
+    ModuleOp moduleOp = getOperation();
+    auto field = getModuleField(moduleOp);
+    if (failed(field)) {
+      signalPassFailure();
+      return;
+    }
+
+    SymbolTableCollection tables;
+    SmallVector<function::FuncDefOp> funcs;
+    moduleOp.walk([&](function::FuncDefOp funcOp) {
+      if (funcOp.nameIsConstrain()) {
+        return;
+      }
+      funcs.push_back(funcOp);
+    });
+
+    BodyLowerer lowerer(moduleOp, tables, field->get());
+    for (function::FuncDefOp funcOp : funcs) {
+      if (failed(lowerer.lowerFunction(funcOp))) {
+        signalPassFailure();
+        return;
+      }
+    }
+  }
+};
+
+/// Create the stable JIT entry wrapper and erase the remaining LLZK declarations.
+class CreateWitgenEntryPass : public impl::CreateWitgenEntryPassBase<CreateWitgenEntryPass> {
+public:
+  /// Run the pass over one module.
+  void runOnOperation() override {
+    ModuleOp moduleOp = getOperation();
+    auto field = getModuleField(moduleOp);
+    if (failed(field)) {
+      signalPassFailure();
+      return;
+    }
+
+    SymbolTableCollection tables;
+    auto mainDef = getMainInstanceDef(tables, moduleOp.getOperation());
+    if (failed(mainDef) || !mainDef.value()) {
+      moduleOp.emitError("module is missing a concrete llzk.main struct");
+      signalPassFailure();
+      return;
+    }
+    function::FuncDefOp computeFunc = mainDef->get().getComputeFuncOp();
+    if (!computeFunc) {
+      moduleOp.emitError("main struct is missing @compute");
+      signalPassFailure();
+      return;
+    }
+
+    auto publicOutputs = collectPublicOutputs(mainDef->get(), tables, field->get());
+    if (failed(publicOutputs)) {
+      signalPassFailure();
+      return;
+    }
+
+    OpBuilder builder(moduleOp.getContext());
+    builder.setInsertionPointToEnd(moduleOp.getBody());
+
+    SmallVector<Type> wrapperArgs;
+    for (Type argType : computeFunc.getArgumentTypes()) {
+      SmallVector<Type> loweredLeafTypes;
+      if (failed(flattenTypeLeaves(
+              argType, tables, computeFunc.getOperation(), field->get(), loweredLeafTypes, {}, true
+          ))) {
+        signalPassFailure();
+        return;
+      }
+      if (loweredLeafTypes.size() != 1 || !isa<MemRefType>(loweredLeafTypes.front())) {
+        computeFunc.emitError("execution-engine wrapper only supports felt and array<...xfelt> inputs");
+        signalPassFailure();
+        return;
+      }
+      wrapperArgs.push_back(loweredLeafTypes.front());
+    }
+    for (const PublicOutput &output : *publicOutputs) {
+      SmallVector<Type> loweredLeafTypes;
+      if (failed(flattenTypeLeaves(
+              output.type, tables, computeFunc.getOperation(), field->get(), loweredLeafTypes, {}, true
+          ))) {
+        signalPassFailure();
+        return;
+      }
+      if (loweredLeafTypes.size() != 1 || !isa<MemRefType>(loweredLeafTypes.front())) {
+        computeFunc.emitError("execution-engine wrapper only supports felt and array<...xfelt> outputs");
+        signalPassFailure();
+        return;
+      }
+      wrapperArgs.push_back(loweredLeafTypes.front());
+    }
+
+    auto wrapper = builder.create<func::FuncOp>(
+        computeFunc.getLoc(), "__llzk_witgen_main", builder.getFunctionType(wrapperArgs, TypeRange {})
+    );
+    wrapper->setAttr(LLVM::LLVMDialect::getEmitCWrapperAttrName(), builder.getUnitAttr());
+    Block *entry = wrapper.addEntryBlock();
+    builder.setInsertionPointToStart(entry);
+
+    SmallVector<Type> loweredMainResultTypes;
+    for (Type resultType : computeFunc.getResultTypes()) {
+      if (failed(flattenTypeLeaves(resultType, tables, computeFunc.getOperation(), field->get(), loweredMainResultTypes))) {
+        signalPassFailure();
+        return;
+      }
+    }
+
+    SmallVector<Value> mainArgs;
+    for (auto [argType, wrapperArg] : llvm::zip(computeFunc.getArgumentTypes(), entry->getArguments().take_front(computeFunc.getNumArguments()))) {
+      if (isScalarType(argType)) {
+        mainArgs.push_back(loadStorageScalar(builder, computeFunc.getLoc(), wrapperArg));
+      } else {
+        mainArgs.push_back(wrapperArg);
+      }
+    }
+    auto loweredMain = builder.create<func::CallOp>(computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs);
+
+    unsigned cursor = 0;
+    llvm::StringMap<SmallVector<Value>> publicSlices;
+    for (component::MemberDefOp member : mainDef->get().getMemberDefs()) {
+      auto count = getLeafCount(member.getType(), tables, member.getOperation(), field->get());
+      if (failed(count)) {
+        signalPassFailure();
+        return;
+      }
+      SmallVector<Value> slice(
+          loweredMain.getResults().begin() + cursor, loweredMain.getResults().begin() + cursor + *count
+      );
+      cursor += *count;
+      if (member.hasPublicAttr()) {
+        publicSlices[member.getSymName()] = std::move(slice);
+      }
+    }
+
+    auto outputArgs = entry->getArguments().drop_front(computeFunc.getNumArguments());
+    for (auto [output, outputMemRef] : llvm::zip(*publicOutputs, outputArgs)) {
+      auto sliceIt = publicSlices.find(output.name.getValue());
+      if (sliceIt == publicSlices.end()) {
+        wrapper.emitError("missing public output slice while building witgen entry");
+        signalPassFailure();
+        return;
+      }
+      ArrayRef<Value> slice = sliceIt->second;
+      if (slice.empty()) {
+        wrapper.emitError("missing public output slice while building witgen entry");
+        signalPassFailure();
+        return;
+      }
+      if (isScalarType(output.type)) {
+        storeStorageScalar(builder, computeFunc.getLoc(), loadStorageScalar(builder, computeFunc.getLoc(), slice.front()), outputMemRef);
+      } else {
+        builder.create<memref::CopyOp>(computeFunc.getLoc(), slice.front(), outputMemRef);
+      }
+    }
+    builder.create<func::ReturnOp>(computeFunc.getLoc());
+
+    SmallVector<Operation *> toErase;
+    for (Operation &op : moduleOp.getBody()->getOperations()) {
+      if (!isa<func::FuncOp>(op)) {
+        toErase.push_back(&op);
+      }
+    }
+    for (Operation *op : toErase) {
+      op->erase();
+    }
+  }
+};
+
+} // namespace
+
+std::unique_ptr<Pass> createLowerComputeToCorePass() {
+  return std::make_unique<LowerComputeToCorePass>();
+}
+
+std::unique_ptr<Pass> createCreateWitgenEntryPass() {
+  return std::make_unique<CreateWitgenEntryPass>();
+}
+
+} // namespace llzk
