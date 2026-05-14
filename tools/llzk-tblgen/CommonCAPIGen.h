@@ -319,6 +319,13 @@ std::optional<std::string> tryCppTypeToCapiType(mlir::StringRef cppType);
 /// Use extractArrayRefElementType() first and then use this on the result.
 std::string mapCppTypeToCapiType(mlir::StringRef cppType);
 
+/// @brief Map C API type to corresponding basic (not dialect-defined) C++ type
+/// @param capiType The C API type to map
+/// @return The corresponding C++ type string if convertible, std::nullopt otherwise
+///
+/// @note The parameter to this function should be something returned from `tryCppTypeToCapiType()`.
+std::optional<std::string> mapCapiTypeToBasicCppType(mlir::StringRef capiType);
+
 /// @brief Base class for C API generators
 struct Generator {
   Generator(std::string_view recordKind, llvm::raw_ostream &outputStream)
