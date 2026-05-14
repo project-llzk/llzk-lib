@@ -154,7 +154,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   if (!isRuntimeConstant(*info.ub)) {
     info.ub.reset();
   }
-  if (!isRuntimeConstant(*info.step)) {
+  if (info.step.has_value() && !isRuntimeConstant(*info.step)) {
     info.step.reset();
   }
   return info;
