@@ -24,18 +24,20 @@
 #include "r1cs/Dialect/IR/Types.cpp.inc"
 
 void r1cs::R1CSDialect::initialize() {
+  // clang-format off
   addOperations<
-#define GET_OP_LIST
-#include "r1cs/Dialect/IR/Ops.cpp.inc"
-      >();
+    #define GET_OP_LIST
+    #include "r1cs/Dialect/IR/Ops.cpp.inc"
+  >();
 
   addTypes<
-#define GET_TYPEDEF_LIST
-#include "r1cs/Dialect/IR/Types.cpp.inc"
-      >();
+    #define GET_TYPEDEF_LIST
+    #include "r1cs/Dialect/IR/Types.cpp.inc"
+  >();
 
   addAttributes<
-#define GET_ATTRDEF_LIST
-#include "r1cs/Dialect/IR/Attrs.cpp.inc"
-      >();
+    #define GET_ATTRDEF_LIST
+    #include "r1cs/Dialect/IR/Attrs.cpp.inc"
+  >();
+  // clang-format on
 }
