@@ -443,6 +443,10 @@ MlirOperation {0}{1}_{2}Build(MlirOpBuilder builder, MlirLocation location{3}) {
 MlirValue {0}{1}_{2}Get{3}(MlirOperation op) {{
   auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
   assert(range.second == 1 && "expected fixed operand segment size");
+  assert(
+      static_cast<uintptr_t>(range.first) <= static_cast<uintptr_t>(std::numeric_limits<intptr_t>::max()) &&
+      "operand index exceeds intptr_t range"
+  );
   return mlirOperationGetOperand(op, static_cast<intptr_t>(range.first));
 }
 )";
@@ -463,6 +467,10 @@ MlirValue {0}{1}_{2}Get{3}(MlirOperation op) {{
 void {0}{1}_{2}Set{3}(MlirOperation op, MlirValue value) {{
   auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
   assert(range.second == 1 && "expected fixed operand segment size");
+  assert(
+      static_cast<uintptr_t>(range.first) <= static_cast<uintptr_t>(std::numeric_limits<intptr_t>::max()) &&
+      "operand index exceeds intptr_t range"
+  );
   mlirOperationSetOperand(op, static_cast<intptr_t>(range.first), value);
 }
 )";
@@ -488,6 +496,10 @@ intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op) {{
 MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index) {{
   auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
   assert(index >= 0 && index < range.second && "variadic operand index out of range");
+  assert(
+      static_cast<uintptr_t>(range.first) <= static_cast<uintptr_t>(std::numeric_limits<intptr_t>::max()) &&
+      "operand index exceeds intptr_t range"
+  );
   return mlirOperationGetOperand(op, static_cast<intptr_t>(range.first) + index);
 }
 )";
@@ -555,6 +567,10 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t groupCount, MlirValueRange cons
     newGroupSizes.push_back(static_cast<int32_t>(groups[g].size));
   }
   MlirContext ctx = mlirOperationGetContext(op);
+  assert(
+      newGroupSizes.size() <= static_cast<size_t>(std::numeric_limits<intptr_t>::max()) &&
+      "group count exceeds intptr_t range"
+  );
   mlirOperationSetAttributeByName(
       op, mlirStringRefCreateFromCString("{4}"),
       mlirDenseI32ArrayGet(ctx, static_cast<intptr_t>(newGroupSizes.size()), newGroupSizes.data())
