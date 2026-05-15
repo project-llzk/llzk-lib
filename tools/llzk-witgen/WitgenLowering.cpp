@@ -87,9 +87,6 @@ static std::string mangleFunctionName(function::FuncDefOp funcOp) {
   return std::string(result);
 }
 
-/// Return the byte width needed to materialize one field element as `iN`.
-static unsigned getFeltBitWidth(const Field &field) { return field.bitWidth(); }
-
 /// Return a constant index value.
 static Value makeIndexConstant(OpBuilder &builder, Location loc, int64_t value) {
   return builder.create<arith::ConstantIndexOp>(loc, value).getResult();
@@ -98,26 +95,14 @@ static Value makeIndexConstant(OpBuilder &builder, Location loc, int64_t value) 
 /// Return a one constant of the lowered field integer type.
 static Value makeOneFelt(OpBuilder &builder, Location loc, const Field &field) {
   return builder.create<arith::ConstantOp>(
-      loc, IntegerAttr::get(IntegerType::get(builder.getContext(), getFeltBitWidth(field)), 1)
+      loc, IntegerAttr::get(IntegerType::get(builder.getContext(), field.bitWidth()), 1)
   );
-}
-
-/// Return the field modulus at the requested width.
-static llvm::APInt toExactWidthAPInt(const llvm::DynamicAPInt &value, unsigned width) {
-  SmallString<64> rendered;
-  llvm::raw_svector_ostream(rendered) << value;
-  return llvm::APInt(width, rendered, 10);
-}
-
-/// Return the field modulus at the requested width.
-static IntegerAttr getModulusAttr(MLIRContext *context, const Field &field, unsigned width) {
-  return IntegerAttr::get(IntegerType::get(context, width), toExactWidthAPInt(field.prime(), width));
 }
 
 /// Return the lowered scalar type for a non-aggregate LLZK type.
 static FailureOr<Type> lowerScalarType(MLIRContext *context, Type type, const Field &field) {
   if (isa<felt::FeltType>(type)) {
-    return IntegerType::get(context, getFeltBitWidth(field));
+    return IntegerType::get(context, field.bitWidth());
   }
   if (isa<IndexType>(type)) {
     return type;
@@ -435,14 +420,15 @@ static Value
 normalizeWideValue(OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field) {
   auto wideType = mlir::cast<IntegerType>(wideValue.getType());
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, getModulusAttr(builder.getContext(), field, wideType.getWidth()));
+      builder.create<arith::ConstantOp>(
+          loc, field.getModulusAttr(builder.getContext(), wideType.getWidth()));
   Value reduced = builder.create<arith::RemUIOp>(loc, wideValue, modulus);
   return builder.create<arith::TruncIOp>(loc, IntegerType::get(builder.getContext(), dstWidth), reduced);
 }
 
 /// Lower field addition with explicit modular reduction.
 static Value lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
-  unsigned width = getFeltBitWidth(field);
+  unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
   Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
@@ -453,13 +439,13 @@ static Value lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs
 
 /// Lower field subtraction with explicit modular reduction.
 static Value lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
-  unsigned width = getFeltBitWidth(field);
+  unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
   Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
   Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, getModulusAttr(builder.getContext(), field, wideWidth));
+      builder.create<arith::ConstantOp>(loc, field.getModulusAttr(builder.getContext(), wideWidth));
   Value lhsPlusMod = builder.create<arith::AddIOp>(loc, lhsWide, modulus);
   Value diff = builder.create<arith::SubIOp>(loc, lhsPlusMod, rhsWide);
   return normalizeWideValue(builder, loc, diff, width, field);
@@ -467,19 +453,19 @@ static Value lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs
 
 /// Lower field negation with explicit modular reduction.
 static Value lowerFeltNeg(OpBuilder &builder, Location loc, Value operand, const Field &field) {
-  unsigned width = getFeltBitWidth(field);
+  unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
   Value operandWide = builder.create<arith::ExtUIOp>(loc, wideType, operand);
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, getModulusAttr(builder.getContext(), field, wideWidth));
+      builder.create<arith::ConstantOp>(loc, field.getModulusAttr(builder.getContext(), wideWidth));
   Value diff = builder.create<arith::SubIOp>(loc, modulus, operandWide);
   return normalizeWideValue(builder, loc, diff, width, field);
 }
 
 /// Lower field multiplication with widening and modular reduction.
 static Value lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
-  unsigned width = getFeltBitWidth(field);
+  unsigned width = field.bitWidth();
   unsigned wideWidth = width * 2;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
   Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
@@ -490,7 +476,7 @@ static Value lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs
 
 /// Lower a field inversion through exponentiation by `p - 2`.
 static Value lowerFeltInv(OpBuilder &builder, Location loc, Value operand, const Field &field) {
-  llvm::APInt exponent = toExactWidthAPInt(field.prime() - 2, getFeltBitWidth(field));
+  llvm::APInt exponent = toExactWidthAPInt(field.prime() - 2, field.bitWidth());
   Value result = makeOneFelt(builder, loc, field);
   Value base = operand;
   for (unsigned bit = 0; bit < exponent.getBitWidth(); ++bit) {
@@ -873,7 +859,7 @@ private:
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
-      auto intType = IntegerType::get(builder.getContext(), getFeltBitWidth(field));
+      auto intType = IntegerType::get(builder.getContext(), field.bitWidth());
       // Do a safe conversion to an APInt of the right bitwidth: mod prime before truncation
       auto constVal = toDynamicAPInt(feltConst.getValue().getValue());
       auto modVal = constVal % field.prime();
@@ -999,7 +985,7 @@ private:
       if (failed(operand)) {
         return failure();
       }
-      auto dstType = IntegerType::get(builder.getContext(), getFeltBitWidth(field));
+      auto dstType = IntegerType::get(builder.getContext(), field.bitWidth());
       Value lowered;
       if (isa<IndexType>((*operand).getType())) {
         lowered = builder.create<arith::IndexCastUIOp>(loc, dstType, *operand);

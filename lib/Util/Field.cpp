@@ -136,6 +136,10 @@ DynamicAPInt Field::inv(const APInt &i) const {
   return modInversePrime(toDynamicAPInt(i), prime());
 }
 
+IntegerAttr Field::getModulusAttr(MLIRContext *context, unsigned bitWidth) const {
+  return IntegerAttr::get(IntegerType::get(context, bitWidth), toExactWidthAPInt(prime(), bitWidth));
+}
+
 // Parses Fields from the given attribute, if able.
 static LogicalResult parseFields(Attribute a) {
   // clang-format off
