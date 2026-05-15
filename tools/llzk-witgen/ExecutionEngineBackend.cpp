@@ -1,4 +1,4 @@
-//===-- ExecutionEngineBackend.cpp - llzk-witgen JIT backend ---*- C++ -*-===//
+//===-- ExecutionEngineBackend.cpp - llzk-witgen JIT backend ----*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

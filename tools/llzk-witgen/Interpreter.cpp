@@ -1,4 +1,4 @@
-//===-- Interpreter.cpp - llzk-witgen compute interpreter ------*- C++ -*-===//
+//===-- Interpreter.cpp - llzk-witgen compute interpreter -------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

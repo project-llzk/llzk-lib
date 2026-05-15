@@ -43,6 +43,79 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKValidationPasses.md
 
+# llzk-witgen {#llzk-witgen}
+
+`llzk-witgen` executes LLZK witness-generation semantics for the concrete main
+component declared by `llzk.main`. It evaluates `compute()` and prints the
+public outputs of the main component as JSON.
+
+`llzk-witgen` is intended for witness-generation and execution-oriented testing.
+In v1 it executes `compute()` only, ignores `constrain()`, and treats
+`bool.assert` as a runtime trap.
+
+#### Basic Usage
+
+```sh
+llzk-witgen <input.llzk> --inputs <input.json>
+```
+
+#### LLZK-Specific Options
+
+```
+--inputs <file>              JSON file containing main compute inputs
+-I <directory>               Directory of include files
+--backend=<name>             Execution backend: interpreter or execution-engine
+--dump-jit-core              Print the pre-LLVM JIT module
+--dump-jit-llvm              Print the post-LLVM JIT module
+```
+
+#### Input Format
+
+The `--inputs` file must contain a top-level JSON object or JSON array.
+
+- A JSON object is keyed by `function.arg_name` attributes on the main
+  `compute()` function arguments.
+- A JSON array is interpreted positionally in declared argument order.
+
+At the main boundary, `llzk-witgen` currently supports `felt` and
+`array<... x felt>` inputs. Field element values are accepted in the same JSON
+form used by the witgen tests, namely JSON integers or decimal strings.
+
+#### Output Format
+
+`llzk-witgen` writes one JSON object to stdout containing the public outputs of
+the main component.
+
+- Public struct members become JSON object fields.
+- Public felt arrays become JSON arrays.
+- Field element leaves are rendered as decimal strings.
+- Private members and non-public intermediates are omitted.
+
+#### Backends
+
+`llzk-witgen` currently supports two execution backends:
+
+- `--backend=interpreter`
+  Executes LLZK `compute()` semantics directly over the preprocessed MLIR.
+- `--backend=execution-engine`
+  Lowers preprocessed LLZK compute IR through MLIR and LLVM, then executes it
+  with `mlir::ExecutionEngine`.
+
+The default backend is `interpreter`.
+
+#### Preprocessing
+
+Before execution, `llzk-witgen` performs the preprocessing needed to make
+witness generation concrete and executable:
+
+- include inlining
+- flattening rooted at `llzk.main` when required
+- affine lowering for execution-engine mode
+- subcomponent inlining for execution-engine mode
+
+Template parameters and affine instantiations are therefore supported only when
+they can be fully resolved by the preprocessing pipeline before execution.
+
 # llzk-lsp-server
 
 `cmake --build <build dir> --target llzk-lsp-server` will produce an LLZK-specific
