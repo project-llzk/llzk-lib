@@ -1,0 +1,5 @@
+// RUN: python3 %S/../../scripts/generate-test-checks.py %S/../Inputs/generate-test-checks-affine-map-input.mlir | FileCheck %s --check-prefix=SCRIPT
+
+// SCRIPT: // CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// SCRIPT-NOT: // CHECK-LABEL: #[[$ATTR_0]]
+// SCRIPT: // CHECK-LABEL: module {
