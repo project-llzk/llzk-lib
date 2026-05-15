@@ -13,11 +13,11 @@
 #include "Errors.h"
 #include "Interpreter.h"
 #include "JSON.h"
+#include "WitgenLowering.h"
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
@@ -143,7 +143,7 @@ static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &opti
     pm.addPass(llzk::include::createInlineIncludesPass());
   }
   if (options.backend == Backend::ExecutionEngine) {
-    llzk::addWitgenPreparePipeline(pm);
+    addWitgenPreparePipeline(pm);
   } else if (requiresFlattening(moduleOp)) {
     pm.addPass(llzk::polymorphic::createFlatteningPass());
   }

@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "WitgenLowering.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -18,11 +18,14 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/SymbolHelper.h"
 
+#include <mlir/Conversion/AffineToStandard/AffineToStandard.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -33,6 +36,8 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Pass/PassManager.h>
+#include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/STLExtras.h>
@@ -42,15 +47,7 @@
 
 using namespace mlir;
 
-namespace llzk {
-#define GEN_PASS_DECL_LOWERCOMPUTETOCOREPASS
-#define GEN_PASS_DECL_CREATEWITGENENTRYPASS
-#define GEN_PASS_DEF_LOWERCOMPUTETOCOREPASS
-#define GEN_PASS_DEF_CREATEWITGENENTRYPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
-
-namespace llzk {
+namespace llzk::witgen {
 namespace {
 
 /// Hold the flattened lowered SSA values for one original LLZK value.
@@ -1329,8 +1326,21 @@ private:
 };
 
 /// Lower all free functions and compute functions into top-level `func.func`s.
-class LowerComputeToCorePass : public impl::LowerComputeToCorePassBase<LowerComputeToCorePass> {
+class LowerComputeToCorePass : public PassWrapper<LowerComputeToCorePass, OperationPass<ModuleOp>> {
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerComputeToCorePass)
+
+  /// Run the pass over one module.
+  StringRef getArgument() const final { return "llzk-lower-compute-to-core"; }
+
+  /// Return the human-readable pass description.
+  StringRef getDescription() const final {
+    return "Lower LLZK compute IR to func/arith/cf/scf/memref";
+  }
+
+  /// Return the pass name for diagnostics.
+  StringRef getName() const override { return "LowerComputeToCorePass"; }
+
   /// Run the pass over one module.
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
@@ -1360,8 +1370,21 @@ public:
 };
 
 /// Create the stable JIT entry wrapper and erase the remaining LLZK declarations.
-class CreateWitgenEntryPass : public impl::CreateWitgenEntryPassBase<CreateWitgenEntryPass> {
+class CreateWitgenEntryPass : public PassWrapper<CreateWitgenEntryPass, OperationPass<ModuleOp>> {
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)
+
+  /// Run the pass over one module.
+  StringRef getArgument() const final { return "llzk-create-witgen-entry"; }
+
+  /// Return the human-readable pass description.
+  StringRef getDescription() const final {
+    return "Create the llzk-witgen execution-engine entry wrapper";
+  }
+
+  /// Return the pass name for diagnostics.
+  StringRef getName() const override { return "CreateWitgenEntryPass"; }
+
   /// Run the pass over one module.
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
@@ -1516,6 +1539,16 @@ public:
 
 } // namespace
 
+void addWitgenPreparePipeline(OpPassManager &pm) {
+  llzk::polymorphic::FlatteningPassOptions options = {
+      .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot};
+  pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(options)));
+  pm.addPass(mlir::createLowerAffinePass());
+  pm.addPass(llzk::createInlineStructsPass());
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createCSEPass());
+}
+
 std::unique_ptr<Pass> createLowerComputeToCorePass() {
   return std::make_unique<LowerComputeToCorePass>();
 }
@@ -1524,4 +1557,4 @@ std::unique_ptr<Pass> createCreateWitgenEntryPass() {
   return std::make_unique<CreateWitgenEntryPass>();
 }
 
-} // namespace llzk
+} // namespace llzk::witgen

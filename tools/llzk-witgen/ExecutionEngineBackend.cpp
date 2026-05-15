@@ -12,11 +12,11 @@
 #include "Errors.h"
 #include "JSON.h"
 #include "ValueModel.h"
+#include "WitgenLowering.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -268,8 +268,8 @@ static llvm::Expected<OwningOpRef<ModuleOp>>
 buildExecutionEngineModule(ModuleOp moduleOp) {
   OwningOpRef<ModuleOp> cloned = cast<ModuleOp>(moduleOp->clone());
   PassManager pm(cloned->getContext());
-  pm.addPass(llzk::createLowerComputeToCorePass());
-  pm.addPass(llzk::createCreateWitgenEntryPass());
+  pm.addPass(createLowerComputeToCorePass());
+  pm.addPass(createCreateWitgenEntryPass());
   if (failed(pm.run(*cloned))) {
     return makeError("failed to lower LLZK compute IR to execution-engine core dialects");
   }

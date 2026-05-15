@@ -97,25 +97,6 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
   ];
 }
 
-def LowerComputeToCorePass : LLZKPass<"llzk-lower-compute-to-core"> {
-  let summary = "Lower LLZK compute IR to func/arith/cf/scf/memref";
-  let description = [{
-    Lowers supported LLZK compute-related operations into MLIR dialects that can
-    subsequently lower to LLVM IR for use by llzk-witgen's execution-engine backend.
-  }];
-  let constructor = "llzk::createLowerComputeToCorePass()";
-}
-
-def CreateWitgenEntryPass : LLZKPass<"llzk-create-witgen-entry"> {
-  let summary = "Create the llzk-witgen execution-engine entry wrapper";
-  let description = [{
-    Synthesizes the stable __llzk_witgen_main wrapper from the concrete llzk.main
-    compute function, lowers its public outputs to the memref ABI, and removes
-    the remaining LLZK-only declarations from the module.
-  }];
-  let constructor = "llzk::createCreateWitgenEntryPass()";
-}
-
 def ComputeConstrainToProductPass
     : LLZKPass<"llzk-compute-constrain-to-product"> {
   let summary = "Replace separate @compute and @constrain functions in a "

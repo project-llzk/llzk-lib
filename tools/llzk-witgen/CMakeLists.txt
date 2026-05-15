@@ -6,6 +6,7 @@ target_sources(
     Interpreter.cpp
     JSON.cpp
     ValueModel.cpp
+    WitgenLowering.cpp
     WitgenDriver.cpp
 )
 target_include_directories(LLZKWitgenTool PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
