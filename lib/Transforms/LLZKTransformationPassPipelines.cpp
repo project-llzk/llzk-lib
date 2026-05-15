@@ -72,6 +72,6 @@ void registerTransformationPassPipelines() {
     pm.addPass(llzk::createFuseProductLoopsPass());
   }
   );
-
 }
+
 } // namespace llzk
