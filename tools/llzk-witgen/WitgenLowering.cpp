@@ -726,8 +726,8 @@ static LogicalResult appendFlatLeavesToTypes(
 class BodyLowerer {
 public:
   /// Create a lowerer that appends new `func.func` operations into the module.
-  BodyLowerer(ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field)
-      : moduleOp(moduleOp), tables(tables), field(field) {}
+  BodyLowerer(ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField)
+      : moduleOp(mod), tables(symbolTables), field(moduleField) {}
 
   /// Lower one LLZK function into `func.func`.
   FailureOr<func::FuncOp> lowerFunction(function::FuncDefOp funcOp) {
@@ -1455,7 +1455,7 @@ public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)
 
   /// Build the pass for either public-only or full-witness emission.
-  explicit CreateWitgenEntryPass(bool emitFullWitness = false) : emitFullWitness(emitFullWitness) {}
+  explicit CreateWitgenEntryPass(bool fullWitness = false) : emitFullWitness(fullWitness) {}
 
   /// Run the pass over one module.
   StringRef getArgument() const final { return "llzk-create-witgen-entry"; }

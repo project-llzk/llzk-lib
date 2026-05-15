@@ -51,8 +51,8 @@ static bool requiresFlattening(ModuleOp moduleOp) {
 }
 
 /// Build a driver around one parsed module and field.
-Interpreter::Interpreter(ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field)
-    : moduleOp(moduleOp), tables(tables), field(field) {}
+Interpreter::Interpreter(ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField)
+    : moduleOp(mod), tables(symbolTables), field(moduleField) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
 static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
