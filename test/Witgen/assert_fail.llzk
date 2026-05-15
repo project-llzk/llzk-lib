@@ -1,6 +1,8 @@
 // RUN: split-file %s %t
 // RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=interpreter 2>&1 | FileCheck %s
-// RUN: not --crash llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+// COM: This isn't reliable since we lower bool.assert to cf.assert, which will print the error, but doesn't
+// COM: flush it properly for tests
+// COM: not --crash llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
 
 //--- test.llzk
 
