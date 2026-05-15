@@ -60,9 +60,9 @@ llvm::Expected<size_t> linearize(llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<i
 
 /// Build an interpreter for a specific module and field.
 FunctionInterpreter::FunctionInterpreter(
-    ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field
+    ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField
 )
-    : moduleOp(moduleOp), tables(tables), field(field) {}
+    : moduleOp(module), tables(symbolTables), field(moduleField) {}
 
 namespace {
 
@@ -70,8 +70,10 @@ namespace {
 class InvocationInterpreter {
 public:
   /// Create an invocation interpreter that shares module-level state.
-  InvocationInterpreter(ModuleOp moduleOp, SymbolTableCollection &tables, const Field &field)
-      : moduleOp(moduleOp), tables(tables), field(field) {}
+  InvocationInterpreter(
+      ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField
+  )
+      : moduleOp(module), tables(symbolTables), field(moduleField) {}
 
   /// Execute a function body with the provided arguments.
   llvm::Expected<llvm::SmallVector<WitnessVal>>
