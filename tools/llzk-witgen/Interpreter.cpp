@@ -781,8 +781,7 @@ private:
       case arith::CmpIPredicate::sge:
         result = *lhsValue >= *rhsValue;
         break;
-      case arith::CmpIPredicate::ult:
-      {
+      case arith::CmpIPredicate::ult: {
         auto lhsUInt = toCheckedUInt64(*lhsValue);
         if (!lhsUInt) {
           return lhsUInt.takeError();
@@ -795,8 +794,7 @@ private:
         result = lhsUIntValue < *rhsUInt;
         break;
       }
-      case arith::CmpIPredicate::ule:
-      {
+      case arith::CmpIPredicate::ule: {
         auto lhsUInt = toCheckedUInt64(*lhsValue);
         if (!lhsUInt) {
           return lhsUInt.takeError();
@@ -809,8 +807,7 @@ private:
         result = lhsUIntValue <= *rhsUInt;
         break;
       }
-      case arith::CmpIPredicate::ugt:
-      {
+      case arith::CmpIPredicate::ugt: {
         auto lhsUInt = toCheckedUInt64(*lhsValue);
         if (!lhsUInt) {
           return lhsUInt.takeError();
@@ -823,8 +820,7 @@ private:
         result = lhsUIntValue > *rhsUInt;
         break;
       }
-      case arith::CmpIPredicate::uge:
-      {
+      case arith::CmpIPredicate::uge: {
         auto lhsUInt = toCheckedUInt64(*lhsValue);
         if (!lhsUInt) {
           return lhsUInt.takeError();

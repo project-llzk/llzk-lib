@@ -118,10 +118,10 @@ TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedDivUIOperands) {
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(2)};
   auto results = interpreter.run(func, args);
   llvm::Error error = results.takeError();
-  ASSERT_TRUE(static_cast<bool>(error))
-      << "expected interpreter to reject negative divui operand";
+  ASSERT_TRUE(static_cast<bool>(error)) << "expected interpreter to reject negative divui operand";
   EXPECT_NE(
-      llvm::toString(std::move(error)).find("cannot reinterpret a negative index value as unsigned"),
+      llvm::toString(std::move(error))
+          .find("cannot reinterpret a negative index value as unsigned"),
       std::string::npos
   );
 }
@@ -160,7 +160,8 @@ TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedForBounds) {
   ASSERT_TRUE(static_cast<bool>(error))
       << "expected interpreter to reject negative unsigned loop bound";
   EXPECT_NE(
-      llvm::toString(std::move(error)).find("cannot reinterpret a negative index value as unsigned"),
+      llvm::toString(std::move(error))
+          .find("cannot reinterpret a negative index value as unsigned"),
       std::string::npos
   );
 }
