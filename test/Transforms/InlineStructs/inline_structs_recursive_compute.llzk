@@ -1,0 +1,51 @@
+// RUN: llzk-opt -llzk-flatten -llzk-inline-structs %s | FileCheck %s
+
+// A recursive helper used only by @compute is prover-side code. The inline-structs pass must not
+// reject it just because it creates a cycle in the whole SymbolUseGraph.
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  // CHECK-LABEL: function.def @gcd
+  function.def @gcd(%a: !felt.type, %b: !felt.type) -> !felt.type
+      attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %b_idx = cast.toindex %b
+    %c0 = arith.constant 0 : index
+    %is_zero = arith.cmpi eq, %b_idx, %c0 : index
+    %result = scf.if %is_zero -> !felt.type {
+      scf.yield %a : !felt.type
+    } else {
+      %r = felt.umod %a, %b : !felt.type, !felt.type
+      // CHECK: function.call @gcd
+      %g = function.call @gcd(%b, %r) : (!felt.type, !felt.type) -> !felt.type
+      scf.yield %g : !felt.type
+    }
+    function.return %result : !felt.type
+  }
+
+  // CHECK-LABEL: struct.def @Main
+  struct.def @Main {
+    struct.member @x       : !felt.type
+    struct.member @x_inv   : !felt.type
+    struct.member @gcd_xp  : !felt.type
+
+    function.def @compute(%x: !felt.type, %p: !felt.type) -> !struct.type<@Main>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %g    = function.call @gcd(%x, %p) : (!felt.type, !felt.type) -> !felt.type
+      %inv  = felt.inv %x
+      struct.writem %self[@x]      = %x   : !struct.type<@Main>, !felt.type
+      struct.writem %self[@x_inv]  = %inv : !struct.type<@Main>, !felt.type
+      struct.writem %self[@gcd_xp] = %g   : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>, %x_arg: !felt.type, %p_arg: !felt.type) {
+      %x       = struct.readm %self[@x]      : !struct.type<@Main>, !felt.type
+      %x_inv   = struct.readm %self[@x_inv]  : !struct.type<@Main>, !felt.type
+      %g       = struct.readm %self[@gcd_xp] : !struct.type<@Main>, !felt.type
+      %product = felt.mul %x, %x_inv : !felt.type, !felt.type
+      %one     = felt.const 1
+      constrain.eq %product, %one : !felt.type
+      constrain.eq %g, %one : !felt.type
+      function.return
+    }
+  }
+}

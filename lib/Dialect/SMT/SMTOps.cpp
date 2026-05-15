@@ -8,22 +8,22 @@
 
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 
-#include "llvm/ADT/APSInt.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/OpImplementation.h"
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/OpImplementation.h>
+
+#include <llvm/ADT/APSInt.h>
 
 using namespace mlir;
 using namespace llzk::smt;
-using namespace mlir;
 
 //===----------------------------------------------------------------------===//
 // BVConstantOp
 //===----------------------------------------------------------------------===//
 
 LogicalResult BVConstantOp::inferReturnTypes(
-    mlir::MLIRContext *context, std::optional<mlir::Location> location, ::mlir::ValueRange operands,
-    ::mlir::DictionaryAttr attributes, ::mlir::OpaqueProperties properties,
-    ::mlir::RegionRange regions, ::llvm::SmallVectorImpl<::mlir::Type> &inferredReturnTypes
+    MLIRContext * /*context*/, std::optional<Location> /*location*/, ValueRange /*operands*/,
+    DictionaryAttr /*attributes*/, OpaqueProperties properties, RegionRange /*regions*/,
+    SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.push_back(properties.as<Properties *>()->getValue().getType());
   return success();
@@ -173,8 +173,8 @@ LogicalResult ExtractOp::verify() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult ConcatOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
+    MLIRContext *context, std::optional<Location> /*location*/, ValueRange operands,
+    DictionaryAttr /*attributes*/, OpaqueProperties /*properties*/, RegionRange /*regions*/,
     SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.push_back(
@@ -208,7 +208,7 @@ unsigned RepeatOp::getCount() {
 }
 
 void RepeatOp::build(OpBuilder &builder, OperationState &state, unsigned count, Value input) {
-  unsigned inputWidth = cast<BitVectorType>(input.getType()).getWidth();
+  int64_t inputWidth = cast<BitVectorType>(input.getType()).getWidth();
   Type resultTy = BitVectorType::get(builder.getContext(), inputWidth * count);
   build(builder, state, resultTy, input);
 }
@@ -260,7 +260,9 @@ ParseResult RepeatOp::parse(OpAsmParser &parser, OperationState &result) {
            << maxBw << " bits";
   }
 
-  Type resultTy = BitVectorType::get(parser.getContext(), resultBw.getZExtValue());
+  uint64_t val = resultBw.getZExtValue();
+  assert(val <= std::numeric_limits<int64_t>::max() && "value too large");
+  Type resultTy = BitVectorType::get(parser.getContext(), static_cast<int64_t>(val));
   result.addTypes(resultTy);
   return success();
 }

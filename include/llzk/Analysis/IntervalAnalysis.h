@@ -202,8 +202,16 @@ private:
 // NOLINTNEXTLINE(bugprone-exception-escape)
 class IntervalAnalysisLatticeValue
     : public dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue> {
+  using Base = dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue>;
+
 public:
-  using AbstractLatticeValue::AbstractLatticeValue;
+  explicit IntervalAnalysisLatticeValue(ExpressionValue e) : Base(std::move(e)) {}
+  IntervalAnalysisLatticeValue() : Base() {}
+  explicit IntervalAnalysisLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
+  IntervalAnalysisLatticeValue(const IntervalAnalysisLatticeValue &) = default;
+  IntervalAnalysisLatticeValue(IntervalAnalysisLatticeValue &&) = default;
+  IntervalAnalysisLatticeValue &operator=(const IntervalAnalysisLatticeValue &) = default;
+  IntervalAnalysisLatticeValue &operator=(IntervalAnalysisLatticeValue &&) = default;
 };
 
 /* IntervalAnalysisLattice */

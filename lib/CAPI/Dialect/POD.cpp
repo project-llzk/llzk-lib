@@ -16,6 +16,7 @@
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 
+#include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/IR.h>
 
 #include <mlir/CAPI/IR.h>

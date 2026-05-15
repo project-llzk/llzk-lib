@@ -2,7 +2,7 @@
 find_program(LLVM_EXTERNAL_LIT NAMES lit llvm-lit ${LLVM_EXTERNAL_LIT} REQUIRED)
 message(STATUS "Using lit: ${LLVM_EXTERNAL_LIT}")
 
-set(LLZK_TEST_DEPENDS llzk-opt llzk-witgen r1cs-opt)
+set(LLZK_TEST_DEPENDS llzk-opt llzk-witgen lzk-tblgen r1cs-opt)
 
 set(LLZK_ENABLE_BINDINGS_PYTHON_STRING "False")
 if(LLZK_ENABLE_BINDINGS_PYTHON)

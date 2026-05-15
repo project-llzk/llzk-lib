@@ -143,6 +143,25 @@ MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirV
     );
   }
 
+  void genVariadicOfVariadicOperandSetterDecl() const {
+    static constexpr char fmt[] = R"(
+/// Set {3} operand groups of {4}::{2} Operation.
+/// Each element of `groups` represents one group; its `size` field drives the per-group
+/// segment-size attribute and `values` supplies the operands for that group.
+MLIR_CAPI_EXPORTED void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t groupCount, MlirValueRange const *groups);
+)";
+    assert(!className.empty() && "className must be set");
+    assert(!operandNameCapitalized.empty() && "operandName must be set");
+    os << llvm::formatv(
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized, // {3}
+        dialectNamespace        // {4}
+    );
+  }
+
   void genAttributeGetterDecl() const {
     static constexpr char fmt[] = R"(
 /// Get {3} attribute from {4}::{2} Operation.
@@ -325,7 +344,11 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &os)
           generator.genVariadicOperandGetterDecl();
         }
         if (GenOpOperandSetters) {
-          generator.genVariadicOperandSetterDecl();
+          if (operand.isVariadicOfVariadic()) {
+            generator.genVariadicOfVariadicOperandSetterDecl();
+          } else {
+            generator.genVariadicOperandSetterDecl();
+          }
         }
       } else {
         if (GenOpOperandGetters) {
@@ -389,6 +412,15 @@ struct OpImplementationGenerator : public ImplementationGenerator, OpGeneratorDa
   using ImplementationGenerator::ImplementationGenerator;
   ~OpImplementationGenerator() override = default;
 
+  void genPrologue() const override {
+    os << R"(
+#include <limits>
+
+using namespace mlir;
+using namespace llvm;
+)";
+  }
+
   /// @brief Generate operation "Build" function implementation
   /// @param operationName The full operation name (e.g., "dialect.opname")
   /// @param params The parameter list for the "Build" function
@@ -418,7 +450,13 @@ MlirOperation {0}{1}_{2}Build(MlirOpBuilder builder, MlirLocation location{3}) {
   void genOperandGetterImpl(int index) const {
     static constexpr char fmt[] = R"(
 MlirValue {0}{1}_{2}Get{3}(MlirOperation op) {{
-  return mlirOperationGetOperand(op, {4});
+  auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
+  assert(range.second == 1 && "expected fixed operand segment size");
+  assert(
+      static_cast<uintptr_t>(range.first) <= static_cast<uintptr_t>(std::numeric_limits<intptr_t>::max()) &&
+      "operand index exceeds intptr_t range"
+  );
+  return mlirOperationGetOperand(op, static_cast<intptr_t>(range.first));
 }
 )";
     assert(!className.empty() && "className must be set");
@@ -436,7 +474,13 @@ MlirValue {0}{1}_{2}Get{3}(MlirOperation op) {{
   void genOperandSetterImpl(int index) const {
     static constexpr char fmt[] = R"(
 void {0}{1}_{2}Set{3}(MlirOperation op, MlirValue value) {{
-  mlirOperationSetOperand(op, {4}, value);
+  auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
+  assert(range.second == 1 && "expected fixed operand segment size");
+  assert(
+      static_cast<uintptr_t>(range.first) <= static_cast<uintptr_t>(std::numeric_limits<intptr_t>::max()) &&
+      "operand index exceeds intptr_t range"
+  );
+  mlirOperationSetOperand(op, static_cast<intptr_t>(range.first), value);
 }
 )";
     assert(!className.empty() && "className must be set");
@@ -451,16 +495,21 @@ void {0}{1}_{2}Set{3}(MlirOperation op, MlirValue value) {{
     );
   }
 
-  void genVariadicOperandGetterImpl(int startIdx) const {
+  void genVariadicOperandGetterImpl(int index) const {
     static constexpr char fmt[] = R"(
 intptr_t {0}{1}_{2}Get{3}Count(MlirOperation op) {{
-  intptr_t count = mlirOperationGetNumOperands(op);
-  assert(count >= {4} && "operand count less than start index");
-  return count - {4};
+  auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
+  return range.second;
 }
 
 MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index) {{
-  return mlirOperationGetOperand(op, {4} + index);
+  auto range = llvm::cast<{2}>(unwrap(op)).getODSOperandIndexAndLength({4});
+  assert(index >= 0 && index < range.second && "variadic operand index out of range");
+  assert(
+      static_cast<uintptr_t>(range.first) <= static_cast<uintptr_t>(std::numeric_limits<intptr_t>::max()) &&
+      "operand index exceeds intptr_t range"
+  );
+  return mlirOperationGetOperand(op, static_cast<intptr_t>(range.first) + index);
 }
 )";
     assert(!className.empty() && "className must be set");
@@ -471,45 +520,72 @@ MlirValue {0}{1}_{2}Get{3}At(MlirOperation op, intptr_t index) {{
         dialectNameCapitalized, // {1}
         className,              // {2}
         operandNameCapitalized, // {3}
-        startIdx                // {4}
+        index                   // {4}
     );
   }
 
-  void genVariadicOperandSetterImpl(int startIdx) const {
+  // Delegate to the ODS-generated mutable accessor. assign() keeps operandSegmentSizes in sync
+  // automatically via MutableOperandRange::updateLength.
+  void genVariadicOperandSetterImpl() const {
     static constexpr char fmt[] = R"(
 void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values) {{
-  intptr_t numOperands = mlirOperationGetNumOperands(op);
-  intptr_t startIdx = {4};
-
-  // Validate bounds
-  if (startIdx < 0 || startIdx > numOperands) {{
+  if (count < 0)
     return;
+  ::llvm::SmallVector<::mlir::Value> vals;
+  vals.reserve(static_cast<size_t>(count));
+  for (intptr_t i = 0; i < count; ++i)
+    vals.push_back(unwrap(values[i]));
+  ::llvm::cast<{2}>(unwrap(op)).get{3}Mutable().assign(vals);
+}
+)";
+    assert(!className.empty() && "className must be set");
+    assert(!operandNameCapitalized.empty() && "operandName must be set");
+    os << llvm::formatv(
+        fmt,
+        FunctionPrefix,         // {0}
+        dialectNameCapitalized, // {1}
+        className,              // {2}
+        operandNameCapitalized  // {3}
+    );
   }
-  if (count < 0 || count > (std::numeric_limits<intptr_t>::max() - startIdx)) {{
+
+  // For VariadicOfVariadic operands the caller passes one MlirValueRange per group. The flat
+  // operand list is rebuilt from all groups, operandSegmentSizes is updated automatically by
+  // join().assign(), and the per-group segment-size attribute (whose name is read from the
+  // TableGen constraint via getVariadicOfVariadicSegmentSizeAttr()) is updated explicitly.
+  void genVariadicOfVariadicOperandSetterImpl(mlir::StringRef segSizeAttrName) const {
+    static constexpr char fmt[] = R"(
+void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t groupCount, MlirValueRange const *groups) {{
+  if (groupCount < 0)
     return;
+
+  ::llvm::SmallVector<::mlir::Value> vals;
+  for (intptr_t g = 0; g < groupCount; ++g) {{
+    assert(groups[g].size >= 0 && "group size must be non-negative");
+    for (intptr_t i = 0; i < groups[g].size; ++i) {{
+      vals.push_back(unwrap(groups[g].values[i]));
+    }
   }
+  ::llvm::cast<{2}>(unwrap(op)).get{3}Mutable().join().assign(vals);
 
-  intptr_t oldCount = numOperands - startIdx;
-  intptr_t newNumOperands = startIdx + count;
-
-  std::vector<MlirValue> newOperands(newNumOperands);
-
-  // Copy operands before this variadic group
-  for (intptr_t i = 0; i < startIdx; ++i) {{
-    newOperands[i] = mlirOperationGetOperand(op, i);
+  ::llvm::SmallVector<int32_t> newGroupSizes;
+  newGroupSizes.reserve(static_cast<size_t>(groupCount));
+  for (intptr_t g = 0; g < groupCount; ++g) {{
+    assert(
+        groups[g].size <= static_cast<intptr_t>(std::numeric_limits<int32_t>::max()) &&
+        "group size exceeds int32_t range"
+    );
+    newGroupSizes.push_back(static_cast<int32_t>(groups[g].size));
   }
-
-  // Copy new variadic operands
-  for (intptr_t i = 0; i < count; ++i) {{
-    newOperands[startIdx + i] = values[i];
-  }
-
-  // Copy operands after this variadic group
-  for (intptr_t i = startIdx + oldCount; i < numOperands; ++i) {{
-    newOperands[i - oldCount + count] = mlirOperationGetOperand(op, i);
-  }
-
-  mlirOperationSetOperands(op, newNumOperands, newOperands.data());
+  MlirContext ctx = mlirOperationGetContext(op);
+  assert(
+      newGroupSizes.size() <= static_cast<size_t>(std::numeric_limits<intptr_t>::max()) &&
+      "group count exceeds intptr_t range"
+  );
+  mlirOperationSetAttributeByName(
+      op, mlirStringRefCreateFromCString("{4}"),
+      mlirDenseI32ArrayGet(ctx, static_cast<intptr_t>(newGroupSizes.size()), newGroupSizes.data())
+  );
 }
 )";
     assert(!className.empty() && "className must be set");
@@ -520,7 +596,7 @@ void {0}{1}_{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values)
         dialectNameCapitalized, // {1}
         className,              // {2}
         operandNameCapitalized, // {3}
-        startIdx                // {4}
+        segSizeAttrName         // {4}
     );
   }
 
@@ -727,6 +803,7 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
   emitSourceFileHeader("Op C API Definitions", os, records);
 
   OpImplementationGenerator generator("Operation", os);
+  generator.genPrologue();
 
   for (const auto *def : records.getAllDerivedDefinitions("Op")) {
     const Operator op(def);
@@ -759,7 +836,13 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
           generator.genVariadicOperandGetterImpl(i);
         }
         if (GenOpOperandSetters) {
-          generator.genVariadicOperandSetterImpl(i);
+          if (operand.isVariadicOfVariadic()) {
+            generator.genVariadicOfVariadicOperandSetterImpl(
+                operand.constraint.getVariadicOfVariadicSegmentSizeAttr()
+            );
+          } else {
+            generator.genVariadicOperandSetterImpl();
+          }
         }
       } else {
         if (GenOpOperandGetters) {
