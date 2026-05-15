@@ -46,8 +46,9 @@ available in `mlir-opt` are not available in `llzk-opt`.
 # llzk-witgen {#llzk-witgen}
 
 `llzk-witgen` executes LLZK witness-generation logic for the concrete main
-component declared by `llzk.main`. It evaluates `compute()` and prints the
-public outputs of the main component as JSON.
+component declared by `llzk.main`. It evaluates `compute()` and prints JSON
+for either the public outputs of the main component or the full generated
+witness signal set.
 
 #### Basic Usage
 
@@ -61,6 +62,7 @@ llzk-witgen <input.llzk> --inputs <input.json>
 --inputs <file>              JSON file containing main compute inputs
 -I <directory>               Directory of include files
 --backend=<name>             Execution backend: interpreter or execution-engine
+--output-scope=<name>        Output scope: public or full-witness
 --dump-jit-core              Print the pre-LLVM JIT module
 --dump-jit-llvm              Print the post-LLVM JIT module
 ```
@@ -80,13 +82,25 @@ form used by the witgen tests, namely JSON integers or decimal strings.
 
 #### Output Format
 
-`llzk-witgen` writes one JSON object to stdout containing the public outputs of
-the main component.
+`llzk-witgen` writes one JSON object to stdout. The exact shape depends on
+`--output-scope`.
 
-- Public struct members become JSON object fields.
-- Public felt arrays become JSON arrays.
-- Field element leaves are rendered as decimal strings.
-- Private members and non-public intermediates are currently omitted.
+- `--output-scope=public` is the default.
+  - The output JSON contains only the public outputs of the main component.
+  - Public struct members become JSON object fields.
+  - Public felt arrays become JSON arrays.
+  - Field element leaves are rendered as decimal strings.
+- `--output-scope=full-witness`
+  - The output JSON contains two top-level objects: `inputs` and `signals`.
+  - `inputs` records the main `compute()` arguments using their
+    `function.arg_name` attributes when available, or stable fallback names
+    such as `arg0`, `arg1`, and so on for positional inputs.
+  - `signals` records all witness signals reachable from the returned main
+    struct, including both public and private signals.
+  - Non-signal leaves are omitted, though non-signal struct containers may
+    still appear when needed to reach nested signals.
+  - Felt arrays remain JSON arrays and field element leaves remain decimal
+    strings.
 
 #### Backends
 
