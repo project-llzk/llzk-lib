@@ -1,9 +1,11 @@
 // RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json | FileCheck %s
 // RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %s --inputs %S/Inputs/subcomponents_nested_arrays.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Store {
-    struct.member @buf : !array.type<4 x !felt.type<"babybear">> {llzk.pub}
+    struct.member @buf : !array.type<4 x !felt.type<"babybear">> {llzk.pub, signal}
     function.def @compute(
       %values: !array.type<4 x !felt.type<"babybear">>
     ) -> !struct.type<@Store> {
@@ -98,3 +100,30 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:     "11"
 // CHECK-NEXT:   ]
 // CHECK-NEXT: }
+
+// FULL: {
+// FULL-NEXT:   "inputs": {
+// FULL-NEXT:     "values": [
+// FULL-NEXT:       "2",
+// FULL-NEXT:       "5",
+// FULL-NEXT:       "7",
+// FULL-NEXT:       "11"
+// FULL-NEXT:     ]
+// FULL-NEXT:   },
+// FULL-NEXT:   "signals": {
+// FULL-NEXT:     "out": [
+// FULL-NEXT:       "2",
+// FULL-NEXT:       "5",
+// FULL-NEXT:       "7",
+// FULL-NEXT:       "11"
+// FULL-NEXT:     ],
+// FULL-NEXT:     "stored": {
+// FULL-NEXT:       "buf": [
+// FULL-NEXT:         "2",
+// FULL-NEXT:         "5",
+// FULL-NEXT:         "7",
+// FULL-NEXT:         "11"
+// FULL-NEXT:       ]
+// FULL-NEXT:     }
+// FULL-NEXT:   }
+// FULL-NEXT: }

@@ -19,7 +19,7 @@ namespace llzk::witgen {
 std::unique_ptr<mlir::Pass> createLowerComputeToCorePass();
 
 /// Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.
-std::unique_ptr<mlir::Pass> createCreateWitgenEntryPass();
+std::unique_ptr<mlir::Pass> createCreateWitgenEntryPass(bool emitFullWitness);
 
 /// Add the preprocessing pipeline required before witgen backend execution.
 void addWitgenPreparePipeline(mlir::OpPassManager &pm);

@@ -12,6 +12,7 @@
 #include "Errors.h"
 #include "JSON.h"
 #include "ValueModel.h"
+#include "WitnessSelection.h"
 #include "WitgenLowering.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
@@ -52,12 +53,6 @@ namespace {
 
 /// Distinguish parsed interpreter/runtime values from MLIR SSA values in this file.
 using RuntimeValue = llzk::witgen::Value;
-
-/// Describe one public main output that is marshaled through the JIT wrapper.
-struct PublicOutput {
-  std::string name;
-  Type type;
-};
 
 /// Hold one raw memref descriptor and its backing storage bytes.
 struct BufferPack {
@@ -236,40 +231,13 @@ static llvm::json::Value bufferToJSON(const BufferPack &buffer) {
   return bufferToJSONArray(buffer, 0, 0);
 }
 
-/// Emit the final JSON object from the ordered list of public output buffers.
-static llvm::json::Value
-buildJSONResult(ArrayRef<PublicOutput> outputs, ArrayRef<BufferPack> buffers) {
-  llvm::json::Object result;
-  for (auto [output, buffer] : llvm::zip(outputs, buffers)) {
-    result[output.name] = bufferToJSON(buffer);
-  }
-  return llvm::json::Value(std::move(result));
-}
-
-/// Collect the ordered public output members of the main struct.
-static llvm::Expected<llvm::SmallVector<PublicOutput>>
-collectPublicOutputs(component::StructDefOp mainDef) {
-  llvm::SmallVector<PublicOutput> outputs;
-  for (component::MemberDefOp member : mainDef.getMemberDefs()) {
-    if (!member.hasPublicAttr()) {
-      continue;
-    }
-    if (!isa<felt::FeltType>(member.getType()) &&
-        !isa<array::ArrayType>(member.getType())) {
-      return makeError("execution-engine backend only supports felt and array<...xfelt> public outputs");
-    }
-    outputs.push_back(PublicOutput {member.getSymName().str(), member.getType()});
-  }
-  return outputs;
-}
-
 /// Lower the module through the shared LLZK-to-core witgen passes.
 static llvm::Expected<OwningOpRef<ModuleOp>>
-buildExecutionEngineModule(ModuleOp moduleOp) {
+buildExecutionEngineModule(ModuleOp moduleOp, OutputScope outputScope) {
   OwningOpRef<ModuleOp> cloned = cast<ModuleOp>(moduleOp->clone());
   PassManager pm(cloned->getContext());
   pm.addPass(createLowerComputeToCorePass());
-  pm.addPass(createCreateWitgenEntryPass());
+  pm.addPass(createCreateWitgenEntryPass(outputScope == OutputScope::FullWitness));
   if (failed(pm.run(*cloned))) {
     return makeError("failed to lower LLZK compute IR to execution-engine core dialects");
   }
@@ -363,9 +331,11 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     return parsedArgs.takeError();
   }
 
-  auto outputs = collectPublicOutputs(mainDef->get());
-  if (!outputs) {
-    return outputs.takeError();
+  auto inputBindings = collectInputBindings(computeFunc);
+  auto outputs =
+      collectOutputBindings(mainDef->get(), tables, computeFunc.getOperation(), options.outputScope);
+  if (failed(outputs)) {
+    return makeError("failed to select witness outputs for execution-engine mode");
   }
 
   llvm::SmallVector<BufferPack> inputBuffers;
@@ -381,7 +351,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
 
   llvm::SmallVector<BufferPack> outputBuffers;
-  for (const PublicOutput &output : *outputs) {
+  for (const OutputBinding &output : *outputs) {
     auto buffer = createBufferPack(output.type, field);
     if (!buffer) {
       return buffer.takeError();
@@ -389,7 +359,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     outputBuffers.push_back(std::move(*buffer));
   }
 
-  auto loweredModule = buildExecutionEngineModule(moduleOp);
+  auto loweredModule = buildExecutionEngineModule(moduleOp, options.outputScope);
   if (!loweredModule) {
     return loweredModule.takeError();
   }
@@ -446,7 +416,24 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     return std::move(err);
   }
 
-  return buildJSONResult(*outputs, outputBuffers);
+  llvm::SmallVector<llvm::json::Value> serializedOutputs;
+  serializedOutputs.reserve(outputBuffers.size());
+  for (const BufferPack &buffer : outputBuffers) {
+    serializedOutputs.push_back(bufferToJSON(buffer));
+  }
+
+  if (options.outputScope == OutputScope::Public) {
+    return buildSignalsJSONObject(*outputs, serializedOutputs);
+  }
+
+  auto inputsJSON = buildInputsJSONObject(inputBindings, *parsedArgs, tables, computeFunc.getOperation());
+  if (!inputsJSON) {
+    return inputsJSON.takeError();
+  }
+  llvm::json::Object result;
+  result["inputs"] = llvm::json::Value(std::move(*inputsJSON));
+  result["signals"] = buildSignalsJSONObject(*outputs, serializedOutputs);
+  return llvm::json::Value(std::move(result));
 }
 
 } // namespace llzk::witgen

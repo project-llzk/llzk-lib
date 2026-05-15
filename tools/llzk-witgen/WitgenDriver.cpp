@@ -13,6 +13,7 @@
 #include "Errors.h"
 #include "Interpreter.h"
 #include "JSON.h"
+#include "WitnessSelection.h"
 #include "WitgenLowering.h"
 
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -102,7 +103,7 @@ static llvm::Expected<llvm::SmallVector<Value>> parseArgumentsFromJSON(
   return args;
 }
 
-/// Execute the concrete `llzk.main` compute function and serialize its public outputs.
+/// Execute the concrete `llzk.main` compute function and serialize the selected witness scope.
 llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json::Value &input) {
   auto mainDef = getMainInstanceDef(tables, moduleOp.getOperation());
   if (failed(mainDef) || !mainDef.value()) {
@@ -130,9 +131,47 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
   if (results->size() != 1) {
     return makeError("main compute returned unexpected result count");
   }
-  return serializeJSONValue(
-      results->front(), computeFunc.getResultTypes().front(), tables, computeFunc.getOperation()
-  );
+  if (outputScope == OutputScope::Public) {
+    return serializeJSONValue(
+        results->front(), computeFunc.getResultTypes().front(), tables,
+        computeFunc.getOperation(), SerializationMode::PublicOutputsOnly
+    );
+  }
+
+  auto inputBindings = collectInputBindings(computeFunc);
+  auto inputsJSON = buildInputsJSONObject(inputBindings, *args, tables, computeFunc.getOperation());
+  if (!inputsJSON) {
+    return inputsJSON.takeError();
+  }
+
+  auto outputBindings =
+      collectOutputBindings(mainDef->get(), tables, computeFunc.getOperation(), OutputScope::FullWitness);
+  if (failed(outputBindings)) {
+    return makeError("failed to select full witness signals");
+  }
+
+  llvm::SmallVector<llvm::json::Value> serializedSignals;
+  serializedSignals.reserve(outputBindings->size());
+  for (const OutputBinding &binding : *outputBindings) {
+    auto leafValue = extractValueAtPath(
+        results->front(), computeFunc.getResultTypes().front(), binding.path, tables,
+        computeFunc.getOperation());
+    if (!leafValue) {
+      return leafValue.takeError();
+    }
+    auto serialized = serializeJSONValue(
+        *leafValue, binding.type, tables, computeFunc.getOperation(),
+        SerializationMode::AllSignals);
+    if (!serialized) {
+      return serialized.takeError();
+    }
+    serializedSignals.push_back(*serialized);
+  }
+
+  llvm::json::Object result;
+  result["inputs"] = llvm::json::Value(std::move(*inputsJSON));
+  result["signals"] = buildSignalsJSONObject(*outputBindings, serializedSignals);
+  return llvm::json::Value(std::move(result));
 }
 
 /// Run include preprocessing and flattening before backend execution.
@@ -173,6 +212,7 @@ runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions
     return runWithExecutionEngine(moduleOp, tables, *fields.begin(), input, options);
   }
   Interpreter interpreter(moduleOp, tables, *fields.begin());
+  interpreter.setOutputScope(options.outputScope);
   return interpreter.runMainFromJSON(input);
 }
 

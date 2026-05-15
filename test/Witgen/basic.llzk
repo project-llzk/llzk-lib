@@ -1,10 +1,12 @@
 // RUN: llzk-witgen %s --inputs %S/Inputs/basic.json | FileCheck %s
 // RUN: llzk-witgen %s --inputs %S/Inputs/basic.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
     struct.member @sum : !felt.type<"babybear"> {llzk.pub}
-    struct.member @secret : !felt.type<"babybear">
+    struct.member @secret : !felt.type<"babybear"> {signal}
     function.def @compute(
       %lhs: !felt.type<"babybear"> {function.arg_name = "lhs"},
       %rhs: !felt.type<"babybear"> {function.arg_name = "rhs"}
@@ -26,3 +28,14 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK: {
 // CHECK-NEXT:   "sum": "9"
 // CHECK-NEXT: }
+
+// FULL: {
+// FULL-NEXT:   "inputs": {
+// FULL-NEXT:     "lhs": "4",
+// FULL-NEXT:     "rhs": "5"
+// FULL-NEXT:   },
+// FULL-NEXT:   "signals": {
+// FULL-NEXT:     "secret": "4",
+// FULL-NEXT:     "sum": "9"
+// FULL-NEXT:   }
+// FULL-NEXT: }

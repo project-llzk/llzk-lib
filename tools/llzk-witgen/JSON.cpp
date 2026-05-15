@@ -10,6 +10,7 @@
 #include "JSON.h"
 
 #include "Errors.h"
+#include "WitnessSelection.h"
 
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
@@ -111,7 +112,7 @@ static llvm::Expected<llvm::json::Value> feltToJSON(const llvm::DynamicAPInt &va
 /// Serialize a flattened LLZK array into nested JSON arrays.
 static llvm::Expected<llvm::json::Value> serializeJSONArray(
     const ArrayValueRef &arrayValue, array::ArrayType type, SymbolTableCollection &tables,
-    Operation *origin, size_t dimIndex = 0, size_t flatOffset = 0
+    Operation *origin, SerializationMode mode, size_t dimIndex = 0, size_t flatOffset = 0
 ) {
   llvm::json::Array jsonArray;
   llvm::ArrayRef<int64_t> shape = type.getShape();
@@ -119,7 +120,7 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
     for (int64_t i = 0; i < shape[dimIndex]; ++i) {
       auto elem = serializeJSONValue(
           arrayValue->elements[flatOffset + static_cast<size_t>(i)], type.getElementType(), tables,
-          origin
+          origin, mode
       );
       if (!elem) {
         return elem.takeError();
@@ -138,7 +139,7 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
       array::ArrayType::get(type.getElementType(), type.getDimensionSizes().drop_front());
   for (int64_t i = 0; i < shape[dimIndex]; ++i) {
     auto subArray = serializeJSONArray(
-        arrayValue, subArrayType, tables, origin, dimIndex + 1,
+        arrayValue, subArrayType, tables, origin, mode, dimIndex + 1,
         flatOffset + static_cast<size_t>(i) * subArraySize
     );
     if (!subArray) {
@@ -189,7 +190,8 @@ parseJSONValue(const llvm::json::Value *json, Type type, const Field &field, Ope
 
 /// Serialize a supported LLZK runtime value into JSON.
 llvm::Expected<llvm::json::Value> serializeJSONValue(
-    const Value &value, Type type, SymbolTableCollection &tables, Operation *origin
+    const Value &value, Type type, SymbolTableCollection &tables, Operation *origin,
+    SerializationMode mode
 ) {
   return llvm::TypeSwitch<Type, llvm::Expected<llvm::json::Value>>(type)
       .Case([&](felt::FeltType) -> llvm::Expected<llvm::json::Value> {
@@ -204,7 +206,7 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     if (!arrayValue) {
       return arrayValue.takeError();
     }
-    return serializeJSONArray(*arrayValue, arrayType, tables, origin);
+    return serializeJSONArray(*arrayValue, arrayType, tables, origin, mode);
   })
       .Case([&](pod::PodType podType) -> llvm::Expected<llvm::json::Value> {
     auto podValue = asPod(value);
@@ -217,7 +219,7 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
       if (it == (*podValue)->records.end()) {
         return makeError("missing POD record during JSON serialization");
       }
-      auto serialized = serializeJSONValue(it->second, record.getType(), tables, origin);
+      auto serialized = serializeJSONValue(it->second, record.getType(), tables, origin, mode);
       if (!serialized) {
         return serialized.takeError();
       }
@@ -234,22 +236,37 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     if (failed(defLookup)) {
       return makeError("could not resolve struct type during JSON serialization");
     }
-    llvm::json::Object result;
-    for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
-      if (!member.hasPublicAttr()) {
-        continue;
+      llvm::json::Object result;
+      for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
+        auto it = (*structValue)->members.find(member.getSymName());
+        if (it == (*structValue)->members.end()) {
+          return makeError("missing struct member during JSON serialization");
+        }
+
+        if (mode == SerializationMode::PublicOutputsOnly) {
+          if (!member.hasPublicAttr()) {
+            continue;
+          }
+        } else {
+          if (!memberIsSignal(defLookup->get(), member) &&
+              !isa<component::StructType>(member.getType())) {
+            continue;
+          }
+        }
+
+        auto serialized = serializeJSONValue(it->second, member.getType(), tables, origin, mode);
+        if (!serialized) {
+          return serialized.takeError();
+        }
+        if (mode == SerializationMode::AllSignals && isa<component::StructType>(member.getType())) {
+          auto *object = serialized->getAsObject();
+          if (!object || object->empty()) {
+            continue;
+          }
+        }
+        result[member.getSymName()] = *serialized;
       }
-      auto it = (*structValue)->members.find(member.getSymName());
-      if (it == (*structValue)->members.end()) {
-        return makeError("missing struct member during JSON serialization");
-      }
-      auto serialized = serializeJSONValue(it->second, member.getType(), tables, origin);
-      if (!serialized) {
-        return serialized.takeError();
-      }
-      result[member.getSymName()] = *serialized;
-    }
-    return llvm::json::Value(std::move(result));
+      return llvm::json::Value(std::move(result));
   })
       .Case([&](IndexType) -> llvm::Expected<llvm::json::Value> {
     auto indexValue = asIndex(value);
@@ -268,8 +285,81 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     }
     return llvm::json::Value(*boolValue);
   }).Default([&](Type) -> llvm::Expected<llvm::json::Value> {
-    return makeError("unsupported output type in llzk-witgen");
+      return makeError("unsupported output type in llzk-witgen");
   });
+}
+
+/// Serialize named input values into a JSON object.
+llvm::Expected<llvm::json::Object> buildInputsJSONObject(
+    ArrayRef<InputBinding> bindings, ArrayRef<Value> values, SymbolTableCollection &tables,
+    Operation *origin
+) {
+  if (bindings.size() != values.size()) {
+    return makeError("input binding count mismatch during witness JSON assembly");
+  }
+
+  llvm::json::Object result;
+  for (auto [binding, value] : llvm::zip(bindings, values)) {
+    auto serialized =
+        serializeJSONValue(value, binding.type, tables, origin, SerializationMode::AllSignals);
+    if (!serialized) {
+      return serialized.takeError();
+    }
+    result[binding.name] = *serialized;
+  }
+  return result;
+}
+
+/// Extract one nested runtime leaf by path.
+llvm::Expected<Value> extractValueAtPath(
+    const Value &root, Type rootType, ArrayRef<std::string> path, SymbolTableCollection &tables,
+    Operation *origin
+) {
+  if (path.empty()) {
+    return root;
+  }
+
+  if (auto structType = dyn_cast<component::StructType>(rootType)) {
+    auto structValue = asStruct(root);
+    if (!structValue) {
+      return structValue.takeError();
+    }
+    auto defLookup = structType.getDefinition(tables, origin);
+    if (failed(defLookup)) {
+      return makeError("could not resolve struct type while extracting witness value");
+    }
+    for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
+      if (member.getSymName() != path.front()) {
+        continue;
+      }
+      auto it = (*structValue)->members.find(member.getSymName());
+      if (it == (*structValue)->members.end()) {
+        return makeError("missing struct member while extracting witness value");
+      }
+      return extractValueAtPath(it->second, member.getType(), path.drop_front(), tables, origin);
+    }
+    return makeError("unknown struct member while extracting witness value");
+  }
+
+  if (auto podType = dyn_cast<pod::PodType>(rootType)) {
+    auto podValue = asPod(root);
+    if (!podValue) {
+      return podValue.takeError();
+    }
+    for (pod::RecordAttr record : podType.getRecords()) {
+      if (record.getName().getValue() != path.front()) {
+        continue;
+      }
+      auto it = (*podValue)->records.find(record.getName().getValue());
+      if (it == (*podValue)->records.end()) {
+        return makeError("missing POD record while extracting witness value");
+      }
+      return extractValueAtPath(it->second, record.getType(), path.drop_front(), tables, origin);
+    }
+    return makeError("unknown POD record while extracting witness value");
+  }
+
+  return makeError("extra witness path components for non-aggregate value");
 }
 
 } // namespace llzk::witgen

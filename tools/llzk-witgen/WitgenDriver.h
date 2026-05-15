@@ -24,9 +24,16 @@ enum class Backend {
   ExecutionEngine,
 };
 
+/// Select the JSON scope emitted by `llzk-witgen`.
+enum class OutputScope {
+  Public,
+  FullWitness,
+};
+
 /// Configure one `llzk-witgen` execution.
 struct WitgenOptions {
   Backend backend = Backend::Interpreter;
+  OutputScope outputScope = OutputScope::Public;
   bool inlineIncludes = true;
   bool dumpJITCore = false;
   bool dumpJITLLVM = false;
@@ -40,6 +47,9 @@ public:
       mlir::ModuleOp moduleOp, mlir::SymbolTableCollection &tables, const llzk::Field &field
   );
 
+  /// Select which witness JSON scope this interpreter emits.
+  void setOutputScope(OutputScope newOutputScope) { outputScope = newOutputScope; }
+
   /// Execute the main `compute()` function using JSON inputs.
   llvm::Expected<llvm::json::Value> runMainFromJSON(const llvm::json::Value &input);
 
@@ -47,6 +57,7 @@ private:
   mlir::ModuleOp moduleOp;
   mlir::SymbolTableCollection &tables;
   const llzk::Field &field;
+  OutputScope outputScope = OutputScope::Public;
 };
 
 /// Run the full llzk-witgen pipeline on a parsed module.

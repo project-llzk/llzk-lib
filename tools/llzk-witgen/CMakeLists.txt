@@ -6,6 +6,7 @@ target_sources(
     Interpreter.cpp
     JSON.cpp
     ValueModel.cpp
+    WitnessSelection.cpp
     WitgenLowering.cpp
     WitgenDriver.cpp
 )

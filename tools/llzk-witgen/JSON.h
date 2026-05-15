@@ -10,11 +10,18 @@
 #pragma once
 
 #include "ValueModel.h"
+#include "WitnessSelection.h"
 
 #include <llvm/Support/Error.h>
 #include <llvm/Support/JSON.h>
 
 namespace llzk::witgen {
+
+/// Select how struct values are filtered during JSON serialization.
+enum class SerializationMode {
+  PublicOutputsOnly,
+  AllSignals,
+};
 
 /// Parse one JSON value into the tool's runtime representation.
 llvm::Expected<Value> parseJSONValue(
@@ -25,7 +32,20 @@ llvm::Expected<Value> parseJSONValue(
 /// Serialize one runtime value into the user-facing JSON output format.
 llvm::Expected<llvm::json::Value> serializeJSONValue(
     const Value &value, mlir::Type type, mlir::SymbolTableCollection &tables,
-    mlir::Operation *origin
+    mlir::Operation *origin,
+    SerializationMode mode = SerializationMode::PublicOutputsOnly
+);
+
+/// Serialize named input values into a JSON object.
+llvm::Expected<llvm::json::Object> buildInputsJSONObject(
+    llvm::ArrayRef<InputBinding> bindings, llvm::ArrayRef<Value> values,
+    mlir::SymbolTableCollection &tables, mlir::Operation *origin
+);
+
+/// Extract one nested runtime leaf by path.
+llvm::Expected<Value> extractValueAtPath(
+    const Value &root, mlir::Type rootType, llvm::ArrayRef<std::string> path,
+    mlir::SymbolTableCollection &tables, mlir::Operation *origin
 );
 
 } // namespace llzk::witgen

@@ -9,6 +9,8 @@
 
 #include "WitgenLowering.h"
 
+#include "WitnessSelection.h"
+
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -54,12 +56,6 @@ namespace {
 struct LoweredValue {
   Type sourceType;
   llvm::SmallVector<Value> leaves;
-};
-
-/// Describe one ordered public main output.
-struct PublicOutput {
-  StringAttr name;
-  Type type;
 };
 
 /// Return the only field used by the module or emit an error.
@@ -710,28 +706,6 @@ static LogicalResult appendFlatLeavesToTypes(
   return success();
 }
 
-/// Build the ordered public outputs for the concrete main struct.
-static FailureOr<SmallVector<PublicOutput>> collectPublicOutputs(
-    component::StructDefOp mainDef, SymbolTableCollection &tables, const Field &field
-) {
-  SmallVector<PublicOutput> outputs;
-  for (component::MemberDefOp member : mainDef.getMemberDefs()) {
-    if (!member.hasPublicAttr()) {
-      continue;
-    }
-    SmallVector<Type> leaves;
-    if (failed(flattenTypeLeaves(member.getType(), tables, member.getOperation(), field, leaves))) {
-      return failure();
-    }
-    if (leaves.size() != 1 || (!isa<MemRefType>(leaves.front()) && !isScalarType(member.getType()))) {
-      member.emitError("execution-engine backend only supports public felt or felt-array outputs");
-      return failure();
-    }
-    outputs.push_back(PublicOutput {member.getSymNameAttr(), member.getType()});
-  }
-  return outputs;
-}
-
 /// Lower one LLZK compute/free function body into `func.func`.
 class BodyLowerer {
 public:
@@ -1374,6 +1348,10 @@ class CreateWitgenEntryPass : public PassWrapper<CreateWitgenEntryPass, Operatio
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)
 
+  /// Build the pass for either public-only or full-witness emission.
+  explicit CreateWitgenEntryPass(bool emitFullWitness = false)
+      : emitFullWitness(emitFullWitness) {}
+
   /// Run the pass over one module.
   StringRef getArgument() const final { return "llzk-create-witgen-entry"; }
 
@@ -1408,8 +1386,10 @@ public:
       return;
     }
 
-    auto publicOutputs = collectPublicOutputs(mainDef->get(), tables, field->get());
-    if (failed(publicOutputs)) {
+    auto outputs = collectOutputBindings(
+        mainDef->get(), tables, computeFunc.getOperation(),
+        emitFullWitness ? OutputScope::FullWitness : OutputScope::Public);
+    if (failed(outputs)) {
       signalPassFailure();
       return;
     }
@@ -1433,7 +1413,7 @@ public:
       }
       wrapperArgs.push_back(loweredLeafTypes.front());
     }
-    for (const PublicOutput &output : *publicOutputs) {
+    for (const OutputBinding &output : *outputs) {
       SmallVector<Type> loweredLeafTypes;
       if (failed(flattenTypeLeaves(
               output.type, tables, computeFunc.getOperation(), field->get(), loweredLeafTypes, {}, true
@@ -1486,41 +1466,71 @@ public:
     }
     auto loweredMain = builder.create<func::CallOp>(computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs);
 
-    unsigned cursor = 0;
-    llvm::StringMap<SmallVector<Value>> publicSlices;
-    for (component::MemberDefOp member : mainDef->get().getMemberDefs()) {
-      auto count = getLeafCount(member.getType(), tables, member.getOperation(), field->get());
-      if (failed(count)) {
-        signalPassFailure();
-        return;
+    LoweredValue mainResultValue {
+        computeFunc.getResultTypes().front(),
+        llvm::SmallVector<Value>(loweredMain.getResults().begin(), loweredMain.getResults().end())};
+
+    auto extractOutputSlice =
+        [&](ArrayRef<std::string> path, Type currentType, ArrayRef<Value> leaves,
+            auto &self) -> FailureOr<SmallVector<Value>> {
+      if (path.empty()) {
+        return SmallVector<Value>(leaves.begin(), leaves.end());
       }
-      SmallVector<Value> slice(
-          loweredMain.getResults().begin() + cursor, loweredMain.getResults().begin() + cursor + *count
-      );
-      cursor += *count;
-      if (member.hasPublicAttr()) {
-        publicSlices[member.getSymName()] = std::move(slice);
+      if (auto structType = dyn_cast<component::StructType>(currentType)) {
+        auto defLookup = structType.getDefinition(tables, computeFunc.getOperation());
+        if (failed(defLookup)) {
+          return failure();
+        }
+        unsigned localCursor = 0;
+        for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
+          auto leafCount = getLeafCount(member.getType(), tables, member.getOperation(), field->get());
+          if (failed(leafCount)) {
+            return failure();
+          }
+          ArrayRef<Value> slice = ArrayRef<Value>(leaves).slice(localCursor, *leafCount);
+          localCursor += *leafCount;
+          if (member.getSymName() == path.front()) {
+            return self(path.drop_front(), member.getType(), slice, self);
+          }
+        }
+        computeFunc.emitError("failed to find struct member while wiring witgen outputs");
+        return failure();
       }
-    }
+      if (auto podType = dyn_cast<pod::PodType>(currentType)) {
+        unsigned localCursor = 0;
+        for (pod::RecordAttr record : podType.getRecords()) {
+          auto leafCount = getLeafCount(record.getType(), tables, computeFunc.getOperation(), field->get());
+          if (failed(leafCount)) {
+            return failure();
+          }
+          ArrayRef<Value> slice = ArrayRef<Value>(leaves).slice(localCursor, *leafCount);
+          localCursor += *leafCount;
+          if (record.getName().getValue() == path.front()) {
+            return self(path.drop_front(), record.getType(), slice, self);
+          }
+        }
+        computeFunc.emitError("failed to find POD record while wiring witgen outputs");
+        return failure();
+      }
+      computeFunc.emitError("extra witness path components for non-aggregate output");
+      return failure();
+    };
 
     auto outputArgs = entry->getArguments().drop_front(computeFunc.getNumArguments());
-    for (auto [output, outputMemRef] : llvm::zip(*publicOutputs, outputArgs)) {
-      auto sliceIt = publicSlices.find(output.name.getValue());
-      if (sliceIt == publicSlices.end()) {
-        wrapper.emitError("missing public output slice while building witgen entry");
-        signalPassFailure();
-        return;
-      }
-      ArrayRef<Value> slice = sliceIt->second;
-      if (slice.empty()) {
-        wrapper.emitError("missing public output slice while building witgen entry");
+    for (auto [output, outputMemRef] : llvm::zip(*outputs, outputArgs)) {
+      auto slice =
+          extractOutputSlice(output.path, mainResultValue.sourceType, mainResultValue.leaves, extractOutputSlice);
+      if (failed(slice) || slice->empty()) {
+        wrapper.emitError("missing selected witness output slice while building witgen entry");
         signalPassFailure();
         return;
       }
       if (isScalarType(output.type)) {
-        storeStorageScalar(builder, computeFunc.getLoc(), loadStorageScalar(builder, computeFunc.getLoc(), slice.front()), outputMemRef);
+        storeStorageScalar(
+            builder, computeFunc.getLoc(),
+            loadStorageScalar(builder, computeFunc.getLoc(), slice->front()), outputMemRef);
       } else {
-        builder.create<memref::CopyOp>(computeFunc.getLoc(), slice.front(), outputMemRef);
+        builder.create<memref::CopyOp>(computeFunc.getLoc(), slice->front(), outputMemRef);
       }
     }
     builder.create<func::ReturnOp>(computeFunc.getLoc());
@@ -1535,6 +1545,9 @@ public:
       op->erase();
     }
   }
+
+private:
+  bool emitFullWitness;
 };
 
 } // namespace
@@ -1553,8 +1566,8 @@ std::unique_ptr<Pass> createLowerComputeToCorePass() {
   return std::make_unique<LowerComputeToCorePass>();
 }
 
-std::unique_ptr<Pass> createCreateWitgenEntryPass() {
-  return std::make_unique<CreateWitgenEntryPass>();
+std::unique_ptr<Pass> createCreateWitgenEntryPass(bool emitFullWitness) {
+  return std::make_unique<CreateWitgenEntryPass>(emitFullWitness);
 }
 
 } // namespace llzk::witgen

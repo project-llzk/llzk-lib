@@ -1,5 +1,7 @@
 // RUN: llzk-witgen %s --inputs %S/Inputs/array_and_assert.json | FileCheck %s
 // RUN: llzk-witgen %s --inputs %S/Inputs/array_and_assert.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %s --inputs %S/Inputs/array_and_assert.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %s --inputs %S/Inputs/array_and_assert.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
@@ -34,3 +36,20 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:     "9"
 // CHECK-NEXT:   ]
 // CHECK-NEXT: }
+
+// FULL: {
+// FULL-NEXT:   "inputs": {
+// FULL-NEXT:     "input": [
+// FULL-NEXT:       "2",
+// FULL-NEXT:       "5",
+// FULL-NEXT:       "7"
+// FULL-NEXT:     ]
+// FULL-NEXT:   },
+// FULL-NEXT:   "signals": {
+// FULL-NEXT:     "out": [
+// FULL-NEXT:       "2",
+// FULL-NEXT:       "5",
+// FULL-NEXT:       "9"
+// FULL-NEXT:     ]
+// FULL-NEXT:   }
+// FULL-NEXT: }

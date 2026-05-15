@@ -58,6 +58,10 @@ static llvm::cl::opt<std::string> BackendName(
     "backend", llvm::cl::desc("Execution backend: interpreter or execution-engine"),
     llvm::cl::init("interpreter")
 );
+static llvm::cl::opt<std::string> OutputScopeName(
+    "output-scope", llvm::cl::desc("Output scope: public or full-witness"),
+    llvm::cl::init("public")
+);
 static llvm::cl::opt<bool>
     DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));
 static llvm::cl::opt<bool>
@@ -137,6 +141,14 @@ int main(int argc, char **argv) {
     options.backend = llzk::witgen::Backend::Interpreter;
   } else {
     llvm::errs() << "unknown backend: " << BackendName << '\n';
+    return EXIT_FAILURE;
+  }
+  if (OutputScopeName == "full-witness") {
+    options.outputScope = llzk::witgen::OutputScope::FullWitness;
+  } else if (OutputScopeName == "public") {
+    options.outputScope = llzk::witgen::OutputScope::Public;
+  } else {
+    llvm::errs() << "unknown output scope: " << OutputScopeName << '\n';
     return EXIT_FAILURE;
   }
   options.inlineIncludes = true;
