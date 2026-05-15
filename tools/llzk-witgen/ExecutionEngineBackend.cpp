@@ -20,6 +20,7 @@
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
+#include <mlir/Conversion/AffineToStandard/AffineToStandard.h>
 #include <mlir/Conversion/ArithToLLVM/ArithToLLVM.h>
 #include <mlir/Conversion/ControlFlowToLLVM/ControlFlowToLLVM.h>
 #include <mlir/Conversion/FuncToLLVM/ConvertFuncToLLVM.h>
@@ -27,6 +28,8 @@
 #include <mlir/Conversion/MemRefToLLVM/MemRefToLLVM.h>
 #include <mlir/Conversion/Passes.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
+#include <mlir/Dialect/MemRef/Transforms/Passes.h>
+#include <mlir/ExecutionEngine/CRunnerUtils.h>
 #include <mlir/ExecutionEngine/ExecutionEngine.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Target/LLVMIR/Dialect/All.h>
@@ -278,6 +281,10 @@ static llvm::Error finalizeExecutionEngineModule(ModuleOp moduleOp) {
   PassManager pm(moduleOp.getContext());
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
+  pm.addPass(mlir::memref::createExpandStridedMetadataPass());
+  pm.addPass(mlir::createLowerAffinePass());
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::createConvertToLLVMPass());
   pm.addPass(mlir::createReconcileUnrealizedCastsPass());
   if (failed(pm.run(moduleOp))) {
@@ -412,6 +419,13 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   if (!maybeEngine) {
     return maybeEngine.takeError();
   }
+  (*maybeEngine)->registerSymbols([&](llvm::orc::MangleAndInterner interner) {
+    llvm::orc::SymbolMap symbolMap;
+    symbolMap[interner("memrefCopy")] = {
+        llvm::orc::ExecutorAddr::fromPtr(&memrefCopy),
+        llvm::JITSymbolFlags::Exported};
+    return symbolMap;
+  });
 
   llvm::SmallVector<void *> descriptorPtrs;
   descriptorPtrs.reserve(inputBuffers.size() + outputBuffers.size());

@@ -202,6 +202,77 @@ static LogicalResult flattenTypeLeaves(
   return failure();
 }
 
+/// Return a strided memref type for one internal aggregate ABI leaf.
+static MemRefType
+getStridedMemRefType(MLIRContext *context, ArrayRef<int64_t> shape, Type elementType) {
+  SmallVector<int64_t> strides(shape.size(), ShapedType::kDynamic);
+  return MemRefType::get(
+      shape, elementType,
+      StridedLayoutAttr::get(context, ShapedType::kDynamic, strides)
+  );
+}
+
+/// Flatten one LLZK type into its ordered internal aggregate ABI leaf types.
+static LogicalResult flattenABILeafTypes(
+    Type type, SymbolTableCollection &tables, Operation *origin, const Field &field,
+    SmallVectorImpl<Type> &out, size_t prefixRank = 0, bool aggregateStorage = false
+) {
+  auto emitScalarLeaf = [&](Type leafType) {
+    auto lowered = lowerScalarType(origin->getContext(), leafType, field);
+    if (failed(lowered)) {
+      return failure();
+    }
+    if (!aggregateStorage && prefixRank == 0) {
+      out.push_back(*lowered);
+      return success();
+    }
+    SmallVector<int64_t> shape;
+    if (prefixRank == 0) {
+      shape.push_back(1);
+    } else {
+      shape.assign(prefixRank, ShapedType::kDynamic);
+    }
+    out.push_back(getStridedMemRefType(origin->getContext(), shape, *lowered));
+    return success();
+  };
+
+  if (isScalarType(type)) {
+    return emitScalarLeaf(type);
+  }
+
+  if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
+    return flattenABILeafTypes(
+        arrayType.getElementType(), tables, origin, field, out, prefixRank + arrayType.getRank(), true
+    );
+  }
+
+  if (auto podType = dyn_cast<pod::PodType>(type)) {
+    for (pod::RecordAttr record : podType.getRecords()) {
+      if (failed(flattenABILeafTypes(record.getType(), tables, origin, field, out, prefixRank, true))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  if (auto structType = dyn_cast<component::StructType>(type)) {
+    auto def = structType.getDefinition(tables, origin);
+    if (failed(def)) {
+      origin->emitError("could not resolve struct type during witgen lowering");
+      return failure();
+    }
+    for (component::MemberDefOp member : def->get().getMemberDefs()) {
+      if (failed(flattenABILeafTypes(member.getType(), tables, origin, field, out, prefixRank, true))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  origin->emitError("unsupported type in llzk-witgen lowering: ") << type;
+  return failure();
+}
+
 /// Return the number of flattened lowered leaves for one LLZK type.
 static FailureOr<size_t>
 getLeafCount(Type type, SymbolTableCollection &tables, Operation *origin, const Field &field) {
@@ -217,6 +288,16 @@ static FailureOr<SmallVector<Type>>
 getLeafTypes(Type type, SymbolTableCollection &tables, Operation *origin, const Field &field) {
   SmallVector<Type> leaves;
   if (failed(flattenTypeLeaves(type, tables, origin, field, leaves))) {
+    return failure();
+  }
+  return leaves;
+}
+
+/// Return the internal aggregate ABI leaf types for one LLZK type.
+static FailureOr<SmallVector<Type>>
+getABILeafTypes(Type type, SymbolTableCollection &tables, Operation *origin, const Field &field) {
+  SmallVector<Type> leaves;
+  if (failed(flattenABILeafTypes(type, tables, origin, field, leaves))) {
     return failure();
   }
   return leaves;
@@ -529,23 +610,46 @@ static LogicalResult writeNamedAggregateValue(
 }
 
 /// Create a static subview representing one aggregate array element leaf.
-static Value createElementSubview(
-    OpBuilder &builder, Location loc, Value source, MemRefType resultType, ValueRange outerIndices
-) {
+static Value createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange outerIndices) {
   auto sourceType = mlir::cast<MemRefType>(source.getType());
-  SmallVector<Value> offsets(outerIndices.begin(), outerIndices.end());
-  SmallVector<Value> sizes;
-  SmallVector<Value> strides;
-  for (int64_t dim = static_cast<int64_t>(outerIndices.size()); dim < sourceType.getRank(); ++dim) {
-    offsets.push_back(makeIndexConstant(builder, loc, 0));
+  SmallVector<OpFoldResult> mixedOffsets;
+  SmallVector<OpFoldResult> mixedSizes;
+  SmallVector<OpFoldResult> mixedStrides;
+  const int64_t indexedRank = static_cast<int64_t>(outerIndices.size());
+  mixedOffsets.reserve(sourceType.getRank());
+  mixedSizes.reserve(sourceType.getRank());
+  mixedStrides.reserve(sourceType.getRank());
+  for (Value index : outerIndices) {
+    mixedOffsets.push_back(index);
   }
-  for (int64_t size : resultType.getShape()) {
-    sizes.push_back(makeIndexConstant(builder, loc, size));
+  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+    mixedOffsets.push_back(builder.getIndexAttr(0));
+  }
+  for (int64_t dim = 0; dim < indexedRank; ++dim) {
+    mixedSizes.push_back(builder.getIndexAttr(1));
+  }
+  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+    mixedSizes.push_back(memref::getMixedSize(builder, loc, source, dim));
   }
   for (int64_t dim = 0; dim < sourceType.getRank(); ++dim) {
-    strides.push_back(makeIndexConstant(builder, loc, 1));
+    mixedStrides.push_back(builder.getIndexAttr(1));
   }
-  return builder.create<memref::SubViewOp>(loc, resultType, source, offsets, sizes, strides);
+  SmallVector<int64_t> desiredShape;
+  desiredShape.reserve(static_cast<size_t>(sourceType.getRank() - indexedRank));
+  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[static_cast<size_t>(dim)])) {
+      desiredShape.push_back(mlir::cast<IntegerAttr>(attr).getInt());
+    } else {
+      desiredShape.push_back(ShapedType::kDynamic);
+    }
+  }
+  if (desiredShape.empty()) {
+    desiredShape.push_back(1);
+  }
+  auto resultType = mlir::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
+      desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
+  ));
+  return builder.create<memref::SubViewOp>(loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides);
 }
 
 /// Read one LLZK array element.
@@ -560,14 +664,8 @@ static FailureOr<LoweredValue> readArrayElement(
     return result;
   }
 
-  auto leafTypes = getLeafTypes(elementType, tables, origin, field);
-  if (failed(leafTypes)) {
-    return failure();
-  }
-  for (auto [sourceLeaf, resultLeafType] : llvm::zip(arrayValue.leaves, *leafTypes)) {
-    result.leaves.push_back(
-        createElementSubview(builder, loc, sourceLeaf, mlir::cast<MemRefType>(resultLeafType), indices)
-    );
+  for (Value sourceLeaf : arrayValue.leaves) {
+    result.leaves.push_back(createElementSubview(builder, loc, sourceLeaf, indices));
   }
   return result;
 }
@@ -584,29 +682,34 @@ static LogicalResult writeArrayElement(
     return success();
   }
 
-  auto leafTypes = getLeafTypes(elementType, tables, origin, field);
-  if (failed(leafTypes)) {
-    return failure();
-  }
-  for (auto [destLeaf, srcLeaf, resultLeafType] :
-       llvm::zip(arrayValue.leaves, elementValue.leaves, *leafTypes)) {
-    Value subview = createElementSubview(builder, loc, destLeaf, mlir::cast<MemRefType>(resultLeafType), indices);
+  for (auto [destLeaf, srcLeaf] : llvm::zip(arrayValue.leaves, elementValue.leaves)) {
+    Value subview = createElementSubview(builder, loc, destLeaf, indices);
     builder.create<memref::CopyOp>(loc, srcLeaf, subview);
   }
   return success();
 }
 
-/// Flatten one lowered value into its callee argument/result leaf list.
-static LogicalResult appendFlatLeaves(
-    const LoweredValue &value, SmallVectorImpl<Value> &out, SymbolTableCollection &tables,
-    Operation *origin, const Field &field
+/// Flatten one lowered value into one target leaf type list.
+static LogicalResult appendFlatLeavesToTypes(
+    OpBuilder &builder, Location loc, const LoweredValue &value, ArrayRef<Type> targetLeafTypes,
+    SmallVectorImpl<Value> &out, Operation *origin
 ) {
-  auto leafTypes = getLeafTypes(value.sourceType, tables, origin, field);
-  if (failed(leafTypes) || leafTypes->size() != value.leaves.size()) {
+  if (targetLeafTypes.size() != value.leaves.size()) {
     origin->emitError("flattened leaf mismatch during call lowering");
     return failure();
   }
-  out.append(value.leaves.begin(), value.leaves.end());
+  for (auto [leafValue, leafType] : llvm::zip(value.leaves, targetLeafTypes)) {
+    if (leafValue.getType() == leafType) {
+      out.push_back(leafValue);
+      continue;
+    }
+    if (isa<MemRefType>(leafValue.getType()) && isa<MemRefType>(leafType)) {
+      out.push_back(builder.create<memref::CastOp>(loc, leafType, leafValue));
+      continue;
+    }
+    origin->emitError("lowered leaf type mismatch during call lowering");
+    return failure();
+  }
   return success();
 }
 
@@ -652,13 +755,13 @@ public:
 
     SmallVector<Type> loweredArgTypes;
     for (Type argType : funcOp.getArgumentTypes()) {
-      if (failed(flattenTypeLeaves(argType, tables, funcOp.getOperation(), field, loweredArgTypes))) {
+      if (failed(flattenABILeafTypes(argType, tables, funcOp.getOperation(), field, loweredArgTypes))) {
         return failure();
       }
     }
     SmallVector<Type> loweredResultTypes;
     for (Type resultType : funcOp.getResultTypes()) {
-      if (failed(flattenTypeLeaves(resultType, tables, funcOp.getOperation(), field, loweredResultTypes))) {
+      if (failed(flattenABILeafTypes(resultType, tables, funcOp.getOperation(), field, loweredResultTypes))) {
         return failure();
       }
     }
@@ -769,8 +872,9 @@ private:
       SmallVector<Value> results;
       for (Value operand : returnOp.getOperands()) {
         auto lowered = lookup(operand, valueMap, returnOp.getOperation());
-        if (failed(lowered) ||
-            failed(appendFlatLeaves(*lowered, results, tables, returnOp.getOperation(), field))) {
+        auto leafTypes = getABILeafTypes(operand.getType(), tables, returnOp.getOperation(), field);
+        if (failed(lowered) || failed(leafTypes) ||
+            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, results, returnOp.getOperation()))) {
           return failure();
         }
       }
@@ -782,8 +886,9 @@ private:
       SmallVector<Value> results;
       for (Value operand : yieldOp.getOperands()) {
         auto lowered = lookup(operand, valueMap, yieldOp.getOperation());
-        if (failed(lowered) ||
-            failed(appendFlatLeaves(*lowered, results, tables, yieldOp.getOperation(), field))) {
+        auto leafTypes = getABILeafTypes(operand.getType(), tables, yieldOp.getOperation(), field);
+        if (failed(lowered) || failed(leafTypes) ||
+            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, results, yieldOp.getOperation()))) {
           return failure();
         }
       }
@@ -1134,15 +1239,16 @@ private:
       }
       SmallVector<Type> resultTypes;
       for (Type resultType : callOp.getResultTypes()) {
-        if (failed(flattenTypeLeaves(resultType, tables, callOp.getOperation(), field, resultTypes))) {
+        if (failed(flattenABILeafTypes(resultType, tables, callOp.getOperation(), field, resultTypes))) {
           return failure();
         }
       }
       SmallVector<Value> flatArgs;
       for (Value operand : callOp.getArgOperands()) {
         auto lowered = lookup(operand, valueMap, callOp.getOperation());
-        if (failed(lowered) ||
-            failed(appendFlatLeaves(*lowered, flatArgs, tables, callOp.getOperation(), field))) {
+        auto leafTypes = getABILeafTypes(operand.getType(), tables, callOp.getOperation(), field);
+        if (failed(lowered) || failed(leafTypes) ||
+            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, flatArgs, callOp.getOperation()))) {
           return failure();
         }
       }
@@ -1175,8 +1281,9 @@ private:
       SmallVector<unsigned> initLeafCounts;
       for (auto [init, resultType] : llvm::zip(forOp.getInitArgs(), forOp.getResultTypes())) {
         auto lowered = lookup(init, valueMap, forOp.getOperation());
-        if (failed(lowered) ||
-            failed(appendFlatLeaves(*lowered, initArgs, tables, forOp.getOperation(), field))) {
+        auto leafTypes = getABILeafTypes(resultType, tables, forOp.getOperation(), field);
+        if (failed(lowered) || failed(leafTypes) ||
+            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, initArgs, forOp.getOperation()))) {
           return failure();
         }
         auto count = getLeafCount(resultType, tables, forOp.getOperation(), field);
@@ -1328,7 +1435,9 @@ public:
 
     SmallVector<Type> loweredMainResultTypes;
     for (Type resultType : computeFunc.getResultTypes()) {
-      if (failed(flattenTypeLeaves(resultType, tables, computeFunc.getOperation(), field->get(), loweredMainResultTypes))) {
+      if (failed(flattenABILeafTypes(
+              resultType, tables, computeFunc.getOperation(), field->get(), loweredMainResultTypes
+          ))) {
         signalPassFailure();
         return;
       }
@@ -1339,7 +1448,17 @@ public:
       if (isScalarType(argType)) {
         mainArgs.push_back(loadStorageScalar(builder, computeFunc.getLoc(), wrapperArg));
       } else {
-        mainArgs.push_back(wrapperArg);
+        auto abiLeafTypes = getABILeafTypes(argType, tables, computeFunc.getOperation(), field->get());
+        if (failed(abiLeafTypes) || abiLeafTypes->size() != 1 || !isa<MemRefType>(abiLeafTypes->front())) {
+          computeFunc.emitError("failed to derive execution-engine ABI type for main input");
+          signalPassFailure();
+          return;
+        }
+        if (wrapperArg.getType() == abiLeafTypes->front()) {
+          mainArgs.push_back(wrapperArg);
+        } else {
+          mainArgs.push_back(builder.create<memref::CastOp>(computeFunc.getLoc(), abiLeafTypes->front(), wrapperArg));
+        }
       }
     }
     auto loweredMain = builder.create<func::CallOp>(computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs);

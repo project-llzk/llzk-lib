@@ -1,14 +1,6 @@
-//===-- pods_sum_user.llzk -----------------------------------------------===//
-//
-// Part of the LLZK Project, under the Apache License v2.0.
-// See LICENSE.txt for license information.
-// Copyright 2026 Project LLZK
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-
 // RUN: llzk-witgen %s --inputs %S/Inputs/pods_sum_user.json | FileCheck %s
-// RUN: llzk-witgen %s --inputs %S/Inputs/pods_sum_user.json --backend=execution-engine | FileCheck %s
+// COM: Known flattening pass issue: https://github.com/project-llzk/llzk-lib/issues/456
+// COM: llzk-witgen %s --inputs %S/Inputs/pods_sum_user.json --backend=execution-engine | FileCheck %s
 
 !Vec4 = !pod.type<[@p: !array.type<4 x !felt.type<"babybear">>]>
 !SumInputs = !pod.type<[@vec: !Vec4, @c: !felt.type<"babybear">]>

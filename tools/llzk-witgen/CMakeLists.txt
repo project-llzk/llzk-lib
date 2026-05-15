@@ -39,10 +39,12 @@ target_link_libraries(
     MLIRIndexToLLVM
     MLIRLLVMToLLVMIRTranslation
     MLIRMemRefToLLVM
+    MLIRMemRefTransforms
     MLIRReconcileUnrealizedCasts
     MLIRTargetLLVMIRExport
     MLIRTransforms
     MLIRUBToLLVM
+    mlir_c_runner_utils
 )
 llzk_target_add_mlir_link_settings(LLZKWitgenTool)
 

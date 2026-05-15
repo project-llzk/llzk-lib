@@ -38,7 +38,8 @@ void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
 }
 
 void addWitgenPreparePipeline(OpPassManager &pm) {
-  pm.addPass(llzk::polymorphic::createFlatteningPass());
+  llzk::polymorphic::FlatteningPassOptions options = {.cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot};
+  pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(options)));
   pm.addPass(mlir::createLowerAffinePass());
   pm.addPass(llzk::createInlineStructsPass());
   pm.addPass(mlir::createCanonicalizerPass());
