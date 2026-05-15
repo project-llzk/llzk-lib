@@ -52,7 +52,7 @@ namespace llzk::witgen {
 namespace {
 
 /// Distinguish parsed interpreter/runtime values from MLIR SSA values in this file.
-using RuntimeValue = llzk::witgen::Value;
+using RuntimeValue = llzk::witgen::WitnessVal;
 
 /// Hold one raw memref descriptor and its backing storage bytes.
 struct BufferPack {

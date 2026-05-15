@@ -1,7 +1,10 @@
-// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json | FileCheck %s
-// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json --backend=execution-engine | FileCheck %s
-// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
-// RUN: llzk-witgen %s --inputs %S/Inputs/basic.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+
+//--- test.llzk
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
@@ -39,3 +42,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // FULL-NEXT:     "sum": "9"
 // FULL-NEXT:   }
 // FULL-NEXT: }
+
+//--- input.json
+{"lhs": 4, "rhs": 5}

@@ -28,8 +28,8 @@ public:
   );
 
   /// Run a function with concrete arguments and return its result values.
-  llvm::Expected<llvm::SmallVector<Value>>
-  run(llzk::function::FuncDefOp funcOp, mlir::ArrayRef<Value> args);
+  llvm::Expected<llvm::SmallVector<WitnessVal>>
+  run(llzk::function::FuncDefOp funcOp, mlir::ArrayRef<WitnessVal> args);
 
 private:
   mlir::ModuleOp moduleOp;

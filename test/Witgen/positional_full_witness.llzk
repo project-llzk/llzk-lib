@@ -1,5 +1,8 @@
-// RUN: llzk-witgen %s --inputs %S/Inputs/positional_full_witness.json --output-scope=full-witness | FileCheck %s
-// RUN: llzk-witgen %s --inputs %S/Inputs/positional_full_witness.json --backend=execution-engine --output-scope=full-witness | FileCheck %s
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness | FileCheck %s
+
+//--- test.llzk
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
@@ -25,3 +28,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:     "sum": "21"
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
+
+//--- input.json
+[8, 13]

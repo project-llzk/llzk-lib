@@ -55,10 +55,10 @@ Interpreter::Interpreter(ModuleOp moduleOp, SymbolTableCollection &tables, const
     : moduleOp(moduleOp), tables(tables), field(field) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
-static llvm::Expected<llvm::SmallVector<Value>> parseArgumentsFromJSON(
+static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
     function::FuncDefOp computeFunc, const llvm::json::Value &input, const Field &field
 ) {
-  llvm::SmallVector<Value> args;
+  llvm::SmallVector<WitnessVal> args;
   auto *jsonObject = input.getAsObject();
   auto *jsonArray = input.getAsArray();
   if (!jsonObject && !jsonArray) {

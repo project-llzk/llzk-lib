@@ -45,47 +45,47 @@ using PodValueRef = std::shared_ptr<PodValue>;
 using StructValueRef = std::shared_ptr<StructValue>;
 
 /// Runtime value representation used by the tool-local interpreter.
-using Value = std::variant<
+using WitnessVal = std::variant<
     std::monostate, bool, int64_t, llvm::DynamicAPInt, ArrayValueRef, PodValueRef, StructValueRef>;
 
 /// Materialized array value with flattened element storage.
 struct ArrayValue {
   array::ArrayType type;
-  std::vector<Value> elements;
+  std::vector<WitnessVal> elements;
 };
 
 /// Materialized POD value keyed by record name.
 struct PodValue {
   pod::PodType type;
-  llvm::DenseMap<llvm::StringRef, Value> records;
+  llvm::DenseMap<llvm::StringRef, WitnessVal> records;
 };
 
 /// Materialized struct value keyed by member name.
 struct StructValue {
   component::StructType type;
-  llvm::DenseMap<llvm::StringRef, Value> members;
+  llvm::DenseMap<llvm::StringRef, WitnessVal> members;
 };
 
 /// Interpret a runtime value as a boolean.
-llvm::Expected<bool> asBool(const Value &value);
+llvm::Expected<bool> asBool(const WitnessVal &value);
 
 /// Interpret a runtime value as an index-sized signed integer.
-llvm::Expected<int64_t> asIndex(const Value &value);
+llvm::Expected<int64_t> asIndex(const WitnessVal &value);
 
 /// Interpret a runtime value as a field element.
-llvm::Expected<llvm::DynamicAPInt> asFelt(const Value &value);
+llvm::Expected<llvm::DynamicAPInt> asFelt(const WitnessVal &value);
 
 /// Interpret a runtime value as an array reference.
-llvm::Expected<ArrayValueRef> asArray(const Value &value);
+llvm::Expected<ArrayValueRef> asArray(const WitnessVal &value);
 
 /// Interpret a runtime value as a POD reference.
-llvm::Expected<PodValueRef> asPod(const Value &value);
+llvm::Expected<PodValueRef> asPod(const WitnessVal &value);
 
 /// Interpret a runtime value as a struct reference.
-llvm::Expected<StructValueRef> asStruct(const Value &value);
+llvm::Expected<StructValueRef> asStruct(const WitnessVal &value);
 
 /// Build the deterministic default value used for `llzk.nondet`.
-llvm::Expected<Value> defaultValue(
+llvm::Expected<WitnessVal> defaultValue(
     mlir::Type type, mlir::SymbolTableCollection &tables, mlir::Operation *origin,
     const llzk::Field &field
 );

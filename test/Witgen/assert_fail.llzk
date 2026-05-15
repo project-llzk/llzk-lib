@@ -1,5 +1,8 @@
-// RUN: not llzk-witgen %s --inputs %S/Inputs/assert_fail.json --backend=interpreter 2>&1 | FileCheck %s
-// RUN: not --crash llzk-witgen %s --inputs %S/Inputs/assert_fail.json --backend=execution-engine 2>&1 | FileCheck %s
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=interpreter 2>&1 | FileCheck %s
+// RUN: not --crash llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+
+//--- test.llzk
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   struct.def @Main {
@@ -21,3 +24,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK: x must be less than 3
+
+//--- input.json
+{"x": 4}

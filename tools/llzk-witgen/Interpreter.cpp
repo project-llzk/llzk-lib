@@ -35,7 +35,7 @@ namespace {
 /// Represent the values yielded by a block or region along with termination state.
 struct BlockResult {
   bool terminated = false;
-  llvm::SmallVector<Value> values;
+  llvm::SmallVector<WitnessVal> values;
 };
 
 /// Linearize multi-dimensional indices into the flattened array storage offset.
@@ -74,7 +74,8 @@ public:
       : moduleOp(moduleOp), tables(tables), field(field) {}
 
   /// Execute a function body with the provided arguments.
-  llvm::Expected<llvm::SmallVector<Value>> run(function::FuncDefOp funcOp, ArrayRef<Value> args) {
+  llvm::Expected<llvm::SmallVector<WitnessVal>>
+  run(function::FuncDefOp funcOp, ArrayRef<WitnessVal> args) {
     if (funcOp.isExternal()) {
       return makeError("extern functions are not supported in llzk-witgen");
     }
@@ -85,7 +86,7 @@ public:
       return makeError("wrong number of arguments passed to function");
     }
 
-    llvm::DenseMap<mlir::Value, Value> scope;
+    llvm::DenseMap<mlir::Value, WitnessVal> scope;
     Block &entry = funcOp.getBody().front();
     for (auto [arg, value] : llvm::zip(entry.getArguments(), args)) {
       scope[arg] = value;
@@ -104,7 +105,8 @@ private:
   const Field &field;
 
   /// Execute every operation in a block until termination or fallthrough.
-  llvm::Expected<BlockResult> runBlock(Block &block, llvm::DenseMap<mlir::Value, Value> &scope) {
+  llvm::Expected<BlockResult>
+  runBlock(Block &block, llvm::DenseMap<mlir::Value, WitnessVal> &scope) {
     for (Operation &op : block) {
       auto handled = runOperation(op, scope);
       if (!handled) {
@@ -119,7 +121,10 @@ private:
 
   /// Execute a single-block region with explicit block arguments.
   llvm::Expected<BlockResult>
-  runRegion(Region &region, ArrayRef<Value> args, llvm::DenseMap<mlir::Value, Value> scope) {
+  runRegion(
+      Region &region, ArrayRef<WitnessVal> args,
+      llvm::DenseMap<mlir::Value, WitnessVal> scope
+  ) {
     if (!region.hasOneBlock()) {
       return makeError("multi-block regions are not supported in llzk-witgen");
     }
@@ -134,7 +139,8 @@ private:
   }
 
   /// Look up the runtime value bound to an SSA value.
-  llvm::Expected<Value> lookup(mlir::Value value, llvm::DenseMap<mlir::Value, Value> &scope) {
+  llvm::Expected<WitnessVal>
+  lookup(mlir::Value value, llvm::DenseMap<mlir::Value, WitnessVal> &scope) {
     auto it = scope.find(value);
     if (it == scope.end()) {
       return makeError("failed to find SSA value during interpretation");
@@ -143,9 +149,9 @@ private:
   }
 
   /// Materialize operand values for an operation in source order.
-  llvm::Expected<llvm::SmallVector<Value>>
-  collectOperands(OperandRange operands, llvm::DenseMap<mlir::Value, Value> &scope) {
-    llvm::SmallVector<Value> values;
+  llvm::Expected<llvm::SmallVector<WitnessVal>>
+  collectOperands(OperandRange operands, llvm::DenseMap<mlir::Value, WitnessVal> &scope) {
+    llvm::SmallVector<WitnessVal> values;
     values.reserve(operands.size());
     for (mlir::Value operand : operands) {
       auto value = lookup(operand, scope);
@@ -159,7 +165,7 @@ private:
 
   /// Execute one supported operation and bind its result values.
   llvm::Expected<BlockResult>
-  runOperation(Operation &op, llvm::DenseMap<mlir::Value, Value> &scope) {
+  runOperation(Operation &op, llvm::DenseMap<mlir::Value, WitnessVal> &scope) {
     if (auto returnOp = dyn_cast<function::ReturnOp>(op)) {
       auto values = collectOperands(returnOp.getOperands(), scope);
       if (!values) {
@@ -175,7 +181,7 @@ private:
       return BlockResult {true, std::move(*values)};
     }
 
-    auto bind = [&](ArrayRef<Value> results) -> llvm::Expected<BlockResult> {
+    auto bind = [&](ArrayRef<WitnessVal> results) -> llvm::Expected<BlockResult> {
       if (results.size() != op.getNumResults()) {
         return makeError("internal result count mismatch");
       }
@@ -189,9 +195,9 @@ private:
       Attribute valueAttr = constantOp.getValue();
       if (auto integerAttr = dyn_cast<IntegerAttr>(valueAttr)) {
         if (integerAttr.getType().isInteger(1)) {
-          return bind({Value(integerAttr.getValue().getBoolValue())});
+          return bind({WitnessVal(integerAttr.getValue().getBoolValue())});
         }
-        return bind({Value(integerAttr.getValue().getSExtValue())});
+        return bind({WitnessVal(integerAttr.getValue().getSExtValue())});
       }
       return makeError("unsupported arith.constant value");
     }
@@ -240,7 +246,7 @@ private:
       if (!rhs) {
         return rhs.takeError();
       }
-      return bind({Value(*lhs && *rhs)});
+      return bind({WitnessVal(*lhs && *rhs)});
     }
     if (auto orOp = dyn_cast<boolean::OrBoolOp>(op)) {
       auto lhsValue = lookup(orOp.getLhs(), scope);
@@ -259,7 +265,7 @@ private:
       if (!rhs) {
         return rhs.takeError();
       }
-      return bind({Value(*lhs || *rhs)});
+      return bind({WitnessVal(*lhs || *rhs)});
     }
     if (auto xorOp = dyn_cast<boolean::XorBoolOp>(op)) {
       auto lhsValue = lookup(xorOp.getLhs(), scope);
@@ -278,7 +284,7 @@ private:
       if (!rhs) {
         return rhs.takeError();
       }
-      return bind({Value(*lhs != *rhs)});
+      return bind({WitnessVal(*lhs != *rhs)});
     }
     if (auto notOp = dyn_cast<boolean::NotBoolOp>(op)) {
       auto operand = lookup(notOp.getOperand(), scope);
@@ -289,7 +295,7 @@ private:
       if (!boolValue) {
         return boolValue.takeError();
       }
-      return bind({Value(!*boolValue)});
+      return bind({WitnessVal(!*boolValue)});
     }
     if (auto cmpOp = dyn_cast<boolean::CmpOp>(op)) {
       auto lhs = lookup(cmpOp.getLhs(), scope);
@@ -329,11 +335,11 @@ private:
         result = *lhsValue >= *rhsValue;
         break;
       }
-      return bind({Value(result)});
+      return bind({WitnessVal(result)});
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
-      return bind({Value(field.reduce(feltConst.getValue().getValue()))});
+      return bind({WitnessVal(field.reduce(feltConst.getValue().getValue()))});
     }
 
     auto handleBinaryFelt = [&](auto feltOp, auto fn) -> llvm::Expected<BlockResult> {
@@ -353,7 +359,7 @@ private:
       if (!rhs) {
         return rhs.takeError();
       }
-      return bind({Value(field.reduce(fn(*lhs, *rhs)))});
+      return bind({WitnessVal(field.reduce(fn(*lhs, *rhs)))});
     };
 
     if (auto addOp = dyn_cast<felt::AddFeltOp>(op)) {
@@ -379,7 +385,7 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      return bind({Value(field.reduce(-*feltValue))});
+      return bind({WitnessVal(field.reduce(-*feltValue))});
     }
     if (auto invOp = dyn_cast<felt::InvFeltOp>(op)) {
       auto operand = lookup(invOp.getOperand(), scope);
@@ -390,7 +396,7 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      return bind({Value(field.inv(*feltValue))});
+      return bind({WitnessVal(field.inv(*feltValue))});
     }
 
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
@@ -399,13 +405,13 @@ private:
         return operand.takeError();
       }
       if (std::holds_alternative<bool>(*operand)) {
-        return bind({Value(field.reduce(std::get<bool>(*operand) ? 1 : 0))});
+        return bind({WitnessVal(field.reduce(std::get<bool>(*operand) ? 1 : 0))});
       }
       auto integer = asIndex(*operand);
       if (!integer) {
         return integer.takeError();
       }
-      return bind({Value(field.reduce(*integer))});
+      return bind({WitnessVal(field.reduce(*integer))});
     }
     if (auto feltToIndexOp = dyn_cast<cast::FeltToIndexOp>(op)) {
       auto operand = lookup(feltToIndexOp.getValue(), scope);
@@ -416,7 +422,7 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      return bind({Value(static_cast<int64_t>(toAPSInt(*feltValue).getExtValue()))});
+      return bind({WitnessVal(static_cast<int64_t>(toAPSInt(*feltValue).getExtValue()))});
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
@@ -688,7 +694,7 @@ private:
       if (*dim < 0 || static_cast<size_t>(*dim) >= shape.size()) {
         return makeError("array.len dimension out of bounds");
       }
-      return bind({Value(shape[static_cast<size_t>(*dim)])});
+      return bind({WitnessVal(shape[static_cast<size_t>(*dim)])});
     }
 
     if (auto callOp = dyn_cast<function::CallOp>(op)) {
@@ -760,7 +766,7 @@ private:
         result = static_cast<uint64_t>(*lhsValue) >= static_cast<uint64_t>(*rhsValue);
         break;
       }
-      return bind({Value(result)});
+      return bind({WitnessVal(result)});
     }
 
     auto handleBinaryIndex = [&](auto arithOp, auto fn) -> llvm::Expected<BlockResult> {
@@ -780,7 +786,7 @@ private:
       if (!rhsValue) {
         return rhsValue.takeError();
       }
-      return bind({Value(fn(*lhsValue, *rhsValue))});
+      return bind({WitnessVal(fn(*lhsValue, *rhsValue))});
     };
 
     if (auto addIOp = dyn_cast<arith::AddIOp>(op)) {
@@ -861,11 +867,11 @@ private:
       if (!iterValuesOrErr) {
         return iterValuesOrErr.takeError();
       }
-      llvm::SmallVector<Value> iterValues = std::move(*iterValuesOrErr);
+      llvm::SmallVector<WitnessVal> iterValues = std::move(*iterValuesOrErr);
 
       for (int64_t iv = *lowerBound; iv < *upperBound; iv += *step) {
-        llvm::SmallVector<Value> regionArgs;
-        regionArgs.push_back(Value(iv));
+        llvm::SmallVector<WitnessVal> regionArgs;
+        regionArgs.push_back(WitnessVal(iv));
         regionArgs.append(iterValues.begin(), iterValues.end());
         auto result = runRegion(forOp.getRegion(), regionArgs, scope);
         if (!result) {
@@ -887,8 +893,8 @@ private:
 } // namespace
 
 /// Execute a function body with concrete runtime values.
-llvm::Expected<llvm::SmallVector<Value>>
-FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<Value> args) {
+llvm::Expected<llvm::SmallVector<WitnessVal>>
+FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<WitnessVal> args) {
   return InvocationInterpreter(moduleOp, tables, field).run(funcOp, args);
 }
 

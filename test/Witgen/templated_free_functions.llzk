@@ -1,6 +1,9 @@
-// RUN: llzk-witgen %s --inputs %S/Inputs/templated_free_functions.json | FileCheck %s
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
 // COM: Known flattening pass issue: https://github.com/project-llzk/llzk-lib/issues/457
-// COM: llzk-witgen %s --inputs %S/Inputs/templated_free_functions.json --backend=execution-engine | FileCheck %s
+// COM: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @TFAddN {
@@ -52,3 +55,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:   "direct": "4",
 // CHECK-NEXT:   "forwarded": "5"
 // CHECK-NEXT: }
+
+//--- input.json
+{"y": [1, 8, 9]}

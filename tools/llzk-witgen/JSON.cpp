@@ -51,7 +51,7 @@ jsonToFelt(const llvm::json::Value *json, const Field &field) {
 }
 
 /// Parse a shaped LLZK array from nested JSON arrays.
-static llvm::Expected<Value> parseJSONArray(
+static llvm::Expected<WitnessVal> parseJSONArray(
     const llvm::json::Value *json, array::ArrayType type, const Field &field, Operation *origin,
     size_t dimIndex = 0
 ) {
@@ -94,7 +94,7 @@ static llvm::Expected<Value> parseJSONArray(
     if (!subArray) {
       return subArray.takeError();
     }
-    for (const Value &subElem : (*subArray)->elements) {
+    for (const WitnessVal &subElem : (*subArray)->elements) {
       arrayValue->elements.push_back(subElem);
     }
   }
@@ -151,27 +151,27 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
 }
 
 /// Parse a supported LLZK input type from JSON.
-llvm::Expected<Value>
+llvm::Expected<WitnessVal>
 parseJSONValue(const llvm::json::Value *json, Type type, const Field &field, Operation *origin) {
-  return llvm::TypeSwitch<Type, llvm::Expected<Value>>(type)
-      .Case([&](felt::FeltType) -> llvm::Expected<Value> { return jsonToFelt(json, field); })
-      .Case([&](array::ArrayType arrayType) -> llvm::Expected<Value> {
+  return llvm::TypeSwitch<Type, llvm::Expected<WitnessVal>>(type)
+      .Case([&](felt::FeltType) -> llvm::Expected<WitnessVal> { return jsonToFelt(json, field); })
+      .Case([&](array::ArrayType arrayType) -> llvm::Expected<WitnessVal> {
     return parseJSONArray(json, arrayType, field, origin);
   })
-      .Case([&](pod::PodType) -> llvm::Expected<Value> {
+      .Case([&](pod::PodType) -> llvm::Expected<WitnessVal> {
     return makeError("pod JSON inputs are not supported in llzk-witgen v1");
   })
-      .Case([&](component::StructType) -> llvm::Expected<Value> {
+      .Case([&](component::StructType) -> llvm::Expected<WitnessVal> {
     return makeError("struct JSON inputs are not supported in llzk-witgen v1");
   })
-      .Case([&](IndexType) -> llvm::Expected<Value> {
+      .Case([&](IndexType) -> llvm::Expected<WitnessVal> {
     auto integer = jsonToInt(json);
     if (!integer) {
       return integer.takeError();
     }
     return *integer;
   })
-      .Case([&](IntegerType intType) -> llvm::Expected<Value> {
+      .Case([&](IntegerType intType) -> llvm::Expected<WitnessVal> {
     if (intType.getWidth() == 1) {
       if (std::optional<bool> boolValue = json->getAsBoolean()) {
         return *boolValue;
@@ -183,14 +183,14 @@ parseJSONValue(const llvm::json::Value *json, Type type, const Field &field, Ope
       return *integer != 0;
     }
     return makeError("only i1 integer JSON inputs are supported");
-  }).Default([&](Type) -> llvm::Expected<Value> {
+  }).Default([&](Type) -> llvm::Expected<WitnessVal> {
     return makeError("unsupported input type in llzk-witgen");
   });
 }
 
 /// Serialize a supported LLZK runtime value into JSON.
 llvm::Expected<llvm::json::Value> serializeJSONValue(
-    const Value &value, Type type, SymbolTableCollection &tables, Operation *origin,
+    const WitnessVal &value, Type type, SymbolTableCollection &tables, Operation *origin,
     SerializationMode mode
 ) {
   return llvm::TypeSwitch<Type, llvm::Expected<llvm::json::Value>>(type)
@@ -291,7 +291,7 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
 
 /// Serialize named input values into a JSON object.
 llvm::Expected<llvm::json::Object> buildInputsJSONObject(
-    ArrayRef<InputBinding> bindings, ArrayRef<Value> values, SymbolTableCollection &tables,
+    ArrayRef<InputBinding> bindings, ArrayRef<WitnessVal> values, SymbolTableCollection &tables,
     Operation *origin
 ) {
   if (bindings.size() != values.size()) {
@@ -311,8 +311,8 @@ llvm::Expected<llvm::json::Object> buildInputsJSONObject(
 }
 
 /// Extract one nested runtime leaf by path.
-llvm::Expected<Value> extractValueAtPath(
-    const Value &root, Type rootType, ArrayRef<std::string> path, SymbolTableCollection &tables,
+llvm::Expected<WitnessVal> extractValueAtPath(
+    const WitnessVal &root, Type rootType, ArrayRef<std::string> path, SymbolTableCollection &tables,
     Operation *origin
 ) {
   if (path.empty()) {

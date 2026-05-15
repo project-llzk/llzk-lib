@@ -23,7 +23,7 @@ using namespace mlir;
 namespace llzk::witgen {
 
 /// Require a boolean value from the runtime variant.
-llvm::Expected<bool> asBool(const Value &value) {
+llvm::Expected<bool> asBool(const WitnessVal &value) {
   if (auto boolValue = std::get_if<bool>(&value)) {
     return *boolValue;
   }
@@ -31,7 +31,7 @@ llvm::Expected<bool> asBool(const Value &value) {
 }
 
 /// Require an index value from the runtime variant.
-llvm::Expected<int64_t> asIndex(const Value &value) {
+llvm::Expected<int64_t> asIndex(const WitnessVal &value) {
   if (auto indexValue = std::get_if<int64_t>(&value)) {
     return *indexValue;
   }
@@ -39,7 +39,7 @@ llvm::Expected<int64_t> asIndex(const Value &value) {
 }
 
 /// Require a felt value from the runtime variant.
-llvm::Expected<llvm::DynamicAPInt> asFelt(const Value &value) {
+llvm::Expected<llvm::DynamicAPInt> asFelt(const WitnessVal &value) {
   if (auto feltValue = std::get_if<llvm::DynamicAPInt>(&value)) {
     return *feltValue;
   }
@@ -47,7 +47,7 @@ llvm::Expected<llvm::DynamicAPInt> asFelt(const Value &value) {
 }
 
 /// Require an array value from the runtime variant.
-llvm::Expected<ArrayValueRef> asArray(const Value &value) {
+llvm::Expected<ArrayValueRef> asArray(const WitnessVal &value) {
   if (auto arrayValue = std::get_if<ArrayValueRef>(&value)) {
     return *arrayValue;
   }
@@ -55,7 +55,7 @@ llvm::Expected<ArrayValueRef> asArray(const Value &value) {
 }
 
 /// Require a POD value from the runtime variant.
-llvm::Expected<PodValueRef> asPod(const Value &value) {
+llvm::Expected<PodValueRef> asPod(const WitnessVal &value) {
   if (auto podValue = std::get_if<PodValueRef>(&value)) {
     return *podValue;
   }
@@ -63,7 +63,7 @@ llvm::Expected<PodValueRef> asPod(const Value &value) {
 }
 
 /// Require a struct value from the runtime variant.
-llvm::Expected<StructValueRef> asStruct(const Value &value) {
+llvm::Expected<StructValueRef> asStruct(const WitnessVal &value) {
   if (auto structValue = std::get_if<StructValueRef>(&value)) {
     return *structValue;
   }
@@ -71,18 +71,18 @@ llvm::Expected<StructValueRef> asStruct(const Value &value) {
 }
 
 /// Build a deterministic default value for a supported LLZK type.
-llvm::Expected<Value>
+llvm::Expected<WitnessVal>
 defaultValue(Type type, SymbolTableCollection &tables, Operation *origin, const Field &field) {
-  return llvm::TypeSwitch<Type, llvm::Expected<Value>>(type)
-      .Case([&](felt::FeltType) -> llvm::Expected<Value> { return field.zero(); })
-      .Case([&](IndexType) -> llvm::Expected<Value> { return int64_t(0); })
-      .Case([&](IntegerType intType) -> llvm::Expected<Value> {
+  return llvm::TypeSwitch<Type, llvm::Expected<WitnessVal>>(type)
+      .Case([&](felt::FeltType) -> llvm::Expected<WitnessVal> { return field.zero(); })
+      .Case([&](IndexType) -> llvm::Expected<WitnessVal> { return int64_t(0); })
+      .Case([&](IntegerType intType) -> llvm::Expected<WitnessVal> {
     if (intType.getWidth() == 1) {
       return false;
     }
     return makeError("only i1 integer values are supported in llzk-witgen");
   })
-      .Case([&](array::ArrayType arrayType) -> llvm::Expected<Value> {
+      .Case([&](array::ArrayType arrayType) -> llvm::Expected<WitnessVal> {
     auto arrayValue = std::make_shared<ArrayValue>();
     arrayValue->type = arrayType;
     arrayValue->elements.reserve(arrayType.getNumElements());
@@ -95,7 +95,7 @@ defaultValue(Type type, SymbolTableCollection &tables, Operation *origin, const 
     }
     return arrayValue;
   })
-      .Case([&](pod::PodType podType) -> llvm::Expected<Value> {
+      .Case([&](pod::PodType podType) -> llvm::Expected<WitnessVal> {
     auto podValue = std::make_shared<PodValue>();
     podValue->type = podType;
     for (pod::RecordAttr record : podType.getRecords()) {
@@ -107,7 +107,7 @@ defaultValue(Type type, SymbolTableCollection &tables, Operation *origin, const 
     }
     return podValue;
   })
-      .Case([&](component::StructType structType) -> llvm::Expected<Value> {
+      .Case([&](component::StructType structType) -> llvm::Expected<WitnessVal> {
     auto defLookup = structType.getDefinition(tables, origin);
     if (failed(defLookup)) {
       return makeError("could not resolve struct type");
@@ -122,7 +122,7 @@ defaultValue(Type type, SymbolTableCollection &tables, Operation *origin, const 
       structValue->members[member.getSymName()] = *memberValue;
     }
     return structValue;
-  }).Default([&](Type) -> llvm::Expected<Value> {
+  }).Default([&](Type) -> llvm::Expected<WitnessVal> {
     return makeError("unsupported type in llzk-witgen");
   });
 }
