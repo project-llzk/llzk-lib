@@ -1367,6 +1367,9 @@ private:
       }
 
       auto newFor = builder.create<scf::ForOp>(loc, *lb, *ub, *step, initArgs);
+      if (Attribute unsignedCmpAttr = forOp->getAttr("unsignedCmp")) {
+        newFor->setAttr("unsignedCmp", unsignedCmpAttr);
+      }
       DenseMap<Value, LoweredValue> bodyMap(valueMap.begin(), valueMap.end());
       bodyMap[forOp.getInductionVar()] =
           LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};

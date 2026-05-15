@@ -32,6 +32,30 @@ namespace llzk::witgen {
 
 namespace {
 
+/// Return whether the loop should compare its bounds as unsigned integers.
+static bool usesUnsignedCmp(scf::ForOp forOp) {
+  if (auto boolAttr = forOp->getAttrOfType<BoolAttr>("unsignedCmp")) {
+    return boolAttr.getValue();
+  }
+  return forOp->hasAttr("unsignedCmp");
+}
+
+/// Convert a signed runtime index value to `uint64_t`, rejecting negative inputs.
+static llvm::Expected<uint64_t> toCheckedUInt64(int64_t value) {
+  if (value < 0) {
+    return makeError("cannot reinterpret a negative index value as unsigned");
+  }
+  return static_cast<uint64_t>(value);
+}
+
+/// Convert an unsigned intermediate back to `int64_t`, rejecting underflow.
+static llvm::Expected<int64_t> toCheckedInt64(uint64_t value) {
+  if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return makeError("unsigned value does not fit in signed int64_t");
+  }
+  return static_cast<int64_t>(value);
+}
+
 /// Represent the values yielded by a block or region along with termination state.
 struct BlockResult {
   bool terminated = false;
@@ -422,7 +446,11 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      return bind({WitnessVal(static_cast<int64_t>(toAPSInt(*feltValue).getExtValue()))});
+      auto indexValue = toCheckedInt64(toAPSInt(*feltValue).getExtValue());
+      if (!indexValue) {
+        return indexValue.takeError();
+      }
+      return bind({WitnessVal(*indexValue)});
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
@@ -754,17 +782,61 @@ private:
         result = *lhsValue >= *rhsValue;
         break;
       case arith::CmpIPredicate::ult:
-        result = static_cast<uint64_t>(*lhsValue) < static_cast<uint64_t>(*rhsValue);
+      {
+        auto lhsUInt = toCheckedUInt64(*lhsValue);
+        if (!lhsUInt) {
+          return lhsUInt.takeError();
+        }
+        uint64_t lhsUIntValue = *lhsUInt;
+        auto rhsUInt = toCheckedUInt64(*rhsValue);
+        if (!rhsUInt) {
+          return rhsUInt.takeError();
+        }
+        result = lhsUIntValue < *rhsUInt;
         break;
+      }
       case arith::CmpIPredicate::ule:
-        result = static_cast<uint64_t>(*lhsValue) <= static_cast<uint64_t>(*rhsValue);
+      {
+        auto lhsUInt = toCheckedUInt64(*lhsValue);
+        if (!lhsUInt) {
+          return lhsUInt.takeError();
+        }
+        uint64_t lhsUIntValue = *lhsUInt;
+        auto rhsUInt = toCheckedUInt64(*rhsValue);
+        if (!rhsUInt) {
+          return rhsUInt.takeError();
+        }
+        result = lhsUIntValue <= *rhsUInt;
         break;
+      }
       case arith::CmpIPredicate::ugt:
-        result = static_cast<uint64_t>(*lhsValue) > static_cast<uint64_t>(*rhsValue);
+      {
+        auto lhsUInt = toCheckedUInt64(*lhsValue);
+        if (!lhsUInt) {
+          return lhsUInt.takeError();
+        }
+        uint64_t lhsUIntValue = *lhsUInt;
+        auto rhsUInt = toCheckedUInt64(*rhsValue);
+        if (!rhsUInt) {
+          return rhsUInt.takeError();
+        }
+        result = lhsUIntValue > *rhsUInt;
         break;
+      }
       case arith::CmpIPredicate::uge:
-        result = static_cast<uint64_t>(*lhsValue) >= static_cast<uint64_t>(*rhsValue);
+      {
+        auto lhsUInt = toCheckedUInt64(*lhsValue);
+        if (!lhsUInt) {
+          return lhsUInt.takeError();
+        }
+        uint64_t lhsUIntValue = *lhsUInt;
+        auto rhsUInt = toCheckedUInt64(*rhsValue);
+        if (!rhsUInt) {
+          return rhsUInt.takeError();
+        }
+        result = lhsUIntValue >= *rhsUInt;
         break;
+      }
       }
       return bind({WitnessVal(result)});
     }
@@ -799,7 +871,36 @@ private:
       return handleBinaryIndex(mulIOp, [](int64_t lhs, int64_t rhs) { return lhs * rhs; });
     }
     if (auto divUIOp = dyn_cast<arith::DivUIOp>(op)) {
-      return handleBinaryIndex(divUIOp, [](int64_t lhs, int64_t rhs) { return lhs / rhs; });
+      auto lhs = lookup(divUIOp.getLhs(), scope);
+      auto rhs = lookup(divUIOp.getRhs(), scope);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      auto lhsValue = asIndex(*lhs);
+      auto rhsValue = asIndex(*rhs);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhsUInt = toCheckedUInt64(*lhsValue);
+      if (!lhsUInt) {
+        return lhsUInt.takeError();
+      }
+      uint64_t lhsUIntValue = *lhsUInt;
+      auto rhsUInt = toCheckedUInt64(*rhsValue);
+      if (!rhsUInt) {
+        return rhsUInt.takeError();
+      }
+      auto result = toCheckedInt64(lhsUIntValue / *rhsUInt);
+      if (!result) {
+        return result.takeError();
+      }
+      return bind({WitnessVal(*result)});
     }
     if (auto selectOp = dyn_cast<arith::SelectOp>(op)) {
       auto cond = lookup(selectOp.getCondition(), scope);
@@ -869,15 +970,47 @@ private:
       }
       llvm::SmallVector<WitnessVal> iterValues = std::move(*iterValuesOrErr);
 
-      for (int64_t iv = *lowerBound; iv < *upperBound; iv += *step) {
-        llvm::SmallVector<WitnessVal> regionArgs;
-        regionArgs.push_back(WitnessVal(iv));
-        regionArgs.append(iterValues.begin(), iterValues.end());
-        auto result = runRegion(forOp.getRegion(), regionArgs, scope);
-        if (!result) {
-          return result.takeError();
+      if (usesUnsignedCmp(forOp)) {
+        auto lowerBoundUInt = toCheckedUInt64(*lowerBound);
+        if (!lowerBoundUInt) {
+          return lowerBoundUInt.takeError();
         }
-        iterValues = std::move(result->values);
+        uint64_t lowerBoundUIntValue = *lowerBoundUInt;
+        auto upperBoundUInt = toCheckedUInt64(*upperBound);
+        if (!upperBoundUInt) {
+          return upperBoundUInt.takeError();
+        }
+        uint64_t upperBoundUIntValue = *upperBoundUInt;
+        auto stepUInt = toCheckedUInt64(*step);
+        if (!stepUInt) {
+          return stepUInt.takeError();
+        }
+        for (uint64_t iv = lowerBoundUIntValue, ub = upperBoundUIntValue, unsignedStep = *stepUInt;
+             iv < ub; iv += unsignedStep) {
+          auto signedIV = toCheckedInt64(iv);
+          if (!signedIV) {
+            return signedIV.takeError();
+          }
+          llvm::SmallVector<WitnessVal> regionArgs;
+          regionArgs.push_back(WitnessVal(*signedIV));
+          regionArgs.append(iterValues.begin(), iterValues.end());
+          auto result = runRegion(forOp.getRegion(), regionArgs, scope);
+          if (!result) {
+            return result.takeError();
+          }
+          iterValues = std::move(result->values);
+        }
+      } else {
+        for (int64_t iv = *lowerBound; iv < *upperBound; iv += *step) {
+          llvm::SmallVector<WitnessVal> regionArgs;
+          regionArgs.push_back(WitnessVal(iv));
+          regionArgs.append(iterValues.begin(), iterValues.end());
+          auto result = runRegion(forOp.getRegion(), regionArgs, scope);
+          if (!result) {
+            return result.takeError();
+          }
+          iterValues = std::move(result->values);
+        }
       }
       return bind(iterValues);
     }
