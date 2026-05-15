@@ -13,7 +13,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
@@ -75,5 +74,4 @@ void registerTransformationPassPipelines() {
   );
 
 }
-
 } // namespace llzk

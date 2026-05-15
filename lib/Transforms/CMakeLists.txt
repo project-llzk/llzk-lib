@@ -10,17 +10,7 @@ target_link_libraries(
   PUBLIC
     LLZKDialectHeaders
     ${LLZK_DEP_DIALECT_LIBS}
-    MLIRIR
-    MLIRPass
-    MLIRParser
-    MLIRTransformUtils
-    MLIRSCFTransforms
-    MLIRArithDialect
-    MLIRControlFlowDialect
-    MLIRAffineToStandard
-    MLIRFuncDialect
-    MLIRMemRefDialect
-    MLIRSCFDialect
+    MLIRIR MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
     LLVMHeaders MLIRHeaders
   PRIVATE
     LLZKDialect
