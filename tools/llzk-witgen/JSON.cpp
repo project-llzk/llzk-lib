@@ -236,37 +236,37 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     if (failed(defLookup)) {
       return makeError("could not resolve struct type during JSON serialization");
     }
-      llvm::json::Object result;
-      for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
-        auto it = (*structValue)->members.find(member.getSymName());
-        if (it == (*structValue)->members.end()) {
-          return makeError("missing struct member during JSON serialization");
-        }
-
-        if (mode == SerializationMode::PublicOutputsOnly) {
-          if (!member.hasPublicAttr()) {
-            continue;
-          }
-        } else {
-          if (!memberIsSignal(defLookup->get(), member) &&
-              !isa<component::StructType>(member.getType())) {
-            continue;
-          }
-        }
-
-        auto serialized = serializeJSONValue(it->second, member.getType(), tables, origin, mode);
-        if (!serialized) {
-          return serialized.takeError();
-        }
-        if (mode == SerializationMode::AllSignals && isa<component::StructType>(member.getType())) {
-          auto *object = serialized->getAsObject();
-          if (!object || object->empty()) {
-            continue;
-          }
-        }
-        result[member.getSymName()] = *serialized;
+    llvm::json::Object result;
+    for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
+      auto it = (*structValue)->members.find(member.getSymName());
+      if (it == (*structValue)->members.end()) {
+        return makeError("missing struct member during JSON serialization");
       }
-      return llvm::json::Value(std::move(result));
+
+      if (mode == SerializationMode::PublicOutputsOnly) {
+        if (!member.hasPublicAttr()) {
+          continue;
+        }
+      } else {
+        if (!memberIsSignal(defLookup->get(), member) &&
+            !isa<component::StructType>(member.getType())) {
+          continue;
+        }
+      }
+
+      auto serialized = serializeJSONValue(it->second, member.getType(), tables, origin, mode);
+      if (!serialized) {
+        return serialized.takeError();
+      }
+      if (mode == SerializationMode::AllSignals && isa<component::StructType>(member.getType())) {
+        auto *object = serialized->getAsObject();
+        if (!object || object->empty()) {
+          continue;
+        }
+      }
+      result[member.getSymName()] = *serialized;
+    }
+    return llvm::json::Value(std::move(result));
   })
       .Case([&](IndexType) -> llvm::Expected<llvm::json::Value> {
     auto indexValue = asIndex(value);
@@ -285,7 +285,7 @@ llvm::Expected<llvm::json::Value> serializeJSONValue(
     }
     return llvm::json::Value(*boolValue);
   }).Default([&](Type) -> llvm::Expected<llvm::json::Value> {
-      return makeError("unsupported output type in llzk-witgen");
+    return makeError("unsupported output type in llzk-witgen");
   });
 }
 
@@ -312,8 +312,8 @@ llvm::Expected<llvm::json::Object> buildInputsJSONObject(
 
 /// Extract one nested runtime leaf by path.
 llvm::Expected<WitnessVal> extractValueAtPath(
-    const WitnessVal &root, Type rootType, ArrayRef<std::string> path, SymbolTableCollection &tables,
-    Operation *origin
+    const WitnessVal &root, Type rootType, ArrayRef<std::string> path,
+    SymbolTableCollection &tables, Operation *origin
 ) {
   if (path.empty()) {
     return root;

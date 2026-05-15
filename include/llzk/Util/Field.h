@@ -12,8 +12,8 @@
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 
-#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/DenseMap.h>

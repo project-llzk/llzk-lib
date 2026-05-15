@@ -34,8 +34,8 @@
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 #include <mlir/Dialect/MemRef/IR/MemRef.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
-#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Pass/PassManager.h>
@@ -150,12 +150,16 @@ static LogicalResult flattenTypeLeaves(
   if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
     llvm::SmallVector<int64_t> newPrefix(prefixShape.begin(), prefixShape.end());
     newPrefix.append(arrayType.getShape().begin(), arrayType.getShape().end());
-    return flattenTypeLeaves(arrayType.getElementType(), tables, origin, field, out, newPrefix, true);
+    return flattenTypeLeaves(
+        arrayType.getElementType(), tables, origin, field, out, newPrefix, true
+    );
   }
 
   if (auto podType = dyn_cast<pod::PodType>(type)) {
     for (pod::RecordAttr record : podType.getRecords()) {
-      if (failed(flattenTypeLeaves(record.getType(), tables, origin, field, out, prefixShape, true))) {
+      if (failed(
+              flattenTypeLeaves(record.getType(), tables, origin, field, out, prefixShape, true)
+          )) {
         return failure();
       }
     }
@@ -169,7 +173,9 @@ static LogicalResult flattenTypeLeaves(
       return failure();
     }
     for (component::MemberDefOp member : def->get().getMemberDefs()) {
-      if (failed(flattenTypeLeaves(member.getType(), tables, origin, field, out, prefixShape, true))) {
+      if (failed(
+              flattenTypeLeaves(member.getType(), tables, origin, field, out, prefixShape, true)
+          )) {
         return failure();
       }
     }
@@ -185,8 +191,7 @@ static MemRefType
 getStridedMemRefType(MLIRContext *context, ArrayRef<int64_t> shape, Type elementType) {
   SmallVector<int64_t> strides(shape.size(), ShapedType::kDynamic);
   return MemRefType::get(
-      shape, elementType,
-      StridedLayoutAttr::get(context, ShapedType::kDynamic, strides)
+      shape, elementType, StridedLayoutAttr::get(context, ShapedType::kDynamic, strides)
   );
 }
 
@@ -220,13 +225,16 @@ static LogicalResult flattenABILeafTypes(
 
   if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
     return flattenABILeafTypes(
-        arrayType.getElementType(), tables, origin, field, out, prefixRank + arrayType.getRank(), true
+        arrayType.getElementType(), tables, origin, field, out, prefixRank + arrayType.getRank(),
+        true
     );
   }
 
   if (auto podType = dyn_cast<pod::PodType>(type)) {
     for (pod::RecordAttr record : podType.getRecords()) {
-      if (failed(flattenABILeafTypes(record.getType(), tables, origin, field, out, prefixRank, true))) {
+      if (failed(
+              flattenABILeafTypes(record.getType(), tables, origin, field, out, prefixRank, true)
+          )) {
         return failure();
       }
     }
@@ -240,7 +248,9 @@ static LogicalResult flattenABILeafTypes(
       return failure();
     }
     for (component::MemberDefOp member : def->get().getMemberDefs()) {
-      if (failed(flattenABILeafTypes(member.getType(), tables, origin, field, out, prefixRank, true))) {
+      if (failed(
+              flattenABILeafTypes(member.getType(), tables, origin, field, out, prefixRank, true)
+          )) {
         return failure();
       }
     }
@@ -283,7 +293,8 @@ getABILeafTypes(Type type, SymbolTableCollection &tables, Operation *origin, con
 
 /// Return the ordered member span for one pod record or struct member.
 static FailureOr<std::pair<size_t, size_t>> getNamedLeafSpan(
-    Type ownerType, StringRef name, SymbolTableCollection &tables, Operation *origin, const Field &field
+    Type ownerType, StringRef name, SymbolTableCollection &tables, Operation *origin,
+    const Field &field
 ) {
   if (auto podType = dyn_cast<pod::PodType>(ownerType)) {
     size_t running = 0;
@@ -323,9 +334,8 @@ static FailureOr<std::pair<size_t, size_t>> getNamedLeafSpan(
 }
 
 /// Return the type of one pod record or struct member.
-static FailureOr<Type> getNamedSubType(
-    Type ownerType, StringRef name, SymbolTableCollection &tables, Operation *origin
-) {
+static FailureOr<Type>
+getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, Operation *origin) {
   if (auto podType = dyn_cast<pod::PodType>(ownerType)) {
     for (pod::RecordAttr record : podType.getRecords()) {
       if (record.getName().getValue() == name) {
@@ -371,14 +381,17 @@ static size_t getNumElements(ArrayRef<int64_t> shape) {
 }
 
 /// Create one static memref filled with zeros.
-static Value createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
+static Value
+createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
   Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
   auto elementType = memrefType.getElementType();
   Value zero;
   if (isa<IndexType>(elementType)) {
     zero = builder.create<arith::ConstantIndexOp>(loc, 0);
   } else {
-    zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(mlir::cast<IntegerType>(elementType), 0));
+    zero = builder.create<arith::ConstantOp>(
+        loc, IntegerAttr::get(mlir::cast<IntegerType>(elementType), 0)
+    );
   }
   size_t elementCount = getNumElements(memrefType.getShape());
   for (size_t flat = 0; flat < elementCount; ++flat) {
@@ -410,24 +423,30 @@ static FailureOr<LoweredValue> createDefaultValue(
       lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, 0));
       continue;
     }
-    lowered.leaves.push_back(builder.create<arith::ConstantOp>(loc, IntegerAttr::get(mlir::cast<IntegerType>(leafType), 0)));
+    lowered.leaves.push_back(builder.create<arith::ConstantOp>(
+        loc, IntegerAttr::get(mlir::cast<IntegerType>(leafType), 0)
+    ));
   }
   return lowered;
 }
 
 /// Normalize a widened integer back into the field modulus and truncate it.
-static Value
-normalizeWideValue(OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field) {
+static Value normalizeWideValue(
+    OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field
+) {
   auto wideType = mlir::cast<IntegerType>(wideValue.getType());
-  Value modulus =
-      builder.create<arith::ConstantOp>(
-          loc, field.getModulusAttr(builder.getContext(), wideType.getWidth()));
+  Value modulus = builder.create<arith::ConstantOp>(
+      loc, field.getModulusAttr(builder.getContext(), wideType.getWidth())
+  );
   Value reduced = builder.create<arith::RemUIOp>(loc, wideValue, modulus);
-  return builder.create<arith::TruncIOp>(loc, IntegerType::get(builder.getContext(), dstWidth), reduced);
+  return builder.create<arith::TruncIOp>(
+      loc, IntegerType::get(builder.getContext(), dstWidth), reduced
+  );
 }
 
 /// Lower field addition with explicit modular reduction.
-static Value lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+static Value
+lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
@@ -438,7 +457,8 @@ static Value lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs
 }
 
 /// Lower field subtraction with explicit modular reduction.
-static Value lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+static Value
+lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
@@ -464,7 +484,8 @@ static Value lowerFeltNeg(OpBuilder &builder, Location loc, Value operand, const
 }
 
 /// Lower field multiplication with widening and modular reduction.
-static Value lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+static Value
+lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   unsigned width = field.bitWidth();
   unsigned wideWidth = width * 2;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
@@ -491,7 +512,8 @@ static Value lowerFeltInv(OpBuilder &builder, Location loc, Value operand, const
 }
 
 /// Lower field division as multiplication by the modular inverse.
-static Value lowerFeltDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+static Value
+lowerFeltDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   return lowerFeltMul(builder, loc, lhs, lowerFeltInv(builder, loc, rhs, field), field);
 }
 
@@ -520,7 +542,8 @@ static void storeStorageScalar(OpBuilder &builder, Location loc, Value scalar, V
 /// Copy the flattened source value into aggregate storage leaves.
 static LogicalResult copyIntoStorage(
     OpBuilder &builder, Location loc, Type sourceType, ArrayRef<Value> destLeaves,
-    ArrayRef<Value> sourceLeaves, SymbolTableCollection &tables, Operation *origin, const Field &field
+    ArrayRef<Value> sourceLeaves, SymbolTableCollection &tables, Operation *origin,
+    const Field &field
 ) {
   auto leafTypes = getLeafTypes(sourceType, tables, origin, field);
   if (failed(leafTypes)) {
@@ -583,13 +606,14 @@ static LogicalResult writeNamedAggregateValue(
     return failure();
   }
   return copyIntoStorage(
-      builder, loc, *subType, ArrayRef<Value>(owner.leaves).slice(span->first, span->second), value.leaves, tables,
-      origin, field
+      builder, loc, *subType, ArrayRef<Value>(owner.leaves).slice(span->first, span->second),
+      value.leaves, tables, origin, field
   );
 }
 
 /// Create a static subview representing one aggregate array element leaf.
-static Value createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange outerIndices) {
+static Value
+createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange outerIndices) {
   auto sourceType = mlir::cast<MemRefType>(source.getType());
   SmallVector<OpFoldResult> mixedOffsets;
   SmallVector<OpFoldResult> mixedSizes;
@@ -628,7 +652,9 @@ static Value createElementSubview(OpBuilder &builder, Location loc, Value source
   auto resultType = mlir::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
       desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
   ));
-  return builder.create<memref::SubViewOp>(loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides);
+  return builder.create<memref::SubViewOp>(
+      loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
+  );
 }
 
 /// Read one LLZK array element.
@@ -639,7 +665,9 @@ static FailureOr<LoweredValue> readArrayElement(
   Type elementType = arrayType.getElementType();
   LoweredValue result {elementType, {}};
   if (isScalarType(elementType)) {
-    result.leaves.push_back(builder.create<memref::LoadOp>(loc, arrayValue.leaves.front(), indices));
+    result.leaves.push_back(
+        builder.create<memref::LoadOp>(loc, arrayValue.leaves.front(), indices)
+    );
     return result;
   }
 
@@ -657,7 +685,9 @@ static LogicalResult writeArrayElement(
 ) {
   Type elementType = arrayType.getElementType();
   if (isScalarType(elementType)) {
-    builder.create<memref::StoreOp>(loc, elementValue.leaves.front(), arrayValue.leaves.front(), indices);
+    builder.create<memref::StoreOp>(
+        loc, elementValue.leaves.front(), arrayValue.leaves.front(), indices
+    );
     return success();
   }
 
@@ -712,13 +742,17 @@ public:
 
     SmallVector<Type> loweredArgTypes;
     for (Type argType : funcOp.getArgumentTypes()) {
-      if (failed(flattenABILeafTypes(argType, tables, funcOp.getOperation(), field, loweredArgTypes))) {
+      if (failed(
+              flattenABILeafTypes(argType, tables, funcOp.getOperation(), field, loweredArgTypes)
+          )) {
         return failure();
       }
     }
     SmallVector<Type> loweredResultTypes;
     for (Type resultType : funcOp.getResultTypes()) {
-      if (failed(flattenABILeafTypes(resultType, tables, funcOp.getOperation(), field, loweredResultTypes))) {
+      if (failed(flattenABILeafTypes(
+              resultType, tables, funcOp.getOperation(), field, loweredResultTypes
+          ))) {
         return failure();
       }
     }
@@ -734,14 +768,18 @@ public:
 
     DenseMap<Value, LoweredValue> valueMap;
     unsigned cursor = 0;
-    for (auto [arg, argType] : llvm::zip(funcOp.getBody().front().getArguments(), funcOp.getArgumentTypes())) {
+    for (auto [arg, argType] :
+         llvm::zip(funcOp.getBody().front().getArguments(), funcOp.getArgumentTypes())) {
       auto leafCount = getLeafCount(argType, tables, funcOp.getOperation(), field);
       if (failed(leafCount)) {
         loweredFunc.erase();
         return failure();
       }
       LoweredValue lowered {argType, {}};
-      lowered.leaves.append(entry->getArguments().begin() + cursor, entry->getArguments().begin() + cursor + *leafCount);
+      lowered.leaves.append(
+          entry->getArguments().begin() + cursor,
+          entry->getArguments().begin() + cursor + *leafCount
+      );
       cursor += *leafCount;
       valueMap[arg] = std::move(lowered);
     }
@@ -759,7 +797,8 @@ private:
   const Field &field;
 
   /// Look up one already-lowered SSA value.
-  FailureOr<LoweredValue> lookup(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
+  FailureOr<LoweredValue>
+  lookup(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
     auto it = valueMap.find(value);
     if (it == valueMap.end()) {
       origin->emitError("failed to find lowered SSA value");
@@ -769,9 +808,11 @@ private:
   }
 
   /// Require a scalar lowered value.
-  FailureOr<Value> lookupScalar(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
+  FailureOr<Value>
+  lookupScalar(Value value, DenseMap<Value, LoweredValue> &valueMap, Operation *origin) {
     auto lowered = lookup(value, valueMap, origin);
-    if (failed(lowered) || lowered->leaves.size() != 1 || isa<MemRefType>(lowered->leaves.front().getType())) {
+    if (failed(lowered) || lowered->leaves.size() != 1 ||
+        isa<MemRefType>(lowered->leaves.front().getType())) {
       origin->emitError("expected scalar lowered value");
       return failure();
     }
@@ -779,7 +820,8 @@ private:
   }
 
   /// Lower every operation in a single block.
-  LogicalResult lowerBlock(OpBuilder &builder, Block &block, DenseMap<Value, LoweredValue> &valueMap) {
+  LogicalResult
+  lowerBlock(OpBuilder &builder, Block &block, DenseMap<Value, LoweredValue> &valueMap) {
     for (Operation &op : block) {
       if (failed(lowerOperation(builder, op, valueMap))) {
         return failure();
@@ -789,9 +831,8 @@ private:
   }
 
   /// Lower one field comparison predicate.
-  FailureOr<Value> lowerFeltCmp(
-      OpBuilder &builder, Location loc, boolean::CmpOp cmpOp, Value lhs, Value rhs
-  ) {
+  FailureOr<Value>
+  lowerFeltCmp(OpBuilder &builder, Location loc, boolean::CmpOp cmpOp, Value lhs, Value rhs) {
     arith::CmpIPredicate predicate;
     switch (cmpOp.getPredicate()) {
     case boolean::FeltCmpPredicate::EQ:
@@ -817,7 +858,8 @@ private:
   }
 
   /// Lower one LLZK operation into core MLIR dialects.
-  LogicalResult lowerOperation(OpBuilder &builder, Operation &op, DenseMap<Value, LoweredValue> &valueMap) {
+  LogicalResult
+  lowerOperation(OpBuilder &builder, Operation &op, DenseMap<Value, LoweredValue> &valueMap) {
     Location loc = op.getLoc();
 
     auto bind = [&](Value result, LoweredValue lowered) {
@@ -831,7 +873,9 @@ private:
         auto lowered = lookup(operand, valueMap, returnOp.getOperation());
         auto leafTypes = getABILeafTypes(operand.getType(), tables, returnOp.getOperation(), field);
         if (failed(lowered) || failed(leafTypes) ||
-            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, results, returnOp.getOperation()))) {
+            failed(appendFlatLeavesToTypes(
+                builder, loc, *lowered, *leafTypes, results, returnOp.getOperation()
+            ))) {
           return failure();
         }
       }
@@ -845,7 +889,9 @@ private:
         auto lowered = lookup(operand, valueMap, yieldOp.getOperation());
         auto leafTypes = getABILeafTypes(operand.getType(), tables, yieldOp.getOperation(), field);
         if (failed(lowered) || failed(leafTypes) ||
-            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, results, yieldOp.getOperation()))) {
+            failed(appendFlatLeavesToTypes(
+                builder, loc, *lowered, *leafTypes, results, yieldOp.getOperation()
+            ))) {
           return failure();
         }
       }
@@ -855,7 +901,9 @@ private:
 
     if (auto constantOp = dyn_cast<arith::ConstantOp>(op)) {
       Operation *clone = builder.clone(op);
-      return bind(constantOp.getResult(), LoweredValue {constantOp.getType(), {clone->getResult(0)}});
+      return bind(
+          constantOp.getResult(), LoweredValue {constantOp.getType(), {clone->getResult(0)}}
+      );
     }
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
@@ -871,7 +919,9 @@ private:
     }
 
     if (auto nondetOp = dyn_cast<llzk::NonDetOp>(op)) {
-      auto lowered = createDefaultValue(builder, loc, nondetOp.getType(), tables, nondetOp.getOperation(), field);
+      auto lowered = createDefaultValue(
+          builder, loc, nondetOp.getType(), tables, nondetOp.getOperation(), field
+      );
       if (failed(lowered)) {
         return failure();
       }
@@ -884,7 +934,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(addOp.getResult(), LoweredValue {addOp.getType(), {lowerFeltAdd(builder, loc, *lhs, *rhs, field)}});
+      return bind(
+          addOp.getResult(),
+          LoweredValue {addOp.getType(), {lowerFeltAdd(builder, loc, *lhs, *rhs, field)}}
+      );
     }
     if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
       auto lhs = lookupScalar(subOp.getLhs(), valueMap, subOp.getOperation());
@@ -892,7 +945,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(subOp.getResult(), LoweredValue {subOp.getType(), {lowerFeltSub(builder, loc, *lhs, *rhs, field)}});
+      return bind(
+          subOp.getResult(),
+          LoweredValue {subOp.getType(), {lowerFeltSub(builder, loc, *lhs, *rhs, field)}}
+      );
     }
     if (auto mulOp = dyn_cast<felt::MulFeltOp>(op)) {
       auto lhs = lookupScalar(mulOp.getLhs(), valueMap, mulOp.getOperation());
@@ -900,21 +956,30 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(mulOp.getResult(), LoweredValue {mulOp.getType(), {lowerFeltMul(builder, loc, *lhs, *rhs, field)}});
+      return bind(
+          mulOp.getResult(),
+          LoweredValue {mulOp.getType(), {lowerFeltMul(builder, loc, *lhs, *rhs, field)}}
+      );
     }
     if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
       auto operand = lookupScalar(negOp.getOperand(), valueMap, negOp.getOperation());
       if (failed(operand)) {
         return failure();
       }
-      return bind(negOp.getResult(), LoweredValue {negOp.getType(), {lowerFeltNeg(builder, loc, *operand, field)}});
+      return bind(
+          negOp.getResult(),
+          LoweredValue {negOp.getType(), {lowerFeltNeg(builder, loc, *operand, field)}}
+      );
     }
     if (auto invOp = dyn_cast<felt::InvFeltOp>(op)) {
       auto operand = lookupScalar(invOp.getOperand(), valueMap, invOp.getOperation());
       if (failed(operand)) {
         return failure();
       }
-      return bind(invOp.getResult(), LoweredValue {invOp.getType(), {lowerFeltInv(builder, loc, *operand, field)}});
+      return bind(
+          invOp.getResult(),
+          LoweredValue {invOp.getType(), {lowerFeltInv(builder, loc, *operand, field)}}
+      );
     }
     if (auto divOp = dyn_cast<felt::DivFeltOp>(op)) {
       auto lhs = lookupScalar(divOp.getLhs(), valueMap, divOp.getOperation());
@@ -922,7 +987,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(divOp.getResult(), LoweredValue {divOp.getType(), {lowerFeltDiv(builder, loc, *lhs, *rhs, field)}});
+      return bind(
+          divOp.getResult(),
+          LoweredValue {divOp.getType(), {lowerFeltDiv(builder, loc, *lhs, *rhs, field)}}
+      );
     }
 
     if (auto cmpOp = dyn_cast<boolean::CmpOp>(op)) {
@@ -953,7 +1021,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(andOp.getResult(), LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}});
+      return bind(
+          andOp.getResult(),
+          LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}}
+      );
     }
     if (auto orOp = dyn_cast<boolean::OrBoolOp>(op)) {
       auto lhs = lookupScalar(orOp.getLhs(), valueMap, orOp.getOperation());
@@ -961,7 +1032,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(orOp.getResult(), LoweredValue {orOp.getType(), {builder.create<arith::OrIOp>(loc, *lhs, *rhs)}});
+      return bind(
+          orOp.getResult(),
+          LoweredValue {orOp.getType(), {builder.create<arith::OrIOp>(loc, *lhs, *rhs)}}
+      );
     }
     if (auto xorOp = dyn_cast<boolean::XorBoolOp>(op)) {
       auto lhs = lookupScalar(xorOp.getLhs(), valueMap, xorOp.getOperation());
@@ -969,15 +1043,23 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(xorOp.getResult(), LoweredValue {xorOp.getType(), {builder.create<arith::XOrIOp>(loc, *lhs, *rhs)}});
+      return bind(
+          xorOp.getResult(),
+          LoweredValue {xorOp.getType(), {builder.create<arith::XOrIOp>(loc, *lhs, *rhs)}}
+      );
     }
     if (auto notOp = dyn_cast<boolean::NotBoolOp>(op)) {
       auto operand = lookupScalar(notOp.getOperand(), valueMap, notOp.getOperation());
       if (failed(operand)) {
         return failure();
       }
-      Value one = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(IntegerType::get(builder.getContext(), 1), 1));
-      return bind(notOp.getResult(), LoweredValue {notOp.getType(), {builder.create<arith::XOrIOp>(loc, *operand, one)}});
+      Value one = builder.create<arith::ConstantOp>(
+          loc, IntegerAttr::get(IntegerType::get(builder.getContext(), 1), 1)
+      );
+      return bind(
+          notOp.getResult(),
+          LoweredValue {notOp.getType(), {builder.create<arith::XOrIOp>(loc, *operand, one)}}
+      );
     }
 
     if (auto intToFelt = dyn_cast<cast::IntToFeltOp>(op)) {
@@ -1006,18 +1088,27 @@ private:
       if (failed(operand)) {
         return failure();
       }
-      return bind(feltToIndex.getResult(), LoweredValue {feltToIndex.getType(), {builder.create<arith::IndexCastUIOp>(loc, builder.getIndexType(), *operand)}});
+      return bind(
+          feltToIndex.getResult(),
+          LoweredValue {
+              feltToIndex.getType(),
+              {builder.create<arith::IndexCastUIOp>(loc, builder.getIndexType(), *operand)}
+          }
+      );
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
-      auto lowered = createDefaultValue(builder, loc, structNewOp.getType(), tables, structNewOp.getOperation(), field);
+      auto lowered = createDefaultValue(
+          builder, loc, structNewOp.getType(), tables, structNewOp.getOperation(), field
+      );
       if (failed(lowered)) {
         return failure();
       }
       return bind(structNewOp.getResult(), std::move(*lowered));
     }
     if (auto readMemberOp = dyn_cast<component::MemberReadOp>(op)) {
-      auto componentValue = lookup(readMemberOp.getComponent(), valueMap, readMemberOp.getOperation());
+      auto componentValue =
+          lookup(readMemberOp.getComponent(), valueMap, readMemberOp.getOperation());
       if (failed(componentValue)) {
         return failure();
       }
@@ -1031,29 +1122,32 @@ private:
       return bind(readMemberOp.getResult(), std::move(*lowered));
     }
     if (auto writeMemberOp = dyn_cast<component::MemberWriteOp>(op)) {
-      auto componentValue = lookup(writeMemberOp.getComponent(), valueMap, writeMemberOp.getOperation());
+      auto componentValue =
+          lookup(writeMemberOp.getComponent(), valueMap, writeMemberOp.getOperation());
       auto memberValue = lookup(writeMemberOp.getVal(), valueMap, writeMemberOp.getOperation());
       if (failed(componentValue) || failed(memberValue)) {
         return failure();
       }
       return writeNamedAggregateValue(
           builder, loc, writeMemberOp.getComponent().getType(), writeMemberOp.getMemberName(),
-          valueMap[writeMemberOp.getComponent()], *memberValue, tables, writeMemberOp.getOperation(), field
+          valueMap[writeMemberOp.getComponent()], *memberValue, tables,
+          writeMemberOp.getOperation(), field
       );
     }
 
     if (auto newPodOp = dyn_cast<pod::NewPodOp>(op)) {
-      auto lowered = createDefaultValue(builder, loc, newPodOp.getType(), tables, newPodOp.getOperation(), field);
+      auto lowered = createDefaultValue(
+          builder, loc, newPodOp.getType(), tables, newPodOp.getOperation(), field
+      );
       if (failed(lowered)) {
         return failure();
       }
       for (pod::RecordValue init : newPodOp.getInitializedRecordValues()) {
         auto value = lookup(init.value, valueMap, newPodOp.getOperation());
-        if (failed(value) ||
-            failed(writeNamedAggregateValue(
-                builder, loc, newPodOp.getType(), init.name, *lowered, *value, tables,
-                newPodOp.getOperation(), field
-            ))) {
+        if (failed(value) || failed(writeNamedAggregateValue(
+                                 builder, loc, newPodOp.getType(), init.name, *lowered, *value,
+                                 tables, newPodOp.getOperation(), field
+                             ))) {
           return failure();
         }
       }
@@ -1065,8 +1159,8 @@ private:
         return failure();
       }
       auto lowered = readNamedAggregateValue(
-          builder, loc, readPodOp.getPodRef().getType(), readPodOp.getRecordName(),
-          *podValue, tables, readPodOp.getOperation(), field
+          builder, loc, readPodOp.getPodRef().getType(), readPodOp.getRecordName(), *podValue,
+          tables, readPodOp.getOperation(), field
       );
       if (failed(lowered)) {
         return failure();
@@ -1085,7 +1179,9 @@ private:
     }
 
     if (auto arrayNewOp = dyn_cast<array::CreateArrayOp>(op)) {
-      auto lowered = createDefaultValue(builder, loc, arrayNewOp.getType(), tables, arrayNewOp.getOperation(), field);
+      auto lowered = createDefaultValue(
+          builder, loc, arrayNewOp.getType(), tables, arrayNewOp.getOperation(), field
+      );
       if (failed(lowered)) {
         return failure();
       }
@@ -1129,8 +1225,8 @@ private:
         return failure();
       }
       auto lowered = readArrayElement(
-          builder, loc, mlir::cast<array::ArrayType>(readArrayOp.getArrRef().getType()), *arrayValue,
-          indices, tables, readArrayOp.getOperation(), field
+          builder, loc, mlir::cast<array::ArrayType>(readArrayOp.getArrRef().getType()),
+          *arrayValue, indices, tables, readArrayOp.getOperation(), field
       );
       if (failed(lowered)) {
         return failure();
@@ -1164,7 +1260,13 @@ private:
       if (failed(cond) || failed(trueValue) || failed(falseValue)) {
         return failure();
       }
-      return bind(selectOp.getResult(), LoweredValue {selectOp.getType(), {builder.create<arith::SelectOp>(loc, *cond, *trueValue, *falseValue)}});
+      return bind(
+          selectOp.getResult(),
+          LoweredValue {
+              selectOp.getType(),
+              {builder.create<arith::SelectOp>(loc, *cond, *trueValue, *falseValue)}
+          }
+      );
     }
     if (auto addiOp = dyn_cast<arith::AddIOp>(op)) {
       auto lhs = lookupScalar(addiOp.getLhs(), valueMap, addiOp.getOperation());
@@ -1172,7 +1274,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(addiOp.getResult(), LoweredValue {addiOp.getType(), {builder.create<arith::AddIOp>(loc, *lhs, *rhs)}});
+      return bind(
+          addiOp.getResult(),
+          LoweredValue {addiOp.getType(), {builder.create<arith::AddIOp>(loc, *lhs, *rhs)}}
+      );
     }
     if (auto subiOp = dyn_cast<arith::SubIOp>(op)) {
       auto lhs = lookupScalar(subiOp.getLhs(), valueMap, subiOp.getOperation());
@@ -1180,7 +1285,10 @@ private:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      return bind(subiOp.getResult(), LoweredValue {subiOp.getType(), {builder.create<arith::SubIOp>(loc, *lhs, *rhs)}});
+      return bind(
+          subiOp.getResult(),
+          LoweredValue {subiOp.getType(), {builder.create<arith::SubIOp>(loc, *lhs, *rhs)}}
+      );
     }
 
     if (auto callOp = dyn_cast<function::CallOp>(op)) {
@@ -1196,7 +1304,9 @@ private:
       }
       SmallVector<Type> resultTypes;
       for (Type resultType : callOp.getResultTypes()) {
-        if (failed(flattenABILeafTypes(resultType, tables, callOp.getOperation(), field, resultTypes))) {
+        if (failed(
+                flattenABILeafTypes(resultType, tables, callOp.getOperation(), field, resultTypes)
+            )) {
           return failure();
         }
       }
@@ -1205,11 +1315,14 @@ private:
         auto lowered = lookup(operand, valueMap, callOp.getOperation());
         auto leafTypes = getABILeafTypes(operand.getType(), tables, callOp.getOperation(), field);
         if (failed(lowered) || failed(leafTypes) ||
-            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, flatArgs, callOp.getOperation()))) {
+            failed(appendFlatLeavesToTypes(
+                builder, loc, *lowered, *leafTypes, flatArgs, callOp.getOperation()
+            ))) {
           return failure();
         }
       }
-      auto loweredCall = builder.create<func::CallOp>(loc, mangleFunctionName(callee), resultTypes, flatArgs);
+      auto loweredCall =
+          builder.create<func::CallOp>(loc, mangleFunctionName(callee), resultTypes, flatArgs);
       unsigned cursor = 0;
       for (auto [oldResult, oldType] : llvm::zip(callOp.getResults(), callOp.getResultTypes())) {
         auto leafCount = getLeafCount(oldType, tables, callOp.getOperation(), field);
@@ -1218,7 +1331,8 @@ private:
         }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
-            loweredCall.getResults().begin() + cursor, loweredCall.getResults().begin() + cursor + *leafCount
+            loweredCall.getResults().begin() + cursor,
+            loweredCall.getResults().begin() + cursor + *leafCount
         );
         cursor += *leafCount;
         valueMap[oldResult] = std::move(lowered);
@@ -1240,7 +1354,9 @@ private:
         auto lowered = lookup(init, valueMap, forOp.getOperation());
         auto leafTypes = getABILeafTypes(resultType, tables, forOp.getOperation(), field);
         if (failed(lowered) || failed(leafTypes) ||
-            failed(appendFlatLeavesToTypes(builder, loc, *lowered, *leafTypes, initArgs, forOp.getOperation()))) {
+            failed(appendFlatLeavesToTypes(
+                builder, loc, *lowered, *leafTypes, initArgs, forOp.getOperation()
+            ))) {
           return failure();
         }
         auto count = getLeafCount(resultType, tables, forOp.getOperation(), field);
@@ -1252,7 +1368,8 @@ private:
 
       auto newFor = builder.create<scf::ForOp>(loc, *lb, *ub, *step, initArgs);
       DenseMap<Value, LoweredValue> bodyMap(valueMap.begin(), valueMap.end());
-      bodyMap[forOp.getInductionVar()] = LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};
+      bodyMap[forOp.getInductionVar()] =
+          LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};
       unsigned cursor = 0;
       for (auto [oldIterArg, oldType, leafCount] :
            llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {
@@ -1271,9 +1388,12 @@ private:
       }
 
       cursor = 0;
-      for (auto [oldResult, oldType, leafCount] : llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
+      for (auto [oldResult, oldType, leafCount] :
+           llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
         LoweredValue lowered {oldType, {}};
-        lowered.leaves.append(newFor.getResults().begin() + cursor, newFor.getResults().begin() + cursor + leafCount);
+        lowered.leaves.append(
+            newFor.getResults().begin() + cursor, newFor.getResults().begin() + cursor + leafCount
+        );
         valueMap[oldResult] = std::move(lowered);
         cursor += leafCount;
       }
@@ -1335,8 +1455,7 @@ public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)
 
   /// Build the pass for either public-only or full-witness emission.
-  explicit CreateWitgenEntryPass(bool emitFullWitness = false)
-      : emitFullWitness(emitFullWitness) {}
+  explicit CreateWitgenEntryPass(bool emitFullWitness = false) : emitFullWitness(emitFullWitness) {}
 
   /// Run the pass over one module.
   StringRef getArgument() const final { return "llzk-create-witgen-entry"; }
@@ -1374,7 +1493,8 @@ public:
 
     auto outputs = collectOutputBindings(
         mainDef->get(), tables, computeFunc.getOperation(),
-        emitFullWitness ? OutputScope::FullWitness : OutputScope::Public);
+        emitFullWitness ? OutputScope::FullWitness : OutputScope::Public
+    );
     if (failed(outputs)) {
       signalPassFailure();
       return;
@@ -1393,7 +1513,9 @@ public:
         return;
       }
       if (loweredLeafTypes.size() != 1 || !isa<MemRefType>(loweredLeafTypes.front())) {
-        computeFunc.emitError("execution-engine wrapper only supports felt and array<...xfelt> inputs");
+        computeFunc.emitError(
+            "execution-engine wrapper only supports felt and array<...xfelt> inputs"
+        );
         signalPassFailure();
         return;
       }
@@ -1402,13 +1524,16 @@ public:
     for (const OutputBinding &output : *outputs) {
       SmallVector<Type> loweredLeafTypes;
       if (failed(flattenTypeLeaves(
-              output.type, tables, computeFunc.getOperation(), field->get(), loweredLeafTypes, {}, true
+              output.type, tables, computeFunc.getOperation(), field->get(), loweredLeafTypes, {},
+              true
           ))) {
         signalPassFailure();
         return;
       }
       if (loweredLeafTypes.size() != 1 || !isa<MemRefType>(loweredLeafTypes.front())) {
-        computeFunc.emitError("execution-engine wrapper only supports felt and array<...xfelt> outputs");
+        computeFunc.emitError(
+            "execution-engine wrapper only supports felt and array<...xfelt> outputs"
+        );
         signalPassFailure();
         return;
       }
@@ -1416,7 +1541,8 @@ public:
     }
 
     auto wrapper = builder.create<func::FuncOp>(
-        computeFunc.getLoc(), "__llzk_witgen_main", builder.getFunctionType(wrapperArgs, TypeRange {})
+        computeFunc.getLoc(), "__llzk_witgen_main",
+        builder.getFunctionType(wrapperArgs, TypeRange {})
     );
     wrapper->setAttr(LLVM::LLVMDialect::getEmitCWrapperAttrName(), builder.getUnitAttr());
     Block *entry = wrapper.addEntryBlock();
@@ -1433,12 +1559,17 @@ public:
     }
 
     SmallVector<Value> mainArgs;
-    for (auto [argType, wrapperArg] : llvm::zip(computeFunc.getArgumentTypes(), entry->getArguments().take_front(computeFunc.getNumArguments()))) {
+    for (auto [argType, wrapperArg] : llvm::zip(
+             computeFunc.getArgumentTypes(),
+             entry->getArguments().take_front(computeFunc.getNumArguments())
+         )) {
       if (isScalarType(argType)) {
         mainArgs.push_back(loadStorageScalar(builder, computeFunc.getLoc(), wrapperArg));
       } else {
-        auto abiLeafTypes = getABILeafTypes(argType, tables, computeFunc.getOperation(), field->get());
-        if (failed(abiLeafTypes) || abiLeafTypes->size() != 1 || !isa<MemRefType>(abiLeafTypes->front())) {
+        auto abiLeafTypes =
+            getABILeafTypes(argType, tables, computeFunc.getOperation(), field->get());
+        if (failed(abiLeafTypes) || abiLeafTypes->size() != 1 ||
+            !isa<MemRefType>(abiLeafTypes->front())) {
           computeFunc.emitError("failed to derive execution-engine ABI type for main input");
           signalPassFailure();
           return;
@@ -1446,19 +1577,24 @@ public:
         if (wrapperArg.getType() == abiLeafTypes->front()) {
           mainArgs.push_back(wrapperArg);
         } else {
-          mainArgs.push_back(builder.create<memref::CastOp>(computeFunc.getLoc(), abiLeafTypes->front(), wrapperArg));
+          mainArgs.push_back(builder.create<memref::CastOp>(
+              computeFunc.getLoc(), abiLeafTypes->front(), wrapperArg
+          ));
         }
       }
     }
-    auto loweredMain = builder.create<func::CallOp>(computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs);
+    auto loweredMain = builder.create<func::CallOp>(
+        computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs
+    );
 
     LoweredValue mainResultValue {
         computeFunc.getResultTypes().front(),
-        llvm::SmallVector<Value>(loweredMain.getResults().begin(), loweredMain.getResults().end())};
+        llvm::SmallVector<Value>(loweredMain.getResults().begin(), loweredMain.getResults().end())
+    };
 
-    auto extractOutputSlice =
-        [&](ArrayRef<std::string> path, Type currentType, ArrayRef<Value> leaves,
-            auto &self) -> FailureOr<SmallVector<Value>> {
+    auto extractOutputSlice = [&](ArrayRef<std::string> path, Type currentType,
+                                  ArrayRef<Value> leaves,
+                                  auto &self) -> FailureOr<SmallVector<Value>> {
       if (path.empty()) {
         return SmallVector<Value>(leaves.begin(), leaves.end());
       }
@@ -1469,7 +1605,8 @@ public:
         }
         unsigned localCursor = 0;
         for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
-          auto leafCount = getLeafCount(member.getType(), tables, member.getOperation(), field->get());
+          auto leafCount =
+              getLeafCount(member.getType(), tables, member.getOperation(), field->get());
           if (failed(leafCount)) {
             return failure();
           }
@@ -1485,7 +1622,8 @@ public:
       if (auto podType = dyn_cast<pod::PodType>(currentType)) {
         unsigned localCursor = 0;
         for (pod::RecordAttr record : podType.getRecords()) {
-          auto leafCount = getLeafCount(record.getType(), tables, computeFunc.getOperation(), field->get());
+          auto leafCount =
+              getLeafCount(record.getType(), tables, computeFunc.getOperation(), field->get());
           if (failed(leafCount)) {
             return failure();
           }
@@ -1504,8 +1642,9 @@ public:
 
     auto outputArgs = entry->getArguments().drop_front(computeFunc.getNumArguments());
     for (auto [output, outputMemRef] : llvm::zip(*outputs, outputArgs)) {
-      auto slice =
-          extractOutputSlice(output.path, mainResultValue.sourceType, mainResultValue.leaves, extractOutputSlice);
+      auto slice = extractOutputSlice(
+          output.path, mainResultValue.sourceType, mainResultValue.leaves, extractOutputSlice
+      );
       if (failed(slice) || slice->empty()) {
         wrapper.emitError("missing selected witness output slice while building witgen entry");
         signalPassFailure();
@@ -1514,7 +1653,8 @@ public:
       if (isScalarType(output.type)) {
         storeStorageScalar(
             builder, computeFunc.getLoc(),
-            loadStorageScalar(builder, computeFunc.getLoc(), slice->front()), outputMemRef);
+            loadStorageScalar(builder, computeFunc.getLoc(), slice->front()), outputMemRef
+        );
       } else {
         builder.create<memref::CopyOp>(computeFunc.getLoc(), slice->front(), outputMemRef);
       }
@@ -1540,7 +1680,8 @@ private:
 
 void addWitgenPreparePipeline(OpPassManager &pm) {
   llzk::polymorphic::FlatteningPassOptions options = {
-      .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot};
+      .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot
+  };
   pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(options)));
   pm.addPass(mlir::createLowerAffinePass());
   pm.addPass(llzk::createInlineStructsPass());

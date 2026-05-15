@@ -10,6 +10,7 @@
 #pragma once
 
 #include <mlir/Pass/Pass.h>
+
 #include <memory>
 
 namespace llzk::witgen {

@@ -9,12 +9,12 @@
 
 #include "WitgenDriver.h"
 
-#include "ExecutionEngineBackend.h"
 #include "Errors.h"
+#include "ExecutionEngineBackend.h"
 #include "Interpreter.h"
 #include "JSON.h"
-#include "WitnessSelection.h"
 #include "WitgenLowering.h"
+#include "WitnessSelection.h"
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
@@ -133,8 +133,8 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
   }
   if (outputScope == OutputScope::Public) {
     return serializeJSONValue(
-        results->front(), computeFunc.getResultTypes().front(), tables,
-        computeFunc.getOperation(), SerializationMode::PublicOutputsOnly
+        results->front(), computeFunc.getResultTypes().front(), tables, computeFunc.getOperation(),
+        SerializationMode::PublicOutputsOnly
     );
   }
 
@@ -144,8 +144,9 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
     return inputsJSON.takeError();
   }
 
-  auto outputBindings =
-      collectOutputBindings(mainDef->get(), tables, computeFunc.getOperation(), OutputScope::FullWitness);
+  auto outputBindings = collectOutputBindings(
+      mainDef->get(), tables, computeFunc.getOperation(), OutputScope::FullWitness
+  );
   if (failed(outputBindings)) {
     return makeError("failed to select full witness signals");
   }
@@ -155,13 +156,14 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
   for (const OutputBinding &binding : *outputBindings) {
     auto leafValue = extractValueAtPath(
         results->front(), computeFunc.getResultTypes().front(), binding.path, tables,
-        computeFunc.getOperation());
+        computeFunc.getOperation()
+    );
     if (!leafValue) {
       return leafValue.takeError();
     }
     auto serialized = serializeJSONValue(
-        *leafValue, binding.type, tables, computeFunc.getOperation(),
-        SerializationMode::AllSignals);
+        *leafValue, binding.type, tables, computeFunc.getOperation(), SerializationMode::AllSignals
+    );
     if (!serialized) {
       return serialized.takeError();
     }

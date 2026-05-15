@@ -26,8 +26,9 @@ static FailureOr<bool>
 typeContainsSignals(Type type, SymbolTableCollection &tables, Operation *origin);
 
 /// Return whether the struct contains nested signal members.
-static FailureOr<bool>
-structContainsSignals(component::StructDefOp def, SymbolTableCollection &tables, Operation *origin) {
+static FailureOr<bool> structContainsSignals(
+    component::StructDefOp def, SymbolTableCollection &tables, Operation *origin
+) {
   for (component::MemberDefOp member : def.getMemberDefs()) {
     if (memberIsSignal(def, member)) {
       return true;
@@ -58,11 +59,12 @@ typeContainsSignals(Type type, SymbolTableCollection &tables, Operation *origin)
 
 /// Append recursively selected signal leaves from one signal aggregate.
 static LogicalResult appendSignalLeafBindings(
-    Type type, ArrayRef<std::string> prefix, SmallVectorImpl<OutputBinding> &out,
-    Operation *origin
+    Type type, ArrayRef<std::string> prefix, SmallVectorImpl<OutputBinding> &out, Operation *origin
 ) {
   if (isa<felt::FeltType, array::ArrayType>(type)) {
-    out.push_back(OutputBinding {llvm::SmallVector<std::string>(prefix.begin(), prefix.end()), type});
+    out.push_back(
+        OutputBinding {llvm::SmallVector<std::string>(prefix.begin(), prefix.end()), type}
+    );
     return success();
   }
 
@@ -122,9 +124,8 @@ static LogicalResult appendStructSignalBindings(
 }
 
 /// Insert one serialized leaf into the nested JSON object at the given path.
-static void insertLeafJSON(
-    llvm::json::Object &root, ArrayRef<std::string> path, llvm::json::Value value
-) {
+static void
+insertLeafJSON(llvm::json::Object &root, ArrayRef<std::string> path, llvm::json::Value value) {
   if (path.empty()) {
     return;
   }

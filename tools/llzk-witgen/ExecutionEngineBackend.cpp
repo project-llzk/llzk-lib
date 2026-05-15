@@ -12,8 +12,8 @@
 #include "Errors.h"
 #include "JSON.h"
 #include "ValueModel.h"
-#include "WitnessSelection.h"
 #include "WitgenLowering.h"
+#include "WitnessSelection.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
@@ -84,11 +84,15 @@ static llvm::Expected<std::vector<int64_t>> getBoundaryShape(Type type) {
   }
   if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
     if (!isa<felt::FeltType>(arrayType.getElementType())) {
-      return makeError("execution-engine backend only supports arrays of felt values at the main boundary");
+      return makeError(
+          "execution-engine backend only supports arrays of felt values at the main boundary"
+      );
     }
     return std::vector<int64_t>(arrayType.getShape().begin(), arrayType.getShape().end());
   }
-  return makeError("execution-engine backend only supports felt and array<...xfelt> main boundaries");
+  return makeError(
+      "execution-engine backend only supports felt and array<...xfelt> main boundaries"
+  );
 }
 
 /// Build row-major strides for one shaped buffer.
@@ -215,9 +219,7 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
   llvm::json::Array result;
   for (int64_t i = 0; i < buffer.shape[dimIndex]; ++i) {
     result.push_back(
-        bufferToJSONArray(
-            buffer, dimIndex + 1, flatOffset + static_cast<size_t>(i) * subArraySize
-        )
+        bufferToJSONArray(buffer, dimIndex + 1, flatOffset + static_cast<size_t>(i) * subArraySize)
     );
   }
   return llvm::json::Value(std::move(result));
@@ -304,8 +306,9 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
         if (!value) {
           return makeError(llvm::Twine("missing JSON input field: ") + argName->getValue());
         }
-        auto parsed =
-            parseJSONValue(value, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation());
+        auto parsed = parseJSONValue(
+            value, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
+        );
         if (!parsed) {
           return parsed.takeError();
         }
@@ -332,8 +335,9 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
 
   auto inputBindings = collectInputBindings(computeFunc);
-  auto outputs =
-      collectOutputBindings(mainDef->get(), tables, computeFunc.getOperation(), options.outputScope);
+  auto outputs = collectOutputBindings(
+      mainDef->get(), tables, computeFunc.getOperation(), options.outputScope
+  );
   if (failed(outputs)) {
     return makeError("failed to select witness outputs for execution-engine mode");
   }
@@ -392,8 +396,8 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   (*maybeEngine)->registerSymbols([&](llvm::orc::MangleAndInterner interner) {
     llvm::orc::SymbolMap symbolMap;
     symbolMap[interner("memrefCopy")] = {
-        llvm::orc::ExecutorAddr::fromPtr(&memrefCopy),
-        llvm::JITSymbolFlags::Exported};
+        llvm::orc::ExecutorAddr::fromPtr(&memrefCopy), llvm::JITSymbolFlags::Exported
+    };
     return symbolMap;
   });
 
@@ -426,7 +430,8 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     return buildSignalsJSONObject(*outputs, serializedOutputs);
   }
 
-  auto inputsJSON = buildInputsJSONObject(inputBindings, *parsedArgs, tables, computeFunc.getOperation());
+  auto inputsJSON =
+      buildInputsJSONObject(inputBindings, *parsedArgs, tables, computeFunc.getOperation());
   if (!inputsJSON) {
     return inputsJSON.takeError();
   }

@@ -120,10 +120,8 @@ private:
   }
 
   /// Execute a single-block region with explicit block arguments.
-  llvm::Expected<BlockResult>
-  runRegion(
-      Region &region, ArrayRef<WitnessVal> args,
-      llvm::DenseMap<mlir::Value, WitnessVal> scope
+  llvm::Expected<BlockResult> runRegion(
+      Region &region, ArrayRef<WitnessVal> args, llvm::DenseMap<mlir::Value, WitnessVal> scope
   ) {
     if (!region.hasOneBlock()) {
       return makeError("multi-block regions are not supported in llzk-witgen");

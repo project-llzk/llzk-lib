@@ -2537,6 +2537,7 @@ std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass() {
   return std::make_unique<FlatteningPass>();
 };
 
-std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass(llzk::polymorphic::FlatteningPassOptions &&options) {
+std::unique_ptr<Pass>
+llzk::polymorphic::createFlatteningPass(llzk::polymorphic::FlatteningPassOptions &&options) {
   return std::make_unique<FlatteningPass>(options);
 };

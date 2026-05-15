@@ -10,8 +10,6 @@
 #include "WitgenDriver.h"
 #include "tools/config.h"
 
-#include "llzk/Dialect/Include/Util/IncludeHelper.h"
-#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
@@ -20,6 +18,8 @@
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/Include/Util/IncludeHelper.h"
+#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
@@ -59,8 +59,7 @@ static llvm::cl::opt<std::string> BackendName(
     llvm::cl::init("interpreter")
 );
 static llvm::cl::opt<std::string> OutputScopeName(
-    "output-scope", llvm::cl::desc("Output scope: public or full-witness"),
-    llvm::cl::init("public")
+    "output-scope", llvm::cl::desc("Output scope: public or full-witness"), llvm::cl::init("public")
 );
 static llvm::cl::opt<bool>
     DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));

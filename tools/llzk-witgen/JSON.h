@@ -32,8 +32,7 @@ llvm::Expected<WitnessVal> parseJSONValue(
 /// Serialize one runtime value into the user-facing JSON output format.
 llvm::Expected<llvm::json::Value> serializeJSONValue(
     const WitnessVal &value, mlir::Type type, mlir::SymbolTableCollection &tables,
-    mlir::Operation *origin,
-    SerializationMode mode = SerializationMode::PublicOutputsOnly
+    mlir::Operation *origin, SerializationMode mode = SerializationMode::PublicOutputsOnly
 );
 
 /// Serialize named input values into a JSON object.

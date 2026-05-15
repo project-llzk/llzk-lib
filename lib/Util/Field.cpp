@@ -137,7 +137,9 @@ DynamicAPInt Field::inv(const APInt &i) const {
 }
 
 IntegerAttr Field::getModulusAttr(MLIRContext *context, unsigned bitWidth) const {
-  return IntegerAttr::get(IntegerType::get(context, bitWidth), toExactWidthAPInt(prime(), bitWidth));
+  return IntegerAttr::get(
+      IntegerType::get(context, bitWidth), toExactWidthAPInt(prime(), bitWidth)
+  );
 }
 
 // Parses Fields from the given attribute, if able.
