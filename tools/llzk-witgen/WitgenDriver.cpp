@@ -51,7 +51,9 @@ static bool requiresFlattening(ModuleOp moduleOp) {
 }
 
 /// Build a driver around one parsed module and field.
-Interpreter::Interpreter(ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField)
+Interpreter::Interpreter(
+    ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField
+)
     : moduleOp(mod), tables(symbolTables), field(moduleField) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
