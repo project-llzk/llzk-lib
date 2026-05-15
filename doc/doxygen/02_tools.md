@@ -45,13 +45,9 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 # llzk-witgen {#llzk-witgen}
 
-`llzk-witgen` executes LLZK witness-generation semantics for the concrete main
+`llzk-witgen` executes LLZK witness-generation logic for the concrete main
 component declared by `llzk.main`. It evaluates `compute()` and prints the
 public outputs of the main component as JSON.
-
-`llzk-witgen` is intended for witness-generation and execution-oriented testing.
-In v1 it executes `compute()` only, ignores `constrain()`, and treats
-`bool.assert` as a runtime trap.
 
 #### Basic Usage
 
@@ -77,8 +73,9 @@ The `--inputs` file must contain a top-level JSON object or JSON array.
   `compute()` function arguments.
 - A JSON array is interpreted positionally in declared argument order.
 
-At the main boundary, `llzk-witgen` currently supports `felt` and
-`array<... x felt>` inputs. Field element values are accepted in the same JSON
+At the main boundary, `llzk-witgen` only supports `felt` and
+`array<... x felt>` inputs, due to the restrictions posed on `llzk.main` components.
+Field element values are accepted in the same JSON
 form used by the witgen tests, namely JSON integers or decimal strings.
 
 #### Output Format
@@ -89,19 +86,21 @@ the main component.
 - Public struct members become JSON object fields.
 - Public felt arrays become JSON arrays.
 - Field element leaves are rendered as decimal strings.
-- Private members and non-public intermediates are omitted.
+- Private members and non-public intermediates are currently omitted.
 
 #### Backends
 
 `llzk-witgen` currently supports two execution backends:
 
 - `--backend=interpreter`
-  Executes LLZK `compute()` semantics directly over the preprocessed MLIR.
+  Executes LLZK `@compute` logic directly over the preprocessed MLIR.
 - `--backend=execution-engine`
-  Lowers preprocessed LLZK compute IR through MLIR and LLVM, then executes it
+  Lowers preprocessed LLZK `@compute` IR to built-in MLIR dialects that can be
+  natively converted to LLVM IR, then executes it
   with `mlir::ExecutionEngine`.
 
-The default backend is `interpreter`.
+The default backend is `interpreter`, as the `execution-engine` does not currently
+support all LLZK features due to existing lowering limitations (e.g., in the `-llzk-flattening` pass).
 
 #### Preprocessing
 
