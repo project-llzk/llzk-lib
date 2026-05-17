@@ -21,11 +21,12 @@ using namespace llvm;
 using namespace std;
 
 static DynamicAPInt po2(const DynamicAPInt &e) {
-  // Ensure parameter is not negative and that it can be safely cast to unsigned.
+  // Ensure parameter is not negative and that shiftAmt + 1 fits in unsigned.
   assert(e >= 0);
-  assert(e <= std::numeric_limits<unsigned>::max() /* upcast from unsigned -> int64_t */);
+  assert(e < std::numeric_limits<unsigned>::max() /* upcast from unsigned -> int64_t */);
   unsigned shiftAmt = llzk::toAPSInt(e).getZExtValue();
-  APSInt p = APSInt::get(1) << shiftAmt;
+  APSInt p(shiftAmt + 1, /* isUnsigned */ true);
+  p.setBit(shiftAmt);
   return llzk::toDynamicAPInt(p);
 }
 
