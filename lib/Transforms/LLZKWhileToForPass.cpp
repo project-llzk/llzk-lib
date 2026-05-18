@@ -21,6 +21,8 @@
 
 #include <llvm/Support/Debug.h>
 
+#include <algorithm>
+
 namespace llzk {
 #define GEN_PASS_DECL_WHILETOFORPASS
 #define GEN_PASS_DEF_WHILETOFORPASS
@@ -53,12 +55,19 @@ struct ForOpInfo {
 };
 
 static inline ForOpInfo parseInfo(WhileOp op) {
-
   auto reportFailureReason = [&op](Twine reason) {
     return op.emitWarning() << "failed to transform op: " << reason;
   };
 
   ForOpInfo info;
+
+  if (!std::equal(
+          op.getBeforeArguments().begin(), op.getBeforeArguments().end(),
+          op.getConditionOp().getArgs().begin()
+      )) {
+    reportFailureReason("block arguments not passed through from preamble to body");
+    return info;
+  }
 
   auto condition = op.getConditionOp().getCondition();
   Value ivarBefore;
@@ -243,18 +252,46 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
         rewriter.create<cast::IntToFeltOp>(forOp.getLoc(), ivarType, inductionVar).getResult();
   }
 
-  // Map uses of the old scf.while "induction var" with the new scf.for induction variable
-  auto *whileBody = op.getAfterBody();
-  for (size_t i = 0; i < whileBody->getNumArguments(); i++) {
-    if (i == info.ivarIndexAfter) {
-      mapping.map(whileBody->getArgument(i), inductionVar);
+  // Start by mapping the `before` block to the loop body
+  // Each block arg of the before block should get mapped to the corresponding iter_arg, with the
+  // exception of the induction var which should get mapped to the induction var
+  auto *whilePreamble = op.getBeforeBody();
+  for (size_t i = 0; i < whilePreamble->getNumArguments(); i++) {
+    if (i == info.ivarIndexBefore) {
+      mapping.map(whilePreamble->getArgument(i), inductionVar);
       continue;
     }
-    // map uses of the old "iter args" to the scf.for's actual iter_args
     mapping.map(
-        whileBody->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexAfter ? i - 1 : i)
+        whilePreamble->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
     );
   }
+
+  // Emit the preamble into the for loop body
+  for (auto &preambleOp : *whilePreamble) {
+    // Don't emit the scf.condition; rather, use it to update the mapping in preparation for the
+    // loop body
+    if (auto condOp = dyn_cast<scf::ConditionOp>(&preambleOp)) {
+      for (auto [value, blockArg] : llvm::zip(condOp.getArgs(), op.getAfterArguments())) {
+        // TODO: maybe this isn't transitive?
+        mapping.map(blockArg, mapping.lookupOrDefault(value));
+      }
+      continue;
+    }
+    rewriter.clone(preambleOp, mapping);
+  }
+
+  // // Map uses of the old scf.while "induction var" with the new scf.for induction variable
+  auto *whileBody = op.getAfterBody();
+  // for (size_t i = 0; i < whileBody->getNumArguments(); i++) {
+  //   if (i == info.ivarIndexAfter) {
+  //     mapping.map(whileBody->getArgument(i), inductionVar);
+  //     continue;
+  //   }
+  //   // map uses of the old "iter args" to the scf.for's actual iter_args
+  //   mapping.map(
+  //       whileBody->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexAfter ? i - 1 : i)
+  //   );
+  // }
 
   for (auto &bodyOp : *whileBody) {
     // scf.yield is special here because we don't want to yield the induction var to the next
