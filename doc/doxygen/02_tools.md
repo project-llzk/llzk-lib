@@ -110,8 +110,7 @@ form used by the witgen tests, namely JSON integers or decimal strings.
   Executes LLZK `@compute` logic directly over the preprocessed MLIR.
 - `--backend=execution-engine`
   Lowers preprocessed LLZK `@compute` IR to built-in MLIR dialects that can be
-  natively converted to LLVM IR, then executes it
-  with `mlir::ExecutionEngine`.
+  natively converted to LLVM IR, then executes it with `mlir::ExecutionEngine`.
 
 The default backend is `interpreter`, as the `execution-engine` does not currently
 support all LLZK features due to existing lowering limitations (e.g., in the `-llzk-flattening` pass).
@@ -121,7 +120,7 @@ support all LLZK features due to existing lowering limitations (e.g., in the `-l
 Before execution, `llzk-witgen` performs the preprocessing needed to make
 witness generation concrete and executable:
 
-- include inlining
+- `include` inlining
 - flattening rooted at `llzk.main` when required
 - affine lowering for execution-engine mode
 - subcomponent inlining for execution-engine mode
