@@ -325,6 +325,10 @@ TEST_F(BabyBearFoldTest, Shl33) {
   expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(33)), 536870908ULL);
 }
 
+TEST_F(BabyBearFoldTest, Shl100) {
+  expectValue(foldBinary<ShlFeltOp>(babyBearConst(1), babyBearConst(100)), 1060618158ULL);
+}
+
 TEST_F(BabyBearFoldTest, Shr) {
   // 16 >> 2 = 4
   expectValue(foldBinary<ShrFeltOp>(babyBearConst(16), babyBearConst(2)), 4);

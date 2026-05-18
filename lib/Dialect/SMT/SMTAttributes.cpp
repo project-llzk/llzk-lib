@@ -168,8 +168,12 @@ Type BitVectorAttr::getType() const {
 #include "llzk/Dialect/SMT/IR/SMTAttributes.cpp.inc"
 
 void SMTDialect::registerAttributes() {
+  // clang-format off
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
-#define GET_ATTRDEF_LIST
-#include "llzk/Dialect/SMT/IR/SMTAttributes.cpp.inc"
-      >();
+    #define GET_ATTRDEF_LIST
+    #include "llzk/Dialect/SMT/IR/SMTAttributes.cpp.inc"
+  >();
+  // clang-format on
 }

@@ -22,10 +22,14 @@ using namespace llzk::smt;
 #include "llzk/Dialect/SMT/IR/SMTTypes.cpp.inc"
 
 void SMTDialect::registerTypes() {
+  // clang-format off
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
-#define GET_TYPEDEF_LIST
-#include "llzk/Dialect/SMT/IR/SMTTypes.cpp.inc"
-      >();
+    #define GET_TYPEDEF_LIST
+    #include "llzk/Dialect/SMT/IR/SMTTypes.cpp.inc"
+  >();
+  // clang-format on
 }
 
 bool llzk::smt::isAnyNonFuncSMTValueType(Type type) {

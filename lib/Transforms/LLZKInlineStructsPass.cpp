@@ -1089,7 +1089,7 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
       const SymbolUseGraph &useGraph, SymbolTableCollection &tables,
       SmallVectorImpl<const SymbolUseGraphNode *> &postOrder
   ) {
-    enum class VisitState { Active, Done };
+    enum class VisitState : std::uint8_t { Active, Done };
 
     DenseMap<const SymbolUseGraphNode *, VisitState> state;
     SmallVector<const SymbolUseGraphNode *, 32> dfsStack;
