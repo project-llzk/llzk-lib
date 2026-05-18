@@ -53,6 +53,11 @@ struct ForOpInfo {
 };
 
 static inline ForOpInfo parseInfo(WhileOp op) {
+
+  auto reportFailureReason = [&op](Twine reason) {
+    return op.emitWarning() << "failed to transform op: " << reason;
+  };
+
   ForOpInfo info;
 
   auto condition = op.getConditionOp().getCondition();
@@ -63,6 +68,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     ivarBefore = cmp.getLhs();
     info.ub = cmp.getRhs();
   } else {
+    reportFailureReason("could not identify an upper bound");
     return info;
   }
 
@@ -80,6 +86,7 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   getBlockArgIndex(ivarBefore, op.getConditionOp().getArgs(), info.ivarIndexAfter);
 
   if (!info.ivarIndexBefore.has_value() || !info.ivarIndexAfter.has_value()) {
+    reportFailureReason("could not identify an induction variable");
     return info;
   }
 
@@ -88,6 +95,10 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // computation. Lets just conservatively bail out in that case
   auto yieldedIVar = op->getResults().drop_front(*info.ivarIndexAfter).front();
   if (!yieldedIVar.use_empty()) {
+    auto report = reportFailureReason("final ivar value unsafe to drop");
+    for (auto *use : yieldedIVar.getUsers()) {
+      report.attachNote(use->getLoc()) << "used here";
+    }
     return info;
   }
 
@@ -133,20 +144,39 @@ static inline ForOpInfo parseInfo(WhileOp op) {
     }
   }
 
+  if (!info.step.has_value()) {
+    reportFailureReason("could not identify step");
+    return info;
+  }
+
   // Make sure the bounds aren't loop-carried, making this not a legal for loop
   // We don't actually need to check the LB because its always passed in via an init block arg
-
-  auto isRuntimeConstant = [&op](Value val) -> bool {
+  std::function<bool(Value, InFlightDiagnostic &)> isRuntimeConstant;
+  isRuntimeConstant = [&op, &isRuntimeConstant](Value val, InFlightDiagnostic &reporter) -> bool {
     // The value can't come from a block argument owned by the while loop
     if (auto blockArg = dyn_cast<BlockArgument>(val)) {
+      reporter.attachNote(blockArg.getLoc()) << "depends on loop-carried value";
       return blockArg.getParentBlock()->getParentOp() != op;
     }
-    return true;
+
+    // The value also can't depend on any value that comes from a block argument owned by the while
+    // loop
+    return !llvm::any_of(val.getDefiningOp()->getOperands(), [&](Value operand) {
+      return !isRuntimeConstant(operand, reporter);
+    });
   };
 
-  if (!isRuntimeConstant(*info.ub) || (info.step.has_value() && !isRuntimeConstant(*info.step))) {
+  auto ubReport = reportFailureReason("upper bound may not be constant");
+  if (!isRuntimeConstant(*info.ub, ubReport)) {
     return ForOpInfo {};
   }
+  ubReport.abandon();
+
+  auto stepReport = reportFailureReason("step may not be constant");
+  if (!isRuntimeConstant(*info.step, stepReport)) {
+    return ForOpInfo {};
+  }
+  stepReport.abandon();
 
   return info;
 }
