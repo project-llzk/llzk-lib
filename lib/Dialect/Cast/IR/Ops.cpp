@@ -9,14 +9,17 @@
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -47,7 +50,23 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
   });
 }
 
+LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter &rewriter) {
+  // Instead of casting an arith.constant to felt, just generate a felt.const
+  if (!op.getValue().getDefiningOp()) {
+    return failure();
+  }
+
+  return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
+      .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
+    rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
+        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
+    );
+    return success();
+  }).Default([](auto) { return failure(); });
+}
+
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
+  // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     auto value = constOp.getValue().getValue();
     if (value.getBitWidth() <= 64) {

@@ -51,6 +51,8 @@ def LLZK_IntToFeltOp
   let extraExtraClassDeclaration = [{
     static bool isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs);
   }];
+
+  let hasCanonicalizeMethod = 1;
 }
 
 def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
