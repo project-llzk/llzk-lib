@@ -105,8 +105,8 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
                             toPascalCase(enumInfo.getEnumClassName());
 
     // Get first enum case for testing
-    std::string firstCase = enumCases[0].getSymbol().upper();
-    std::string firstCaseValue = llvm::formatv("{0}_{1}", cEnumName, firstCase).str();
+    std::string firstCaseValue =
+        llvm::formatv("{0}_{1}", cEnumName, enumCases[0].getSymbol()).str();
 
     // Generate enum usage test
     this->genEnumUsageTest(cEnumName, firstCaseValue);

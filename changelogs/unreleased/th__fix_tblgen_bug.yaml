@@ -1,0 +1,2 @@
+fixed:
+  - fix bug in llzk-tblgen where the generated getter/setter for a variadic operand was using the wrong offset when there are multiple variadic operands.

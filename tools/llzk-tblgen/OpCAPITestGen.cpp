@@ -180,6 +180,22 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
   mlirOperationDestroy(testOp);
 }
 )";
+
+    static constexpr char VariadicOfVariadicOperandSetterTest[] = R"(
+TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_VariadicOfVariadic) {{
+  auto testOp = createIndexOperation();
+
+  if ({0}OperationIsA_{1}_{2}(testOp)) {{
+    auto dummyValue = mlirOperationGetResult(testOp, 0);
+    MlirValueRange groups[1];
+    groups[0].values = &dummyValue;
+    groups[0].size = 1;
+    {0}{1}_{2}Set{3}(testOp, 1, groups);
+  }
+
+  mlirOperationDestroy(testOp);
+}
+)";
     assert(!className.empty() && "className must be set");
 
     for (int i = 0, e = op.getNumOperands(); i < e; ++i) {
@@ -197,7 +213,8 @@ TEST_F({1}OperationLinkTests, {0}_{2}_Set{3}_Variadic) {{
         }
         if (GenOpOperandSetters) {
           os << llvm::formatv(
-              VariadicOperandSetterTest,
+              operand.isVariadicOfVariadic() ? VariadicOfVariadicOperandSetterTest
+                                             : VariadicOperandSetterTest,
               FunctionPrefix,         // {0}
               dialectNameCapitalized, // {1}
               className,              // {2}

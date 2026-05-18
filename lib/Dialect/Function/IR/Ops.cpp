@@ -773,7 +773,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyTemplateParams() override {
-    auto tgtOp = tgt.getOperation();
+    Operation *tgtOp = tgt.getOperation();
     if (isInStruct(tgtOp)) {
       // Struct function calls cannot contain template parameter instantiations.
       return verifyNoTemplateInstantiations();

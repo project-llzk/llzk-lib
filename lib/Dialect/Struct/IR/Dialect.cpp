@@ -104,7 +104,7 @@ public:
     // Remap callee if its path prefix matches a struct FQN that was wrapped.
     SymbolRefAttr calleeAttr = op.getCalleeAttr();
     SmallVector<FlatSymbolRefAttr> calleePieces = getPieces(calleeAttr);
-    for (auto &[oldFQN, newFQN] : fqnMap) {
+    for (const auto &[oldFQN, newFQN] : fqnMap) {
       SmallVector<FlatSymbolRefAttr> oldPieces = getPieces(oldFQN);
       if (calleePieces.size() > oldPieces.size() &&
           std::equal(

@@ -38,6 +38,8 @@ concept ScalarLatticeValue =
     };
 
 template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeValue {
+  friend Derived;
+
   /// For arrays of values created by, e.g., the LLZK array.new op. A recursive
   /// definition allows arrays to be constructed of other existing values, which is
   /// how the `array.new` operator works.
@@ -66,7 +68,6 @@ template <typename Derived, ScalarLatticeValue ScalarTy> class AbstractLatticeVa
     return mlir::ShapedType::isDynamicShape(shape);
   }
 
-public:
   explicit AbstractLatticeValue(ScalarTy s)
       : value(s), arrayShape(std::nullopt), isDynamic(false) {}
   AbstractLatticeValue() : AbstractLatticeValue(ScalarTy()) {}
@@ -80,6 +81,7 @@ public:
   }
 
   AbstractLatticeValue(const AbstractLatticeValue &rhs) { *this = rhs; }
+  AbstractLatticeValue(AbstractLatticeValue &&rhs) = default;
 
   // Enable copying by duplicating unique_ptrs and copying the contained values.
   AbstractLatticeValue &operator=(const AbstractLatticeValue &rhs) {
@@ -98,7 +100,9 @@ public:
     }
     return *this;
   }
+  AbstractLatticeValue &operator=(AbstractLatticeValue &&rhs) = default;
 
+public:
   bool isScalar() const { return std::holds_alternative<ScalarTy>(value); }
   bool isSingleValue() const { return isScalar() && getScalarValue().size() == 1; }
   bool isArray() const { return std::holds_alternative<ArrayTy>(value); }

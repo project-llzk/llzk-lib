@@ -66,7 +66,9 @@ void NewPodOp::build(
     DenseI32ArrayAttr numDimsPerMap, InitializedRecords initialValues
 ) {
   buildCommon(builder, state, result, initialValues);
-  affineMapHelpers::buildInstantiationAttrs<NewPodOp>(builder, state, mapOperands, numDimsPerMap);
+  affineMapHelpers::buildInstantiationAttrs<NewPodOp>(
+      builder, state, mapOperands, numDimsPerMap, llzk::checkedCast<int32_t>(initialValues.size())
+  );
 }
 
 void NewPodOp::build(

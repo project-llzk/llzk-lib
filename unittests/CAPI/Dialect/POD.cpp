@@ -11,6 +11,7 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk-c/Builder.h"
 #include "llzk-c/Support.h"
 
 #include "llzk/CAPI/Support.h"
@@ -148,6 +149,38 @@ TEST_F(PODDialectTests, llzkPod_PodTypeGetRecords) {
   llzkPod_PodTypeGetRecords(type, output);
   ASSERT_NE(output[0].ptr, nullptr);
   ASSERT_EQ(output[0].ptr, record.ptr);
+}
+
+TEST_F(PODDialectTests, llzkPod_NewPodOpBuildWithMapOperands) {
+  auto builder = mlirOpBuilderCreate(context);
+  auto loc = mlirLocationUnknownGet(context);
+
+  auto initOps = createNOps(2, createIndexType());
+  MlirType type =
+      wrap(llzk::pod::PodType::get(unwrap(context), {testRecord("x"), testRecord("y")}));
+
+  LlzkRecordValue initialValues[] = {
+      LlzkRecordValue {
+          .name = mlirStringRefCreateFromCString("x"),
+          .value = mlirOperationGetResult(initOps[0], 0)
+      },
+      LlzkRecordValue {
+          .name = mlirStringRefCreateFromCString("y"),
+          .value = mlirOperationGetResult(initOps[1], 0)
+      },
+  };
+  LlzkAffineMapOperandsBuilder mapOperands = llzkAffineMapOperandsBuilderCreate();
+
+  auto op = llzkPod_NewPodOpBuildWithMapOperands(builder, loc, type, 2, initialValues, mapOperands);
+
+  ASSERT_TRUE(mlirOperationVerify(op));
+  mlirOperationDestroy(op);
+  llzkAffineMapOperandsBuilderDestroy(&mapOperands);
+  mlirOpBuilderDestroy(builder);
+
+  for (auto initOp : initOps) {
+    mlirOperationDestroy(initOp);
+  }
 }
 
 // Implementation for `ReadPodOp_build_pass` test

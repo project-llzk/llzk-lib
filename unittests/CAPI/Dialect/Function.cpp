@@ -381,6 +381,58 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
   helper.run(*this);
 }
 
+TEST_F(FuncDialectTest, llzk_call_op_build_with_template_params) {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    MlirAttribute templateParam;
+
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
+      templateParam = testClass.createIndexAttribute(42);
+      return llzkFunction_CallOpBuildWithTemplateParams(
+          builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
+          callee_name, 1, &templateParam, 0, (const MlirValue *)NULL
+      );
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      MlirAttribute templateParams = llzkFunction_CallOpGetTemplateParams(op);
+      ASSERT_FALSE(mlirAttributeIsNull(templateParams));
+      ASSERT_TRUE(mlirAttributeIsAArray(templateParams));
+      ASSERT_EQ(mlirArrayAttrGetNumElements(templateParams), 1);
+      EXPECT_TRUE(mlirAttributeEqual(mlirArrayAttrGetElement(templateParams, 0), templateParam));
+    }
+  } helper;
+  helper.run(*this);
+}
+
+TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_template_params) {
+  struct LocalHelper : CallOpBuildFuncHelper {
+    MlirAttribute templateParam;
+
+    MlirOperation callBuild(
+        const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      auto f = testClass.test_function0();
+      templateParam = testClass.createIndexAttribute(42);
+      return llzkFunction_CallOpBuildToCalleeWithTemplateParams(
+          builder, location, f.op, 1, &templateParam, 0, (const MlirValue *)NULL
+      );
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      MlirAttribute templateParams = llzkFunction_CallOpGetTemplateParams(op);
+      ASSERT_FALSE(mlirAttributeIsNull(templateParams));
+      ASSERT_TRUE(mlirAttributeIsAArray(templateParams));
+      ASSERT_EQ(mlirArrayAttrGetNumElements(templateParams), 1);
+      EXPECT_TRUE(mlirAttributeEqual(mlirArrayAttrGetElement(templateParams, 0), templateParam));
+    }
+  } helper;
+  helper.run(*this);
+}
+
 TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
   struct : CallOpBuildFuncHelper {
     MlirType func_type;
@@ -425,28 +477,96 @@ call_pred_test(
     test_llzk_call_op_callee_is_struct_constrain, llzkFunction_CallOpCalleeIsStructConstrain, false
 );
 
+//===----------------------------------------------------------------------===//
+// CallOp operand getter tests (mixed argOperands + mapOperands)
+//
+// These tests specifically cover the bugs where the generated code used the
+// total flat operand count (or total - 1) instead of reading each segment's
+// size from `operandSegmentSizes`, and where the start index for mapOperands
+// was hardcoded to 1 instead of being computed from the attribute.
+//===----------------------------------------------------------------------===//
+
+// Builds a CallOp with 2 argOperands (v[0], v[1]) and 1 mapOperand group
+// containing 1 value (v[2]). Each value comes from a distinct index constant.
+struct MixedOperandCallOp {
+  MlirOperation constOps[3]; // owners of the three index constant ops
+  MlirValue v[3];            // results: v[0],v[1] are argOperands; v[2] is the mapOperand
+  LlzkAffineMapOperandsBuilder mapBuilder;
+  MlirOpBuilder builder;
+  MlirOperation callOp;
+
+  explicit MixedOperandCallOp(const FuncDialectTest &t) {
+    mapBuilder = llzkAffineMapOperandsBuilderCreate();
+    builder = mlirOpBuilderCreate(t.context);
+    auto loc = mlirLocationUnknownGet(t.context);
+
+    for (int i = 0; i < 3; ++i) {
+      MlirOperation op = t.createIndexOperation();
+      v[i] = mlirOperationGetResult(op, 0);
+      constOps[i] = op;
+    }
+
+    // v[2] forms a single map operand group with 0 dims (pure symbols)
+    MlirValueRange mapGroup = {.values = &v[2], .size = 1};
+    int32_t nDims = 0;
+    llzkAffineMapOperandsBuilderAppendOperandsWithDimCount(&mapBuilder, 1, &mapGroup, &nDims);
+
+    auto callee = t.test_function0();
+    MlirAttribute calleeName = mlirFlatSymbolRefAttrGet(t.context, callee.nameRef());
+    MlirType outType = t.createIndexType();
+
+    // Build: 1 result, callee, 1 map group (v[2]), 2 arg operands (v[0], v[1])
+    callOp = llzkFunction_CallOpBuildWithMapOperands(
+        builder, loc, 1, &outType, calleeName, mapBuilder, 2, &v[0]
+    );
+  }
+
+  ~MixedOperandCallOp() {
+    mlirOperationDestroy(callOp);
+    for (auto op : constOps) {
+      mlirOperationDestroy(op);
+    }
+    llzkAffineMapOperandsBuilderDestroy(&mapBuilder);
+    mlirOpBuilderDestroy(builder);
+  }
+};
+
+// GetArgOperandsCount must return the argOperands segment size (2), not the
+// total flat operand count (3). Old bug: returned `count - 0 = 3`.
+TEST_F(FuncDialectTest, llzk_call_op_get_arg_operands_count_with_map_operands) {
+  MixedOperandCallOp m(*this);
+  EXPECT_EQ(llzkFunction_CallOpGetArgOperandsCount(m.callOp), 2);
+}
+
+// GetMapOperandsCount must return the mapOperands segment size (1), not
+// `(total - 1) = 2`. Old bug: returned `count - 1 = 2`.
+TEST_F(FuncDialectTest, llzk_call_op_get_map_operands_count_with_arg_operands) {
+  MixedOperandCallOp m(*this);
+  EXPECT_EQ(llzkFunction_CallOpGetMapOperandsCount(m.callOp), 1);
+}
+
+// GetArgOperandsAt must index within the argOperands segment.
+TEST_F(FuncDialectTest, llzk_call_op_get_arg_operands_at_with_map_operands) {
+  MixedOperandCallOp m(*this);
+  EXPECT_EQ(llzkFunction_CallOpGetArgOperandsAt(m.callOp, 0).ptr, m.v[0].ptr);
+  EXPECT_EQ(llzkFunction_CallOpGetArgOperandsAt(m.callOp, 1).ptr, m.v[1].ptr);
+}
+
+// GetMapOperandsAt must skip past the argOperands segment using operandSegmentSizes,
+// not with a hardcoded offset of 1. Old bug: returned `operand[1 + 0] = v[1]`
+// (an arg operand) instead of the actual map operand `v[2]`.
+TEST_F(FuncDialectTest, llzk_call_op_get_map_operands_at_with_arg_operands) {
+  MixedOperandCallOp m(*this);
+  EXPECT_EQ(llzkFunction_CallOpGetMapOperandsAt(m.callOp, 0).ptr, m.v[2].ptr);
+}
+
 // Implementation for `ReturnOp_build_pass` test
 std::unique_ptr<ReturnOpBuildFuncHelper> ReturnOpBuildFuncHelper::get() {
   struct Impl : public ReturnOpBuildFuncHelper {
     mlir::OwningOpRef<mlir::ModuleOp> parentModule;
     MlirOperation
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
-      // Use C++ API to avoid indirectly testing other LLZK C API functions here.
-      {
-        this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
-        llzk::ModuleBuilder cppBldr(this->parentModule.get());
-        const auto *name = "func_name";
-        cppBldr.insertFreeFunc(
-            name,
-            mlir::FunctionType::get(
-                unwrap(testClass.context), mlir::TypeRange {}, mlir::TypeRange {}
-            ),
-            unwrap(location)
-        );
-        auto func = cppBldr.getFreeFunc(name);
-        assert(succeeded(func) && "Failed to retrieve the function just inserted into the module");
-        mlirOpBuilderSetInsertionPointToStart(builder, wrap(&func->getBody().emplaceBlock()));
-      }
+      this->parentModule = testClass.cppGenFreeFuncAndSetInsertionPoint(builder, location);
       llvm::SmallVector<MlirValue> vals {};
       return llzkFunction_ReturnOpBuild(
           builder, location, llzk::checkedCast<intptr_t>(vals.size()), vals.data()
