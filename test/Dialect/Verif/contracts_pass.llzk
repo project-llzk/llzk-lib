@@ -38,17 +38,26 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @T {
+    poly.param @N
+
     struct.def @Top {
-      function.def @compute(%a : !felt.type) -> !struct.type<@T::@Top> {
-        %self = struct.new : !struct.type<@T::@Top>
-        function.return %self : !struct.type<@T::@Top>
+      struct.member @m : !felt.type
+      function.def @compute(%a : !felt.type) -> !struct.type<@T::@Top<[@N]>> {
+        %self = struct.new : !struct.type<@T::@Top<[@N]>>
+        struct.writem %self[@m] = %a : !struct.type<@T::@Top<[@N]>>, !felt.type
+        function.return %self : !struct.type<@T::@Top<[@N]>>
       }
-      function.def @constrain(%self: !struct.type<@T::@Top>, %a : !felt.type)  {
+      function.def @constrain(%self: !struct.type<@T::@Top<[@N]>>, %a : !felt.type) {
+        %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
+        constrain.eq %m, %a : !felt.type
         function.return
       }
     }
 
-    verif.contract @Foo for @T::@Top (%self: !struct.type<@T::@Top>, %a: !felt.type) {
+    verif.contract @Foo for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>, %a: !felt.type) {
+      %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
+      %eq = bool.cmp eq(%a, %m) : !felt.type, !felt.type
+
     }
   }
 }
