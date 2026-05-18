@@ -8,8 +8,19 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the `-llzk-while-to-for` pass.
+/// This file identifies scf.while loops that can be converted to scf.for loops and performs the
+/// conversion. A while loop can be converted if:
+/// * The scf.condition directly forwards `before` block arguments to the `after` block
+/// * The `before` block has an argument %arg (the "induction variable") such that:
+///   * The scf.condition condition has the form `bool.cmp lt(%arg, %upper_bound)`
+///   * The value yielded from the after block has the form `felt.add %arg, %step`
+/// * `%upper_bound` and `%step` do not depend on any loop-carried variables
+/// * The final yielded value of the induction variable does not have uses outside the loop
 ///
+/// This pass begins by identifying the induction variable, lower and upper bounds, and step
+/// (`ForOp::parseInfo`), then materializes a for loop with these parameters and copies the `before`
+/// and `after` blocks into the body, drops the yielded induction variable, and remaps uses of the
+/// other yielded values (`transformWhileToFor`).
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -280,18 +291,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     rewriter.clone(preambleOp, mapping);
   }
 
-  // // Map uses of the old scf.while "induction var" with the new scf.for induction variable
   auto *whileBody = op.getAfterBody();
-  // for (size_t i = 0; i < whileBody->getNumArguments(); i++) {
-  //   if (i == info.ivarIndexAfter) {
-  //     mapping.map(whileBody->getArgument(i), inductionVar);
-  //     continue;
-  //   }
-  //   // map uses of the old "iter args" to the scf.for's actual iter_args
-  //   mapping.map(
-  //       whileBody->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexAfter ? i - 1 : i)
-  //   );
-  // }
 
   for (auto &bodyOp : *whileBody) {
     // scf.yield is special here because we don't want to yield the induction var to the next
