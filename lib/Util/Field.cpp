@@ -136,7 +136,7 @@ DynamicAPInt Field::inv(const APInt &i) const {
   return modInversePrime(toDynamicAPInt(i), prime());
 }
 
-IntegerAttr Field::getModulusAttr(MLIRContext *context, unsigned bitWidth) const {
+IntegerAttr Field::getPrimeAttr(MLIRContext *context, unsigned bitWidth) const {
   return IntegerAttr::get(
       IntegerType::get(context, bitWidth), toExactWidthAPInt(prime(), bitWidth)
   );

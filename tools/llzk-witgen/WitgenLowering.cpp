@@ -436,7 +436,7 @@ static Value normalizeWideValue(
 ) {
   auto wideType = mlir::cast<IntegerType>(wideValue.getType());
   Value modulus = builder.create<arith::ConstantOp>(
-      loc, field.getModulusAttr(builder.getContext(), wideType.getWidth())
+      loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
   );
   Value reduced = builder.create<arith::RemUIOp>(loc, wideValue, modulus);
   return builder.create<arith::TruncIOp>(
@@ -465,7 +465,7 @@ lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
   Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
   Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, field.getModulusAttr(builder.getContext(), wideWidth));
+      builder.create<arith::ConstantOp>(loc, field.getPrimeAttr(builder.getContext(), wideWidth));
   Value lhsPlusMod = builder.create<arith::AddIOp>(loc, lhsWide, modulus);
   Value diff = builder.create<arith::SubIOp>(loc, lhsPlusMod, rhsWide);
   return normalizeWideValue(builder, loc, diff, width, field);
@@ -478,7 +478,7 @@ static Value lowerFeltNeg(OpBuilder &builder, Location loc, Value operand, const
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
   Value operandWide = builder.create<arith::ExtUIOp>(loc, wideType, operand);
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, field.getModulusAttr(builder.getContext(), wideWidth));
+      builder.create<arith::ConstantOp>(loc, field.getPrimeAttr(builder.getContext(), wideWidth));
   Value diff = builder.create<arith::SubIOp>(loc, modulus, operandWide);
   return normalizeWideValue(builder, loc, diff, width, field);
 }
