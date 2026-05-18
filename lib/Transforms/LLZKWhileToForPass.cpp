@@ -30,12 +30,12 @@ namespace llzk {
 #define DEBUG_TYPE "while-to-for"
 
 using namespace mlir;
+using namespace scf;
 
 namespace llzk {
 
 using namespace boolean;
 using namespace felt;
-using namespace scf;
 
 struct ForOpInfo {
   // SSA values holding the loop bounds
@@ -46,12 +46,6 @@ struct ForOpInfo {
   // Block argument index of the induction variable in the *after* block
   std::optional<size_t> ivarIndexAfter;
 
-  void reset() {
-    lb.reset();
-    ub.reset();
-    step.reset();
-  }
-
   bool success() const {
     return lb.has_value() && ub.has_value() && step.has_value() && ivarIndexBefore.has_value() &&
            ivarIndexAfter.has_value();
@@ -60,16 +54,6 @@ struct ForOpInfo {
 
 static inline ForOpInfo parseInfo(WhileOp op) {
   ForOpInfo info;
-
-  auto isRuntimeConstant = [&op](Value val) -> bool {
-    // The value can't come from a block argument owned by the while loop
-    if (auto blockArg = dyn_cast<BlockArgument>(val)) {
-      return blockArg.getParentBlock()->getParentOp() != op;
-    }
-    return true;
-  };
-
-  (void)isRuntimeConstant;
 
   auto condition = op.getConditionOp().getCondition();
   Value ivarBefore;
@@ -104,37 +88,37 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // computation. Lets just conservatively bail out in that case
   auto yieldedIVar = op->getResults().drop_front(*info.ivarIndexAfter).front();
   if (!yieldedIVar.use_empty()) {
-    return ForOpInfo {};
+    return info;
   }
-
-  Value ivarAfter = op.getAfterArguments().drop_front(*info.ivarIndexAfter).front();
 
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(LoopBoundsAttr::name)) {
     auto bounds = op->getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name);
 
-    IRRewriter rewriter {op->getContext()};
-    rewriter.setInsertionPoint(op);
+    OpBuilder builder {op->getContext()};
+    builder.setInsertionPoint(op);
 
     // Make these constant felts for now; the actual for op builder will later clean it up
-    info.lb = rewriter
-                  .create<felt::FeltConstantOp>(
+    info.lb = builder
+                  .create<FeltConstantOp>(
                       op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getLower())
                   )
                   .getResult();
-    info.ub = rewriter
-                  .create<felt::FeltConstantOp>(
+    info.ub = builder
+                  .create<FeltConstantOp>(
                       op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getUpper())
                   )
                   .getResult();
-    info.step = rewriter
-                    .create<felt::FeltConstantOp>(
+    info.step = builder
+                    .create<FeltConstantOp>(
                         op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getStep())
                     )
                     .getResult();
     return info;
   }
+
+  Value ivarAfter = op.getAfterArguments().drop_front(*info.ivarIndexAfter).front();
 
   // Now, look for the lb as the corresponding init arg
   info.lb = *op.getInits().drop_front(*info.ivarIndexBefore).begin();
@@ -151,25 +135,32 @@ static inline ForOpInfo parseInfo(WhileOp op) {
 
   // Make sure the bounds aren't loop-carried, making this not a legal for loop
   // We don't actually need to check the LB because its always passed in via an init block arg
-  if (!isRuntimeConstant(*info.ub)) {
-    info.ub.reset();
+
+  auto isRuntimeConstant = [&op](Value val) -> bool {
+    // The value can't come from a block argument owned by the while loop
+    if (auto blockArg = dyn_cast<BlockArgument>(val)) {
+      return blockArg.getParentBlock()->getParentOp() != op;
+    }
+    return true;
+  };
+
+  if (!isRuntimeConstant(*info.ub) || (info.step.has_value() && !isRuntimeConstant(*info.step))) {
+    return ForOpInfo {};
   }
-  if (info.step.has_value() && !isRuntimeConstant(*info.step)) {
-    info.step.reset();
-  }
+
   return info;
 }
 
-static inline llvm::FailureOr<mlir::scf::ForOp>
-transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &rewriter) {
+static inline FailureOr<scf::ForOp>
+transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   llzk::ensure(info.success(), "attempting to convert non-constant while loop");
 
   rewriter.setInsertionPointAfter(op);
-  mlir::IRMapping mapping;
+  IRMapping mapping;
 
-  auto copyValue = [op, &rewriter, &mapping](mlir::Value val) -> mlir::Value {
+  auto copyIfNeeded = [op, &rewriter, &mapping](Value val) -> Value {
     if (auto *definingOp = val.getDefiningOp();
-        definingOp && definingOp->getParentOfType<mlir::scf::WhileOp>() == op) {
+        definingOp && definingOp->getParentOfType<scf::WhileOp>() == op) {
       return rewriter.clone(*definingOp, mapping)->getResult(0);
     }
     return val;
@@ -177,7 +168,7 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
 
   // scf.for bounds have to be `index`, so we might have to cast them here felt -> index before
   // building the op, and cast them back index -> felt inside the body
-  auto toIndex = [&rewriter](mlir::Value val) -> mlir::Value {
+  auto toIndex = [&rewriter](Value val) -> Value {
     if (!isa<FeltType>(val.getType())) {
       return val;
     }
@@ -185,9 +176,9 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
   };
 
   // Emit a prelude setting up the loop bounds
-  auto lb = copyValue(*info.lb);
-  auto ub = copyValue(*info.ub);
-  auto step = copyValue(*info.step);
+  auto lb = copyIfNeeded(*info.lb);
+  auto ub = copyIfNeeded(*info.ub);
+  auto step = copyIfNeeded(*info.step);
 
   // Store the original type of the scf.while's induction var so we can cast back if necessary
   ensure(
@@ -201,7 +192,7 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
     step = toIndex(step);
   }
 
-  llvm::SmallVector<mlir::Value> inits;
+  SmallVector<Value> inits;
   for (auto [i, init] : llvm::enumerate(op.getInits())) {
     if (i == info.ivarIndexBefore) {
       continue;
@@ -210,7 +201,7 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
   }
 
   // Build the skeleton of the for loop
-  auto forOp = rewriter.create<mlir::scf::ForOp>(op->getLoc(), lb, ub, step, inits);
+  auto forOp = rewriter.create<scf::ForOp>(op->getLoc(), lb, ub, step, inits);
   rewriter.setInsertionPointToStart(forOp.getBody());
 
   auto inductionVar = forOp.getInductionVar();
@@ -221,8 +212,6 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
     inductionVar =
         rewriter.create<cast::IntToFeltOp>(forOp.getLoc(), ivarType, inductionVar).getResult();
   }
-
-  // // mapping.map(*info.ivar, forOp.getInductionVar()); // I don't think I need this anymore
 
   // Map uses of the old scf.while "induction var" with the new scf.for induction variable
   auto *whileBody = op.getAfterBody();
@@ -237,11 +226,11 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
     );
   }
 
-  for (auto &bodyOp : *op.getAfterBody()) {
+  for (auto &bodyOp : *whileBody) {
     // scf.yield is special here because we don't want to yield the induction var to the next
     // iteration...
-    if (auto yieldOp = mlir::dyn_cast<mlir::scf::YieldOp>(&bodyOp)) {
-      llvm::SmallVector<mlir::Value> valuesToYield;
+    if (auto yieldOp = dyn_cast<scf::YieldOp>(&bodyOp)) {
+      SmallVector<Value> valuesToYield;
       for (auto [i, val] : llvm::enumerate(yieldOp.getResults())) {
         if (i == info.ivarIndexAfter) {
           continue;
@@ -250,7 +239,7 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
         valuesToYield.push_back(mapping.lookupOrDefault(val));
       }
       if (!valuesToYield.empty()) {
-        rewriter.create<mlir::scf::YieldOp>(yieldOp.getLoc(), valuesToYield);
+        rewriter.create<scf::YieldOp>(yieldOp.getLoc(), valuesToYield);
       }
       continue;
     }
@@ -259,7 +248,7 @@ transformWhileToFor(mlir::scf::WhileOp op, ForOpInfo info, mlir::RewriterBase &r
 
   // scf.for doesn't explicitly yield its induction var from the final iteration, so we need to
   // reconstruct it
-  llvm::SmallVector<mlir::Value> replacedValues;
+  SmallVector<Value> replacedValues;
   for (auto [i, result] : llvm::enumerate(op.getResults())) {
     if (i == info.ivarIndexBefore) {
       // Note that the final value of the induction variable might not actually be the upper bound
