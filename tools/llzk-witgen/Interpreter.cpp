@@ -914,6 +914,9 @@ private:
       if (!condition) {
         return condition.takeError();
       }
+      if (!*condition && ifOp.getNumResults() == 0 && ifOp.getElseRegion().empty()) {
+        return bind({});
+      }
       Region &region = *condition ? ifOp.getThenRegion() : ifOp.getElseRegion();
       auto result = runRegion(region, {}, scope);
       if (!result) {

@@ -337,6 +337,73 @@ TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedForBounds) {
   EXPECT_EQ(*count, 0);
 }
 
+TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenFalse) {
+  constexpr llvm::StringLiteral source = R"mlir(
+    module attributes {llzk.lang} {
+      function.def @if_without_else(%cond: i1) -> index {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        scf.if %cond {
+          %unused = arith.addi %c0, %c1 : index
+        }
+        function.return %c1 : index
+      }
+    }
+  )mlir";
+
+  auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(static_cast<bool>(module));
+
+  auto func = getUniqueFuncByName(*module, "if_without_else");
+  ASSERT_TRUE(static_cast<bool>(func));
+
+  SymbolTableCollection tables;
+  witgen::FunctionInterpreter interpreter(
+      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Zero,
+      std::mt19937_64(0)
+  );
+  llvm::SmallVector<witgen::WitnessVal> args = {false};
+  auto results = interpreter.run(func, args);
+  ASSERT_TRUE(static_cast<bool>(results)) << llvm::toString(results.takeError());
+  ASSERT_EQ(results->size(), 1u);
+  auto value = witgen::asIndex((*results)[0]);
+  ASSERT_TRUE(static_cast<bool>(value)) << llvm::toString(value.takeError());
+  EXPECT_EQ(*value, 1);
+}
+
+TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenTrue) {
+  constexpr llvm::StringLiteral source = R"mlir(
+    module attributes {llzk.lang} {
+      function.def @if_without_else(%cond: i1) -> index {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        scf.if %cond {
+          %boom = arith.divsi %c1, %c0 : index
+        }
+        function.return %c1 : index
+      }
+    }
+  )mlir";
+
+  auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(static_cast<bool>(module));
+
+  auto func = getUniqueFuncByName(*module, "if_without_else");
+  ASSERT_TRUE(static_cast<bool>(func));
+
+  SymbolTableCollection tables;
+  witgen::FunctionInterpreter interpreter(
+      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Zero,
+      std::mt19937_64(0)
+  );
+  llvm::SmallVector<witgen::WitnessVal> args = {true};
+  auto results = interpreter.run(func, args);
+  ASSERT_FALSE(static_cast<bool>(results));
+  EXPECT_NE(
+      llvm::toString(results.takeError()).find("unsupported op in llzk-witgen"), std::string::npos
+  );
+}
+
 TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
   auto field = Field::getField("goldilocks");
   auto overflowingValue = field.reduce(llvm::APInt(64, uint64_t(1) << 63));
