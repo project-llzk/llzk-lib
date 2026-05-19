@@ -764,3 +764,25 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @foo : !array.type<2 x !felt.type> {llzk.pub}
+    struct.member @bar : !array.type<2 x !felt.type> {signal}
+    struct.member @baz : !array.type<2 x !felt.type> {column}
+
+    function.def @product() -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @A {
+// CHECK-NEXT: struct.member @foo_0 : !felt.type {llzk.pub}
+// CHECK-NEXT: struct.member @foo_1 : !felt.type {llzk.pub}
+// CHECK-NEXT: struct.member @bar_2 : !felt.type {signal}
+// CHECK-NEXT: struct.member @bar_3 : !felt.type {signal}
+// CHECK-NEXT: struct.member @baz_4 : !felt.type {column}
+// CHECK-NEXT: struct.member @baz_5 : !felt.type {column}
