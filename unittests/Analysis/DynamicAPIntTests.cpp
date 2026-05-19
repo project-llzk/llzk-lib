@@ -148,10 +148,8 @@ INSTANTIATE_TEST_SUITE_P(
 struct DynamicAPIntShiftTest : public testing::TestWithParam<std::pair<DynamicAPInt, unsigned>> {
   static const std::vector<std::pair<DynamicAPInt, unsigned>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, unsigned>> vals = {
-        {DynamicAPInt(-1), 0},
-        {bn254, 0},
-        {bn254, 32},
-        {DynamicAPInt(100), 32},
+        {DynamicAPInt(-1), 0},    {bn254, 0}, {bn254, 32}, {bn254, 100}, {DynamicAPInt(100), 32},
+        {DynamicAPInt(100), 100},
     };
     return vals;
   }
@@ -169,7 +167,10 @@ TEST_P(DynamicAPIntShiftTest, ShiftLeft) {
 TEST_P(DynamicAPIntShiftTest, ShiftRight) {
   auto [a, b] = GetParam();
   // Equivalent to APSInt operator
-  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(toAPSInt(a) >> b));
+  APSInt base = toAPSInt(a);
+  base = base.extend(max(base.getBitWidth(), b));
+
+  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(base >> b));
 }
 
 INSTANTIATE_TEST_SUITE_P(

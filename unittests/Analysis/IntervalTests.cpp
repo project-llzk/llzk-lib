@@ -612,7 +612,7 @@ TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
 
   // Iteration and lookup should agree for every stored key.
   for (const auto &[ref, interval] : intervals) {
-    auto it = intervals.find(ref);
+    const auto *it = intervals.find(ref);
     ASSERT_NE(it, intervals.end()) << "missing key on self-lookup: " << buildStringViaPrint(ref);
     ASSERT_TRUE(checkCond(interval, it->second, interval == it->second))
         << buildStringViaPrint(ref);
@@ -631,7 +631,7 @@ TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
   for (int64_t i = 0; i < 3; i++) {
     auto elemRef = outRef.createChild(SourceRefIndex(i));
     ASSERT_TRUE(succeeded(elemRef));
-    auto it = intervals.find(*elemRef);
+    const auto *it = intervals.find(*elemRef);
     ASSERT_NE(it, intervals.end())
         << "missing constrain interval for " << buildStringViaPrint(*elemRef);
     ASSERT_TRUE(it->second.isDegenerate())
@@ -673,14 +673,14 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   ASSERT_TRUE(succeeded(out0Ref));
   ASSERT_TRUE(succeeded(out1Ref));
 
-  auto out0It = intervals.find(*out0Ref);
+  const auto *out0It = intervals.find(*out0Ref);
   ASSERT_NE(out0It, intervals.end())
       << "missing compute interval for " << buildStringViaPrint(*out0Ref);
   ASSERT_TRUE(out0It->second.isDegenerate())
       << buildStringViaPrint(*out0Ref) << " -> " << buildStringViaPrint(out0It->second);
   ASSERT_EQ(out0It->second.lhs(), field.zero()) << buildStringViaPrint(*out0Ref);
 
-  auto out1It = intervals.find(*out1Ref);
+  const auto *out1It = intervals.find(*out1Ref);
   ASSERT_NE(out1It, intervals.end())
       << "missing compute interval for " << buildStringViaPrint(*out1Ref);
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));

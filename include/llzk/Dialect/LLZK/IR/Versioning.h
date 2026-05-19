@@ -85,7 +85,7 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
   }
 
   virtual mlir::LogicalResult upgradeFromVersion(
-      mlir::Operation *rootOp, const LLZKDialectVersion &current,
+      mlir::Operation * /*rootOp*/, const LLZKDialectVersion &current,
       const LLZKDialectVersion &requested
   ) const {
     assert(requested < current && "pre-condition of upgradeFromVersion not met");

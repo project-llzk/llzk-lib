@@ -13,20 +13,19 @@
 #ifndef MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 #define MLIR_DIALECT_SMT_IR_SMTVISITORS_H
 
-#include "llvm/ADT/TypeSwitch.h"
-
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 
-namespace llzk {
-namespace smt {
+#include <llvm/ADT/TypeSwitch.h>
+
+namespace llzk::smt {
 
 /// This helps visit SMT nodes.
 template <typename ConcreteType, typename ResultType = void, typename... ExtraArgs>
 class SMTOpVisitor {
 public:
-  ResultType dispatchSMTOpVisitor(Operation *op, ExtraArgs... args) {
+  ResultType dispatchSMTOpVisitor(mlir::Operation *op, ExtraArgs... args) {
     auto *thisCast = static_cast<ConcreteType *>(this);
-    return TypeSwitch<Operation *, ResultType>(op)
+    return mlir::TypeSwitch<mlir::Operation *, ResultType>(op)
         .template Case<
             // Constants
             BoolConstantOp, IntConstantOp, BVConstantOp,
@@ -52,18 +51,20 @@ public:
             // Quantifiers
             ForallOp, ExistsOp, YieldOp>([&](auto expr) -> ResultType {
       return thisCast->visitSMTOp(expr, args...);
-    }).Default([&](auto expr) -> ResultType { return thisCast->visitInvalidSMTOp(op, args...); });
+    }).Default([&](auto) -> ResultType { return thisCast->visitInvalidSMTOp(op, args...); });
   }
 
   /// This callback is invoked on any non-expression operations.
-  ResultType visitInvalidSMTOp(Operation *op, ExtraArgs... args) {
+  ResultType visitInvalidSMTOp(mlir::Operation *op, ExtraArgs... /*args*/) {
     op->emitOpError("unknown SMT node");
     abort();
   }
 
   /// This callback is invoked on any SMT operations that are not
   /// handled by the concrete visitor.
-  ResultType visitUnhandledSMTOp(Operation *op, ExtraArgs... args) { return ResultType(); }
+  ResultType visitUnhandledSMTOp(mlir::Operation * /*op*/, ExtraArgs... /*args*/) {
+    return ResultType();
+  }
 
 #define HANDLE(OPTYPE, OPKIND)                                                                     \
   ResultType visitSMTOp(OPTYPE op, ExtraArgs... args) {                                            \
@@ -150,23 +151,23 @@ public:
 template <typename ConcreteType, typename ResultType = void, typename... ExtraArgs>
 class SMTTypeVisitor {
 public:
-  ResultType dispatchSMTTypeVisitor(Type type, ExtraArgs... args) {
+  ResultType dispatchSMTTypeVisitor(mlir::Type type, ExtraArgs... args) {
     auto *thisCast = static_cast<ConcreteType *>(this);
-    return TypeSwitch<Type, ResultType>(type)
+    return mlir::TypeSwitch<mlir::Type, ResultType>(type)
         .template Case<BoolType, IntType, BitVectorType, ArrayType, SMTFuncType, SortType>(
             [&](auto expr) -> ResultType { return thisCast->visitSMTType(expr, args...); }
         )
-        .Default([&](auto expr) -> ResultType {
-      return thisCast->visitInvalidSMTType(type, args...);
-    });
+        .Default([&](auto) -> ResultType { return thisCast->visitInvalidSMTType(type, args...); });
   }
 
   /// This callback is invoked on any non-expression types.
-  ResultType visitInvalidSMTType(Type type, ExtraArgs... args) { abort(); }
+  ResultType visitInvalidSMTType(mlir::Type /*type*/, ExtraArgs... /*args*/) { abort(); }
 
   /// This callback is invoked on any SMT type that are not
   /// handled by the concrete visitor.
-  ResultType visitUnhandledSMTType(Type type, ExtraArgs... args) { return ResultType(); }
+  ResultType visitUnhandledSMTType(mlir::Type /*type*/, ExtraArgs... /*args*/) {
+    return ResultType();
+  }
 
 #define HANDLE(TYPE, KIND)                                                                         \
   ResultType visitSMTType(TYPE op, ExtraArgs... args) {                                            \
@@ -174,7 +175,7 @@ public:
   }
 
   HANDLE(BoolType, Unhandled);
-  HANDLE(IntegerType, Unhandled);
+  HANDLE(IntType, Unhandled);
   HANDLE(BitVectorType, Unhandled);
   HANDLE(ArrayType, Unhandled);
   HANDLE(SMTFuncType, Unhandled);
@@ -183,7 +184,6 @@ public:
 #undef HANDLE
 };
 
-} // namespace smt
-} // namespace llzk
+} // namespace llzk::smt
 
 #endif // MLIR_DIALECT_SMT_IR_SMTVISITORS_H

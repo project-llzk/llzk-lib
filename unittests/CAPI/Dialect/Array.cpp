@@ -476,3 +476,111 @@ std::unique_ptr<ExtractArrayOpBuildFuncHelper> ExtractArrayOpBuildFuncHelper::ge
   };
   return std::make_unique<Impl>();
 }
+
+/// Test that SetMapOperands (a VariadicOfVariadic operand setter) correctly updates both
+/// `operandSegmentSizes` (via `MutableOperandRange::assign()` after `join()`) and
+/// `mapOpGroupSizes` (via the explicit post-update in the generated code).
+///
+/// CreateArrayOp.mapOperands is declared as VariadicOfVariadic, so the generated setter
+/// accepts one `MlirValueRange` per group. Internally it calls
+/// `getMapOperandsMutable().join().assign(flatVals)`. The `join()` produces a flat
+/// `MutableOperandRange` whose `operandSegments` carries `operandSegmentSizes[1]`, so
+/// `assign()` keeps that slot in sync automatically via `updateLength`. The generator then
+/// explicitly updates the per-group segment-size attribute (here `mapOpGroupSizes`) using
+/// the name obtained from `TypeConstraint::getVariadicOfVariadicSegmentSizeAttr()`.
+/// LLZK-specific attributes such as `numDimsPerMap` are the caller's responsibility and
+/// are not touched by the generated setter.
+TEST_F(ArrayDialectTests, create_array_op_set_map_operands_updates_attributes) {
+  auto location = mlirLocationUnknownGet(context);
+  auto elt_type = createIndexType();
+
+  // Create four constant ops: e0 (element), m0 and m1 (initial map operands), m_new.
+  auto auxOps = create_n_ops(4, elt_type);
+  MlirValue e0 = mlirOperationGetResult(auxOps[0], 0);
+  MlirValue m0 = mlirOperationGetResult(auxOps[1], 0);
+  MlirValue m1 = mlirOperationGetResult(auxOps[2], 0);
+  MlirValue m_new = mlirOperationGetResult(auxOps[3], 0);
+
+  // Manually build an `array.new` op with:
+  //   operands:            [e0, m0, m1]
+  //   operandSegmentSizes: [1, 2]  (elements=1, mapOperands=2)
+  //   mapOpGroupSizes:     [2]     (one group of 2 map operands)
+  //   numDimsPerMap:       [1]     (1 dim per map for the one group)
+  //   result:              !array.type<1 x index>
+  int64_t dims[1] = {1};
+  auto arr_type = test_array(elt_type, llvm::ArrayRef(dims, 1));
+
+  auto op_state = mlirOperationStateGet(mlirStringRefCreateFromCString("array.new"), location);
+  MlirValue operands[3] = {e0, m0, m1};
+  mlirOperationStateAddOperands(&op_state, 3, operands);
+  mlirOperationStateAddResults(&op_state, 1, &arr_type);
+
+  int32_t segSizes[2] = {1, 2};
+  int32_t groupSizes[1] = {2};
+  int32_t numDims[1] = {1};
+  MlirNamedAttribute attrs[3] = {
+      mlirNamedAttributeGet(
+          mlirIdentifierGet(context, mlirStringRefCreateFromCString("operandSegmentSizes")),
+          mlirDenseI32ArrayGet(context, 2, segSizes)
+      ),
+      mlirNamedAttributeGet(
+          mlirIdentifierGet(context, mlirStringRefCreateFromCString("mapOpGroupSizes")),
+          mlirDenseI32ArrayGet(context, 1, groupSizes)
+      ),
+      mlirNamedAttributeGet(
+          mlirIdentifierGet(context, mlirStringRefCreateFromCString("numDimsPerMap")),
+          mlirDenseI32ArrayGet(context, 1, numDims)
+      ),
+  };
+  mlirOperationStateAddAttributes(&op_state, 3, attrs);
+
+  auto op = mlirOperationCreate(&op_state);
+  ASSERT_NE(op.ptr, nullptr);
+
+  // Verify the initial operand layout is as expected.
+  EXPECT_EQ(mlirOperationGetNumOperands(op), 3);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetElementsCount(op), 1);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsCount(op), 2);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 0).ptr, m0.ptr);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 1).ptr, m1.ptr);
+
+  // Replace the two map operands with multiple groups so the VariadicOfVariadic
+  // setter must preserve group boundaries, not just flatten operands.
+  MlirValue secondGroupVals[2] = {m0, m1};
+  MlirValueRange newGroups[2] = {{&m_new, 1}, {secondGroupVals, 2}};
+  llzkArray_CreateArrayOpSetMapOperands(op, 2, newGroups);
+
+  // Physical operand count must reflect the replacement: one element plus three
+  // flattened map operands across two groups.
+  EXPECT_EQ(mlirOperationGetNumOperands(op), 4);
+
+  // mapOperands should flatten to [m_new, m0, m1].
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsCount(op), 3);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 0).ptr, m_new.ptr);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 1).ptr, m0.ptr);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetMapOperandsAt(op, 2).ptr, m1.ptr);
+
+  // operandSegmentSizes[0] must be intact so the elements operand is still reachable.
+  // This verifies that join().assign() updated only slot 1, not slot 0.
+  EXPECT_EQ(llzkArray_CreateArrayOpGetElementsCount(op), 1);
+  EXPECT_EQ(llzkArray_CreateArrayOpGetElementsAt(op, 0).ptr, e0.ptr);
+
+  // mapOpGroupSizes must have been updated to [1, 2], preserving both groups.
+  MlirAttribute mapGroupSizesAttr = llzkArray_CreateArrayOpGetMapOpGroupSizes(op);
+  ASSERT_FALSE(mlirAttributeIsNull(mapGroupSizesAttr));
+  EXPECT_EQ(mlirDenseArrayGetNumElements(mapGroupSizesAttr), 2);
+  EXPECT_EQ(mlirDenseI32ArrayGetElement(mapGroupSizesAttr, 0), 1);
+  EXPECT_EQ(mlirDenseI32ArrayGetElement(mapGroupSizesAttr, 1), 2);
+
+  // numDimsPerMap is NOT updated by the generated setter (it is LLZK-specific and the
+  // caller's responsibility), so it must remain unchanged at [1].
+  MlirAttribute numDimsAttr = llzkArray_CreateArrayOpGetNumDimsPerMap(op);
+  ASSERT_FALSE(mlirAttributeIsNull(numDimsAttr));
+  EXPECT_EQ(mlirDenseArrayGetNumElements(numDimsAttr), 1);
+  EXPECT_EQ(mlirDenseI32ArrayGetElement(numDimsAttr, 0), 1);
+
+  mlirOperationDestroy(op);
+  for (auto auxOp : auxOps) {
+    mlirOperationDestroy(auxOp);
+  }
+}
