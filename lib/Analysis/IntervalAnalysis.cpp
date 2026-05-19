@@ -641,9 +641,13 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
     const ExpressionValue &old = it->second;
     Interval combinedWrite = old.getInterval().join(writeVal.getInterval());
+    auto combinedUnreduced = mergeUnreducedIntervals(
+        old.getOptionalUnreducedInterval(), writeVal.getOptionalUnreducedInterval()
+    );
     if (old.getExpr() != nullptr && writeVal.getExpr() != nullptr &&
         *old.getExpr() == *writeVal.getExpr()) {
-      writeResults[writtenRef] = old.withInterval(combinedWrite);
+      writeResults[writtenRef] =
+          old.withInterval(combinedWrite).withOptionalUnreducedInterval(combinedUnreduced);
     } else {
       llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
       writeResults[writtenRef] = ExpressionValue(expr, combinedWrite, std::move(combinedUnreduced));
