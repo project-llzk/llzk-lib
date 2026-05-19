@@ -46,14 +46,6 @@ static bool usesUnsignedCmp(scf::ForOp forOp) {
   return forOp->hasAttr("unsignedCmp");
 }
 
-/// Convert a signed runtime index value to `uint64_t`, rejecting negative inputs.
-static llvm::Expected<uint64_t> toCheckedUInt64(int64_t value) {
-  if (value < 0) {
-    return makeError("cannot reinterpret a negative index value as unsigned");
-  }
-  return llzk::checkedCast<uint64_t>(value);
-}
-
 /// Convert an unsigned intermediate back to `int64_t`, rejecting underflow.
 static llvm::Expected<int64_t> toCheckedInt64(uint64_t value) {
   if (value > llzk::checkedCast<uint64_t>(std::numeric_limits<int64_t>::max())) {
@@ -986,21 +978,10 @@ private:
       llvm::SmallVector<WitnessVal> iterValues = std::move(*iterValuesOrErr);
 
       if (usesUnsignedCmp(forOp)) {
-        auto lowerBoundUInt = toCheckedUInt64(*lowerBound);
-        if (!lowerBoundUInt) {
-          return lowerBoundUInt.takeError();
-        }
-        uint64_t lowerBoundUIntValue = *lowerBoundUInt;
-        auto upperBoundUInt = toCheckedUInt64(*upperBound);
-        if (!upperBoundUInt) {
-          return upperBoundUInt.takeError();
-        }
-        uint64_t upperBoundUIntValue = *upperBoundUInt;
-        auto stepUInt = toCheckedUInt64(*step);
-        if (!stepUInt) {
-          return stepUInt.takeError();
-        }
-        for (uint64_t iv = lowerBoundUIntValue, ub = upperBoundUIntValue, unsignedStep = *stepUInt;
+        auto lowerBoundUIntValue = static_cast<uint64_t>(*lowerBound);
+        auto upperBoundUIntValue = static_cast<uint64_t>(*upperBound);
+        auto stepUInt = static_cast<uint64_t>(*step);
+        for (uint64_t iv = lowerBoundUIntValue, ub = upperBoundUIntValue, unsignedStep = stepUInt;
              iv < ub; iv += unsignedStep) {
           auto signedIV = toCheckedInt64(iv);
           if (!signedIV) {

@@ -246,7 +246,7 @@ TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
   EXPECT_EQ(*quotient, std::numeric_limits<int64_t>::max());
 }
 
-TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedForBounds) {
+TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedForBounds) {
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
       function.def @count_unsigned(%lb: index, %ub: index, %step: index) -> index {
@@ -279,14 +279,11 @@ TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedForBounds) {
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(1), int64_t(2)};
   auto results = interpreter.run(func, args);
-  llvm::Error error = results.takeError();
-  ASSERT_TRUE(static_cast<bool>(error))
-      << "expected interpreter to reject negative unsigned loop bound";
-  EXPECT_NE(
-      llvm::toString(std::move(error))
-          .find("cannot reinterpret a negative index value as unsigned"),
-      std::string::npos
-  );
+  ASSERT_TRUE(static_cast<bool>(results)) << llvm::toString(results.takeError());
+  ASSERT_EQ(results->size(), 1u);
+  auto count = witgen::asIndex((*results)[0]);
+  ASSERT_TRUE(static_cast<bool>(count)) << llvm::toString(count.takeError());
+  EXPECT_EQ(*count, 0);
 }
 
 TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
