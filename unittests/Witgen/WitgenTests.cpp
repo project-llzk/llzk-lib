@@ -100,10 +100,14 @@ TEST_F(WitgenTests, RandomDefaultValueIsSeeded) {
   auto rhsArray = std::get<witgen::ArrayValueRef>(*rhs);
   ASSERT_EQ(lhsArray->elements.size(), rhsArray->elements.size());
   ASSERT_EQ(lhsArray->elements.size(), 2u);
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(lhsArray->elements[0]),
-            std::get<llvm::DynamicAPInt>(rhsArray->elements[0]));
-  EXPECT_EQ(std::get<llvm::DynamicAPInt>(lhsArray->elements[1]),
-            std::get<llvm::DynamicAPInt>(rhsArray->elements[1]));
+  EXPECT_EQ(
+      std::get<llvm::DynamicAPInt>(lhsArray->elements[0]),
+      std::get<llvm::DynamicAPInt>(rhsArray->elements[0])
+  );
+  EXPECT_EQ(
+      std::get<llvm::DynamicAPInt>(lhsArray->elements[1]),
+      std::get<llvm::DynamicAPInt>(rhsArray->elements[1])
+  );
 }
 
 TEST_F(WitgenTests, SharedWitgenRngUsesDeterministicSeed) {
@@ -346,6 +350,5 @@ TEST_F(WitgenTests, InterpreterFailsDuringFinalWitnessSerialization) {
   interpreter.setOutputScope(witgen::OutputScope::Public);
   auto result = interpreter.runMainFromJSON(llvm::json::Object {});
   ASSERT_FALSE(static_cast<bool>(result));
-  EXPECT_NE(llvm::toString(result.takeError()).find("uninitialized felt value"),
-            std::string::npos);
+  EXPECT_NE(llvm::toString(result.takeError()).find("uninitialized felt value"), std::string::npos);
 }

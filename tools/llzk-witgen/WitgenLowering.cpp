@@ -25,9 +25,9 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
-#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Conversion/AffineToStandard/AffineToStandard.h>
@@ -423,17 +423,18 @@ static FailureOr<Value> createRandomMemRef(
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
-      auto value = std::uniform_int_distribution<int64_t>(
-          std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max()
-      )(rng);
-      builder.create<memref::StoreOp>(loc, builder.create<arith::ConstantIndexOp>(loc, value),
-                                      alloc, indices);
+      auto value = std::uniform_int_distribution<
+          int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(rng);
+      builder.create<memref::StoreOp>(
+          loc, builder.create<arith::ConstantIndexOp>(loc, value), alloc, indices
+      );
       continue;
     }
     auto intType = mlir::cast<IntegerType>(elementType);
     if (intType.getWidth() == 1) {
       builder.create<memref::StoreOp>(
-          loc, builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, APInt(1, rng() & 1ULL))),
+          loc,
+          builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, APInt(1, rng() & 1ULL))),
           alloc, indices
       );
       continue;
@@ -441,9 +442,10 @@ static FailureOr<Value> createRandomMemRef(
     uint64_t prime = toAPSInt(field.prime()).getZExtValue();
     uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(rng);
     builder.create<memref::StoreOp>(
-        loc, builder.create<arith::ConstantOp>(
-                loc, IntegerAttr::get(intType, APInt(intType.getWidth(), candidate))
-            ),
+        loc,
+        builder.create<arith::ConstantOp>(
+            loc, IntegerAttr::get(intType, APInt(intType.getWidth(), candidate))
+        ),
         alloc, indices
     );
   }
@@ -492,17 +494,19 @@ static FailureOr<LoweredValue> createDefaultValue(
       }
       if (isa<IndexType>(leafType)) {
         lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(
-            loc, std::uniform_int_distribution<int64_t>(
-                     std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max()
-                 )(*rng)
+            loc,
+            std::uniform_int_distribution<
+                int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(
+                *rng
+            )
         ));
         continue;
       }
       auto intType = mlir::cast<IntegerType>(leafType);
       if (intType.getWidth() == 1) {
-        lowered.leaves.push_back(
-            builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, APInt(1, (*rng)() & 1ULL)))
-        );
+        lowered.leaves.push_back(builder.create<arith::ConstantOp>(
+            loc, IntegerAttr::get(intType, APInt(1, (*rng)() & 1ULL))
+        ));
         continue;
       }
       uint64_t prime = toAPSInt(field.prime()).getZExtValue();

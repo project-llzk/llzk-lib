@@ -39,9 +39,8 @@ static llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &rng, const Field &
 
 /// Draw a uniformly distributed signed index value.
 static int64_t randomIndexValue(std::mt19937_64 &rng) {
-  return std::uniform_int_distribution<int64_t>(
-      std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max()
-  )(rng);
+  return std::uniform_int_distribution<
+      int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(rng);
 }
 
 /// Draw a uniformly distributed boolean value.
@@ -118,36 +117,35 @@ llvm::Expected<StructValueRef> asStruct(const WitnessVal &value) {
 }
 
 /// Build a default value for a supported LLZK type.
-llvm::Expected<WitnessVal>
-defaultValue(
+llvm::Expected<WitnessVal> defaultValue(
     Type type, SymbolTableCollection &tables, Operation *origin, const Field &field,
     UninitializedBehavior behavior, std::mt19937_64 *rng
 ) {
   return llvm::TypeSwitch<Type, llvm::Expected<WitnessVal>>(type)
       .Case([&](felt::FeltType) -> llvm::Expected<WitnessVal> {
-        if (behavior == UninitializedBehavior::Fail) {
-          return WitnessVal(std::monostate {});
-        }
-        if (behavior == UninitializedBehavior::Random) {
-          if (!rng) {
-            return makeError("missing RNG for random witgen initialization");
-          }
-          return WitnessVal(randomFieldElement(*rng, field));
-        }
-        return field.zero();
-      })
+    if (behavior == UninitializedBehavior::Fail) {
+      return WitnessVal(std::monostate {});
+    }
+    if (behavior == UninitializedBehavior::Random) {
+      if (!rng) {
+        return makeError("missing RNG for random witgen initialization");
+      }
+      return WitnessVal(randomFieldElement(*rng, field));
+    }
+    return field.zero();
+  })
       .Case([&](IndexType) -> llvm::Expected<WitnessVal> {
-        if (behavior == UninitializedBehavior::Fail) {
-          return WitnessVal(std::monostate {});
-        }
-        if (behavior == UninitializedBehavior::Random) {
-          if (!rng) {
-            return makeError("missing RNG for random witgen initialization");
-          }
-          return int64_t(randomIndexValue(*rng));
-        }
-        return int64_t(0);
-      })
+    if (behavior == UninitializedBehavior::Fail) {
+      return WitnessVal(std::monostate {});
+    }
+    if (behavior == UninitializedBehavior::Random) {
+      if (!rng) {
+        return makeError("missing RNG for random witgen initialization");
+      }
+      return int64_t(randomIndexValue(*rng));
+    }
+    return int64_t(0);
+  })
       .Case([&](IntegerType intType) -> llvm::Expected<WitnessVal> {
     if (intType.getWidth() == 1) {
       if (behavior == UninitializedBehavior::Fail) {
@@ -168,8 +166,7 @@ defaultValue(
     arrayValue->type = arrayType;
     arrayValue->elements.reserve(arrayType.getNumElements());
     for (int64_t i = 0; i < arrayType.getNumElements(); ++i) {
-      auto elem =
-          defaultValue(arrayType.getElementType(), tables, origin, field, behavior, rng);
+      auto elem = defaultValue(arrayType.getElementType(), tables, origin, field, behavior, rng);
       if (!elem) {
         return elem.takeError();
       }
@@ -181,8 +178,7 @@ defaultValue(
     auto podValue = std::make_shared<PodValue>();
     podValue->type = podType;
     for (pod::RecordAttr record : podType.getRecords()) {
-      auto recordValue =
-          defaultValue(record.getType(), tables, origin, field, behavior, rng);
+      auto recordValue = defaultValue(record.getType(), tables, origin, field, behavior, rng);
       if (!recordValue) {
         return recordValue.takeError();
       }
@@ -198,8 +194,7 @@ defaultValue(
     auto structValue = std::make_shared<StructValue>();
     structValue->type = structType;
     for (component::MemberDefOp member : defLookup->get().getMemberDefs()) {
-      auto memberValue =
-          defaultValue(member.getType(), tables, origin, field, behavior, rng);
+      auto memberValue = defaultValue(member.getType(), tables, origin, field, behavior, rng);
       if (!memberValue) {
         return memberValue.takeError();
       }

@@ -93,8 +93,8 @@ FunctionInterpreter::FunctionInterpreter(
     ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField,
     UninitializedBehavior behavior, std::mt19937_64 rng
 )
-    : moduleOp(module), tables(symbolTables), field(moduleField),
-      uninitializedBehavior(behavior), rng(std::move(rng)) {}
+    : moduleOp(module), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
+      rng(std::move(rng)) {}
 
 namespace {
 
@@ -1078,7 +1078,7 @@ private:
 
 /// Execute a function body with concrete runtime values.
 llvm::Expected<llvm::SmallVector<WitnessVal>>
-  FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<WitnessVal> args) {
+FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<WitnessVal> args) {
   return InvocationInterpreter(moduleOp, tables, field, uninitializedBehavior, rng)
       .run(funcOp, args);
 }

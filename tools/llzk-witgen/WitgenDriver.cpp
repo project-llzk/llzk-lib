@@ -219,8 +219,7 @@ runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions
     return runWithExecutionEngine(moduleOp, tables, *fields.begin(), input, options);
   }
   Interpreter interpreter(
-      moduleOp, tables, *fields.begin(), options.uninitializedBehavior,
-      makeDefaultValueRng(options)
+      moduleOp, tables, *fields.begin(), options.uninitializedBehavior, makeDefaultValueRng(options)
   );
   interpreter.setOutputScope(options.outputScope);
   return interpreter.runMainFromJSON(input);

@@ -32,13 +32,13 @@
 #include <mlir/Conversion/Passes.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
 #include <mlir/Dialect/MemRef/Transforms/Passes.h>
+#include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/ExecutionEngine/CRunnerUtils.h>
 #include <mlir/ExecutionEngine/ExecutionEngine.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Target/LLVMIR/Dialect/All.h>
 #include <mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h>
 #include <mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h>
-#include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/APInt.h>
@@ -282,8 +282,9 @@ static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) 
 }
 
 /// Lower the module through the shared LLZK-to-core witgen passes.
-static llvm::Expected<OwningOpRef<ModuleOp>>
-buildExecutionEngineModule(ModuleOp moduleOp, OutputScope outputScope, const WitgenOptions &options) {
+static llvm::Expected<OwningOpRef<ModuleOp>> buildExecutionEngineModule(
+    ModuleOp moduleOp, OutputScope outputScope, const WitgenOptions &options
+) {
   OwningOpRef<ModuleOp> cloned = cast<ModuleOp>(moduleOp->clone());
   PassManager pm(cloned->getContext());
   pm.addPass(createLowerComputeToCorePass(options));

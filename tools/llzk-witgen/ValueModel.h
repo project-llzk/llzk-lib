@@ -97,8 +97,7 @@ llvm::Expected<StructValueRef> asStruct(const WitnessVal &value);
 /// Build a default value used for `llzk.nondet` and aggregate constructors.
 llvm::Expected<WitnessVal> defaultValue(
     mlir::Type type, mlir::SymbolTableCollection &tables, mlir::Operation *origin,
-    const llzk::Field &field, UninitializedBehavior behavior,
-    std::mt19937_64 *rng = nullptr
+    const llzk::Field &field, UninitializedBehavior behavior, std::mt19937_64 *rng = nullptr
 );
 
 } // namespace llzk::witgen

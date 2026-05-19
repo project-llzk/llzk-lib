@@ -64,13 +64,11 @@ static llvm::cl::opt<std::string> OutputScopeName(
     "output-scope", llvm::cl::desc("Output scope: public or full-witness"), llvm::cl::init("public")
 );
 static llvm::cl::opt<std::string> UninitializedBehaviorName(
-    "uninitialized-behavior",
-    llvm::cl::desc("Uninitialized value behavior: zero, random, or fail"),
+    "uninitialized-behavior", llvm::cl::desc("Uninitialized value behavior: zero, random, or fail"),
     llvm::cl::init("zero")
 );
-static llvm::cl::opt<uint64_t> UninitializedSeed(
-    "uninitialized-seed", llvm::cl::desc("Seed for random uninitialized values")
-);
+static llvm::cl::opt<uint64_t>
+    UninitializedSeed("uninitialized-seed", llvm::cl::desc("Seed for random uninitialized values"));
 static llvm::cl::opt<bool>
     DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));
 static llvm::cl::opt<bool>
@@ -93,20 +91,14 @@ int main(int argc, char **argv) {
   DialectRegistry registry;
   llzk::registerAllDialects(registry);
   registry.insert<
-      mlir::arith::ArithDialect,
-      mlir::cf::ControlFlowDialect,
-      mlir::func::FuncDialect,
-      mlir::memref::MemRefDialect,
-      mlir::scf::SCFDialect>();
+      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
+      mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
   MLIRContext context;
   context.appendDialectRegistry(registry);
   context.loadAllAvailableDialects();
   context.loadDialect<
-      mlir::arith::ArithDialect,
-      mlir::cf::ControlFlowDialect,
-      mlir::func::FuncDialect,
-      mlir::memref::MemRefDialect,
-      mlir::scf::SCFDialect>();
+      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
+      mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
   if (failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
   }
