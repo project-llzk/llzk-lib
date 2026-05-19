@@ -65,6 +65,8 @@ llzk-witgen <input.llzk> --inputs <input.json>
 --output-scope=<name>        Output scope: public or full-witness
 --dump-jit-core              Print the pre-LLVM JIT module
 --dump-jit-llvm              Print the post-LLVM JIT module
+--uninitialized-behavior     Control default handling of uninitialized witness values
+--uninitialized-seed         Seed used for randomized uninitialized witness values
 ```
 
 #### Input Format
