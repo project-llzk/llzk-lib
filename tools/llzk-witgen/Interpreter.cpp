@@ -435,6 +435,8 @@ private:
       }
       return bind({WitnessVal(field.inv(*feltValue))});
     }
+    // Reduces signed integers to unsigned field elements using Field::reduce.
+    // Negative results are reduced by subtracting from the prime (e.g., -1 -> p - 1).
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
       auto operand = lookup(intToFeltOp.getValue(), scope);
       if (!operand) {
@@ -449,6 +451,8 @@ private:
       }
       return bind({WitnessVal(field.reduce(*integer))});
     }
+    // Field elements are unsigned. If the field element would overflow the 64-bit
+    // index, an error is reported.
     if (auto feltToIndexOp = dyn_cast<cast::FeltToIndexOp>(op)) {
       auto operand = lookup(feltToIndexOp.getValue(), scope);
       if (!operand) {
