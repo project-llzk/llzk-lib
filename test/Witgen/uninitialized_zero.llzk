@@ -1,6 +1,7 @@
 // RUN: split-file %s %t
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// COM: uninitialized values default to 0 unless the `--uninitialized-behavior` specifies otherwise
 
 //--- test.llzk
 
