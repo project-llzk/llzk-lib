@@ -1519,7 +1519,7 @@ class LowerComputeToCorePass : public PassWrapper<LowerComputeToCorePass, Operat
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerComputeToCorePass)
 
-  explicit LowerComputeToCorePass(const WitgenOptions &options) : options(options) {}
+  explicit LowerComputeToCorePass(const WitgenOptions &opts) : options(opts) {}
 
   /// Run the pass over one module.
   StringRef getArgument() const final { return "llzk-lower-compute-to-core"; }

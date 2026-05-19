@@ -83,10 +83,10 @@ llvm::Expected<size_t> checkedLinearize(
 /// Build an interpreter for a specific module and field.
 FunctionInterpreter::FunctionInterpreter(
     ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField,
-    UninitializedBehavior behavior, std::mt19937_64 rng
+    UninitializedBehavior behavior, std::mt19937_64 r
 )
     : moduleOp(module), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
-      rng(std::move(rng)) {}
+      rng(std::move(r)) {}
 
 namespace {
 
@@ -96,10 +96,10 @@ public:
   /// Create an invocation interpreter that shares module-level state.
   InvocationInterpreter(
       ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField,
-      UninitializedBehavior behavior, std::mt19937_64 &rng
+      UninitializedBehavior behavior, std::mt19937_64 &r
   )
       : moduleOp(module), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
-        rng(rng) {}
+        rng(r) {}
 
   /// Execute a function body with the provided arguments.
   llvm::Expected<llvm::SmallVector<WitnessVal>>
