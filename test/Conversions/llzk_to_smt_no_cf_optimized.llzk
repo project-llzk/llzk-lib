@@ -1,0 +1,122 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' -split-input-file %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @ConstrainEqCongruence {
+    function.def @product(%a: !felt.type) -> !struct.type<@ConstrainEqCongruence> {
+      %self = struct.new : <@ConstrainEqCongruence>
+      %sum = felt.add %a, %a : !felt.type, !felt.type
+      constrain.eq %sum, %a : !felt.type
+      function.return %self : !struct.type<@ConstrainEqCongruence>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_ConstrainEqCongruence(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[ARG]], %[[ARG]]
+// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "constrain_eq_q" : !smt.int
+// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[SUM]], %[[ARG]]
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIFF]], %[[PROD]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+// CHECK-NOT: smt.int.mod
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @OrderedReduction {
+    function.def @product(%a: !felt.type) -> !struct.type<@OrderedReduction> {
+      %self = struct.new : <@OrderedReduction>
+      %zero = felt.const 0
+      %neg = felt.neg %a : !felt.type
+      %lt = bool.cmp lt (%neg, %zero)
+      scf.if %lt {
+      } else {
+      }
+      function.return %self : !struct.type<@OrderedReduction>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_OrderedReduction(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK: %[[NEG:[0-9a-zA-Z_\.]+]] = smt.int.neg %[[ARG]]
+// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "bool_cmp_ordered_lhs_q" : !smt.int
+// CHECK: %[[N:[0-9a-zA-Z_\.]+]] = smt.declare_fun "bool_cmp_ordered_lhs_n" : !smt.int
+// CHECK: %[[REC_PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[REC:[0-9a-zA-Z_\.]+]] = smt.int.add %[[REC_PROD]], %[[N]]
+// CHECK: %[[REC_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[NEG]], %[[REC]] : !smt.int
+// CHECK: smt.assert %[[REC_EQ]]
+// CHECK: %[[CMP:[0-9a-zA-Z_\.]+]] = smt.int.cmp lt %[[N]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK-NOT: smt.int.mod
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MemberWriteCongruence {
+    struct.member @foo : !felt.type
+
+    function.def @product(%a: !felt.type) -> !struct.type<@MemberWriteCongruence> {
+      %self = struct.new : <@MemberWriteCongruence>
+      %sum = felt.add %a, %a : !felt.type, !felt.type
+      struct.writem %self[@foo] = %sum : <@MemberWriteCongruence>, !felt.type
+      function.return %self : !struct.type<@MemberWriteCongruence>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_MemberWriteCongruence(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[ARG]], %[[ARG]]
+// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "member_write_q" : !smt.int
+// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[FOOW:[0-9a-zA-Z_\.]+]], %[[SUM]]
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIFF]], %[[PROD]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+// CHECK-NOT: smt.int.mod
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @DivNonZero {
+    function.def @product(%a: !felt.type) -> !struct.type<@DivNonZero> {
+      %self = struct.new : <@DivNonZero>
+      %one = felt.const 1
+      %div = felt.div %a, %one : !felt.type, !felt.type
+      function.return %self : !struct.type<@DivNonZero>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_DivNonZero(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %{{[0-9a-zA-Z_\.]+}}, %[[DIV]]
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[PROD]], %[[ARG]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+// CHECK-NOT: smt.ite
+// CHECK-NOT: smt.int.mod
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @DivMaybeZero {
+    function.def @product(%a: !felt.type) -> !struct.type<@DivMaybeZero> {
+      %self = struct.new : <@DivMaybeZero>
+      %one = felt.const 1
+      %div = felt.div %one, %a : !felt.type, !felt.type
+      function.return %self : !struct.type<@DivMaybeZero>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_DivMaybeZero(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
+// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "felt_div_q" : !smt.int
+// CHECK: %[[CONGR:[0-9a-zA-Z_\.]+]] = smt.eq %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARG]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[DIV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIV]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[ITE:[0-9a-zA-Z_\.]+]] = smt.ite %[[COND]], %[[DIV_ZERO]], %[[CONGR]] : !smt.bool
+// CHECK: smt.assert %[[ITE]]
+// CHECK-NOT: smt.int.mod

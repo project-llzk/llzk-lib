@@ -21,16 +21,22 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int, %[[B:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK: %[[A_LO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[A_HI:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
+// CHECK: %[[A_GE:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[A]], %[[A_LO]]
+// CHECK: %[[A_LE:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[A]], %[[A_HI]]
+// CHECK: smt.assert %[[A_GE]]
+// CHECK: smt.assert %[[A_LE]]
 // CHECK-DAG: %[[FOOC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "foo_c" : !smt.int
 // CHECK-DAG: %[[FOOW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "foo_w" : !smt.int
-// CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
-// CHECK: %[[CMP:[0-9a-zA-Z_\.]+]] = smt.int.cmp lt %[[A]], %[[ZERO]]
+// CHECK: %[[CMP:[0-9a-zA-Z_\.]+]] = smt.int.cmp lt %[[A]], %{{[0-9a-zA-Z_\.]+}}
 // CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[CMP]] : !smt.bool to i1
 // CHECK: scf.if %[[COND]] {
-// CHECK:   %[[MOD0:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
-// CHECK:   smt.assert
+// CHECK:   %[[EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[FOOW]], %[[A]] : !smt.int
+// CHECK:   smt.assert %[[EQ0]]
 // CHECK: } else {
-// CHECK:   %[[MOD1:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
-// CHECK:   smt.assert
+// CHECK:   %[[EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[FOOW]], %[[B]] : !smt.int
+// CHECK:   smt.assert %[[EQ1]]
 // CHECK: }
+// CHECK-NOT: smt.int.mod
 // CHECK: return

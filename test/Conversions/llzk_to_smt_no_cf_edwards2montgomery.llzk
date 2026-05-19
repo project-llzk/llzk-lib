@@ -1,0 +1,58 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=Edwards2Montgomery' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Edwards2Montgomery>} {
+  struct.def @Edwards2Montgomery {
+    struct.member @out0 : !felt.type {llzk.pub, signal}
+    struct.member @out1 : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%in0: !felt.type, %in1: !felt.type) -> !struct.type<@Edwards2Montgomery> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@Edwards2Montgomery>
+      %c1 = felt.const 1
+      %num0 = felt.add %c1, %in1 : !felt.type, !felt.type
+      %den0 = felt.sub %c1, %in1 : !felt.type, !felt.type
+      %inv_den0 = felt.inv %den0 : !felt.type
+      %out0 = felt.mul %num0, %inv_den0 : !felt.type, !felt.type
+      struct.writem %self[@out0] = %out0 : <@Edwards2Montgomery>, !felt.type
+      %inv_in0 = felt.inv %in0 : !felt.type
+      %out1 = felt.mul %out0, %inv_in0 : !felt.type, !felt.type
+      struct.writem %self[@out1] = %out1 : <@Edwards2Montgomery>, !felt.type
+      function.return %self : !struct.type<@Edwards2Montgomery>
+    }
+
+    function.def @constrain(%self: !struct.type<@Edwards2Montgomery>, %in0: !felt.type, %in1: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %c1 = felt.const 1
+      %out0 = struct.readm %self[@out0] : <@Edwards2Montgomery>, !felt.type
+      %out1 = struct.readm %self[@out1] : <@Edwards2Montgomery>, !felt.type
+      %num0 = felt.add %c1, %in1 : !felt.type, !felt.type
+      %den0 = felt.sub %c1, %in1 : !felt.type, !felt.type
+      %lhs0 = felt.mul %out0, %den0 : !felt.type, !felt.type
+      constrain.eq %lhs0, %num0 : !felt.type, !felt.type
+      %lhs1 = felt.mul %out1, %in0 : !felt.type, !felt.type
+      constrain.eq %lhs1, %out0 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_Edwards2Montgomery(
+// CHECK-SAME: %[[IN0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[IN1:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK-DAG: %[[OUT0C:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out0_c" : !smt.int
+// CHECK-DAG: %[[OUT0W:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out0_w" : !smt.int
+// CHECK-DAG: %[[OUT1C:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out1_c" : !smt.int
+// CHECK-DAG: %[[OUT1W:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out1_w" : !smt.int
+// CHECK: %[[INV0:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv" : !smt.int
+// CHECK: %[[PROD0:[0-9a-zA-Z_\.]+]] = smt.int.mul %{{[0-9a-zA-Z_\.]+}}, %[[INV0]]
+// CHECK: %[[DIFF0:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[PROD0]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[MOD0:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[DIFF0]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[WRITE0DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[OUT0W]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[WRITE0MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[WRITE0DIFF]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[INV1:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv" : !smt.int
+// CHECK: %[[WRITE1DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[OUT1W]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[WRITE1MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[WRITE1DIFF]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %{{[0-9a-zA-Z_\.]+}} = smt.int.sub %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %{{[0-9a-zA-Z_\.]+}} = smt.int.mod %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %{{[0-9a-zA-Z_\.]+}} = smt.int.sub %{{[0-9a-zA-Z_\.]+}}, %[[OUT0C]]
+// CHECK: %{{[0-9a-zA-Z_\.]+}} = smt.int.mod %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK-NOT: smt.declare_fun "felt_inv_q"
+// CHECK-NOT: smt.declare_fun "member_write_q"
+// CHECK-NOT: smt.declare_fun "constrain_eq_q"

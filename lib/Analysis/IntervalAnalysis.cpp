@@ -273,6 +273,14 @@ mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expressi
 }
 
 ExpressionValue
+sintMod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  return ExpressionValue(
+      solver->mkBVSRem(lhs.getExpr(), rhs.getExpr()),
+      signedMod(lhs.getInterval(), rhs.getInterval())
+  );
+}
+
+ExpressionValue
 bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i & rhs.i;
@@ -1076,6 +1084,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<UnsignedIntDivFeltOp>([&](auto) {return uintDiv(smtSolver, op, lhs, rhs); })
                  .Case<SignedIntDivFeltOp>([&](auto) {return sintDiv(smtSolver, op, lhs, rhs); })
                  .Case<UnsignedModFeltOp>([&](auto) { return mod(smtSolver, lhs, rhs); })
+                 .Case<SignedModFeltOp>([&](auto) { return sintMod(smtSolver, lhs, rhs); })
                  .Case<AndFeltOp>([&](auto) { return bitAnd(smtSolver, lhs, rhs); })
                  .Case<OrFeltOp>([&](auto) { return bitOr(smtSolver, lhs, rhs); })
                  .Case<XorFeltOp, arith::XOrIOp>([&](auto) { return bitXor(smtSolver, lhs, rhs); })
@@ -1550,6 +1559,10 @@ LogicalResult StructIntervals::computeIntervals(
           llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
           llvm::SetVector<ExpressionValue> & /*solverConstraints*/
       ) {
+    if (!fn) {
+      return;
+    }
+
     auto setUnreducedRange =
         [&memberUnreducedRanges](const SourceRef &ref, const UnreducedInterval &interval) {
       memberUnreducedRanges.erase(ref);
