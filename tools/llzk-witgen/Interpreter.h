@@ -17,6 +17,8 @@
 
 #include <llvm/ADT/SmallVector.h>
 
+#include <random>
+
 namespace llzk::witgen {
 
 /// Execute one flattened LLZK function body over runtime values.
@@ -24,7 +26,8 @@ class FunctionInterpreter {
 public:
   /// Build an interpreter for one module and field configuration.
   FunctionInterpreter(
-      mlir::ModuleOp moduleOp, mlir::SymbolTableCollection &tables, const llzk::Field &field
+      mlir::ModuleOp moduleOp, mlir::SymbolTableCollection &tables, const llzk::Field &field,
+      UninitializedBehavior uninitializedBehavior, std::mt19937_64 rng
   );
 
   /// Run a function with concrete arguments and return its result values.
@@ -35,6 +38,8 @@ private:
   mlir::ModuleOp moduleOp;
   mlir::SymbolTableCollection &tables;
   const llzk::Field &field;
+  UninitializedBehavior uninitializedBehavior = UninitializedBehavior::Zero;
+  std::mt19937_64 rng;
 };
 
 } // namespace llzk::witgen

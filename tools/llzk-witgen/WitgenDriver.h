@@ -9,12 +9,18 @@
 
 #pragma once
 
+#include "ValueModel.h"
+
 #include "llzk/Util/Field.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/Support/Error.h>
 #include <llvm/Support/JSON.h>
+
+#include <cstdint>
+#include <optional>
+#include <random>
 
 namespace llzk::witgen {
 
@@ -34,6 +40,8 @@ enum class OutputScope {
 struct WitgenOptions {
   Backend backend = Backend::Interpreter;
   OutputScope outputScope = OutputScope::Public;
+  UninitializedBehavior uninitializedBehavior = UninitializedBehavior::Zero;
+  std::optional<uint64_t> randomSeed;
   bool inlineIncludes = true;
   bool dumpJITCore = false;
   bool dumpJITLLVM = false;
@@ -44,7 +52,8 @@ class Interpreter {
 public:
   /// Build a driver for one parsed module and validated field.
   Interpreter(
-      mlir::ModuleOp moduleOp, mlir::SymbolTableCollection &tables, const llzk::Field &field
+      mlir::ModuleOp moduleOp, mlir::SymbolTableCollection &tables, const llzk::Field &field,
+      UninitializedBehavior uninitializedBehavior, std::mt19937_64 rng
   );
 
   /// Select which witness JSON scope this interpreter emits.
@@ -58,6 +67,8 @@ private:
   mlir::SymbolTableCollection &tables;
   const llzk::Field &field;
   OutputScope outputScope = OutputScope::Public;
+  UninitializedBehavior uninitializedBehavior = UninitializedBehavior::Zero;
+  std::mt19937_64 rng;
 };
 
 /// Run the full llzk-witgen pipeline on a parsed module.

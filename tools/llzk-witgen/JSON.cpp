@@ -10,10 +10,12 @@
 #include "JSON.h"
 
 #include "Errors.h"
+#include "WitgenUtils.h"
 #include "WitnessSelection.h"
 
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Util/Compare.h"
 
 #include <mlir/IR/Operation.h>
 
@@ -64,7 +66,11 @@ static llvm::Expected<WitnessVal> parseJSONArray(
   if (dimIndex >= shape.size()) {
     return makeError("invalid array shape");
   }
-  if (jsonArray->size() != static_cast<size_t>(shape[dimIndex])) {
+  auto expectedSize = checkedShapeDimToSize(shape[dimIndex], "JSON array input");
+  if (!expectedSize) {
+    return expectedSize.takeError();
+  }
+  if (jsonArray->size() != *expectedSize) {
     return makeError("JSON array length does not match LLZK array dimension");
   }
 
@@ -116,11 +122,18 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
 ) {
   llvm::json::Array jsonArray;
   llvm::ArrayRef<int64_t> shape = type.getShape();
+  auto dimSize = checkedShapeDimToSize(shape[dimIndex], "JSON array output");
+  if (!dimSize) {
+    return dimSize.takeError();
+  }
   if (dimIndex == shape.size() - 1) {
-    for (int64_t i = 0; i < shape[dimIndex]; ++i) {
+    for (size_t i = 0; i < *dimSize; ++i) {
+      auto elementOffset = checkedAddSize(flatOffset, i, "JSON array output flat index");
+      if (!elementOffset) {
+        return elementOffset.takeError();
+      }
       auto elem = serializeJSONValue(
-          arrayValue->elements[flatOffset + static_cast<size_t>(i)], type.getElementType(), tables,
-          origin, mode
+          arrayValue->elements[*elementOffset], type.getElementType(), tables, origin, mode
       );
       if (!elem) {
         return elem.takeError();
@@ -132,15 +145,30 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
 
   size_t subArraySize = 1;
   for (size_t i = dimIndex + 1; i < shape.size(); ++i) {
-    subArraySize *= static_cast<size_t>(shape[i]);
+    auto nextDimSize = checkedShapeDimToSize(shape[i], "JSON array output");
+    if (!nextDimSize) {
+      return nextDimSize.takeError();
+    }
+    auto nextSubArraySize = checkedMulSize(subArraySize, *nextDimSize, "JSON array output shape");
+    if (!nextSubArraySize) {
+      return nextSubArraySize.takeError();
+    }
+    subArraySize = *nextSubArraySize;
   }
 
   auto subArrayType =
       array::ArrayType::get(type.getElementType(), type.getDimensionSizes().drop_front());
-  for (int64_t i = 0; i < shape[dimIndex]; ++i) {
+  for (size_t i = 0; i < *dimSize; ++i) {
+    auto subArrayOffset = checkedMulSize(i, subArraySize, "JSON array output flat index");
+    if (!subArrayOffset) {
+      return subArrayOffset.takeError();
+    }
+    auto nextOffset = checkedAddSize(flatOffset, *subArrayOffset, "JSON array output flat index");
+    if (!nextOffset) {
+      return nextOffset.takeError();
+    }
     auto subArray = serializeJSONArray(
-        arrayValue, subArrayType, tables, origin, mode, dimIndex + 1,
-        flatOffset + static_cast<size_t>(i) * subArraySize
+        arrayValue, subArrayType, tables, origin, mode, dimIndex + 1, *nextOffset
     );
     if (!subArray) {
       return subArray.takeError();

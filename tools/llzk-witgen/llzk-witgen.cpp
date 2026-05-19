@@ -29,7 +29,9 @@
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/MemRef/IR/MemRef.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinDialect.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -61,6 +63,14 @@ static llvm::cl::opt<std::string> BackendName(
 static llvm::cl::opt<std::string> OutputScopeName(
     "output-scope", llvm::cl::desc("Output scope: public or full-witness"), llvm::cl::init("public")
 );
+static llvm::cl::opt<std::string> UninitializedBehaviorName(
+    "uninitialized-behavior",
+    llvm::cl::desc("Uninitialized value behavior: zero, random, or fail"),
+    llvm::cl::init("zero")
+);
+static llvm::cl::opt<uint64_t> UninitializedSeed(
+    "uninitialized-seed", llvm::cl::desc("Seed for random uninitialized values")
+);
 static llvm::cl::opt<bool>
     DumpJITCore("dump-jit-core", llvm::cl::desc("Print the pre-LLVM JIT module"));
 static llvm::cl::opt<bool>
@@ -82,28 +92,21 @@ int main(int argc, char **argv) {
 
   DialectRegistry registry;
   llzk::registerAllDialects(registry);
+  registry.insert<
+      mlir::arith::ArithDialect,
+      mlir::cf::ControlFlowDialect,
+      mlir::func::FuncDialect,
+      mlir::memref::MemRefDialect,
+      mlir::scf::SCFDialect>();
   MLIRContext context;
   context.appendDialectRegistry(registry);
   context.loadAllAvailableDialects();
-  context.getOrLoadDialect<mlir::BuiltinDialect>();
-  context.getOrLoadDialect<llzk::LLZKDialect>();
-  context.getOrLoadDialect<llzk::array::ArrayDialect>();
-  context.getOrLoadDialect<llzk::boolean::BoolDialect>();
-  context.getOrLoadDialect<llzk::cast::CastDialect>();
-  context.getOrLoadDialect<llzk::component::StructDialect>();
-  context.getOrLoadDialect<llzk::constrain::ConstrainDialect>();
-  context.getOrLoadDialect<llzk::felt::FeltDialect>();
-  context.getOrLoadDialect<llzk::function::FunctionDialect>();
-  context.getOrLoadDialect<llzk::global::GlobalDialect>();
-  context.getOrLoadDialect<llzk::ram::RAMDialect>();
-  context.getOrLoadDialect<llzk::include::IncludeDialect>();
-  context.getOrLoadDialect<llzk::string::StringDialect>();
-  context.getOrLoadDialect<llzk::pod::PODDialect>();
-  context.getOrLoadDialect<llzk::polymorphic::PolymorphicDialect>();
-  context.getOrLoadDialect<llzk::smt::SMTDialect>();
-  context.getOrLoadDialect<mlir::arith::ArithDialect>();
-  context.getOrLoadDialect<mlir::func::FuncDialect>();
-  context.getOrLoadDialect<mlir::scf::SCFDialect>();
+  context.loadDialect<
+      mlir::arith::ArithDialect,
+      mlir::cf::ControlFlowDialect,
+      mlir::func::FuncDialect,
+      mlir::memref::MemRefDialect,
+      mlir::scf::SCFDialect>();
   if (failed(llzk::GlobalSourceMgr::get().setup(IncludeDirs))) {
     return EXIT_FAILURE;
   }
@@ -149,6 +152,19 @@ int main(int argc, char **argv) {
   } else {
     llvm::errs() << "unknown output scope: " << OutputScopeName << '\n';
     return EXIT_FAILURE;
+  }
+  if (UninitializedBehaviorName == "zero") {
+    options.uninitializedBehavior = llzk::witgen::UninitializedBehavior::Zero;
+  } else if (UninitializedBehaviorName == "random") {
+    options.uninitializedBehavior = llzk::witgen::UninitializedBehavior::Random;
+  } else if (UninitializedBehaviorName == "fail") {
+    options.uninitializedBehavior = llzk::witgen::UninitializedBehavior::Fail;
+  } else {
+    llvm::errs() << "unknown uninitialized behavior: " << UninitializedBehaviorName << '\n';
+    return EXIT_FAILURE;
+  }
+  if (UninitializedSeed.getNumOccurrences() > 0) {
+    options.randomSeed = UninitializedSeed;
   }
   options.inlineIncludes = true;
   options.dumpJITCore = DumpJITCore;

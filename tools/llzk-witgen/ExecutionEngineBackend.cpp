@@ -13,11 +13,13 @@
 #include "JSON.h"
 #include "ValueModel.h"
 #include "WitgenLowering.h"
+#include "WitgenUtils.h"
 #include "WitnessSelection.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -36,6 +38,7 @@
 #include <mlir/Target/LLVMIR/Dialect/All.h>
 #include <mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h>
 #include <mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h>
+#include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/APInt.h>
@@ -51,9 +54,6 @@ namespace llzk::witgen {
 
 namespace {
 
-/// Distinguish parsed interpreter/runtime values from MLIR SSA values in this file.
-using RuntimeValue = llzk::witgen::WitnessVal;
-
 /// Hold one raw memref descriptor and its backing storage bytes.
 struct BufferPack {
   Type originalType;
@@ -68,15 +68,6 @@ struct BufferPack {
 /// Return the byte width needed to store one `iN` field element.
 static size_t getElementBytes(unsigned bitWidth) { return (bitWidth + 7U) / 8U; }
 
-/// Return the row-major element count for a shaped felt aggregate.
-static size_t getNumElements(ArrayRef<int64_t> shape) {
-  size_t count = 1;
-  for (int64_t dim : shape) {
-    count *= static_cast<size_t>(dim);
-  }
-  return count;
-}
-
 /// Return the static shape of a main-boundary felt or felt-array type.
 static llvm::Expected<std::vector<int64_t>> getBoundaryShape(Type type) {
   if (isa<felt::FeltType>(type)) {
@@ -88,6 +79,11 @@ static llvm::Expected<std::vector<int64_t>> getBoundaryShape(Type type) {
           "execution-engine backend only supports arrays of felt values at the main boundary"
       );
     }
+    if (!arrayType.hasStaticShape()) {
+      return makeError(
+          "execution-engine backend only supports statically shaped arrays at the main boundary"
+      );
+    }
     return std::vector<int64_t>(arrayType.getShape().begin(), arrayType.getShape().end());
   }
   return makeError(
@@ -96,19 +92,47 @@ static llvm::Expected<std::vector<int64_t>> getBoundaryShape(Type type) {
 }
 
 /// Build row-major strides for one shaped buffer.
-static std::vector<int64_t> computeStrides(ArrayRef<int64_t> shape) {
-  std::vector<int64_t> strides(shape.size(), 1);
-  for (int64_t i = static_cast<int64_t>(shape.size()) - 2; i >= 0; --i) {
-    strides[static_cast<size_t>(i)] =
-        strides[static_cast<size_t>(i + 1)] * shape[static_cast<size_t>(i + 1)];
+static llvm::Expected<std::vector<int64_t>> computeStaticStrides(ArrayRef<int64_t> shape) {
+  for (int64_t dim : shape) {
+    auto checkedDim = checkedShapeDimToSize(dim, "execution-engine buffer shape");
+    if (!checkedDim) {
+      return checkedDim.takeError();
+    }
+    (void)*checkedDim;
   }
-  return strides;
+  auto strides = mlir::computeStrides(shape);
+  return std::vector<int64_t>(strides.begin(), strides.end());
 }
 
 /// Populate the raw memref descriptor for a host buffer.
-static void buildDescriptor(BufferPack &buffer) {
+static llvm::Error buildDescriptor(BufferPack &buffer) {
   const size_t rank = buffer.shape.size();
-  buffer.descriptor.resize(sizeof(void *) * 2 + sizeof(int64_t) * (1 + rank + rank));
+  auto descriptorSize = checkedMulSize(sizeof(void *), 2, "execution-engine memref descriptor");
+  if (!descriptorSize) {
+    return descriptorSize.takeError();
+  }
+  auto shapeAndStrideCount =
+      checkedAddSize(1, rank, "execution-engine memref descriptor field count");
+  if (!shapeAndStrideCount) {
+    return shapeAndStrideCount.takeError();
+  }
+  shapeAndStrideCount =
+      checkedAddSize(*shapeAndStrideCount, rank, "execution-engine memref descriptor field count");
+  if (!shapeAndStrideCount) {
+    return shapeAndStrideCount.takeError();
+  }
+  auto dynamicPart =
+      checkedMulSize(sizeof(int64_t), *shapeAndStrideCount, "execution-engine memref descriptor");
+  if (!dynamicPart) {
+    return dynamicPart.takeError();
+  }
+  auto totalSize = checkedAddSize(
+      *descriptorSize, *dynamicPart, "execution-engine memref descriptor"
+  );
+  if (!totalSize) {
+    return totalSize.takeError();
+  }
+  buffer.descriptor.resize(*totalSize);
   uint8_t *cursor = buffer.descriptor.data();
   void *base = buffer.storage.data();
   std::memcpy(cursor, &base, sizeof(void *));
@@ -126,6 +150,7 @@ static void buildDescriptor(BufferPack &buffer) {
     std::memcpy(cursor, &stride, sizeof(int64_t));
     cursor += sizeof(int64_t);
   }
+  return llvm::Error::success();
 }
 
 /// Create one host buffer matching the C-interface ABI for a memref boundary.
@@ -139,33 +164,50 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
   buffer.feltBitWidth = field.bitWidth();
   buffer.elemBytes = getElementBytes(buffer.feltBitWidth);
   buffer.shape = std::move(*shape);
-  buffer.strides = computeStrides(buffer.shape);
-  buffer.storage.resize(getNumElements(buffer.shape) * buffer.elemBytes);
-  buildDescriptor(buffer);
+  auto strides = computeStaticStrides(buffer.shape);
+  if (!strides) {
+    return strides.takeError();
+  }
+  buffer.strides = std::move(*strides);
+  auto elementCount = getStaticShapeElementCount(buffer.shape, "execution-engine buffer storage");
+  if (!elementCount) {
+    return elementCount.takeError();
+  }
+  auto storageBytes =
+      checkedMulSize(*elementCount, buffer.elemBytes, "execution-engine buffer storage");
+  if (!storageBytes) {
+    return storageBytes.takeError();
+  }
+  buffer.storage.resize(*storageBytes);
+  if (auto error = buildDescriptor(buffer)) {
+    return std::move(error);
+  }
   return buffer;
 }
 
 /// Store one field element into the buffer at the given flat element index.
 static void storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &value) {
   llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
+  assert(std::in_range<unsigned>(buffer.elemBytes));
   llvm::StoreIntToMemory(
       raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
-      static_cast<unsigned>(buffer.elemBytes)
+      llzk::checkedCast<unsigned>(buffer.elemBytes)
   );
 }
 
 /// Load one field element from the buffer at the given flat element index.
 static llvm::DynamicAPInt loadElement(const BufferPack &buffer, size_t flatIndex) {
   llvm::APInt raw(buffer.feltBitWidth, 0);
+  assert(buffer.elemBytes <= std::numeric_limits<unsigned>::max());
   llvm::LoadIntFromMemory(
       raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
-      static_cast<unsigned>(buffer.elemBytes)
+      llzk::checkedCast<unsigned>(buffer.elemBytes)
   );
   return toDynamicAPInt(raw);
 }
 
 /// Marshal a parsed JSON runtime value into the raw storage for one host buffer.
-static llvm::Error fillInputBuffer(BufferPack &buffer, const RuntimeValue &value) {
+static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) {
   if (isa<felt::FeltType>(buffer.originalType)) {
     auto feltValue = asFelt(value);
     if (!feltValue) {
@@ -179,7 +221,11 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const RuntimeValue &value
   if (!arrayValue) {
     return arrayValue.takeError();
   }
-  if ((*arrayValue)->elements.size() != getNumElements(buffer.shape)) {
+  auto elementCount = getStaticShapeElementCount(buffer.shape, "execution-engine input array");
+  if (!elementCount) {
+    return elementCount.takeError();
+  }
+  if ((*arrayValue)->elements.size() != *elementCount) {
     return makeError("input array element count mismatch");
   }
   for (size_t i = 0; i < (*arrayValue)->elements.size(); ++i) {
@@ -201,32 +247,59 @@ static llvm::json::Value feltElementToJSON(const BufferPack &buffer, size_t flat
 }
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
-static llvm::json::Value
+static llvm::Expected<llvm::json::Value>
 bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) {
+  auto dimSize = checkedShapeDimToSize(buffer.shape[dimIndex], "execution-engine JSON output");
+  if (!dimSize) {
+    return dimSize.takeError();
+  }
   if (dimIndex + 1 == buffer.shape.size()) {
     llvm::json::Array result;
-    for (int64_t i = 0; i < buffer.shape[dimIndex]; ++i) {
-      result.push_back(feltElementToJSON(buffer, flatOffset + static_cast<size_t>(i)));
+    for (size_t i = 0; i < *dimSize; ++i) {
+      auto elementOffset = checkedAddSize(flatOffset, i, "execution-engine JSON output");
+      if (!elementOffset) {
+        return elementOffset.takeError();
+      }
+      result.push_back(feltElementToJSON(buffer, *elementOffset));
     }
     return llvm::json::Value(std::move(result));
   }
 
   size_t subArraySize = 1;
   for (size_t i = dimIndex + 1; i < buffer.shape.size(); ++i) {
-    subArraySize *= static_cast<size_t>(buffer.shape[i]);
+    auto nextDimSize = checkedShapeDimToSize(buffer.shape[i], "execution-engine JSON output");
+    if (!nextDimSize) {
+      return nextDimSize.takeError();
+    }
+    auto nextSubArraySize =
+        checkedMulSize(subArraySize, *nextDimSize, "execution-engine JSON output");
+    if (!nextSubArraySize) {
+      return nextSubArraySize.takeError();
+    }
+    subArraySize = *nextSubArraySize;
   }
 
   llvm::json::Array result;
-  for (int64_t i = 0; i < buffer.shape[dimIndex]; ++i) {
-    result.push_back(
-        bufferToJSONArray(buffer, dimIndex + 1, flatOffset + static_cast<size_t>(i) * subArraySize)
-    );
+  for (size_t i = 0; i < *dimSize; ++i) {
+    auto subArrayOffset = checkedMulSize(i, subArraySize, "execution-engine JSON output");
+    if (!subArrayOffset) {
+      return subArrayOffset.takeError();
+    }
+    auto nextOffset = checkedAddSize(flatOffset, *subArrayOffset, "execution-engine JSON output");
+    if (!nextOffset) {
+      return nextOffset.takeError();
+    }
+    auto subArray = bufferToJSONArray(buffer, dimIndex + 1, *nextOffset);
+    if (!subArray) {
+      return subArray.takeError();
+    }
+    result.push_back(*subArray);
   }
   return llvm::json::Value(std::move(result));
 }
 
 /// Serialize one public output buffer into the user-facing JSON value.
-static llvm::json::Value bufferToJSON(const BufferPack &buffer) {
+static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) {
   if (isa<felt::FeltType>(buffer.originalType)) {
     return feltElementToJSON(buffer, 0);
   }
@@ -235,10 +308,10 @@ static llvm::json::Value bufferToJSON(const BufferPack &buffer) {
 
 /// Lower the module through the shared LLZK-to-core witgen passes.
 static llvm::Expected<OwningOpRef<ModuleOp>>
-buildExecutionEngineModule(ModuleOp moduleOp, OutputScope outputScope) {
+buildExecutionEngineModule(ModuleOp moduleOp, OutputScope outputScope, const WitgenOptions &options) {
   OwningOpRef<ModuleOp> cloned = cast<ModuleOp>(moduleOp->clone());
   PassManager pm(cloned->getContext());
-  pm.addPass(createLowerComputeToCorePass());
+  pm.addPass(createLowerComputeToCorePass(options));
   pm.addPass(createCreateWitgenEntryPass(outputScope == OutputScope::FullWitness));
   if (failed(pm.run(*cloned))) {
     return makeError("failed to lower LLZK compute IR to execution-engine core dialects");
@@ -289,8 +362,16 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     return makeError("main struct is missing @compute");
   }
 
-  auto parsedArgs = [&]() -> llvm::Expected<llvm::SmallVector<RuntimeValue>> {
-    llvm::SmallVector<RuntimeValue> args;
+  if (options.uninitializedBehavior == UninitializedBehavior::Fail) {
+    Interpreter interpreter(
+        moduleOp, tables, field, options.uninitializedBehavior, makeDefaultValueRng(options)
+    );
+    interpreter.setOutputScope(options.outputScope);
+    return interpreter.runMainFromJSON(input);
+  }
+
+  auto parsedArgs = [&]() -> llvm::Expected<llvm::SmallVector<WitnessVal>> {
+    llvm::SmallVector<WitnessVal> args;
     auto *jsonObject = input.getAsObject();
     auto *jsonArray = input.getAsArray();
     if (!jsonObject && !jsonArray) {
@@ -363,7 +444,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     outputBuffers.push_back(std::move(*buffer));
   }
 
-  auto loweredModule = buildExecutionEngineModule(moduleOp, options.outputScope);
+  auto loweredModule = buildExecutionEngineModule(moduleOp, options.outputScope, options);
   if (!loweredModule) {
     return loweredModule.takeError();
   }
@@ -393,7 +474,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   if (!maybeEngine) {
     return maybeEngine.takeError();
   }
-  (*maybeEngine)->registerSymbols([&](llvm::orc::MangleAndInterner interner) {
+  (*maybeEngine)->registerSymbols([](llvm::orc::MangleAndInterner interner) {
     llvm::orc::SymbolMap symbolMap;
     symbolMap[interner("memrefCopy")] = {
         llvm::orc::ExecutorAddr::fromPtr(&memrefCopy), llvm::JITSymbolFlags::Exported
@@ -423,7 +504,11 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   llvm::SmallVector<llvm::json::Value> serializedOutputs;
   serializedOutputs.reserve(outputBuffers.size());
   for (const BufferPack &buffer : outputBuffers) {
-    serializedOutputs.push_back(bufferToJSON(buffer));
+    auto serialized = bufferToJSON(buffer);
+    if (!serialized) {
+      return serialized.takeError();
+    }
+    serializedOutputs.push_back(*serialized);
   }
 
   if (options.outputScope == OutputScope::Public) {

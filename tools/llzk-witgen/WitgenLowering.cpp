@@ -9,6 +9,8 @@
 
 #include "WitgenLowering.h"
 
+#include "WitgenDriver.h"
+#include "WitgenUtils.h"
 #include "WitnessSelection.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
@@ -25,6 +27,7 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Conversion/AffineToStandard/AffineToStandard.h>
@@ -46,6 +49,8 @@
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
+
+#include <limits>
 
 using namespace mlir;
 
@@ -363,26 +368,23 @@ getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, O
 static SmallVector<int64_t> delinearizeIndices(ArrayRef<int64_t> shape, size_t flatIndex) {
   SmallVector<int64_t> indices(shape.size(), 0);
   size_t carry = flatIndex;
-  for (int64_t dim = static_cast<int64_t>(shape.size()) - 1; dim >= 0; --dim) {
-    size_t size = static_cast<size_t>(shape[static_cast<size_t>(dim)]);
-    indices[static_cast<size_t>(dim)] = static_cast<int64_t>(carry % size);
+  for (int64_t dim = llzk::checkedCast<int64_t>(shape.size()) - 1; dim >= 0; --dim) {
+    size_t dimIndex = llzk::checkedCast<size_t>(dim);
+    size_t size = llzk::checkedCast<size_t>(shape[dimIndex]);
+    indices[dimIndex] = llzk::checkedCast<int64_t>(carry % size);
     carry /= size;
   }
   return indices;
 }
 
-/// Return the static element count for one shaped memref.
-static size_t getNumElements(ArrayRef<int64_t> shape) {
-  size_t count = 1;
-  for (int64_t dim : shape) {
-    count *= static_cast<size_t>(dim);
-  }
-  return count;
-}
-
 /// Create one static memref filled with zeros.
-static Value
+static FailureOr<Value>
 createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
+  auto elementCount = getStaticElementCount(memrefType, "witgen zero memref");
+  if (!elementCount) {
+    emitError(loc) << llvm::toString(elementCount.takeError());
+    return failure();
+  }
   Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
   auto elementType = memrefType.getElementType();
   Value zero;
@@ -393,8 +395,7 @@ createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const 
         loc, IntegerAttr::get(mlir::cast<IntegerType>(elementType), 0)
     );
   }
-  size_t elementCount = getNumElements(memrefType.getShape());
-  for (size_t flat = 0; flat < elementCount; ++flat) {
+  for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
     for (int64_t index : delinearizeIndices(memrefType.getShape(), flat)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
@@ -404,10 +405,55 @@ createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const 
   return alloc;
 }
 
-/// Build the deterministic default lowered value for one LLZK type.
+/// Create one static memref filled with random in-range values.
+static FailureOr<Value> createRandomMemRef(
+    OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field,
+    std::mt19937_64 &rng
+) {
+  auto elementCount = getStaticElementCount(memrefType, "witgen random memref");
+  if (!elementCount) {
+    emitError(loc) << llvm::toString(elementCount.takeError());
+    return failure();
+  }
+  Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
+  auto elementType = memrefType.getElementType();
+  for (size_t flat = 0; flat < *elementCount; ++flat) {
+    SmallVector<Value> indices;
+    for (int64_t index : delinearizeIndices(memrefType.getShape(), flat)) {
+      indices.push_back(makeIndexConstant(builder, loc, index));
+    }
+    if (isa<IndexType>(elementType)) {
+      auto value = std::uniform_int_distribution<int64_t>(
+          std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max()
+      )(rng);
+      builder.create<memref::StoreOp>(loc, builder.create<arith::ConstantIndexOp>(loc, value),
+                                      alloc, indices);
+      continue;
+    }
+    auto intType = mlir::cast<IntegerType>(elementType);
+    if (intType.getWidth() == 1) {
+      builder.create<memref::StoreOp>(
+          loc, builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, APInt(1, rng() & 1ULL))),
+          alloc, indices
+      );
+      continue;
+    }
+    uint64_t prime = toAPSInt(field.prime()).getZExtValue();
+    uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(rng);
+    builder.create<memref::StoreOp>(
+        loc, builder.create<arith::ConstantOp>(
+                loc, IntegerAttr::get(intType, APInt(intType.getWidth(), candidate))
+            ),
+        alloc, indices
+    );
+  }
+  return alloc;
+}
+
+/// Build the default lowered value for one LLZK type.
 static FailureOr<LoweredValue> createDefaultValue(
     OpBuilder &builder, Location loc, Type type, SymbolTableCollection &tables, Operation *origin,
-    const Field &field
+    const Field &field, UninitializedBehavior behavior, std::mt19937_64 *rng
 ) {
   LoweredValue lowered {type, {}};
   auto leafTypes = getLeafTypes(type, tables, origin, field);
@@ -415,8 +461,63 @@ static FailureOr<LoweredValue> createDefaultValue(
     return failure();
   }
   for (Type leafType : *leafTypes) {
+    if (behavior == UninitializedBehavior::Fail) {
+      if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
+        auto zeroMemRef = createZeroMemRef(builder, loc, memrefType, field);
+        if (failed(zeroMemRef)) {
+          return failure();
+        }
+        lowered.leaves.push_back(*zeroMemRef);
+      } else if (isa<IndexType>(leafType)) {
+        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, 0));
+      } else {
+        lowered.leaves.push_back(builder.create<arith::ConstantOp>(
+            loc, IntegerAttr::get(mlir::cast<IntegerType>(leafType), 0)
+        ));
+      }
+      continue;
+    }
+    if (behavior == UninitializedBehavior::Random) {
+      if (!rng) {
+        origin->emitError("missing RNG for random witgen initialization");
+        return failure();
+      }
+      if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
+        auto randomMemRef = createRandomMemRef(builder, loc, memrefType, field, *rng);
+        if (failed(randomMemRef)) {
+          return failure();
+        }
+        lowered.leaves.push_back(*randomMemRef);
+        continue;
+      }
+      if (isa<IndexType>(leafType)) {
+        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(
+            loc, std::uniform_int_distribution<int64_t>(
+                     std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max()
+                 )(*rng)
+        ));
+        continue;
+      }
+      auto intType = mlir::cast<IntegerType>(leafType);
+      if (intType.getWidth() == 1) {
+        lowered.leaves.push_back(
+            builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, APInt(1, (*rng)() & 1ULL)))
+        );
+        continue;
+      }
+      uint64_t prime = toAPSInt(field.prime()).getZExtValue();
+      uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(*rng);
+      lowered.leaves.push_back(builder.create<arith::ConstantOp>(
+          loc, IntegerAttr::get(intType, APInt(intType.getWidth(), candidate))
+      ));
+      continue;
+    }
     if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
-      lowered.leaves.push_back(createZeroMemRef(builder, loc, memrefType, field));
+      auto zeroMemRef = createZeroMemRef(builder, loc, memrefType, field);
+      if (failed(zeroMemRef)) {
+        return failure();
+      }
+      lowered.leaves.push_back(*zeroMemRef);
       continue;
     }
     if (isa<IndexType>(leafType)) {
@@ -618,7 +719,7 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   SmallVector<OpFoldResult> mixedOffsets;
   SmallVector<OpFoldResult> mixedSizes;
   SmallVector<OpFoldResult> mixedStrides;
-  const int64_t indexedRank = static_cast<int64_t>(outerIndices.size());
+  const int64_t indexedRank = llzk::checkedCast<int64_t>(outerIndices.size());
   mixedOffsets.reserve(sourceType.getRank());
   mixedSizes.reserve(sourceType.getRank());
   mixedStrides.reserve(sourceType.getRank());
@@ -638,9 +739,9 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
     mixedStrides.push_back(builder.getIndexAttr(1));
   }
   SmallVector<int64_t> desiredShape;
-  desiredShape.reserve(static_cast<size_t>(sourceType.getRank() - indexedRank));
+  desiredShape.reserve(llzk::checkedCast<size_t>(sourceType.getRank() - indexedRank));
   for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
-    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[static_cast<size_t>(dim)])) {
+    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[llzk::checkedCast<size_t>(dim)])) {
       desiredShape.push_back(mlir::cast<IntegerAttr>(attr).getInt());
     } else {
       desiredShape.push_back(ShapedType::kDynamic);
@@ -726,8 +827,12 @@ static LogicalResult appendFlatLeavesToTypes(
 class BodyLowerer {
 public:
   /// Create a lowerer that appends new `func.func` operations into the module.
-  BodyLowerer(ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField)
-      : moduleOp(mod), tables(symbolTables), field(moduleField) {}
+  BodyLowerer(
+      ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField,
+      const WitgenOptions &options
+  )
+      : moduleOp(mod), tables(symbolTables), field(moduleField),
+        uninitializedBehavior(options.uninitializedBehavior), rng(makeDefaultValueRng(options)) {}
 
   /// Lower one LLZK function into `func.func`.
   FailureOr<func::FuncOp> lowerFunction(function::FuncDefOp funcOp) {
@@ -795,6 +900,8 @@ private:
   ModuleOp moduleOp;
   SymbolTableCollection &tables;
   const Field &field;
+  UninitializedBehavior uninitializedBehavior;
+  std::mt19937_64 rng;
 
   /// Look up one already-lowered SSA value.
   FailureOr<LoweredValue>
@@ -920,7 +1027,8 @@ private:
 
     if (auto nondetOp = dyn_cast<llzk::NonDetOp>(op)) {
       auto lowered = createDefaultValue(
-          builder, loc, nondetOp.getType(), tables, nondetOp.getOperation(), field
+          builder, loc, nondetOp.getType(), tables, nondetOp.getOperation(), field,
+          uninitializedBehavior, &rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1099,7 +1207,8 @@ private:
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
       auto lowered = createDefaultValue(
-          builder, loc, structNewOp.getType(), tables, structNewOp.getOperation(), field
+          builder, loc, structNewOp.getType(), tables, structNewOp.getOperation(), field,
+          uninitializedBehavior, &rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1137,7 +1246,8 @@ private:
 
     if (auto newPodOp = dyn_cast<pod::NewPodOp>(op)) {
       auto lowered = createDefaultValue(
-          builder, loc, newPodOp.getType(), tables, newPodOp.getOperation(), field
+          builder, loc, newPodOp.getType(), tables, newPodOp.getOperation(), field,
+          uninitializedBehavior, &rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1180,13 +1290,14 @@ private:
 
     if (auto arrayNewOp = dyn_cast<array::CreateArrayOp>(op)) {
       auto lowered = createDefaultValue(
-          builder, loc, arrayNewOp.getType(), tables, arrayNewOp.getOperation(), field
+          builder, loc, arrayNewOp.getType(), tables, arrayNewOp.getOperation(), field,
+          uninitializedBehavior, &rng
       );
       if (failed(lowered)) {
         return failure();
       }
       if (!arrayNewOp.getElements().empty()) {
-        size_t elementCount = arrayNewOp.getType().getNumElements();
+        size_t elementCount = llzk::checkedCast<size_t>(arrayNewOp.getType().getNumElements());
         if (arrayNewOp.getElements().size() != elementCount) {
           arrayNewOp.emitError("expected one explicit element per array slot in witgen lowering");
           return failure();
@@ -1413,6 +1524,8 @@ class LowerComputeToCorePass : public PassWrapper<LowerComputeToCorePass, Operat
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerComputeToCorePass)
 
+  explicit LowerComputeToCorePass(const WitgenOptions &options) : options(options) {}
+
   /// Run the pass over one module.
   StringRef getArgument() const final { return "llzk-lower-compute-to-core"; }
 
@@ -1442,7 +1555,7 @@ public:
       funcs.push_back(funcOp);
     });
 
-    BodyLowerer lowerer(moduleOp, tables, field->get());
+    BodyLowerer lowerer(moduleOp, tables, field->get(), options);
     for (function::FuncDefOp funcOp : funcs) {
       if (failed(lowerer.lowerFunction(funcOp))) {
         signalPassFailure();
@@ -1450,6 +1563,9 @@ public:
       }
     }
   }
+
+private:
+  WitgenOptions options;
 };
 
 /// Create the stable JIT entry wrapper and erase the remaining LLZK declarations.
@@ -1681,19 +1797,20 @@ private:
 
 } // namespace
 
-void addWitgenPreparePipeline(OpPassManager &pm) {
-  llzk::polymorphic::FlatteningPassOptions options = {
+void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &options) {
+  (void)options;
+  llzk::polymorphic::FlatteningPassOptions flatteningOptions = {
       .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot
   };
-  pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(options)));
+  pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(flatteningOptions)));
   pm.addPass(mlir::createLowerAffinePass());
   pm.addPass(llzk::createInlineStructsPass());
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
 }
 
-std::unique_ptr<Pass> createLowerComputeToCorePass() {
-  return std::make_unique<LowerComputeToCorePass>();
+std::unique_ptr<Pass> createLowerComputeToCorePass(const WitgenOptions &options) {
+  return std::make_unique<LowerComputeToCorePass>(options);
 }
 
 std::unique_ptr<Pass> createCreateWitgenEntryPass(bool emitFullWitness) {

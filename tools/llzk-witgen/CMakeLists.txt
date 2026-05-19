@@ -9,6 +9,7 @@ target_sources(
     WitnessSelection.cpp
     WitgenLowering.cpp
     WitgenDriver.cpp
+    WitgenUtils.cpp
 )
 target_include_directories(LLZKWitgenTool PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(

@@ -14,6 +14,7 @@
 #include "Interpreter.h"
 #include "JSON.h"
 #include "WitgenLowering.h"
+#include "WitgenUtils.h"
 #include "WitnessSelection.h"
 
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -52,9 +53,11 @@ static bool requiresFlattening(ModuleOp moduleOp) {
 
 /// Build a driver around one parsed module and field.
 Interpreter::Interpreter(
-    ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField
+    ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField,
+    UninitializedBehavior behavior, std::mt19937_64 rng
 )
-    : moduleOp(mod), tables(symbolTables), field(moduleField) {}
+    : moduleOp(mod), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
+      rng(std::move(rng)) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
 static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
@@ -125,7 +128,7 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
     return args.takeError();
   }
 
-  FunctionInterpreter interpreter(moduleOp, tables, field);
+  FunctionInterpreter interpreter(moduleOp, tables, field, uninitializedBehavior, std::move(rng));
   auto results = interpreter.run(computeFunc, *args);
   if (!results) {
     return results.takeError();
@@ -186,7 +189,7 @@ static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &opti
     pm.addPass(llzk::include::createInlineIncludesPass());
   }
   if (options.backend == Backend::ExecutionEngine) {
-    addWitgenPreparePipeline(pm);
+    addWitgenPreparePipeline(pm, options);
   } else if (requiresFlattening(moduleOp)) {
     pm.addPass(llzk::polymorphic::createFlatteningPass());
   }
@@ -215,7 +218,10 @@ runWitgen(ModuleOp moduleOp, const llvm::json::Value &input, const WitgenOptions
   if (options.backend == Backend::ExecutionEngine) {
     return runWithExecutionEngine(moduleOp, tables, *fields.begin(), input, options);
   }
-  Interpreter interpreter(moduleOp, tables, *fields.begin());
+  Interpreter interpreter(
+      moduleOp, tables, *fields.begin(), options.uninitializedBehavior,
+      makeDefaultValueRng(options)
+  );
   interpreter.setOutputScope(options.outputScope);
   return interpreter.runMainFromJSON(input);
 }

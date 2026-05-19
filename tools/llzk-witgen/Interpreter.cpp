@@ -10,6 +10,7 @@
 #include "Interpreter.h"
 
 #include "Errors.h"
+#include "WitgenUtils.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -18,6 +19,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -25,6 +27,8 @@
 #include <mlir/IR/Operation.h>
 
 #include <llvm/ADT/SmallVector.h>
+
+#include <random>
 
 using namespace mlir;
 
@@ -45,15 +49,15 @@ static llvm::Expected<uint64_t> toCheckedUInt64(int64_t value) {
   if (value < 0) {
     return makeError("cannot reinterpret a negative index value as unsigned");
   }
-  return static_cast<uint64_t>(value);
+  return llzk::checkedCast<uint64_t>(value);
 }
 
 /// Convert an unsigned intermediate back to `int64_t`, rejecting underflow.
 static llvm::Expected<int64_t> toCheckedInt64(uint64_t value) {
-  if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+  if (value > llzk::checkedCast<uint64_t>(std::numeric_limits<int64_t>::max())) {
     return makeError("unsigned value does not fit in signed int64_t");
   }
-  return static_cast<int64_t>(value);
+  return llzk::checkedCast<int64_t>(value);
 }
 
 /// Represent the values yielded by a block or region along with termination state.
@@ -69,13 +73,33 @@ llvm::Expected<size_t> linearize(llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<i
   }
   size_t offset = 0;
   size_t stride = 1;
-  for (int64_t i = static_cast<int64_t>(shape.size()) - 1; i >= 0; --i) {
-    if (indices[static_cast<size_t>(i)] < 0 ||
-        indices[static_cast<size_t>(i)] >= shape[static_cast<size_t>(i)]) {
+  for (int64_t i = llzk::checkedCast<int64_t>(shape.size()) - 1; i >= 0; --i) {
+    size_t index = llzk::checkedCast<size_t>(i);
+    if (indices[index] < 0 || indices[index] >= shape[index]) {
       return makeError("array index out of bounds");
     }
-    offset += static_cast<size_t>(indices[static_cast<size_t>(i)]) * stride;
-    stride *= static_cast<size_t>(shape[static_cast<size_t>(i)]);
+    auto currentIndex = checkedShapeDimToSize(indices[index], "array index");
+    if (!currentIndex) {
+      return currentIndex.takeError();
+    }
+    auto nextOffset = checkedMulSize(*currentIndex, stride, "array linearized index");
+    if (!nextOffset) {
+      return nextOffset.takeError();
+    }
+    auto updatedOffset = checkedAddSize(offset, *nextOffset, "array linearized index");
+    if (!updatedOffset) {
+      return updatedOffset.takeError();
+    }
+    auto dimSize = checkedShapeDimToSize(shape[index], "array shape");
+    if (!dimSize) {
+      return dimSize.takeError();
+    }
+    auto updatedStride = checkedMulSize(stride, *dimSize, "array linearized stride");
+    if (!updatedStride) {
+      return updatedStride.takeError();
+    }
+    offset = *updatedOffset;
+    stride = *updatedStride;
   }
   return offset;
 }
@@ -84,9 +108,11 @@ llvm::Expected<size_t> linearize(llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<i
 
 /// Build an interpreter for a specific module and field.
 FunctionInterpreter::FunctionInterpreter(
-    ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField
+    ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField,
+    UninitializedBehavior behavior, std::mt19937_64 rng
 )
-    : moduleOp(module), tables(symbolTables), field(moduleField) {}
+    : moduleOp(module), tables(symbolTables), field(moduleField),
+      uninitializedBehavior(behavior), rng(std::move(rng)) {}
 
 namespace {
 
@@ -95,9 +121,11 @@ class InvocationInterpreter {
 public:
   /// Create an invocation interpreter that shares module-level state.
   InvocationInterpreter(
-      ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField
+      ModuleOp module, SymbolTableCollection &symbolTables, const Field &moduleField,
+      UninitializedBehavior behavior, std::mt19937_64 &rng
   )
-      : moduleOp(module), tables(symbolTables), field(moduleField) {}
+      : moduleOp(module), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
+        rng(rng) {}
 
   /// Execute a function body with the provided arguments.
   llvm::Expected<llvm::SmallVector<WitnessVal>>
@@ -129,6 +157,8 @@ private:
   ModuleOp moduleOp;
   SymbolTableCollection &tables;
   const Field &field;
+  UninitializedBehavior uninitializedBehavior;
+  std::mt19937_64 &rng;
 
   /// Execute every operation in a block until termination or fallthrough.
   llvm::Expected<BlockResult>
@@ -227,7 +257,9 @@ private:
     }
 
     if (auto nondetOp = dyn_cast<llzk::NonDetOp>(op)) {
-      auto value = defaultValue(nondetOp.getType(), tables, nondetOp.getOperation(), field);
+      auto value = defaultValue(
+          nondetOp.getType(), tables, nondetOp.getOperation(), field, uninitializedBehavior, &rng
+      );
       if (!value) {
         return value.takeError();
       }
@@ -263,10 +295,10 @@ private:
         return rhsValue.takeError();
       }
       auto lhs = asBool(*lhsValue);
-      auto rhs = asBool(*rhsValue);
       if (!lhs) {
         return lhs.takeError();
       }
+      auto rhs = asBool(*rhsValue);
       if (!rhs) {
         return rhs.takeError();
       }
@@ -282,10 +314,10 @@ private:
         return rhsValue.takeError();
       }
       auto lhs = asBool(*lhsValue);
-      auto rhs = asBool(*rhsValue);
       if (!lhs) {
         return lhs.takeError();
       }
+      auto rhs = asBool(*rhsValue);
       if (!rhs) {
         return rhs.takeError();
       }
@@ -301,10 +333,10 @@ private:
         return rhsValue.takeError();
       }
       auto lhs = asBool(*lhsValue);
-      auto rhs = asBool(*rhsValue);
       if (!lhs) {
         return lhs.takeError();
       }
+      auto rhs = asBool(*rhsValue);
       if (!rhs) {
         return rhs.takeError();
       }
@@ -331,10 +363,10 @@ private:
         return rhs.takeError();
       }
       auto lhsValue = asFelt(*lhs);
-      auto rhsValue = asFelt(*rhs);
       if (!lhsValue) {
         return lhsValue.takeError();
       }
+      auto rhsValue = asFelt(*rhs);
       if (!rhsValue) {
         return rhsValue.takeError();
       }
@@ -376,10 +408,10 @@ private:
         return rhsValue.takeError();
       }
       auto lhs = asFelt(*lhsValue);
-      auto rhs = asFelt(*rhsValue);
       if (!lhs) {
         return lhs.takeError();
       }
+      auto rhs = asFelt(*rhsValue);
       if (!rhs) {
         return rhs.takeError();
       }
@@ -454,7 +486,10 @@ private:
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
-      auto value = defaultValue(structNewOp.getType(), tables, structNewOp.getOperation(), field);
+      auto value = defaultValue(
+          structNewOp.getType(), tables, structNewOp.getOperation(), field, uninitializedBehavior,
+          &rng
+      );
       if (!value) {
         return value.takeError();
       }
@@ -493,7 +528,9 @@ private:
     }
 
     if (auto newPodOp = dyn_cast<pod::NewPodOp>(op)) {
-      auto podValue = defaultValue(newPodOp.getType(), tables, newPodOp.getOperation(), field);
+      auto podValue = defaultValue(
+          newPodOp.getType(), tables, newPodOp.getOperation(), field, uninitializedBehavior, &rng
+      );
       if (!podValue) {
         return podValue.takeError();
       }
@@ -547,10 +584,16 @@ private:
       auto arrayValue = std::make_shared<ArrayValue>();
       arrayValue->type = arrayNewOp.getType();
       if (arrayNewOp.getElements().empty()) {
-        arrayValue->elements.reserve(arrayValue->type.getNumElements());
-        for (int64_t i = 0; i < arrayValue->type.getNumElements(); ++i) {
+        auto elementCount =
+            getStaticShapeElementCount(arrayValue->type.getShape(), "array.create default value");
+        if (!elementCount) {
+          return elementCount.takeError();
+        }
+        arrayValue->elements.reserve(*elementCount);
+        for (size_t i = 0; i < *elementCount; ++i) {
           auto elem = defaultValue(
-              arrayValue->type.getElementType(), tables, arrayNewOp.getOperation(), field
+              arrayValue->type.getElementType(), tables, arrayNewOp.getOperation(), field,
+              uninitializedBehavior, &rng
           );
           if (!elem) {
             return elem.takeError();
@@ -652,7 +695,15 @@ private:
       }
       size_t subArraySize = 1;
       for (size_t i = indices.size(); i < shape.size(); ++i) {
-        subArraySize *= static_cast<size_t>(shape[i]);
+        auto dimSize = checkedShapeDimToSize(shape[i], "array.extract shape");
+        if (!dimSize) {
+          return dimSize.takeError();
+        }
+        auto nextSubArraySize = checkedMulSize(subArraySize, *dimSize, "array.extract shape");
+        if (!nextSubArraySize) {
+          return nextSubArraySize.takeError();
+        }
+        subArraySize = *nextSubArraySize;
       }
       auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
       if (!prefixOffset) {
@@ -698,14 +749,21 @@ private:
         indices.push_back(*index);
       }
       llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
-      size_t subArraySize = static_cast<size_t>((*subArrayRef)->elements.size());
+      size_t subArraySize = (*subArrayRef)->elements.size();
       auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
-      size_t base = *prefixOffset * subArraySize;
+      auto base = checkedMulSize(*prefixOffset, subArraySize, "array.insert base offset");
+      if (!base) {
+        return base.takeError();
+      }
       for (size_t i = 0; i < subArraySize; ++i) {
-        (*arrayRef)->elements[base + i] = (*subArrayRef)->elements[i];
+        auto elementOffset = checkedAddSize(*base, i, "array.insert element offset");
+        if (!elementOffset) {
+          return elementOffset.takeError();
+        }
+        (*arrayRef)->elements[*elementOffset] = (*subArrayRef)->elements[i];
       }
       return BlockResult {};
     }
@@ -719,10 +777,17 @@ private:
         return dim.takeError();
       }
       llvm::ArrayRef<int64_t> shape = arrayLenOp.getArrRefType().getShape();
-      if (*dim < 0 || static_cast<size_t>(*dim) >= shape.size()) {
+      if (*dim < 0) {
         return makeError("array.len dimension out of bounds");
       }
-      return bind({WitnessVal(shape[static_cast<size_t>(*dim)])});
+      auto dimIndex = checkedShapeDimToSize(*dim, "array.len dimension");
+      if (!dimIndex) {
+        return dimIndex.takeError();
+      }
+      if (*dimIndex >= shape.size()) {
+        return makeError("array.len dimension out of bounds");
+      }
+      return bind({WitnessVal(shape[*dimIndex])});
     }
 
     if (auto callOp = dyn_cast<function::CallOp>(op)) {
@@ -754,10 +819,10 @@ private:
         return rhs.takeError();
       }
       auto lhsValue = asIndex(*lhs);
-      auto rhsValue = asIndex(*rhs);
       if (!lhsValue) {
         return lhsValue.takeError();
       }
+      auto rhsValue = asIndex(*rhs);
       if (!rhsValue) {
         return rhsValue.takeError();
       }
@@ -847,10 +912,10 @@ private:
         return rhs.takeError();
       }
       auto lhsValue = asIndex(*lhs);
-      auto rhsValue = asIndex(*rhs);
       if (!lhsValue) {
         return lhsValue.takeError();
       }
+      auto rhsValue = asIndex(*rhs);
       if (!rhsValue) {
         return rhsValue.takeError();
       }
@@ -876,10 +941,10 @@ private:
         return rhs.takeError();
       }
       auto lhsValue = asIndex(*lhs);
-      auto rhsValue = asIndex(*rhs);
       if (!lhsValue) {
         return lhsValue.takeError();
       }
+      auto rhsValue = asIndex(*rhs);
       if (!rhsValue) {
         return rhsValue.takeError();
       }
@@ -1023,8 +1088,9 @@ private:
 
 /// Execute a function body with concrete runtime values.
 llvm::Expected<llvm::SmallVector<WitnessVal>>
-FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<WitnessVal> args) {
-  return InvocationInterpreter(moduleOp, tables, field).run(funcOp, args);
+  FunctionInterpreter::run(function::FuncDefOp funcOp, ArrayRef<WitnessVal> args) {
+  return InvocationInterpreter(moduleOp, tables, field, uninitializedBehavior, rng)
+      .run(funcOp, args);
 }
 
 } // namespace llzk::witgen

@@ -20,7 +20,10 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Error.h>
 
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <random>
 #include <variant>
 #include <vector>
 
@@ -47,6 +50,13 @@ using StructValueRef = std::shared_ptr<StructValue>;
 /// Runtime value representation used by the tool-local interpreter.
 using WitnessVal = std::variant<
     std::monostate, bool, int64_t, llvm::DynamicAPInt, ArrayValueRef, PodValueRef, StructValueRef>;
+
+/// Control how witgen materializes uninitialized/default values.
+enum class UninitializedBehavior {
+  Zero,
+  Random,
+  Fail,
+};
 
 /// Materialized array value with flattened element storage.
 struct ArrayValue {
@@ -84,10 +94,11 @@ llvm::Expected<PodValueRef> asPod(const WitnessVal &value);
 /// Interpret a runtime value as a struct reference.
 llvm::Expected<StructValueRef> asStruct(const WitnessVal &value);
 
-/// Build the deterministic default value used for `llzk.nondet`.
+/// Build a default value used for `llzk.nondet` and aggregate constructors.
 llvm::Expected<WitnessVal> defaultValue(
     mlir::Type type, mlir::SymbolTableCollection &tables, mlir::Operation *origin,
-    const llzk::Field &field
+    const llzk::Field &field, UninitializedBehavior behavior,
+    std::mt19937_64 *rng = nullptr
 );
 
 } // namespace llzk::witgen
