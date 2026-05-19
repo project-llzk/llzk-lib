@@ -409,7 +409,7 @@ static FailureOr<Value> createRandomMemRef(
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, strides);) {
+    for (int64_t index : mlir::delinearize(flat, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
