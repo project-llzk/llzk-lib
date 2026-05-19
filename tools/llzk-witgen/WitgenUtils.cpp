@@ -1,4 +1,4 @@
-//===-- WitgenUtils.cpp - llzk-witgen shared helpers -----------*- C++ -*-===//
+//===-- WitgenUtils.cpp - llzk-witgen shared helpers ------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -31,14 +31,11 @@ dynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::Twine context) {
   if (value < 0) {
     return makeError(context + " would underflow size_t");
   }
-  llvm::DynamicAPInt sizeMax = llzk::toDynamicAPInt(
-      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
-  );
-  if (value > sizeMax) {
+  llvm::APSInt as = llzk::toAPSInt(value);
+  if (as.getActiveBits() > std::numeric_limits<size_t>::digits) {
     return makeError(context + " would overflow size_t");
   }
-  llvm::APSInt as = llzk::toAPSInt(value);
-  return llzk::checkedCast<size_t>(as.getLimitedValue());
+  return llzk::checkedCast<size_t>(as.getZExtValue());
 }
 
 std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options) {

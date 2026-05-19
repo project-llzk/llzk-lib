@@ -383,9 +383,10 @@ createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const 
         loc, IntegerAttr::get(mlir::cast<IntegerType>(elementType), 0)
     );
   }
+  auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, memrefType.getShape())) {
+    for (int64_t index : mlir::delinearize(flat, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     builder.create<memref::StoreOp>(loc, zero, alloc, indices);
@@ -405,9 +406,10 @@ static FailureOr<Value> createRandomMemRef(
   }
   Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
   auto elementType = memrefType.getElementType();
+  auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, memrefType.getShape())) {
+    for (int64_t index : mlir::delinearize(flat, strides);) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
@@ -1301,7 +1303,8 @@ private:
             return failure();
           }
           SmallVector<Value> indices;
-          for (int64_t index : mlir::delinearize(flatIndex, shape)) {
+          auto strides = mlir::computeStrides(shape);
+          for (int64_t index : mlir::delinearize(flatIndex, strides)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
           }
           if (failed(writeArrayElement(

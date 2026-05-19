@@ -33,22 +33,20 @@ namespace llzk::witgen {
 
 /// Return whether the module needs template/affine flattening before execution.
 static bool requiresFlattening(ModuleOp moduleOp) {
-  bool needsFlattening = false;
-  moduleOp->walk([&](Operation *op) {
+  return moduleOp
+      ->walk([&](Operation *op) {
     if (isa<function::CallOp>(op)) {
       auto callOp = cast<function::CallOp>(op);
       if (callOp.getTemplateParams() || !callOp.getMapOperands().empty()) {
-        needsFlattening = true;
         return WalkResult::interrupt();
       }
     }
-    if (op->getName().getStringRef().starts_with("poly.")) {
-      needsFlattening = true;
+    if (op->getDialect()->getNamespace() ==
+        polymorphic::PolymorphicDialect::getDialectNamespace()) {
       return WalkResult::interrupt();
     }
     return WalkResult::advance();
-  });
-  return needsFlattening;
+  }).wasInterrupted();
 }
 
 /// Build a driver around one parsed module and field.
