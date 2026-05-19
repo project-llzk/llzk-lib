@@ -20,7 +20,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // COM: We don't check the precise output here because, even seeded, there will
-// be differences between outputs on different platforms.
+// COM: be differences between outputs on different platforms.
 // CHECK: {
 // CHECK-NEXT:   "out": "{{[0-9]+}}"
 // CHECK-NEXT: }
