@@ -20,6 +20,7 @@
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -28,6 +29,7 @@
 
 #include <llvm/ADT/SmallVector.h>
 
+#include <limits>
 #include <random>
 
 using namespace mlir;
@@ -71,37 +73,17 @@ llvm::Expected<size_t> linearize(llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<i
   if (shape.size() != indices.size()) {
     return makeError("wrong number of array indices");
   }
-  size_t offset = 0;
-  size_t stride = 1;
+  llvm::DynamicAPInt offset(0);
+  llvm::DynamicAPInt stride(1);
   for (int64_t i = llzk::checkedCast<int64_t>(shape.size()) - 1; i >= 0; --i) {
     size_t index = llzk::checkedCast<size_t>(i);
     if (indices[index] < 0 || indices[index] >= shape[index]) {
       return makeError("array index out of bounds");
     }
-    auto currentIndex = checkedShapeDimToSize(indices[index], "array index");
-    if (!currentIndex) {
-      return currentIndex.takeError();
-    }
-    auto nextOffset = checkedMulSize(*currentIndex, stride, "array linearized index");
-    if (!nextOffset) {
-      return nextOffset.takeError();
-    }
-    auto updatedOffset = checkedAddSize(offset, *nextOffset, "array linearized index");
-    if (!updatedOffset) {
-      return updatedOffset.takeError();
-    }
-    auto dimSize = checkedShapeDimToSize(shape[index], "array shape");
-    if (!dimSize) {
-      return dimSize.takeError();
-    }
-    auto updatedStride = checkedMulSize(stride, *dimSize, "array linearized stride");
-    if (!updatedStride) {
-      return updatedStride.takeError();
-    }
-    offset = *updatedOffset;
-    stride = *updatedStride;
+    offset += llvm::DynamicAPInt(indices[index]) * stride;
+    stride *= shape[index];
   }
-  return offset;
+  return checkedDynamicAPIntToSize(offset, "array linearized index");
 }
 
 } // namespace
@@ -229,6 +211,13 @@ private:
     }
     if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
       auto values = collectOperands(yieldOp.getOperands(), scope);
+      if (!values) {
+        return values.takeError();
+      }
+      return BlockResult {true, std::move(*values)};
+    }
+    if (auto conditionOp = dyn_cast<scf::ConditionOp>(op)) {
+      auto values = collectOperands(conditionOp.getOperands(), scope);
       if (!values) {
         return values.takeError();
       }
@@ -454,7 +443,6 @@ private:
       }
       return bind({WitnessVal(field.inv(*feltValue))});
     }
-
     if (auto intToFeltOp = dyn_cast<cast::IntToFeltOp>(op)) {
       auto operand = lookup(intToFeltOp.getValue(), scope);
       if (!operand) {
@@ -478,11 +466,11 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      auto indexValue = toCheckedInt64(toAPSInt(*feltValue).getExtValue());
-      if (!indexValue) {
-        return indexValue.takeError();
+      llvm::APSInt indexAPS = toAPSInt(*feltValue);
+      if (indexAPS < 0 || indexAPS > std::numeric_limits<int64_t>::max()) {
+        return makeError("felt value does not fit in index");
       }
-      return bind({WitnessVal(*indexValue)});
+      return bind({WitnessVal(llzk::checkedCast<int64_t>(indexAPS.getLimitedValue()))});
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
@@ -693,29 +681,35 @@ private:
       if (indices.size() >= shape.size()) {
         return makeError("array.extract indices exceed array rank");
       }
-      size_t subArraySize = 1;
+      llvm::DynamicAPInt subArraySize(1);
       for (size_t i = indices.size(); i < shape.size(); ++i) {
         auto dimSize = checkedShapeDimToSize(shape[i], "array.extract shape");
         if (!dimSize) {
           return dimSize.takeError();
         }
-        auto nextSubArraySize = checkedMulSize(subArraySize, *dimSize, "array.extract shape");
-        if (!nextSubArraySize) {
-          return nextSubArraySize.takeError();
-        }
-        subArraySize = *nextSubArraySize;
+        subArraySize *= *dimSize;
       }
       auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
-      size_t prefixStride = subArraySize;
       auto subArray = std::make_shared<ArrayValue>();
       subArray->type = extractArrayOp.getType();
-      subArray->elements.reserve(subArraySize);
-      size_t base = *prefixOffset * prefixStride;
-      for (size_t i = 0; i < subArraySize; ++i) {
-        subArray->elements.push_back((*arrayRef)->elements[base + i]);
+      auto checkedSubArraySize = checkedDynamicAPIntToSize(subArraySize, "array.extract shape");
+      if (!checkedSubArraySize) {
+        return checkedSubArraySize.takeError();
+      }
+      subArray->elements.reserve(*checkedSubArraySize);
+      llvm::DynamicAPInt base(*prefixOffset);
+      base *= subArraySize;
+      for (size_t i = 0; i < *checkedSubArraySize; ++i) {
+        auto elementOffset = base + i;
+        auto checkedElementOffset =
+            checkedDynamicAPIntToSize(elementOffset, "array.extract element offset");
+        if (!checkedElementOffset) {
+          return checkedElementOffset.takeError();
+        }
+        subArray->elements.push_back((*arrayRef)->elements[*checkedElementOffset]);
       }
       return bind({subArray});
     }
@@ -749,21 +743,25 @@ private:
         indices.push_back(*index);
       }
       llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
-      size_t subArraySize = (*subArrayRef)->elements.size();
+      llvm::DynamicAPInt subArraySize((*subArrayRef)->elements.size());
       auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
-      auto base = checkedMulSize(*prefixOffset, subArraySize, "array.insert base offset");
-      if (!base) {
-        return base.takeError();
+      llvm::DynamicAPInt base(*prefixOffset);
+      base *= subArraySize;
+      auto checkedSubArraySize = checkedDynamicAPIntToSize(subArraySize, "array.insert shape");
+      if (!checkedSubArraySize) {
+        return checkedSubArraySize.takeError();
       }
-      for (size_t i = 0; i < subArraySize; ++i) {
-        auto elementOffset = checkedAddSize(*base, i, "array.insert element offset");
-        if (!elementOffset) {
-          return elementOffset.takeError();
+      for (size_t i = 0; i < *checkedSubArraySize; ++i) {
+        llvm::DynamicAPInt elementOffset = base + i;
+        auto checkedElementOffset =
+            checkedDynamicAPIntToSize(elementOffset, "array.insert element offset");
+        if (!checkedElementOffset) {
+          return checkedElementOffset.takeError();
         }
-        (*arrayRef)->elements[*elementOffset] = (*subArrayRef)->elements[i];
+        (*arrayRef)->elements[*checkedElementOffset] = (*subArrayRef)->elements[i];
       }
       return BlockResult {};
     }
@@ -847,55 +845,19 @@ private:
         result = *lhsValue >= *rhsValue;
         break;
       case arith::CmpIPredicate::ult: {
-        auto lhsUInt = toCheckedUInt64(*lhsValue);
-        if (!lhsUInt) {
-          return lhsUInt.takeError();
-        }
-        uint64_t lhsUIntValue = *lhsUInt;
-        auto rhsUInt = toCheckedUInt64(*rhsValue);
-        if (!rhsUInt) {
-          return rhsUInt.takeError();
-        }
-        result = lhsUIntValue < *rhsUInt;
+        result = static_cast<uint64_t>(*lhsValue) < static_cast<uint64_t>(*rhsValue);
         break;
       }
       case arith::CmpIPredicate::ule: {
-        auto lhsUInt = toCheckedUInt64(*lhsValue);
-        if (!lhsUInt) {
-          return lhsUInt.takeError();
-        }
-        uint64_t lhsUIntValue = *lhsUInt;
-        auto rhsUInt = toCheckedUInt64(*rhsValue);
-        if (!rhsUInt) {
-          return rhsUInt.takeError();
-        }
-        result = lhsUIntValue <= *rhsUInt;
+        result = static_cast<uint64_t>(*lhsValue) <= static_cast<uint64_t>(*rhsValue);
         break;
       }
       case arith::CmpIPredicate::ugt: {
-        auto lhsUInt = toCheckedUInt64(*lhsValue);
-        if (!lhsUInt) {
-          return lhsUInt.takeError();
-        }
-        uint64_t lhsUIntValue = *lhsUInt;
-        auto rhsUInt = toCheckedUInt64(*rhsValue);
-        if (!rhsUInt) {
-          return rhsUInt.takeError();
-        }
-        result = lhsUIntValue > *rhsUInt;
+        result = static_cast<uint64_t>(*lhsValue) > static_cast<uint64_t>(*rhsValue);
         break;
       }
       case arith::CmpIPredicate::uge: {
-        auto lhsUInt = toCheckedUInt64(*lhsValue);
-        if (!lhsUInt) {
-          return lhsUInt.takeError();
-        }
-        uint64_t lhsUIntValue = *lhsUInt;
-        auto rhsUInt = toCheckedUInt64(*rhsValue);
-        if (!rhsUInt) {
-          return rhsUInt.takeError();
-        }
-        result = lhsUIntValue >= *rhsUInt;
+        result = static_cast<uint64_t>(*lhsValue) >= static_cast<uint64_t>(*rhsValue);
         break;
       }
       }
@@ -948,16 +910,8 @@ private:
       if (!rhsValue) {
         return rhsValue.takeError();
       }
-      auto lhsUInt = toCheckedUInt64(*lhsValue);
-      if (!lhsUInt) {
-        return lhsUInt.takeError();
-      }
-      uint64_t lhsUIntValue = *lhsUInt;
-      auto rhsUInt = toCheckedUInt64(*rhsValue);
-      if (!rhsUInt) {
-        return rhsUInt.takeError();
-      }
-      auto result = toCheckedInt64(lhsUIntValue / *rhsUInt);
+      auto divRes = static_cast<uint64_t>(*lhsValue) / static_cast<uint64_t>(*rhsValue);
+      auto result = toCheckedInt64(divRes);
       if (!result) {
         return result.takeError();
       }
@@ -1076,8 +1030,44 @@ private:
       return bind(iterValues);
     }
 
-    if (isa<scf::WhileOp>(op)) {
-      return makeError("scf.while is not supported in llzk-witgen");
+    if (auto whileOp = dyn_cast<scf::WhileOp>(op)) {
+      auto iterValuesOrErr = collectOperands(whileOp.getInits(), scope);
+      if (!iterValuesOrErr) {
+        return iterValuesOrErr.takeError();
+      }
+      llvm::SmallVector<WitnessVal> iterValues = std::move(*iterValuesOrErr);
+      while (true) {
+        auto beforeResult = runRegion(whileOp.getBefore(), iterValues, scope);
+        if (!beforeResult) {
+          return beforeResult.takeError();
+        }
+        if (!beforeResult->terminated) {
+          return makeError("scf.while before region must terminate with scf.condition");
+        }
+        if (beforeResult->values.empty()) {
+          return makeError("scf.while before region did not produce a condition");
+        }
+
+        auto condition = asBool(beforeResult->values.front());
+        if (!condition) {
+          return condition.takeError();
+        }
+
+        llvm::SmallVector<WitnessVal> nextValues;
+        nextValues.append(beforeResult->values.begin() + 1, beforeResult->values.end());
+        if (!*condition) {
+          return bind(nextValues);
+        }
+
+        auto afterResult = runRegion(whileOp.getAfter(), nextValues, scope);
+        if (!afterResult) {
+          return afterResult.takeError();
+        }
+        if (!afterResult->terminated) {
+          return makeError("scf.while after region must terminate with scf.yield");
+        }
+        iterValues = std::move(afterResult->values);
+      }
     }
 
     return makeError(llvm::Twine("unsupported op in llzk-witgen: ") + op.getName().getStringRef());

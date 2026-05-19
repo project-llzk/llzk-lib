@@ -12,17 +12,34 @@
 #include "Errors.h"
 
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <mlir/IR/BuiltinTypes.h>
 
 #include <llvm/ADT/Twine.h>
 
+#include <climits>
 #include <limits>
 #include <random>
 
 using namespace mlir;
 
 namespace llzk::witgen {
+
+static llvm::Expected<size_t>
+dynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::Twine context) {
+  if (value < 0) {
+    return makeError(context + " would underflow size_t");
+  }
+  llvm::DynamicAPInt sizeMax = llzk::toDynamicAPInt(
+      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
+  );
+  if (value > sizeMax) {
+    return makeError(context + " would overflow size_t");
+  }
+  llvm::APSInt as = llzk::toAPSInt(value);
+  return llzk::checkedCast<size_t>(as.getLimitedValue());
+}
 
 std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options) {
   if (options.randomSeed) {
@@ -40,43 +57,26 @@ llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef contex
   if (dim < 0) {
     return makeError(llvm::Twine(context) + " has a negative dimension");
   }
-  if (!std::in_range<size_t>(dim)) {
-    return makeError(llvm::Twine(context) + " dimension does not fit in size_t");
-  }
-  return llzk::checkedCast<size_t>(dim);
+  llvm::DynamicAPInt value(dim);
+  return dynamicAPIntToSize(value, llvm::Twine(context) + " dimension");
 }
 
-llvm::Expected<size_t> checkedAddSize(size_t lhs, size_t rhs, llvm::StringRef context) {
-  size_t result = 0;
-  if (__builtin_add_overflow(lhs, rhs, &result)) {
-    return makeError(llvm::Twine("size overflow while computing ") + context);
-  }
-  return result;
-}
-
-llvm::Expected<size_t> checkedMulSize(size_t lhs, size_t rhs, llvm::StringRef context) {
-  size_t result = 0;
-  if (__builtin_mul_overflow(lhs, rhs, &result)) {
-    return makeError(llvm::Twine("size overflow while computing ") + context);
-  }
-  return result;
+llvm::Expected<size_t>
+checkedDynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::StringRef context) {
+  return dynamicAPIntToSize(value, context);
 }
 
 llvm::Expected<size_t>
 getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef context) {
-  size_t count = 1;
+  llvm::DynamicAPInt count(1);
   for (int64_t dim : shape) {
     auto dimSize = checkedShapeDimToSize(dim, context);
     if (!dimSize) {
       return dimSize.takeError();
     }
-    auto nextCount = checkedMulSize(count, *dimSize, context);
-    if (!nextCount) {
-      return nextCount.takeError();
-    }
-    count = *nextCount;
+    count *= llvm::DynamicAPInt(*dimSize);
   }
-  return count;
+  return dynamicAPIntToSize(count, context);
 }
 
 llvm::Expected<size_t> getStaticElementCount(ShapedType type, llvm::StringRef context) {
@@ -87,10 +87,7 @@ llvm::Expected<size_t> getStaticElementCount(ShapedType type, llvm::StringRef co
   if (count < 0) {
     return makeError(llvm::Twine(context) + " has an invalid negative element count");
   }
-  if (!std::in_range<size_t>(count)) {
-    return makeError(llvm::Twine(context) + " element count does not fit in size_t");
-  }
-  return llzk::checkedCast<size_t>(count);
+  return dynamicAPIntToSize(llvm::DynamicAPInt(count), context);
 }
 
 } // namespace llzk::witgen

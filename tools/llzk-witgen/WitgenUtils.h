@@ -5,6 +5,7 @@
 #include <mlir/IR/BuiltinTypes.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Error.h>
 
@@ -19,11 +20,9 @@ std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options);
 /// Convert one static dimension to `size_t`, rejecting dynamic or invalid sizes.
 llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context);
 
-/// Add two `size_t` values and reject overflow.
-llvm::Expected<size_t> checkedAddSize(size_t lhs, size_t rhs, llvm::StringRef context);
-
-/// Multiply two `size_t` values and reject overflow.
-llvm::Expected<size_t> checkedMulSize(size_t lhs, size_t rhs, llvm::StringRef context);
+/// Convert a `DynamicAPInt` into `size_t` after validating its range.
+llvm::Expected<size_t>
+checkedDynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::StringRef context);
 
 /// Return the static element count for one shape, rejecting dynamic sizes.
 llvm::Expected<size_t>

@@ -24,6 +24,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Parser/Parser.h>
 
+#include <climits>
 #include <limits>
 #include <random>
 
@@ -144,11 +145,14 @@ TEST_F(WitgenTests, SerializeJSONArrayRejectsDynamicShape) {
   EXPECT_NE(llvm::toString(value.takeError()).find("requires a static shape"), std::string::npos);
 }
 
-TEST_F(WitgenTests, CheckedMulSizeRejectsOverflow) {
-  auto value =
-      witgen::checkedMulSize(std::numeric_limits<size_t>::max(), 2, "unit-test overflow");
-  ASSERT_FALSE(static_cast<bool>(value));
-  EXPECT_NE(llvm::toString(value.takeError()).find("size overflow"), std::string::npos);
+TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
+  llvm::DynamicAPInt value = llzk::toDynamicAPInt(
+      llvm::APInt(sizeof(size_t) * CHAR_BIT + 1, std::numeric_limits<size_t>::max())
+  );
+  value += llvm::DynamicAPInt(1);
+  auto checked = witgen::checkedDynamicAPIntToSize(value, "unit-test overflow");
+  ASSERT_FALSE(static_cast<bool>(checked));
+  EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
 }
 
 TEST_F(WitgenTests, NestedAggregateFailModeMaterializesMonostate) {
@@ -208,7 +212,7 @@ TEST_F(WitgenTests, SerializeStructOnlyEmitsPublicMembers) {
   EXPECT_EQ(obj->get("tmp"), nullptr);
 }
 
-TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedDivUIOperands) {
+TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
       function.def @u_div(%lhs: index, %rhs: index) -> index {
@@ -231,13 +235,11 @@ TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedDivUIOperands) {
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(2)};
   auto results = interpreter.run(func, args);
-  llvm::Error error = results.takeError();
-  ASSERT_TRUE(static_cast<bool>(error)) << "expected interpreter to reject negative divui operand";
-  EXPECT_NE(
-      llvm::toString(std::move(error))
-          .find("cannot reinterpret a negative index value as unsigned"),
-      std::string::npos
-  );
+  ASSERT_TRUE(static_cast<bool>(results)) << llvm::toString(results.takeError());
+  ASSERT_EQ(results->size(), 1u);
+  auto quotient = witgen::asIndex((*results)[0]);
+  ASSERT_TRUE(static_cast<bool>(quotient)) << llvm::toString(quotient.takeError());
+  EXPECT_EQ(*quotient, std::numeric_limits<int64_t>::max());
 }
 
 TEST_F(WitgenTests, InterpreterRejectsNegativeUnsignedForBounds) {
@@ -312,10 +314,7 @@ TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
   llvm::Error error = results.takeError();
   ASSERT_TRUE(static_cast<bool>(error))
       << "expected interpreter to reject unsigned-to-signed index underflow";
-  EXPECT_NE(
-      llvm::toString(std::move(error)).find("unsigned value does not fit in signed int64_t"),
-      std::string::npos
-  );
+  EXPECT_NE(llvm::toString(std::move(error)).find("fit in index"), std::string::npos);
 }
 
 TEST_F(WitgenTests, InterpreterFailsDuringFinalWitnessSerialization) {

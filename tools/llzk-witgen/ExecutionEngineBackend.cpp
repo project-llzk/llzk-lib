@@ -107,32 +107,16 @@ static llvm::Expected<std::vector<int64_t>> computeStaticStrides(ArrayRef<int64_
 /// Populate the raw memref descriptor for a host buffer.
 static llvm::Error buildDescriptor(BufferPack &buffer) {
   const size_t rank = buffer.shape.size();
-  auto descriptorSize = checkedMulSize(sizeof(void *), 2, "execution-engine memref descriptor");
-  if (!descriptorSize) {
-    return descriptorSize.takeError();
+  auto descriptorSize = llvm::DynamicAPInt(sizeof(void *)) * 2;
+  auto shapeAndStrideCount = llvm::DynamicAPInt(1) + rank + rank;
+  auto dynamicPart = llvm::DynamicAPInt(sizeof(int64_t)) * shapeAndStrideCount;
+  auto totalSize = descriptorSize + dynamicPart;
+  auto checkedTotalSize =
+      checkedDynamicAPIntToSize(totalSize, "execution-engine memref descriptor");
+  if (!checkedTotalSize) {
+    return checkedTotalSize.takeError();
   }
-  auto shapeAndStrideCount =
-      checkedAddSize(1, rank, "execution-engine memref descriptor field count");
-  if (!shapeAndStrideCount) {
-    return shapeAndStrideCount.takeError();
-  }
-  shapeAndStrideCount =
-      checkedAddSize(*shapeAndStrideCount, rank, "execution-engine memref descriptor field count");
-  if (!shapeAndStrideCount) {
-    return shapeAndStrideCount.takeError();
-  }
-  auto dynamicPart =
-      checkedMulSize(sizeof(int64_t), *shapeAndStrideCount, "execution-engine memref descriptor");
-  if (!dynamicPart) {
-    return dynamicPart.takeError();
-  }
-  auto totalSize = checkedAddSize(
-      *descriptorSize, *dynamicPart, "execution-engine memref descriptor"
-  );
-  if (!totalSize) {
-    return totalSize.takeError();
-  }
-  buffer.descriptor.resize(*totalSize);
+  buffer.descriptor.resize(*checkedTotalSize);
   uint8_t *cursor = buffer.descriptor.data();
   void *base = buffer.storage.data();
   std::memcpy(cursor, &base, sizeof(void *));
@@ -173,12 +157,13 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
   if (!elementCount) {
     return elementCount.takeError();
   }
-  auto storageBytes =
-      checkedMulSize(*elementCount, buffer.elemBytes, "execution-engine buffer storage");
-  if (!storageBytes) {
-    return storageBytes.takeError();
+  auto storageBytes = llvm::DynamicAPInt(*elementCount) * buffer.elemBytes;
+  auto checkedStorageBytes =
+      checkedDynamicAPIntToSize(storageBytes, "execution-engine buffer storage");
+  if (!checkedStorageBytes) {
+    return checkedStorageBytes.takeError();
   }
-  buffer.storage.resize(*storageBytes);
+  buffer.storage.resize(*checkedStorageBytes);
   if (auto error = buildDescriptor(buffer)) {
     return std::move(error);
   }
@@ -248,7 +233,7 @@ static llvm::json::Value feltElementToJSON(const BufferPack &buffer, size_t flat
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
 static llvm::Expected<llvm::json::Value>
-bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) {
+bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::DynamicAPInt &flatOffset) {
   auto dimSize = checkedShapeDimToSize(buffer.shape[dimIndex], "execution-engine JSON output");
   if (!dimSize) {
     return dimSize.takeError();
@@ -256,40 +241,30 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
   if (dimIndex + 1 == buffer.shape.size()) {
     llvm::json::Array result;
     for (size_t i = 0; i < *dimSize; ++i) {
-      auto elementOffset = checkedAddSize(flatOffset, i, "execution-engine JSON output");
-      if (!elementOffset) {
-        return elementOffset.takeError();
+      llvm::DynamicAPInt elementOffset = flatOffset + i;
+      auto checkedElementOffset =
+          checkedDynamicAPIntToSize(elementOffset, "execution-engine JSON output");
+      if (!checkedElementOffset) {
+        return checkedElementOffset.takeError();
       }
-      result.push_back(feltElementToJSON(buffer, *elementOffset));
+      result.push_back(feltElementToJSON(buffer, *checkedElementOffset));
     }
     return llvm::json::Value(std::move(result));
   }
 
-  size_t subArraySize = 1;
+  llvm::DynamicAPInt subArraySize(1);
   for (size_t i = dimIndex + 1; i < buffer.shape.size(); ++i) {
     auto nextDimSize = checkedShapeDimToSize(buffer.shape[i], "execution-engine JSON output");
     if (!nextDimSize) {
       return nextDimSize.takeError();
     }
-    auto nextSubArraySize =
-        checkedMulSize(subArraySize, *nextDimSize, "execution-engine JSON output");
-    if (!nextSubArraySize) {
-      return nextSubArraySize.takeError();
-    }
-    subArraySize = *nextSubArraySize;
+    subArraySize *= llvm::DynamicAPInt(*nextDimSize);
   }
 
   llvm::json::Array result;
   for (size_t i = 0; i < *dimSize; ++i) {
-    auto subArrayOffset = checkedMulSize(i, subArraySize, "execution-engine JSON output");
-    if (!subArrayOffset) {
-      return subArrayOffset.takeError();
-    }
-    auto nextOffset = checkedAddSize(flatOffset, *subArrayOffset, "execution-engine JSON output");
-    if (!nextOffset) {
-      return nextOffset.takeError();
-    }
-    auto subArray = bufferToJSONArray(buffer, dimIndex + 1, *nextOffset);
+    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * subArraySize);
+    auto subArray = bufferToJSONArray(buffer, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();
     }
@@ -303,7 +278,7 @@ static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) 
   if (isa<felt::FeltType>(buffer.originalType)) {
     return feltElementToJSON(buffer, 0);
   }
-  return bufferToJSONArray(buffer, 0, 0);
+  return bufferToJSONArray(buffer, 0, llvm::DynamicAPInt(0));
 }
 
 /// Lower the module through the shared LLZK-to-core witgen passes.

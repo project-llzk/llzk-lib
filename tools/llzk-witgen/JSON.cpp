@@ -118,7 +118,8 @@ static llvm::Expected<llvm::json::Value> feltToJSON(const llvm::DynamicAPInt &va
 /// Serialize a flattened LLZK array into nested JSON arrays.
 static llvm::Expected<llvm::json::Value> serializeJSONArray(
     const ArrayValueRef &arrayValue, array::ArrayType type, SymbolTableCollection &tables,
-    Operation *origin, SerializationMode mode, size_t dimIndex = 0, size_t flatOffset = 0
+    Operation *origin, SerializationMode mode, size_t dimIndex = 0,
+    const llvm::DynamicAPInt &flatOffset = llvm::DynamicAPInt(0)
 ) {
   llvm::json::Array jsonArray;
   llvm::ArrayRef<int64_t> shape = type.getShape();
@@ -128,12 +129,14 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
   }
   if (dimIndex == shape.size() - 1) {
     for (size_t i = 0; i < *dimSize; ++i) {
-      auto elementOffset = checkedAddSize(flatOffset, i, "JSON array output flat index");
-      if (!elementOffset) {
-        return elementOffset.takeError();
+      llvm::DynamicAPInt elementOffset = flatOffset + i;
+      auto checkedElementOffset =
+          checkedDynamicAPIntToSize(elementOffset, "JSON array output flat index");
+      if (!checkedElementOffset) {
+        return checkedElementOffset.takeError();
       }
       auto elem = serializeJSONValue(
-          arrayValue->elements[*elementOffset], type.getElementType(), tables, origin, mode
+          arrayValue->elements[*checkedElementOffset], type.getElementType(), tables, origin, mode
       );
       if (!elem) {
         return elem.takeError();
@@ -143,32 +146,21 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
     return llvm::json::Value(std::move(jsonArray));
   }
 
-  size_t subArraySize = 1;
+  llvm::DynamicAPInt subArraySize(1);
   for (size_t i = dimIndex + 1; i < shape.size(); ++i) {
     auto nextDimSize = checkedShapeDimToSize(shape[i], "JSON array output");
     if (!nextDimSize) {
       return nextDimSize.takeError();
     }
-    auto nextSubArraySize = checkedMulSize(subArraySize, *nextDimSize, "JSON array output shape");
-    if (!nextSubArraySize) {
-      return nextSubArraySize.takeError();
-    }
-    subArraySize = *nextSubArraySize;
+    subArraySize *= llvm::DynamicAPInt(*nextDimSize);
   }
 
   auto subArrayType =
       array::ArrayType::get(type.getElementType(), type.getDimensionSizes().drop_front());
   for (size_t i = 0; i < *dimSize; ++i) {
-    auto subArrayOffset = checkedMulSize(i, subArraySize, "JSON array output flat index");
-    if (!subArrayOffset) {
-      return subArrayOffset.takeError();
-    }
-    auto nextOffset = checkedAddSize(flatOffset, *subArrayOffset, "JSON array output flat index");
-    if (!nextOffset) {
-      return nextOffset.takeError();
-    }
+    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * subArraySize);
     auto subArray = serializeJSONArray(
-        arrayValue, subArrayType, tables, origin, mode, dimIndex + 1, *nextOffset
+        arrayValue, subArrayType, tables, origin, mode, dimIndex + 1, nextOffset
     );
     if (!subArray) {
       return subArray.takeError();
