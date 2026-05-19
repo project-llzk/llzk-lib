@@ -129,13 +129,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a83966ad5b76bac673ad192b1f7dd8058" id="r_a83966ad5b76bac673ad192b1f7dd8058"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a83966ad5b76bac673ad192b1f7dd8058">hasField</a> () const</td></tr>
 <tr class="memitem:a48ff4cc2ce95d178efbd90f3cb2d682b" id="r_a48ff4cc2ce95d178efbd90f3cb2d682b"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a48ff4cc2ce95d178efbd90f3cb2d682b">getField</a> () const</td></tr>
 <tr class="memitem:a4709114f479049212e2228adbaf7a04c" id="r_a4709114f479049212e2228adbaf7a04c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4709114f479049212e2228adbaf7a04c">doInputConstraintPropagation</a> () const</td></tr>
+<tr class="memitem:ab010f938e7c29c5989d93a8c84164a12" id="r_ab010f938e7c29c5989d93a8c84164a12"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab010f938e7c29c5989d93a8c84164a12">doTrackUnreducedIntervals</a> () const</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a9963abb9ab406a7cd8f41f5c5d9705fc" id="r_a9963abb9ab406a7cd8f41f5c5d9705fc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1IntervalDataFlowAnalysis.html">IntervalDataFlowAnalysis</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9963abb9ab406a7cd8f41f5c5d9705fc">intervalDFA</a></td></tr>
 <tr class="memitem:adb00edd00d23f45d1a044cdb81c72786" id="r_adb00edd00d23f45d1a044cdb81c72786"><td class="memItemLeft" align="right" valign="top">llvm::SMTSolverRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adb00edd00d23f45d1a044cdb81c72786">smtSolver</a></td></tr>
 <tr class="memitem:a6f9d3bdd60524fefdb543f35d620b15b" id="r_a6f9d3bdd60524fefdb543f35d620b15b"><td class="memItemLeft" align="right" valign="top">std::optional&lt; std::reference_wrapper&lt; const <a class="el" href="classllzk_1_1Field.html">Field</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6f9d3bdd60524fefdb543f35d620b15b">field</a></td></tr>
-<tr class="memitem:ad400aa87427b2d052f8d41e667696493" id="r_ad400aa87427b2d052f8d41e667696493"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad400aa87427b2d052f8d41e667696493">propagateInputConstraints</a></td></tr>
+<tr class="memitem:ad400aa87427b2d052f8d41e667696493" id="r_ad400aa87427b2d052f8d41e667696493"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad400aa87427b2d052f8d41e667696493">propagateInputConstraints</a> = false</td></tr>
+<tr class="memitem:a2a71f18bfaf414caa27ef0232b3f8017" id="r_a2a71f18bfaf414caa27ef0232b3f8017"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2a71f18bfaf414caa27ef0232b3f8017">trackUnreducedIntervals</a> = false</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -144,7 +146,7 @@ Friends</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Parameters and shared objects to pass to child analyses. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00434">434</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00472">472</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a4709114f479049212e2228adbaf7a04c" name="a4709114f479049212e2228adbaf7a04c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4709114f479049212e2228adbaf7a04c">&#9670;&#160;</a></span>doInputConstraintPropagation()</h2>
@@ -169,7 +171,34 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00446">446</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00485">485</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+
+</div>
+</div>
+<a id="ab010f938e7c29c5989d93a8c84164a12" name="ab010f938e7c29c5989d93a8c84164a12"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab010f938e7c29c5989d93a8c84164a12">&#9670;&#160;</a></span>doTrackUnreducedIntervals()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::IntervalAnalysisContext::doTrackUnreducedIntervals </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00486">486</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -196,7 +225,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00442">442</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00481">481</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -223,7 +252,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00440">440</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00479">479</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -250,7 +279,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00441">441</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00480">480</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -297,7 +326,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00437">437</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00475">475</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -313,7 +342,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00435">435</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00473">473</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -324,12 +353,12 @@ Friends</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool llzk::IntervalAnalysisContext::propagateInputConstraints</td>
+          <td class="memname">bool llzk::IntervalAnalysisContext::propagateInputConstraints = false</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00438">438</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00476">476</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -345,7 +374,23 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00436">436</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00474">474</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+
+</div>
+</div>
+<a id="a2a71f18bfaf414caa27ef0232b3f8017" name="a2a71f18bfaf414caa27ef0232b3f8017"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a71f18bfaf414caa27ef0232b3f8017">&#9670;&#160;</a></span>trackUnreducedIntervals</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::IntervalAnalysisContext::trackUnreducedIntervals = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00477">477</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>

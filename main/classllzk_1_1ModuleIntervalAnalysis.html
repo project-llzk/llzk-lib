@@ -130,6 +130,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a90c32227278f118a13b42b2916c94e45" id="r_a90c32227278f118a13b42b2916c94e45"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a90c32227278f118a13b42b2916c94e45">~ModuleIntervalAnalysis</a> () override=default</td></tr>
 <tr class="memitem:af5c80dbe5e2b1bead062a1ea557d6834" id="r_af5c80dbe5e2b1bead062a1ea557d6834"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af5c80dbe5e2b1bead062a1ea557d6834">setField</a> (const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;f)</td></tr>
 <tr class="memitem:aa2bc19db79b5ce7770fd1ed44424a5ac" id="r_aa2bc19db79b5ce7770fd1ed44424a5ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa2bc19db79b5ce7770fd1ed44424a5ac">setPropagateInputConstraints</a> (bool prop)</td></tr>
+<tr class="memitem:abccc78a6d10ed120acc267c9d732abeb" id="r_abccc78a6d10ed120acc267c9d732abeb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abccc78a6d10ed120acc267c9d732abeb">setTrackUnreducedIntervals</a> (bool track)</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1ModuleAnalysis"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllzk_1_1ModuleAnalysis')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Member Functions inherited from <a class="el" href="classllzk_1_1ModuleAnalysis.html">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a></td></tr>
 <tr class="memitem:aed232eafd07e6a7acc193f859ecc145c inherit pub_methods_classllzk_1_1ModuleAnalysis" id="r_aed232eafd07e6a7acc193f859ecc145c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleAnalysis.html#aed232eafd07e6a7acc193f859ecc145c">ModuleAnalysis</a> (mlir::Operation *op, const mlir::DataFlowConfig &amp;config=mlir::DataFlowConfig())</td></tr>
 <tr class="memdesc:aed232eafd07e6a7acc193f859ecc145c inherit pub_methods_classllzk_1_1ModuleAnalysis"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asserts that the analysis is being run on a <span class="tt">ModuleOp</span>.  <br /></td></tr>
@@ -165,7 +166,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00552">552</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00606">606</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a2ec93ab19cab53b4f8f33f5ac03e981a" name="a2ec93ab19cab53b4f8f33f5ac03e981a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2ec93ab19cab53b4f8f33f5ac03e981a">&#9670;&#160;</a></span>ModuleIntervalAnalysis()</h2>
@@ -190,7 +191,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00557">557</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00611">611</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -248,7 +249,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a7c526fe089c335516927f44f6d16fd82">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00579">579</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00636">636</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -285,7 +286,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a611afa38b4248519d6284c5adc643099">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00567">567</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00622">622</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -312,7 +313,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00563">563</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00617">617</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -339,7 +340,34 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00564">564</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00618">618</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+
+</div>
+</div>
+<a id="abccc78a6d10ed120acc267c9d732abeb" name="abccc78a6d10ed120acc267c9d732abeb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abccc78a6d10ed120acc267c9d732abeb">&#9670;&#160;</a></span>setTrackUnreducedIntervals()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::ModuleIntervalAnalysis::setTrackUnreducedIntervals </td>
+          <td>(</td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>track</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00619">619</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>

@@ -626,6 +626,7 @@ var hierarchy =
     [ "llzk::Interval::Hash", "structllzk_1_1Interval_1_1Hash.html", null ],
     [ "llzk::SourceRef::Hash", "structllzk_1_1SourceRef_1_1Hash.html", null ],
     [ "llzk::SourceRefIndex::Hash", "structllzk_1_1SourceRefIndex_1_1Hash.html", null ],
+    [ "llzk::UnreducedInterval::Hash", "structllzk_1_1UnreducedInterval_1_1Hash.html", null ],
     [ "std::hash< llzk::CDGAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html", null ],
     [ "std::hash< llzk::IntervalAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4.html", null ],
     [ "ClangLexerContext::Impl", "structClangLexerContext_1_1Impl.html", null ],

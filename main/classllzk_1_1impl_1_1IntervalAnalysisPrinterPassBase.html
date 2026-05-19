@@ -161,11 +161,13 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a7a1675797e85a84f52050c0e0322889b" id="r_a7a1675797e85a84f52050c0e0322889b"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7a1675797e85a84f52050c0e0322889b">propagateInputConstraints</a> {*this, &quot;propagate-input-constraints&quot;, ::llvm::cl::desc(&quot;Whether to propagate constraints <a class="el" href="LICENSE_8txt.html#a99e0c7c6bd1082fe4cf97f0912e847d7">on</a> inputs <a class="el" href="LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2">from</a> @constrain to @compute functions. This allows for tighter intervals to possibly be found for computed values, assuming that the witness generator would include constraints as assertions during the computation.&quot;), ::llvm::cl::init(false)}</td></tr>
 <tr class="memitem:aa326b4238b0878905c530e976c86a4a0" id="r_aa326b4238b0878905c530e976c86a4a0"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa326b4238b0878905c530e976c86a4a0">printSolverConstraints</a> {*this, &quot;print-solver-constraints&quot;, ::llvm::cl::desc(&quot;Whether to output SMT solver constraints along with intervals.&quot;), ::llvm::cl::init(false)}</td></tr>
 <tr class="memitem:a4a387d940c6ecec65cb6659d35a0610b" id="r_a4a387d940c6ecec65cb6659d35a0610b"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4a387d940c6ecec65cb6659d35a0610b">printComputeIntervals</a> {*this, &quot;print-compute-intervals&quot;, ::llvm::cl::desc(&quot;Whether to print compute function intervals (default only prints constrain function intervals).&quot;), ::llvm::cl::init(false)}</td></tr>
+<tr class="memitem:aa4e3b8a752ef304315b789124cc98ab3" id="r_aa4e3b8a752ef304315b789124cc98ab3"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4e3b8a752ef304315b789124cc98ab3">printUnreducedIntervals</a> {*this, &quot;print-unreduced-intervals&quot;, ::llvm::cl::desc(&quot;Whether to print tracked unreduced intervals alongside reduced interval summaries.&quot;), ::llvm::cl::init(false)}</td></tr>
+<tr class="memitem:a8eacb313d3fbf0df8f283d5554fa8048" id="r_a8eacb313d3fbf0df8f283d5554fa8048"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8eacb313d3fbf0df8f283d5554fa8048">printSSAIntervals</a> {*this, &quot;print-ssa-intervals&quot;, ::llvm::cl::desc(&quot;Whether to print per-SSA intervals for function arguments <a class="el" href="LICENSE_8txt.html#a44310e8a4338596c818c9c8cc6af8d1e">and</a> scalar op results.&quot;), ::llvm::cl::init(false)}</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::impl::IntervalAnalysisPrinterPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00261">261</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00263">263</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ac3e4f1e1c76047735141957313b9e6c7" name="ac3e4f1e1c76047735141957313b9e6c7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac3e4f1e1c76047735141957313b9e6c7">&#9670;&#160;</a></span>Base</h2>
@@ -181,7 +183,7 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00263">263</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00265">265</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -211,7 +213,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00265">265</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00267">267</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -240,7 +242,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00266">266</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00268">268</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -326,7 +328,7 @@ template&lt;typename DerivedT&gt; </div>
 <p>Explicitly declare the TypeID for this class. </p>
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00318">318</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00320">320</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -358,7 +360,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00287">287</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00289">289</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -389,7 +391,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00292">292</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00294">294</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -418,7 +420,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00276">276</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00278">278</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -449,7 +451,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00273">273</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00275">275</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -480,7 +482,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00297">297</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00299">299</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -509,7 +511,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00278">278</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00280">280</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -538,7 +540,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00284">284</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00286">286</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -569,7 +571,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00281">281</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00283">283</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -650,7 +652,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00325">325</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00329">329</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -676,7 +678,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00328">328</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00332">332</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -702,7 +704,59 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00327">327</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00331">331</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a8eacb313d3fbf0df8f283d5554fa8048" name="a8eacb313d3fbf0df8f283d5554fa8048"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8eacb313d3fbf0df8f283d5554fa8048">&#9670;&#160;</a></span>printSSAIntervals</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">::mlir::Pass::Option&lt;bool&gt; <a class="el" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html">llzk::impl::IntervalAnalysisPrinterPassBase</a>&lt; DerivedT &gt;::printSSAIntervals {*this, &quot;print-ssa-intervals&quot;, ::llvm::cl::desc(&quot;Whether to print per-SSA intervals for function arguments <a class="el" href="LICENSE_8txt.html#a44310e8a4338596c818c9c8cc6af8d1e">and</a> scalar op results.&quot;), ::llvm::cl::init(false)}</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00334">334</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aa4e3b8a752ef304315b789124cc98ab3" name="aa4e3b8a752ef304315b789124cc98ab3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4e3b8a752ef304315b789124cc98ab3">&#9670;&#160;</a></span>printUnreducedIntervals</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">::mlir::Pass::Option&lt;bool&gt; <a class="el" href="classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html">llzk::impl::IntervalAnalysisPrinterPassBase</a>&lt; DerivedT &gt;::printUnreducedIntervals {*this, &quot;print-unreduced-intervals&quot;, ::llvm::cl::desc(&quot;Whether to print tracked unreduced intervals alongside reduced interval summaries.&quot;), ::llvm::cl::init(false)}</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00333">333</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -728,7 +782,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00326">326</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysisPass_8cpp_source.html#l00330">330</a> of file <a class="el" href="IntervalAnalysisPass_8cpp_source.html">IntervalAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>

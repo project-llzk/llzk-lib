@@ -19,7 +19,7 @@ var searchData=
   ['hascontainsop_16',['HasContainsOp',['../concept_0d311117161036051067263366262131136336120033104220_1_1HasContainsOp.html',1,'@311117161036051067263366262131136336120033104220']]],
   ['hascycle_17',['hasCycle',['../namespacellzk.html#ae6fdef4971f7aa74e1bf5cf1c33895a2',1,'llzk']]],
   ['hasfield_18',['hasField',['../classllzk_1_1felt_1_1FeltType.html#ae8c6b7303e8daa54120f316f41ac73d2',1,'llzk::felt::FeltType::hasField()'],['../structllzk_1_1IntervalAnalysisContext.html#a83966ad5b76bac673ad192b1f7dd8058',1,'llzk::IntervalAnalysisContext::hasField()']]],
-  ['hash_19',['Hash',['../structllzk_1_1ExpressionValue_1_1Hash.html',1,'llzk::ExpressionValue::Hash'],['../structllzk_1_1Interval_1_1Hash.html',1,'llzk::Interval::Hash'],['../structllzk_1_1SourceRef_1_1Hash.html',1,'llzk::SourceRef::Hash'],['../structllzk_1_1SourceRefIndex_1_1Hash.html',1,'llzk::SourceRefIndex::Hash']]],
+  ['hash_19',['Hash',['../structllzk_1_1ExpressionValue_1_1Hash.html',1,'llzk::ExpressionValue::Hash'],['../structllzk_1_1Interval_1_1Hash.html',1,'llzk::Interval::Hash'],['../structllzk_1_1SourceRef_1_1Hash.html',1,'llzk::SourceRef::Hash'],['../structllzk_1_1SourceRefIndex_1_1Hash.html',1,'llzk::SourceRefIndex::Hash'],['../structllzk_1_1UnreducedInterval_1_1Hash.html',1,'llzk::UnreducedInterval::Hash']]],
   ['hash_2eh_20',['Hash.h',['../Hash_8h.html',1,'']]],
   ['hash_3c_20llzk_3a_3acdganalysiscontext_20_3e_21',['hash&lt; llzk::CDGAnalysisContext &gt;',['../structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html',1,'std']]],
   ['hash_3c_20llzk_3a_3aintervalanalysiscontext_20_3e_22',['hash&lt; llzk::IntervalAnalysisContext &gt;',['../structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4.html',1,'std']]],
@@ -35,7 +35,8 @@ var searchData=
   ['hassuccessor_32',['hasSuccessor',['../classllzk_1_1SymbolUseGraphNode.html#a1b1087a96c4e50ce0b9b8960aa89aafb',1,'llzk::SymbolUseGraphNode']]],
   ['hastemplatesymbolbindings_33',['hasTemplateSymbolBindings',['../classllzk_1_1component_1_1StructDefOp.html#ad2431f2ff8226862ffa9dfe9a0e7999e',1,'llzk::component::StructDefOp']]],
   ['hastrait_34',['HasTrait',['../conceptHasTrait.html',1,'']]],
-  ['headergenerator_35',['HeaderGenerator',['../structHeaderGenerator.html',1,'']]],
-  ['homogeneous_20arrays_36',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
-  ['http_37',['http',['../LICENSE_8txt.html#a94615be87ac36e4d954e52531ff7c50b',1,'LICENSE.txt']]]
+  ['hasunreducedinterval_35',['hasUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a92765712c15e7b01df0025e6838ecc72',1,'llzk::ExpressionValue']]],
+  ['headergenerator_36',['HeaderGenerator',['../structHeaderGenerator.html',1,'']]],
+  ['homogeneous_20arrays_37',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
+  ['http_38',['http',['../LICENSE_8txt.html#a94615be87ac36e4d954e52531ff7c50b',1,'LICENSE.txt']]]
 ];

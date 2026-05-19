@@ -16,5 +16,7 @@ var classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase =
     [ "fieldName", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7", null ],
     [ "printComputeIntervals", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a4a387d940c6ecec65cb6659d35a0610b", null ],
     [ "printSolverConstraints", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#aa326b4238b0878905c530e976c86a4a0", null ],
+    [ "printSSAIntervals", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a8eacb313d3fbf0df8f283d5554fa8048", null ],
+    [ "printUnreducedIntervals", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#aa4e3b8a752ef304315b789124cc98ab3", null ],
     [ "propagateInputConstraints", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a7a1675797e85a84f52050c0e0322889b", null ]
 ];
