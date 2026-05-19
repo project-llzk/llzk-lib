@@ -799,63 +799,6 @@ private:
       return bind(*results);
     }
 
-    if (auto cmpIOp = dyn_cast<arith::CmpIOp>(op)) {
-      auto lhs = lookup(cmpIOp.getLhs(), scope);
-      auto rhs = lookup(cmpIOp.getRhs(), scope);
-      if (!lhs) {
-        return lhs.takeError();
-      }
-      if (!rhs) {
-        return rhs.takeError();
-      }
-      auto lhsValue = asIndex(*lhs);
-      if (!lhsValue) {
-        return lhsValue.takeError();
-      }
-      auto rhsValue = asIndex(*rhs);
-      if (!rhsValue) {
-        return rhsValue.takeError();
-      }
-      bool result = false;
-      switch (cmpIOp.getPredicate()) {
-      case arith::CmpIPredicate::eq:
-        result = *lhsValue == *rhsValue;
-        break;
-      case arith::CmpIPredicate::ne:
-        result = *lhsValue != *rhsValue;
-        break;
-      case arith::CmpIPredicate::slt:
-        result = *lhsValue < *rhsValue;
-        break;
-      case arith::CmpIPredicate::sle:
-        result = *lhsValue <= *rhsValue;
-        break;
-      case arith::CmpIPredicate::sgt:
-        result = *lhsValue > *rhsValue;
-        break;
-      case arith::CmpIPredicate::sge:
-        result = *lhsValue >= *rhsValue;
-        break;
-      case arith::CmpIPredicate::ult: {
-        result = static_cast<uint64_t>(*lhsValue) < static_cast<uint64_t>(*rhsValue);
-        break;
-      }
-      case arith::CmpIPredicate::ule: {
-        result = static_cast<uint64_t>(*lhsValue) <= static_cast<uint64_t>(*rhsValue);
-        break;
-      }
-      case arith::CmpIPredicate::ugt: {
-        result = static_cast<uint64_t>(*lhsValue) > static_cast<uint64_t>(*rhsValue);
-        break;
-      }
-      case arith::CmpIPredicate::uge: {
-        result = static_cast<uint64_t>(*lhsValue) >= static_cast<uint64_t>(*rhsValue);
-        break;
-      }
-      }
-      return bind({WitnessVal(result)});
-    }
-
     auto handleBinaryIndex = [&](auto arithOp, auto fn) -> llvm::Expected<BlockResult> {
       auto lhs = lookup(arithOp.getLhs(), scope);
       auto rhs = lookup(arithOp.getRhs(), scope);
@@ -886,29 +829,54 @@ private:
       return handleBinaryIndex(mulIOp, [](int64_t lhs, int64_t rhs) { return lhs * rhs; });
     }
     if (auto divUIOp = dyn_cast<arith::DivUIOp>(op)) {
-      auto lhs = lookup(divUIOp.getLhs(), scope);
-      auto rhs = lookup(divUIOp.getRhs(), scope);
-      if (!lhs) {
-        return lhs.takeError();
-      }
-      if (!rhs) {
-        return rhs.takeError();
-      }
-      auto lhsValue = asIndex(*lhs);
-      if (!lhsValue) {
-        return lhsValue.takeError();
-      }
-      auto rhsValue = asIndex(*rhs);
-      if (!rhsValue) {
-        return rhsValue.takeError();
-      }
-      auto divRes = static_cast<uint64_t>(*lhsValue) / static_cast<uint64_t>(*rhsValue);
-      auto result = toCheckedInt64(divRes);
-      if (!result) {
-        return result.takeError();
-      }
-      return bind({WitnessVal(*result)});
+      return handleBinaryIndex(divUIOp, [](int64_t lhs, int64_t rhs) {
+        auto divRes = static_cast<uint64_t>(lhs) / static_cast<uint64_t>(rhs);
+        return static_cast<int64_t>(divRes);
+      });
     }
+    if (auto cmpIOp = dyn_cast<arith::CmpIOp>(op)) {
+      return handleBinaryIndex(cmpIOp, [&cmpIOp](int64_t lhs, int64_t rhs) -> bool {
+        bool result = false;
+        switch (cmpIOp.getPredicate()) {
+        case arith::CmpIPredicate::eq:
+          result = lhs == rhs;
+          break;
+        case arith::CmpIPredicate::ne:
+          result = lhs != rhs;
+          break;
+        case arith::CmpIPredicate::slt:
+          result = lhs < rhs;
+          break;
+        case arith::CmpIPredicate::sle:
+          result = lhs <= rhs;
+          break;
+        case arith::CmpIPredicate::sgt:
+          result = lhs > rhs;
+          break;
+        case arith::CmpIPredicate::sge:
+          result = lhs >= rhs;
+          break;
+        case arith::CmpIPredicate::ult: {
+          result = static_cast<uint64_t>(lhs) < static_cast<uint64_t>(rhs);
+          break;
+        }
+        case arith::CmpIPredicate::ule: {
+          result = static_cast<uint64_t>(lhs) <= static_cast<uint64_t>(rhs);
+          break;
+        }
+        case arith::CmpIPredicate::ugt: {
+          result = static_cast<uint64_t>(lhs) > static_cast<uint64_t>(rhs);
+          break;
+        }
+        case arith::CmpIPredicate::uge: {
+          result = static_cast<uint64_t>(lhs) >= static_cast<uint64_t>(rhs);
+          break;
+        }
+        }
+        return result;
+      });
+    }
+
     if (auto selectOp = dyn_cast<arith::SelectOp>(op)) {
       auto cond = lookup(selectOp.getCondition(), scope);
       auto trueValue = lookup(selectOp.getTrueValue(), scope);
