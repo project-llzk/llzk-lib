@@ -52,10 +52,10 @@ static bool requiresFlattening(ModuleOp moduleOp) {
 /// Build a driver around one parsed module and field.
 Interpreter::Interpreter(
     ModuleOp mod, SymbolTableCollection &symbolTables, const Field &moduleField,
-    UninitializedBehavior behavior, std::mt19937_64 rng
+    UninitializedBehavior behavior, std::mt19937_64 r
 )
     : moduleOp(mod), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
-      rng(std::move(rng)) {}
+      rng(std::move(r)) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
 static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
