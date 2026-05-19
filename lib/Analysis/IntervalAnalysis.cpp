@@ -418,7 +418,7 @@ ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val
   res.i = -val.i;
   res.expr = solver->mkBVNeg(val.expr);
   if (val.hasUnreducedInterval()) {
-    res = res.withUnreducedInterval(-val.getUnreducedInterval());
+    res = res.withOptionalUnreducedInterval(-val.getUnreducedInterval());
   }
   return res;
 }
@@ -454,7 +454,10 @@ fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const Expressio
   });
 
   if (llvm::isa<InvFeltOp>(op)) {
-    res = res.withUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()));
+    // We have the inverse's unreduced range to be [0, p-1] because for any integer z we can always
+    // choose a conical element x \in [0, p-1] such that 1) (z * x) %p = 0 if z = 0, 2) (z * x) % p
+    // = 1
+    res = res.withOptionalUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()));
   }
 
   return res;
@@ -1702,7 +1705,7 @@ void StructIntervals::print(
       os.indent(indent) << ref << " in " << interval;
       if (printUnreduced) {
         if (auto it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {
-          os << " ( unreduced: " << it->second << " )";
+          os << " ( " << it->second << " )";
         }
       }
     }
