@@ -1,0 +1,199 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals print-ssa-intervals propagate-input-constraints" %s 2>&1 | FileCheck %s
+
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedArithmetic {
+    struct.member @out : !felt.type
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreducedArithmetic>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@TrackUnreducedArithmetic>
+      %five = felt.const 5
+      %sum = felt.add %a, %five : !felt.type, !felt.type
+      %neg = felt.neg %sum : !felt.type
+      struct.writem %self[@out] = %neg : !struct.type<@TrackUnreducedArithmetic>, !felt.type
+      function.return %self : !struct.type<@TrackUnreducedArithmetic>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedArithmetic>, %a: !felt.type)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @TrackUnreducedArithmetic StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:    %arg0 in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self[@out] in Entire ( Unreduced:[ -2013265925, -5 ] )
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedBoolSelect {
+    struct.member @xor : i1
+    struct.member @not : i1
+    struct.member @sel_true : !felt.type
+    struct.member @sel_false : !felt.type
+    struct.member @sel_flag : !felt.type
+
+    function.def @compute(%flag: i1) -> !struct.type<@TrackUnreducedBoolSelect>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@TrackUnreducedBoolSelect>
+      %true = arith.constant true
+      %false = arith.constant false
+      %three = felt.const 3
+      %nine = felt.const 9
+      %xor = bool.xor %true, %false
+      %not = bool.not %flag
+      %sel_true = arith.select %true, %three, %nine : !felt.type
+      %sel_false = arith.select %false, %three, %nine : !felt.type
+      %sel_flag = arith.select %flag, %three, %nine : !felt.type
+      struct.writem %self[@xor] = %xor : !struct.type<@TrackUnreducedBoolSelect>, i1
+      struct.writem %self[@not] = %not : !struct.type<@TrackUnreducedBoolSelect>, i1
+      struct.writem %self[@sel_true] = %sel_true : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
+      struct.writem %self[@sel_false] = %sel_false : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
+      struct.writem %self[@sel_flag] = %sel_flag : !struct.type<@TrackUnreducedBoolSelect>, !felt.type
+      function.return %self : !struct.type<@TrackUnreducedBoolSelect>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedBoolSelect>, %flag: i1)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @TrackUnreducedBoolSelect StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:    %arg0 in TypeA:[ 0, 1 ] ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:    %self[@xor] in Degenerate(1) ( Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:    %self[@not] in TypeA:[ 0, 1 ] ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:    %self[@sel_true] in Degenerate(3) ( Unreduced:[ 3, 3 ] )
+// CHECK-NEXT:    %self[@sel_false] in Degenerate(9) ( Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:    %self[@sel_flag] in TypeA:[ 3, 9 ] ( Unreduced:[ 3, 9 ] )
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedTypeFPropagation {
+    function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreducedTypeFPropagation>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@TrackUnreducedTypeFPropagation>
+      function.return %self : !struct.type<@TrackUnreducedTypeFPropagation>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedTypeFPropagation>, %a: !felt.type)
+        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %one = felt.const 1
+      %sum = felt.add %a, %one : !felt.type, !felt.type
+      %cmp = bool.cmp le(%sum, %one) : !felt.type, !felt.type
+      bool.assert %cmp
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @TrackUnreducedTypeFPropagation StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:    %arg0 in TypeF:[ 2013265920, 0 ] ( Unreduced:[ -1, 0 ] )
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedSignalReadDefault {
+    struct.member @sig : !felt.type {signal}
+
+    function.def @compute() -> !struct.type<@TrackUnreducedSignalReadDefault>
+        attributes {function.allow_witness} {
+      %self = struct.new : !struct.type<@TrackUnreducedSignalReadDefault>
+      function.return %self : !struct.type<@TrackUnreducedSignalReadDefault>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedSignalReadDefault>)
+        attributes {function.allow_constraint} {
+      %sig = struct.readm %self[@sig] : !struct.type<@TrackUnreducedSignalReadDefault>, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @TrackUnreducedSignalReadDefault StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:    %self[@sig] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:  }
+// CHECK: constrain {
+// CHECK-NEXT:    %arg0[@sig] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:  }
+
+// -----
+
+module @Comparators attributes {llzk.lang = "llzk"} {
+  // Adapted from test/Conversions/circom_isZero.llzk.
+  struct.def @IsZero {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @inv : !felt.type
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@IsZero>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@IsZero>
+      %const_1 = felt.const 1
+      %inv = felt.inv %in
+      struct.writem %self[@inv] = %inv : !struct.type<@IsZero>, !felt.type
+      %neg_in = felt.neg %in
+      %mul = felt.mul %neg_in, %inv
+      %out = felt.add %mul, %const_1
+      struct.writem %self[@out] = %out : !struct.type<@IsZero>, !felt.type
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(%self: !struct.type<@IsZero>, %in: !felt.type) {
+      %const_0 = felt.const 0
+      %const_1 = felt.const 1
+      %out = struct.readm %self[@out] : !struct.type<@IsZero>, !felt.type
+      %inv = struct.readm %self[@inv] : !struct.type<@IsZero>, !felt.type
+      %neg_in = felt.neg %in
+      %mul = felt.mul %neg_in, %inv
+      %sum = felt.add %mul, %const_1
+      constrain.eq %out, %sum : !felt.type
+      %zero_prod = felt.mul %in, %out
+      constrain.eq %zero_prod, %const_0 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Comparators::@IsZero StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:    %arg0 in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self[@out] in Entire ( Unreduced:[ -4053239664633446399, 1 ] )
+// CHECK-NEXT:    %self[@inv] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:  }
+// CHECK-NEXT:  constrain {
+// CHECK-NEXT:    %arg0[@out] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %arg0[@inv] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %arg1 in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @Comparators::@IsZero SSAIntervals {
+// CHECK: compute {
+// CHECK-NEXT:    %arg0 in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.const] in Degenerate(1) ( unreduced: Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.inv] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.neg] in Entire ( unreduced: Unreduced:[ -2013265920, 0 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.mul] in Entire ( unreduced: Unreduced:[ -4053239664633446400, 0 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.add] in Entire ( unreduced: Unreduced:[ -4053239664633446399, 1 ] )
+// CHECK-NEXT:  }
+// CHECK-NEXT:  constrain {
+// CHECK-NEXT:    %arg1 in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.const] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.const] in Degenerate(1) ( unreduced: Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [struct.readm] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [struct.readm] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.neg] in Entire ( unreduced: Unreduced:[ -2013265920, 0 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.mul] in Entire ( unreduced: Unreduced:[ -4053239664633446400, 0 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.add] in Entire ( unreduced: Unreduced:[ -4053239664633446399, 1 ] )
+// CHECK-NEXT:    %{{[^ ]+}} [felt.mul] in Degenerate(0)
+// CHECK-NEXT:  }
