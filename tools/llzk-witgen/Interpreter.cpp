@@ -25,8 +25,10 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Operation.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
 #include <limits>
@@ -60,22 +62,19 @@ struct BlockResult {
   llvm::SmallVector<WitnessVal> values;
 };
 
-/// Linearize multi-dimensional indices into the flattened array storage offset.
-llvm::Expected<size_t> linearize(llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<int64_t> indices) {
+/// Validate array indices and flatten them with MLIR's row-major helper.
+llvm::Expected<size_t> checkedLinearize(
+    llvm::ArrayRef<int64_t> shape, llvm::ArrayRef<int64_t> indices, llvm::StringRef context
+) {
   if (shape.size() != indices.size()) {
     return makeError("wrong number of array indices");
   }
-  llvm::DynamicAPInt offset(0);
-  llvm::DynamicAPInt stride(1);
-  for (int64_t i = llzk::checkedCast<int64_t>(shape.size()) - 1; i >= 0; --i) {
-    size_t index = llzk::checkedCast<size_t>(i);
-    if (indices[index] < 0 || indices[index] >= shape[index]) {
-      return makeError("array index out of bounds");
+  for (auto [idx, dim] : llvm::zip_equal(indices, shape)) {
+    if (idx < 0 || dim < 0 || idx >= dim) {
+      return makeError(context);
     }
-    offset += llvm::DynamicAPInt(indices[index]) * stride;
-    stride *= shape[index];
   }
-  return checkedDynamicAPIntToSize(offset, "array linearized index");
+  return llzk::checkedCast<size_t>(mlir::linearize(indices, shape));
 }
 
 } // namespace
@@ -614,7 +613,8 @@ private:
         }
         indices.push_back(*index);
       }
-      auto offset = linearize((*arrayRef)->type.getShape(), indices);
+      auto offset =
+          checkedLinearize((*arrayRef)->type.getShape(), indices, "array index out of bounds");
       if (!offset) {
         return offset.takeError();
       }
@@ -645,7 +645,8 @@ private:
         }
         indices.push_back(*index);
       }
-      auto offset = linearize((*arrayRef)->type.getShape(), indices);
+      auto offset =
+          checkedLinearize((*arrayRef)->type.getShape(), indices, "array index out of bounds");
       if (!offset) {
         return offset.takeError();
       }
@@ -685,7 +686,8 @@ private:
         }
         subArraySize *= *dimSize;
       }
-      auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
+      auto prefixOffset =
+          checkedLinearize(shape.take_front(indices.size()), indices, "array index out of bounds");
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
@@ -740,7 +742,8 @@ private:
       }
       llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
       llvm::DynamicAPInt subArraySize((*subArrayRef)->elements.size());
-      auto prefixOffset = linearize(shape.take_front(indices.size()), indices);
+      auto prefixOffset =
+          checkedLinearize(shape.take_front(indices.size()), indices, "array index out of bounds");
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }

@@ -37,6 +37,7 @@
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 #include <mlir/Dialect/MemRef/IR/MemRef.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -364,19 +365,6 @@ getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, O
   return failure();
 }
 
-/// Unravel one flat element offset into row-major static indices.
-static SmallVector<int64_t> delinearizeIndices(ArrayRef<int64_t> shape, size_t flatIndex) {
-  SmallVector<int64_t> indices(shape.size(), 0);
-  size_t carry = flatIndex;
-  for (int64_t dim = llzk::checkedCast<int64_t>(shape.size()) - 1; dim >= 0; --dim) {
-    size_t dimIndex = llzk::checkedCast<size_t>(dim);
-    size_t size = llzk::checkedCast<size_t>(shape[dimIndex]);
-    indices[dimIndex] = llzk::checkedCast<int64_t>(carry % size);
-    carry /= size;
-  }
-  return indices;
-}
-
 /// Create one static memref filled with zeros.
 static FailureOr<Value>
 createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
@@ -397,7 +385,7 @@ createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const 
   }
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : delinearizeIndices(memrefType.getShape(), flat)) {
+    for (int64_t index : mlir::delinearize(flat, memrefType.getShape())) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     builder.create<memref::StoreOp>(loc, zero, alloc, indices);
@@ -419,7 +407,7 @@ static FailureOr<Value> createRandomMemRef(
   auto elementType = memrefType.getElementType();
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : delinearizeIndices(memrefType.getShape(), flat)) {
+    for (int64_t index : mlir::delinearize(flat, memrefType.getShape())) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
@@ -1313,7 +1301,7 @@ private:
             return failure();
           }
           SmallVector<Value> indices;
-          for (int64_t index : delinearizeIndices(shape, flatIndex)) {
+          for (int64_t index : mlir::delinearize(flatIndex, shape)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
           }
           if (failed(writeArrayElement(
