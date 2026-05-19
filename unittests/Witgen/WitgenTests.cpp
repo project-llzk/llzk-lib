@@ -62,6 +62,26 @@ TEST_F(WitgenTests, ParseJSONArrayInput) {
   EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[2]), field->get().reduce(3));
 }
 
+TEST_F(WitgenTests, ParseJSONArrayNestedInput) {
+  auto parsed = llvm::json::parse(R"([[1, 2], [3, "4"]])");
+  ASSERT_TRUE(static_cast<bool>(parsed));
+
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+  auto arrayType = array::ArrayType::get(feltType, {2, 2});
+  auto field = Field::tryGetField("babybear");
+  ASSERT_TRUE(succeeded(field));
+
+  auto value = witgen::parseJSONValue(&*parsed, arrayType, field->get(), nullptr);
+  ASSERT_TRUE(static_cast<bool>(value)) << llvm::toString(value.takeError());
+
+  auto arrayValue = std::get<witgen::ArrayValueRef>(*value);
+  ASSERT_EQ(arrayValue->elements.size(), 4u);
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[0]), field->get().reduce(1));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[1]), field->get().reduce(2));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[2]), field->get().reduce(3));
+  EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[3]), field->get().reduce(4));
+}
+
 TEST_F(WitgenTests, DefaultValueFailsOnUninitializedRead) {
   auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
   auto field = Field::tryGetField("babybear");
@@ -147,6 +167,37 @@ TEST_F(WitgenTests, SerializeJSONArrayRejectsDynamicShape) {
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
   ASSERT_FALSE(static_cast<bool>(value));
   EXPECT_NE(llvm::toString(value.takeError()).find("requires a static shape"), std::string::npos);
+}
+
+TEST_F(WitgenTests, SerializeJSONArrayNestedOutput) {
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+  auto arrayType = array::ArrayType::get(feltType, {2, 2});
+
+  auto arrayValue = std::make_shared<witgen::ArrayValue>();
+  arrayValue->type = arrayType;
+  auto field = Field::getField("babybear");
+  arrayValue->elements.push_back(field.reduce(1));
+  arrayValue->elements.push_back(field.reduce(2));
+  arrayValue->elements.push_back(field.reduce(3));
+  arrayValue->elements.push_back(field.reduce(4));
+
+  SymbolTableCollection tables;
+  auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
+  ASSERT_TRUE(static_cast<bool>(value)) << llvm::toString(value.takeError());
+
+  auto *outer = value->getAsArray();
+  ASSERT_NE(outer, nullptr);
+  ASSERT_EQ(outer->size(), 2u);
+  auto *first = (*outer)[0].getAsArray();
+  auto *second = (*outer)[1].getAsArray();
+  ASSERT_NE(first, nullptr);
+  ASSERT_NE(second, nullptr);
+  ASSERT_EQ(first->size(), 2u);
+  ASSERT_EQ(second->size(), 2u);
+  EXPECT_EQ((*first)[0].getAsString(), "1");
+  EXPECT_EQ((*first)[1].getAsString(), "2");
+  EXPECT_EQ((*second)[0].getAsString(), "3");
+  EXPECT_EQ((*second)[1].getAsString(), "4");
 }
 
 TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {

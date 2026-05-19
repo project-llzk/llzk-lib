@@ -88,11 +88,9 @@ static llvm::Expected<WitnessVal> parseJSONArray(
     return arrayValue;
   }
 
-  auto subArrayType =
-      array::ArrayType::get(type.getElementType(), type.getDimensionSizes().drop_front());
   arrayValue->elements.reserve(jsonArray->size());
   for (const llvm::json::Value &elem : *jsonArray) {
-    auto parsed = parseJSONArray(&elem, subArrayType, field, origin, dimIndex + 1);
+    auto parsed = parseJSONArray(&elem, type, field, origin, dimIndex + 1);
     if (!parsed) {
       return parsed.takeError();
     }
@@ -155,13 +153,10 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
     subArraySize *= llvm::DynamicAPInt(*nextDimSize);
   }
 
-  auto subArrayType =
-      array::ArrayType::get(type.getElementType(), type.getDimensionSizes().drop_front());
   for (size_t i = 0; i < *dimSize; ++i) {
     llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * subArraySize);
-    auto subArray = serializeJSONArray(
-        arrayValue, subArrayType, tables, origin, mode, dimIndex + 1, nextOffset
-    );
+    auto subArray =
+        serializeJSONArray(arrayValue, type, tables, origin, mode, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();
     }
