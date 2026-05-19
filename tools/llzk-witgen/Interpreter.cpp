@@ -462,11 +462,11 @@ private:
       if (!feltValue) {
         return feltValue.takeError();
       }
-      llvm::APSInt indexAPS = toAPSInt(*feltValue);
-      if (indexAPS < 0 || indexAPS > std::numeric_limits<int64_t>::max()) {
+      auto &felt = *feltValue;
+      if (felt < 0 || felt > std::numeric_limits<int64_t>::max()) {
         return makeError("felt value does not fit in index");
       }
-      return bind({WitnessVal(llzk::checkedCast<int64_t>(indexAPS.getLimitedValue()))});
+      return bind({WitnessVal(int64_t(felt))});
     }
 
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
