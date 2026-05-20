@@ -50,10 +50,10 @@ static bool usesUnsignedCmp(scf::ForOp forOp) {
 
 /// Convert an unsigned intermediate back to `int64_t`, rejecting underflow.
 static llvm::Expected<int64_t> toCheckedInt64(uint64_t value) {
-  if (value > llzk::checkedCast<uint64_t>(std::numeric_limits<int64_t>::max())) {
-    return makeError("unsigned value does not fit in signed int64_t");
+  if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return makeError("value of uint64_t does not fit in signed int64_t");
   }
-  return llzk::checkedCast<int64_t>(value);
+  return static_cast<int64_t>(value);
 }
 
 /// Represent the values yielded by a block or region along with termination state.
