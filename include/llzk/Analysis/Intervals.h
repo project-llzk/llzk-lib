@@ -380,4 +380,8 @@ mlir::FailureOr<Interval> unsignedIntDiv(const Interval &lhs, const Interval &rh
 /// Returns failure if the divisor interval may contain zero.
 mlir::FailureOr<Interval> signedIntDiv(const Interval &lhs, const Interval &rhs);
 
+/// Computes signed integer remainder with possibly non-Degenerate divisors.
+/// If the divisor interval may contain zero, conservatively returns Entire.
+Interval signedMod(const Interval &lhs, const Interval &rhs);
+
 } // namespace llzk

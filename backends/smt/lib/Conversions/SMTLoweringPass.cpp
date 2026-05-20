@@ -12,8 +12,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "SMTLoweringCommon.h"
 #include "smt/Conversions/ConversionPasses.h"
 
+#include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Enums.h"
@@ -37,6 +40,7 @@
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -45,11 +49,16 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <algorithm>
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
 
 namespace llzk {
@@ -60,148 +69,455 @@ namespace smt {
 } // namespace smt
 
 using namespace mlir;
+using namespace llzk::smt::detail;
 
-using SignalSymbols = DenseMap<StringRef, std::pair<Value, Value>>;
-class LLZKToSMTTypeConverter : public TypeConverter {
+namespace {
+
+/// Decide when modular reduction can be avoided or must be reintroduced.
+///
+/// This helper owns the interval-analysis view of the current lowering target.
+/// It computes the range-based facts that drive the optimized non-native
+/// encoding, but it does not emit SMT operations itself. Keeping that reasoning
+/// separate makes it possible to reuse the same modulo-elimination methodology
+/// for other non-native target theories in the future.
+class ModularReasoner {
 public:
-  LLZKToSMTTypeConverter(MLIRContext *ctx) {
-    addConversion([](Type type) { return type; });
-    addConversion([ctx](mlir::IntegerType type) -> Type {
-      if (type.isSignless() && type.getWidth() == 1) {
-        return smt::BoolType::get(ctx);
-      }
-      return type;
-    });
-    addConversion([ctx](felt::FeltType) { return smt::IntType::get(ctx); });
-    addConversion([this](array::ArrayType type) {
-      auto elemType = convertType(type.getElementType());
-      return array::ArrayType::get(elemType, type.getShape());
-    });
-  }
-};
+  static constexpr uint64_t explicitReductionQuotientThreshold = 1000;
 
-static inline bool containsFeltOrStruct(Type type) {
-  return isa<component::StructType>(type) ||
-         TypeSwitch<Type, bool>(type)
-             .Case<felt::FeltType>([](auto) { return true; })
-             .Case<array::ArrayType>([](array::ArrayType arrayType) {
-    return containsFeltOrStruct(arrayType.getElementType());
-  }).Default([](auto) { return false; });
-}
+  enum class ReductionKind {
+    Direct,
+    NativeMod,
+    // Given a constraint of the form e % p = 0, `ExplicitWitness` reduces the constraint to
+    // e = q*p + r where q, r are fresh variables. It further range constrains r to lie in [0, p-1]
+    // and also constrains the quotient based on the unreduced range on e.
+    ExplicitWitness,
+  };
 
-// Define OpConversions
-template <class From, class To> class BasicConverter : public OpConversionPattern<From> {
-  using OpConversionPattern<From>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      From fromOp, typename From::Adaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    rewriter.replaceOpWithNewOp<To>(fromOp, adaptor.getOperands());
+  struct ReductionPlan {
+    ReductionKind kind;
+    std::optional<UnreducedInterval> quotientRange;
+  };
 
-    return success();
-  }
-};
-
-class FunctionDefConverter : public OpConversionPattern<function::FuncDefOp> {
-  using OpConversionPattern<function::FuncDefOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      function::FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    // Convert the signature
-    SmallVector<Type> convertedArgTypes =
-        llvm::map_to_vector(op.getArgumentTypes(), [this](Type t) {
-      return getTypeConverter()->convertType(t);
-    });
-    SmallVector<Type> convertedResultTypes = llvm::map_to_vector(
-        llvm::filter_to_vector(
-            op.getResultTypes(), [](Type t) { return !isa<component::StructType>(t); }
-        ),
-        [this](Type t) { return getTypeConverter()->convertType(t); }
-    );
-
-    auto newType = op.getFunctionType().clone(convertedArgTypes, convertedResultTypes);
-    op.setFunctionType(newType);
-
-    auto &block = op.getBlocks().front();
-    auto signatureConversion = getTypeConverter()->convertBlockSignature(&block);
-    if (signatureConversion.has_value()) {
-      rewriter.applySignatureConversion(&block, *signatureConversion);
-    } else {
-      return failure();
+  ModularReasoner(
+      const Field &selectedField, DataFlowSolver &dataflowSolver,
+      const StructIntervals *intervals = nullptr
+  )
+      : field(selectedField), prime(toAPSInt(selectedField.prime())),
+        primeDynamic(toDynamicAPInt(prime)), solver(dataflowSolver) {
+    if (!intervals) {
+      return;
     }
 
-    return success();
+    captureMemberRanges(intervals->getComputeIntervals(), witnessRanges);
+    captureMemberRanges(intervals->getConstrainIntervals(), constraintRanges);
   }
+
+  bool isScalarFeltType(Type type) const { return isa<felt::FeltType>(type); }
+
+  UnreducedInterval getDefaultFeltRange() const {
+    return UnreducedInterval(field.get().zero(), field.get().maxVal());
+  }
+
+  UnreducedInterval getScalarValueRange(Value value) const {
+    if (const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value)) {
+      const ExpressionValue &expr = lattice->getValue().getScalarValue();
+      if (expr.hasUnreducedInterval()) {
+        return expr.getUnreducedInterval();
+      }
+      if (expr.getExpr() != nullptr) {
+        return expr.getInterval().firstUnreduced();
+      }
+    }
+    return getDefaultFeltRange();
+  }
+
+  UnreducedInterval getWitnessMemberRange(StringRef memberName) const {
+    return lookupMemberRange(witnessRanges, memberName);
+  }
+
+  UnreducedInterval getConstraintMemberRange(StringRef memberName) const {
+    return lookupMemberRange(constraintRanges, memberName);
+  }
+
+  bool unionWidthLessThanPrime(const UnreducedInterval &lhs, const UnreducedInterval &rhs) const {
+    return rangeSpanLessThanPrime(lhs.doUnion(rhs));
+  }
+
+  bool spansModulusBoundary(const UnreducedInterval &range) const {
+    return floorDiv(range.getLHS()) != floorDiv(range.getRHS());
+  }
+
+  bool sameResidueWindow(const UnreducedInterval &lhs, const UnreducedInterval &rhs) const {
+    llvm::DynamicAPInt lhsLow = floorDiv(lhs.getLHS());
+    llvm::DynamicAPInt lhsHigh = floorDiv(lhs.getRHS());
+    llvm::DynamicAPInt rhsLow = floorDiv(rhs.getLHS());
+    llvm::DynamicAPInt rhsHigh = floorDiv(rhs.getRHS());
+    return lhsLow == lhsHigh && lhsLow == rhsLow && lhsLow == rhsHigh;
+  }
+
+  bool isCanonical(const UnreducedInterval &range) const {
+    llvm::DynamicAPInt zero(0);
+    return range.getLHS() >= zero && range.getRHS() < primeDynamic;
+  }
+
+  bool maybeContainsZeroResidue(const UnreducedInterval &range) const {
+    llvm::DynamicAPInt firstMultiple = ceilDiv(range.getLHS()) * primeDynamic;
+    return firstMultiple <= range.getRHS();
+  }
+
+  ReductionPlan planCanonicalization(const UnreducedInterval &range) const {
+    if (isCanonical(range)) {
+      return {ReductionKind::Direct, std::nullopt};
+    }
+
+    if (!shouldUseExplicitReduction(range)) {
+      return {ReductionKind::NativeMod, std::nullopt};
+    }
+
+    return {ReductionKind::ExplicitWitness, getQuotientRange(range)};
+  }
+
+  ReductionPlan
+  planCongruence(const UnreducedInterval &lhsRange, const UnreducedInterval &rhsRange) const {
+    if (explicitReductionQuotientThreshold > 0 && unionWidthLessThanPrime(lhsRange, rhsRange)) {
+      return {ReductionKind::Direct, std::nullopt};
+    }
+
+    auto diffRange = lhsRange - rhsRange;
+    if (!shouldUseExplicitReduction(diffRange)) {
+      return {ReductionKind::NativeMod, std::nullopt};
+    }
+
+    return {ReductionKind::ExplicitWitness, getQuotientRange(diffRange)};
+  }
+
+  const llvm::APSInt &getPrime() const { return prime; }
+
+private:
+  std::reference_wrapper<const Field> field;
+  llvm::APSInt prime;
+  llvm::DynamicAPInt primeDynamic;
+  DataFlowSolver &solver;
+  llvm::StringMap<UnreducedInterval> witnessRanges;
+  llvm::StringMap<UnreducedInterval> constraintRanges;
+
+  static bool isDirectMemberRef(const SourceRef &ref) {
+    return ref.isRooted() && ref.getPath().size() == 1 && ref.getPath().front().isMember();
+  }
+
+  void captureMemberRanges(
+      const llvm::MapVector<SourceRef, Interval> &reducedRanges,
+      llvm::StringMap<UnreducedInterval> &out
+  ) {
+    for (const auto &[ref, reduced] : reducedRanges) {
+      if (!isDirectMemberRef(ref)) {
+        continue;
+      }
+
+      auto member = ref.getPath().front().getMember();
+      StringRef memberName = member.getSymName();
+      // Member symbols denote stored felt values. Use the reduced member interval lifted
+      // to a single residue window, rather than the producer expression's unreduced interval.
+      // Otherwise writes like `1 - x * inv` incorrectly widen the stored witness symbol.
+      UnreducedInterval range = reduced.firstUnreduced();
+      auto [it, inserted] = out.try_emplace(memberName, range);
+      if (!inserted) {
+        it->second = range;
+      }
+    }
+  }
+
+  UnreducedInterval
+  lookupMemberRange(const llvm::StringMap<UnreducedInterval> &ranges, StringRef memberName) const {
+    if (auto it = ranges.find(memberName); it != ranges.end()) {
+      return it->second;
+    }
+    return getDefaultFeltRange();
+  }
+
+  bool rangeSpanLessThanPrime(const UnreducedInterval &range) const {
+    return range.getRHS() - range.getLHS() < primeDynamic;
+  }
+
+  UnreducedInterval getQuotientRange(const UnreducedInterval &range) const {
+    return UnreducedInterval(floorDiv(range.getLHS()), floorDiv(range.getRHS()));
+  }
+
+  bool shouldUseExplicitReduction(const UnreducedInterval &range) const {
+    auto quotientRange = getQuotientRange(range);
+    auto quotientWidth = quotientRange.getRHS() - quotientRange.getLHS();
+    return quotientWidth < llvm::DynamicAPInt(explicitReductionQuotientThreshold);
+  }
+
+  llvm::DynamicAPInt floorDiv(const llvm::DynamicAPInt &value) const {
+    llvm::APSInt lhs = toAPSInt(value);
+    llvm::APSInt rhs = toAPSInt(primeDynamic);
+    unsigned width = std::max(lhs.getBitWidth(), rhs.getBitWidth()) + 1;
+    lhs = lhs.extend(width);
+    rhs = rhs.extend(width);
+    lhs.setIsSigned(true);
+    rhs.setIsSigned(true);
+    llvm::APSInt quotient = lhs / rhs;
+    llvm::APSInt remainder = lhs % rhs;
+    if (remainder < 0) {
+      quotient -= llvm::APSInt(llvm::APInt(width, 1), /*isUnsigned=*/false);
+    }
+    return toDynamicAPInt(quotient);
+  }
+
+  llvm::DynamicAPInt ceilDiv(const llvm::DynamicAPInt &value) const { return -floorDiv(-value); }
+
+  static std::string makeName(StringRef prefix, StringRef suffix) {
+    std::string name(prefix);
+    name += suffix;
+    return name;
+  }
+};
+
+/// Theory-neutral primitive emitter interface used by non-native encoders.
+class NonNativeTheoryEmitter {
+public:
+  virtual ~NonNativeTheoryEmitter() = default;
+
+  virtual void emitRangeConstraint(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const = 0;
+  virtual Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const = 0;
+  virtual Value
+  emitConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const = 0;
+  virtual Value emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
+  virtual Value emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
+  virtual Value emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
+  virtual Value emitModPrime(OpBuilder &builder, Location loc, Value value) const = 0;
+  virtual Value emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const = 0;
+  virtual Value emitOrderedComparison(
+      OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs, Value rhs
+  ) const = 0;
+};
+
+/// Emit primitive integer-theory terms for the optimized non-native encoding.
+///
+/// This layer only builds integer-sorted values and
+/// arithmetic fragments. Higher-level non-native encoding structure lives above
+/// this emitter.
+class SMTIntTheoryEmitter : public NonNativeTheoryEmitter {
+public:
+  SMTIntTheoryEmitter(MLIRContext *context, const ModularReasoner &modularReasoner)
+      : ctx(context), reasoner(modularReasoner) {}
+
+  void emitRangeConstraint(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const override {
+    auto lower = createIntConstant(builder, loc, range.getLHS());
+    auto upper = createIntConstant(builder, loc, range.getRHS());
+    auto lowerBound =
+        builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, value, lower.getResult());
+    auto upperBound =
+        builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::le, value, upper.getResult());
+    // Assert the lower bound of the canonical/unreduced interval for this symbol.
+    builder.create<smt::AssertOp>(loc, lowerBound.getResult());
+    // Assert the upper bound of the canonical/unreduced interval for this symbol.
+    builder.create<smt::AssertOp>(loc, upperBound.getResult());
+  }
+
+  Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const override {
+    return builder
+        .create<smt::DeclareFunOp>(loc, smt::IntType::get(ctx), StringAttr::get(ctx, name))
+        .getResult();
+  }
+
+  Value
+  emitConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const override {
+    return createIntConstant(builder, loc, value).getResult();
+  }
+
+  Value emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
+    return builder.create<smt::IntSubOp>(loc, lhs, rhs).getResult();
+  }
+
+  Value emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
+    return builder.create<smt::IntAddOp>(loc, ValueRange {lhs, rhs}).getResult();
+  }
+
+  Value emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
+    return builder.create<smt::IntMulOp>(loc, ValueRange {lhs, rhs}).getResult();
+  }
+
+  Value emitModPrime(OpBuilder &builder, Location loc, Value value) const override {
+    auto primeConst = createPrimeConstant(builder, loc);
+    return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()})
+        .getResult();
+  }
+
+  Value emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const override {
+    auto primeConst = createPrimeConstant(builder, loc);
+    return emitMul(builder, loc, factor, primeConst.getResult());
+  }
+
+  Value emitOrderedComparison(
+      OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs, Value rhs
+  ) const override {
+    static DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
+        {boolean::FeltCmpPredicate::GE, smt::IntPredicate::ge},
+        {boolean::FeltCmpPredicate::GT, smt::IntPredicate::gt},
+        {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
+        {boolean::FeltCmpPredicate::LT, smt::IntPredicate::lt}
+    };
+    return builder.create<smt::IntCmpOp>(loc, predicateComparator[predicate], lhs, rhs).getResult();
+  }
+
+private:
+  MLIRContext *ctx;
+  const ModularReasoner &reasoner;
+
+  smt::IntConstantOp createPrimeConstant(OpBuilder &builder, Location loc) const {
+    return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, reasoner.getPrime()));
+  }
+
+  smt::IntConstantOp
+  createIntConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const {
+    return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, toAPSInt(value)));
+  }
+};
+
+} // namespace
+
+/// Lower felt operations by combining interval-guided modular reasoning with a
+/// theory-neutral primitive emitter.
+///
+/// The core idea is:
+/// 1. Use interval analysis to decide whether modular reduction can be dropped.
+/// 2. If reduction is still needed, choose between native `mod p` and an
+///    explicit quotient witness based on quotient width.
+/// 3. Compose those choices into equality, comparison, division, and inverse
+///    encodings using generic SMT structure such as `eq`, `ite`, and `assert`.
+///
+/// This class owns the encoding policy. The theory emitter beneath it only
+/// knows how to build primitive target-theory terms.
+class OptimizedNonNativeStrategy {
+public:
+  OptimizedNonNativeStrategy(
+      MLIRContext *context, const Field &selectedField, DataFlowSolver &dataflowSolver,
+      const StructIntervals *intervals = nullptr
+  );
+
+  bool isScalarFeltType(Type type) const;
+  UnreducedInterval getDefaultFeltRange() const;
+  UnreducedInterval getScalarValueRange(Value value) const;
+  UnreducedInterval getConstraintMemberRange(StringRef memberName) const;
+  UnreducedInterval getWitnessMemberRange(StringRef memberName) const;
+  void emitRangeConstraint(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const;
+  bool maybeContainsZeroResidue(const UnreducedInterval &range) const;
+  bool spansModulusBoundary(const UnreducedInterval &range) const;
+  bool sameResidueWindow(const UnreducedInterval &lhs, const UnreducedInterval &rhs) const;
+  Value canonicalizeValue(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range,
+      StringRef prefix
+  ) const;
+  Value buildCanonicalEqualityPredicate(
+      OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
+      const UnreducedInterval &rhsRange, StringRef prefix
+  ) const;
+  Value buildCongruenceEqualityPredicate(
+      OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
+      const UnreducedInterval &rhsRange, StringRef prefix
+  ) const;
+  Value emitOrderedComparisonPredicate(
+      OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs,
+      const UnreducedInterval &lhsRange, Value rhs, const UnreducedInterval &rhsRange,
+      StringRef prefix
+  ) const;
+  void emitCongruenceEqualityAssertion(
+      OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
+      const UnreducedInterval &rhsRange, StringRef prefix
+  ) const;
+  Value emitDivisionValue(
+      OpBuilder &builder, Location loc, Value numerator, const UnreducedInterval &numeratorRange,
+      Value denominator, const UnreducedInterval &denominatorRange,
+      const UnreducedInterval &resultRange
+  ) const;
+  Value emitInverseValue(
+      OpBuilder &builder, Location loc, Value operand, const UnreducedInterval &operandRange
+  ) const;
+  void populatePatterns(
+      RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
+      const SignalSymbols &signalSymbols
+  ) const;
+
+private:
+  ModularReasoner reasoner;
+  std::unique_ptr<NonNativeTheoryEmitter> emitter;
 };
 
 class FeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
-  APSInt prime;
-
 public:
-  FeltDivConverter(TypeConverter &_typeConverter, MLIRContext *context, APSInt _prime)
-      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, prime {std::move(_prime)} {}
+  FeltDivConverter(
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<felt::DivFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-
-    // Rewrite `%z = felt.div %x, %y` into:
-    // %z = smt.declare_fun "z" : !smt.int
-    // %p = smt.constant <field prime> : !smt.int
-    // %c0 = smt.constant 0 : !smt.int
-    // %y0 = smt.eq %y, %c0 : !smt.bool
-    // %z0 = smt.eq %z, %c0 : !smt.bool
-    // %yz = smt.int.mul %y, %z : !smt.int
-    // %yz_mod = smt.int.mod %yz, %p : !smt.int
-    // %x_mod = smt.int.mod %x, %p : !smt.int
-    // %yz_eq_x = smt.eq %yz_mod, %x_mod : !smt.bool
-    // %div_constraint = smt.ite %y0, %z0, %yz_eq_x : !smt.bool
-    // smt.assert %div_constraint
-
-    auto div = rewriter.create<smt::DeclareFunOp>(op->getLoc(), smt::IntType::get(getContext()));
-    auto mod =
-        rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
-    auto zero = rewriter.create<smt::IntConstantOp>(
-        op->getLoc(), IntegerAttr::get(getContext(), APSInt {APInt {1, 0}})
+    auto divRange = strategy->getScalarValueRange(op.getResult());
+    auto lhsRange = strategy->getScalarValueRange(op.getLhs());
+    auto rhsRange = strategy->getScalarValueRange(op.getRhs());
+    auto div = strategy->emitDivisionValue(
+        rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange, divRange
     );
-    auto denominatorIsZero =
-        rewriter.create<smt::EqOp>(op->getLoc(), adaptor.getRhs(), zero.getResult());
-    auto divIsZero = rewriter.create<smt::EqOp>(op->getLoc(), div.getResult(), zero.getResult());
-    auto product = rewriter.create<smt::IntMulOp>(
-        op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()}
-    );
-    auto productMod =
-        rewriter.create<smt::IntModOp>(op->getLoc(), product.getResult(), mod.getResult());
-    auto numeratorMod =
-        rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod.getResult());
-    auto productEqualsNumerator =
-        rewriter.create<smt::EqOp>(op->getLoc(), productMod.getResult(), numeratorMod.getResult());
-    auto divConstraint = rewriter.create<smt::IteOp>(
-        op->getLoc(), denominatorIsZero.getResult(), divIsZero.getResult(),
-        productEqualsNumerator.getResult()
-    );
-    rewriter.create<smt::AssertOp>(op->getLoc(), divConstraint.getResult());
-    rewriter.replaceOp(op, div.getResult());
+    rewriter.replaceOp(op, div);
 
     return success();
   }
+
+private:
+  const OptimizedNonNativeStrategy *strategy;
+};
+
+class FeltInvConverter : public OpConversionPattern<felt::InvFeltOp> {
+public:
+  FeltInvConverter(
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<felt::InvFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
+
+  LogicalResult matchAndRewrite(
+      felt::InvFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto operandRange = strategy->getScalarValueRange(op.getOperand());
+    auto inv =
+        strategy->emitInverseValue(rewriter, op.getLoc(), adaptor.getOperand(), operandRange);
+    rewriter.replaceOp(op, inv);
+
+    return success();
+  }
+
+private:
+  const OptimizedNonNativeStrategy *strategy;
 };
 
 class MemberWriteConverter : public OpConversionPattern<component::MemberWriteOp> {
-
-  SignalSymbols symbols;
-  APSInt prime;
-
 public:
   MemberWriteConverter(
-      TypeConverter &_typeConverter, MLIRContext *context, const SignalSymbols &_symbols,
-      APSInt _prime
+      TypeConverter &converter, MLIRContext *context, const SignalSymbols &signalMap,
+      const OptimizedNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, symbols {_symbols},
-        prime {std::move(_prime)} {}
-  using OpConversionPattern<component::MemberWriteOp>::OpConversionPattern;
+      : OpConversionPattern<component::MemberWriteOp>(converter, context, /*benefit=*/2),
+        symbols(signalMap), strategy(loweringStrategy) {}
+
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (!strategy->isScalarFeltType(op.getVal().getType())) {
+      op.emitError("SMT lowering currently only supports felt-valued struct.writem");
+      return failure();
+    }
 
     auto it = symbols.find(adaptor.getMemberName());
     if (it == symbols.end()) {
@@ -209,237 +525,373 @@ public:
     }
 
     auto [_, witness] = it->second;
-    auto mod =
-        rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
-
-    auto witnessMod = rewriter.create<smt::IntModOp>(op->getLoc(), witness, mod);
-    auto valueMod = rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getVal(), mod);
-    auto equal =
-        rewriter.create<smt::EqOp>(op->getLoc(), witnessMod.getResult(), valueMod.getResult());
-    rewriter.replaceOpWithNewOp<smt::AssertOp>(op, equal);
-
-    return success();
-  }
-};
-
-class MemberReadConverter : public OpConversionPattern<component::MemberReadOp> {
-  SignalSymbols symbols;
-
-public:
-  MemberReadConverter(
-      TypeConverter &_typeConverter, MLIRContext *context, const SignalSymbols &_symbols
-  )
-      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, symbols {_symbols} {}
-  using OpConversionPattern<component::MemberReadOp>::OpConversionPattern;
-
-  LogicalResult matchAndRewrite(
-      component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-
-    // Create a symbol for the signal
-    auto it = symbols.find(adaptor.getMemberName());
-    if (it == symbols.end()) {
-      return failure();
-    }
-
-    auto [constrain, witness] = it->second;
-    rewriter.replaceOp(op, constrain.getDefiningOp());
-
-    return success();
-  }
-};
-
-class StructDefConverter : public OpConversionPattern<component::StructDefOp> {
-  using OpConversionPattern<component::StructDefOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      component::StructDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    // Replace the struct.def with a single mlir func with the signature and body of
-    // @struct::@product
-    std::string smt_func_name = ("smt_" + op.getSymName()).str();
-    auto productFunc = op.getProductFuncOp();
-    auto smtFunc =
-        rewriter.create<func::FuncOp>(op->getLoc(), smt_func_name, productFunc.getFunctionType());
-    IRMapping mapping;
-    productFunc.getFunctionBody().cloneInto(&smtFunc.getFunctionBody(), mapping);
-
-    // Replace llzk::function.return with mlir::func.return
-    smtFunc.walk([&](function::ReturnOp returnOp) {
-      rewriter.setInsertionPoint(returnOp);
-      rewriter.replaceOpWithNewOp<func::ReturnOp>(returnOp, returnOp.getOperands());
-    });
-
+    auto witnessRange = strategy->getWitnessMemberRange(adaptor.getMemberName());
+    auto valueRange = strategy->getScalarValueRange(op.getVal());
+    strategy->emitCongruenceEqualityAssertion(
+        rewriter, op.getLoc(), witness, witnessRange, adaptor.getVal(), valueRange, "member_write"
+    );
     rewriter.eraseOp(op);
+
     return success();
   }
-};
 
-class ReturnConverter : public OpConversionPattern<function::ReturnOp> {
-  using OpConversionPattern<function::ReturnOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      function::ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    // Don't return any !struct.type's from the SMT function
-    SmallVector<Value> returnedValues;
-    for (auto [val, type] : llvm::zip(adaptor.getOperands(), op.getOperandTypes())) {
-      if (isa<component::StructType>(type)) {
-        continue;
-      }
-      returnedValues.push_back(val);
-    }
-
-    rewriter.modifyOpInPlace(op, [&]() { op.getOperandsMutable().assign(returnedValues); });
-    return success();
-  }
+private:
+  SignalSymbols symbols;
+  const OptimizedNonNativeStrategy *strategy;
 };
 
 class ConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp> {
-  APSInt prime;
-
 public:
-  ConstrainConverter(TypeConverter &_typeConverter, MLIRContext *context, APSInt _prime)
-      : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, prime {std::move(_prime)} {}
+  ConstrainConverter(
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<constrain::EmitEqualityOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       constrain::EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto mod =
-        rewriter.create<smt::IntConstantOp>(op->getLoc(), IntegerAttr::get(getContext(), prime));
-
-    auto lhsMod = rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getLhs(), mod);
-    auto rhsMod = rewriter.create<smt::IntModOp>(op->getLoc(), adaptor.getRhs(), mod);
-    auto eq = rewriter.create<smt::EqOp>(op->getLoc(), lhsMod.getResult(), rhsMod.getResult());
-    rewriter.replaceOpWithNewOp<smt::AssertOp>(op, eq.getResult());
+    auto lhsRange = strategy->getScalarValueRange(op.getLhs());
+    auto rhsRange = strategy->getScalarValueRange(op.getRhs());
+    strategy->emitCongruenceEqualityAssertion(
+        rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange,
+        "constrain_eq"
+    );
+    rewriter.eraseOp(op);
     return success();
   }
+
+private:
+  const OptimizedNonNativeStrategy *strategy;
 };
 
 class BoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
-  using OpConversionPattern<boolean::CmpOp>::OpConversionPattern;
+public:
+  BoolCmpConverter(
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<boolean::CmpOp>(converter, context), strategy(loweringStrategy) {}
+
   LogicalResult matchAndRewrite(
       boolean::CmpOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    auto lhsRange = strategy->getScalarValueRange(op.getLhs());
+    auto rhsRange = strategy->getScalarValueRange(op.getRhs());
+
     switch (adaptor.getPredicate()) {
-    case boolean::FeltCmpPredicate::EQ:
-      rewriter.replaceOpWithNewOp<smt::EqOp>(op, adaptor.getLhs(), adaptor.getRhs());
-      return success();
-    case boolean::FeltCmpPredicate::NE:
-      rewriter.replaceOpWithNewOp<smt::NotOp>(
-          op,
-          rewriter.create<smt::EqOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs()).getResult()
+    case boolean::FeltCmpPredicate::EQ: {
+      auto eq = strategy->buildCanonicalEqualityPredicate(
+          rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange,
+          "bool_cmp_eq"
       );
+      rewriter.replaceOp(op, eq);
       return success();
+    }
+    case boolean::FeltCmpPredicate::NE: {
+      auto eq = strategy->buildCanonicalEqualityPredicate(
+          rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange,
+          "bool_cmp_ne"
+      );
+      rewriter.replaceOp(op, rewriter.create<smt::NotOp>(op.getLoc(), eq).getResult());
+      return success();
+    }
     default: {
-      static DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
-          {boolean::FeltCmpPredicate::GE, smt::IntPredicate::ge},
-          {boolean::FeltCmpPredicate::GT, smt::IntPredicate::gt},
-          {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
-          {boolean::FeltCmpPredicate::LT, smt::IntPredicate::lt}
-      };
-      rewriter.replaceOpWithNewOp<smt::IntCmpOp>(
-          op, predicateComparator[adaptor.getPredicate()], adaptor.getLhs(), adaptor.getRhs()
+      Value cmp = strategy->emitOrderedComparisonPredicate(
+          rewriter, op.getLoc(), adaptor.getPredicate(), adaptor.getLhs(), lhsRange,
+          adaptor.getRhs(), rhsRange, "bool_cmp_ordered"
       );
-      break;
+      rewriter.replaceOp(op, cmp);
+      return success();
     }
     }
-    return success();
   }
+
+private:
+  const OptimizedNonNativeStrategy *strategy;
 };
 
-class SCFIfConverter : public OpConversionPattern<scf::IfOp> {
-  using OpConversionPattern<scf::IfOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      scf::IfOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    // Not doing anything interesting here, just convert the result types. A later pass will handle
-    // the rest
-    SmallVector<Type> convertedResultTypes =
-        llvm::map_to_vector(op.getResultTypes(), [this](Type t) {
-      return getTypeConverter()->convertType(t);
-    });
+/// Bundle the optimized non-native lowering policy with the current SMT int
+/// emitter. The strategy decides which range-based encoding shape should be
+/// used, while the emitter remains responsible for spelling that choice in the
+/// target SMT integer theory.
+OptimizedNonNativeStrategy::OptimizedNonNativeStrategy(
+    MLIRContext *context, const Field &selectedField, DataFlowSolver &dataflowSolver,
+    const StructIntervals *intervals
+)
+    : reasoner(selectedField, dataflowSolver, intervals),
+      emitter(std::make_unique<SMTIntTheoryEmitter>(context, reasoner)) {}
 
-    Value cond = adaptor.getCondition();
-    if (!isa<IntegerType>(cond.getType())) {
-      // We have to manually convert the condition type because it might be a block arg instead of
-      // coming from a converted op
-      cond = rewriter
-                 .create<UnrealizedConversionCastOp>(
-                     op.getLoc(), TypeRange {rewriter.getI1Type()}, cond
-                 )
-                 .getResult(0);
-    }
+bool OptimizedNonNativeStrategy::isScalarFeltType(Type type) const {
+  return reasoner.isScalarFeltType(type);
+}
 
-    auto convertedIf = rewriter.create<scf::IfOp>(
-        op.getLoc(), convertedResultTypes, cond,
-        /*addThenBlock=*/false, /*addElseBlock=*/false
-    );
+UnreducedInterval OptimizedNonNativeStrategy::getDefaultFeltRange() const {
+  return reasoner.getDefaultFeltRange();
+}
 
-    rewriter.inlineRegionBefore(
-        op.getThenRegion(), convertedIf.getThenRegion(), convertedIf.getThenRegion().end()
-    );
-    rewriter.inlineRegionBefore(
-        op.getElseRegion(), convertedIf.getElseRegion(), convertedIf.getElseRegion().end()
-    );
-    rewriter.replaceOp(op, convertedIf);
-    return success();
+UnreducedInterval OptimizedNonNativeStrategy::getScalarValueRange(Value value) const {
+  return reasoner.getScalarValueRange(value);
+}
+
+UnreducedInterval OptimizedNonNativeStrategy::getConstraintMemberRange(StringRef memberName) const {
+  return reasoner.getConstraintMemberRange(memberName);
+}
+
+UnreducedInterval OptimizedNonNativeStrategy::getWitnessMemberRange(StringRef memberName) const {
+  return reasoner.getWitnessMemberRange(memberName);
+}
+
+void OptimizedNonNativeStrategy::emitRangeConstraint(
+    OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+) const {
+  emitter->emitRangeConstraint(builder, loc, value, range);
+}
+
+bool OptimizedNonNativeStrategy::maybeContainsZeroResidue(const UnreducedInterval &range) const {
+  return reasoner.maybeContainsZeroResidue(range);
+}
+
+bool OptimizedNonNativeStrategy::spansModulusBoundary(const UnreducedInterval &range) const {
+  return reasoner.spansModulusBoundary(range);
+}
+
+bool OptimizedNonNativeStrategy::sameResidueWindow(
+    const UnreducedInterval &lhs, const UnreducedInterval &rhs
+) const {
+  return reasoner.sameResidueWindow(lhs, rhs);
+}
+
+Value OptimizedNonNativeStrategy::canonicalizeValue(
+    OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range, StringRef prefix
+) const {
+  // Canonicalization produces the representative in [0, p-1]. We keep the
+  // value unchanged when it is already canonical, otherwise either use native
+  // `mod p` or materialize quotient/remainder witnesses depending on the
+  // range-derived reduction plan.
+  auto plan = reasoner.planCanonicalization(range);
+  switch (plan.kind) {
+  case ModularReasoner::ReductionKind::Direct:
+    return value;
+  case ModularReasoner::ReductionKind::NativeMod:
+    return emitter->emitModPrime(builder, loc, value);
+  case ModularReasoner::ReductionKind::ExplicitWitness: {
+    assert(plan.quotientRange.has_value() && "explicit canonicalization requires quotient range");
+    std::string quotientName = (prefix + Twine("_q")).str();
+    std::string remainderName = (prefix + Twine("_n")).str();
+    Value quotient = emitter->emitFreshSymbol(builder, loc, quotientName);
+    Value remainder = emitter->emitFreshSymbol(builder, loc, remainderName);
+    emitRangeConstraint(builder, loc, quotient, *plan.quotientRange);
+    emitRangeConstraint(builder, loc, remainder, getDefaultFeltRange());
+    Value qTimesP = emitter->emitPrimeMultiple(builder, loc, quotient);
+    Value reconstructed = emitter->emitAdd(builder, loc, qTimesP, remainder);
+    Value eq = builder.create<smt::EqOp>(loc, value, reconstructed).getResult();
+    // Assert value = q * p + r, where r is the canonical representative in [0, p-1].
+    builder.create<smt::AssertOp>(loc, eq);
+    return remainder;
   }
-};
-
-class YieldConverter : public OpConversionPattern<scf::YieldOp> {
-  using OpConversionPattern<scf::YieldOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      scf::YieldOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    // Make sure we're yielding the type-converted results so the scf.if's can have the right type
-    rewriter.replaceOpWithNewOp<scf::YieldOp>(op, adaptor.getResults());
-    return success();
   }
-};
+  llvm_unreachable("unknown reduction kind");
+}
 
-class FeltConstConverter : public OpConversionPattern<felt::FeltConstantOp> {
-  using OpConversionPattern<felt::FeltConstantOp>::OpConversionPattern;
-  LogicalResult matchAndRewrite(
-      felt::FeltConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    rewriter.replaceOpWithNewOp<smt::IntConstantOp>(
-        op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
-    );
-    return success();
+Value OptimizedNonNativeStrategy::buildCanonicalEqualityPredicate(
+    OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
+    const UnreducedInterval &rhsRange, StringRef prefix
+) const {
+  if (reasoner.unionWidthLessThanPrime(lhsRange, rhsRange)) {
+    return builder.create<smt::EqOp>(loc, lhs, rhs).getResult();
   }
-};
 
-class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
+  Value lhsCanonical =
+      canonicalizeValue(builder, loc, lhs, lhsRange, (prefix + Twine("_lhs")).str());
+  Value rhsCanonical =
+      canonicalizeValue(builder, loc, rhs, rhsRange, (prefix + Twine("_rhs")).str());
+  return builder.create<smt::EqOp>(loc, lhsCanonical, rhsCanonical).getResult();
+}
+
+Value OptimizedNonNativeStrategy::buildCongruenceEqualityPredicate(
+    OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
+    const UnreducedInterval &rhsRange, StringRef prefix
+) const {
+  // Congruence lowering starts from lhs - rhs ≡ 0 (mod p). When the two ranges
+  // are narrow enough we can compare directly; otherwise we either keep a
+  // native `mod p` constraint or introduce an explicit quotient witness.
+  auto plan = reasoner.planCongruence(lhsRange, rhsRange);
+  if (plan.kind == ModularReasoner::ReductionKind::Direct) {
+    return builder.create<smt::EqOp>(loc, lhs, rhs).getResult();
+  }
+
+  Value diff = emitter->emitSub(builder, loc, lhs, rhs);
+  switch (plan.kind) {
+  case ModularReasoner::ReductionKind::NativeMod: {
+    Value zero = emitter->emitConstant(builder, loc, llvm::DynamicAPInt(0));
+    Value reducedDiff = emitter->emitModPrime(builder, loc, diff);
+    return builder.create<smt::EqOp>(loc, reducedDiff, zero).getResult();
+  }
+  case ModularReasoner::ReductionKind::ExplicitWitness: {
+    assert(plan.quotientRange.has_value() && "explicit congruence requires quotient range");
+    std::string quotientName = (prefix + Twine("_q")).str();
+    Value quotient = emitter->emitFreshSymbol(builder, loc, quotientName);
+    emitRangeConstraint(builder, loc, quotient, *plan.quotientRange);
+    Value qTimesP = emitter->emitPrimeMultiple(builder, loc, quotient);
+    return builder.create<smt::EqOp>(loc, diff, qTimesP).getResult();
+  }
+  case ModularReasoner::ReductionKind::Direct:
+    llvm_unreachable("direct reductions handled above");
+  }
+  llvm_unreachable("unknown reduction kind");
+}
+
+Value OptimizedNonNativeStrategy::emitOrderedComparisonPredicate(
+    OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs,
+    const UnreducedInterval &lhsRange, Value rhs, const UnreducedInterval &rhsRange,
+    StringRef prefix
+) const {
+  // Ordered field comparisons are only safe to interpret directly when both
+  // operands stay within the same residue window. Otherwise compare the
+  // canonical representatives instead.
+  Value lhsToCompare = lhs;
+  Value rhsToCompare = rhs;
+  if (spansModulusBoundary(lhsRange) || spansModulusBoundary(rhsRange) ||
+      !sameResidueWindow(lhsRange, rhsRange)) {
+    lhsToCompare = canonicalizeValue(builder, loc, lhs, lhsRange, (prefix + Twine("_lhs")).str());
+    rhsToCompare = canonicalizeValue(builder, loc, rhs, rhsRange, (prefix + Twine("_rhs")).str());
+  }
+
+  return emitter->emitOrderedComparison(builder, loc, predicate, lhsToCompare, rhsToCompare);
+}
+
+void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
+    OpBuilder &builder, Location loc, Value lhs, const UnreducedInterval &lhsRange, Value rhs,
+    const UnreducedInterval &rhsRange, StringRef prefix
+) const {
+  Value predicate =
+      buildCongruenceEqualityPredicate(builder, loc, lhs, lhsRange, rhs, rhsRange, prefix);
+  // Assert lhs ≡ rhs (mod p) using the selected congruence encoding plan.
+  builder.create<smt::AssertOp>(loc, predicate);
+}
+
+Value OptimizedNonNativeStrategy::emitDivisionValue(
+    OpBuilder &builder, Location loc, Value numerator, const UnreducedInterval &numeratorRange,
+    Value denominator, const UnreducedInterval &denominatorRange,
+    const UnreducedInterval &resultRange
+) const {
+  // Note: this lowering inherits the current inverse convention used by the
+  // non-native encoding task notes and interval reasoning: a zero denominator
+  // forces the division result to zero. That is in some tension with the felt
+  // dialect documentation, which says the divisor must be non-zero.
+  // `felt.div x y` is encoded by a fresh witness `d` satisfying y * d ≡ x
+  // (mod p). If the denominator may be zero modulo p, we preserve the LLZK
+  // semantics with a branch that forces the result to zero in that case.
+  Value div = emitter->emitFreshSymbol(builder, loc, "div");
+  UnreducedInterval zeroRange(0, 0);
+  emitRangeConstraint(builder, loc, div, resultRange);
+
+  Value zero = emitter->emitConstant(builder, loc, llvm::DynamicAPInt(0));
+  Value product = emitter->emitMul(builder, loc, denominator, div);
+  UnreducedInterval productRange = denominatorRange * resultRange;
+  Value productEqualsNumerator = buildCongruenceEqualityPredicate(
+      builder, loc, product, productRange, numerator, numeratorRange, "felt_div"
+  );
+
+  if (!maybeContainsZeroResidue(denominatorRange)) {
+    // Assert denominator * div ≡ numerator (mod p) when the denominator is provably nonzero.
+    builder.create<smt::AssertOp>(loc, productEqualsNumerator);
+    return div;
+  }
+
+  Value denominatorIsZero = buildCanonicalEqualityPredicate(
+      builder, loc, denominator, denominatorRange, zero, zeroRange, "felt_div_denom_zero"
+  );
+  Value divIsZero = buildCanonicalEqualityPredicate(
+      builder, loc, div, resultRange, zero, zeroRange, "felt_div_result_zero"
+  );
+  // Build `ite denominator == 0 then div = 0 else denominator * div ≡ numerator (mod p)`.
+  Value divConstraint =
+      builder.create<smt::IteOp>(loc, denominatorIsZero, divIsZero, productEqualsNumerator)
+          .getResult();
+  // Assert the LLZK field-division semantics with an explicit zero-denominator branch.
+  builder.create<smt::AssertOp>(loc, divConstraint);
+  return div;
+}
+
+Value OptimizedNonNativeStrategy::emitInverseValue(
+    OpBuilder &builder, Location loc, Value operand, const UnreducedInterval &operandRange
+) const {
+  // Note: the current lowering treats `inv(0)` as 0 and otherwise constrains
+  // `x * inv(x) ≡ 1 (mod p)`. This matches the present analysis/task
+  // convention, but it is in tension with the felt dialect docs that require
+  // non-zero divisors for field division.
+  // `felt.inv x` is the special case x * inv ≡ 1 (mod p), again with the LLZK
+  // zero-denominator convention that a zero residue forces the result to zero.
+  Value inv = emitter->emitFreshSymbol(builder, loc, "inv");
+  UnreducedInterval invRange = getDefaultFeltRange();
+  UnreducedInterval zeroRange(0, 0);
+  UnreducedInterval oneRange(1, 1);
+  emitRangeConstraint(builder, loc, inv, invRange);
+
+  Value zero = emitter->emitConstant(builder, loc, llvm::DynamicAPInt(0));
+  Value one = emitter->emitConstant(builder, loc, llvm::DynamicAPInt(1));
+  Value product = emitter->emitMul(builder, loc, operand, inv);
+  UnreducedInterval productRange = operandRange * invRange;
+  Value productEqualsOne = buildCongruenceEqualityPredicate(
+      builder, loc, product, productRange, one, oneRange, "felt_inv"
+  );
+
+  if (!maybeContainsZeroResidue(operandRange)) {
+    // Assert operand * inv ≡ 1 (mod p) when the operand is provably nonzero.
+    builder.create<smt::AssertOp>(loc, productEqualsOne);
+    return inv;
+  }
+
+  Value operandIsZero = buildCanonicalEqualityPredicate(
+      builder, loc, operand, operandRange, zero, zeroRange, "felt_inv_operand_zero"
+  );
+  Value invIsZero = buildCanonicalEqualityPredicate(
+      builder, loc, inv, invRange, zero, zeroRange, "felt_inv_result_zero"
+  );
+  // Build `ite operand == 0 then inv = 0 else operand * inv ≡ 1 (mod p)`.
+  Value invConstraint =
+      builder.create<smt::IteOp>(loc, operandIsZero, invIsZero, productEqualsOne).getResult();
+  // Assert the LLZK inverse semantics with an explicit zero-operand branch.
+  builder.create<smt::AssertOp>(loc, invConstraint);
+  return inv;
+}
+
+void OptimizedNonNativeStrategy::populatePatterns(
+    RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
+    const SignalSymbols &signalSymbols
+) const {
+  patterns.add<
+      BasicConverter<felt::AddFeltOp, smt::IntAddOp>,
+      BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
+      BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
+      BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
+      BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>,
+      BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>,
+      BasicConverter<felt::SignedModFeltOp, smt::IntModOp>, FeltConstConverter, ReturnConverter,
+      SCFIfConverter, YieldConverter>(converter, context);
+  patterns.add<FunctionDefConverter>(converter, context);
+  patterns.add<BoolCmpConverter>(converter, context, this);
+  patterns.add<FeltDivConverter>(converter, context, this);
+  patterns.add<FeltInvConverter>(converter, context, this);
+  patterns.add<ConstrainConverter>(converter, context, this);
+  patterns.add<MemberWriteConverter>(converter, context, signalSymbols, this);
+  patterns.add<MemberReadConverter>(converter, context, signalSymbols);
+}
+
+class SMTOptimizedNonNativeLoweringPass
+    : public smt::impl::SMTLoweringPassBase<SMTOptimizedNonNativeLoweringPass> {
 
   void getDependentDialects(::mlir::DialectRegistry &registry) const override {
     registry.insert<smt::SMTDialect, mlir::func::FuncDialect>();
   }
 
-  // Hoist a @product function.def inside a struct.def to a free MLIR func.func
-  Operation *convertFunction(Operation *op) {
-    if (op == nullptr) {
-      return op;
-    }
-    MLIRContext *context = &getContext();
-
-    LLZKToSMTTypeConverter typeConverter {context};
-    RewritePatternSet patterns {context};
-    ConversionTarget target {*context};
-
-    target.addIllegalOp<component::StructDefOp>();
-    target.addLegalDialect<func::FuncDialect>();
-    target.addLegalOp<func::FuncOp>();
-
-    patterns.add<StructDefConverter>(typeConverter, context);
-
-    if (failed(applyPartialConversion(op, target, std::move(patterns)))) {
-      return nullptr;
-    }
-
-    return op;
-  }
-
   // Convert the body and signature of a @product function to SMT
-  Operation *convertBodies(Operation *op, const SignalSymbols &signalSymbols, const APSInt &prime) {
+  Operation *convertBodies(
+      Operation *op, const SignalSymbols &signalSymbols, const OptimizedNonNativeStrategy &strategy
+  ) {
     if (op == nullptr) {
       return op;
     }
@@ -450,122 +902,117 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     RewritePatternSet patterns {context};
     ConversionTarget target {*context};
 
-    target.addIllegalDialect<felt::FeltDialect>();
-    target.addIllegalDialect<constrain::ConstrainDialect>();
-    target.addLegalDialect<smt::SMTDialect>();
-    target.addLegalOp<UnrealizedConversionCastOp>();
-    target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
-    target.addLegalOp<component::CreateStructOp>();
-    target.addDynamicallyLegalOp<function::ReturnOp>([](function::ReturnOp returnOp) {
-      return llvm::none_of(returnOp.getOperandTypes(), [](Type type) {
-        return isa<component::StructType>(type);
-      });
-    });
-
-    target.addDynamicallyLegalOp<function::FuncDefOp>([](function::FuncDefOp funcOp) {
-      bool signatureLegal = llvm::none_of(funcOp.getArgumentTypes(), containsFeltOrStruct) &&
-                            llvm::none_of(funcOp.getResultTypes(), containsFeltOrStruct);
-
-      return signatureLegal;
-    });
-    target.addDynamicallyLegalOp<scf::YieldOp>([](scf::YieldOp yieldOp) {
-      return llvm::none_of(yieldOp.getOperandTypes(), containsFeltOrStruct);
-    });
-    target.addDynamicallyLegalOp<scf::IfOp>([](scf::IfOp ifOp) {
-      return llvm::none_of(ifOp.getResultTypes(), containsFeltOrStruct);
-    });
-
-    patterns.add<
-        BasicConverter<felt::AddFeltOp, smt::IntAddOp>,
-        BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
-        BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
-        BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
-        BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>, FeltConstConverter,
-        BoolCmpConverter, FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter>(
-        typeConverter, context
-    );
-    patterns.add<FeltDivConverter>(typeConverter, context, prime);
-    patterns.add<ConstrainConverter>(typeConverter, context, prime);
-    patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, prime);
-    patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
-
-    ConversionConfig config;
-    config.buildMaterializations = false;
-    if (failed(applyPartialConversion(op, target, std::move(patterns), config))) {
-      return nullptr;
-    }
-
-    SmallVector<component::CreateStructOp> deadStructs;
-    op->walk([&](component::CreateStructOp createStructOp) {
-      if (createStructOp->use_empty()) {
-        deadStructs.push_back(createStructOp);
-      }
-    });
-    for (component::CreateStructOp createStructOp : deadStructs) {
-      createStructOp->erase();
-    }
-
-    return op;
+    configureSMTNoCFBodyConversionTarget(*context, target);
+    strategy.populatePatterns(patterns, typeConverter, context, signalSymbols);
+    return applySMTNoCFBodyConversion(op, target, std::move(patterns));
   }
 
   void runOnOperation() override {
     ModuleOp mod = getOperation();
+    auto selectedField = resolveSelectedField(mod, fieldName);
+    if (failed(selectedField)) {
+      return signalPassFailure();
+    }
+    auto prime = toAPSInt(selectedField->get().prime());
 
-    FieldSet fields;
-    if (!fieldName.empty()) {
-      auto fieldLookupResult = Field::tryGetField(fieldName);
-      if (failed(fieldLookupResult)) {
-        mod.emitError() << "unknown field \"" << fieldName << "\"";
-        return signalPassFailure();
+    auto &mia = getAnalysis<ModuleIntervalAnalysis>();
+    mia.setField(*selectedField);
+    mia.setTrackUnreducedIntervals(true);
+    auto am = getAnalysisManager();
+    mia.ensureAnalysisRun(am);
+
+    auto walkResult =
+        mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
+      auto productFunc = structDef.getProductFuncOp();
+      if (!productFunc) {
+        structDef.emitError("SMT lowering requires a @product function");
+        signalPassFailure();
+        return WalkResult::interrupt();
       }
-      fields.insert(fieldLookupResult.value());
-    }
+      if (failed(validateSupportedSMTMemberAccesses(structDef))) {
+        signalPassFailure();
+        return WalkResult::interrupt();
+      }
+      Operation *symbolTableOp = structDef->getParentOp();
 
-    // Ignore failure; if we found no fields that will be handled later
-    (void)collectFields(mod, fields);
-
-    if (fields.empty()) {
-      mod.emitError() << "no prime field specified; could not deduce";
-      return signalPassFailure();
-    }
-
-    if (fields.size() > 1) {
-      mod.emitError() << "multiple fields unsupported";
-      return signalPassFailure();
-    }
-
-    auto selectedField = *(fields.begin());
-    auto prime = toAPSInt(selectedField.get().prime());
-
-    auto result = mod.walk([this, &prime](component::StructDefOp structDef) {
-      // Start by adding declare-funcs for each signal
+      // Start by adding declare-funcs for each felt signal member.
       IRRewriter rewriter {&getContext()};
-      rewriter.setInsertionPointToStart(&structDef.getProductFuncOp().getFunctionBody().front());
+      rewriter.setInsertionPointToStart(&productFunc.getFunctionBody().front());
 
-      auto preamble = structDef.getProductFuncOp()->getLoc();
+      auto preamble = productFunc->getLoc();
+      const StructIntervals *intervals =
+          mia.hasResult(structDef) ? &mia.getResult(structDef) : nullptr;
+      OptimizedNonNativeStrategy strategy {
+          &getContext(), selectedField->get(), mia.getSolver(), intervals
+      };
+      SmallVector<std::optional<UnreducedInterval>> productArgRanges;
+      productArgRanges.reserve(productFunc.getNumArguments());
+      for (auto [arg, type] :
+           llvm::zip(productFunc.getArguments(), productFunc.getArgumentTypes())) {
+        if (isa<felt::FeltType>(type)) {
+          productArgRanges.emplace_back(strategy.getScalarValueRange(arg));
+        } else {
+          productArgRanges.emplace_back(std::nullopt);
+        }
+      }
 
-      // Insert symbols for each signal
       SignalSymbols signalSymbols;
       for (auto memberDef : structDef.getMemberDefs()) {
+        if (!isa<felt::FeltType>(memberDef.getType())) {
+          continue;
+        }
+
+        std::string constraintName = memberDef.getSymName().str() + "_c";
+        std::string witnessName = memberDef.getSymName().str() + "_w";
         auto constraintSym = rewriter.create<smt::DeclareFunOp>(
             preamble, smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), memberDef.getSymName() + "_c")
+            StringAttr::get(&getContext(), constraintName)
         );
         auto witnessSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), memberDef.getSymName() + "_w")
+            preamble, smt::IntType::get(&getContext()), StringAttr::get(&getContext(), witnessName)
+        );
+        strategy.emitRangeConstraint(
+            rewriter, memberDef.getLoc(), constraintSym.getResult(),
+            strategy.getConstraintMemberRange(memberDef.getSymName())
+        );
+        strategy.emitRangeConstraint(
+            rewriter, memberDef.getLoc(), witnessSym.getResult(),
+            strategy.getWitnessMemberRange(memberDef.getSymName())
         );
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
 
-      if (convertFunction(convertBodies(structDef, signalSymbols, prime))) {
-        return WalkResult::advance();
-      } else {
+      std::string smtFuncName = "smt_" + structDef.getSymName().str();
+      auto *loweredProduct = convertStructProductToFunc(
+          convertBodies(structDef, signalSymbols, strategy), &getContext()
+      );
+      if (loweredProduct == nullptr) {
         signalPassFailure();
         return WalkResult::interrupt();
       }
+
+      auto smtFunc =
+          dyn_cast_or_null<func::FuncOp>(SymbolTable::lookupSymbolIn(symbolTableOp, smtFuncName));
+      if (!smtFunc) {
+        mod.emitError() << "failed to locate lowered SMT function \"" << smtFuncName << "\"";
+        signalPassFailure();
+        return WalkResult::interrupt();
+      }
+
+      IRRewriter argRewriter {&getContext()};
+      argRewriter.setInsertionPointToStart(&smtFunc.getBody().front());
+      for (auto [idx, maybeRange] : llvm::enumerate(productArgRanges)) {
+        if (!maybeRange.has_value()) {
+          continue;
+        }
+        strategy.emitRangeConstraint(
+            argRewriter, smtFunc.getLoc(), smtFunc.getArgument(idx), *maybeRange
+        );
+      }
+
+      return WalkResult::advance();
     });
-    if (!result.wasInterrupted()) {
+    if (!walkResult.wasInterrupted()) {
       // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
       mod->removeAttr(MAIN_ATTR_NAME);
     }
@@ -573,7 +1020,9 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
 };
 
 namespace smt {
-std::unique_ptr<mlir::Pass> createSMTLoweringPass() { return std::make_unique<SMTLoweringPass>(); }
+std::unique_ptr<mlir::Pass> createSMTLoweringPass() {
+  return std::make_unique<SMTOptimizedNonNativeLoweringPass>();
+}
 } // namespace smt
 
 } // namespace llzk

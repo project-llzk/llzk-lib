@@ -216,6 +216,8 @@ llvm::SmallVector<UnreducedInterval, 2> getSignedCanonicalParts(const Interval &
 
 bool containsZero(const UnreducedInterval &iv) { return iv.getLHS() <= 0 && iv.getRHS() >= 0; }
 
+llvm::DynamicAPInt absSigned(const llvm::DynamicAPInt &v) { return v < 0 ? -v : v; }
+
 Interval joinDivisionPiece(
     const Field &f, const Interval &acc, const llvm::DynamicAPInt &q0, const llvm::DynamicAPInt &q1,
     const llvm::DynamicAPInt &q2, const llvm::DynamicAPInt &q3
@@ -548,6 +550,46 @@ FailureOr<Interval> signedIntDiv(const Interval &lhs, const Interval &rhs) {
     }
   }
   return success(result);
+}
+
+Interval signedMod(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+
+  llvm::SmallVector<UnreducedInterval, 2> lhsParts = getSignedCanonicalParts(lhs);
+  llvm::SmallVector<UnreducedInterval, 2> rhsParts = getSignedCanonicalParts(rhs);
+  Interval result = Interval::Empty(f);
+
+  for (const UnreducedInterval &lhsPart : lhsParts) {
+    for (const UnreducedInterval &rhsPart : rhsParts) {
+      if (containsZero(rhsPart)) {
+        return Interval::Entire(f);
+      }
+
+      if (lhsPart.getLHS() == lhsPart.getRHS() && rhsPart.getLHS() == rhsPart.getRHS()) {
+        auto rem = lhsPart.getLHS() % rhsPart.getLHS();
+        result = result.join(UnreducedInterval(rem, rem).reduce(f));
+        continue;
+      }
+
+      llvm::DynamicAPInt maxAbsDivisor =
+          std::max(absSigned(rhsPart.getLHS()), absSigned(rhsPart.getRHS()));
+      if (maxAbsDivisor == 0) {
+        return Interval::Entire(f);
+      }
+
+      llvm::DynamicAPInt maxAbsRemainder = maxAbsDivisor - 1;
+      llvm::DynamicAPInt low = lhsPart.getLHS() < 0 ? std::max(lhsPart.getLHS(), -maxAbsRemainder)
+                                                    : llvm::DynamicAPInt(0);
+      llvm::DynamicAPInt high = lhsPart.getRHS() > 0 ? std::min(lhsPart.getRHS(), maxAbsRemainder)
+                                                     : llvm::DynamicAPInt(0);
+      result = result.join(UnreducedInterval(low, high).reduce(f));
+    }
+  }
+
+  return result;
 }
 
 Interval operator%(const Interval &lhs, const Interval &rhs) {

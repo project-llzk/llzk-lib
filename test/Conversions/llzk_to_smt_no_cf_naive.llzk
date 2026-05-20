@@ -1,0 +1,91 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf-naive='field=babybear' -split-input-file %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @ConstrainEqNaive {
+    function.def @product(%a: !felt.type) -> !struct.type<@ConstrainEqNaive> {
+      %self = struct.new : <@ConstrainEqNaive>
+      %sum = felt.add %a, %a : !felt.type, !felt.type
+      constrain.eq %sum, %a : !felt.type
+      function.return %self : !struct.type<@ConstrainEqNaive>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_ConstrainEqNaive(
+// CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[ARG:[0-9a-zA-Z_\.]+]], %[[ARG]]
+// CHECK: %[[LHS_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[SUM]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[RHS_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[ARG]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[LHS_MOD]], %[[RHS_MOD]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MemberWriteNaive {
+    struct.member @foo : !felt.type
+
+    function.def @product(%a: !felt.type) -> !struct.type<@MemberWriteNaive> {
+      %self = struct.new : <@MemberWriteNaive>
+      %sum = felt.add %a, %a : !felt.type, !felt.type
+      struct.writem %self[@foo] = %sum : <@MemberWriteNaive>, !felt.type
+      function.return %self : !struct.type<@MemberWriteNaive>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_MemberWriteNaive(
+// CHECK-DAG: %[[FOOW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "foo_w" : !smt.int
+// CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[ARG:[0-9a-zA-Z_\.]+]], %[[ARG]]
+// CHECK: %[[W_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[FOOW]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[V_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[SUM]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[W_MOD]], %[[V_MOD]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @DivNaive {
+    function.def @product(%a: !felt.type) -> !struct.type<@DivNaive> {
+      %self = struct.new : <@DivNaive>
+      %one = felt.const 1
+      %div = felt.div %one, %a : !felt.type, !felt.type
+      function.return %self : !struct.type<@DivNaive>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_DivNaive(
+// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
+// CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[DEN_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARG:[0-9a-zA-Z_\.]+]], %[[ZERO]] : !smt.int
+// CHECK: %[[DIV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIV]], %[[ZERO]] : !smt.int
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[ARG]], %[[DIV]]
+// CHECK: %[[PROD_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[PROD]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[NUM_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[PROD_MOD]], %[[NUM_MOD]] : !smt.int
+// CHECK: %[[ITE:[0-9a-zA-Z_\.]+]] = smt.ite %[[DEN_ZERO]], %[[DIV_ZERO]], %[[EQ]] : !smt.bool
+// CHECK: smt.assert %[[ITE]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @InvNaive {
+    function.def @product(%a: !felt.type) -> !struct.type<@InvNaive> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@InvNaive>
+      %inv = felt.inv %a : !felt.type
+      function.return %self : !struct.type<@InvNaive>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_InvNaive(
+// CHECK: %[[INV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv" : !smt.int
+// CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
+// CHECK: %[[OPERAND_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARG:[0-9a-zA-Z_\.]+]], %[[ZERO]] : !smt.int
+// CHECK: %[[INV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[INV]], %[[ZERO]] : !smt.int
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[ARG]], %[[INV]]
+// CHECK: %[[PROD_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[PROD]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[PROD_MOD]], %[[ONE]] : !smt.int
+// CHECK: %[[ITE:[0-9a-zA-Z_\.]+]] = smt.ite %[[OPERAND_ZERO]], %[[INV_ZERO]], %[[EQ]] : !smt.bool
+// CHECK: smt.assert %[[ITE]]

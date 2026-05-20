@@ -1,0 +1,16 @@
+// RUN: not llzk-opt --llzk-to-smt-no-cf='field=babybear' %s 2>&1 | FileCheck %s
+// RUN: not llzk-opt --llzk-to-smt-no-cf-naive='field=babybear' %s 2>&1 | FileCheck %s
+
+module attributes {llzk.lang} {
+  struct.def @NonFeltWrite {
+    struct.member @foo : !array.type<2 x !felt.type>
+
+    function.def @product(%a: !array.type<2 x !felt.type>) -> !struct.type<@NonFeltWrite> {
+      %self = struct.new : <@NonFeltWrite>
+      struct.writem %self[@foo] = %a : <@NonFeltWrite>, !array.type<2 x !felt.type>
+      function.return %self : !struct.type<@NonFeltWrite>
+    }
+  }
+}
+
+// CHECK: error: SMT lowering currently only supports felt-valued struct.writem
