@@ -10,6 +10,7 @@
 #include "ValueModel.h"
 
 #include "Errors.h"
+#include "WitgenUtils.h"
 
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
@@ -18,37 +19,9 @@
 
 #include <llvm/ADT/TypeSwitch.h>
 
-#include <limits>
-#include <random>
-
 using namespace mlir;
 
 namespace llzk::witgen {
-
-namespace {
-
-/// Draw a uniformly distributed field element in `[0, prime)`.
-static llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &rng, const Field &field) {
-  const uint64_t prime = toAPSInt(field.prime()).getZExtValue();
-  if (prime == 0) {
-    return field.zero();
-  }
-  uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(rng);
-  return field.reduce(candidate);
-}
-
-/// Draw a uniformly distributed signed index value.
-static int64_t randomIndexValue(std::mt19937_64 &rng) {
-  return std::uniform_int_distribution<
-      int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(rng);
-}
-
-/// Draw a uniformly distributed boolean value.
-static bool randomBoolValue(std::mt19937_64 &rng) {
-  return std::uniform_int_distribution<int>(0, 1)(rng) != 0;
-}
-
-} // namespace
 
 /// Require a boolean value from the runtime variant.
 llvm::Expected<bool> asBool(const WitnessVal &value) {

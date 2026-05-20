@@ -26,6 +26,15 @@ namespace llzk::witgen {
 /// Seed an RNG for random/default witness value materialization.
 std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options);
 
+/// Draw a uniformly distributed field element in `[0, prime)`.
+llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &rng, const Field &field);
+
+/// Draw a uniformly distributed signed index value.
+int64_t randomIndexValue(std::mt19937_64 &rng);
+
+/// Draw a uniformly distributed boolean value.
+bool randomBoolValue(std::mt19937_64 &rng);
+
 /// Convert one static dimension to `size_t`, rejecting dynamic or invalid sizes.
 llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context);
 

@@ -413,8 +413,7 @@ static FailureOr<Value> createRandomMemRef(
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
-      auto value = std::uniform_int_distribution<
-          int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(rng);
+      auto value = randomIndexValue(rng);
       builder.create<memref::StoreOp>(
           loc, builder.create<arith::ConstantIndexOp>(loc, value), alloc, indices
       );
@@ -424,17 +423,18 @@ static FailureOr<Value> createRandomMemRef(
     if (intType.getWidth() == 1) {
       builder.create<memref::StoreOp>(
           loc,
-          builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, APInt(1, rng() & 1ULL))),
+          builder.create<arith::ConstantOp>(
+              loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(rng)))
+          ),
           alloc, indices
       );
       continue;
     }
-    uint64_t prime = toAPSInt(field.prime()).getZExtValue();
-    uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(rng);
+    auto candidate = randomFieldElement(rng, field);
     builder.create<memref::StoreOp>(
         loc,
         builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(intType, APInt(intType.getWidth(), candidate))
+            loc, IntegerAttr::get(intType, toAPSInt(candidate).trunc(intType.getWidth()))
         ),
         alloc, indices
     );
@@ -483,26 +483,20 @@ static FailureOr<LoweredValue> createDefaultValue(
         continue;
       }
       if (isa<IndexType>(leafType)) {
-        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(
-            loc,
-            std::uniform_int_distribution<
-                int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(
-                *rng
-            )
-        ));
+        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, randomIndexValue(*rng))
+        );
         continue;
       }
       auto intType = mlir::cast<IntegerType>(leafType);
       if (intType.getWidth() == 1) {
         lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(intType, APInt(1, (*rng)() & 1ULL))
+            loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(*rng)))
         ));
         continue;
       }
-      uint64_t prime = toAPSInt(field.prime()).getZExtValue();
-      uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(*rng);
+      auto candidate = randomFieldElement(*rng, field);
       lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-          loc, IntegerAttr::get(intType, APInt(intType.getWidth(), candidate))
+          loc, IntegerAttr::get(intType, toAPSInt(candidate).trunc(intType.getWidth()))
       ));
       continue;
     }

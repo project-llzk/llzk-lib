@@ -47,6 +47,24 @@ std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options) {
   return std::mt19937_64(seed);
 }
 
+llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &rng, const Field &field) {
+  const uint64_t prime = toAPSInt(field.prime()).getZExtValue();
+  if (prime == 0) {
+    return field.zero();
+  }
+  uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(rng);
+  return field.reduce(candidate);
+}
+
+int64_t randomIndexValue(std::mt19937_64 &rng) {
+  return std::uniform_int_distribution<
+      int64_t>(std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())(rng);
+}
+
+bool randomBoolValue(std::mt19937_64 &rng) {
+  return std::uniform_int_distribution<int>(0, 1)(rng) != 0;
+}
+
 llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context) {
   if (ShapedType::isDynamic(dim)) {
     return makeError(llvm::Twine(context) + " requires a static shape");

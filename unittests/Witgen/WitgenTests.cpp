@@ -141,6 +141,33 @@ TEST_F(WitgenTests, SharedWitgenRngUsesDeterministicSeed) {
   EXPECT_EQ(lhs(), rhs());
 }
 
+TEST_F(WitgenTests, SharedRandomHelpersAreSeeded) {
+  auto field = Field::tryGetField("babybear");
+  ASSERT_TRUE(succeeded(field));
+
+  std::mt19937_64 rngA(1234);
+  std::mt19937_64 rngB(1234);
+
+  EXPECT_EQ(
+      witgen::randomFieldElement(rngA, field->get()), witgen::randomFieldElement(rngB, field->get())
+  );
+  EXPECT_EQ(witgen::randomIndexValue(rngA), witgen::randomIndexValue(rngB));
+  EXPECT_EQ(witgen::randomBoolValue(rngA), witgen::randomBoolValue(rngB));
+}
+
+TEST_F(WitgenTests, RandomFieldHelperReturnsReducedValues) {
+  auto field = Field::tryGetField("babybear");
+  ASSERT_TRUE(succeeded(field));
+
+  std::mt19937_64 rng(1234);
+  for (size_t i = 0; i < 16; ++i) {
+    auto value = witgen::randomFieldElement(rng, field->get());
+    EXPECT_GE(value, field->get().zero());
+    EXPECT_LT(value, field->get().prime());
+    EXPECT_EQ(value, field->get().reduce(value));
+  }
+}
+
 TEST_F(WitgenTests, ParseJSONArrayRejectsDynamicShape) {
   auto parsed = llvm::json::parse(R"([1])");
   ASSERT_TRUE(static_cast<bool>(parsed));
