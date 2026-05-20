@@ -9,13 +9,19 @@
 
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 
+#include "llzk/Dialect/Cast/IR/Attrs.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 
+#include <llvm/ADT/TypeSwitch.h>
+
 // TableGen'd implementation files
 #include "llzk/Dialect/Cast/IR/Dialect.cpp.inc"
+
+#define GET_ATTRDEF_CLASSES
+#include "llzk/Dialect/Cast/IR/Attrs.cpp.inc"
 
 //===------------------------------------------------------------------===//
 // CastDialect
@@ -26,6 +32,11 @@ auto llzk::cast::CastDialect::initialize() -> void {
   addOperations<
     #define GET_OP_LIST
     #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
+  >();
+
+  addAttributes<
+    #define GET_ATTRDEF_LIST
+    #include "llzk/Dialect/Cast/IR/Attrs.cpp.inc"
   >();
   // clang-format on
   addInterfaces<LLZKDialectBytecodeInterface<CastDialect>>();

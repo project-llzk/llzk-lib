@@ -23,6 +23,9 @@
 #include <mlir-c/IR.h>
 
 // Include the generated CAPI
+#include "llzk/Dialect/Cast/IR/Enums.capi.h.inc"
+// Enums must come before Attrs and Ops
+#include "llzk/Dialect/Cast/IR/Attrs.capi.h.inc"
 #include "llzk/Dialect/Cast/IR/Ops.capi.h.inc"
 
 #ifdef __cplusplus

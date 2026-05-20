@@ -9,10 +9,17 @@
 
 #include "llzk-c/Dialect/Cast.h"
 
+#include "llzk/Dialect/Cast/IR/Enums.h"
+
 #include "../CAPITestBase.h"
 
+// Include necessary generated CAPI
+#include "llzk/Dialect/Cast/IR/Enums.capi.cpp.inc"
+
 // Include the auto-generated tests
+#include "llzk/Dialect/Cast/IR/Attrs.capi.test.cpp.inc"
 #include "llzk/Dialect/Cast/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Cast/IR/Enums.capi.test.cpp.inc"
 #include "llzk/Dialect/Cast/IR/Ops.capi.test.cpp.inc"
 
 // Implementation for `IntToFeltOp_build_pass` test
