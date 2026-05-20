@@ -38,6 +38,46 @@ dynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::Twine context) {
   return llzk::checkedCast<size_t>(as.getZExtValue());
 }
 
+llvm::Expected<size_t>
+checkedDynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::StringRef context) {
+  return dynamicAPIntToSize(value, context);
+}
+
+llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context) {
+  if (ShapedType::isDynamic(dim)) {
+    return makeError(llvm::Twine(context) + " requires a static shape");
+  }
+  if (dim < 0) {
+    return makeError(llvm::Twine(context) + " has a negative dimension");
+  }
+  llvm::DynamicAPInt value(dim);
+  return dynamicAPIntToSize(value, llvm::Twine(context) + " dimension");
+}
+
+llvm::Expected<size_t>
+getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef context) {
+  llvm::DynamicAPInt count(1);
+  for (int64_t dim : shape) {
+    auto dimSize = checkedShapeDimToSize(dim, context);
+    if (!dimSize) {
+      return dimSize.takeError();
+    }
+    count *= llvm::DynamicAPInt(*dimSize);
+  }
+  return dynamicAPIntToSize(count, context);
+}
+
+llvm::Expected<size_t> getStaticElementCount(ShapedType type, llvm::StringRef context) {
+  if (!type.hasStaticShape()) {
+    return makeError(llvm::Twine(context) + " requires a static shape");
+  }
+  int64_t count = type.getNumElements();
+  if (count < 0) {
+    return makeError(llvm::Twine(context) + " has an invalid negative element count");
+  }
+  return dynamicAPIntToSize(llvm::DynamicAPInt(count), context);
+}
+
 std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options) {
   if (options.randomSeed) {
     return std::mt19937_64(*options.randomSeed);
@@ -63,46 +103,6 @@ int64_t randomIndexValue(std::mt19937_64 &rng) {
 
 bool randomBoolValue(std::mt19937_64 &rng) {
   return std::uniform_int_distribution<int>(0, 1)(rng) != 0;
-}
-
-llvm::Expected<size_t> checkedShapeDimToSize(int64_t dim, llvm::StringRef context) {
-  if (ShapedType::isDynamic(dim)) {
-    return makeError(llvm::Twine(context) + " requires a static shape");
-  }
-  if (dim < 0) {
-    return makeError(llvm::Twine(context) + " has a negative dimension");
-  }
-  llvm::DynamicAPInt value(dim);
-  return dynamicAPIntToSize(value, llvm::Twine(context) + " dimension");
-}
-
-llvm::Expected<size_t>
-checkedDynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::StringRef context) {
-  return dynamicAPIntToSize(value, context);
-}
-
-llvm::Expected<size_t>
-getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef context) {
-  llvm::DynamicAPInt count(1);
-  for (int64_t dim : shape) {
-    auto dimSize = checkedShapeDimToSize(dim, context);
-    if (!dimSize) {
-      return dimSize.takeError();
-    }
-    count *= llvm::DynamicAPInt(*dimSize);
-  }
-  return dynamicAPIntToSize(count, context);
-}
-
-llvm::Expected<size_t> getStaticElementCount(ShapedType type, llvm::StringRef context) {
-  if (!type.hasStaticShape()) {
-    return makeError(llvm::Twine(context) + " requires a static shape");
-  }
-  int64_t count = type.getNumElements();
-  if (count < 0) {
-    return makeError(llvm::Twine(context) + " has an invalid negative element count");
-  }
-  return dynamicAPIntToSize(llvm::DynamicAPInt(count), context);
 }
 
 } // namespace llzk::witgen
