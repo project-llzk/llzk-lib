@@ -75,7 +75,7 @@ llvm::Expected<size_t> checkedLinearize(
     }
   }
   auto strides = mlir::computeStrides(shape);
-  return llzk::checkedCast<size_t>(mlir::linearize(indices, strides));
+  return checkedCast<size_t>(mlir::linearize(indices, strides));
 }
 
 } // namespace

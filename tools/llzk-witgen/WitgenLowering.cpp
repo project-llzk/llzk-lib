@@ -385,8 +385,13 @@ static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRe
   }
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
+    auto flatSigned = checkedCast<int64_t>(flat);
+    if (!flatSigned) {
+      emitError(loc) << llvm::toString(flatSigned.takeError());
+      return failure();
+    }
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(llzk::checkedCast<int64_t>(flat), strides)) {
+    for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     builder.create<memref::StoreOp>(loc, zero, alloc, indices);
@@ -408,8 +413,13 @@ static FailureOr<Value> createRandomMemRef(
   auto elementType = memrefType.getElementType();
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
+    auto flatSigned = checkedCast<int64_t>(flat);
+    if (!flatSigned) {
+      emitError(loc) << llvm::toString(flatSigned.takeError());
+      return failure();
+    }
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(llzk::checkedCast<int64_t>(flat), strides)) {
+    for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
@@ -689,35 +699,49 @@ static LogicalResult writeNamedAggregateValue(
 }
 
 /// Create a static subview representing one aggregate array element leaf.
-static Value
+static FailureOr<Value>
 createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange outerIndices) {
   auto sourceType = mlir::cast<MemRefType>(source.getType());
   SmallVector<OpFoldResult> mixedOffsets;
   SmallVector<OpFoldResult> mixedSizes;
   SmallVector<OpFoldResult> mixedStrides;
-  const int64_t indexedRank = llzk::checkedCast<int64_t>(outerIndices.size());
+  auto indexedRank = checkedCast<int64_t>(outerIndices.size());
+  if (!indexedRank) {
+    emitError(loc) << llvm::toString(indexedRank.takeError());
+    return failure();
+  }
   mixedOffsets.reserve(sourceType.getRank());
   mixedSizes.reserve(sourceType.getRank());
   mixedStrides.reserve(sourceType.getRank());
   for (Value index : outerIndices) {
     mixedOffsets.push_back(index);
   }
-  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+  for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
     mixedOffsets.push_back(builder.getIndexAttr(0));
   }
-  for (int64_t dim = 0; dim < indexedRank; ++dim) {
+  for (int64_t dim = 0; dim < *indexedRank; ++dim) {
     mixedSizes.push_back(builder.getIndexAttr(1));
   }
-  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+  for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
     mixedSizes.push_back(memref::getMixedSize(builder, loc, source, dim));
   }
   for (int64_t dim = 0; dim < sourceType.getRank(); ++dim) {
     mixedStrides.push_back(builder.getIndexAttr(1));
   }
   SmallVector<int64_t> desiredShape;
-  desiredShape.reserve(llzk::checkedCast<size_t>(sourceType.getRank() - indexedRank));
-  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
-    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[llzk::checkedCast<size_t>(dim)])) {
+  auto reserveSize = checkedCast<size_t>(sourceType.getRank() - *indexedRank);
+  if (!reserveSize) {
+    emitError(loc) << llvm::toString(reserveSize.takeError());
+    return failure();
+  }
+  desiredShape.reserve(*reserveSize);
+  for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
+    auto dimIndex = checkedCast<size_t>(dim);
+    if (!dimIndex) {
+      emitError(loc) << llvm::toString(dimIndex.takeError());
+      return failure();
+    }
+    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[*dimIndex])) {
       desiredShape.push_back(mlir::cast<IntegerAttr>(attr).getInt());
     } else {
       desiredShape.push_back(ShapedType::kDynamic);
@@ -729,9 +753,10 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   auto resultType = mlir::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
       desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
   ));
-  return builder.create<memref::SubViewOp>(
+  auto op = builder.create<memref::SubViewOp>(
       loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
   );
+  return success(op.getResult());
 }
 
 /// Read one LLZK array element.
@@ -749,7 +774,11 @@ static FailureOr<LoweredValue> readArrayElement(
   }
 
   for (Value sourceLeaf : arrayValue.leaves) {
-    result.leaves.push_back(createElementSubview(builder, loc, sourceLeaf, indices));
+    auto subview = createElementSubview(builder, loc, sourceLeaf, indices);
+    if (failed(subview)) {
+      return failure();
+    }
+    result.leaves.push_back(*subview);
   }
   return result;
 }
@@ -768,8 +797,11 @@ static LogicalResult writeArrayElement(
   }
 
   for (auto [destLeaf, srcLeaf] : llvm::zip(arrayValue.leaves, elementValue.leaves)) {
-    Value subview = createElementSubview(builder, loc, destLeaf, indices);
-    builder.create<memref::CopyOp>(loc, srcLeaf, subview);
+    auto subview = createElementSubview(builder, loc, destLeaf, indices);
+    if (failed(subview)) {
+      return failure();
+    }
+    builder.create<memref::CopyOp>(loc, srcLeaf, *subview);
   }
   return success();
 }
@@ -1272,8 +1304,12 @@ private:
         return failure();
       }
       if (!arrayNewOp.getElements().empty()) {
-        size_t elementCount = llzk::checkedCast<size_t>(arrayNewOp.getType().getNumElements());
-        if (arrayNewOp.getElements().size() != elementCount) {
+        auto elementCount = checkedCast<size_t>(arrayNewOp.getType().getNumElements());
+        if (!elementCount) {
+          arrayNewOp.emitError() << llvm::toString(elementCount.takeError());
+          return failure();
+        }
+        if (arrayNewOp.getElements().size() != *elementCount) {
           arrayNewOp.emitError("expected one explicit element per array slot in witgen lowering");
           return failure();
         }
@@ -1285,7 +1321,12 @@ private:
           }
           SmallVector<Value> indices;
           auto strides = mlir::computeStrides(shape);
-          for (int64_t index : mlir::delinearize(llzk::checkedCast<int64_t>(flatIndex), strides)) {
+          auto flatSigned = checkedCast<int64_t>(flatIndex);
+          if (!flatSigned) {
+            arrayNewOp.emitError() << llvm::toString(flatSigned.takeError());
+            return failure();
+          }
+          for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
           }
           if (failed(writeArrayElement(

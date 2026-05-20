@@ -48,7 +48,6 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <cstdint>
-#include <limits>
 
 using namespace mlir;
 
@@ -108,9 +107,12 @@ static llvm::Expected<std::vector<int64_t>> computeStaticStrides(ArrayRef<int64_
 
 /// Populate the raw memref descriptor for a host buffer.
 static llvm::Error buildDescriptor(BufferPack &buffer) {
-  const int64_t rank = llzk::checkedCast<int64_t>(buffer.shape.size());
+  auto rank = checkedCast<int64_t>(buffer.shape.size());
+  if (!rank) {
+    return rank.takeError();
+  }
   auto descriptorSize = llvm::DynamicAPInt(sizeof(void *)) * 2;
-  auto shapeAndStrideCount = llvm::DynamicAPInt(1) + rank + rank;
+  auto shapeAndStrideCount = llvm::DynamicAPInt(1) + *rank + *rank;
   auto dynamicPart = llvm::DynamicAPInt(sizeof(int64_t)) * shapeAndStrideCount;
   auto totalSize = descriptorSize + dynamicPart;
   auto checkedTotalSize =
@@ -179,13 +181,12 @@ storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &val
   if (overflow) {
     return makeError("execution-engine buffer store offset would overflow size_t");
   }
-  if (buffer.elemBytes > std::numeric_limits<unsigned>::max()) {
-    return makeError("execution-engine buffer element size would overflow unsigned");
+  auto elemBytesU = checkedCast<unsigned>(buffer.elemBytes);
+  if (!elemBytesU) {
+    return elemBytesU.takeError();
   }
   llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
-  llvm::StoreIntToMemory(
-      raw, buffer.storage.data() + byteOffset, static_cast<unsigned>(buffer.elemBytes)
-  );
+  llvm::StoreIntToMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
   return llvm::Error::success();
 }
 
@@ -196,13 +197,12 @@ static llvm::Expected<llvm::DynamicAPInt> loadElement(const BufferPack &buffer, 
   if (overflow) {
     return makeError("execution-engine buffer load offset would overflow size_t");
   }
-  if (buffer.elemBytes > std::numeric_limits<unsigned>::max()) {
-    return makeError("execution-engine buffer element size would overflow unsigned");
+  auto elemBytesU = checkedCast<unsigned>(buffer.elemBytes);
+  if (!elemBytesU) {
+    return elemBytesU.takeError();
   }
   llvm::APInt raw(buffer.feltBitWidth, 0);
-  llvm::LoadIntFromMemory(
-      raw, buffer.storage.data() + byteOffset, static_cast<unsigned>(buffer.elemBytes)
-  );
+  llvm::LoadIntFromMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
   return toDynamicAPInt(raw);
 }
 
