@@ -17,6 +17,7 @@ def CastDialect : Dialect {
   let summary = "LLZK type conversion operations.";
 
   let cppNamespace = "::llzk::cast";
+  let useDefaultAttributePrinterParser = true;
 
   let dependentDialects = ["::llzk::felt::FeltDialect",
                            "::mlir::arith::ArithDialect"];

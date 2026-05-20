@@ -14,6 +14,7 @@
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 

@@ -12,6 +12,7 @@
 
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Cast/IR/Dialect.td"
+include "llzk/Dialect/Cast/IR/Attrs.td"
 include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Shared/OpsBase.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
@@ -41,10 +42,11 @@ def LLZK_IntToFeltOp
     ```
   }];
 
-  let arguments = (ins AnyLLZKIntType:$value);
+  let arguments = (ins LLZK_OverflowSemanticsAttr:$overflow,
+      AnyLLZKIntType:$value);
   let results = (outs LLZK_FeltType:$result);
   let assemblyFormat =
-      [{ $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
+      [{`` $overflow $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
 
   // Children of NaryOpBase must add their extra C++ code in the extra-extra
   // version.
@@ -68,10 +70,11 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
     ```
   }];
 
-  let arguments = (ins LLZK_FeltType:$value);
+  let arguments = (ins LLZK_OverflowSemanticsAttr:$overflow,
+      LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat =
-      [{ $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
+      [{`` $overflow $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
 
   let hasCanonicalizeMethod = 1;
 }

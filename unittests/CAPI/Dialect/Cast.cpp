@@ -9,9 +9,9 @@
 
 #include "llzk-c/Dialect/Cast.h"
 
-#include "llzk/Dialect/Cast/IR/Enums.h"
-
 #include "../CAPITestBase.h"
+
+#include "llzk/Dialect/Cast/IR/Enums.h"
 
 // Include necessary generated CAPI
 #include "llzk/Dialect/Cast/IR/Enums.capi.cpp.inc"
@@ -49,7 +49,9 @@ std::unique_ptr<FeltToIndexOpBuildFuncHelper> FeltToIndexOpBuildFuncHelper::get(
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value val = testClass.cppGenFeltConstant(builder, location);
-      return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val));
+      MlirAttribute overflowAttr =
+          llzkCast_OverflowSemanticsAttrGet(testClass.context, LlzkCastOverflowSemantics_ASSERT);
+      return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val), overflowAttr);
     }
   };
   return std::make_unique<Impl>();
