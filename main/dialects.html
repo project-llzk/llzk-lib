@@ -2558,16 +2558,16 @@ Operations</h2>
 <div class="line">%0 = pod.new : !pod.type&lt;[@n: !felt.type]&gt;</div>
 <div class="line"> </div>
 <div class="line">// Initialized pod instance</div>
-<div class="line">%0 = felt.const_felt 1 </div>
+<div class="line">%0 = felt.const 1</div>
 <div class="line">%1 = pod.new { @n = %0 } : !pod.type&lt;[@n: !felt.type]&gt;</div>
 <div class="line"> </div>
 <div class="line">// Another one, but with 2 fields</div>
-<div class="line">%0 = felt.const_felt 1</div>
+<div class="line">%0 = felt.const 1</div>
 <div class="line">%1 = felt.inv %0</div>
 <div class="line">%2 = pod.new { @n = %0, @inv = %1 } :   !pod.type&lt;[@n: !felt.type, @inv: !felt.type]&gt;</div>
 <div class="line"> </div>
 <div class="line">// Partial init</div>
-<div class="line">%0 = felt.const_felt 1</div>
+<div class="line">%0 = felt.const 1</div>
 <div class="line">%1 = pod.new { @n = %0 } : !pod.type&lt;[@n: !felt.type, @inv: !felt.type]&gt;</div>
 <div class="line"> </div>
 <div class="line">// Affine map args on uninitialized pod instance</div>
@@ -2578,7 +2578,7 @@ Operations</h2>
 <div class="line">// Affine map with initialized records</div>
 <div class="line">%0 = arith.constant 1 : index</div>
 <div class="line">%c = arith.constant 2 : index</div>
-<div class="line">%1 = felt.const_felt 5 </div>
+<div class="line">%1 = felt.const 5</div>
 <div class="line">%2 = pod.new { @f = %1 }(%0)[%c] : !pod.type&lt;[@f: !felt.type, @a: !array.type&lt;#map, !felt.type&gt;]&gt;</div>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">OpAsmOpInterface</span></p>

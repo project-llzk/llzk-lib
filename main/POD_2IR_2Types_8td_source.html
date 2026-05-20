@@ -136,11 +136,11 @@ $(function(){initNavTree('POD_2IR_2Types_8td_source.html','',''); });
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>def LLZK_PODType : PODDialectType&lt;&quot;Pod&quot;, &quot;type&quot;&gt; {</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  let summary = &quot;plain-old-data struct&quot;;</div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  let description = [{</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    Contains a list of `RecordAttr` defining structure of a pod. </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    Contains a list of `RecordAttr` defining structure of a pod.</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    The order of records in the pod matters and each record must have a unique name.</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    It is possible to have a pod with no records.</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    Two `PODType` types unify if they have the same record names, defined in the </div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    Two `PODType` types unify if they have the same record names, defined in the</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    same order, and if the types of corresponding records unify.</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    This type can be used in the `struct.member` op, and it can be declared as a column,</div>
@@ -164,20 +164,20 @@ $(function(){initNavTree('POD_2IR_2Types_8td_source.html','',''); });
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  let assemblyFormat = &quot;`&lt;` custom&lt;PodType&gt;($records) `&gt;`&quot;;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    /// Creates a new type from a set of initialized records. </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    /// </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    /// Creates a new type from a set of initialized records.</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    ///</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    /// The records are derived from the names and the types of the values.</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    static PodType fromInitialValues(::mlir::MLIRContext *ctx, InitializedRecords init);</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    /// Searches a record by name.</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    ///</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    /// If you plan to make several queries to this type, it&#39;s better to generate the map </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    /// If you plan to make several queries to this type, it&#39;s better to generate the map</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    ::llvm::FailureOr&lt;::mlir::Type&gt; getRecord(::llvm::StringRef name, ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt;) const;</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    /// Returns the records in map form.</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    /// </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    /// If you plan to make several queries to this type, it&#39;s better to generate the map </div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    ///</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    /// If you plan to make several queries to this type, it&#39;s better to generate the map</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    ::llvm::StringMap&lt;::mlir::Type&gt; getRecordMap() const;</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  }];</div>
