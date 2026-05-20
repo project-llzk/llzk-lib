@@ -308,6 +308,8 @@ var namespacellzk =
     [ "getTailAsSymbolRefAttr", "namespacellzk.html#ab8be495092bcd4acc4f4064a0e8ee703", null ],
     [ "getTopRootModule", "namespacellzk.html#a6982559aa99cea04c0cf47ee38166ce2", null ],
     [ "getTopRootModule", "namespacellzk.html#a858ad75166540367bf85ae38bc875707", null ],
+    [ "getTypeFromLlzkMainAttr", "namespacellzk.html#afa6ef0d937bae15784ca01d0a01c32b4", null ],
+    [ "getTypeFromLlzkMainAttr", "namespacellzk.html#aae3bcef1a08579d6633a5534bc783aad", null ],
     [ "getUnknownLoc", "namespacellzk.html#af218387a3d9b9824ec5b1d060d4989ea", null ],
     [ "hasAffineMapAttr", "namespacellzk.html#a21a0759043e8fb39b7ccae07f0d788da", null ],
     [ "hasAffineMapAttr", "namespacellzk.html#ae16625d8c85094fae24fb003012b2380", null ],

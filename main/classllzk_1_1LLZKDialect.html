@@ -130,6 +130,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a54ed9efc1c4ebb3295802a41dfe00d6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse an attribute registered to this dialect.  <br /></td></tr>
 <tr class="memitem:a7a699e45542ee9abea39f4856750e738" id="r_a7a699e45542ee9abea39f4856750e738"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7a699e45542ee9abea39f4856750e738">printAttribute</a> (::mlir::Attribute attr, ::mlir::DialectAsmPrinter &amp;os) const override</td></tr>
 <tr class="memdesc:a7a699e45542ee9abea39f4856750e738"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print an attribute registered to this dialect.  <br /></td></tr>
+<tr class="memitem:a832e5d255f4154cdfd1117860f540aac" id="r_a832e5d255f4154cdfd1117860f540aac"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a832e5d255f4154cdfd1117860f540aac">verifyOperationAttribute</a> (::mlir::Operation *op, ::mlir::NamedAttribute attribute) override</td></tr>
+<tr class="memdesc:a832e5d255f4154cdfd1117860f540aac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides a hook for verifying dialect attributes attached to the given op.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -255,6 +257,39 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Print an attribute registered to this dialect. </p>
+
+</div>
+</div>
+<a id="a832e5d255f4154cdfd1117860f540aac" name="a832e5d255f4154cdfd1117860f540aac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a832e5d255f4154cdfd1117860f540aac">&#9670;&#160;</a></span>verifyOperationAttribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult LLZKDialect::verifyOperationAttribute </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::NamedAttribute</td>          <td class="paramname"><span class="paramname"><em>attribute</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Provides a hook for verifying dialect attributes attached to the given op. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Dialect_8cpp_source.html#l00064">64</a> of file <a class="el" href="LLZK_2IR_2Dialect_8cpp_source.html">Dialect.cpp</a>.</p>
 
 </div>
 </div>

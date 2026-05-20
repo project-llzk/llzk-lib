@@ -385,6 +385,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a4dad20cd356b00c9fad2ef7450535a95" id="r_a4dad20cd356b00c9fad2ef7450535a95"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4dad20cd356b00c9fad2ef7450535a95">createSymbolUseGraphPrinterPass</a> ()</td></tr>
 <tr class="memitem:a9338ef0435a6cb734c7aebea355d4a36" id="r_a9338ef0435a6cb734c7aebea355d4a36"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9338ef0435a6cb734c7aebea355d4a36">registerAllDialects</a> (mlir::DialectRegistry &amp;registry)</td></tr>
 <tr class="memitem:a47e44fbda81e2f164ab37d3696457eff" id="r_a47e44fbda81e2f164ab37d3696457eff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a47e44fbda81e2f164ab37d3696457eff">printAttrs</a> (AsmPrinter &amp;printer, ArrayRef&lt; Attribute &gt; attrs, const StringRef &amp;separator)</td></tr>
+<tr class="memitem:aae3bcef1a08579d6633a5534bc783aad" id="r_aae3bcef1a08579d6633a5534bc783aad"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aae3bcef1a08579d6633a5534bc783aad">getTypeFromLlzkMainAttr</a> (ModuleOp op, Attribute attr)</td></tr>
 <tr class="memitem:a6af91aaab3f72bcd8df881498175c3ac" id="r_a6af91aaab3f72bcd8df881498175c3ac"><td class="memItemLeft" align="right" valign="top">OwningOpRef&lt; ModuleOp &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6af91aaab3f72bcd8df881498175c3ac">createLLZKModule</a> (MLIRContext *, Location loc)</td></tr>
 <tr class="memitem:ad8079cba340b7e8ca05e0fd88b364334" id="r_ad8079cba340b7e8ca05e0fd88b364334"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad8079cba340b7e8ca05e0fd88b364334">addLangAttrForLLZKDialect</a> (ModuleOp <a class="el" href="#a17efa635db7bf7658f865515aefd0cce">mod</a>)</td></tr>
 <tr class="memitem:aa087d5d7590ba6ccdab7817737f4f596" id="r_aa087d5d7590ba6ccdab7817737f4f596"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa087d5d7590ba6ccdab7817737f4f596">isValidRoot</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> root)</td></tr>
@@ -524,6 +525,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ad54f2cf52138ae6282775a72362a7445" id="r_ad54f2cf52138ae6282775a72362a7445"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad54f2cf52138ae6282775a72362a7445">appendWithoutType</a> (mlir::raw_ostream &amp;os, mlir::Attribute a)</td></tr>
 <tr class="memitem:a53fd11575f45740ca49d163fff8c925e" id="r_a53fd11575f45740ca49d163fff8c925e"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a53fd11575f45740ca49d163fff8c925e">stringWithoutType</a> (mlir::Attribute a)</td></tr>
 <tr class="memitem:ab3aea79f1ec3c694d5d0bcf1f949c5fe" id="r_ab3aea79f1ec3c694d5d0bcf1f949c5fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab3aea79f1ec3c694d5d0bcf1f949c5fe">printAttrs</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayRef&lt; mlir::Attribute &gt; attrs, const mlir::StringRef &amp;separator)</td></tr>
+<tr class="memitem:afa6ef0d937bae15784ca01d0a01c32b4" id="r_afa6ef0d937bae15784ca01d0a01c32b4"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa6ef0d937bae15784ca01d0a01c32b4">getTypeFromLlzkMainAttr</a> (mlir::ModuleOp op, mlir::Attribute attr)</td></tr>
 <tr class="memitem:af218387a3d9b9824ec5b1d060d4989ea" id="r_af218387a3d9b9824ec5b1d060d4989ea"><td class="memItemLeft" align="right" valign="top">mlir::Location&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af218387a3d9b9824ec5b1d060d4989ea">getUnknownLoc</a> (mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:a5fca8161d33010dac2a613d7ff184db2" id="r_a5fca8161d33010dac2a613d7ff184db2"><td class="memItemLeft" align="right" valign="top">mlir::OwningOpRef&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5fca8161d33010dac2a613d7ff184db2">createLLZKModule</a> (mlir::MLIRContext *context, mlir::Location loc)</td></tr>
 <tr class="memitem:a24a8f8d60a445812f3792f04b6420f5c" id="r_a24a8f8d60a445812f3792f04b6420f5c"><td class="memItemLeft" align="right" valign="top">mlir::OwningOpRef&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24a8f8d60a445812f3792f04b6420f5c">createLLZKModule</a> (mlir::MLIRContext *context)</td></tr>
@@ -3607,7 +3609,7 @@ template&lt;typename TypeClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00349">349</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00338">338</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4666,6 +4668,50 @@ template&lt;typename OpClass&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00299">299</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="afa6ef0d937bae15784ca01d0a01c32b4" name="afa6ef0d937bae15784ca01d0a01c32b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa6ef0d937bae15784ca01d0a01c32b4">&#9670;&#160;</a></span>getTypeFromLlzkMainAttr() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> &gt; llzk::getTypeFromLlzkMainAttr </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ModuleOp</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aae3bcef1a08579d6633a5534bc783aad" name="aae3bcef1a08579d6633a5534bc783aad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae3bcef1a08579d6633a5534bc783aad">&#9670;&#160;</a></span>getTypeFromLlzkMainAttr() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> &gt; llzk::getTypeFromLlzkMainAttr </td>
+          <td>(</td>
+          <td class="paramtype">ModuleOp</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZK_2IR_2Attrs_8cpp_source.html#l00024">24</a> of file <a class="el" href="LLZK_2IR_2Attrs_8cpp_source.html">Attrs.cpp</a>.</p>
 
 </div>
 </div>
@@ -10077,7 +10123,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00361">361</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00350">350</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -10143,7 +10189,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00388">388</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00377">377</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -10245,7 +10291,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00423">423</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00412">412</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -10420,7 +10466,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00447">447</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00436">436</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>

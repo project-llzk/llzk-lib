@@ -1,5 +1,9 @@
 var NAVTREEINDEX69 =
 {
+"config_8h.html#adf7c7c6700e3090f8c0024c209c3c519":[13,0,4,0,0,0,0],
+"config_8h_source.html":[13,0,4,0,0,0],
+"contribution-guide.html":[5],
+"contribution-guide.html#best-practices-checklist":[5,1,3,0],
 "contribution-guide.html#commit-your-update":[5,1,2],
 "contribution-guide.html#contribution-philosophy":[5,0],
 "contribution-guide.html#create-a-new-issue":[5,1,0,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX69 =
 "dir_0687b6def81e49ad125773c0cd2282f4.html":[13,0,0,0,0,2,1,0],
 "dir_096f03ee7667be126ccf8788caaa9861.html":[13,0,2,0,2,4,0],
 "dir_0f47d102f81ccf3cfd7f2842a6dda839.html":[13,0,3,3,0,1],
-"dir_10c47a7c5d54e3cf864f5c9140990351.html":[13,0,2,0,2,7,2],
-"dir_1270980e1d655487b8d28dd5790afd88.html":[13,0,2,0,2,7,0],
-"dir_160d30f99916a0e98aed449f45f108e3.html":[13,0,2,0,2,2,0],
-"dir_1a25ec519b6c1121408b67cc33ce3f15.html":[13,0,3,3],
-"dir_1af0ae7a8f4fcaffe5681d325dc74e64.html":[13,0,3,3,9]
+"dir_10c47a7c5d54e3cf864f5c9140990351.html":[13,0,2,0,2,7,2]
 };

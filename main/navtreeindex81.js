@@ -1,5 +1,11 @@
 var NAVTREEINDEX81 =
 {
+"structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77":[10,0,2,20,7,4],
+"structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77":[12,0,1,17,7,4],
+"structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894":[10,0,2,20,7,0],
+"structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894":[12,0,1,17,7,0],
+"structllzk_1_1witgen_1_1WitgenOptions.html#a742654891f871f65682a4b99c5c0667d":[10,0,2,20,7,2],
+"structllzk_1_1witgen_1_1WitgenOptions.html#a742654891f871f65682a4b99c5c0667d":[12,0,1,17,7,2],
 "structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d":[10,0,2,20,7,6],
 "structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d":[12,0,1,17,7,6],
 "structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738":[10,0,2,20,7,5],
