@@ -470,7 +470,8 @@ static FailureOr<LoweredValue> createDefaultValue(
         continue;
       }
       if (isa<IndexType>(leafType)) {
-        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, randomIndexValue(rng))
+        lowered.leaves.push_back(
+            builder.create<arith::ConstantIndexOp>(loc, randomIndexValue(rng))
         );
         continue;
       }
