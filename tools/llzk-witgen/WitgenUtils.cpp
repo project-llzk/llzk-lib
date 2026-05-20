@@ -98,7 +98,7 @@ llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &rng, const Field &field) 
   // Generate a random value with the same bit width as the prime; if it is
   // >= prime, discard and retry. The rejection probability is < 50%, so the
   // expected number of iterations is less than 2.
-  const unsigned bitWidth = toAPSInt(prime).getActiveBits();
+  const unsigned bitWidth = field.bitWidth();
   const unsigned numWords = (bitWidth + 63U) / 64U;
   std::uniform_int_distribution<uint64_t> wordDist;
   llvm::SmallVector<uint64_t, 4> words(numWords);

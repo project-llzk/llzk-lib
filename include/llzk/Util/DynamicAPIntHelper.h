@@ -26,6 +26,10 @@
 #include <llvm/ADT/SlowDynamicAPInt.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+
 namespace llzk {
 
 llvm::DynamicAPInt operator&(const llvm::DynamicAPInt &lhs, const llvm::DynamicAPInt &rhs);

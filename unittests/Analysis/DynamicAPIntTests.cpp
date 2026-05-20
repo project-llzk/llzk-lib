@@ -9,7 +9,7 @@
 
 #include "../LLZKTestUtils.h"
 
-#include <climits>
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
 
@@ -92,15 +92,15 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 // Verify that size_t values above INT64_MAX are not mis-converted to negative.
-// SIZE_MAX (0xFFFFFFFFFFFFFFFF) has its MSB set; if the APSInt wrapper incorrectly
-// interpreted the value as signed, it would yield -1 instead of 18446744073709551615.
+// SIZE_MAX has its MSB set; if the APSInt wrapper incorrectly interpreted the value
+// as signed, it would yield -1 instead of 18446744073709551615 (on 64-bit systems).
 TEST(DynamicAPIntSizeTTest, SizeMax1) {
   DynamicAPInt a = toDynamicAPInt(SIZE_MAX);
 
   std::string buffer;
   llvm::raw_string_ostream(buffer) << a;
 
-  ASSERT_EQ(buffer, "18446744073709551615");
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
 }
 
 TEST(DynamicAPIntSizeTTest, SizeMax2) {
@@ -109,7 +109,7 @@ TEST(DynamicAPIntSizeTTest, SizeMax2) {
   std::string buffer;
   llvm::raw_string_ostream(buffer) << a;
 
-  ASSERT_EQ(buffer, "18446744073709551615");
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
 }
 
 TEST(DynamicAPIntSizeTTest, SizeMax3) {
@@ -118,7 +118,7 @@ TEST(DynamicAPIntSizeTTest, SizeMax3) {
   std::string buffer;
   llvm::raw_string_ostream(buffer) << a;
 
-  ASSERT_EQ(buffer, "18446744073709551615");
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
 }
 
 //===----------------------------------------------------------------------===//
