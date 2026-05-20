@@ -4,4 +4,4 @@ added:
 fixed:
   - "Avoid unnecessary narrowing to `int` in `Field::reduce()`"
   - "Ensure distribution of random numbers is uniform for large primes (>64 bits)"
-  - "`toDynamicAPInt(APSInt)` incorrectly converted values <=64 bits but larger than MAX(int64_t) to negative numbers"
+  - "`toDynamicAPInt(APSInt)` incorrectly produced negative results for values larger than MAX(int64_t) and up to 64 bits"
