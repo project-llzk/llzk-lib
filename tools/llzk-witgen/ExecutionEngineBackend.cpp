@@ -48,6 +48,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <cstdint>
+#include <limits>
 
 using namespace mlir;
 
@@ -171,20 +172,36 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
 }
 
 /// Store one field element into the buffer at the given flat element index.
-static void storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &value) {
+static llvm::Error
+storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &value) {
+  bool overflow = false;
+  size_t byteOffset = llvm::SaturatingMultiply(flatIndex, buffer.elemBytes, &overflow);
+  if (overflow) {
+    return makeError("execution-engine buffer store offset would overflow size_t");
+  }
+  if (buffer.elemBytes > std::numeric_limits<unsigned>::max()) {
+    return makeError("execution-engine buffer element size would overflow unsigned");
+  }
   llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
   llvm::StoreIntToMemory(
-      raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
-      llzk::checkedCast<unsigned>(buffer.elemBytes)
+      raw, buffer.storage.data() + byteOffset, static_cast<unsigned>(buffer.elemBytes)
   );
+  return llvm::Error::success();
 }
 
 /// Load one field element from the buffer at the given flat element index.
-static llvm::DynamicAPInt loadElement(const BufferPack &buffer, size_t flatIndex) {
+static llvm::Expected<llvm::DynamicAPInt> loadElement(const BufferPack &buffer, size_t flatIndex) {
+  bool overflow = false;
+  size_t byteOffset = llvm::SaturatingMultiply(flatIndex, buffer.elemBytes, &overflow);
+  if (overflow) {
+    return makeError("execution-engine buffer load offset would overflow size_t");
+  }
+  if (buffer.elemBytes > std::numeric_limits<unsigned>::max()) {
+    return makeError("execution-engine buffer element size would overflow unsigned");
+  }
   llvm::APInt raw(buffer.feltBitWidth, 0);
   llvm::LoadIntFromMemory(
-      raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
-      llzk::checkedCast<unsigned>(buffer.elemBytes)
+      raw, buffer.storage.data() + byteOffset, static_cast<unsigned>(buffer.elemBytes)
   );
   return toDynamicAPInt(raw);
 }
@@ -196,8 +213,7 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
     if (!feltValue) {
       return feltValue.takeError();
     }
-    storeElement(buffer, 0, *feltValue);
-    return llvm::Error::success();
+    return storeElement(buffer, 0, *feltValue);
   }
 
   auto arrayValue = asArray(value);
@@ -216,17 +232,23 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
     if (!feltValue) {
       return feltValue.takeError();
     }
-    storeElement(buffer, i, *feltValue);
+    if (auto err = storeElement(buffer, i, *feltValue)) {
+      return err;
+    }
   }
   return llvm::Error::success();
 }
 
 /// Render one field element buffer entry as the stable JSON decimal string form.
-static llvm::json::Value feltElementToJSON(const BufferPack &buffer, size_t flatIndex) {
+static llvm::Expected<llvm::json::Value>
+feltElementToJSON(const BufferPack &buffer, size_t flatIndex) {
+  auto element = loadElement(buffer, flatIndex);
+  if (!element) {
+    return element.takeError();
+  }
   std::string rendered;
-  llvm::raw_string_ostream os(rendered);
-  os << loadElement(buffer, flatIndex);
-  return llvm::json::Value(os.str());
+  llvm::raw_string_ostream(rendered) << *element;
+  return llvm::json::Value(rendered);
 }
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
@@ -247,7 +269,11 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) 
       if (overflow) {
         return makeError("execution-engine JSON output would overflow size_t");
       }
-      result.push_back(feltElementToJSON(buffer, elementOffset));
+      auto element = feltElementToJSON(buffer, elementOffset);
+      if (!element) {
+        return element.takeError();
+      }
+      result.push_back(*element);
     }
     return llvm::json::Value(std::move(result));
   }
