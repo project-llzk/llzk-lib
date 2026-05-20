@@ -850,6 +850,7 @@ private:
         case arith::CmpIPredicate::uge:
           return static_cast<uint64_t>(lhs) >= static_cast<uint64_t>(rhs);
         }
+        llvm_unreachable("unknown comparison predicate");
       });
     }
 
