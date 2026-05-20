@@ -44,7 +44,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i65>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i66>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.lt %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.le %arg1, %arg2
@@ -96,7 +96,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i65>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i66>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
@@ -122,7 +122,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i65>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i66>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.not %0
