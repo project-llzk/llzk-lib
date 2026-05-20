@@ -367,8 +367,7 @@ getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, O
 }
 
 /// Create one static memref filled with zeros.
-static FailureOr<Value>
-createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
+static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType) {
   auto elementCount = getStaticElementCount(memrefType, "witgen zero memref");
   if (!elementCount) {
     emitError(loc) << llvm::toString(elementCount.takeError());
@@ -490,7 +489,7 @@ static FailureOr<LoweredValue> createDefaultValue(
       continue;
     }
     if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
-      auto zeroMemRef = createZeroMemRef(builder, loc, memrefType, field);
+      auto zeroMemRef = createZeroMemRef(builder, loc, memrefType);
       if (failed(zeroMemRef)) {
         return failure();
       }
@@ -738,7 +737,7 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
 /// Read one LLZK array element.
 static FailureOr<LoweredValue> readArrayElement(
     OpBuilder &builder, Location loc, array::ArrayType arrayType, const LoweredValue &arrayValue,
-    ArrayRef<Value> indices, SymbolTableCollection &tables, Operation *origin, const Field &field
+    ArrayRef<Value> indices
 ) {
   Type elementType = arrayType.getElementType();
   LoweredValue result {elementType, {}};
@@ -758,8 +757,7 @@ static FailureOr<LoweredValue> readArrayElement(
 /// Write one LLZK array element.
 static LogicalResult writeArrayElement(
     OpBuilder &builder, Location loc, array::ArrayType arrayType, LoweredValue &arrayValue,
-    ArrayRef<Value> indices, const LoweredValue &elementValue, SymbolTableCollection &tables,
-    Operation *origin, const Field &field
+    ArrayRef<Value> indices, const LoweredValue &elementValue
 ) {
   Type elementType = arrayType.getElementType();
   if (isScalarType(elementType)) {
@@ -1291,8 +1289,7 @@ private:
             indices.push_back(makeIndexConstant(builder, loc, index));
           }
           if (failed(writeArrayElement(
-                  builder, loc, arrayNewOp.getType(), *lowered, indices, *elementValue, tables,
-                  arrayNewOp.getOperation(), field
+                  builder, loc, arrayNewOp.getType(), *lowered, indices, *elementValue
               ))) {
             return failure();
           }
@@ -1315,7 +1312,7 @@ private:
       }
       auto lowered = readArrayElement(
           builder, loc, mlir::cast<array::ArrayType>(readArrayOp.getArrRef().getType()),
-          *arrayValue, indices, tables, readArrayOp.getOperation(), field
+          *arrayValue, indices
       );
       if (failed(lowered)) {
         return failure();
@@ -1337,8 +1334,7 @@ private:
       }
       return writeArrayElement(
           builder, loc, mlir::cast<array::ArrayType>(writeArrayOp.getArrRef().getType()),
-          valueMap[writeArrayOp.getArrRef()], indices, *elementValue, tables,
-          writeArrayOp.getOperation(), field
+          valueMap[writeArrayOp.getArrRef()], indices, *elementValue
       );
     }
 
@@ -1809,10 +1805,10 @@ private:
 } // namespace
 
 void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &) {
-  llzk::polymorphic::FlatteningPassOptions flatteningOptions = {
-      .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot
-  };
-  pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(flatteningOptions)));
+  using namespace llzk::polymorphic;
+  pm.addPass(
+      createFlatteningPass(FlatteningPassOptions {.cleanupMode = StructCleanupMode::ConcreteAsRoot})
+  );
   pm.addPass(mlir::createLowerAffinePass());
   pm.addPass(llzk::createInlineStructsPass());
   pm.addPass(mlir::createCanonicalizerPass());

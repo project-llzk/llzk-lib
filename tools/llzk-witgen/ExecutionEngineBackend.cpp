@@ -119,10 +119,10 @@ static llvm::Error buildDescriptor(BufferPack &buffer) {
   }
   buffer.descriptor.resize(*checkedTotalSize);
   uint8_t *cursor = buffer.descriptor.data();
-  void *base = buffer.storage.data();
-  std::memcpy(cursor, &base, sizeof(void *));
+  uint8_t *base = buffer.storage.data();
+  std::memcpy(cursor, static_cast<const void *>(&base), sizeof(void *));
   cursor += sizeof(void *);
-  std::memcpy(cursor, &base, sizeof(void *));
+  std::memcpy(cursor, static_cast<const void *>(&base), sizeof(void *));
   cursor += sizeof(void *);
   const int64_t offset = 0;
   std::memcpy(cursor, &offset, sizeof(int64_t));
@@ -350,8 +350,8 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
 
   auto parsedArgs = [&]() -> llvm::Expected<llvm::SmallVector<WitnessVal>> {
     llvm::SmallVector<WitnessVal> args;
-    auto *jsonObject = input.getAsObject();
-    auto *jsonArray = input.getAsArray();
+    const auto *jsonObject = input.getAsObject();
+    const auto *jsonArray = input.getAsArray();
     if (!jsonObject && !jsonArray) {
       return makeError("inputs JSON must be either an object or an array");
     }
@@ -472,7 +472,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   llvm::SmallVector<void *> packedArgs;
   packedArgs.reserve(descriptorPtrs.size());
   for (void *&descriptorPtr : descriptorPtrs) {
-    packedArgs.push_back(&descriptorPtr);
+    packedArgs.push_back(static_cast<void *>(&descriptorPtr));
   }
 
   if (auto err = (*maybeEngine)->invokePacked("_mlir_ciface___llzk_witgen_main", packedArgs)) {

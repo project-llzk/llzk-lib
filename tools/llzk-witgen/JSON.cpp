@@ -57,7 +57,7 @@ static llvm::Expected<WitnessVal> parseJSONArray(
     const llvm::json::Value *json, array::ArrayType type, const Field &field, Operation *origin,
     size_t dimIndex = 0
 ) {
-  auto *jsonArray = json->getAsArray();
+  const auto *jsonArray = json->getAsArray();
   if (!jsonArray) {
     return makeError("expected JSON array");
   }

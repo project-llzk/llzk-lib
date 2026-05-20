@@ -86,7 +86,7 @@ FunctionInterpreter::FunctionInterpreter(
     UninitializedBehavior behavior, std::mt19937_64 r
 )
     : moduleOp(module), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
-      rng(std::move(r)) {}
+      rng(r) {}
 
 namespace {
 
