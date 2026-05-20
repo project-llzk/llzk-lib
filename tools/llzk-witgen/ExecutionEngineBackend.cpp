@@ -43,6 +43,7 @@
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/Support/Endian.h>
+#include <llvm/Support/MathExtras.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -106,7 +107,7 @@ static llvm::Expected<std::vector<int64_t>> computeStaticStrides(ArrayRef<int64_
 
 /// Populate the raw memref descriptor for a host buffer.
 static llvm::Error buildDescriptor(BufferPack &buffer) {
-  const size_t rank = buffer.shape.size();
+  const int64_t rank = llzk::checkedCast<int64_t>(buffer.shape.size());
   auto descriptorSize = llvm::DynamicAPInt(sizeof(void *)) * 2;
   auto shapeAndStrideCount = llvm::DynamicAPInt(1) + rank + rank;
   auto dynamicPart = llvm::DynamicAPInt(sizeof(int64_t)) * shapeAndStrideCount;
@@ -157,13 +158,12 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
   if (!elementCount) {
     return elementCount.takeError();
   }
-  auto storageBytes = llvm::DynamicAPInt(*elementCount) * buffer.elemBytes;
-  auto checkedStorageBytes =
-      checkedDynamicAPIntToSize(storageBytes, "execution-engine buffer storage");
-  if (!checkedStorageBytes) {
-    return checkedStorageBytes.takeError();
+  bool overflow = false;
+  size_t storageBytes = llvm::SaturatingMultiply(*elementCount, buffer.elemBytes, &overflow);
+  if (overflow) {
+    return makeError("execution-engine buffer storage would overflow size_t");
   }
-  buffer.storage.resize(*checkedStorageBytes);
+  buffer.storage.resize(storageBytes);
   if (auto error = buildDescriptor(buffer)) {
     return std::move(error);
   }
@@ -231,7 +231,10 @@ static llvm::json::Value feltElementToJSON(const BufferPack &buffer, size_t flat
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
 static llvm::Expected<llvm::json::Value>
-bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::DynamicAPInt &flatOffset) {
+bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) {
+  if (dimIndex == SIZE_MAX) {
+    return makeError("execution-engine JSON output would overflow size_t");
+  }
   auto dimSize = checkedShapeDimToSize(buffer.shape[dimIndex], "execution-engine JSON output");
   if (!dimSize) {
     return dimSize.takeError();
@@ -239,13 +242,12 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::Dynamic
   if (dimIndex + 1 == buffer.shape.size()) {
     llvm::json::Array result;
     for (size_t i = 0; i < *dimSize; ++i) {
-      llvm::DynamicAPInt elementOffset = flatOffset + i;
-      auto checkedElementOffset =
-          checkedDynamicAPIntToSize(elementOffset, "execution-engine JSON output");
-      if (!checkedElementOffset) {
-        return checkedElementOffset.takeError();
+      bool overflow = false;
+      size_t elementOffset = llvm::SaturatingAdd(i, flatOffset, &overflow);
+      if (overflow) {
+        return makeError("execution-engine JSON output would overflow size_t");
       }
-      result.push_back(feltElementToJSON(buffer, *checkedElementOffset));
+      result.push_back(feltElementToJSON(buffer, elementOffset));
     }
     return llvm::json::Value(std::move(result));
   }
@@ -259,7 +261,11 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::Dynamic
 
   llvm::json::Array result;
   for (size_t i = 0; i < *dimSize; ++i) {
-    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * *subArraySize);
+    bool overflow = false;
+    size_t nextOffset = llvm::SaturatingMultiplyAdd(i, *subArraySize, flatOffset, &overflow);
+    if (overflow) {
+      return makeError("execution-engine JSON output would overflow size_t");
+    }
     auto subArray = bufferToJSONArray(buffer, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();
@@ -274,7 +280,7 @@ static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) 
   if (isa<felt::FeltType>(buffer.originalType)) {
     return feltElementToJSON(buffer, 0);
   }
-  return bufferToJSONArray(buffer, 0, llvm::DynamicAPInt(0));
+  return bufferToJSONArray(buffer, 0, 0);
 }
 
 /// Lower the module through the shared LLZK-to-core witgen passes.

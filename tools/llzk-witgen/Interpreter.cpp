@@ -689,19 +689,21 @@ private:
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
+      bool baseOverflow = false;
+      size_t base = llvm::SaturatingMultiply(*prefixOffset, *subArraySize, &baseOverflow);
+      if (baseOverflow) {
+        return makeError("array.extract element offset would overflow size_t");
+      }
       auto subArray = std::make_shared<ArrayValue>();
       subArray->type = extractArrayOp.getType();
       subArray->elements.reserve(*subArraySize);
-      llvm::DynamicAPInt base(*prefixOffset);
-      base *= *subArraySize;
       for (size_t i = 0; i < *subArraySize; ++i) {
-        auto elementOffset = base + i;
-        auto checkedElementOffset =
-            checkedDynamicAPIntToSize(elementOffset, "array.extract element offset");
-        if (!checkedElementOffset) {
-          return checkedElementOffset.takeError();
+        bool overflow = false;
+        size_t elementOffset = llvm::SaturatingAdd(base, i, &overflow);
+        if (overflow) {
+          return makeError("array.extract element offset would overflow size_t");
         }
-        subArray->elements.push_back((*arrayRef)->elements[*checkedElementOffset]);
+        subArray->elements.push_back((*arrayRef)->elements[elementOffset]);
       }
       return bind({subArray});
     }
@@ -735,26 +737,24 @@ private:
         indices.push_back(*index);
       }
       llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
-      llvm::DynamicAPInt subArraySize((*subArrayRef)->elements.size());
+      size_t subArraySize = (*subArrayRef)->elements.size();
       auto prefixOffset =
           checkedLinearize(shape.take_front(indices.size()), indices, "array index out of bounds");
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
-      llvm::DynamicAPInt base(*prefixOffset);
-      base *= subArraySize;
-      auto checkedSubArraySize = checkedDynamicAPIntToSize(subArraySize, "array.insert shape");
-      if (!checkedSubArraySize) {
-        return checkedSubArraySize.takeError();
+      bool baseOverflow = false;
+      size_t base = llvm::SaturatingMultiply(*prefixOffset, subArraySize, &baseOverflow);
+      if (baseOverflow) {
+        return makeError("array.insert element offset would overflow size_t");
       }
-      for (size_t i = 0; i < *checkedSubArraySize; ++i) {
-        llvm::DynamicAPInt elementOffset = base + i;
-        auto checkedElementOffset =
-            checkedDynamicAPIntToSize(elementOffset, "array.insert element offset");
-        if (!checkedElementOffset) {
-          return checkedElementOffset.takeError();
+      for (size_t i = 0; i < subArraySize; ++i) {
+        bool overflow = false;
+        size_t elementOffset = llvm::SaturatingAdd(base, i, &overflow);
+        if (overflow) {
+          return makeError("array.insert element offset would overflow size_t");
         }
-        (*arrayRef)->elements[*checkedElementOffset] = (*subArrayRef)->elements[i];
+        (*arrayRef)->elements[elementOffset] = (*subArrayRef)->elements[i];
       }
       return BlockResult {};
     }

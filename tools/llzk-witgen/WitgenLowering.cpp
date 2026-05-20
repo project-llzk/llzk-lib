@@ -88,7 +88,7 @@ static std::string mangleFunctionName(function::FuncDefOp funcOp) {
       result += "__";
     }
     for (char c : piece) {
-      result += llvm::isAlnum(static_cast<unsigned char>(c)) ? c : '_';
+      result += llvm::isAlnum(c) ? c : '_';
     }
   }
   return std::string(result);
@@ -387,7 +387,7 @@ createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const 
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, strides)) {
+    for (int64_t index : mlir::delinearize(llzk::checkedCast<int64_t>(flat), strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     builder.create<memref::StoreOp>(loc, zero, alloc, indices);
@@ -410,7 +410,7 @@ static FailureOr<Value> createRandomMemRef(
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, strides)) {
+    for (int64_t index : mlir::delinearize(llzk::checkedCast<int64_t>(flat), strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
@@ -1287,7 +1287,7 @@ private:
           }
           SmallVector<Value> indices;
           auto strides = mlir::computeStrides(shape);
-          for (int64_t index : mlir::delinearize(flatIndex, strides)) {
+          for (int64_t index : mlir::delinearize(llzk::checkedCast<int64_t>(flatIndex), strides)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
           }
           if (failed(writeArrayElement(
@@ -1412,19 +1412,27 @@ private:
       }
       auto loweredCall =
           builder.create<func::CallOp>(loc, mangleFunctionName(callee), resultTypes, flatArgs);
-      unsigned cursor = 0;
+      auto loweredCallResults = loweredCall.getResults();
+      size_t totalResults = loweredCallResults.size();
+      size_t cursor = 0;
       for (auto [oldResult, oldType] : llvm::zip(callOp.getResults(), callOp.getResultTypes())) {
         auto leafCount = getLeafCount(oldType, tables, callOp.getOperation(), field);
         if (failed(leafCount)) {
           return failure();
         }
+        bool overflow = false;
+        size_t nextCursor = llvm::SaturatingAdd(cursor, *leafCount, &overflow);
+        if (overflow || nextCursor > totalResults) {
+          callOp.emitError("leaf count overflow while lowering function call results");
+          return failure();
+        }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
-            loweredCall.getResults().begin() + cursor,
-            loweredCall.getResults().begin() + cursor + *leafCount
+            loweredCallResults.begin() + static_cast<ptrdiff_t>(cursor),
+            loweredCallResults.begin() + static_cast<ptrdiff_t>(nextCursor)
         );
-        cursor += *leafCount;
         valueMap[oldResult] = std::move(lowered);
+        cursor = nextCursor;
       }
       return success();
     }
@@ -1438,7 +1446,7 @@ private:
       }
 
       SmallVector<Value> initArgs;
-      SmallVector<unsigned> initLeafCounts;
+      SmallVector<size_t> initLeafCounts;
       for (auto [init, resultType] : llvm::zip(forOp.getInitArgs(), forOp.getResultTypes())) {
         auto lowered = lookup(init, valueMap, forOp.getOperation());
         auto leafTypes = getABILeafTypes(resultType, tables, forOp.getOperation(), field);
@@ -1462,32 +1470,54 @@ private:
       DenseMap<Value, LoweredValue> bodyMap(valueMap.begin(), valueMap.end());
       bodyMap[forOp.getInductionVar()] =
           LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};
-      unsigned cursor = 0;
-      for (auto [oldIterArg, oldType, leafCount] :
-           llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {
-        LoweredValue lowered {oldType, {}};
-        lowered.leaves.append(
-            newFor.getRegionIterArgs().begin() + cursor,
-            newFor.getRegionIterArgs().begin() + cursor + leafCount
-        );
-        bodyMap[oldIterArg] = std::move(lowered);
-        cursor += leafCount;
+      {
+        auto newForIterArgs = newFor.getRegionIterArgs();
+        size_t totalIterArgs = newForIterArgs.size();
+        size_t cursor = 0;
+        for (auto [oldIterArg, oldType, leafCount] :
+             llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {
+          bool overflow = false;
+          size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+          if (overflow || nextCursor > totalIterArgs) {
+            forOp.emitError("leaf count overflow while lowering for-loop region iter args");
+            return failure();
+          }
+          LoweredValue lowered {oldType, {}};
+          lowered.leaves.append(
+              newForIterArgs.begin() + static_cast<ptrdiff_t>(cursor),
+              newForIterArgs.begin() + static_cast<ptrdiff_t>(nextCursor)
+          );
+          bodyMap[oldIterArg] = std::move(lowered);
+          cursor = nextCursor;
+        }
       }
+
       newFor.getBody()->clear();
       OpBuilder bodyBuilder = OpBuilder::atBlockBegin(newFor.getBody());
       if (failed(lowerBlock(bodyBuilder, *forOp.getBody(), bodyMap))) {
         return failure();
       }
 
-      cursor = 0;
-      for (auto [oldResult, oldType, leafCount] :
-           llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
-        LoweredValue lowered {oldType, {}};
-        lowered.leaves.append(
-            newFor.getResults().begin() + cursor, newFor.getResults().begin() + cursor + leafCount
-        );
-        valueMap[oldResult] = std::move(lowered);
-        cursor += leafCount;
+      {
+        auto newForResults = newFor.getResults();
+        size_t totalForResults = newForResults.size();
+        size_t cursor = 0;
+        for (auto [oldResult, oldType, leafCount] :
+             llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
+          bool overflow = false;
+          size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+          if (overflow || nextCursor > totalForResults) {
+            forOp.emitError("leaf count overflow while lowering for-loop results");
+            return failure();
+          }
+          LoweredValue lowered {oldType, {}};
+          lowered.leaves.append(
+              newForResults.begin() + static_cast<ptrdiff_t>(cursor),
+              newForResults.begin() + static_cast<ptrdiff_t>(nextCursor)
+          );
+          valueMap[oldResult] = std::move(lowered);
+          cursor = nextCursor;
+        }
       }
       return success();
     }

@@ -116,8 +116,7 @@ static llvm::Expected<llvm::json::Value> feltToJSON(const llvm::DynamicAPInt &va
 /// Serialize a flattened LLZK array into nested JSON arrays.
 static llvm::Expected<llvm::json::Value> serializeJSONArray(
     const ArrayValueRef &arrayValue, array::ArrayType type, SymbolTableCollection &tables,
-    Operation *origin, SerializationMode mode, size_t dimIndex = 0,
-    const llvm::DynamicAPInt &flatOffset = llvm::DynamicAPInt(0)
+    Operation *origin, SerializationMode mode, size_t dimIndex = 0, size_t flatOffset = 0
 ) {
   llvm::json::Array jsonArray;
   llvm::ArrayRef<int64_t> shape = type.getShape();
@@ -127,14 +126,13 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
   }
   if (dimIndex == shape.size() - 1) {
     for (size_t i = 0; i < *dimSize; ++i) {
-      llvm::DynamicAPInt elementOffset = flatOffset + i;
-      auto checkedElementOffset =
-          checkedDynamicAPIntToSize(elementOffset, "JSON array output flat index");
-      if (!checkedElementOffset) {
-        return checkedElementOffset.takeError();
+      bool overflow = false;
+      size_t elementOffset = llvm::SaturatingAdd(flatOffset, i, &overflow);
+      if (overflow) {
+        return makeError("JSON array output flat index would overflow size_t");
       }
       auto elem = serializeJSONValue(
-          arrayValue->elements[*checkedElementOffset], type.getElementType(), tables, origin, mode
+          arrayValue->elements[elementOffset], type.getElementType(), tables, origin, mode
       );
       if (!elem) {
         return elem.takeError();
@@ -144,17 +142,25 @@ static llvm::Expected<llvm::json::Value> serializeJSONArray(
     return llvm::json::Value(std::move(jsonArray));
   }
 
-  llvm::DynamicAPInt subArraySize(1);
+  size_t subArraySize = 1;
   for (size_t i = dimIndex + 1; i < shape.size(); ++i) {
     auto nextDimSize = checkedShapeDimToSize(shape[i], "JSON array output");
     if (!nextDimSize) {
       return nextDimSize.takeError();
     }
-    subArraySize *= llvm::DynamicAPInt(*nextDimSize);
+    bool overflow = false;
+    subArraySize = llvm::SaturatingMultiply(subArraySize, *nextDimSize, &overflow);
+    if (overflow) {
+      return makeError("JSON array output sub-array size would overflow size_t");
+    }
   }
 
   for (size_t i = 0; i < *dimSize; ++i) {
-    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * subArraySize);
+    bool overflow = false;
+    size_t nextOffset = llvm::SaturatingMultiplyAdd(i, subArraySize, flatOffset, &overflow);
+    if (overflow) {
+      return makeError("JSON array output flat offset would overflow size_t");
+    }
     auto subArray =
         serializeJSONArray(arrayValue, type, tables, origin, mode, dimIndex + 1, nextOffset);
     if (!subArray) {
