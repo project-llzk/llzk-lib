@@ -9,6 +9,7 @@
 
 #include "../LLZKTestUtils.h"
 
+#include <climits>
 #include <gtest/gtest.h>
 #include <string>
 
@@ -89,6 +90,13 @@ TEST_P(DynamicAPIntStringTest, Strings) {
 INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntStringTest, testing::ValuesIn(DynamicAPIntStringTest::TestingValues())
 );
+
+// Verify that size_t values above INT64_MAX are not mis-converted to negative.
+// SIZE_MAX (0xFFFFFFFFFFFFFFFF) has its MSB set; if the APSInt wrapper incorrectly
+// interpreted the value as signed, it would yield -1 instead of 18446744073709551615.
+TEST(DynamicAPIntSizeTTest, SizeMax) {
+  ASSERT_EQ(toDynamicAPInt(SIZE_MAX), toDynamicAPInt("18446744073709551615"));
+}
 
 //===----------------------------------------------------------------------===//
 // Test bitwise AND, OR, XOR operations
