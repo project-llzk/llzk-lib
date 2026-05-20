@@ -38,7 +38,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@TIsZero_0::@IsZero_0>} {
   }
 }
 
-// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@TIsZero_0::@IsZero_0>} {
+// CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK: func.func @smt_IsZero_0(%[[IN:[0-9a-zA-Z_\.]+]]: !smt.int) {
 // CHECK-DAG: %[[OUTC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
 // CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int

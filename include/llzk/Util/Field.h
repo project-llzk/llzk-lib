@@ -95,7 +95,7 @@ public:
   /// Field elements are returned as signed integers so that negation functions
   /// as expected (i.e., reducing -1 will yield p-1).
   llvm::DynamicAPInt reduce(const llvm::DynamicAPInt &i) const;
-  inline llvm::DynamicAPInt reduce(int i) const { return reduce(llvm::DynamicAPInt(i)); }
+  inline llvm::DynamicAPInt reduce(int64_t i) const { return reduce(llvm::DynamicAPInt(i)); }
   llvm::DynamicAPInt reduce(const llvm::APInt &i) const;
 
   /// Converts a canonical field element to its signed integer representation:

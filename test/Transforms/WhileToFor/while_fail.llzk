@@ -1,0 +1,173 @@
+// RUN: llzk-opt --llzk-while-to-for -split-input-file -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+
+    function.def private @use_felt(%f: !felt.type) -> ()
+
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+        %f0 = felt.const 0
+        %f1 = felt.const 1
+        %f10 = felt.const 10
+        // expected-warning@+1 {{failed to transform op: could not identify step}}
+        %end, %total = scf.while (%i = %f1, %sum = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+            %cond = bool.cmp lt(%i, %f10)
+            scf.condition(%cond) %i, %sum : !felt.type, !felt.type
+        } do {
+        ^bb0(%i: !felt.type, %sum: !felt.type):
+            %next_sum = felt.add %sum, %i
+            %next_i = felt.mul %i, %i
+            scf.yield %next_i, %next_sum : !felt.type, !felt.type
+        }
+        function.call @use_felt(%total) : (!felt.type) -> ()
+        function.return
+    }
+}
+
+// CHECK-NOT:     scf.for
+// CHECK-LABEL: scf.while
+// -----
+
+module attributes {llzk.lang} {
+
+    function.def private @use_felt(%f: !felt.type) -> ()
+
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+        %f0 = felt.const 0
+        %f1 = felt.const 1
+        
+        // This looks like a proper for loop, but the upper bound is not constant so it can't be converted
+        // expected-warning@+2 {{failed to transform op: upper bound may not be constant}}
+        // expected-note@+1 {{depends on loop-carried value}}
+        %result:2 = scf.while (%i = %f0, %ub = %f1) : (!felt.type, !felt.type) -> (!felt.type, !felt.type) {
+            %cond = bool.cmp lt(%i, %ub)
+            scf.condition(%cond) %i, %ub : !felt.type, !felt.type
+        } do {
+        ^bb0(%i: !felt.type, %ub: !felt.type):
+            %next_i = felt.add %i, %f1
+            %next_ub = felt.add %ub, %f1
+            scf.yield %next_i, %next_ub : !felt.type, !felt.type
+        }
+
+        function.call @use_felt(%result#1) : (!felt.type) -> ()
+
+        function.return
+    }
+}
+
+// CHECK-NOT:     scf.for
+// CHECK-LABEL: scf.while
+// -----
+
+module attributes {llzk.lang} {
+
+    function.def private @use_felt(%f: !felt.type) -> ()
+
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+        %f0 = felt.const 0
+        %f2 = felt.const 2
+        %f5 = felt.const 5
+
+        // expected-warning@+1 {{failed to transform op: final ivar value unsafe to drop}}
+        %final = scf.while (%i = %f0) : (!felt.type) -> !felt.type {
+            %cond = bool.cmp lt(%i, %f5)
+            scf.condition(%cond) %i : !felt.type
+        } do {
+        ^bb0(%i: !felt.type):
+            %next_i = felt.add %i, %f2
+            scf.yield %next_i : !felt.type
+        }
+
+        // expected-note@+1 {{used here}}
+        function.call @use_felt(%final) : (!felt.type) -> ()
+
+        function.return
+    }
+}
+
+// CHECK-NOT:     scf.for
+// CHECK-LABEL:   scf.while
+// -----
+
+module attributes {llzk.lang} {
+    function.def private @use_felt(%f: !felt.type) -> ()
+
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+        %f0 = felt.const 0
+        %f2 = felt.const 2
+        %f5 = felt.const 5
+
+        // expected-warning@+1 {{failed to transform op: could not identify an induction variable}}
+        scf.while (%i = %f0) : (!felt.type) -> !felt.type {
+            %i2 = felt.mul %i, %i
+            %cond = bool.cmp lt(%i2, %f5) : !felt.type
+            scf.condition(%cond) %i : !felt.type
+        } do {
+        ^bb0(%i: !felt.type):
+            %next_i = felt.add %i, %f2
+            scf.yield %next_i : !felt.type
+        }
+
+        function.return
+    }
+}
+
+// CHECK-NOT:     scf.for
+// CHECK-LABEL:   scf.while
+// -----
+
+module attributes {llzk.lang} {
+    function.def private @use_felt(%f: !felt.type) -> ()
+
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+        %f0 = felt.const 0
+        %f2 = felt.const 2
+        %f5 = felt.const 5
+
+        // expected-warning@+1 {{failed to transform op: step may not be constant}}
+        scf.while (%i = %f0) : (!felt.type) -> !felt.type {
+            %cond = bool.cmp lt(%i, %f5) : !felt.type
+            scf.condition(%cond) %i : !felt.type
+        } do {
+        // expected-note@+1 {{depends on loop-carried value}}
+        ^bb0(%i: !felt.type):
+            %step = felt.add %i, %f2
+            %next_i = felt.add %i, %step
+            scf.yield %next_i : !felt.type
+        }
+
+        function.return
+    }
+}
+
+// CHECK-NOT:     scf.for
+// CHECK-LABEL:   scf.while
+// -----
+
+module attributes {llzk.lang} {
+    function.def private @use_felt(!felt.type) -> ()
+
+    function.def @func() attributes {function.allow_non_native_field_ops} {
+
+        %f0 = felt.const 0
+        %f1 = felt.const 1
+        %f5 = felt.const 5
+
+        // expected-warning@+1 {{failed to transform op: block arguments not passed through from preamble to body}}
+        %result:3 = scf.while (%i = %f0, %total = %f0) : (!felt.type, !felt.type) -> (!felt.type, !felt.type, !felt.type) {
+            %cond = bool.cmp lt(%i, %f5) : !felt.type
+            %i2 = felt.mul %i, %i
+            %total_inc = felt.add %total, %f1
+            scf.condition(%cond) %i, %i2, %total_inc : !felt.type, !felt.type, !felt.type
+        } do {
+        ^bb0(%i: !felt.type, %j: !felt.type, %total: !felt.type):
+            %next_i = felt.add %i, %f1
+            %next_total = felt.add %total, %j
+            scf.yield %next_i, %next_total : !felt.type, !felt.type
+        }
+        
+
+        function.call @use_felt(%result#2) : (!felt.type) -> ()
+
+        function.return
+    }
+}

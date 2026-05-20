@@ -1,0 +1,34 @@
+// RUN: llzk-opt --llzk-while-to-for --canonicalize %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        function.def @product(%lo: !felt.type, %hi: !felt.type, %step: !felt.type) -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
+            %self = struct.new : <@A>
+            %array = array.new : !array.type<10 x !felt.type>
+            scf.while (%i = %lo) : (!felt.type) -> !felt.type {
+                %cond = bool.cmp lt(%i, %hi)
+                scf.condition(%cond) %i : !felt.type
+            } do {
+            ^bb0(%i: !felt.type):
+                %i_index = cast.toindex %i
+                array.write %array[%i_index] = %i : !array.type<10 x !felt.type>, !felt.type
+                %next = felt.add %i, %step
+                scf.yield %next : !felt.type
+            } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 10 step 1>}
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+
+// CHECK-LABEL: function.def @product(%{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type)
+// CHECK-DAG:     %[[STEP_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-DAG:     %[[UB_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
+// CHECK-DAG:     %[[LB_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK:         %[[ARRAY:[0-9a-zA-Z_\.]+]] = array.new
+// CHECK-NOT:     scf.while
+// CHECK:         scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB_IDX]] to %[[UB_IDX]] step %[[STEP_IDX]] {
+// CHECK-NEXT:      %[[IV_FELT:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[IV]]
+// CHECK-NEXT:      %[[WRITE_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[IV_FELT]]
+// CHECK-NEXT:      array.write %[[ARRAY]][%[[WRITE_IDX]]] = %[[IV_FELT]]
+// CHECK-NEXT:    }
+// CHECK-NOT:     scf.while

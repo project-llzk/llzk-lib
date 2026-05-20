@@ -39,6 +39,7 @@
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
@@ -916,7 +917,7 @@ class SMTOptimizedNonNativeLoweringPass
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
-    mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
+    auto result = mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");
@@ -1006,6 +1007,10 @@ class SMTOptimizedNonNativeLoweringPass
 
       return WalkResult::advance();
     });
+    if (!result.wasInterrupted()) {
+      // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
+      mod->removeAttr(MAIN_ATTR_NAME);
+    }
   }
 };
 

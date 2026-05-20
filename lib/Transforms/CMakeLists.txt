@@ -3,7 +3,11 @@ add_library(LLZK::LLZKTransforms ALIAS LLZKTransforms)
 
 file(GLOB LLZKTransforms_SOURCES "*.cpp")
 
-target_sources(LLZKTransforms PRIVATE ${LLZKTransforms_SOURCES})
+target_sources(
+  LLZKTransforms PRIVATE
+    ${LLZKTransforms_SOURCES}
+    LLZKWhileToForPass.cpp
+)
 
 target_link_libraries(
   LLZKTransforms
