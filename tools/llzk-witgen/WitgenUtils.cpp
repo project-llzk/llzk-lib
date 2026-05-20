@@ -16,6 +16,7 @@
 
 #include <mlir/IR/BuiltinTypes.h>
 
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/Twine.h>
 
 #include <climits>
@@ -62,7 +63,7 @@ getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef contex
     if (!dimSize) {
       return dimSize.takeError();
     }
-    count *= llvm::DynamicAPInt(*dimSize);
+    count *= toDynamicAPInt(*dimSize);
   }
   return dynamicAPIntToSize(count, context);
 }
@@ -88,12 +89,30 @@ std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options) {
 }
 
 llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &rng, const Field &field) {
-  const uint64_t prime = toAPSInt(field.prime()).getZExtValue();
+  const llvm::DynamicAPInt prime = field.prime();
   if (prime == 0) {
-    return field.zero();
+    return prime;
   }
-  uint64_t candidate = std::uniform_int_distribution<uint64_t>(0, prime - 1)(rng);
-  return field.reduce(candidate);
+
+  // Use rejection sampling to produce a uniform value in [0, prime).
+  // Generate a random value with the same bit width as the prime; if it is
+  // >= prime, discard and retry. The rejection probability is < 50%, so the
+  // expected number of iterations is less than 2.
+  const unsigned bitWidth = toAPSInt(prime).getActiveBits();
+  const unsigned numWords = (bitWidth + 63U) / 64U;
+  std::uniform_int_distribution<uint64_t> wordDist;
+  llvm::SmallVector<uint64_t, 4> words(numWords);
+  while (true) {
+    for (uint64_t &word : words) {
+      word = wordDist(rng);
+    }
+    // APInt truncates the top word to exactly bitWidth bits, keeping the
+    // candidate in [0, 2^bitWidth).
+    llvm::DynamicAPInt value = toDynamicAPInt(llvm::APInt(bitWidth, words));
+    if (value < prime) {
+      return field.reduce(value);
+    }
+  }
 }
 
 int64_t randomIndexValue(std::mt19937_64 &rng) {
