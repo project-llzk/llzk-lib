@@ -26,6 +26,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -1756,6 +1757,9 @@ public:
       }
     }
     builder.create<func::ReturnOp>(computeFunc.getLoc());
+
+    // Remove `llzk.main` attribute because the main struct is deleted below.
+    moduleOp->removeAttr(MAIN_ATTR_NAME);
 
     SmallVector<Operation *> toErase;
     for (Operation &op : moduleOp.getBody()->getOperations()) {

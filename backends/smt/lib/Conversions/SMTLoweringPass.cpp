@@ -36,6 +36,7 @@
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -564,6 +565,9 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
       }
       return WalkResult::advance();
     });
+
+    // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
+    mod->removeAttr(MAIN_ATTR_NAME);
   }
 };
 
