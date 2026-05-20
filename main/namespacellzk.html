@@ -612,6 +612,7 @@ Functions</h2></td></tr>
 <tr class="memitem:aee183fbf8efdb7074e4ae15d7a4029a4" id="r_aee183fbf8efdb7074e4ae15d7a4029a4"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aee183fbf8efdb7074e4ae15d7a4029a4">toDynamicAPInt</a> (llvm::StringRef str)</td></tr>
 <tr class="memitem:a42ddc7147daa762ec4335b255dacd7b3" id="r_a42ddc7147daa762ec4335b255dacd7b3"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a42ddc7147daa762ec4335b255dacd7b3">toDynamicAPInt</a> (const llvm::APSInt &amp;i)</td></tr>
 <tr class="memitem:ad74feac4c1ab67da90787102f5231390" id="r_ad74feac4c1ab67da90787102f5231390"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad74feac4c1ab67da90787102f5231390">toDynamicAPInt</a> (const llvm::APInt &amp;i)</td></tr>
+<tr class="memitem:a254f0d812ac8a3f615d91a868115ee83" id="r_a254f0d812ac8a3f615d91a868115ee83"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a254f0d812ac8a3f615d91a868115ee83">toDynamicAPInt</a> (size_t i)</td></tr>
 <tr class="memitem:a3b93df0843f457f1f81cc0dc5933d1c9" id="r_a3b93df0843f457f1f81cc0dc5933d1c9"><td class="memItemLeft" align="right" valign="top">llvm::APSInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3b93df0843f457f1f81cc0dc5933d1c9">toAPSInt</a> (const llvm::DynamicAPInt &amp;i)</td></tr>
 <tr class="memitem:a1998817a76cc8f6e316294d1b18e2e92" id="r_a1998817a76cc8f6e316294d1b18e2e92"><td class="memItemLeft" align="right" valign="top">llvm::APInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1998817a76cc8f6e316294d1b18e2e92">toAPInt</a> (const llvm::DynamicAPInt &amp;i, unsigned bitWidth)</td></tr>
 <tr class="memdesc:a1998817a76cc8f6e316294d1b18e2e92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a DynamicAPInt that is non-negative and fits in <span class="tt">bitWidth</span> bits into an APInt.  <br /></td></tr>
@@ -5866,7 +5867,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00153">153</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00155">155</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5915,7 +5916,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00170">170</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00172">172</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9252,7 +9253,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00141">141</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00143">143</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9322,7 +9323,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00120">120</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00122">122</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9344,7 +9345,7 @@ template&lt;&gt; </div>
 </div>
 </div>
 <a id="a6487238a0c9232afbc011cfbe1f93cce" name="a6487238a0c9232afbc011cfbe1f93cce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6487238a0c9232afbc011cfbe1f93cce">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[1/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a6487238a0c9232afbc011cfbe1f93cce">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[1/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -9363,7 +9364,7 @@ template&lt;&gt; </div>
 </div>
 </div>
 <a id="ad74feac4c1ab67da90787102f5231390" name="ad74feac4c1ab67da90787102f5231390"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad74feac4c1ab67da90787102f5231390">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[2/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad74feac4c1ab67da90787102f5231390">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[2/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -9385,12 +9386,12 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00039">39</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00045">45</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
 
 </div>
 </div>
 <a id="a42ddc7147daa762ec4335b255dacd7b3" name="a42ddc7147daa762ec4335b255dacd7b3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a42ddc7147daa762ec4335b255dacd7b3">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[3/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a42ddc7147daa762ec4335b255dacd7b3">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[3/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -9407,7 +9408,7 @@ template&lt;&gt; </div>
 </div>
 </div>
 <a id="aee183fbf8efdb7074e4ae15d7a4029a4" name="aee183fbf8efdb7074e4ae15d7a4029a4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aee183fbf8efdb7074e4ae15d7a4029a4">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[4/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aee183fbf8efdb7074e4ae15d7a4029a4">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[4/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -9423,8 +9424,35 @@ template&lt;&gt; </div>
 
 </div>
 </div>
+<a id="a254f0d812ac8a3f615d91a868115ee83" name="a254f0d812ac8a3f615d91a868115ee83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a254f0d812ac8a3f615d91a868115ee83">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[5/6]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::DynamicAPInt llzk::toDynamicAPInt </td>
+          <td>(</td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8h_source.html#l00049">49</a> of file <a class="el" href="DynamicAPIntHelper_8h_source.html">DynamicAPIntHelper.h</a>.</p>
+
+</div>
+</div>
 <a id="a591c6bf26566c23d2ccb0c9ed20ab12b" name="a591c6bf26566c23d2ccb0c9ed20ab12b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a591c6bf26566c23d2ccb0c9ed20ab12b">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[5/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a591c6bf26566c23d2ccb0c9ed20ab12b">&#9670;&#160;</a></span>toDynamicAPInt() <span class="overload">[6/6]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -9461,7 +9489,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00147">147</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DynamicAPIntHelper_8cpp_source.html#l00149">149</a> of file <a class="el" href="DynamicAPIntHelper_8cpp_source.html">DynamicAPIntHelper.cpp</a>.</p>
 
 </div>
 </div>

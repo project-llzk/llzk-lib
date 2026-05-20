@@ -214,6 +214,13 @@ Functions</h2></td></tr>
 <tr class="memdesc:a3013ddc88e96d029adc582aa7768f9e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.  <br /></td></tr>
 <tr class="memitem:a054fb616e9cdd12d136efb6b37449d24" id="r_a054fb616e9cdd12d136efb6b37449d24"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a054fb616e9cdd12d136efb6b37449d24">addWitgenPreparePipeline</a> (mlir::OpPassManager &amp;pm, const <a class="el" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a054fb616e9cdd12d136efb6b37449d24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the preprocessing pipeline required before witgen backend execution.  <br /></td></tr>
+<tr class="memitem:aaf2a9e39090cf207cbfa15acb8096c1a" id="r_aaf2a9e39090cf207cbfa15acb8096c1a"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf2a9e39090cf207cbfa15acb8096c1a">checkedDynamicAPIntToSize</a> (const llvm::DynamicAPInt &amp;value, llvm::StringRef context)</td></tr>
+<tr class="memdesc:aaf2a9e39090cf207cbfa15acb8096c1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert a <span class="tt">DynamicAPInt</span> into <span class="tt">size_t</span> after validating its range.  <br /></td></tr>
+<tr class="memitem:ab60790824909c50e8aa2b661862d6cb5" id="r_ab60790824909c50e8aa2b661862d6cb5"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab60790824909c50e8aa2b661862d6cb5">checkedShapeDimToSize</a> (int64_t dim, llvm::StringRef context)</td></tr>
+<tr class="memdesc:ab60790824909c50e8aa2b661862d6cb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert one static dimension to <span class="tt">size_t</span>, rejecting dynamic or invalid sizes.  <br /></td></tr>
+<tr class="memitem:a78a397cece314c79f6091556f25e9717" id="r_a78a397cece314c79f6091556f25e9717"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a78a397cece314c79f6091556f25e9717">getStaticShapeElementCount</a> (llvm::ArrayRef&lt; int64_t &gt; shape, llvm::StringRef context)</td></tr>
+<tr class="memdesc:a78a397cece314c79f6091556f25e9717"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the static element count for one shape, rejecting dynamic sizes.  <br /></td></tr>
+<tr class="memitem:ab255ee70c5f377a9b4b1dceff9afb9d4" id="r_ab255ee70c5f377a9b4b1dceff9afb9d4"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab255ee70c5f377a9b4b1dceff9afb9d4">getStaticElementCount</a> (ShapedType type, llvm::StringRef context)</td></tr>
 <tr class="memitem:a23d7c44c1e254150720c92e81e68ebc2" id="r_a23d7c44c1e254150720c92e81e68ebc2"><td class="memItemLeft" align="right" valign="top">std::mt19937_64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a23d7c44c1e254150720c92e81e68ebc2">makeDefaultValueRng</a> (const <a class="el" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a23d7c44c1e254150720c92e81e68ebc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Seed an RNG for random/default witness value materialization.  <br /></td></tr>
 <tr class="memitem:a8d2926c72c7a53aec9e109f94845619b" id="r_a8d2926c72c7a53aec9e109f94845619b"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8d2926c72c7a53aec9e109f94845619b">randomFieldElement</a> (std::mt19937_64 &amp;rng, const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field)</td></tr>
@@ -222,13 +229,6 @@ Functions</h2></td></tr>
 <tr class="memdesc:ac49b7c4a16ce206bb7278fa4c5227131"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draw a uniformly distributed signed index value.  <br /></td></tr>
 <tr class="memitem:a9133fd240db34d3237708cd2a796838a" id="r_a9133fd240db34d3237708cd2a796838a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9133fd240db34d3237708cd2a796838a">randomBoolValue</a> (std::mt19937_64 &amp;rng)</td></tr>
 <tr class="memdesc:a9133fd240db34d3237708cd2a796838a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draw a uniformly distributed boolean value.  <br /></td></tr>
-<tr class="memitem:ab60790824909c50e8aa2b661862d6cb5" id="r_ab60790824909c50e8aa2b661862d6cb5"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab60790824909c50e8aa2b661862d6cb5">checkedShapeDimToSize</a> (int64_t dim, llvm::StringRef context)</td></tr>
-<tr class="memdesc:ab60790824909c50e8aa2b661862d6cb5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert one static dimension to <span class="tt">size_t</span>, rejecting dynamic or invalid sizes.  <br /></td></tr>
-<tr class="memitem:aaf2a9e39090cf207cbfa15acb8096c1a" id="r_aaf2a9e39090cf207cbfa15acb8096c1a"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf2a9e39090cf207cbfa15acb8096c1a">checkedDynamicAPIntToSize</a> (const llvm::DynamicAPInt &amp;value, llvm::StringRef context)</td></tr>
-<tr class="memdesc:aaf2a9e39090cf207cbfa15acb8096c1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert a <span class="tt">DynamicAPInt</span> into <span class="tt">size_t</span> after validating its range.  <br /></td></tr>
-<tr class="memitem:a78a397cece314c79f6091556f25e9717" id="r_a78a397cece314c79f6091556f25e9717"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a78a397cece314c79f6091556f25e9717">getStaticShapeElementCount</a> (llvm::ArrayRef&lt; int64_t &gt; shape, llvm::StringRef context)</td></tr>
-<tr class="memdesc:a78a397cece314c79f6091556f25e9717"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the static element count for one shape, rejecting dynamic sizes.  <br /></td></tr>
-<tr class="memitem:ab255ee70c5f377a9b4b1dceff9afb9d4" id="r_ab255ee70c5f377a9b4b1dceff9afb9d4"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab255ee70c5f377a9b4b1dceff9afb9d4">getStaticElementCount</a> (ShapedType type, llvm::StringRef context)</td></tr>
 <tr class="memitem:a24298067aefc53e7983c2ca181ed571e" id="r_a24298067aefc53e7983c2ca181ed571e"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24298067aefc53e7983c2ca181ed571e">getStaticElementCount</a> (mlir::ShapedType type, llvm::StringRef context)</td></tr>
 <tr class="memdesc:a24298067aefc53e7983c2ca181ed571e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the static element count for one shaped type.  <br /></td></tr>
 <tr class="memitem:ab007230ad7d678d7548cc2a68ef74da6" id="r_ab007230ad7d678d7548cc2a68ef74da6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab007230ad7d678d7548cc2a68ef74da6">memberIsSignal</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> owner, <a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a> member)</td></tr>
@@ -760,7 +760,7 @@ Functions</h2></td></tr>
 
 <p>Convert a <span class="tt">DynamicAPInt</span> into <span class="tt">size_t</span> after validating its range. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00080">80</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00043">43</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -785,7 +785,7 @@ Functions</h2></td></tr>
 
 <p>Convert one static dimension to <span class="tt">size_t</span>, rejecting dynamic or invalid sizes. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00068">68</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00047">47</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -1128,7 +1128,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00097">97</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00071">71</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -1153,7 +1153,7 @@ Functions</h2></td></tr>
 
 <p>Return the static element count for one shape, rejecting dynamic sizes. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00085">85</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00059">59</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -1174,7 +1174,7 @@ Functions</h2></td></tr>
 
 <p>Seed an RNG for random/default witness value materialization. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00041">41</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00082">82</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -1317,7 +1317,7 @@ Functions</h2></td></tr>
 
 <p>Draw a uniformly distributed boolean value. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00064">64</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00123">123</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -1342,7 +1342,7 @@ Functions</h2></td></tr>
 
 <p>Draw a uniformly distributed field element in <span class="tt">[0, prime)</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00050">50</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00091">91</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -1363,7 +1363,7 @@ Functions</h2></td></tr>
 
 <p>Draw a uniformly distributed signed index value. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00059">59</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenUtils_8cpp_source.html#l00118">118</a> of file <a class="el" href="WitgenUtils_8cpp_source.html">WitgenUtils.cpp</a>.</p>
 
 </div>
 </div>

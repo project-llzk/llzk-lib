@@ -12,5 +12,6 @@ var DynamicAPIntHelper_8h =
     [ "llzk::toDynamicAPInt", "namespacellzk.html#ad74feac4c1ab67da90787102f5231390", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#a42ddc7147daa762ec4335b255dacd7b3", null ],
     [ "llzk::toDynamicAPInt", "namespacellzk.html#aee183fbf8efdb7074e4ae15d7a4029a4", null ],
+    [ "llzk::toDynamicAPInt", "namespacellzk.html#a254f0d812ac8a3f615d91a868115ee83", null ],
     [ "llzk::toExactWidthAPInt", "namespacellzk.html#ab655bb1748d3ea9a799f9c044ce65d0e", null ]
 ];

@@ -141,7 +141,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aaaf90138e9e077e306770c6b42306871" id="r_aaaf90138e9e077e306770c6b42306871"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaaf90138e9e077e306770c6b42306871">inv</a> (const llvm::APInt &amp;i) const</td></tr>
 <tr class="memitem:a4b004a9fbedd042fe568bda6a9455bfb" id="r_a4b004a9fbedd042fe568bda6a9455bfb"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4b004a9fbedd042fe568bda6a9455bfb">reduce</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
 <tr class="memdesc:a4b004a9fbedd042fe568bda6a9455bfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns i mod p and reduces the result into the appropriate bitwidth.  <br /></td></tr>
-<tr class="memitem:a66d63632e3e7b0acbe24930914aa2eff" id="r_a66d63632e3e7b0acbe24930914aa2eff"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66d63632e3e7b0acbe24930914aa2eff">reduce</a> (int i) const</td></tr>
+<tr class="memitem:a8441c9b1837fb919983c838284bc63ab" id="r_a8441c9b1837fb919983c838284bc63ab"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8441c9b1837fb919983c838284bc63ab">reduce</a> (int64_t i) const</td></tr>
 <tr class="memitem:a70940b8886993bdff31e6b82db1b7ebb" id="r_a70940b8886993bdff31e6b82db1b7ebb"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a70940b8886993bdff31e6b82db1b7ebb">reduce</a> (const llvm::APInt &amp;i) const</td></tr>
 <tr class="memitem:a39381adb038ecf28cf28c97737c61cc1" id="r_a39381adb038ecf28cf28c97737c61cc1"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39381adb038ecf28cf28c97737c61cc1">toSigned</a> (const llvm::DynamicAPInt &amp;i) const</td></tr>
 <tr class="memdesc:a39381adb038ecf28cf28c97737c61cc1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a canonical field element to its signed integer representation: toSigned(f) = f if f &lt; field.half() toSigned(f) = f - p if f &gt;= field.half() (field.half() == ceil(p/2) == floor(p/2) + 1 for odd prime p)  <br /></td></tr>
@@ -748,8 +748,8 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
 
 </div>
 </div>
-<a id="a66d63632e3e7b0acbe24930914aa2eff" name="a66d63632e3e7b0acbe24930914aa2eff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a66d63632e3e7b0acbe24930914aa2eff">&#9670;&#160;</a></span>reduce() <span class="overload">[3/3]</span></h2>
+<a id="a8441c9b1837fb919983c838284bc63ab" name="a8441c9b1837fb919983c838284bc63ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8441c9b1837fb919983c838284bc63ab">&#9670;&#160;</a></span>reduce() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -760,7 +760,7 @@ We use DynamicAPInt to support arithmetic that may require increasing or signed 
         <tr>
           <td class="memname">llvm::DynamicAPInt llzk::Field::reduce </td>
           <td>(</td>
-          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
+          <td class="paramtype">int64_t</td>          <td class="paramname"><span class="paramname"><em>i</em></span></td><td>)</td>
           <td> const</td>
         </tr>
       </table>

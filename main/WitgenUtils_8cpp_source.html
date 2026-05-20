@@ -125,132 +125,152 @@ $(function(){initNavTree('WitgenUtils_8cpp_source.html','',''); });
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinTypes.h&gt;</span></div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;llvm/ADT/Twine.h&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;climits&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;limits&gt;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;random&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1witgen.html">llzk::witgen</a> {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">static</span> llvm::Expected&lt;size_t&gt;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>dynamicAPIntToSize(<span class="keyword">const</span> llvm::DynamicAPInt &amp;value, llvm::Twine context) {</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordflow">if</span> (value &lt; 0) {</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(context + <span class="stringliteral">&quot; would underflow size_t&quot;</span>);</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  }</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  llvm::APSInt as = <a class="code hl_function" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a>(value);</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordflow">if</span> (as.getActiveBits() &gt; std::numeric_limits&lt;size_t&gt;::digits) {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(context + <span class="stringliteral">&quot; would overflow size_t&quot;</span>);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  }</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;size_t&gt;</a>(as.getZExtValue());</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>}</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="foldopen" id="foldopen00041" data-start="{" data-end="}">
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">   41</a></span>std::mt19937_64 <a class="code hl_function" href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">makeDefaultValueRng</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options) {</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordflow">if</span> (options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">randomSeed</a>) {</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordflow">return</span> std::mt19937_64(*options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">randomSeed</a>);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  std::random_device rd;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  std::seed_seq seed {rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordflow">return</span> std::mt19937_64(seed);</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>}</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;llvm/ADT/Twine.h&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;climits&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;limits&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;random&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1witgen.html">llzk::witgen</a> {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">static</span> llvm::Expected&lt;size_t&gt;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>dynamicAPIntToSize(<span class="keyword">const</span> llvm::DynamicAPInt &amp;value, llvm::Twine context) {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordflow">if</span> (value &lt; 0) {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(context + <span class="stringliteral">&quot; would underflow size_t&quot;</span>);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  }</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  llvm::APSInt as = <a class="code hl_function" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a>(value);</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordflow">if</span> (as.getActiveBits() &gt; std::numeric_limits&lt;size_t&gt;::digits) {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(context + <span class="stringliteral">&quot; would overflow size_t&quot;</span>);</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  }</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;size_t&gt;</a>(as.getZExtValue());</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>}</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>llvm::Expected&lt;size_t&gt;</div>
+<div class="foldopen" id="foldopen00043" data-start="{" data-end="}">
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">   43</a></span><a class="code hl_function" href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">checkedDynamicAPIntToSize</a>(<span class="keyword">const</span> llvm::DynamicAPInt &amp;value, llvm::StringRef context) {</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(value, context);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>}</div>
 </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="foldopen" id="foldopen00050" data-start="{" data-end="}">
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">   50</a></span>llvm::DynamicAPInt <a class="code hl_function" href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">randomFieldElement</a>(std::mt19937_64 &amp;rng, <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1Field.html">Field</a> &amp;field) {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">const</span> uint64_t prime = <a class="code hl_function" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">toAPSInt</a>(field.<a class="code hl_function" href="classllzk_1_1Field.html#a47ec17bc79f0c5b89ef340db23ed76a7">prime</a>()).getZExtValue();</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordflow">if</span> (prime == 0) {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">return</span> field.<a class="code hl_function" href="classllzk_1_1Field.html#a371d71b386b8387a592a9967311a91ab">zero</a>();</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  uint64_t candidate = std::uniform_int_distribution&lt;uint64_t&gt;(0, prime - 1)(rng);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordflow">return</span> field.<a class="code hl_function" href="classllzk_1_1Field.html#a4b004a9fbedd042fe568bda6a9455bfb">reduce</a>(candidate);</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>}</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="foldopen" id="foldopen00047" data-start="{" data-end="}">
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">   47</a></span>llvm::Expected&lt;size_t&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">checkedShapeDimToSize</a>(int64_t dim, llvm::StringRef context) {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordflow">if</span> (ShapedType::isDynamic(dim)) {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; requires a static shape&quot;</span>);</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  }</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">if</span> (dim &lt; 0) {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; has a negative dimension&quot;</span>);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  llvm::DynamicAPInt value(dim);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(value, llvm::Twine(context) + <span class="stringliteral">&quot; dimension&quot;</span>);</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
 </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>llvm::Expected&lt;size_t&gt;</div>
 <div class="foldopen" id="foldopen00059" data-start="{" data-end="}">
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#ac49b7c4a16ce206bb7278fa4c5227131">   59</a></span>int64_t <a class="code hl_function" href="namespacellzk_1_1witgen.html#ac49b7c4a16ce206bb7278fa4c5227131">randomIndexValue</a>(std::mt19937_64 &amp;rng) {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordflow">return</span> std::uniform_int_distribution&lt;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      int64_t&gt;(std::numeric_limits&lt;int64_t&gt;::min(), std::numeric_limits&lt;int64_t&gt;::max())(rng);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">   59</a></span><a class="code hl_function" href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">getStaticShapeElementCount</a>(llvm::ArrayRef&lt;int64_t&gt; shape, llvm::StringRef context) {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  llvm::DynamicAPInt count(1);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordflow">for</span> (int64_t dim : shape) {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keyword">auto</span> dimSize = <a class="code hl_function" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">checkedShapeDimToSize</a>(dim, context);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">if</span> (!dimSize) {</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="keywordflow">return</span> dimSize.takeError();</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    }</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    count *= <a class="code hl_function" href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">toDynamicAPInt</a>(*dimSize);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  }</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(count, context);</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>}</div>
 </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="foldopen" id="foldopen00064" data-start="{" data-end="}">
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">   64</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">randomBoolValue</a>(std::mt19937_64 &amp;rng) {</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordflow">return</span> std::uniform_int_distribution&lt;int&gt;(0, 1)(rng) != 0;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
-</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="foldopen" id="foldopen00068" data-start="{" data-end="}">
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">   68</a></span>llvm::Expected&lt;size_t&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">checkedShapeDimToSize</a>(int64_t dim, llvm::StringRef context) {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">if</span> (ShapedType::isDynamic(dim)) {</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; requires a static shape&quot;</span>);</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  }</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordflow">if</span> (dim &lt; 0) {</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; has a negative dimension&quot;</span>);</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="foldopen" id="foldopen00071" data-start="{" data-end="}">
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">   71</a></span>llvm::Expected&lt;size_t&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">getStaticElementCount</a>(ShapedType type, llvm::StringRef context) {</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordflow">if</span> (!type.hasStaticShape()) {</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; requires a static shape&quot;</span>);</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  }</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  llvm::DynamicAPInt value(dim);</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(value, llvm::Twine(context) + <span class="stringliteral">&quot; dimension&quot;</span>);</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>}</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  int64_t count = type.getNumElements();</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordflow">if</span> (count &lt; 0) {</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; has an invalid negative element count&quot;</span>);</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  }</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(llvm::DynamicAPInt(count), context);</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>}</div>
 </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>llvm::Expected&lt;size_t&gt;</div>
-<div class="foldopen" id="foldopen00080" data-start="{" data-end="}">
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">   80</a></span><a class="code hl_function" href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">checkedDynamicAPIntToSize</a>(<span class="keyword">const</span> llvm::DynamicAPInt &amp;value, llvm::StringRef context) {</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(value, context);</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>}</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
+<div class="foldopen" id="foldopen00082" data-start="{" data-end="}">
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">   82</a></span>std::mt19937_64 <a class="code hl_function" href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">makeDefaultValueRng</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options) {</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keywordflow">if</span> (options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">randomSeed</a>) {</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keywordflow">return</span> std::mt19937_64(*options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">randomSeed</a>);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  }</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  std::random_device rd;</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  std::seed_seq seed {rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordflow">return</span> std::mt19937_64(seed);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>}</div>
 </div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>llvm::Expected&lt;size_t&gt;</div>
-<div class="foldopen" id="foldopen00085" data-start="{" data-end="}">
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">   85</a></span><a class="code hl_function" href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">getStaticShapeElementCount</a>(llvm::ArrayRef&lt;int64_t&gt; shape, llvm::StringRef context) {</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  llvm::DynamicAPInt count(1);</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="keywordflow">for</span> (int64_t dim : shape) {</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="keyword">auto</span> dimSize = <a class="code hl_function" href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">checkedShapeDimToSize</a>(dim, context);</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keywordflow">if</span> (!dimSize) {</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      <span class="keywordflow">return</span> dimSize.takeError();</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    }</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    count *= llvm::DynamicAPInt(*dimSize);</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  }</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(count, context);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>}</div>
-</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="foldopen" id="foldopen00091" data-start="{" data-end="}">
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">   91</a></span>llvm::DynamicAPInt <a class="code hl_function" href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">randomFieldElement</a>(std::mt19937_64 &amp;rng, <span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1Field.html">Field</a> &amp;field) {</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keyword">const</span> llvm::DynamicAPInt prime = field.<a class="code hl_function" href="classllzk_1_1Field.html#a47ec17bc79f0c5b89ef340db23ed76a7">prime</a>();</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordflow">if</span> (prime == 0) {</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    <span class="keywordflow">return</span> prime;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  }</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="foldopen" id="foldopen00097" data-start="{" data-end="}">
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">   97</a></span>llvm::Expected&lt;size_t&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">getStaticElementCount</a>(ShapedType type, llvm::StringRef context) {</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordflow">if</span> (!type.hasStaticShape()) {</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; requires a static shape&quot;</span>);</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  }</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  int64_t count = type.getNumElements();</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordflow">if</span> (count &lt; 0) {</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">makeError</a>(llvm::Twine(context) + <span class="stringliteral">&quot; has an invalid negative element count&quot;</span>);</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  }</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">return</span> dynamicAPIntToSize(llvm::DynamicAPInt(count), context);</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>}</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="comment">// Use rejection sampling to produce a uniform value in [0, prime).</span></div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="comment">// Generate a random value with the same bit width as the prime; if it is</span></div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="comment">// &gt;= prime, discard and retry. The rejection probability is &lt; 50%, so the</span></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="comment">// expected number of iterations is less than 2.</span></div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> bitWidth = field.<a class="code hl_function" href="classllzk_1_1Field.html#a81da197fd28bcd670656ff4dd0929728">bitWidth</a>();</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> numWords = (bitWidth + 63U) / 64U;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  std::uniform_int_distribution&lt;uint64_t&gt; wordDist;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  llvm::SmallVector&lt;uint64_t, 4&gt; words(numWords);</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="keywordflow">for</span> (uint64_t &amp;word : words) {</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>      word = wordDist(rng);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    }</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="comment">// APInt truncates the top word to exactly bitWidth bits, keeping the</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    <span class="comment">// candidate in [0, 2^bitWidth).</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    llvm::DynamicAPInt value = <a class="code hl_function" href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">toDynamicAPInt</a>(llvm::APInt(bitWidth, words));</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keywordflow">if</span> (value &lt; prime) {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      <span class="keywordflow">return</span> field.<a class="code hl_function" href="classllzk_1_1Field.html#a4b004a9fbedd042fe568bda6a9455bfb">reduce</a>(value);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    }</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>}</div>
 </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>} <span class="comment">// namespace llzk::witgen</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="foldopen" id="foldopen00118" data-start="{" data-end="}">
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#ac49b7c4a16ce206bb7278fa4c5227131">  118</a></span>int64_t <a class="code hl_function" href="namespacellzk_1_1witgen.html#ac49b7c4a16ce206bb7278fa4c5227131">randomIndexValue</a>(std::mt19937_64 &amp;rng) {</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">return</span> std::uniform_int_distribution&lt;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>      int64_t&gt;(std::numeric_limits&lt;int64_t&gt;::min(), std::numeric_limits&lt;int64_t&gt;::max())(rng);</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>}</div>
+</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
+<div class="foldopen" id="foldopen00123" data-start="{" data-end="}">
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">  123</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">randomBoolValue</a>(std::mt19937_64 &amp;rng) {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keywordflow">return</span> std::uniform_int_distribution&lt;int&gt;(0, 1)(rng) != 0;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>}</div>
+</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span> </div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>} <span class="comment">// namespace llzk::witgen</span></div>
 <div class="ttc" id="aCompare_8h_html"><div class="ttname"><a href="Compare_8h.html">Compare.h</a></div></div>
 <div class="ttc" id="aDynamicAPIntHelper_8h_html"><div class="ttname"><a href="DynamicAPIntHelper_8h.html">DynamicAPIntHelper.h</a></div><div class="ttdoc">This file implements helper methods for constructing DynamicAPInts.</div></div>
 <div class="ttc" id="aErrors_8h_html"><div class="ttname"><a href="Errors_8h.html">Errors.h</a></div></div>
 <div class="ttc" id="aWitgenUtils_8h_html"><div class="ttname"><a href="WitgenUtils_8h.html">WitgenUtils.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html"><div class="ttname"><a href="classllzk_1_1Field.html">llzk::Field</a></div><div class="ttdoc">Information about the prime finite field used for the interval analysis.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00036">Field.h:36</a></div></div>
-<div class="ttc" id="aclassllzk_1_1Field_html_a371d71b386b8387a592a9967311a91ab"><div class="ttname"><a href="classllzk_1_1Field.html#a371d71b386b8387a592a9967311a91ab">llzk::Field::zero</a></div><div class="ttdeci">llvm::DynamicAPInt zero() const</div><div class="ttdoc">Returns 0 at the bitwidth of the field.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00081">Field.h:81</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_a47ec17bc79f0c5b89ef340db23ed76a7"><div class="ttname"><a href="classllzk_1_1Field.html#a47ec17bc79f0c5b89ef340db23ed76a7">llzk::Field::prime</a></div><div class="ttdeci">llvm::DynamicAPInt prime() const</div><div class="ttdoc">For the prime field p, returns p.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00072">Field.h:72</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Field_html_a4b004a9fbedd042fe568bda6a9455bfb"><div class="ttname"><a href="classllzk_1_1Field.html#a4b004a9fbedd042fe568bda6a9455bfb">llzk::Field::reduce</a></div><div class="ttdeci">llvm::DynamicAPInt reduce(const llvm::DynamicAPInt &amp;i) const</div><div class="ttdoc">Returns i mod p and reduces the result into the appropriate bitwidth.</div></div>
+<div class="ttc" id="aclassllzk_1_1Field_html_a81da197fd28bcd670656ff4dd0929728"><div class="ttname"><a href="classllzk_1_1Field.html#a81da197fd28bcd670656ff4dd0929728">llzk::Field::bitWidth</a></div><div class="ttdeci">unsigned bitWidth() const</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00107">Field.h:107</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html"><div class="ttname"><a href="namespacellzk_1_1witgen.html">llzk::witgen</a></div><div class="ttdef"><b>Definition</b> <a href="Errors_8h_source.html#l00015">Errors.h:15</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a23d7c44c1e254150720c92e81e68ebc2"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">llzk::witgen::makeDefaultValueRng</a></div><div class="ttdeci">std::mt19937_64 makeDefaultValueRng(const WitgenOptions &amp;options)</div><div class="ttdoc">Seed an RNG for random/default witness value materialization.</div><div class="ttdef"><b>Definition</b> <a href="#l00041">WitgenUtils.cpp:41</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a78a397cece314c79f6091556f25e9717"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">llzk::witgen::getStaticShapeElementCount</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; getStaticShapeElementCount(llvm::ArrayRef&lt; int64_t &gt; shape, llvm::StringRef context)</div><div class="ttdoc">Return the static element count for one shape, rejecting dynamic sizes.</div><div class="ttdef"><b>Definition</b> <a href="#l00085">WitgenUtils.cpp:85</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a8d2926c72c7a53aec9e109f94845619b"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">llzk::witgen::randomFieldElement</a></div><div class="ttdeci">llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &amp;rng, const Field &amp;field)</div><div class="ttdoc">Draw a uniformly distributed field element in [0, prime).</div><div class="ttdef"><b>Definition</b> <a href="#l00050">WitgenUtils.cpp:50</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a9133fd240db34d3237708cd2a796838a"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">llzk::witgen::randomBoolValue</a></div><div class="ttdeci">bool randomBoolValue(std::mt19937_64 &amp;rng)</div><div class="ttdoc">Draw a uniformly distributed boolean value.</div><div class="ttdef"><b>Definition</b> <a href="#l00064">WitgenUtils.cpp:64</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_aaf2a9e39090cf207cbfa15acb8096c1a"><div class="ttname"><a href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">llzk::witgen::checkedDynamicAPIntToSize</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; checkedDynamicAPIntToSize(const llvm::DynamicAPInt &amp;value, llvm::StringRef context)</div><div class="ttdoc">Convert a DynamicAPInt into size_t after validating its range.</div><div class="ttdef"><b>Definition</b> <a href="#l00080">WitgenUtils.cpp:80</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_ab255ee70c5f377a9b4b1dceff9afb9d4"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">llzk::witgen::getStaticElementCount</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; getStaticElementCount(ShapedType type, llvm::StringRef context)</div><div class="ttdef"><b>Definition</b> <a href="#l00097">WitgenUtils.cpp:97</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_ab60790824909c50e8aa2b661862d6cb5"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">llzk::witgen::checkedShapeDimToSize</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; checkedShapeDimToSize(int64_t dim, llvm::StringRef context)</div><div class="ttdoc">Convert one static dimension to size_t, rejecting dynamic or invalid sizes.</div><div class="ttdef"><b>Definition</b> <a href="#l00068">WitgenUtils.cpp:68</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_ac49b7c4a16ce206bb7278fa4c5227131"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ac49b7c4a16ce206bb7278fa4c5227131">llzk::witgen::randomIndexValue</a></div><div class="ttdeci">int64_t randomIndexValue(std::mt19937_64 &amp;rng)</div><div class="ttdoc">Draw a uniformly distributed signed index value.</div><div class="ttdef"><b>Definition</b> <a href="#l00059">WitgenUtils.cpp:59</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a23d7c44c1e254150720c92e81e68ebc2"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">llzk::witgen::makeDefaultValueRng</a></div><div class="ttdeci">std::mt19937_64 makeDefaultValueRng(const WitgenOptions &amp;options)</div><div class="ttdoc">Seed an RNG for random/default witness value materialization.</div><div class="ttdef"><b>Definition</b> <a href="#l00082">WitgenUtils.cpp:82</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a78a397cece314c79f6091556f25e9717"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a78a397cece314c79f6091556f25e9717">llzk::witgen::getStaticShapeElementCount</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; getStaticShapeElementCount(llvm::ArrayRef&lt; int64_t &gt; shape, llvm::StringRef context)</div><div class="ttdoc">Return the static element count for one shape, rejecting dynamic sizes.</div><div class="ttdef"><b>Definition</b> <a href="#l00059">WitgenUtils.cpp:59</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a8d2926c72c7a53aec9e109f94845619b"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">llzk::witgen::randomFieldElement</a></div><div class="ttdeci">llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &amp;rng, const Field &amp;field)</div><div class="ttdoc">Draw a uniformly distributed field element in [0, prime).</div><div class="ttdef"><b>Definition</b> <a href="#l00091">WitgenUtils.cpp:91</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a9133fd240db34d3237708cd2a796838a"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">llzk::witgen::randomBoolValue</a></div><div class="ttdeci">bool randomBoolValue(std::mt19937_64 &amp;rng)</div><div class="ttdoc">Draw a uniformly distributed boolean value.</div><div class="ttdef"><b>Definition</b> <a href="#l00123">WitgenUtils.cpp:123</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_aaf2a9e39090cf207cbfa15acb8096c1a"><div class="ttname"><a href="namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a">llzk::witgen::checkedDynamicAPIntToSize</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; checkedDynamicAPIntToSize(const llvm::DynamicAPInt &amp;value, llvm::StringRef context)</div><div class="ttdoc">Convert a DynamicAPInt into size_t after validating its range.</div><div class="ttdef"><b>Definition</b> <a href="#l00043">WitgenUtils.cpp:43</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_ab255ee70c5f377a9b4b1dceff9afb9d4"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">llzk::witgen::getStaticElementCount</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; getStaticElementCount(ShapedType type, llvm::StringRef context)</div><div class="ttdef"><b>Definition</b> <a href="#l00071">WitgenUtils.cpp:71</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_ab60790824909c50e8aa2b661862d6cb5"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5">llzk::witgen::checkedShapeDimToSize</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; checkedShapeDimToSize(int64_t dim, llvm::StringRef context)</div><div class="ttdoc">Convert one static dimension to size_t, rejecting dynamic or invalid sizes.</div><div class="ttdef"><b>Definition</b> <a href="#l00047">WitgenUtils.cpp:47</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_ac49b7c4a16ce206bb7278fa4c5227131"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ac49b7c4a16ce206bb7278fa4c5227131">llzk::witgen::randomIndexValue</a></div><div class="ttdeci">int64_t randomIndexValue(std::mt19937_64 &amp;rng)</div><div class="ttdoc">Draw a uniformly distributed signed index value.</div><div class="ttdef"><b>Definition</b> <a href="#l00118">WitgenUtils.cpp:118</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_ae5f4aab5bd33a96b6ee62602badec64f"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ae5f4aab5bd33a96b6ee62602badec64f">llzk::witgen::makeError</a></div><div class="ttdeci">llvm::Error makeError(const llvm::Twine &amp;msg)</div><div class="ttdoc">Build a string-backed error for user-facing witgen failures.</div><div class="ttdef"><b>Definition</b> <a href="Errors_8h_source.html#l00018">Errors.h:18</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a591c6bf26566c23d2ccb0c9ed20ab12b"><div class="ttname"><a href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">llzk::toDynamicAPInt</a></div><div class="ttdeci">DynamicAPInt toDynamicAPInt(StringRef str)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00093">DynamicAPIntHelper.cpp:93</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a60ca7c6c3ae1d404296cec5b7fdf2237"><div class="ttname"><a href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast</a></div><div class="ttdeci">constexpr T checkedCast(U u) noexcept</div><div class="ttdef"><b>Definition</b> <a href="Compare_8h_source.html#l00081">Compare.h:81</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ad1bfa5460ac00c7974a989fa2e8ddc56"><div class="ttname"><a href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a></div><div class="ttdeci">APSInt toAPSInt(const DynamicAPInt &amp;i)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00120">DynamicAPIntHelper.cpp:120</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ad1bfa5460ac00c7974a989fa2e8ddc56"><div class="ttname"><a href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a></div><div class="ttdeci">APSInt toAPSInt(const DynamicAPInt &amp;i)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00122">DynamicAPIntHelper.cpp:122</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 <div class="ttc" id="astructllzk_1_1witgen_1_1WitgenOptions_html"><div class="ttname"><a href="structllzk_1_1witgen_1_1WitgenOptions.html">llzk::witgen::WitgenOptions</a></div><div class="ttdoc">Configure one llzk-witgen execution.</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8h_source.html#l00040">WitgenDriver.h:40</a></div></div>
 <div class="ttc" id="astructllzk_1_1witgen_1_1WitgenOptions_html_a9dc6236cf621c59f01b0bd4bb8a33738"><div class="ttname"><a href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">llzk::witgen::WitgenOptions::randomSeed</a></div><div class="ttdeci">std::optional&lt; uint64_t &gt; randomSeed</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8h_source.html#l00044">WitgenDriver.h:44</a></div></div>

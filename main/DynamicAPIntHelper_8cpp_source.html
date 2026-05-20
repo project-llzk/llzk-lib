@@ -216,98 +216,100 @@ $(function(){initNavTree('DynamicAPIntHelper_8cpp_source.html','',''); });
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
 <div class="foldopen" id="foldopen00098" data-start="{" data-end="}">
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6487238a0c9232afbc011cfbe1f93cce">   98</a></span>DynamicAPInt <a class="code hl_function" href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">toDynamicAPInt</a>(<span class="keyword">const</span> APSInt &amp;i) {</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="keywordflow">if</span> (i.getBitWidth() &lt;= 64) {</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="comment">// Fast path for smaller values, just use the int64_t conversion</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordflow">return</span> DynamicAPInt(i.isNegative() ? i.getSExtValue() : <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(i.getZExtValue()));</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  }</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  DynamicAPInt res(0), po2(1);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="comment">// Since LLVM 20 doesn&#39;t have a direct APInt to DynamicAPInt constructor, we</span></div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="comment">// manually construct the DynamicAPInt from bits of the input.</span></div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="comment">// We use the positive representation so our negation works at the end.</span></div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  APSInt raw = i &lt; 0 ? -i : i;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> b = 0; b &lt; raw.getActiveBits(); b++) {</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    DynamicAPInt bitSet(raw[b]);</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    res += (bitSet * po2);</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    po2 *= 2;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  }</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keywordflow">if</span> (i.isNegative() &amp;&amp; res &gt; 0) {</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    res = -res;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  }</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordflow">return</span> res;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>}</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="comment">// Fast path for smaller values, just use the `int64_t` conversion. However, that only works if</span></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="comment">// the value is signed or if the sign bit is clear otherwise it will incorrectly interpret the</span></div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="comment">// value as a negative number.</span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordflow">if</span> (i.getBitWidth() &lt;= 64 &amp;&amp; (i.isSigned() || i.isSignBitClear())) {</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keywordflow">return</span> DynamicAPInt(i.isNegative() ? i.getSExtValue() : <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(i.getZExtValue()));</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  }</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  DynamicAPInt res(0), po2(1);</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="comment">// Since LLVM 20 doesn&#39;t have a direct APInt to DynamicAPInt constructor, we</span></div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="comment">// manually construct the DynamicAPInt from bits of the input.</span></div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="comment">// We use the positive representation so our negation works at the end.</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  APSInt raw = i &lt; 0 ? -i : i;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> b = 0; b &lt; raw.getActiveBits(); b++) {</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    DynamicAPInt bitSet(raw[b]);</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    res += (bitSet * po2);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    po2 *= 2;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordflow">if</span> (i.isNegative() &amp;&amp; res &gt; 0) {</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    res = -res;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  }</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordflow">return</span> res;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>}</div>
 </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="foldopen" id="foldopen00120" data-start="{" data-end="}">
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">  120</a></span>APSInt <a class="code hl_function" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">toAPSInt</a>(<span class="keyword">const</span> DynamicAPInt &amp;i) {</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordflow">if</span> (numeric_limits&lt;int64_t&gt;::min() &lt;= i &amp;&amp; i &lt;= numeric_limits&lt;int64_t&gt;::max()) {</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    <span class="comment">// Fast path for smaller values, just use the int64_t conversion</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="keywordflow">return</span> APSInt::get(int64_t(i));</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  }</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="comment">// Else, convert to string and parse back as an APSInt.</span></div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="comment">// This may not be the most efficient implementation, but it is the cleanest</span></div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="comment">// due to the lack of direct conversions between DynamicAPInt and APInts.</span></div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  SmallString&lt;64&gt; repr;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  raw_svector_ostream(repr) &lt;&lt; i;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  APSInt res(repr);</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <span class="comment">// For consistency, we add a bit and mark these as signed integers, since</span></div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="comment">// DynamicAPInts are inherently signed.</span></div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  res = res.extend(res.getBitWidth() + 1);</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  res.setIsSigned(<span class="keyword">true</span>);</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="keywordflow">return</span> res;</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>}</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="foldopen" id="foldopen00122" data-start="{" data-end="}">
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno"><a class="line" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">  122</a></span>APSInt <a class="code hl_function" href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">toAPSInt</a>(<span class="keyword">const</span> DynamicAPInt &amp;i) {</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordflow">if</span> (numeric_limits&lt;int64_t&gt;::min() &lt;= i &amp;&amp; i &lt;= numeric_limits&lt;int64_t&gt;::max()) {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="comment">// Fast path for smaller values, just use the int64_t conversion</span></div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    <span class="keywordflow">return</span> APSInt::get(int64_t(i));</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  }</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="comment">// Else, convert to string and parse back as an APSInt.</span></div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="comment">// This may not be the most efficient implementation, but it is the cleanest</span></div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="comment">// due to the lack of direct conversions between DynamicAPInt and APInts.</span></div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  SmallString&lt;64&gt; repr;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  raw_svector_ostream(repr) &lt;&lt; i;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  APSInt res(repr);</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="comment">// For consistency, we add a bit and mark these as signed integers, since</span></div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <span class="comment">// DynamicAPInts are inherently signed.</span></div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  res = res.extend(res.getBitWidth() + 1);</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  res.setIsSigned(<span class="keyword">true</span>);</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  <span class="keywordflow">return</span> res;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>}</div>
 </div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span> </div>
-<div class="foldopen" id="foldopen00141" data-start="{" data-end="}">
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">  141</a></span>APInt <a class="code hl_function" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a>(<span class="keyword">const</span> DynamicAPInt &amp;val, <span class="keywordtype">unsigned</span> bitWidth) {</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  SmallString&lt;64&gt; str;</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  raw_svector_ostream(str) &lt;&lt; val;</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  <span class="keywordflow">return</span> APInt(bitWidth + 1, str, 10);</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>}</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
+<div class="foldopen" id="foldopen00143" data-start="{" data-end="}">
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno"><a class="line" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">  143</a></span>APInt <a class="code hl_function" href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">toAPInt</a>(<span class="keyword">const</span> DynamicAPInt &amp;val, <span class="keywordtype">unsigned</span> bitWidth) {</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  SmallString&lt;64&gt; str;</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  raw_svector_ostream(str) &lt;&lt; val;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  <span class="keywordflow">return</span> APInt(bitWidth + 1, str, 10);</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>}</div>
 </div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
-<div class="foldopen" id="foldopen00147" data-start="{" data-end="}">
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno"><a class="line" href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">  147</a></span>APInt <a class="code hl_function" href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">toExactWidthAPInt</a>(<span class="keyword">const</span> DynamicAPInt &amp;val, <span class="keywordtype">unsigned</span> bitWidth) {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  SmallString&lt;64&gt; str;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  raw_svector_ostream(str) &lt;&lt; val;</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordflow">return</span> APInt(bitWidth, str, 10);</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>}</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
+<div class="foldopen" id="foldopen00149" data-start="{" data-end="}">
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno"><a class="line" href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">  149</a></span>APInt <a class="code hl_function" href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">toExactWidthAPInt</a>(<span class="keyword">const</span> DynamicAPInt &amp;val, <span class="keywordtype">unsigned</span> bitWidth) {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  SmallString&lt;64&gt; str;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  raw_svector_ostream(str) &lt;&lt; val;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keywordflow">return</span> APInt(bitWidth, str, 10);</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>}</div>
 </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span> </div>
-<div class="foldopen" id="foldopen00153" data-start="{" data-end="}">
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">  153</a></span>DynamicAPInt <a class="code hl_function" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">modExp</a>(<span class="keyword">const</span> DynamicAPInt &amp;base, <span class="keyword">const</span> DynamicAPInt &amp;exp, <span class="keyword">const</span> DynamicAPInt &amp;<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  DynamicAPInt result(1);</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  DynamicAPInt b = base;</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  DynamicAPInt e = exp;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  DynamicAPInt one(1);</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span> </div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  <span class="keywordflow">while</span> (e != 0) {</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="keywordflow">if</span> (e % 2 != 0) {</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>      result = (result * b) % <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>;</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    }</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span> </div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    b = (b * b) % <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>;</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    e = e &gt;&gt; one;</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  }</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  <span class="keywordflow">return</span> result;</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>}</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
+<div class="foldopen" id="foldopen00155" data-start="{" data-end="}">
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">  155</a></span>DynamicAPInt <a class="code hl_function" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">modExp</a>(<span class="keyword">const</span> DynamicAPInt &amp;base, <span class="keyword">const</span> DynamicAPInt &amp;exp, <span class="keyword">const</span> DynamicAPInt &amp;<a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>) {</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  DynamicAPInt result(1);</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  DynamicAPInt b = base;</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  DynamicAPInt e = exp;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  DynamicAPInt one(1);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  <span class="keywordflow">while</span> (e != 0) {</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    <span class="keywordflow">if</span> (e % 2 != 0) {</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>      result = (result * b) % <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>;</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    }</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    b = (b * b) % <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>;</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    e = e &gt;&gt; one;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  }</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <span class="keywordflow">return</span> result;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>}</div>
 </div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
-<div class="foldopen" id="foldopen00170" data-start="{" data-end="}">
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno"><a class="line" href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">  170</a></span>DynamicAPInt <a class="code hl_function" href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">modInversePrime</a>(<span class="keyword">const</span> DynamicAPInt &amp;f, <span class="keyword">const</span> DynamicAPInt &amp;p) {</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  assert(f != 0 &amp;&amp; <span class="stringliteral">&quot;0 has no inverse&quot;</span>);</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="comment">// Fermat: f^(p-2) mod p</span></div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  DynamicAPInt exp = p - 2;</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  DynamicAPInt result = <a class="code hl_function" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">modExp</a>(f, exp, p);</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  assert((f * result) % p == 1 &amp;&amp; <span class="stringliteral">&quot;inverse is incorrect&quot;</span>);</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keywordflow">return</span> result;</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>}</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
+<div class="foldopen" id="foldopen00172" data-start="{" data-end="}">
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno"><a class="line" href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">  172</a></span>DynamicAPInt <a class="code hl_function" href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">modInversePrime</a>(<span class="keyword">const</span> DynamicAPInt &amp;f, <span class="keyword">const</span> DynamicAPInt &amp;p) {</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  assert(f != 0 &amp;&amp; <span class="stringliteral">&quot;0 has no inverse&quot;</span>);</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <span class="comment">// Fermat: f^(p-2) mod p</span></div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  DynamicAPInt exp = p - 2;</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  DynamicAPInt result = <a class="code hl_function" href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">modExp</a>(f, exp, p);</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  assert((f * result) % p == 1 &amp;&amp; <span class="stringliteral">&quot;inverse is incorrect&quot;</span>);</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordflow">return</span> result;</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>}</div>
 </div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aCompare_8h_html"><div class="ttname"><a href="Compare_8h.html">Compare.h</a></div></div>
 <div class="ttc" id="aDynamicAPIntHelper_8h_html"><div class="ttname"><a href="DynamicAPIntHelper_8h.html">DynamicAPIntHelper.h</a></div><div class="ttdoc">This file implements helper methods for constructing DynamicAPInts.</div></div>
 <div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00271">SourceRefLattice.cpp:271</a></div></div>
@@ -317,13 +319,13 @@ $(function(){initNavTree('DynamicAPIntHelper_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_html_a41877dee22a597e2a10095dd80ceb786"><div class="ttname"><a href="namespacellzk.html#a41877dee22a597e2a10095dd80ceb786">llzk::operator^</a></div><div class="ttdeci">Interval operator^(const Interval &amp;lhs, const Interval &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00619">Intervals.cpp:619</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a591c6bf26566c23d2ccb0c9ed20ab12b"><div class="ttname"><a href="namespacellzk.html#a591c6bf26566c23d2ccb0c9ed20ab12b">llzk::toDynamicAPInt</a></div><div class="ttdeci">DynamicAPInt toDynamicAPInt(StringRef str)</div><div class="ttdef"><b>Definition</b> <a href="#l00093">DynamicAPIntHelper.cpp:93</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5e4f88183c04d290fa8ffde7bfe4afd6"><div class="ttname"><a href="namespacellzk.html#a5e4f88183c04d290fa8ffde7bfe4afd6">llzk::operator&lt;&lt;</a></div><div class="ttdeci">Interval operator&lt;&lt;(const Interval &amp;lhs, const Interval &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00637">Intervals.cpp:637</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a6ec06c177f8be824dc8c3adc0ae22eb6"><div class="ttname"><a href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">llzk::toAPInt</a></div><div class="ttdeci">APInt toAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="#l00141">DynamicAPIntHelper.cpp:141</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a7ad816687c36ab31df4f80aa25208f27"><div class="ttname"><a href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">llzk::toExactWidthAPInt</a></div><div class="ttdeci">APInt toExactWidthAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="#l00147">DynamicAPIntHelper.cpp:147</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a6ec06c177f8be824dc8c3adc0ae22eb6"><div class="ttname"><a href="namespacellzk.html#a6ec06c177f8be824dc8c3adc0ae22eb6">llzk::toAPInt</a></div><div class="ttdeci">APInt toAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="#l00143">DynamicAPIntHelper.cpp:143</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a7ad816687c36ab31df4f80aa25208f27"><div class="ttname"><a href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">llzk::toExactWidthAPInt</a></div><div class="ttdeci">APInt toExactWidthAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="#l00149">DynamicAPIntHelper.cpp:149</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aa0684a91edd323e82c739f7e542c4525"><div class="ttname"><a href="namespacellzk.html#aa0684a91edd323e82c739f7e542c4525">llzk::operator&gt;&gt;</a></div><div class="ttdeci">Interval operator&gt;&gt;(const Interval &amp;lhs, const Interval &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00653">Intervals.cpp:653</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aa27b5260e5b373868e1f59a9f0676843"><div class="ttname"><a href="namespacellzk.html#aa27b5260e5b373868e1f59a9f0676843">llzk::operator&amp;</a></div><div class="ttdeci">Interval operator&amp;(const Interval &amp;lhs, const Interval &amp;rhs)</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00586">Intervals.cpp:586</a></div></div>
-<div class="ttc" id="anamespacellzk_html_acadd66413800c2610538c0e3568561fd"><div class="ttname"><a href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">llzk::modInversePrime</a></div><div class="ttdeci">DynamicAPInt modInversePrime(const DynamicAPInt &amp;f, const DynamicAPInt &amp;p)</div><div class="ttdef"><b>Definition</b> <a href="#l00170">DynamicAPIntHelper.cpp:170</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ad1bfa5460ac00c7974a989fa2e8ddc56"><div class="ttname"><a href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a></div><div class="ttdeci">APSInt toAPSInt(const DynamicAPInt &amp;i)</div><div class="ttdef"><b>Definition</b> <a href="#l00120">DynamicAPIntHelper.cpp:120</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ae716915c256b3e8259e0fd51d5a88b82"><div class="ttname"><a href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">llzk::modExp</a></div><div class="ttdeci">DynamicAPInt modExp(const DynamicAPInt &amp;base, const DynamicAPInt &amp;exp, const DynamicAPInt &amp;mod)</div><div class="ttdef"><b>Definition</b> <a href="#l00153">DynamicAPIntHelper.cpp:153</a></div></div>
+<div class="ttc" id="anamespacellzk_html_acadd66413800c2610538c0e3568561fd"><div class="ttname"><a href="namespacellzk.html#acadd66413800c2610538c0e3568561fd">llzk::modInversePrime</a></div><div class="ttdeci">DynamicAPInt modInversePrime(const DynamicAPInt &amp;f, const DynamicAPInt &amp;p)</div><div class="ttdef"><b>Definition</b> <a href="#l00172">DynamicAPIntHelper.cpp:172</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ad1bfa5460ac00c7974a989fa2e8ddc56"><div class="ttname"><a href="namespacellzk.html#ad1bfa5460ac00c7974a989fa2e8ddc56">llzk::toAPSInt</a></div><div class="ttdeci">APSInt toAPSInt(const DynamicAPInt &amp;i)</div><div class="ttdef"><b>Definition</b> <a href="#l00122">DynamicAPIntHelper.cpp:122</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ae716915c256b3e8259e0fd51d5a88b82"><div class="ttname"><a href="namespacellzk.html#ae716915c256b3e8259e0fd51d5a88b82">llzk::modExp</a></div><div class="ttdeci">DynamicAPInt modExp(const DynamicAPInt &amp;base, const DynamicAPInt &amp;exp, const DynamicAPInt &amp;mod)</div><div class="ttdef"><b>Definition</b> <a href="#l00155">DynamicAPIntHelper.cpp:155</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

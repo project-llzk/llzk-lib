@@ -1,5 +1,6 @@
 var NAVTREEINDEX81 =
 {
+"structllzk_1_1witgen_1_1WitgenOptions.html":[12,0,1,17,7],
 "structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77":[10,0,2,20,7,4],
 "structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77":[12,0,1,17,7,4],
 "structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894":[10,0,2,20,7,0],

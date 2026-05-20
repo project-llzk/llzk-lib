@@ -1,5 +1,6 @@
 var NAVTREEINDEX80 =
 {
+"structllzk_1_1smt_1_1detail_1_1BitVectorTypeStorage.html#af9f07e3209e86f8d95895e63b51a5373":[12,0,1,15,0,7,0],
 "structllzk_1_1smt_1_1detail_1_1BitVectorTypeStorage.html#afb79b7b242c6b54626f545ba9f02112e":[10,0,2,18,0,7,4],
 "structllzk_1_1smt_1_1detail_1_1BitVectorTypeStorage.html#afb79b7b242c6b54626f545ba9f02112e":[12,0,1,15,0,7,4],
 "structllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase_1_1Properties.html":[10,0,2,18,0,8,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX80 =
 "structllzk_1_1witgen_1_1StructValue.html#a5501b58bf0bfc9416180790966fa8c18":[12,0,1,17,6,0],
 "structllzk_1_1witgen_1_1StructValue.html#af2579e21384750d5ec99ea49ae5da810":[10,0,2,20,6,1],
 "structllzk_1_1witgen_1_1StructValue.html#af2579e21384750d5ec99ea49ae5da810":[12,0,1,17,6,1],
-"structllzk_1_1witgen_1_1WitgenOptions.html":[10,0,2,20,7],
-"structllzk_1_1witgen_1_1WitgenOptions.html":[12,0,1,17,7]
+"structllzk_1_1witgen_1_1WitgenOptions.html":[10,0,2,20,7]
 };
