@@ -1,0 +1,21 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// expected-error@+2 {{'builtin.module' op references unknown symbol "@MissingMain"}}
+// expected-error@+1 {{could not find 'struct.def' named "@MissingMain"}}
+module attributes {llzk.main = !struct.type<@MissingMain>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{"llzk.main" attribute can only be specified on 'builtin.module'}}
+  global.def @b : i1 = false {llzk.main = !struct.type<@NonModuleMainAttr>}
+}

@@ -328,18 +328,7 @@ FailureOr<StructType> getMainInstanceType(Operation *lookupFrom) {
   }
   ModuleOp root = rootOpt.value();
   if (Attribute a = root->getAttr(MAIN_ATTR_NAME)) {
-    // If the attribute is present, it must be a TypeAttr of concrete StructType.
-    if (TypeAttr ta = llvm::dyn_cast<TypeAttr>(a)) {
-      if (StructType st = llvm::dyn_cast<StructType>(ta.getValue())) {
-        if (isConcreteType(st)) {
-          return success(st);
-        }
-      }
-    }
-    return rootOpt->emitError().append(
-        '"', MAIN_ATTR_NAME, "\" on top-level module must be a concrete '", StructType::name,
-        "' attribute. Found: ", a
-    );
+    return getTypeFromLlzkMainAttr(root, a);
   }
   // The attribute is optional so it's okay if not present.
   return success(nullptr);
