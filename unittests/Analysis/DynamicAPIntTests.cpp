@@ -95,7 +95,13 @@ INSTANTIATE_TEST_SUITE_P(
 // SIZE_MAX (0xFFFFFFFFFFFFFFFF) has its MSB set; if the APSInt wrapper incorrectly
 // interpreted the value as signed, it would yield -1 instead of 18446744073709551615.
 TEST(DynamicAPIntSizeTTest, SizeMax) {
-  ASSERT_EQ(toDynamicAPInt(SIZE_MAX), toDynamicAPInt("18446744073709551615"));
+  DynamicAPInt a = toDynamicAPInt(SIZE_MAX);
+
+  std::string buffer;
+  llvm::raw_string_ostream os(buffer);
+  a.print(os);
+
+  ASSERT_EQ(buffer, "18446744073709551615");
 }
 
 //===----------------------------------------------------------------------===//
