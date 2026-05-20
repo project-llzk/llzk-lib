@@ -70,6 +70,8 @@ LogicalResult LLZKDialect::verifyOperationAttribute(Operation *op, NamedAttribut
 
 auto LLZKDialect::initialize() -> void {
   // clang-format off
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"

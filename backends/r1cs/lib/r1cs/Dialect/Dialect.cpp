@@ -30,11 +30,15 @@ void r1cs::R1CSDialect::initialize() {
     #include "r1cs/Dialect/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "r1cs/Dialect/IR/Types.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "r1cs/Dialect/IR/Attrs.cpp.inc"

@@ -34,6 +34,8 @@ auto llzk::string::StringDialect::initialize() -> void {
     #include "llzk/Dialect/String/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/String/IR/Types.cpp.inc"
