@@ -679,13 +679,10 @@ private:
       if (indices.size() >= shape.size()) {
         return makeError("array.extract indices exceed array rank");
       }
-      llvm::DynamicAPInt subArraySize(1);
-      for (size_t i = indices.size(); i < shape.size(); ++i) {
-        auto dimSize = checkedShapeDimToSize(shape[i], "array.extract shape");
-        if (!dimSize) {
-          return dimSize.takeError();
-        }
-        subArraySize *= *dimSize;
+      auto subArraySize =
+          getStaticShapeElementCount(shape.drop_front(indices.size()), "array.extract shape");
+      if (!subArraySize) {
+        return subArraySize.takeError();
       }
       auto prefixOffset =
           checkedLinearize(shape.take_front(indices.size()), indices, "array index out of bounds");
@@ -694,14 +691,10 @@ private:
       }
       auto subArray = std::make_shared<ArrayValue>();
       subArray->type = extractArrayOp.getType();
-      auto checkedSubArraySize = checkedDynamicAPIntToSize(subArraySize, "array.extract shape");
-      if (!checkedSubArraySize) {
-        return checkedSubArraySize.takeError();
-      }
-      subArray->elements.reserve(*checkedSubArraySize);
+      subArray->elements.reserve(*subArraySize);
       llvm::DynamicAPInt base(*prefixOffset);
-      base *= subArraySize;
-      for (size_t i = 0; i < *checkedSubArraySize; ++i) {
+      base *= *subArraySize;
+      for (size_t i = 0; i < *subArraySize; ++i) {
         auto elementOffset = base + i;
         auto checkedElementOffset =
             checkedDynamicAPIntToSize(elementOffset, "array.extract element offset");
@@ -775,9 +768,6 @@ private:
         return dim.takeError();
       }
       llvm::ArrayRef<int64_t> shape = arrayLenOp.getArrRefType().getShape();
-      if (*dim < 0) {
-        return makeError("array.len dimension out of bounds");
-      }
       auto dimIndex = checkedShapeDimToSize(*dim, "array.len dimension");
       if (!dimIndex) {
         return dimIndex.takeError();

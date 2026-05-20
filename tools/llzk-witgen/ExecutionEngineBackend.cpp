@@ -173,7 +173,6 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
 /// Store one field element into the buffer at the given flat element index.
 static void storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &value) {
   llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
-  assert(std::in_range<unsigned>(buffer.elemBytes));
   llvm::StoreIntToMemory(
       raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
       llzk::checkedCast<unsigned>(buffer.elemBytes)
@@ -183,7 +182,6 @@ static void storeElement(BufferPack &buffer, size_t flatIndex, const llvm::Dynam
 /// Load one field element from the buffer at the given flat element index.
 static llvm::DynamicAPInt loadElement(const BufferPack &buffer, size_t flatIndex) {
   llvm::APInt raw(buffer.feltBitWidth, 0);
-  assert(buffer.elemBytes <= std::numeric_limits<unsigned>::max());
   llvm::LoadIntFromMemory(
       raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
       llzk::checkedCast<unsigned>(buffer.elemBytes)
@@ -252,18 +250,16 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::Dynamic
     return llvm::json::Value(std::move(result));
   }
 
-  llvm::DynamicAPInt subArraySize(1);
-  for (size_t i = dimIndex + 1; i < buffer.shape.size(); ++i) {
-    auto nextDimSize = checkedShapeDimToSize(buffer.shape[i], "execution-engine JSON output");
-    if (!nextDimSize) {
-      return nextDimSize.takeError();
-    }
-    subArraySize *= llvm::DynamicAPInt(*nextDimSize);
+  auto subArraySize = getStaticShapeElementCount(
+      llvm::ArrayRef<int64_t>(buffer.shape).drop_front(dimIndex + 1), "execution-engine JSON output"
+  );
+  if (!subArraySize) {
+    return subArraySize.takeError();
   }
 
   llvm::json::Array result;
   for (size_t i = 0; i < *dimSize; ++i) {
-    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * subArraySize);
+    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * *subArraySize);
     auto subArray = bufferToJSONArray(buffer, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();

@@ -445,7 +445,7 @@ static FailureOr<Value> createRandomMemRef(
 /// Build the default lowered value for one LLZK type.
 static FailureOr<LoweredValue> createDefaultValue(
     OpBuilder &builder, Location loc, Type type, SymbolTableCollection &tables, Operation *origin,
-    const Field &field, UninitializedBehavior behavior, std::mt19937_64 *rng
+    const Field &field, UninitializedBehavior behavior, std::mt19937_64 &rng
 ) {
   LoweredValue lowered {type, {}};
   auto leafTypes = getLeafTypes(type, tables, origin, field);
@@ -454,28 +454,15 @@ static FailureOr<LoweredValue> createDefaultValue(
   }
   for (Type leafType : *leafTypes) {
     if (behavior == UninitializedBehavior::Fail) {
-      if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
-        auto zeroMemRef = createZeroMemRef(builder, loc, memrefType, field);
-        if (failed(zeroMemRef)) {
-          return failure();
-        }
-        lowered.leaves.push_back(*zeroMemRef);
-      } else if (isa<IndexType>(leafType)) {
-        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, 0));
-      } else {
-        lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(mlir::cast<IntegerType>(leafType), 0)
-        ));
-      }
-      continue;
+      origin->emitError(
+          "fail-mode default materialization is unsupported in witgen lowering because it would "
+          "hide uninitialized reads"
+      );
+      return failure();
     }
     if (behavior == UninitializedBehavior::Random) {
-      if (!rng) {
-        origin->emitError("missing RNG for random witgen initialization");
-        return failure();
-      }
       if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
-        auto randomMemRef = createRandomMemRef(builder, loc, memrefType, field, *rng);
+        auto randomMemRef = createRandomMemRef(builder, loc, memrefType, field, rng);
         if (failed(randomMemRef)) {
           return failure();
         }
@@ -483,18 +470,18 @@ static FailureOr<LoweredValue> createDefaultValue(
         continue;
       }
       if (isa<IndexType>(leafType)) {
-        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, randomIndexValue(*rng))
+        lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, randomIndexValue(rng))
         );
         continue;
       }
       auto intType = mlir::cast<IntegerType>(leafType);
       if (intType.getWidth() == 1) {
         lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(*rng)))
+            loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(rng)))
         ));
         continue;
       }
-      auto candidate = randomFieldElement(*rng, field);
+      auto candidate = randomFieldElement(rng, field);
       lowered.leaves.push_back(builder.create<arith::ConstantOp>(
           loc, IntegerAttr::get(intType, toAPSInt(candidate).trunc(intType.getWidth()))
       ));
@@ -1016,7 +1003,7 @@ private:
     if (auto nondetOp = dyn_cast<llzk::NonDetOp>(op)) {
       auto lowered = createDefaultValue(
           builder, loc, nondetOp.getType(), tables, nondetOp.getOperation(), field,
-          uninitializedBehavior, &rng
+          uninitializedBehavior, rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1196,7 +1183,7 @@ private:
     if (auto structNewOp = dyn_cast<component::CreateStructOp>(op)) {
       auto lowered = createDefaultValue(
           builder, loc, structNewOp.getType(), tables, structNewOp.getOperation(), field,
-          uninitializedBehavior, &rng
+          uninitializedBehavior, rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1235,7 +1222,7 @@ private:
     if (auto newPodOp = dyn_cast<pod::NewPodOp>(op)) {
       auto lowered = createDefaultValue(
           builder, loc, newPodOp.getType(), tables, newPodOp.getOperation(), field,
-          uninitializedBehavior, &rng
+          uninitializedBehavior, rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1279,7 +1266,7 @@ private:
     if (auto arrayNewOp = dyn_cast<array::CreateArrayOp>(op)) {
       auto lowered = createDefaultValue(
           builder, loc, arrayNewOp.getType(), tables, arrayNewOp.getOperation(), field,
-          uninitializedBehavior, &rng
+          uninitializedBehavior, rng
       );
       if (failed(lowered)) {
         return failure();
@@ -1786,8 +1773,7 @@ private:
 
 } // namespace
 
-void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &options) {
-  (void)options;
+void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &) {
   llzk::polymorphic::FlatteningPassOptions flatteningOptions = {
       .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot
   };
