@@ -30,7 +30,8 @@ def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
 }
 
 def SMTNaiveLoweringPass : LLZKPass<"llzk-to-smt-no-cf-naive"> {
-  let summary = "Lowers non-control flow LLZK ops to SMTLIB using naive mod p encoding";
+  let summary =
+      "Lowers non-control flow LLZK ops to SMTLIB using naive mod p encoding";
   let description = [{
     Lowers felt operations to integer SMT operations using the original
     unoptimized encoding strategy, preserving explicit modulo reductions
