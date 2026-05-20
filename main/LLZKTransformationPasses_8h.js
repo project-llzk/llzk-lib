@@ -13,6 +13,7 @@ var LLZKTransformationPasses_8h =
     [ "llzk::createRedundantOperationEliminationPass", "namespacellzk.html#a02ed7b620ceb2def986e01d65617d3d4", null ],
     [ "llzk::createRedundantReadAndWriteEliminationPass", "namespacellzk.html#a764713f7354a0b4b2cf1b861a443136e", null ],
     [ "llzk::createUnusedDeclarationEliminationPass", "namespacellzk.html#aa81a4cdbc9130d5a1f71367fdc225ef2", null ],
+    [ "llzk::createWhileToForPass", "namespacellzk.html#a8c648f62b051cecda2954864f2038556", null ],
     [ "llzk::registerComputeConstrainToProductPass", "namespacellzk.html#aab965ef5ca57582a4dc91a0effe1b200", null ],
     [ "llzk::registerComputeConstrainToProductPassPass", "namespacellzk.html#a634c2695107587874aa6a0f5275ce898", null ],
     [ "llzk::registerEnforceNoMemberOverwritePass", "namespacellzk.html#ae3e54e31d7ac526c7a4a85373bc8ce78", null ],
@@ -31,5 +32,7 @@ var LLZKTransformationPasses_8h =
     [ "llzk::registerTransformationPasses", "namespacellzk.html#a79f7a98b4670512b82df5098ca84e99e", null ],
     [ "llzk::registerTransformationPassPipelines", "namespacellzk.html#a27132e28370fc61e82609260869dedfd", null ],
     [ "llzk::registerUnusedDeclarationEliminationPass", "namespacellzk.html#a5bfb781c85fcdfda09d0472c2ede1e29", null ],
-    [ "llzk::registerUnusedDeclarationEliminationPassPass", "namespacellzk.html#a00a1db9f2cbc20b8b1ef3010ea7c97a5", null ]
+    [ "llzk::registerUnusedDeclarationEliminationPassPass", "namespacellzk.html#a00a1db9f2cbc20b8b1ef3010ea7c97a5", null ],
+    [ "llzk::registerWhileToForPass", "namespacellzk.html#a0aa9659a4887acefdc571169a46b9ef5", null ],
+    [ "llzk::registerWhileToForPassPass", "namespacellzk.html#a00bd872221998557153b097e07775024", null ]
 ];

@@ -224,6 +224,9 @@ $(function(){initNavTree('tools.html','',''); });
                   </li>
                 </ul>
               </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-while-to-for"><span class="tt">-llzk-while-to-for</span> </a>
+              </li>
             </ul>
           </li>
           <li class="level3">
@@ -409,7 +412,11 @@ Options</h5>
 <h5 class="doxsection"><a class="anchor" id="options-8"></a>
 Options</h5>
 <div class="fragment"><div class="line">-remove-structs : Whether to remove unused struct definitions as well. Requires module to declare a Main component, otherwise all components will appear unused.</div>
-</div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="array-dialect-transformation-passes"></a>
+</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-while-to-for"></a>
+<span class="tt">-llzk-while-to-for</span></h4>
+<p><em>Converts scf.while loops to equivalent scf.for loops when possible</em></p>
+<p>This pass identifies scf.while loops that have an induction variable and a uniform step, and converts them to equivalent scf.for loops, which are preferred by some analyses. This pass may introduce some spurious felt/index casts which should be cleaned up by &ndash;canonicalize.  </p>
+<h3 class="doxsection"><a class="anchor" id="array-dialect-transformation-passes"></a>
 'array' Dialect Transformation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-array-to-scalar"></a>
 <span class="tt">-llzk-array-to-scalar</span></h4>

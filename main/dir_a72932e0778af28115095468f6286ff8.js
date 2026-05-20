@@ -10,5 +10,6 @@ var dir_a72932e0778af28115095468f6286ff8 =
     [ "LLZKRedundantOperationEliminationPass.cpp", "LLZKRedundantOperationEliminationPass_8cpp.html", "LLZKRedundantOperationEliminationPass_8cpp" ],
     [ "LLZKRedundantReadAndWriteEliminationPass.cpp", "LLZKRedundantReadAndWriteEliminationPass_8cpp.html", "LLZKRedundantReadAndWriteEliminationPass_8cpp" ],
     [ "LLZKTransformationPassPipelines.cpp", "LLZKTransformationPassPipelines_8cpp.html", "LLZKTransformationPassPipelines_8cpp" ],
-    [ "LLZKUnusedDeclarationEliminationPass.cpp", "LLZKUnusedDeclarationEliminationPass_8cpp.html", "LLZKUnusedDeclarationEliminationPass_8cpp" ]
+    [ "LLZKUnusedDeclarationEliminationPass.cpp", "LLZKUnusedDeclarationEliminationPass_8cpp.html", "LLZKUnusedDeclarationEliminationPass_8cpp" ],
+    [ "LLZKWhileToForPass.cpp", "LLZKWhileToForPass_8cpp.html", "LLZKWhileToForPass_8cpp" ]
 ];

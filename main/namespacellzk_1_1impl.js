@@ -15,5 +15,6 @@ var namespacellzk_1_1impl =
     [ "RedundantReadAndWriteEliminationPassBase", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase" ],
     [ "SymbolDefTreePrinterPassBase", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase" ],
     [ "SymbolUseGraphPrinterPassBase", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
-    [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ]
+    [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ],
+    [ "WhileToForPassBase", "classllzk_1_1impl_1_1WhileToForPassBase.html", "classllzk_1_1impl_1_1WhileToForPassBase" ]
 ];

@@ -33,9 +33,10 @@ var searchData=
   ['llzk_20specific_20options_30',['LLZK Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options']]],
   ['llzk_20unused_20declaration_20elim_31',['&lt;span class=&quot;tt&quot;&gt;-llzk-unused-declaration-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-unused-declaration-elim',1,'']]],
   ['llzk_20validate_20member_20writes_32',['&lt;span class=&quot;tt&quot;&gt;-llzk-validate-member-writes&lt;/span&gt;',['../tools.html#autotoc_md-llzk-validate-member-writes',1,'']]],
-  ['llzk_20witgen_33',['llzk-witgen',['../tools.html#llzk-witgen',1,'']]],
-  ['loopboundsattr_34',['LoopBoundsAttr',['../dialects.html#loopboundsattr',1,'']]],
-  ['loops_35',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
-  ['lowering_20pass_36',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
-  ['lsp_20server_37',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]]
+  ['llzk_20while_20to_20for_33',['&lt;span class=&quot;tt&quot;&gt;-llzk-while-to-for&lt;/span&gt;',['../tools.html#autotoc_md-llzk-while-to-for',1,'']]],
+  ['llzk_20witgen_34',['llzk-witgen',['../tools.html#llzk-witgen',1,'']]],
+  ['loopboundsattr_35',['LoopBoundsAttr',['../dialects.html#loopboundsattr',1,'']]],
+  ['loops_36',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
+  ['lowering_20pass_37',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
+  ['lsp_20server_38',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]]
 ];

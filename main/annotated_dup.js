@@ -306,7 +306,8 @@ var annotated_dup =
         [ "RedundantReadAndWriteEliminationPassBase", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase" ],
         [ "SymbolDefTreePrinterPassBase", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase" ],
         [ "SymbolUseGraphPrinterPassBase", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
-        [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ]
+        [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ],
+        [ "WhileToForPassBase", "classllzk_1_1impl_1_1WhileToForPassBase.html", "classllzk_1_1impl_1_1WhileToForPassBase" ]
       ] ],
       [ "include", "namespacellzk_1_1include.html", [
         [ "detail", "namespacellzk_1_1include_1_1detail.html", [
@@ -681,6 +682,7 @@ var annotated_dup =
       [ "Field", "classllzk_1_1Field.html", "classllzk_1_1Field" ],
       [ "FileLineColLocComparator", "structllzk_1_1FileLineColLocComparator.html", "structllzk_1_1FileLineColLocComparator" ],
       [ "filtered_raw_ostream", "classllzk_1_1filtered__raw__ostream.html", "classllzk_1_1filtered__raw__ostream" ],
+      [ "ForOpInfo", "structllzk_1_1ForOpInfo.html", "structllzk_1_1ForOpInfo" ],
       [ "FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", "structllzk_1_1FullPolyLoweringOptions" ],
       [ "FunctionTypeConverter", "classllzk_1_1FunctionTypeConverter.html", "classllzk_1_1FunctionTypeConverter" ],
       [ "FuseProductLoopsPass", "classllzk_1_1FuseProductLoopsPass.html", "classllzk_1_1FuseProductLoopsPass" ],
@@ -746,6 +748,7 @@ var annotated_dup =
       [ "UnusedDeclarationEliminationPassOptions", "structllzk_1_1UnusedDeclarationEliminationPassOptions.html", "structllzk_1_1UnusedDeclarationEliminationPassOptions" ],
       [ "ValueLess", "structllzk_1_1ValueLess.html", "structllzk_1_1ValueLess" ],
       [ "VerifySizesForMultiAffineOps", "structllzk_1_1VerifySizesForMultiAffineOps.html", "structllzk_1_1VerifySizesForMultiAffineOps" ],
+      [ "WhileToForPass", "classllzk_1_1WhileToForPass.html", null ],
       [ "Within", "classllzk_1_1Within.html", "classllzk_1_1Within" ]
     ] ],
     [ "mlir", "namespacemlir.html", [

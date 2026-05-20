@@ -298,61 +298,61 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="comment">// Update member read/write ops that target the &quot;self&quot; value of the FuncDefOp plus some key in</span></div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <span class="comment">// `oldToNewMemberDef` to instead target the new base Value provided to the constructor plus the</span></div>
 <div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  <span class="comment">// mapped Value from `oldToNewMemberDef`.</span></div>
-<div class="foldopen" id="foldopen00250" data-start="{" data-end="};">
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno"><a class="line" href="structllzk_1_1InlineStructsPassOptions.html">  250</a></span>  <span class="comment">// Example:</span></div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno"><a class="line" href="structllzk_1_1InlineStructsPassOptions.html#aacfbe685e26d5d1b82bffe293309e2c4">  251</a></span>  <span class="comment">//  old:  %1 = struct.readm %0[@f1] : &lt;@Component1A&gt;, !felt.type</span></div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  <span class="comment">//  new:  %1 = struct.readm %self[@&quot;f2:!s&lt;@Component1A&gt;+f1&quot;] : &lt;@Component1B&gt;, !felt.type</span></div>
-</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  <span class="comment">// Example:</span></div>
+<div class="foldopen" id="foldopen00251" data-start="{" data-end="};">
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno"><a class="line" href="structllzk_1_1InlineStructsPassOptions.html">  251</a></span>  <span class="comment">//  old:  %1 = struct.readm %0[@f1] : &lt;@Component1A&gt;, !felt.type</span></div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno"><a class="line" href="structllzk_1_1InlineStructsPassOptions.html#aacfbe685e26d5d1b82bffe293309e2c4">  252</a></span>  <span class="comment">//  new:  %1 = struct.readm %self[@&quot;f2:!s&lt;@Component1A&gt;+f1&quot;] : &lt;@Component1B&gt;, !felt.type</span></div>
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  <span class="keyword">class </span>MemberRefRewriter final : <span class="keyword">public</span> OpInterfaceRewritePattern&lt;MemberRefOpInterface&gt; {</div>
+</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span></div>
 <div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> funcRef;</div>
 <div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    Value oldBaseVal;</div>
-<div class="foldopen" id="foldopen00259" data-start="{" data-end="};">
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html">  259</a></span><span class="comment">    /// The new base value for updated member references.</span></div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    Value newBaseVal;</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a0880c6d4fc2559632a23ce651d903175">  261</a></span>    <span class="keyword">const</span> SrcStructMemberToCloneInDest &amp;oldToNewMembers;</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a93114f6f8249e84e977af47b1ea91f4d">  263</a></span>  <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#abd85e5b58341859e64473c5d0fc3d905">  264</a></span>    MemberRefRewriter(</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#afb61b8d5725c639b39f6e85959e8be54">  265</a></span>        <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> originalFunc, Value newRefBase,</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a9836e625472c3ceccf969883ab348286">  266</a></span>        <span class="keyword">const</span> SrcStructMemberToCloneInDest &amp;oldToNewMemberDef</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a4c2edcb8be95f0d8814b55690330a962">  267</a></span>    )</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#abfcebf6cbf46e136916dac67f33c5e65">  268</a></span>        : OpInterfaceRewritePattern(originalFunc.getContext()), funcRef(originalFunc),</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>          oldBaseVal(nullptr), newBaseVal(newRefBase), oldToNewMembers(oldToNewMemberDef) {}</div>
+<div class="foldopen" id="foldopen00260" data-start="{" data-end="};">
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html">  260</a></span>    Value newBaseVal;</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    <span class="keyword">const</span> SrcStructMemberToCloneInDest &amp;oldToNewMembers;</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a0880c6d4fc2559632a23ce651d903175">  262</a></span> </div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>  <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a93114f6f8249e84e977af47b1ea91f4d">  264</a></span>    MemberRefRewriter(</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#abd85e5b58341859e64473c5d0fc3d905">  265</a></span>        <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> originalFunc, Value newRefBase,</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#afb61b8d5725c639b39f6e85959e8be54">  266</a></span>        <span class="keyword">const</span> SrcStructMemberToCloneInDest &amp;oldToNewMemberDef</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a9836e625472c3ceccf969883ab348286">  267</a></span>    )</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a4c2edcb8be95f0d8814b55690330a962">  268</a></span>        : OpInterfaceRewritePattern(originalFunc.getContext()), funcRef(originalFunc),</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#abfcebf6cbf46e136916dac67f33c5e65">  269</a></span>          oldBaseVal(nullptr), newBaseVal(newRefBase), oldToNewMembers(oldToNewMemberDef) {}</div>
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
-<div class="foldopen" id="foldopen00271" data-start="{" data-end="}">
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a3600d0419711d4a53843d65795ec5cb4">  271</a></span>    LogicalResult match(<a class="code hl_class" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a> op) <span class="keyword">const</span> <span class="keyword">final</span> {</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>      assert(oldBaseVal); <span class="comment">// ensure it&#39;s used via `cloneWithMemberRefUpdate()` only</span></div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    LogicalResult match(<a class="code hl_class" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a> op) <span class="keyword">const</span> <span class="keyword">final</span> {</div>
+<div class="foldopen" id="foldopen00272" data-start="{" data-end="}">
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a3600d0419711d4a53843d65795ec5cb4">  272</a></span>      assert(oldBaseVal); <span class="comment">// ensure it&#39;s used via `cloneWithMemberRefUpdate()` only</span></div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>      <span class="comment">// Check if the MemberRef accesses a member of &quot;self&quot; within the `oldToNewMembers` map.</span></div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>      <span class="comment">// Per `cloneWithMemberRefUpdate()`, `oldBaseVal` is the &quot;self&quot; value of `funcRef` so</span></div>
 </div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#ac9edd0bc5ce60d13f033e0d0c2775b80">  274</a></span>      <span class="comment">// Per `cloneWithMemberRefUpdate()`, `oldBaseVal` is the &quot;self&quot; value of `funcRef` so</span></div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>      <span class="comment">// check for a match there and then check that the referenced member name is in the map.</span></div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a66aac4a27f8536bad401995d43bfc766">  276</a></span>      <span class="keywordflow">return</span> success(</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>          op.getComponent() == oldBaseVal &amp;&amp; oldToNewMembers.contains(op.getMemberName())</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#ac9edd0bc5ce60d13f033e0d0c2775b80">  275</a></span>      <span class="comment">// check for a match there and then check that the referenced member name is in the map.</span></div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>      <span class="keywordflow">return</span> success(</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a66aac4a27f8536bad401995d43bfc766">  277</a></span>          op.getComponent() == oldBaseVal &amp;&amp; oldToNewMembers.contains(op.getMemberName())</div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>      );</div>
-<div class="foldopen" id="foldopen00279" data-start="{" data-end="}">
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a115898787fad1b541b8bb16fd88daeb6">  279</a></span>    }</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    }</div>
+<div class="foldopen" id="foldopen00280" data-start="{" data-end="}">
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a115898787fad1b541b8bb16fd88daeb6">  280</a></span> </div>
 <div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    <span class="keywordtype">void</span> rewrite(<a class="code hl_class" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a> op, PatternRewriter &amp;rewriter) <span class="keyword">const</span> <span class="keyword">final</span> {</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>      rewriter.modifyOpInPlace(op, [<span class="keyword">this</span>, &amp;op]() {</div>
 </div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a35bb063b5e0219c33610bf67353ba769">  282</a></span>      rewriter.modifyOpInPlace(op, [<span class="keyword">this</span>, &amp;op]() {</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>        DestCloneOfSrcStructMember newF = oldToNewMembers.at(op.getMemberName());</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a35bb063b5e0219c33610bf67353ba769">  283</a></span>        DestCloneOfSrcStructMember newF = oldToNewMembers.at(op.getMemberName());</div>
 <div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>        op.setMemberName(newF.getSymName());</div>
-<div class="foldopen" id="foldopen00285" data-start="{" data-end="}">
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a1b69a9414c82a90e2fb76c80e79b3ef4">  285</a></span>        op.getComponentMutable().set(this-&gt;newBaseVal);</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>      });</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>        op.getComponentMutable().set(this-&gt;newBaseVal);</div>
+<div class="foldopen" id="foldopen00286" data-start="{" data-end="}">
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a1b69a9414c82a90e2fb76c80e79b3ef4">  286</a></span>      });</div>
 <div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    }</div>
-</div>
 <div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span></div>
-<div class="foldopen" id="foldopen00290" data-start="{" data-end="}">
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#af778b8a90ef1f43d8d2aae33cf816072">  290</a></span><span class="comment">    /// `SrcStructMemberToCloneInDest` map (both are within the given `MemberRefRewriter`).</span></div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    <span class="keyword">static</span> <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> cloneWithMemberRefUpdate(std::unique_ptr&lt;MemberRefRewriter&gt; thisPat) {</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>      IRMapping mapper;</div>
 </div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span></div>
+<div class="foldopen" id="foldopen00291" data-start="{" data-end="}">
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#af778b8a90ef1f43d8d2aae33cf816072">  291</a></span>    <span class="keyword">static</span> <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> cloneWithMemberRefUpdate(std::unique_ptr&lt;MemberRefRewriter&gt; thisPat) {</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>      IRMapping mapper;</div>
 <div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>      <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> srcFuncClone = thisPat-&gt;funcRef.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a05f0d10ae2b278d506ca678089e54efe">clone</a>(mapper);</div>
+</div>
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>      <span class="comment">// Update some data in the `MemberRefRewriter` instance before moving it.</span></div>
-<div class="foldopen" id="foldopen00295" data-start="{" data-end="}">
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#aecea2374661ccdb96dc260ca7b6f5e69">  295</a></span>      thisPat-&gt;funcRef = srcFuncClone;</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>      thisPat-&gt;oldBaseVal = getSelfValue(srcFuncClone);</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>      thisPat-&gt;funcRef = srcFuncClone;</div>
+<div class="foldopen" id="foldopen00296" data-start="{" data-end="}">
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#aecea2374661ccdb96dc260ca7b6f5e69">  296</a></span>      thisPat-&gt;oldBaseVal = getSelfValue(srcFuncClone);</div>
 <div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>      <span class="comment">// Run the rewriter to replace read/write ops</span></div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>      MLIRContext *ctx = thisPat-&gt;getContext();</div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>      RewritePatternSet patterns(ctx, std::move(thisPat));</div>
@@ -365,22 +365,22 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  <span class="keyword">class </span>ImplBase {</div>
 <div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  <span class="keyword">protected</span>:</div>
 <div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>    <span class="keyword">const</span> StructInliner &amp;data;</div>
-</div>
 <div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>    <span class="keyword">const</span> DestToSrcToClonedSrcInDest &amp;destToSrcToClone;</div>
+</div>
 <div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span></div>
 <div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>    <span class="keyword">virtual</span> <a class="code hl_class" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a> getSelfRefMember(<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> callOp) = 0;</div>
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>    <span class="keyword">virtual</span> <span class="keywordtype">void</span> processCloneBeforeInlining(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> func) {}</div>
-<div class="foldopen" id="foldopen00316" data-start="{" data-end="}">
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a39837d590b66d2710feecb651d2c5316">  316</a></span>    <span class="keyword">virtual</span> ~ImplBase() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    <span class="keyword">virtual</span> ~ImplBase() = <span class="keywordflow">default</span>;</div>
+<div class="foldopen" id="foldopen00317" data-start="{" data-end="}">
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a39837d590b66d2710feecb651d2c5316">  317</a></span> </div>
 <div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  <span class="keyword">public</span>:</div>
-</div>
 <div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    ImplBase(<span class="keyword">const</span> StructInliner &amp;inliner, <span class="keyword">const</span> DestToSrcToClonedSrcInDest &amp;destToSrcToCloneRef)</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a5d68e0c07fb63ab5766e02f8659410ae">  320</a></span>        : data(inliner), destToSrcToClone(destToSrcToCloneRef) {}</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span> </div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    LogicalResult doInlining(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> srcFunc, <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> destFunc) {</div>
 </div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>        : data(inliner), destToSrcToClone(destToSrcToCloneRef) {}</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1InlineStructsPassBase.html#a5d68e0c07fb63ab5766e02f8659410ae">  321</a></span> </div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    LogicalResult doInlining(<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> srcFunc, <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> destFunc) {</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>      LLVM_DEBUG({</div>
+</div>
 <div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[doInlining] SOURCE FUNCTION:\n&quot;</span>;</div>
 <div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>        srcFunc.dump();</div>
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[doInlining] DESTINATION FUNCTION:\n&quot;</span>;</div>
@@ -408,7 +408,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>        <span class="comment">// Create a clone of the source function (must do the whole function not just the body</span></div>
 <div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>        <span class="comment">// region because `inlineCall()` expects the Region to have a parent op) and update member</span></div>
 <div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>        <span class="comment">// references to the old struct members to instead use the new struct members.</span></div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>        FuncDefOp srcFuncClone = MemberRefRewriter::cloneWithMemberRefUpdate(</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>        <a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> srcFuncClone = MemberRefRewriter::cloneWithMemberRefUpdate(</div>
 <div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>            std::make_unique&lt;MemberRefRewriter&gt;(</div>
 <div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>                srcFunc, selfMemberRefOp.<a class="code hl_function" href="classllzk_1_1component_1_1MemberRefOpInterface.html#a4b007babad8777e0971d6a8abf773c1a">getComponent</a>(),</div>
 <div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>                this-&gt;destToSrcToClone.at(this-&gt;data.getDef(selfMemberRefOp))</div>
@@ -428,7 +428,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>        <span class="keywordflow">return</span> WalkResult::skip(); <span class="comment">// Must skip because the CallOp was erased.</span></div>
 <div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>      };</div>
 <div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span> </div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>      <span class="keyword">auto</span> memberWriteHandler = [<span class="keyword">this</span>](MemberWriteOp writeOp) {</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>      <span class="keyword">auto</span> memberWriteHandler = [<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a> writeOp) {</div>
 <div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>        <span class="comment">// Check if the member ref op should be deleted in the end</span></div>
 <div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>        <span class="keywordflow">if</span> (this-&gt;destToSrcToClone.contains(this-&gt;data.getDef(writeOp))) {</div>
 <div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>          this-&gt;data.toDelete.memberWriteOps.insert(writeOp);</div>
@@ -436,7 +436,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>        <span class="keywordflow">return</span> WalkResult::advance();</div>
 <div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>      };</div>
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span></div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>      <span class="keyword">auto</span> memberReadHandler = [<span class="keyword">this</span>](MemberReadOp readOp) {</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>      <span class="keyword">auto</span> memberReadHandler = [<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a> readOp) {</div>
 <div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>        <span class="comment">// Check if the member ref op should be deleted in the end</span></div>
 <div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>        <span class="keywordflow">if</span> (this-&gt;destToSrcToClone.contains(this-&gt;data.getDef(readOp))) {</div>
 <div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>          this-&gt;data.toDelete.memberReadOps.insert(readOp);</div>
@@ -449,9 +449,9 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span> </div>
 <div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>      WalkResult walkRes = destFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">getBody</a>().walk&lt;WalkOrder::PreOrder&gt;([&amp;](Operation *op) {</div>
 <div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>        <span class="keywordflow">return</span> TypeSwitch&lt;Operation *, WalkResult&gt;(op)</div>
-<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>            .Case&lt;CallOp&gt;(callHandler)</div>
+<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>            .Case&lt;<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>&gt;(callHandler)</div>
 <div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>            .Case&lt;MemberWriteOp&gt;(memberWriteHandler)</div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>            .Case&lt;MemberReadOp&gt;(memberReadHandler)</div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>            .Case&lt;<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a>&gt;(memberReadHandler)</div>
 <div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span>            .Default([](Operation *) { <span class="keywordflow">return</span> WalkResult::advance(); });</div>
 <div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>      });</div>
 <div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span> </div>
@@ -462,13 +462,13 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>  <span class="keyword">class </span>ConstrainImpl : <span class="keyword">public</span> ImplBase {</div>
 <div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>    <span class="keyword">using </span>ImplBase::ImplBase;</div>
 <div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span> </div>
-<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>    MemberRefOpInterface getSelfRefMember(CallOp callOp)<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>    <a class="code hl_class" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a> getSelfRefMember(<a class="code hl_class" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> callOp)<span class="keyword"> override </span>{</div>
 <div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>      LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[ConstrainImpl::getSelfRefMember] &quot;</span> &lt;&lt; callOp &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>; });</div>
 <div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span> </div>
 <div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>      <span class="comment">// The typical pattern is to read a struct instance from a member and then call &quot;constrain()&quot;</span></div>
 <div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>      <span class="comment">// on it. Get the Value passed as the &quot;self&quot; struct to the CallOp and determine which member</span></div>
 <div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>      <span class="comment">// it was read from in the current struct (i.e., `destStruct`).</span></div>
-<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>      MemberRefOpInterface selfMemberRef =</div>
+<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>      <a class="code hl_class" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a> selfMemberRef =</div>
 <div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span>          getMemberReadThatDefinesSelfValuePassedToConstrain(callOp);</div>
 <div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>      <span class="keywordflow">if</span> (selfMemberRef &amp;&amp;</div>
 <div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>          selfMemberRef.getComponent().getType() == this-&gt;data.destStruct.getType()) {</div>
@@ -1332,7 +1332,7 @@ $(function(){initNavTree('LLZKInlineStructsPass_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_acf0d8bd6e292c5e8d103f6033c6f1f30"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#acf0d8bd6e292c5e8d103f6033c6f1f30">llzk::function::FuncDefOp::isStructConstrain</a></div><div class="ttdeci">bool isStructConstrain()</div><div class="ttdoc">Return true iff the function is within a StructDefOp and named FUNC_NAME_CONSTRAIN.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00882">Ops.h.inc:882</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ad1b8b5a39d86f7ddb4329a0a94563b37"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ad1b8b5a39d86f7ddb4329a0a94563b37">llzk::function::FuncDefOp::getFullyQualifiedName</a></div><div class="ttdeci">::mlir::SymbolRefAttr getFullyQualifiedName(bool requireParent=true)</div><div class="ttdoc">Return the full name for this function from the root module, including all surrounding symbol table n...</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00421">Ops.cpp:421</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_ae71c6dc38ab6cf2859fc1bd6cbb380ac"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">llzk::function::FuncDefOp::getBody</a></div><div class="ttdeci">::mlir::Region &amp; getBody()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00690">Ops.h.inc:690</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1InlineStructsPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1InlineStructsPassBase.html">llzk::impl::InlineStructsPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00259">LLZKInlineStructsPass.cpp:259</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1InlineStructsPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1InlineStructsPassBase.html">llzk::impl::InlineStructsPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00260">LLZKInlineStructsPass.cpp:260</a></div></div>
 <div class="ttc" id="aconcept_0d311117161036051067263366262131136336120033104220_1_1HasContainsOp_html"><div class="ttname"><a href="concept_0d311117161036051067263366262131136336120033104220_1_1HasContainsOp.html">@311117161036051067263366262131136336120033104220::HasContainsOp</a></div><div class="ttdef"><b>Definition</b> <a href="#l00533">LLZKInlineStructsPass.cpp:533</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Dialect_8cpp_source.html#l00209">Dialect.cpp:209</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1debug_html_a26d41644d8893b584f5e5e07f875784a"><div class="ttname"><a href="namespacellzk_1_1debug.html#a26d41644d8893b584f5e5e07f875784a">llzk::debug::toStringOne</a></div><div class="ttdeci">std::string toStringOne(const T &amp;value)</div><div class="ttdef"><b>Definition</b> <a href="Debug_8h_source.html#l00182">Debug.h:182</a></div></div>

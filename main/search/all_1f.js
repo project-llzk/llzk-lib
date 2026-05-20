@@ -56,5 +56,6 @@ var searchData=
   ['_7esymboldeftreeprinterpassbase_53',['~SymbolDefTreePrinterPassBase',['../classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#a5bca8babde1ca4bb66641f1cd2fe2f59',1,'llzk::impl::SymbolDefTreePrinterPassBase']]],
   ['_7esymbolusegraphprinterpassbase_54',['~SymbolUseGraphPrinterPassBase',['../classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#ad54ce10e0e85ad6a956ad15a57f8f95a',1,'llzk::impl::SymbolUseGraphPrinterPassBase']]],
   ['_7etestgenerator_55',['~TestGenerator',['../structTestGenerator.html#a79410178fccfd53130bad794ba35f7e4',1,'TestGenerator']]],
-  ['_7eunuseddeclarationeliminationpassbase_56',['~UnusedDeclarationEliminationPassBase',['../classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a61d074d97ebd3cd2ab08a9a72e74d150',1,'llzk::impl::UnusedDeclarationEliminationPassBase']]]
+  ['_7eunuseddeclarationeliminationpassbase_56',['~UnusedDeclarationEliminationPassBase',['../classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a61d074d97ebd3cd2ab08a9a72e74d150',1,'llzk::impl::UnusedDeclarationEliminationPassBase']]],
+  ['_7ewhiletoforpassbase_57',['~WhileToForPassBase',['../classllzk_1_1impl_1_1WhileToForPassBase.html#a8528b95328132bab4b72e47d6b337d7c',1,'llzk::impl::WhileToForPassBase']]]
 ];

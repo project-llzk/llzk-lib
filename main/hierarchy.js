@@ -565,6 +565,7 @@ var hierarchy =
       ] ],
       [ "llzk::smt::ForallOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::ForOpInfo", "structllzk_1_1ForOpInfo.html", null ],
     [ "llzk::function::detail::FuncDefOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase.html", [
       [ "llzk::function::FuncDefOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ],
       [ "llzk::function::FuncDefOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", [
@@ -1011,6 +1012,9 @@ var hierarchy =
       [ "llzk::impl::SymbolUseGraphPrinterPassBase< SymbolUseGraphPass >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", [
         [ "llzk::SymbolUseGraphPass", "classllzk_1_1SymbolUseGraphPass.html", null ]
       ] ],
+      [ "llzk::impl::WhileToForPassBase< WhileToForPass >", "classllzk_1_1impl_1_1WhileToForPassBase.html", [
+        [ "llzk::WhileToForPass", "classllzk_1_1WhileToForPass.html", null ]
+      ] ],
       [ "llzk::polymorphic::impl::FlatteningPassBase< FlatteningPass >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ],
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
       [ "llzk::impl::CallGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", null ],
@@ -1029,6 +1033,7 @@ var hierarchy =
       [ "llzk::impl::SymbolDefTreePrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", null ],
       [ "llzk::impl::SymbolUseGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", null ],
       [ "llzk::impl::UnusedDeclarationEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", null ],
+      [ "llzk::impl::WhileToForPassBase< DerivedT >", "classllzk_1_1impl_1_1WhileToForPassBase.html", null ],
       [ "llzk::include::impl::InlineIncludesPassBase< DerivedT >", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html", null ],
       [ "llzk::polymorphic::impl::EmptyTemplateRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", null ],
       [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ]
