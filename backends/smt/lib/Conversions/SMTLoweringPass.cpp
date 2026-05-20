@@ -302,8 +302,8 @@ public:
 /// this emitter.
 class SMTIntTheoryEmitter : public NonNativeTheoryEmitter {
 public:
-  SMTIntTheoryEmitter(MLIRContext *context, const ModularReasoner &reasoner)
-      : ctx(context), reasoner(reasoner) {}
+  SMTIntTheoryEmitter(MLIRContext *context, const ModularReasoner &modularReasoner)
+      : ctx(context), reasoner(modularReasoner) {}
 
   void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
@@ -442,7 +442,7 @@ public:
       OpBuilder &builder, Location loc, Value operand, const UnreducedInterval &operandRange
   ) const;
   void populatePatterns(
-      RewritePatternSet &patterns, TypeConverter &typeConverter, MLIRContext *context,
+      RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
       const SignalSymbols &signalSymbols
   ) const;
 
@@ -454,10 +454,11 @@ private:
 class FeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
 public:
   FeltDivConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const OptimizedNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<felt::DivFeltOp>(typeConverter, context, /*benefit=*/2),
-        strategy(strategy) {}
+      : OpConversionPattern<felt::DivFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -480,10 +481,11 @@ private:
 class FeltInvConverter : public OpConversionPattern<felt::InvFeltOp> {
 public:
   FeltInvConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const OptimizedNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<felt::InvFeltOp>(typeConverter, context, /*benefit=*/2),
-        strategy(strategy) {}
+      : OpConversionPattern<felt::InvFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       felt::InvFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -503,11 +505,11 @@ private:
 class MemberWriteConverter : public OpConversionPattern<component::MemberWriteOp> {
 public:
   MemberWriteConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &signalMap,
-      const OptimizedNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context, const SignalSymbols &signalMap,
+      const OptimizedNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<component::MemberWriteOp>(typeConverter, context, /*benefit=*/2),
-        symbols(signalMap), strategy(strategy) {}
+      : OpConversionPattern<component::MemberWriteOp>(converter, context, /*benefit=*/2),
+        symbols(signalMap), strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -541,10 +543,11 @@ private:
 class ConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp> {
 public:
   ConstrainConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const OptimizedNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<constrain::EmitEqualityOp>(typeConverter, context, /*benefit=*/2),
-        strategy(strategy) {}
+      : OpConversionPattern<constrain::EmitEqualityOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       constrain::EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -566,9 +569,10 @@ private:
 class BoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
 public:
   BoolCmpConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const OptimizedNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<boolean::CmpOp>(typeConverter, context), strategy(strategy) {}
+      : OpConversionPattern<boolean::CmpOp>(converter, context), strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       boolean::CmpOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -856,7 +860,7 @@ Value OptimizedNonNativeStrategy::emitInverseValue(
 }
 
 void OptimizedNonNativeStrategy::populatePatterns(
-    RewritePatternSet &patterns, TypeConverter &typeConverter, MLIRContext *context,
+    RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
     const SignalSymbols &signalSymbols
 ) const {
   patterns.add<
@@ -867,14 +871,14 @@ void OptimizedNonNativeStrategy::populatePatterns(
       BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>,
       BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>,
       BasicConverter<felt::SignedModFeltOp, smt::IntModOp>, FeltConstConverter, ReturnConverter,
-      SCFIfConverter, YieldConverter>(typeConverter, context);
-  patterns.add<FunctionDefConverter>(typeConverter, context);
-  patterns.add<BoolCmpConverter>(typeConverter, context, this);
-  patterns.add<FeltDivConverter>(typeConverter, context, this);
-  patterns.add<FeltInvConverter>(typeConverter, context, this);
-  patterns.add<ConstrainConverter>(typeConverter, context, this);
-  patterns.add<MemberWriteConverter>(typeConverter, context, signalSymbols, this);
-  patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
+      SCFIfConverter, YieldConverter>(converter, context);
+  patterns.add<FunctionDefConverter>(converter, context);
+  patterns.add<BoolCmpConverter>(converter, context, this);
+  patterns.add<FeltDivConverter>(converter, context, this);
+  patterns.add<FeltInvConverter>(converter, context, this);
+  patterns.add<ConstrainConverter>(converter, context, this);
+  patterns.add<MemberWriteConverter>(converter, context, signalSymbols, this);
+  patterns.add<MemberReadConverter>(converter, context, signalSymbols);
 }
 
 class SMTOptimizedNonNativeLoweringPass
@@ -917,7 +921,7 @@ class SMTOptimizedNonNativeLoweringPass
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
-    auto result =
+    auto walkResult =
         mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
@@ -979,10 +983,10 @@ class SMTOptimizedNonNativeLoweringPass
       }
 
       std::string smtFuncName = "smt_" + structDef.getSymName().str();
-      auto *result = convertStructProductToFunc(
+      auto *loweredProduct = convertStructProductToFunc(
           convertBodies(structDef, signalSymbols, strategy), &getContext()
       );
-      if (result == nullptr) {
+      if (loweredProduct == nullptr) {
         signalPassFailure();
         return WalkResult::interrupt();
       }
@@ -1008,7 +1012,7 @@ class SMTOptimizedNonNativeLoweringPass
 
       return WalkResult::advance();
     });
-    if (!result.wasInterrupted()) {
+    if (!walkResult.wasInterrupted()) {
       // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
       mod->removeAttr(MAIN_ATTR_NAME);
     }

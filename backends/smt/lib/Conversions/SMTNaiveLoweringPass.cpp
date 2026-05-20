@@ -104,13 +104,13 @@ static Value createSMTModPrimeExpr(
 
 class NaiveNonNativeStrategy {
 public:
-  explicit NaiveNonNativeStrategy(llvm::APSInt prime);
+  explicit NaiveNonNativeStrategy(llvm::APSInt fieldPrime);
 
   smt::IntConstantOp createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
   smt::IntConstantOp createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
   Value createModPrimeExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
   void populatePatterns(
-      RewritePatternSet &patterns, TypeConverter &typeConverter, MLIRContext *context,
+      RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
       const SignalSymbols &signalSymbols
   ) const;
 
@@ -121,10 +121,10 @@ private:
 class NaiveFeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
 public:
   NaiveFeltDivConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const NaiveNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context, const NaiveNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<felt::DivFeltOp>(typeConverter, context, /*benefit=*/2),
-        strategy(strategy) {}
+      : OpConversionPattern<felt::DivFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -161,10 +161,10 @@ private:
 class NaiveFeltInvConverter : public OpConversionPattern<felt::InvFeltOp> {
 public:
   NaiveFeltInvConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const NaiveNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context, const NaiveNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<felt::InvFeltOp>(typeConverter, context, /*benefit=*/2),
-        strategy(strategy) {}
+      : OpConversionPattern<felt::InvFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       felt::InvFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -198,11 +198,11 @@ private:
 class NaiveMemberWriteConverter : public OpConversionPattern<component::MemberWriteOp> {
 public:
   NaiveMemberWriteConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &signalMap,
-      const NaiveNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context, const SignalSymbols &signalMap,
+      const NaiveNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<component::MemberWriteOp>(typeConverter, context, /*benefit=*/2),
-        symbols(signalMap), strategy(strategy) {}
+      : OpConversionPattern<component::MemberWriteOp>(converter, context, /*benefit=*/2),
+        symbols(signalMap), strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -234,10 +234,10 @@ private:
 class NaiveConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp> {
 public:
   NaiveConstrainConverter(
-      TypeConverter &typeConverter, MLIRContext *context, const NaiveNonNativeStrategy *strategy
+      TypeConverter &converter, MLIRContext *context, const NaiveNonNativeStrategy *loweringStrategy
   )
-      : OpConversionPattern<constrain::EmitEqualityOp>(typeConverter, context, /*benefit=*/2),
-        strategy(strategy) {}
+      : OpConversionPattern<constrain::EmitEqualityOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
 
   LogicalResult matchAndRewrite(
       constrain::EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -290,7 +290,8 @@ class NaiveBoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
 /// Bundle the naive non-native lowering policy. This keeps the original
 /// modulo-based encoding explicit while making the lowering strategy visible as
 /// a separate concept from the SMT integer operations used to materialize it.
-NaiveNonNativeStrategy::NaiveNonNativeStrategy(llvm::APSInt prime) : prime(std::move(prime)) {}
+NaiveNonNativeStrategy::NaiveNonNativeStrategy(llvm::APSInt fieldPrime)
+    : prime(std::move(fieldPrime)) {}
 
 smt::IntConstantOp NaiveNonNativeStrategy::createZeroConstant(
     OpBuilder &builder, Location loc, MLIRContext *ctx
@@ -311,7 +312,7 @@ Value NaiveNonNativeStrategy::createModPrimeExpr(
 }
 
 void NaiveNonNativeStrategy::populatePatterns(
-    RewritePatternSet &patterns, TypeConverter &typeConverter, MLIRContext *context,
+    RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
     const SignalSymbols &signalSymbols
 ) const {
   patterns.add<
@@ -323,13 +324,13 @@ void NaiveNonNativeStrategy::populatePatterns(
       BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>,
       BasicConverter<felt::SignedModFeltOp, smt::IntModOp>, FeltConstConverter,
       FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter, NaiveBoolCmpConverter>(
-      typeConverter, context
+      converter, context
   );
-  patterns.add<NaiveFeltDivConverter>(typeConverter, context, this);
-  patterns.add<NaiveFeltInvConverter>(typeConverter, context, this);
-  patterns.add<NaiveConstrainConverter>(typeConverter, context, this);
-  patterns.add<NaiveMemberWriteConverter>(typeConverter, context, signalSymbols, this);
-  patterns.add<MemberReadConverter>(typeConverter, context, signalSymbols);
+  patterns.add<NaiveFeltDivConverter>(converter, context, this);
+  patterns.add<NaiveFeltInvConverter>(converter, context, this);
+  patterns.add<NaiveConstrainConverter>(converter, context, this);
+  patterns.add<NaiveMemberWriteConverter>(converter, context, signalSymbols, this);
+  patterns.add<MemberReadConverter>(converter, context, signalSymbols);
 }
 
 class SMTNaiveNonNativeLoweringPass

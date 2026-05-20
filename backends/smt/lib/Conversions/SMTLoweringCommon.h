@@ -89,7 +89,7 @@ public:
 class MemberReadConverter : public mlir::OpConversionPattern<component::MemberReadOp> {
 public:
   MemberReadConverter(
-      mlir::TypeConverter &typeConverter, mlir::MLIRContext *context, const SignalSymbols &signalMap
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, const SignalSymbols &signalMap
   );
 
   mlir::LogicalResult matchAndRewrite(

@@ -199,9 +199,9 @@ LogicalResult FunctionDefConverter::matchAndRewrite(
 }
 
 MemberReadConverter::MemberReadConverter(
-    TypeConverter &typeConverter, MLIRContext *context, const SignalSymbols &signalMap
+    TypeConverter &converter, MLIRContext *context, const SignalSymbols &signalMap
 )
-    : OpConversionPattern<component::MemberReadOp>(typeConverter, context, /*benefit=*/2),
+    : OpConversionPattern<component::MemberReadOp>(converter, context, /*benefit=*/2),
       symbols(signalMap) {}
 
 LogicalResult MemberReadConverter::matchAndRewrite(
