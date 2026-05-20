@@ -5,5 +5,6 @@ var searchData=
   ['unifiable_5fcast_20_3a_3allzk_3a_3apolymorphic_3a_3aunifiablecastop_2',['&lt;span class=&quot;tt&quot;&gt;poly.unifiable_cast&lt;/span&gt; (llzk::polymorphic::UnifiableCastOp)',['../dialects.html#polyunifiable_cast-llzkpolymorphicunifiablecastop',1,'']]],
   ['unused_20declaration_20elim_3',['&lt;span class=&quot;tt&quot;&gt;-llzk-unused-declaration-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-unused-declaration-elim',1,'']]],
   ['update_4',['Commit your update',['../contribution-guide.html#commit-your-update',1,'']]],
-  ['use_20graph_5',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]]
+  ['usage_5',['Basic Usage',['../tools.html#basic-usage',1,'']]],
+  ['use_20graph_6',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]]
 ];

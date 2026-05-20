@@ -6,6 +6,7 @@ var classllzk_1_1Field =
     [ "bitWidth", "classllzk_1_1Field.html#a81da197fd28bcd670656ff4dd0929728", null ],
     [ "createSymbol", "classllzk_1_1Field.html#aa1b5ece317011cd347f3c5fb1b52addd", null ],
     [ "felt", "classllzk_1_1Field.html#a67cf5f88ccdfb5c9fa56164a7fa7d52d", null ],
+    [ "getPrimeAttr", "classllzk_1_1Field.html#a14c60e9780992545f3ba457d4ef4849c", null ],
     [ "half", "classllzk_1_1Field.html#a0ba190165250763577ea685828a52d98", null ],
     [ "inv", "classllzk_1_1Field.html#aaaf90138e9e077e306770c6b42306871", null ],
     [ "inv", "classllzk_1_1Field.html#a7e120e6674063d384f3528bb9c13e263", null ],

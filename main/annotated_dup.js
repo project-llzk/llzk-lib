@@ -647,6 +647,16 @@ var annotated_dup =
         [ "StringDialect", "classllzk_1_1string_1_1StringDialect.html", "classllzk_1_1string_1_1StringDialect" ],
         [ "StringType", "classllzk_1_1string_1_1StringType.html", null ]
       ] ],
+      [ "witgen", "namespacellzk_1_1witgen.html", [
+        [ "ArrayValue", "structllzk_1_1witgen_1_1ArrayValue.html", "structllzk_1_1witgen_1_1ArrayValue" ],
+        [ "FunctionInterpreter", "classllzk_1_1witgen_1_1FunctionInterpreter.html", "classllzk_1_1witgen_1_1FunctionInterpreter" ],
+        [ "InputBinding", "structllzk_1_1witgen_1_1InputBinding.html", "structllzk_1_1witgen_1_1InputBinding" ],
+        [ "Interpreter", "classllzk_1_1witgen_1_1Interpreter.html", "classllzk_1_1witgen_1_1Interpreter" ],
+        [ "OutputBinding", "structllzk_1_1witgen_1_1OutputBinding.html", "structllzk_1_1witgen_1_1OutputBinding" ],
+        [ "PodValue", "structllzk_1_1witgen_1_1PodValue.html", "structllzk_1_1witgen_1_1PodValue" ],
+        [ "StructValue", "structllzk_1_1witgen_1_1StructValue.html", "structllzk_1_1witgen_1_1StructValue" ],
+        [ "WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", "structllzk_1_1witgen_1_1WitgenOptions" ]
+      ] ],
       [ "AuxAssignment", "structllzk_1_1AuxAssignment.html", "structllzk_1_1AuxAssignment" ],
       [ "BaseBuilder", "classllzk_1_1BaseBuilder.html", "classllzk_1_1BaseBuilder" ],
       [ "BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],

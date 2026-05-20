@@ -263,6 +263,37 @@ $(function(){initNavTree('tools.html','',''); });
     </ul>
   </li>
   <li class="level1">
+    <a href="#llzk-witgen">llzk-witgen </a>
+    <ul>
+      <li class="level2 empty">
+        <ul>
+          <li class="level3 empty">
+            <ul>
+              <li class="level4">
+                <a href="#basic-usage">Basic Usage </a>
+              </li>
+              <li class="level4">
+                <a href="#llzk-specific-options-1">LLZK-Specific Options </a>
+              </li>
+              <li class="level4">
+                <a href="#input-format">Input Format </a>
+              </li>
+              <li class="level4">
+                <a href="#output-format">Output Format </a>
+              </li>
+              <li class="level4">
+                <a href="#backends-1">Backends </a>
+              </li>
+              <li class="level4">
+                <a href="#preprocessing">Preprocessing </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li class="level1">
     <a href="#llzk-lsp-server">llzk-lsp-server </a>
   </li>
 </ul>
@@ -412,6 +443,68 @@ Validation Passes</h3>
 <p><em>Detect multiple and missing writes to the same member of a component.</em></p>
 <p>Detect multiple and missing writes to the same member of a component.</p>
 <p>Note that this is overapproximate (i.e., some writes may erroneously be flagged as overwrites, and some members may erroneously be marked unwritten).  </p>
+<h1 class="doxsection"><a class="anchor" id="llzk-witgen"></a>
+llzk-witgen</h1>
+<p><span class="tt">llzk-witgen</span> executes LLZK witness-generation logic for the concrete main component declared by <span class="tt">llzk.main</span>. It evaluates <span class="tt">compute()</span> and prints JSON for either the public outputs of the main component or the full generated witness signal set.</p>
+<h4 class="doxsection"><a class="anchor" id="basic-usage"></a>
+Basic Usage</h4>
+<div class="fragment"><div class="line">llzk-witgen &lt;input.llzk&gt; --inputs &lt;input.json&gt;</div>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="llzk-specific-options-1"></a>
+LLZK-Specific Options</h4>
+<div class="fragment"><div class="line">--inputs &lt;file&gt;              JSON file containing main compute inputs</div>
+<div class="line">-I &lt;directory&gt;               Directory of include files</div>
+<div class="line">--backend=&lt;name&gt;             Execution backend: interpreter or execution-engine</div>
+<div class="line">--output-scope=&lt;name&gt;        Output scope: public or full-witness</div>
+<div class="line">--dump-jit-core              Print the pre-LLVM JIT module</div>
+<div class="line">--dump-jit-llvm              Print the post-LLVM JIT module</div>
+<div class="line">--uninitialized-behavior     Control default handling of uninitialized witness values</div>
+<div class="line">--uninitialized-seed         Seed used for randomized uninitialized witness values</div>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="input-format"></a>
+Input Format</h4>
+<p>The <span class="tt">--inputs</span> file must contain a top-level JSON object or JSON array.</p>
+<ul>
+<li>A JSON object is keyed by <span class="tt">function.arg_name</span> attributes on the main <span class="tt">compute()</span> function arguments.</li>
+<li>A JSON array is interpreted positionally in declared argument order.</li>
+</ul>
+<p>At the main boundary, <span class="tt">llzk-witgen</span> only supports <span class="tt">felt</span> and <span class="tt">array&lt;... x felt&gt;</span> inputs, due to the restrictions posed on <span class="tt">llzk.main</span> components. Field element values are accepted in the same JSON form used by the witgen tests, namely JSON integers or decimal strings.</p>
+<h4 class="doxsection"><a class="anchor" id="output-format"></a>
+Output Format</h4>
+<p><span class="tt">llzk-witgen</span> writes one JSON object to stdout. The exact shape depends on <span class="tt">--output-scope</span>.</p>
+<ul>
+<li><span class="tt">--output-scope=public</span> is the default.<ul>
+<li>The output JSON contains only the public outputs of the main component.</li>
+<li>Public struct members become JSON object fields.</li>
+<li>Public felt arrays become JSON arrays.</li>
+<li>Field element leaves are rendered as decimal strings.</li>
+</ul>
+</li>
+<li><span class="tt">--output-scope=full-witness</span><ul>
+<li>The output JSON contains two top-level objects: <span class="tt">inputs</span> and <span class="tt">signals</span>.</li>
+<li><span class="tt">inputs</span> records the main <span class="tt">compute()</span> arguments using their <span class="tt">function.arg_name</span> attributes when available, or stable fallback names such as <span class="tt">arg0</span>, <span class="tt">arg1</span>, and so on for positional inputs.</li>
+<li><span class="tt">signals</span> records all witness signals reachable from the returned main struct, including both public and private signals.</li>
+<li>Non-signal leaves are omitted, though non-signal struct containers may still appear when needed to reach nested signals.</li>
+<li>Felt arrays remain JSON arrays and field element leaves remain decimal strings.</li>
+</ul>
+</li>
+</ul>
+<h4 class="doxsection"><a class="anchor" id="backends-1"></a>
+Backends</h4>
+<p><span class="tt">llzk-witgen</span> currently supports two execution backends:</p>
+<ul>
+<li><span class="tt">--backend=interpreter</span> Executes LLZK <span class="tt">@compute</span> logic directly over the preprocessed MLIR.</li>
+<li><span class="tt">--backend=execution-engine</span> Lowers preprocessed LLZK <span class="tt">@compute</span> IR to built-in MLIR dialects that can be natively converted to LLVM IR, then executes it with <span class="tt">mlir::ExecutionEngine</span>.</li>
+</ul>
+<p>The default backend is <span class="tt">interpreter</span>, as the <span class="tt">execution-engine</span> does not currently support all LLZK features due to existing lowering limitations (e.g., in the <span class="tt">-llzk-flattening</span> pass).</p>
+<h4 class="doxsection"><a class="anchor" id="preprocessing"></a>
+Preprocessing</h4>
+<p>Before execution, <span class="tt">llzk-witgen</span> performs the preprocessing needed to make witness generation concrete and executable:</p>
+<ul>
+<li><span class="tt">include</span> inlining</li>
+<li>flattening rooted at <span class="tt">llzk.main</span> when required</li>
+<li>affine lowering for execution-engine mode</li>
+<li>subcomponent inlining for execution-engine mode</li>
+</ul>
+<p>Template parameters and affine instantiations are therefore supported only when they can be fully resolved by the preprocessing pipeline before execution.</p>
 <h1 class="doxsection"><a class="anchor" id="llzk-lsp-server"></a>
 llzk-lsp-server</h1>
 <p><span class="tt">cmake --build &lt;build dir&gt; --target llzk-lsp-server</span> will produce an LLZK-specific LSP server that can be used in an IDE to provide language information for LLZK. Refer to the <a href="https://mlir.llvm.org/docs/Tools/MLIRLSP/">MLIR LSP documentation</a> for a more detailed explanation of the MLIR LSP tools and how to set them up in your IDE.</p>

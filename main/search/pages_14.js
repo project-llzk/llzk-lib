@@ -13,7 +13,7 @@ var searchData=
   ['site_20organization_10',['Site Organization',['../index.html#site-organization',1,'']]],
   ['smod_20_3a_3allzk_3a_3afelt_3a_3asignedmodfeltop_11',['&lt;span class=&quot;tt&quot;&gt;felt.smod&lt;/span&gt; (llzk::felt::SignedModFeltOp)',['../dialects.html#feltsmod-llzkfeltsignedmodfeltop',1,'']]],
   ['solve_20an_20issue_12',['Solve an issue',['../contribution-guide.html#solve-an-issue',1,'']]],
-  ['specific_20options_13',['LLZK-Specific Options',['../tools.html#llzk-specific-options',1,'']]],
+  ['specific_20options_13',['Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options']]],
   ['specification_14',['LLZK Language Specification',['../syntax.html',1,'']]],
   ['standards_15',['Our Standards',['../code-of-conduct.html#our-standards',1,'']]],
   ['started_16',['Getting started',['../contribution-guide.html#getting-started',1,'']]],

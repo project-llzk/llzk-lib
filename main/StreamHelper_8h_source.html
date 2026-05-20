@@ -143,45 +143,46 @@ $(function(){initNavTree('StreamHelper_8h_source.html','',''); });
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>      : underlyingStream(os), filterFunc(std::move(filter)) {}</div>
 </div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classllzk_1_1filtered__raw__ostream.html#a6af28b2d75f6b0115fab5ced145a2123">   35</a></span>  <a class="code hl_function" href="classllzk_1_1filtered__raw__ostream.html#a6af28b2d75f6b0115fab5ced145a2123">~filtered_raw_ostream</a>()<span class="keyword"> override </span>{ flush(); }</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>};</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="comment">// Moved to a separate file to avoid a weak vtable error.</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <a class="code hl_function" href="classllzk_1_1filtered__raw__ostream.html#a6af28b2d75f6b0115fab5ced145a2123">~filtered_raw_ostream</a>() <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>};</div>
 </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Func, <span class="keyword">typename</span>... Args&gt;</div>
-<div class="foldopen" id="foldopen00041" data-start="{" data-end="}">
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">   41</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">buildStringViaCallback</a>(Func &amp;&amp;appendFn, Args &amp;&amp;...args) {</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  std::string output;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  llvm::raw_string_ostream oss(output);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  std::invoke(std::forward&lt;Func&gt;(appendFn), oss, std::forward&lt;Args&gt;(args)...);</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordflow">return</span> output;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>}</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Func, <span class="keyword">typename</span>... Args&gt;</div>
+<div class="foldopen" id="foldopen00042" data-start="{" data-end="}">
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">   42</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">buildStringViaCallback</a>(Func &amp;&amp;appendFn, Args &amp;&amp;...args) {</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  std::string output;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  llvm::raw_string_ostream oss(output);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  std::invoke(std::forward&lt;Func&gt;(appendFn), oss, std::forward&lt;Args&gt;(args)...);</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordflow">return</span> output;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>}</div>
 </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span>... Args&gt;</div>
-<div class="foldopen" id="foldopen00051" data-start="{" data-end="}">
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28">   51</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28">buildStringViaPrint</a>(<span class="keyword">const</span> T &amp;base, Args &amp;&amp;...args) {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">buildStringViaCallback</a>([&amp;](llvm::raw_ostream &amp;ss, <span class="keyword">const</span> T &amp;b) {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    b.print(ss, std::forward&lt;Args&gt;(args)...);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }, base);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>}</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span>... Args&gt;</div>
+<div class="foldopen" id="foldopen00052" data-start="{" data-end="}">
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28">   52</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28">buildStringViaPrint</a>(<span class="keyword">const</span> T &amp;base, Args &amp;&amp;...args) {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">buildStringViaCallback</a>([&amp;](llvm::raw_ostream &amp;ss, <span class="keyword">const</span> T &amp;b) {</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    b.print(ss, std::forward&lt;Args&gt;(args)...);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  }, base);</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
 </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span></div>
-<div class="foldopen" id="foldopen00059" data-start="{" data-end="}">
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1">   59</a></span><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... Args&gt; <span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1">buildStringViaInsertionOp</a>(Args &amp;&amp;...args) {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::string output;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  llvm::raw_string_ostream oss(output);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  (oss &lt;&lt; ... &lt;&lt; std::forward&lt;Args&gt;(args));</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordflow">return</span> output;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span></div>
+<div class="foldopen" id="foldopen00060" data-start="{" data-end="}">
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1">   60</a></span><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... Args&gt; <span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1">buildStringViaInsertionOp</a>(Args &amp;&amp;...args) {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  std::string output;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  llvm::raw_string_ostream oss(output);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  (oss &lt;&lt; ... &lt;&lt; std::forward&lt;Args&gt;(args));</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">return</span> output;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>}</div>
 </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>} <span class="comment">// namespace llzk</span></div>
-<div class="ttc" id="aclassllzk_1_1filtered__raw__ostream_html_a6af28b2d75f6b0115fab5ced145a2123"><div class="ttname"><a href="classllzk_1_1filtered__raw__ostream.html#a6af28b2d75f6b0115fab5ced145a2123">llzk::filtered_raw_ostream::~filtered_raw_ostream</a></div><div class="ttdeci">~filtered_raw_ostream() override</div><div class="ttdef"><b>Definition</b> <a href="#l00035">StreamHelper.h:35</a></div></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>} <span class="comment">// namespace llzk</span></div>
+<div class="ttc" id="aclassllzk_1_1filtered__raw__ostream_html_a6af28b2d75f6b0115fab5ced145a2123"><div class="ttname"><a href="classllzk_1_1filtered__raw__ostream.html#a6af28b2d75f6b0115fab5ced145a2123">llzk::filtered_raw_ostream::~filtered_raw_ostream</a></div><div class="ttdeci">~filtered_raw_ostream() override</div><div class="ttdef"><b>Definition</b> <a href="StreamHelper_8cpp_source.html#l00015">StreamHelper.cpp:15</a></div></div>
 <div class="ttc" id="aclassllzk_1_1filtered__raw__ostream_html_afe99c3fada31a5963a742c971745f01b"><div class="ttname"><a href="classllzk_1_1filtered__raw__ostream.html#afe99c3fada31a5963a742c971745f01b">llzk::filtered_raw_ostream::filtered_raw_ostream</a></div><div class="ttdeci">filtered_raw_ostream(llvm::raw_ostream &amp;os, std::function&lt; bool(char)&gt; filter)</div><div class="ttdef"><b>Definition</b> <a href="#l00032">StreamHelper.h:32</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a8d8a6091a342556308a1e52f90a32f28"><div class="ttname"><a href="namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28">llzk::buildStringViaPrint</a></div><div class="ttdeci">std::string buildStringViaPrint(const T &amp;base, Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by calling base.print(llvm::raw_ostream &amp;) on a stream backed by the returned strin...</div><div class="ttdef"><b>Definition</b> <a href="#l00051">StreamHelper.h:51</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a9f1d3c78bf8b6e096419767531cf5ab1"><div class="ttname"><a href="namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1">llzk::buildStringViaInsertionOp</a></div><div class="ttdeci">std::string buildStringViaInsertionOp(Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by using the insertion operator (&lt;&lt;) to append all args to a stream backed by the r...</div><div class="ttdef"><b>Definition</b> <a href="#l00059">StreamHelper.h:59</a></div></div>
-<div class="ttc" id="anamespacellzk_html_add5fbee8a55ca19fc62c9e5b8e04f380"><div class="ttname"><a href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">llzk::buildStringViaCallback</a></div><div class="ttdeci">std::string buildStringViaCallback(Func &amp;&amp;appendFn, Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by calling the given appendFn with an llvm::raw_ostream &amp; as the first argument fol...</div><div class="ttdef"><b>Definition</b> <a href="#l00041">StreamHelper.h:41</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a8d8a6091a342556308a1e52f90a32f28"><div class="ttname"><a href="namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28">llzk::buildStringViaPrint</a></div><div class="ttdeci">std::string buildStringViaPrint(const T &amp;base, Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by calling base.print(llvm::raw_ostream &amp;) on a stream backed by the returned strin...</div><div class="ttdef"><b>Definition</b> <a href="#l00052">StreamHelper.h:52</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a9f1d3c78bf8b6e096419767531cf5ab1"><div class="ttname"><a href="namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1">llzk::buildStringViaInsertionOp</a></div><div class="ttdeci">std::string buildStringViaInsertionOp(Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by using the insertion operator (&lt;&lt;) to append all args to a stream backed by the r...</div><div class="ttdef"><b>Definition</b> <a href="#l00060">StreamHelper.h:60</a></div></div>
+<div class="ttc" id="anamespacellzk_html_add5fbee8a55ca19fc62c9e5b8e04f380"><div class="ttname"><a href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">llzk::buildStringViaCallback</a></div><div class="ttdeci">std::string buildStringViaCallback(Func &amp;&amp;appendFn, Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by calling the given appendFn with an llvm::raw_ostream &amp; as the first argument fol...</div><div class="ttdef"><b>Definition</b> <a href="#l00042">StreamHelper.h:42</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

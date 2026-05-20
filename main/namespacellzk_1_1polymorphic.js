@@ -36,6 +36,7 @@ var namespacellzk_1_1polymorphic =
     ] ],
     [ "createEmptyTemplateRemoval", "namespacellzk_1_1polymorphic.html#ae5e3a76ebc8b70aae91e2bc805f34a54", null ],
     [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#a588852ffba37b2c570615b494d488163", null ],
+    [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#a59959bb9e7bef15b2c50ad659626e0f6", null ],
     [ "getMaxEnumValForStructCleanupMode", "namespacellzk_1_1polymorphic.html#ad840f03dba722bb4b532aa99d95d6286", null ],
     [ "isInTemplate", "namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed", null ],
     [ "isInTemplate", "namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562", null ],

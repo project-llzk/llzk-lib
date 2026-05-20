@@ -30,11 +30,12 @@ var searchData=
   ['llzk_20print_20predecessors_27',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-predecessors&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-predecessors',1,'']]],
   ['llzk_20print_20symbol_20def_20tree_28',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],
   ['llzk_20print_20symbol_20use_20graph_29',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]],
-  ['llzk_20specific_20options_30',['LLZK-Specific Options',['../tools.html#llzk-specific-options',1,'']]],
+  ['llzk_20specific_20options_30',['LLZK Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options']]],
   ['llzk_20unused_20declaration_20elim_31',['&lt;span class=&quot;tt&quot;&gt;-llzk-unused-declaration-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-unused-declaration-elim',1,'']]],
   ['llzk_20validate_20member_20writes_32',['&lt;span class=&quot;tt&quot;&gt;-llzk-validate-member-writes&lt;/span&gt;',['../tools.html#autotoc_md-llzk-validate-member-writes',1,'']]],
-  ['loopboundsattr_33',['LoopBoundsAttr',['../dialects.html#loopboundsattr',1,'']]],
-  ['loops_34',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
-  ['lowering_20pass_35',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
-  ['lsp_20server_36',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]]
+  ['llzk_20witgen_33',['llzk-witgen',['../tools.html#llzk-witgen',1,'']]],
+  ['loopboundsattr_34',['LoopBoundsAttr',['../dialects.html#loopboundsattr',1,'']]],
+  ['loops_35',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
+  ['lowering_20pass_36',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
+  ['lsp_20server_37',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]]
 ];

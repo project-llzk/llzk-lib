@@ -16,5 +16,7 @@ var searchData=
   ['distribute_13',['distribute',['../LICENSE_8txt.html#a4043f6796a9cc8a7ee48fdad37e3788f',1,'LICENSE.txt']]],
   ['documentation_14',['documentation',['../structExtraMethod.html#adece370eb95e462adfa9e610bcaf3ec9',1,'ExtraMethod::documentation'],['../LICENSE_8txt.html#a7afdcebc9fb04562c0bb505121fdd890',1,'documentation:&#160;LICENSE.txt']]],
   ['domaintype_15',['domainType',['../structllzk_1_1smt_1_1detail_1_1ArrayTypeStorage.html#a32695d3e3ea2ed89ee1d205c74df1274',1,'llzk::smt::detail::ArrayTypeStorage']]],
-  ['domaintypes_16',['domainTypes',['../structllzk_1_1smt_1_1detail_1_1SMTFuncTypeStorage.html#abe94300bc691108d31145734e66bcadb',1,'llzk::smt::detail::SMTFuncTypeStorage']]]
+  ['domaintypes_16',['domainTypes',['../structllzk_1_1smt_1_1detail_1_1SMTFuncTypeStorage.html#abe94300bc691108d31145734e66bcadb',1,'llzk::smt::detail::SMTFuncTypeStorage']]],
+  ['dumpjitcore_17',['dumpJITCore',['../structllzk_1_1witgen_1_1WitgenOptions.html#aa9a1ccb452462595fcd2d462c56fb9b2',1,'llzk::witgen::WitgenOptions']]],
+  ['dumpjitllvm_18',['dumpJITLLVM',['../structllzk_1_1witgen_1_1WitgenOptions.html#a742654891f871f65682a4b99c5c0667d',1,'llzk::witgen::WitgenOptions']]]
 ];

@@ -3,7 +3,7 @@ var searchData=
   ['callee_0',['callee',['../structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a2b733c0338c2f77d80c232c2203c08b3',1,'llzk::function::detail::CallOpGenericAdaptorBase::Properties']]],
   ['charge_1',['charge',['../LICENSE_8txt.html#a84a21d115bb384bf97843ff4342c2e26',1,'charge:&#160;LICENSE.txt'],['../LICENSE_8txt.html#a84a21d115bb384bf97843ff4342c2e26',1,'charge:&#160;LICENSE.txt']]],
   ['classname_2',['className',['../structGenerator.html#a4d8de52512ddb4ea8477af0735e8f119',1,'Generator']]],
-  ['cleanupmode_3',['cleanupMode',['../structllzk_1_1polymorphic_1_1FlatteningPassOptions.html#ad3588c0eca88acad1d37bd4ef796f663',1,'llzk::polymorphic::FlatteningPassOptions::cleanupMode'],['../classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a4f15ea9474a27fd88381cdf937ec0f76',1,'llzk::polymorphic::impl::FlatteningPassBase::cleanupMode']]],
+  ['cleanupmode_3',['cleanupMode',['../classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a4f15ea9474a27fd88381cdf937ec0f76',1,'llzk::polymorphic::impl::FlatteningPassBase::cleanupMode'],['../structllzk_1_1polymorphic_1_1FlatteningPassOptions.html#ad3588c0eca88acad1d37bd4ef796f663',1,'llzk::polymorphic::FlatteningPassOptions::cleanupMode']]],
   ['code_4',['code',['../LICENSE_8txt.html#a99101f1111e3615a81e34012de5a239b',1,'LICENSE.txt']]],
   ['column_5',['column',['../structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a768ae66330b8eb5178aa9d29272d3ce4',1,'llzk::component::detail::MemberDefOpGenericAdaptorBase::Properties']]],
   ['computedvalue_6',['computedValue',['../structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3',1,'llzk::AuxAssignment']]],

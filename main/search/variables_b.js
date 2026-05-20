@@ -11,9 +11,10 @@ var searchData=
   ['maxdegree_8',['maxDegree',['../structllzk_1_1PolyLoweringPassOptions.html#a8ed7856c84369defac1a2aba9c2bd85f',1,'llzk::PolyLoweringPassOptions::maxDegree'],['../classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc',1,'llzk::impl::PolyLoweringPassBase::maxDegree'],['../structllzk_1_1FullPolyLoweringOptions.html#a81344fb55c02c27328b48ada4bd51301',1,'llzk::FullPolyLoweringOptions::maxDegree']]],
   ['medium_9',['medium',['../LICENSE_8txt.html#a5cc99c832a7102c12c8338a5e3356c94',1,'LICENSE.txt']]],
   ['member_5fname_10',['member_name',['../structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#adf43d614337ea0400d31f390e940e0c6',1,'llzk::component::detail::MemberReadOpGenericAdaptorBase::Properties::member_name'],['../structllzk_1_1component_1_1detail_1_1MemberWriteOpGenericAdaptorBase_1_1Properties.html#a8ce19d20367134a85c82be5475f04e22',1,'llzk::component::detail::MemberWriteOpGenericAdaptorBase::Properties::member_name']]],
-  ['merchantability_11',['MERCHANTABILITY',['../LICENSE_8txt.html#a763139c20af97b9a64a19a298a21e78b',1,'LICENSE.txt']]],
-  ['methodname_12',['methodName',['../structExtraMethod.html#ac390da29009ebcc2985321d0df1ed054',1,'ExtraMethod']]],
-  ['minorversion_13',['minorVersion',['../structllzk_1_1LLZKDialectVersion.html#a86fd4d3eb7d65fef26f996c4ef8aff2c',1,'llzk::LLZKDialectVersion']]],
-  ['modifications_14',['modifications',['../LICENSE_8txt.html#a8540b5d72f1eb4b4876067ab195ab6a1',1,'LICENSE.txt']]],
-  ['msg_15',['msg',['../structllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase_1_1Properties.html#a5b5f2fab2ef06a96500e97ce3c26b547',1,'llzk::boolean::detail::AssertOpGenericAdaptorBase::Properties']]]
+  ['members_11',['members',['../structllzk_1_1witgen_1_1StructValue.html#a5501b58bf0bfc9416180790966fa8c18',1,'llzk::witgen::StructValue']]],
+  ['merchantability_12',['MERCHANTABILITY',['../LICENSE_8txt.html#a763139c20af97b9a64a19a298a21e78b',1,'LICENSE.txt']]],
+  ['methodname_13',['methodName',['../structExtraMethod.html#ac390da29009ebcc2985321d0df1ed054',1,'ExtraMethod']]],
+  ['minorversion_14',['minorVersion',['../structllzk_1_1LLZKDialectVersion.html#a86fd4d3eb7d65fef26f996c4ef8aff2c',1,'llzk::LLZKDialectVersion']]],
+  ['modifications_15',['modifications',['../LICENSE_8txt.html#a8540b5d72f1eb4b4876067ab195ab6a1',1,'LICENSE.txt']]],
+  ['msg_16',['msg',['../structllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase_1_1Properties.html#a5b5f2fab2ef06a96500e97ce3c26b547',1,'llzk::boolean::detail::AssertOpGenericAdaptorBase::Properties']]]
 ];

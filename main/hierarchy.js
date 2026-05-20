@@ -88,6 +88,7 @@ var hierarchy =
       ] ],
       [ "llzk::smt::ArrayStoreOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ArrayStoreOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::witgen::ArrayValue", "structllzk_1_1witgen_1_1ArrayValue.html", null ],
     [ "llzk::boolean::detail::AssertOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase.html", [
       [ "llzk::boolean::AssertOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html", null ],
       [ "llzk::boolean::AssertOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html", [
@@ -571,6 +572,7 @@ var hierarchy =
       ] ],
       [ "llzk::function::FuncDefOpGenericAdaptor< RangeT >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::witgen::FunctionInterpreter", "classllzk_1_1witgen_1_1FunctionInterpreter.html", null ],
     [ "llzk::FunctionTypeConverter", "classllzk_1_1FunctionTypeConverter.html", null ],
     [ "llzk::FuzzySet", "classllzk_1_1FuzzySet.html", null ],
     [ "Generator", "structGenerator.html", [
@@ -646,6 +648,7 @@ var hierarchy =
     ] ],
     [ "llzk::InFlightDiagnosticWrapper", "classllzk_1_1InFlightDiagnosticWrapper.html", null ],
     [ "llzk::InlineStructsPassOptions", "structllzk_1_1InlineStructsPassOptions.html", null ],
+    [ "llzk::witgen::InputBinding", "structllzk_1_1witgen_1_1InputBinding.html", null ],
     [ "llzk::array::detail::InsertArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1InsertArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::InsertArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html", null ],
       [ "llzk::array::InsertArrayOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html", [
@@ -700,6 +703,7 @@ var hierarchy =
       [ "llzk::smt::BVCmpPredicateAttr", "classllzk_1_1smt_1_1BVCmpPredicateAttr.html", null ],
       [ "llzk::smt::IntPredicateAttr", "classllzk_1_1smt_1_1IntPredicateAttr.html", null ]
     ] ],
+    [ "llzk::witgen::Interpreter", "classllzk_1_1witgen_1_1Interpreter.html", null ],
     [ "llzk::Interval", "classllzk_1_1Interval.html", null ],
     [ "llzk::IntervalAnalysisContext", "structllzk_1_1IntervalAnalysisContext.html", null ],
     [ "llzk::IntervalAnalysisPrinterPassOptions", "structllzk_1_1IntervalAnalysisPrinterPassOptions.html", null ],
@@ -1007,6 +1011,7 @@ var hierarchy =
       [ "llzk::impl::SymbolUseGraphPrinterPassBase< SymbolUseGraphPass >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", [
         [ "llzk::SymbolUseGraphPass", "classllzk_1_1SymbolUseGraphPass.html", null ]
       ] ],
+      [ "llzk::polymorphic::impl::FlatteningPassBase< FlatteningPass >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ],
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
       [ "llzk::impl::CallGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", null ],
       [ "llzk::impl::CallGraphSCCsPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", null ],
@@ -1064,12 +1069,14 @@ var hierarchy =
       ] ],
       [ "llzk::smt::OrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1OrOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::witgen::OutputBinding", "structllzk_1_1witgen_1_1OutputBinding.html", null ],
     [ "PassPipelineOptions", null, [
       [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", null ]
     ] ],
     [ "mlir::PassWrapper", null, [
       [ "mlir_hotfix::RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", null ]
     ] ],
+    [ "llzk::witgen::PodValue", "structllzk_1_1witgen_1_1PodValue.html", null ],
     [ "llzk::PolyLoweringPassOptions", "structllzk_1_1PolyLoweringPassOptions.html", null ],
     [ "llzk::smt::detail::PopOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase.html", [
       [ "llzk::smt::PopOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1PopOpGenericAdaptor.html", null ],
@@ -1238,6 +1245,7 @@ var hierarchy =
       [ "llzk::component::StructDefOpGenericAdaptor< RangeT >", "classllzk_1_1component_1_1StructDefOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::StructIntervals", "classllzk_1_1StructIntervals.html", null ],
+    [ "llzk::witgen::StructValue", "structllzk_1_1witgen_1_1StructValue.html", null ],
     [ "llzk::felt::detail::SubFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1SubFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::SubFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1SubFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::SubFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1SubFeltOpGenericAdaptor.html", [
@@ -1416,6 +1424,7 @@ var hierarchy =
     [ "llzk::UnusedDeclarationEliminationPassOptions", "structllzk_1_1UnusedDeclarationEliminationPassOptions.html", null ],
     [ "llzk::ValueLess", "structllzk_1_1ValueLess.html", null ],
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", null ],
+    [ "llzk::witgen::WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", null ],
     [ "llzk::Within", "classllzk_1_1Within.html", null ],
     [ "llzk::array::detail::WriteArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1WriteArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::WriteArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1WriteArrayOpGenericAdaptor.html", null ],
