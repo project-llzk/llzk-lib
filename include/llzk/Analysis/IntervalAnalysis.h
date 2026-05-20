@@ -231,8 +231,16 @@ private:
 // NOLINTNEXTLINE(bugprone-exception-escape)
 class IntervalAnalysisLatticeValue
     : public dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue> {
+  using Base = dataflow::AbstractLatticeValue<IntervalAnalysisLatticeValue, ExpressionValue>;
+
 public:
-  using AbstractLatticeValue::AbstractLatticeValue;
+  explicit IntervalAnalysisLatticeValue(ExpressionValue e) : Base(std::move(e)) {}
+  IntervalAnalysisLatticeValue() : Base() {}
+  explicit IntervalAnalysisLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
+  IntervalAnalysisLatticeValue(const IntervalAnalysisLatticeValue &) = default;
+  IntervalAnalysisLatticeValue(IntervalAnalysisLatticeValue &&) = default;
+  IntervalAnalysisLatticeValue &operator=(const IntervalAnalysisLatticeValue &) = default;
+  IntervalAnalysisLatticeValue &operator=(IntervalAnalysisLatticeValue &&) = default;
 };
 
 /* IntervalAnalysisLattice */
@@ -296,11 +304,11 @@ class IntervalDataFlowAnalysis
 public:
   explicit IntervalDataFlowAnalysis(
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
-      bool propInputConstraints, bool trackUnreducedIntervals
+      bool propInputConstraints, bool shouldTrackUnreducedIntervals
   )
       : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
         smtSolver(std::move(smt)), field(f), propagateInputConstraints(propInputConstraints),
-        trackUnreducedIntervals(trackUnreducedIntervals) {}
+        trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
 
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,

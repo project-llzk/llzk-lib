@@ -14,8 +14,8 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: func.func @smt_ConstrainEqCongruence(
 // CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
 // CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[ARG]], %[[ARG]]
-// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "constrain_eq_q" : !smt.int
 // CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[SUM]], %[[ARG]]
+// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "constrain_eq_q" : !smt.int
 // CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\.]+}}
 // CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIFF]], %[[PROD]] : !smt.int
 // CHECK: smt.assert %[[EQ]]
@@ -68,8 +68,8 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: func.func @smt_MemberWriteCongruence(
 // CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
 // CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[ARG]], %[[ARG]]
-// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "member_write_q" : !smt.int
 // CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[FOOW:[0-9a-zA-Z_\.]+]], %[[SUM]]
+// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "member_write_q" : !smt.int
 // CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\.]+}}
 // CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIFF]], %[[PROD]] : !smt.int
 // CHECK: smt.assert %[[EQ]]
@@ -113,10 +113,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: func.func @smt_DivMaybeZero(
 // CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
 // CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
-// CHECK: %[[Q:[0-9a-zA-Z_\.]+]] = smt.declare_fun "felt_div_q" : !smt.int
-// CHECK: %[[CONGR:[0-9a-zA-Z_\.]+]] = smt.eq %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[ARG]], %[[DIV]]
+// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[PROD]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[RED:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[DIFF]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[CONGR:[0-9a-zA-Z_\.]+]] = smt.eq %[[RED]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
 // CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARG]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
 // CHECK: %[[DIV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIV]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
 // CHECK: %[[ITE:[0-9a-zA-Z_\.]+]] = smt.ite %[[COND]], %[[DIV_ZERO]], %[[CONGR]] : !smt.bool
 // CHECK: smt.assert %[[ITE]]
-// CHECK-NOT: smt.int.mod

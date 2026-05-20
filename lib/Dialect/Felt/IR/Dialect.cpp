@@ -201,6 +201,8 @@ auto FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Types.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"

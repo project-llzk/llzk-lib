@@ -29,6 +29,20 @@ def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
                         "If omitted, the pass auto-detects it.">];
 }
 
+def SMTNaiveLoweringPass : LLZKPass<"llzk-to-smt-no-cf-naive"> {
+  let summary = "Lowers non-control flow LLZK ops to SMTLIB using naive mod p encoding";
+  let description = [{
+    Lowers felt operations to integer SMT operations using the original
+    unoptimized encoding strategy, preserving explicit modulo reductions
+    instead of exploiting interval-analysis results.
+  }];
+  let constructor = "smt::createSMTNaiveLoweringPass()";
+  let options = [Option<"fieldName", "field", "std::string",
+                        /* default */ "\"\"",
+                        "Prime field name to use for SMT lowering. "
+                        "If omitted, the pass auto-detects it.">];
+}
+
 def SMTCFLoweringPass : LLZKPass<"llzk-to-smt-cf-only"> {
   let summary = "Lowers control-flow LLZK ops to SMTLIB";
   let description = [{

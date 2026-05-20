@@ -426,7 +426,7 @@ ExpressionValue neg(const llvm::SMTSolverRef &solver, const ExpressionValue &val
   res.i = -val.i;
   res.expr = solver->mkBVNeg(val.expr);
   if (val.hasUnreducedInterval()) {
-    res = res.withUnreducedInterval(-val.getUnreducedInterval());
+    res = res.withOptionalUnreducedInterval(-val.getUnreducedInterval());
   }
   return res;
 }
@@ -462,7 +462,10 @@ fallbackUnaryOp(const llvm::SMTSolverRef &solver, Operation *op, const Expressio
   });
 
   if (llvm::isa<InvFeltOp>(op)) {
-    res = res.withUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()));
+    // We have the inverse's unreduced range to be [0, p-1] because for any integer z we can always
+    // choose a conical element x \in [0, p-1] such that 1) (z * x) %p = 0 if z = 0, 2) (z * x) % p
+    // = 1
+    res = res.withOptionalUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()));
   }
 
   return res;
@@ -527,7 +530,7 @@ SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
 }
 
 std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
-    Operation *baseOp, ArrayAccessOpInterface arrayAccessOp
+    Operation * /*baseOp*/, ArrayAccessOpInterface arrayAccessOp
 ) {
   std::vector<SourceRefIndex> indices;
   ArrayType arrayType = arrayAccessOp.getArrRefType();
@@ -643,16 +646,14 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
 void IntervalDataFlowAnalysis::recordRefWrite(
     const SourceRef &writtenRef, const ExpressionValue &writeVal
 ) {
-  ExpressionValue written = writeVal;
-
   if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
     const ExpressionValue &old = it->second;
-    Interval combinedWrite = old.getInterval().join(written.getInterval());
+    Interval combinedWrite = old.getInterval().join(writeVal.getInterval());
     auto combinedUnreduced = mergeUnreducedIntervals(
-        old.getOptionalUnreducedInterval(), written.getOptionalUnreducedInterval()
+        old.getOptionalUnreducedInterval(), writeVal.getOptionalUnreducedInterval()
     );
-    if (old.getExpr() != nullptr && written.getExpr() != nullptr &&
-        *old.getExpr() == *written.getExpr()) {
+    if (old.getExpr() != nullptr && writeVal.getExpr() != nullptr &&
+        *old.getExpr() == *writeVal.getExpr()) {
       writeResults[writtenRef] =
           old.withInterval(combinedWrite).withOptionalUnreducedInterval(combinedUnreduced);
     } else {
@@ -660,13 +661,13 @@ void IntervalDataFlowAnalysis::recordRefWrite(
       writeResults[writtenRef] = ExpressionValue(expr, combinedWrite, std::move(combinedUnreduced));
     }
   } else {
-    writeResults[writtenRef] = written;
+    writeResults[writtenRef] = writeVal;
   }
 
   for (Lattice *readerLattice : readResults[writtenRef]) {
     ExpressionValue prior = readerLattice->getValue().getScalarValue();
-    Interval intersection = prior.getInterval().intersect(written.getInterval());
-    ExpressionValue newVal = refineReducedInterval(prior, intersection);
+    Interval intersection = prior.getInterval().intersect(writeVal.getInterval());
+    ExpressionValue newVal = prior.withInterval(intersection);
     propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
   }
 }
@@ -870,7 +871,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         SourceRefIndex idx(memberDefRes.value());
         auto memberRefRes = refSet.getSingleValue().createChild(idx);
         ensure(succeeded(memberRefRes), "could not create SourceRef child for member write");
-        SourceRef memberRef = *memberRefRes;
+        const SourceRef &memberRef = *memberRefRes;
         Type memberTy = writem.getVal().getType();
         if (!llvm::isa<ArrayType, StructType>(memberTy)) {
           // Simple scalar update
@@ -1465,7 +1466,9 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 }
 
 FailureOr<std::pair<DenseSet<Value>, Interval>>
-IntervalDataFlowAnalysis::getGeneralizedDecompInterval(Operation *baseOp, Value lhs, Value rhs) {
+IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
+    Operation * /*baseOp*/, Value lhs, Value rhs
+) {
   auto isZeroConst = [this](Value v) {
     Operation *op = v.getDefiningOp();
     if (!op) {
@@ -1559,10 +1562,6 @@ LogicalResult StructIntervals::computeIntervals(
           llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
           llvm::SetVector<ExpressionValue> & /*solverConstraints*/
       ) {
-    if (!fn) {
-      return;
-    }
-
     auto setUnreducedRange =
         [&memberUnreducedRanges](const SourceRef &ref, const UnreducedInterval &interval) {
       memberUnreducedRanges.erase(ref);
@@ -1677,14 +1676,17 @@ LogicalResult StructIntervals::computeIntervals(
     }
   };
 
-  computeIntervalsImpl(
-      structDef.getComputeFuncOp(), computeMemberRanges, computeMemberUnreducedRanges,
-      computeSolverConstraints
-  );
-  computeIntervalsImpl(
-      structDef.getConstrainFuncOp(), constrainMemberRanges, constrainMemberUnreducedRanges,
-      constrainSolverConstraints
-  );
+  if (auto computeFn = structDef.getComputeFuncOp()) {
+    computeIntervalsImpl(
+        computeFn, computeMemberRanges, computeMemberUnreducedRanges, computeSolverConstraints
+    );
+  }
+  if (auto constrainFn = structDef.getConstrainFuncOp()) {
+    computeIntervalsImpl(
+        constrainFn, constrainMemberRanges, constrainMemberUnreducedRanges,
+        constrainSolverConstraints
+    );
+  }
 
   return success();
 }
@@ -1715,7 +1717,7 @@ void StructIntervals::print(
       os.indent(indent) << ref << " in " << interval;
       if (printUnreduced) {
         if (auto it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {
-          os << " ( unreduced: " << it->second << " )";
+          os << " ( " << it->second << " )";
         }
       }
     }

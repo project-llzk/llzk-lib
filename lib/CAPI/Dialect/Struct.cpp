@@ -19,6 +19,7 @@
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/Support.h>
 
 #include <mlir/CAPI/AffineMap.h>

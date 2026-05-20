@@ -12,6 +12,7 @@
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/ErrorHelper.h"
 
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Support/LLVM.h>
 
@@ -111,6 +112,9 @@ public:
   llvm::SMTExprRef createSymbol(const llvm::SMTSolverRef &solver, const char *name) const {
     return solver->mkSymbol(name, solver->getBitvectorSort(bitWidth()));
   }
+
+  /// Return the field prime modulus materialized as an integer attribute at `bitWidth`.
+  mlir::IntegerAttr getPrimeAttr(mlir::MLIRContext *context, unsigned bitWidth) const;
 
   friend bool operator==(const Field &lhs, const Field &rhs) {
     return lhs.primeMod == rhs.primeMod;

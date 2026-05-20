@@ -1,0 +1,8 @@
+added:
+  - An optimized SMT encoding for non-native theories like QF_NIA (and eventually QF_BV)
+
+changed:
+  - The old encoding is called a naive encoding where modulos are always applied during an integer encoding.
+
+fixed:
+  - Added support for smod in the interval analysis

@@ -7,6 +7,7 @@
 # -*- Python -*-
 
 import os
+import shlex
 
 import lit.formats
 
@@ -20,7 +21,7 @@ config.name = 'LLZK'
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = ['.mlir', '.llzk']
+config.suffixes = ['.mlir', '.llzk', '.td']
 config.suffixes.extend(config.extra_suffixes)
 
 # test_source_root: The root path where tests are located.
@@ -31,6 +32,15 @@ config.test_exec_root = os.path.join(config.llzk_obj_root, 'test')
 
 config.substitutions.append(('%PATH%', config.environment['PATH']))
 config.substitutions.append(('%input_dir', config.test_source_root))
+tablegen_include_dirs = [
+    config.llzk_include_dir,
+    *config.mlir_include_dirs,
+    *config.llvm_include_dirs,
+]
+config.substitutions.append((
+    '%tablegen_includes',
+    ' '.join(f'-I{shlex.quote(path)}' for path in tablegen_include_dirs if path),
+))
 
 llvm_config.with_system_environment(
     ['HOME', 'INCLUDE', 'LIB', 'TMP', 'TEMP'])
@@ -45,14 +55,16 @@ config.excludes = ['Inputs', 'Examples', 'CMakeLists.txt', 'README.txt', 'LICENS
 # test_exec_root: The root path where tests should be run.
 config.test_exec_root = os.path.join(config.llzk_obj_root, 'test')
 config.llzk_tools_dir = os.path.join(config.llzk_obj_root, 'bin')
+config.llzk_tblgen_tools_dir = os.path.join(config.llzk_obj_root, 'tools', 'llzk-tblgen')
 
 # Tweak the PATH to include the tools dir.
 llvm_config.with_environment('PATH', config.llzk_tools_dir, append_path=True)
+llvm_config.with_environment('PATH', config.llzk_tblgen_tools_dir, append_path=True)
 llvm_config.with_environment('PATH', config.llvm_tools_dir, append_path=True)
 
-tool_dirs = [config.llzk_tools_dir, config.llvm_tools_dir]
+tool_dirs = [config.llzk_tools_dir, config.llzk_tblgen_tools_dir, config.llvm_tools_dir]
 tools = [
-    "llzk-opt", "r1cs-opt"
+    "llzk-opt", "llzk-tblgen", "llzk-witgen", "r1cs-opt"
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

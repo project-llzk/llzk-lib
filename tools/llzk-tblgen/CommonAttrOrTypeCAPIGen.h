@@ -174,7 +174,7 @@ struct AttrOrTypeImplementationGenerator : public ImplementationGenerator {
     this->paramNameCapitalized = toPascalCase(name);
   }
 
-  virtual void genPrologue() const {
+  void genPrologue() const override {
     os << R"(
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
@@ -266,9 +266,16 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
           argListStream << ", ::llvm::ArrayRef<" << cppElemType << ">(" << pName << ", " << pName
                         << "Count)";
         } else {
-          prefixStream << "SmallVector<Attribute> storage;";
-          argListStream << ", llvm::map_to_vector(unwrapList(" << pName << "Count, " << pName
-                        << ", storage), [](auto a) {return llvm::cast<RecordAttr>(a);})";
+          std::optional<std::string> storageCppType = mapCapiTypeToBasicCppType(capiElemType);
+          if (storageCppType.has_value()) {
+            prefixStream << "SmallVector<" << storageCppType.value() << "> storage;";
+            argListStream << ", llvm::map_to_vector(unwrapList(" << pName << "Count, " << pName
+                          << ", storage), [](auto a) {return llvm::cast<" << cppElemType
+                          << ">(a);})";
+          } else {
+            prefixStream << "SmallVector<" << cppElemType << "> storage;";
+            argListStream << ", unwrapList(" << pName << "Count, " << pName << ", storage)";
+          }
         }
       } else {
         std::string capiType = mapCppTypeToCapiType(cppType);

@@ -42,6 +42,10 @@ public:
   explicit SourceRefLatticeValue(ScalarTy s) : Base(std::move(s)) {}
   explicit SourceRefLatticeValue(SourceRef r) : Base(ScalarTy {std::move(r)}) {}
   SourceRefLatticeValue() : Base(ScalarTy {}) {}
+  SourceRefLatticeValue(const SourceRefLatticeValue &) = default;
+  SourceRefLatticeValue(SourceRefLatticeValue &&) = default;
+  SourceRefLatticeValue &operator=(const SourceRefLatticeValue &) = default;
+  SourceRefLatticeValue &operator=(SourceRefLatticeValue &&) = default;
   virtual ~SourceRefLatticeValue() = default;
 
   // Create an empty array of the given shape.

@@ -609,7 +609,7 @@ public:
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the member
       MemberDefOp newMember = rewriter.create<MemberDefOp>(
-          op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn(), op.getSignal()
+          op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
       );
       newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map

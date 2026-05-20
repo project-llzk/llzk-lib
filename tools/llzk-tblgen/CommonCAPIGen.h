@@ -118,8 +118,8 @@ inline bool isIntegerType(mlir::StringRef type) {
     if (type == "max" || type == "ptr") {
       return true;
     }
-    // Optional "_fast" or "_least" and finally bit width to cover the rest
-    type.consume_back("_fast") || type.consume_back("_least");
+    // Optional "_fast" or "_least" followed by bit width to cover the rest
+    type.consume_front("_fast") || type.consume_front("_least");
     if (type == "8" || type == "16" || type == "32" || type == "64") {
       return true;
     }
@@ -319,6 +319,13 @@ std::optional<std::string> tryCppTypeToCapiType(mlir::StringRef cppType);
 /// Use extractArrayRefElementType() first and then use this on the result.
 std::string mapCppTypeToCapiType(mlir::StringRef cppType);
 
+/// @brief Map C API type to corresponding basic (not dialect-defined) C++ type
+/// @param capiType The C API type to map
+/// @return The corresponding C++ type string if convertible, std::nullopt otherwise
+///
+/// @note The parameter to this function should be something returned from `tryCppTypeToCapiType()`.
+std::optional<std::string> mapCapiTypeToBasicCppType(mlir::StringRef capiType);
+
 /// @brief Base class for C API generators
 struct Generator {
   Generator(std::string_view recordKind, llvm::raw_ostream &outputStream)
@@ -444,6 +451,8 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
 struct ImplementationGenerator : public Generator {
   using Generator::Generator;
   ~ImplementationGenerator() override = default;
+
+  virtual void genPrologue() const {}
 
   virtual void genIsAImpl() const {
     static constexpr char fmt[] = R"(

@@ -1,0 +1,45 @@
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/read.llzk --inputs %t/input.json --uninitialized-behavior=fail 2>&1 | FileCheck %s --check-prefix=READ
+// RUN: not llzk-witgen %t/read.llzk --inputs %t/input.json --backend=execution-engine --uninitialized-behavior=fail 2>&1 | FileCheck %s --check-prefix=READ
+// RUN: not llzk-witgen %t/serialize.llzk --inputs %t/input.json --uninitialized-behavior=fail 2>&1 | FileCheck %s --check-prefix=SERIALIZE
+// RUN: not llzk-witgen %t/serialize.llzk --inputs %t/input.json --backend=execution-engine --uninitialized-behavior=fail 2>&1 | FileCheck %s --check-prefix=SERIALIZE
+
+//--- read.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %x = llzk.nondet : !felt.type<"babybear">
+      %y = felt.add %x, %x : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@out] = %y : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// READ: read of uninitialized felt value
+
+//--- serialize.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// SERIALIZE: read of uninitialized felt value
+
+//--- input.json
+{}

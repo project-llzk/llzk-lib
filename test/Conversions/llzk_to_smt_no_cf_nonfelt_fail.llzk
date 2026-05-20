@@ -1,4 +1,5 @@
 // RUN: not llzk-opt --llzk-to-smt-no-cf='field=babybear' %s 2>&1 | FileCheck %s
+// RUN: not llzk-opt --llzk-to-smt-no-cf-naive='field=babybear' %s 2>&1 | FileCheck %s
 
 module attributes {llzk.lang} {
   struct.def @NonFeltWrite {
