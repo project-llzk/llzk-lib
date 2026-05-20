@@ -917,7 +917,8 @@ class SMTOptimizedNonNativeLoweringPass
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
-    auto result = mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
+    auto result =
+        mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");

@@ -55,12 +55,13 @@ bool containsFeltOrStruct(mlir::Type type);
 
 mlir::Operation *convertStructProductToFunc(mlir::Operation *op, mlir::MLIRContext *context);
 
-void configureSMTNoCFBodyConversionTarget(mlir::MLIRContext &context,
-                                          mlir::ConversionTarget &target);
+void configureSMTNoCFBodyConversionTarget(
+    mlir::MLIRContext &context, mlir::ConversionTarget &target
+);
 
-mlir::Operation *applySMTNoCFBodyConversion(mlir::Operation *op,
-                                            mlir::ConversionTarget &target,
-                                            mlir::RewritePatternSet &&patterns);
+mlir::Operation *applySMTNoCFBodyConversion(
+    mlir::Operation *op, mlir::ConversionTarget &target, mlir::RewritePatternSet &&patterns
+);
 
 mlir::LogicalResult validateSupportedSMTMemberAccesses(component::StructDefOp structDef);
 
@@ -69,8 +70,7 @@ template <class From, class To> class BasicConverter : public mlir::OpConversion
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      From fromOp, typename From::Adaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      From fromOp, typename From::Adaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override {
     rewriter.template replaceOpWithNewOp<To>(fromOp, adaptor.getOperands());
     return mlir::success();
@@ -82,21 +82,18 @@ class FunctionDefConverter : public mlir::OpConversionPattern<function::FuncDefO
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      function::FuncDefOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      function::FuncDefOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 
 class MemberReadConverter : public mlir::OpConversionPattern<component::MemberReadOp> {
 public:
   MemberReadConverter(
-      mlir::TypeConverter &typeConverter, mlir::MLIRContext *context,
-      const SignalSymbols &signalMap
+      mlir::TypeConverter &typeConverter, mlir::MLIRContext *context, const SignalSymbols &signalMap
   );
 
   mlir::LogicalResult matchAndRewrite(
-      component::MemberReadOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      component::MemberReadOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 
 private:
@@ -108,8 +105,7 @@ class StructDefConverter : public mlir::OpConversionPattern<component::StructDef
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      component::StructDefOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      component::StructDefOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 
@@ -118,8 +114,7 @@ class ReturnConverter : public mlir::OpConversionPattern<function::ReturnOp> {
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      function::ReturnOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      function::ReturnOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 
@@ -128,8 +123,7 @@ class SCFIfConverter : public mlir::OpConversionPattern<mlir::scf::IfOp> {
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      mlir::scf::IfOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      mlir::scf::IfOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 
@@ -138,8 +132,7 @@ class YieldConverter : public mlir::OpConversionPattern<mlir::scf::YieldOp> {
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      mlir::scf::YieldOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      mlir::scf::YieldOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 
@@ -148,8 +141,7 @@ class FeltConstConverter : public mlir::OpConversionPattern<felt::FeltConstantOp
 
 public:
   mlir::LogicalResult matchAndRewrite(
-      felt::FeltConstantOp op, OpAdaptor adaptor,
-      mlir::ConversionPatternRewriter &rewriter
+      felt::FeltConstantOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 

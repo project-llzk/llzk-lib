@@ -120,8 +120,8 @@ void configureSMTNoCFBodyConversionTarget(MLIRContext &context, ConversionTarget
   });
 }
 
-Operation *applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target,
-                                      RewritePatternSet &&patterns) {
+Operation *
+applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatternSet &&patterns) {
   if (op == nullptr) {
     return op;
   }
@@ -176,8 +176,7 @@ LogicalResult validateSupportedSMTMemberAccesses(component::StructDefOp structDe
 LogicalResult FunctionDefConverter::matchAndRewrite(
     function::FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
-  SmallVector<Type> convertedArgTypes =
-      llvm::map_to_vector(op.getArgumentTypes(), [this](Type t) {
+  SmallVector<Type> convertedArgTypes = llvm::map_to_vector(op.getArgumentTypes(), [this](Type t) {
     return getTypeConverter()->convertType(t);
   });
   SmallVector<Type> convertedResultTypes = llvm::map_to_vector(
@@ -259,18 +258,16 @@ LogicalResult ReturnConverter::matchAndRewrite(
 LogicalResult SCFIfConverter::matchAndRewrite(
     scf::IfOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
-  SmallVector<Type> convertedResultTypes =
-      llvm::map_to_vector(op.getResultTypes(), [this](Type t) {
+  SmallVector<Type> convertedResultTypes = llvm::map_to_vector(op.getResultTypes(), [this](Type t) {
     return getTypeConverter()->convertType(t);
   });
 
   Value cond = adaptor.getCondition();
   if (!isa<IntegerType>(cond.getType())) {
-    cond = rewriter
-               .create<UnrealizedConversionCastOp>(
-                   op.getLoc(), TypeRange {rewriter.getI1Type()}, cond
-               )
-               .getResult(0);
+    cond =
+        rewriter
+            .create<UnrealizedConversionCastOp>(op.getLoc(), TypeRange {rewriter.getI1Type()}, cond)
+            .getResult(0);
   }
 
   auto convertedIf = rewriter.create<scf::IfOp>(

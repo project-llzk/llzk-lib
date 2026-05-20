@@ -15,9 +15,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "smt/Conversions/ConversionPasses.h"
-
 #include "SMTLoweringCommon.h"
+#include "smt/Conversions/ConversionPasses.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
@@ -71,52 +70,49 @@ using namespace llzk::smt::detail;
 
 namespace {
 
-static smt::IntConstantOp
-createSMTIntConstant(OpBuilder &builder, Location loc, MLIRContext *ctx, const llvm::APSInt &value) {
+static smt::IntConstantOp createSMTIntConstant(
+    OpBuilder &builder, Location loc, MLIRContext *ctx, const llvm::APSInt &value
+) {
   return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, value));
 }
 
-static smt::IntConstantOp createSMTPrimeConstant(OpBuilder &builder, Location loc,
-                                                 MLIRContext *ctx,
-                                                 const llvm::APSInt &prime) {
+static smt::IntConstantOp createSMTPrimeConstant(
+    OpBuilder &builder, Location loc, MLIRContext *ctx, const llvm::APSInt &prime
+) {
   return createSMTIntConstant(builder, loc, ctx, prime);
 }
 
-static smt::IntConstantOp createSMTZeroConstant(OpBuilder &builder, Location loc,
-                                                MLIRContext *ctx) {
+static smt::IntConstantOp
+createSMTZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) {
   return builder.create<smt::IntConstantOp>(
       loc, IntegerAttr::get(ctx, llvm::APSInt {llvm::APInt {1, 0}})
   );
 }
 
-static smt::IntConstantOp createSMTOneConstant(OpBuilder &builder, Location loc,
-                                               MLIRContext *ctx) {
+static smt::IntConstantOp createSMTOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) {
   return builder.create<smt::IntConstantOp>(
-      loc, IntegerAttr::get(
-               ctx, llvm::APSInt(llvm::APInt(64, 1), /*isUnsigned=*/false)
-           )
+      loc, IntegerAttr::get(ctx, llvm::APSInt(llvm::APInt(64, 1), /*isUnsigned=*/false))
   );
 }
 
-static Value createSMTModPrimeExpr(OpBuilder &builder, Location loc, Value value,
-                                   MLIRContext *ctx, const llvm::APSInt &prime) {
+static Value createSMTModPrimeExpr(
+    OpBuilder &builder, Location loc, Value value, MLIRContext *ctx, const llvm::APSInt &prime
+) {
   auto primeConst = createSMTPrimeConstant(builder, loc, ctx, prime);
-  return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()})
-      .getResult();
+  return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()}).getResult();
 }
 
 class NaiveNonNativeStrategy {
 public:
   explicit NaiveNonNativeStrategy(llvm::APSInt prime);
 
-  smt::IntConstantOp createZeroConstant(OpBuilder &builder, Location loc,
-                                        MLIRContext *ctx) const;
-  smt::IntConstantOp createOneConstant(OpBuilder &builder, Location loc,
-                                       MLIRContext *ctx) const;
-  Value createModPrimeExpr(OpBuilder &builder, Location loc, Value value,
-                           MLIRContext *ctx) const;
-  void populatePatterns(RewritePatternSet &patterns, TypeConverter &typeConverter,
-                        MLIRContext *context, const SignalSymbols &signalSymbols) const;
+  smt::IntConstantOp createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
+  smt::IntConstantOp createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
+  Value createModPrimeExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
+  void populatePatterns(
+      RewritePatternSet &patterns, TypeConverter &typeConverter, MLIRContext *context,
+      const SignalSymbols &signalSymbols
+  ) const;
 
 private:
   llvm::APSInt prime;
@@ -125,8 +121,7 @@ private:
 class NaiveFeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
 public:
   NaiveFeltDivConverter(
-      TypeConverter &typeConverter, MLIRContext *context,
-      const NaiveNonNativeStrategy *strategy
+      TypeConverter &typeConverter, MLIRContext *context, const NaiveNonNativeStrategy *strategy
   )
       : OpConversionPattern<felt::DivFeltOp>(typeConverter, context, /*benefit=*/2),
         strategy(strategy) {}
@@ -166,8 +161,7 @@ private:
 class NaiveFeltInvConverter : public OpConversionPattern<felt::InvFeltOp> {
 public:
   NaiveFeltInvConverter(
-      TypeConverter &typeConverter, MLIRContext *context,
-      const NaiveNonNativeStrategy *strategy
+      TypeConverter &typeConverter, MLIRContext *context, const NaiveNonNativeStrategy *strategy
   )
       : OpConversionPattern<felt::InvFeltOp>(typeConverter, context, /*benefit=*/2),
         strategy(strategy) {}
@@ -188,11 +182,9 @@ public:
     );
     auto productMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), product.getResult(), getContext());
-    auto productEqualsOne =
-        rewriter.create<smt::EqOp>(op->getLoc(), productMod, one.getResult());
+    auto productEqualsOne = rewriter.create<smt::EqOp>(op->getLoc(), productMod, one.getResult());
     auto invConstraint = rewriter.create<smt::IteOp>(
-        op->getLoc(), operandIsZero.getResult(), invIsZero.getResult(),
-        productEqualsOne.getResult()
+        op->getLoc(), operandIsZero.getResult(), invIsZero.getResult(), productEqualsOne.getResult()
     );
     rewriter.create<smt::AssertOp>(op->getLoc(), invConstraint.getResult());
     rewriter.replaceOp(op, inv.getResult());
@@ -226,8 +218,7 @@ public:
     }
 
     auto [_, witness] = it->second;
-    auto witnessMod =
-        strategy->createModPrimeExpr(rewriter, op->getLoc(), witness, getContext());
+    auto witnessMod = strategy->createModPrimeExpr(rewriter, op->getLoc(), witness, getContext());
     auto valueMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getVal(), getContext());
     auto equal = rewriter.create<smt::EqOp>(op->getLoc(), witnessMod, valueMod);
@@ -243,8 +234,7 @@ private:
 class NaiveConstrainConverter : public OpConversionPattern<constrain::EmitEqualityOp> {
 public:
   NaiveConstrainConverter(
-      TypeConverter &typeConverter, MLIRContext *context,
-      const NaiveNonNativeStrategy *strategy
+      TypeConverter &typeConverter, MLIRContext *context, const NaiveNonNativeStrategy *strategy
   )
       : OpConversionPattern<constrain::EmitEqualityOp>(typeConverter, context, /*benefit=*/2),
         strategy(strategy) {}
@@ -252,12 +242,10 @@ public:
   LogicalResult matchAndRewrite(
       constrain::EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto lhsMod = strategy->createModPrimeExpr(
-        rewriter, op->getLoc(), adaptor.getLhs(), getContext()
-    );
-    auto rhsMod = strategy->createModPrimeExpr(
-        rewriter, op->getLoc(), adaptor.getRhs(), getContext()
-    );
+    auto lhsMod =
+        strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getLhs(), getContext());
+    auto rhsMod =
+        strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getRhs(), getContext());
     auto eq = rewriter.create<smt::EqOp>(op->getLoc(), lhsMod, rhsMod);
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, eq.getResult());
     return success();
@@ -334,8 +322,9 @@ void NaiveNonNativeStrategy::populatePatterns(
       BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>,
       BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>,
       BasicConverter<felt::SignedModFeltOp, smt::IntModOp>, FeltConstConverter,
-      FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter,
-      NaiveBoolCmpConverter>(typeConverter, context);
+      FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter, NaiveBoolCmpConverter>(
+      typeConverter, context
+  );
   patterns.add<NaiveFeltDivConverter>(typeConverter, context, this);
   patterns.add<NaiveFeltInvConverter>(typeConverter, context, this);
   patterns.add<NaiveConstrainConverter>(typeConverter, context, this);
@@ -349,8 +338,9 @@ class SMTNaiveNonNativeLoweringPass
     registry.insert<smt::SMTDialect, mlir::func::FuncDialect>();
   }
 
-  Operation *convertBodies(Operation *op, const SignalSymbols &signalSymbols,
-                           const NaiveNonNativeStrategy &strategy) {
+  Operation *convertBodies(
+      Operation *op, const SignalSymbols &signalSymbols, const NaiveNonNativeStrategy &strategy
+  ) {
     if (op == nullptr) {
       return op;
     }
@@ -403,8 +393,7 @@ class SMTNaiveNonNativeLoweringPass
             StringAttr::get(&getContext(), constraintName)
         );
         auto witnessSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), witnessName)
+            preamble, smt::IntType::get(&getContext()), StringAttr::get(&getContext(), witnessName)
         );
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
