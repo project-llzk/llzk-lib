@@ -47,6 +47,9 @@ llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 /// `val < 2^bitWidth` — have a clear sign bit and print as positive decimals.
 llvm::APInt toAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
 
+/// Converts a DynamicAPInt to an APInt with exactly the requested bit width.
+llvm::APInt toExactWidthAPInt(const llvm::DynamicAPInt &i, unsigned bitWidth);
+
 llvm::DynamicAPInt modExp(
     const llvm::DynamicAPInt &base, const llvm::DynamicAPInt &exp, const llvm::DynamicAPInt &mod
 );

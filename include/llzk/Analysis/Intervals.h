@@ -102,7 +102,13 @@ public:
     return std::is_eq(lhs <=> rhs);
   };
 
-  /* Utility */
+  /* Utility for hashing unreduced intervals */
+  struct Hash {
+    unsigned operator()(const UnreducedInterval &ui) const {
+      return llvm::hash_value(ui.a) ^ llvm::hash_value(ui.b);
+    }
+  };
+
   llvm::DynamicAPInt getLHS() const { return a; }
   llvm::DynamicAPInt getRHS() const { return b; }
 

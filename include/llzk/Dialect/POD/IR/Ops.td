@@ -29,18 +29,18 @@ def LLZK_NewPodOp
                                OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "create a new plain-old-data struct";
   let description = [{
-    Creates a new, uninitialized, pod instance. Optionally, the user can pass a list of record names and values 
-    that initialize the records of the pod. Partial initialization is allowed. All records without 
+    Creates a new, uninitialized, pod instance. Optionally, the user can pass a list of record names and values
+    that initialize the records of the pod. Partial initialization is allowed. All records without
     an explicit initialization are initialized with nondeterministic values.
 
-    If the types of the pod records have affine map parameters the user can pass values for them similar 
-    to how `array.new` does it. 
+    If the types of the pod records have affine map parameters the user can pass values for them similar
+    to how `array.new` does it.
 
     This operation returns one value of type `PODType` and, if present, the records passed for initialization
     must form a subset of the records in the type.
 
     Examples:
-    ```llzk 
+    ```llzk
     // Empty pod instance
     %0 = pod.new : !pod.type<[]>
 
@@ -48,16 +48,16 @@ def LLZK_NewPodOp
     %0 = pod.new : !pod.type<[@n: !felt.type]>
 
     // Initialized pod instance
-    %0 = felt.const_felt 1 
+    %0 = felt.const 1
     %1 = pod.new { @n = %0 } : !pod.type<[@n: !felt.type]>
 
     // Another one, but with 2 fields
-    %0 = felt.const_felt 1
+    %0 = felt.const 1
     %1 = felt.inv %0
     %2 = pod.new { @n = %0, @inv = %1 } :	!pod.type<[@n: !felt.type, @inv: !felt.type]>
 
     // Partial init
-    %0 = felt.const_felt 1
+    %0 = felt.const 1
     %1 = pod.new { @n = %0 } : !pod.type<[@n: !felt.type, @inv: !felt.type]>
 
     // Affine map args on uninitialized pod instance
@@ -68,7 +68,7 @@ def LLZK_NewPodOp
     // Affine map with initialized records
     %0 = arith.constant 1 : index
     %c = arith.constant 2 : index
-    %1 = felt.const_felt 5 
+    %1 = felt.const 5
     %2 = pod.new { @f = %1 }(%0)[%c] : !pod.type<[@f: !felt.type, @a: !array.type<#map, !felt.type>]>
     ```
   }];
@@ -116,10 +116,10 @@ def LLZK_NewPodOp
 def LLZK_ReadPodOp : PODDialectOp<"read"> {
   let summary = "reads the contents of a plain-old-data struct record";
   let description = [{
-    Reads the current value of a named record from a pod instance. 
+    Reads the current value of a named record from a pod instance.
     Returns one value of the type of the record.
 
-    The name of the record must be a valid record name for the pod type and the result 
+    The name of the record must be a valid record name for the pod type and the result
     type must match the type of the record.
 
     Example:
@@ -142,7 +142,7 @@ def LLZK_WritePodOp : PODDialectOp<"write"> {
   let description = [{
     Writes a value into a named record of a pod instance. This operation has no result values.
 
-    The name of the record must be a valid record name for the pod type and the source 
+    The name of the record must be a valid record name for the pod type and the source
     value type must match the type of the record.
 
     Writing a record that was written or initialized earlier overwrites the previous value.

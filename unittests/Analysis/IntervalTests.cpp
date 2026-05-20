@@ -12,11 +12,14 @@
 
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
@@ -293,6 +296,11 @@ TEST_F(IntervalTests, Mod) {
 
 class IntervalAnalysisAPITests : public LLZKTest {
 protected:
+  inline static void
+  AssertUnreducedIntervalEq(const UnreducedInterval &expected, const UnreducedInterval &actual) {
+    ASSERT_TRUE(checkCond(expected, actual, expected == actual));
+  }
+
   static constexpr auto kArrayIntervalModule = R"mlir(
 module attributes {llzk.lang} {
   struct.def @ArrayIntervals {
@@ -351,10 +359,237 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kUnreducedIntervalPropagationModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @TrackUnreduced {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreduced>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : <@TrackUnreduced>
+      %felt_const_5 = felt.const 5
+      %sum = felt.add %a, %felt_const_5 : !felt.type, !felt.type
+      %neg = felt.neg %sum : !felt.type
+      %div = felt.uintdiv %sum, %felt_const_5
+      struct.writem %self[@out] = %neg : <@TrackUnreduced>, !felt.type
+      function.return %self : !struct.type<@TrackUnreduced>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreduced>, %a: !felt.type)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kUnreducedBoolAndSelectModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedBoolAndSelect {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%flag: i1) -> !struct.type<@TrackUnreducedBoolAndSelect>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : <@TrackUnreducedBoolAndSelect>
+      %true = arith.constant true
+      %false = arith.constant false
+      %felt_const_3 = felt.const 3
+      %felt_const_9 = felt.const 9
+      %xor = bool.xor %true, %false
+      %not = bool.not %flag
+      %sel_true = arith.select %true, %felt_const_3, %felt_const_9 : !felt.type
+      %sel_false = arith.select %false, %felt_const_3, %felt_const_9 : !felt.type
+      %sel_flag = arith.select %flag, %felt_const_3, %felt_const_9 : !felt.type
+      struct.writem %self[@out] = %sel_flag : <@TrackUnreducedBoolAndSelect>, !felt.type
+      function.return %self : !struct.type<@TrackUnreducedBoolAndSelect>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedBoolAndSelect>, %flag: i1)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kUnreducedTypeFLiftModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedTypeF {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreducedTypeF>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : <@TrackUnreducedTypeF>
+      %felt_const_1 = felt.const 1
+      %cmp = bool.cmp le(%a, %felt_const_1) : !felt.type, !felt.type
+      bool.assert %cmp
+      %neg = felt.neg %a : !felt.type
+      struct.writem %self[@out] = %neg : <@TrackUnreducedTypeF>, !felt.type
+      function.return %self : !struct.type<@TrackUnreducedTypeF>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedTypeF>, %a: !felt.type)
+        attributes {function.allow_constraint} {
+      %read = struct.readm %self[@out] : <@TrackUnreducedTypeF>, !felt.type
+      %felt_const_0 = felt.const 0
+      %sum = felt.add %read, %felt_const_0 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kUnreducedTypeFPropagationModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedTypeFPropagation {
+    function.def @compute(%a: !felt.type) -> !struct.type<@TrackUnreducedTypeFPropagation>
+        attributes {function.allow_witness, function.allow_non_native_field_ops} {
+      %self = struct.new : <@TrackUnreducedTypeFPropagation>
+      function.return %self : !struct.type<@TrackUnreducedTypeFPropagation>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedTypeFPropagation>, %a: !felt.type)
+        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %felt_const_1 = felt.const 1
+      %sum = felt.add %a, %felt_const_1 : !felt.type, !felt.type
+      %cmp = bool.cmp le(%sum, %felt_const_1) : !felt.type, !felt.type
+      bool.assert %cmp
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kUnreducedSignalReadDefaultModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @TrackUnreducedSignalReadDefault {
+    struct.member @sig : !felt.type {signal}
+
+    function.def @compute() -> !struct.type<@TrackUnreducedSignalReadDefault>
+        attributes {function.allow_witness} {
+      %self = struct.new : <@TrackUnreducedSignalReadDefault>
+      function.return %self : !struct.type<@TrackUnreducedSignalReadDefault>
+    }
+
+    function.def @constrain(%self: !struct.type<@TrackUnreducedSignalReadDefault>)
+        attributes {function.allow_constraint} {
+      %sig = struct.readm %self[@sig] : <@TrackUnreducedSignalReadDefault>, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kUnreducedIsZeroModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @IsZero {
+    struct.member @out : !felt.type {llzk.pub}
+    struct.member @inv : !felt.type
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@IsZero>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@IsZero>
+      %const_1 = felt.const 1
+      %inv = felt.inv %in
+      struct.writem %self[@inv] = %inv : <@IsZero>, !felt.type
+      %neg_in = felt.neg %in : !felt.type
+      %mul = felt.mul %neg_in, %inv : !felt.type, !felt.type
+      %out = felt.add %mul, %const_1 : !felt.type, !felt.type
+      struct.writem %self[@out] = %out : <@IsZero>, !felt.type
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(%self: !struct.type<@IsZero>, %in: !felt.type)
+        attributes {function.allow_constraint} {
+      %const_0 = felt.const 0
+      %const_1 = felt.const 1
+      %out = struct.readm %self[@out] : <@IsZero>, !felt.type
+      %inv = struct.readm %self[@inv] : <@IsZero>, !felt.type
+      %neg_in = felt.neg %in : !felt.type
+      %mul = felt.mul %neg_in, %inv : !felt.type, !felt.type
+      %sum = felt.add %mul, %const_1 : !felt.type, !felt.type
+      constrain.eq %out, %sum : !felt.type, !felt.type
+      %zero_prod = felt.mul %in, %out : !felt.type, !felt.type
+      constrain.eq %zero_prod, %const_0 : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kProductFunctionIntervalModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ProductIntervals {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @product(%a: !felt.type) -> !struct.type<@ProductIntervals>
+        attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness, llzk.derived} {
+      %self = struct.new : <@ProductIntervals>
+      %five = felt.const 5
+      %six = felt.const 6
+      %cmp0 = bool.cmp ge(%a, %five) : !felt.type, !felt.type
+      bool.assert %cmp0
+      %cmp1 = bool.cmp le(%a, %six) : !felt.type, !felt.type
+      bool.assert %cmp1
+      %sum = felt.add %a, %five : !felt.type, !felt.type
+      struct.writem %self[@out] = %sum : <@ProductIntervals>, !felt.type
+      %read = struct.readm %self[@out] : <@ProductIntervals>, !felt.type
+      constrain.eq %read, %sum : !felt.type, !felt.type
+      function.return %self : !struct.type<@ProductIntervals>
+    }
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@ProductIntervals>
+        attributes {function.allow_witness} {
+      %self = struct.new : <@ProductIntervals>
+      function.return %self : !struct.type<@ProductIntervals>
+    }
+
+    function.def @constrain(%self: !struct.type<@ProductIntervals>, %a: !felt.type)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  static constexpr auto kProductFunctionUnreducedModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ProductUnreducedIntervals {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @product(%a: !felt.type) -> !struct.type<@ProductUnreducedIntervals>
+        attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness, llzk.derived} {
+      %self = struct.new : <@ProductUnreducedIntervals>
+      %five = felt.const 5
+      %sum = felt.add %a, %five : !felt.type, !felt.type
+      struct.writem %self[@out] = %sum : <@ProductUnreducedIntervals>, !felt.type
+      %read = struct.readm %self[@out] : <@ProductUnreducedIntervals>, !felt.type
+      constrain.eq %read, %sum : !felt.type, !felt.type
+      function.return %self : !struct.type<@ProductUnreducedIntervals>
+    }
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@ProductUnreducedIntervals>
+        attributes {function.allow_witness} {
+      %self = struct.new : <@ProductUnreducedIntervals>
+      function.return %self : !struct.type<@ProductUnreducedIntervals>
+    }
+
+    function.def @constrain(%self: !struct.type<@ProductUnreducedIntervals>, %a: !felt.type)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
     EXPECT_TRUE(mod);
     return mod;
+  }
+
+  const IntervalAnalysisLattice *lookupLattice(ModuleIntervalAnalysis &analysis, Value value) {
+    return analysis.getSolver().lookupState<IntervalAnalysisLattice>(value);
   }
 };
 
@@ -451,4 +686,506 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsDisabledByDefault) {
+  auto mod = parseModule(kUnreducedIntervalPropagationModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  felt::FeltConstantOp constFive;
+  felt::AddFeltOp sumOp;
+  felt::NegFeltOp negOp;
+  felt::UnsignedIntDivFeltOp divOp;
+  computeFn.walk([&](Operation *op) {
+    if (auto c = dyn_cast<felt::FeltConstantOp>(op)) {
+      constFive = c;
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      sumOp = add;
+    } else if (auto neg = dyn_cast<felt::NegFeltOp>(op)) {
+      negOp = neg;
+    } else if (auto div = dyn_cast<felt::UnsignedIntDivFeltOp>(op)) {
+      divOp = div;
+    }
+  });
+  ASSERT_TRUE(constFive != nullptr);
+  ASSERT_TRUE(sumOp != nullptr);
+  ASSERT_TRUE(negOp != nullptr);
+  ASSERT_TRUE(divOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  SmallVector<Value> values = {
+      computeFn.getArgument(0), constFive.getResult(), sumOp.getResult(), negOp.getResult(),
+      divOp.getResult()
+  };
+  for (Value value : values) {
+    const IntervalAnalysisLattice *lattice = lookupLattice(analysis, value);
+    ASSERT_NE(lattice, nullptr);
+    EXPECT_FALSE(lattice->getValue().getScalarValue().hasUnreducedInterval())
+        << buildStringViaPrint(value);
+  }
+}
+
+TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsPropagateThroughSupportedArithmetic) {
+  auto mod = parseModule(kUnreducedIntervalPropagationModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  felt::FeltConstantOp constFive;
+  felt::AddFeltOp sumOp;
+  felt::NegFeltOp negOp;
+  felt::UnsignedIntDivFeltOp divOp;
+  computeFn.walk([&](Operation *op) {
+    if (auto c = dyn_cast<felt::FeltConstantOp>(op)) {
+      constFive = c;
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      sumOp = add;
+    } else if (auto neg = dyn_cast<felt::NegFeltOp>(op)) {
+      negOp = neg;
+    } else if (auto div = dyn_cast<felt::UnsignedIntDivFeltOp>(op)) {
+      divOp = div;
+    }
+  });
+  ASSERT_TRUE(constFive != nullptr);
+  ASSERT_TRUE(sumOp != nullptr);
+  ASSERT_TRUE(negOp != nullptr);
+  ASSERT_TRUE(divOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, computeFn.getArgument(0));
+  ASSERT_NE(argLattice, nullptr);
+  const ExpressionValue &argExpr = argLattice->getValue().getScalarValue();
+  ASSERT_TRUE(argExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.zero(), field.maxVal()), argExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *constLattice = lookupLattice(analysis, constFive.getResult());
+  ASSERT_NE(constLattice, nullptr);
+  const ExpressionValue &constExpr = constLattice->getValue().getScalarValue();
+  ASSERT_TRUE(constExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(5), field.felt(5)), constExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *sumLattice = lookupLattice(analysis, sumOp.getResult());
+  ASSERT_NE(sumLattice, nullptr);
+  const ExpressionValue &sumExpr = sumLattice->getValue().getScalarValue();
+  ASSERT_TRUE(sumExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(5), field.maxVal() + field.felt(5)),
+      sumExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *negLattice = lookupLattice(analysis, negOp.getResult());
+  ASSERT_NE(negLattice, nullptr);
+  const ExpressionValue &negExpr = negLattice->getValue().getScalarValue();
+  ASSERT_TRUE(negExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(-(field.maxVal() + field.felt(5)), -field.felt(5)),
+      negExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *divLattice = lookupLattice(analysis, divOp.getResult());
+  ASSERT_NE(divLattice, nullptr);
+  EXPECT_FALSE(divLattice->getValue().getScalarValue().hasUnreducedInterval());
+}
+
+TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsTrackBooleanAndSelectResults) {
+  auto mod = parseModule(kUnreducedBoolAndSelectModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  arith::ConstantOp trueConst;
+  arith::ConstantOp falseConst;
+  boolean::XorBoolOp xorOp;
+  boolean::NotBoolOp notOp;
+  SmallVector<arith::SelectOp> selectOps;
+  computeFn.walk([&](Operation *op) {
+    if (auto cst = dyn_cast<arith::ConstantOp>(op)) {
+      if (auto boolAttr = dyn_cast<BoolAttr>(cst.getValue())) {
+        if (boolAttr.getValue()) {
+          trueConst = cst;
+        } else {
+          falseConst = cst;
+        }
+      }
+    } else if (auto xorBool = dyn_cast<boolean::XorBoolOp>(op)) {
+      xorOp = xorBool;
+    } else if (auto notBool = dyn_cast<boolean::NotBoolOp>(op)) {
+      notOp = notBool;
+    } else if (auto select = dyn_cast<arith::SelectOp>(op)) {
+      selectOps.push_back(select);
+    }
+  });
+  ASSERT_TRUE(trueConst != nullptr);
+  ASSERT_TRUE(falseConst != nullptr);
+  ASSERT_TRUE(xorOp != nullptr);
+  ASSERT_TRUE(notOp != nullptr);
+  ASSERT_EQ(selectOps.size(), 3U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *flagLattice = lookupLattice(analysis, computeFn.getArgument(0));
+  ASSERT_NE(flagLattice, nullptr);
+  const ExpressionValue &flagExpr = flagLattice->getValue().getScalarValue();
+  ASSERT_TRUE(flagExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(UnreducedInterval(0, 1), flagExpr.getUnreducedInterval());
+
+  const IntervalAnalysisLattice *trueLattice = lookupLattice(analysis, trueConst.getResult());
+  ASSERT_NE(trueLattice, nullptr);
+  ASSERT_TRUE(trueLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(1, 1), trueLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *falseLattice = lookupLattice(analysis, falseConst.getResult());
+  ASSERT_NE(falseLattice, nullptr);
+  ASSERT_TRUE(falseLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(0, 0), falseLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *xorLattice = lookupLattice(analysis, xorOp.getResult());
+  ASSERT_NE(xorLattice, nullptr);
+  ASSERT_TRUE(xorLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(1, 1), xorLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *notLattice = lookupLattice(analysis, notOp.getResult());
+  ASSERT_NE(notLattice, nullptr);
+  ASSERT_TRUE(notLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(0, 1), notLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *selectTrueLattice =
+      lookupLattice(analysis, selectOps[0].getResult());
+  ASSERT_NE(selectTrueLattice, nullptr);
+  ASSERT_TRUE(selectTrueLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(3), field.felt(3)),
+      selectTrueLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *selectFalseLattice =
+      lookupLattice(analysis, selectOps[1].getResult());
+  ASSERT_NE(selectFalseLattice, nullptr);
+  ASSERT_TRUE(selectFalseLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(9), field.felt(9)),
+      selectFalseLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *selectFlagLattice =
+      lookupLattice(analysis, selectOps[2].getResult());
+  ASSERT_NE(selectFlagLattice, nullptr);
+  ASSERT_TRUE(selectFlagLattice->getValue().getScalarValue().hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(3), field.felt(9)),
+      selectFlagLattice->getValue().getScalarValue().getUnreducedInterval()
+  );
+}
+
+TEST_F(IntervalAnalysisAPITests, RefinedReducedIntervalsDropUnreducedIntervals) {
+  auto mod = parseModule(kUnreducedTypeFLiftModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  felt::NegFeltOp negOp;
+  computeFn.walk([&](felt::NegFeltOp op) { negOp = op; });
+  ASSERT_TRUE(negOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, computeFn.getArgument(0));
+  ASSERT_NE(argLattice, nullptr);
+  EXPECT_FALSE(argLattice->getValue().getScalarValue().hasUnreducedInterval());
+
+  const IntervalAnalysisLattice *negLattice = lookupLattice(analysis, negOp.getResult());
+  ASSERT_NE(negLattice, nullptr);
+  EXPECT_FALSE(negLattice->getValue().getScalarValue().hasUnreducedInterval());
+}
+
+TEST_F(IntervalAnalysisAPITests, TypeFConstraintPropagationUsesFirstUnreducedInterval) {
+  auto mod = parseModule(kUnreducedTypeFPropagationModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setPropagateInputConstraints(true);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, computeFn.getArgument(0));
+  ASSERT_NE(argLattice, nullptr);
+  const ExpressionValue &argExpr = argLattice->getValue().getScalarValue();
+  ASSERT_TRUE(argExpr.getInterval().isTypeF());
+  ASSERT_TRUE(argExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(UnreducedInterval(-1, 0), argExpr.getUnreducedInterval());
+}
+
+TEST_F(IntervalAnalysisAPITests, UnconstrainedSignalReadsDefaultToCanonicalUnreducedInterval) {
+  auto mod = parseModule(kUnreducedSignalReadDefaultModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  ASSERT_TRUE(constrainFn != nullptr);
+
+  component::MemberReadOp readOp;
+  constrainFn.walk([&](component::MemberReadOp op) { readOp = op; });
+  ASSERT_TRUE(readOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *readLattice = lookupLattice(analysis, readOp.getResult());
+  ASSERT_NE(readLattice, nullptr);
+  const ExpressionValue &readExpr = readLattice->getValue().getScalarValue();
+  ASSERT_TRUE(readExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.zero(), field.maxVal()), readExpr.getUnreducedInterval()
+  );
+}
+
+TEST_F(IntervalAnalysisAPITests, IsZeroTracksWideUnreducedMulAndSumIntervals) {
+  auto mod = parseModule(kUnreducedIsZeroModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+  ASSERT_TRUE(constrainFn != nullptr);
+
+  llvm::SmallVector<felt::InvFeltOp> computeInvOps;
+  llvm::SmallVector<felt::NegFeltOp> computeNegOps;
+  llvm::SmallVector<felt::MulFeltOp> computeMulOps;
+  llvm::SmallVector<felt::AddFeltOp> computeAddOps;
+  computeFn.walk([&](Operation *op) {
+    if (auto inv = dyn_cast<felt::InvFeltOp>(op)) {
+      computeInvOps.push_back(inv);
+    } else if (auto neg = dyn_cast<felt::NegFeltOp>(op)) {
+      computeNegOps.push_back(neg);
+    } else if (auto mul = dyn_cast<felt::MulFeltOp>(op)) {
+      computeMulOps.push_back(mul);
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      computeAddOps.push_back(add);
+    }
+  });
+  ASSERT_EQ(computeInvOps.size(), 1U);
+  ASSERT_EQ(computeNegOps.size(), 1U);
+  ASSERT_EQ(computeMulOps.size(), 1U);
+  ASSERT_EQ(computeAddOps.size(), 1U);
+
+  llvm::SmallVector<felt::NegFeltOp> constrainNegOps;
+  llvm::SmallVector<felt::MulFeltOp> constrainMulOps;
+  llvm::SmallVector<felt::AddFeltOp> constrainAddOps;
+  constrainFn.walk([&](Operation *op) {
+    if (auto neg = dyn_cast<felt::NegFeltOp>(op)) {
+      constrainNegOps.push_back(neg);
+    } else if (auto mul = dyn_cast<felt::MulFeltOp>(op)) {
+      constrainMulOps.push_back(mul);
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      constrainAddOps.push_back(add);
+    }
+  });
+  ASSERT_EQ(constrainNegOps.size(), 1U);
+  ASSERT_EQ(constrainMulOps.size(), 2U);
+  ASSERT_EQ(constrainAddOps.size(), 1U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  auto pMinusOne = field.maxVal();
+  auto square = pMinusOne * pMinusOne;
+  auto oneMinusSquare = field.one() - square;
+
+  auto assertValueHasUnreduced = [&](Value value, const UnreducedInterval &expected) {
+    const IntervalAnalysisLattice *lattice = lookupLattice(analysis, value);
+    ASSERT_NE(lattice, nullptr);
+    const ExpressionValue &expr = lattice->getValue().getScalarValue();
+    ASSERT_TRUE(expr.hasUnreducedInterval());
+    AssertUnreducedIntervalEq(expected, expr.getUnreducedInterval());
+  };
+
+  assertValueHasUnreduced(
+      computeInvOps.front().getResult(), UnreducedInterval(field.zero(), field.maxVal())
+  );
+  assertValueHasUnreduced(
+      computeNegOps.front().getResult(), UnreducedInterval(-pMinusOne, field.zero())
+  );
+  assertValueHasUnreduced(
+      computeMulOps.front().getResult(), UnreducedInterval(-square, field.zero())
+  );
+  assertValueHasUnreduced(
+      computeAddOps.front().getResult(), UnreducedInterval(oneMinusSquare, field.one())
+  );
+
+  assertValueHasUnreduced(
+      constrainNegOps.front().getResult(), UnreducedInterval(-pMinusOne, field.zero())
+  );
+  assertValueHasUnreduced(
+      constrainMulOps.front().getResult(), UnreducedInterval(-square, field.zero())
+  );
+  assertValueHasUnreduced(
+      constrainAddOps.front().getResult(), UnreducedInterval(oneMinusSquare, field.one())
+  );
+}
+
+TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackReducedIntervals) {
+  auto mod = parseModule(kProductFunctionIntervalModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto productFn = structDef.getProductFuncOp();
+  ASSERT_TRUE(productFn != nullptr);
+
+  felt::AddFeltOp sumOp;
+  component::MemberReadOp readOp;
+  productFn.walk([&](Operation *op) {
+    if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      sumOp = add;
+    } else if (auto read = dyn_cast<component::MemberReadOp>(op)) {
+      readOp = read;
+    }
+  });
+  ASSERT_TRUE(sumOp != nullptr);
+  ASSERT_TRUE(readOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, productFn.getArgument(0));
+  ASSERT_NE(argLattice, nullptr);
+  const ExpressionValue &argExpr = argLattice->getValue().getScalarValue();
+  ASSERT_TRUE(checkCond(
+      Interval::TypeA(field, field.felt(5), field.felt(6)), argExpr.getInterval(),
+      argExpr.getInterval() == Interval::TypeA(field, field.felt(5), field.felt(6))
+  ));
+
+  const IntervalAnalysisLattice *sumLattice = lookupLattice(analysis, sumOp.getResult());
+  ASSERT_NE(sumLattice, nullptr);
+  const ExpressionValue &sumExpr = sumLattice->getValue().getScalarValue();
+  ASSERT_TRUE(checkCond(
+      Interval::TypeA(field, field.felt(10), field.felt(11)), sumExpr.getInterval(),
+      sumExpr.getInterval() == Interval::TypeA(field, field.felt(10), field.felt(11))
+  ));
+
+  const IntervalAnalysisLattice *readLattice = lookupLattice(analysis, readOp.getResult());
+  ASSERT_NE(readLattice, nullptr);
+  const ExpressionValue &readExpr = readLattice->getValue().getScalarValue();
+  ASSERT_TRUE(checkCond(
+      Interval::TypeA(field, field.felt(10), field.felt(11)), readExpr.getInterval(),
+      readExpr.getInterval() == Interval::TypeA(field, field.felt(10), field.felt(11))
+  ));
+}
+
+TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackUnreducedIntervals) {
+  auto mod = parseModule(kProductFunctionUnreducedModule);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto productFn = structDef.getProductFuncOp();
+  ASSERT_TRUE(productFn != nullptr);
+
+  felt::FeltConstantOp constFive;
+  felt::AddFeltOp sumOp;
+  component::MemberReadOp readOp;
+  productFn.walk([&](Operation *op) {
+    if (auto cst = dyn_cast<felt::FeltConstantOp>(op)) {
+      constFive = cst;
+    } else if (auto add = dyn_cast<felt::AddFeltOp>(op)) {
+      sumOp = add;
+    } else if (auto read = dyn_cast<component::MemberReadOp>(op)) {
+      readOp = read;
+    }
+  });
+  ASSERT_TRUE(constFive != nullptr);
+  ASSERT_TRUE(sumOp != nullptr);
+  ASSERT_TRUE(readOp != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.setTrackUnreducedIntervals(true);
+  analysis.runAnalysis(am);
+
+  const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, productFn.getArgument(0));
+  ASSERT_NE(argLattice, nullptr);
+  const ExpressionValue &argExpr = argLattice->getValue().getScalarValue();
+  ASSERT_TRUE(argExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.zero(), field.maxVal()), argExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *constLattice = lookupLattice(analysis, constFive.getResult());
+  ASSERT_NE(constLattice, nullptr);
+  const ExpressionValue &constExpr = constLattice->getValue().getScalarValue();
+  ASSERT_TRUE(constExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(5), field.felt(5)), constExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *sumLattice = lookupLattice(analysis, sumOp.getResult());
+  ASSERT_NE(sumLattice, nullptr);
+  const ExpressionValue &sumExpr = sumLattice->getValue().getScalarValue();
+  ASSERT_TRUE(sumExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(5), field.maxVal() + field.felt(5)),
+      sumExpr.getUnreducedInterval()
+  );
+
+  const IntervalAnalysisLattice *readLattice = lookupLattice(analysis, readOp.getResult());
+  ASSERT_NE(readLattice, nullptr);
+  const ExpressionValue &readExpr = readLattice->getValue().getScalarValue();
+  ASSERT_TRUE(readExpr.hasUnreducedInterval());
+  AssertUnreducedIntervalEq(
+      UnreducedInterval(field.felt(5), field.maxVal() + field.felt(5)),
+      readExpr.getUnreducedInterval()
+  );
 }

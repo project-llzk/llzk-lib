@@ -60,7 +60,6 @@
 
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
-#define GEN_PASS_DECL_FLATTENINGPASS
 #define GEN_PASS_DEF_FLATTENINGPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
@@ -2316,7 +2315,12 @@ private:
 } // namespace Step5_Cleanup
 
 class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
+public:
+  using Base = llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass>;
+  // Allows us to use the default construction and explicit options constructor
+  using Base::Base;
 
+private:
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -2531,4 +2535,9 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
 std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass() {
   return std::make_unique<FlatteningPass>();
+};
+
+std::unique_ptr<Pass>
+llzk::polymorphic::createFlatteningPass(llzk::polymorphic::FlatteningPassOptions &&options) {
+  return std::make_unique<FlatteningPass>(options);
 };

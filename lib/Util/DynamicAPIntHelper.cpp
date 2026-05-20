@@ -144,6 +144,12 @@ APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
   return APInt(bitWidth + 1, str, 10);
 }
 
+APInt toExactWidthAPInt(const DynamicAPInt &val, unsigned bitWidth) {
+  SmallString<64> str;
+  raw_svector_ostream(str) << val;
+  return APInt(bitWidth, str, 10);
+}
+
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {
   DynamicAPInt result(1);
   DynamicAPInt b = base;

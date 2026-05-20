@@ -1,0 +1,72 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @TLeaf {
+    poly.param @A
+    poly.param @B
+
+    struct.def @Leaf {
+      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+      function.def @compute() -> !struct.type<@TLeaf::@Leaf<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TLeaf::@Leaf<[@A, @B]>>
+        %a = poly.read_const @A : !felt.type<"babybear">
+        %b = poly.read_const @B : !felt.type<"babybear">
+        %sum = felt.add %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+        struct.writem %self[@out] = %sum : !struct.type<@TLeaf::@Leaf<[@A, @B]>>, !felt.type<"babybear">
+        function.return %self : !struct.type<@TLeaf::@Leaf<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TLeaf::@Leaf<[@A, @B]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TMid {
+    poly.param @C
+
+    struct.def @Mid {
+      struct.member @leaf : !struct.type<@TLeaf::@Leaf<[5, @C]>>
+      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+      function.def @compute() -> !struct.type<@TMid::@Mid<[@C]>> {
+        %self = struct.new : !struct.type<@TMid::@Mid<[@C]>>
+        %leaf = function.call @TLeaf::@Leaf::@compute() : () -> !struct.type<@TLeaf::@Leaf<[5, @C]>>
+        struct.writem %self[@leaf] = %leaf : !struct.type<@TMid::@Mid<[@C]>>, !struct.type<@TLeaf::@Leaf<[5, @C]>>
+        %leafOut = struct.readm %leaf[@out] : !struct.type<@TLeaf::@Leaf<[5, @C]>>, !felt.type<"babybear">
+        %one = felt.const 1 <"babybear">
+        %out = felt.add %leafOut, %one : !felt.type<"babybear">, !felt.type<"babybear">
+        struct.writem %self[@out] = %out : !struct.type<@TMid::@Mid<[@C]>>, !felt.type<"babybear">
+        function.return %self : !struct.type<@TMid::@Mid<[@C]>>
+      }
+      function.def @constrain(%self: !struct.type<@TMid::@Mid<[@C]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @mid : !struct.type<@TMid::@Mid<[43]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %mid = function.call @TMid::@Mid::@compute() : () -> !struct.type<@TMid::@Mid<[43]>>
+      struct.writem %self[@mid] = %mid : !struct.type<@Main>, !struct.type<@TMid::@Mid<[43]>>
+      %out = struct.readm %mid[@out] : !struct.type<@TMid::@Mid<[43]>>, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": "49"
+// CHECK-NEXT: }
+
+//--- input.json
+{}
