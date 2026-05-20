@@ -48,14 +48,6 @@ static bool usesUnsignedCmp(scf::ForOp forOp) {
   return forOp->hasAttr("unsignedCmp");
 }
 
-/// Convert an unsigned intermediate back to `int64_t`, rejecting underflow.
-static llvm::Expected<int64_t> toCheckedInt64(uint64_t value) {
-  if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
-    return makeError("value of uint64_t does not fit in signed int64_t");
-  }
-  return static_cast<int64_t>(value);
-}
-
 /// Represent the values yielded by a block or region along with termination state.
 struct BlockResult {
   bool terminated = false;
@@ -828,50 +820,36 @@ private:
     }
     if (auto divUIOp = dyn_cast<arith::DivUIOp>(op)) {
       return handleBinaryIndex(divUIOp, [](int64_t lhs, int64_t rhs) {
+        // Unsigned division directly interprets int64 as unsigned value.
         auto divRes = static_cast<uint64_t>(lhs) / static_cast<uint64_t>(rhs);
         return static_cast<int64_t>(divRes);
       });
     }
     if (auto cmpIOp = dyn_cast<arith::CmpIOp>(op)) {
       return handleBinaryIndex(cmpIOp, [&cmpIOp](int64_t lhs, int64_t rhs) -> bool {
-        bool result = false;
         switch (cmpIOp.getPredicate()) {
         case arith::CmpIPredicate::eq:
-          result = lhs == rhs;
-          break;
+          return lhs == rhs;
         case arith::CmpIPredicate::ne:
-          result = lhs != rhs;
-          break;
+          return lhs != rhs;
         case arith::CmpIPredicate::slt:
-          result = lhs < rhs;
-          break;
+          return lhs < rhs;
         case arith::CmpIPredicate::sle:
-          result = lhs <= rhs;
-          break;
+          return lhs <= rhs;
         case arith::CmpIPredicate::sgt:
-          result = lhs > rhs;
-          break;
+          return lhs > rhs;
         case arith::CmpIPredicate::sge:
-          result = lhs >= rhs;
-          break;
-        case arith::CmpIPredicate::ult: {
-          result = static_cast<uint64_t>(lhs) < static_cast<uint64_t>(rhs);
-          break;
+          return lhs >= rhs;
+        // Unsigned comparisons directly interprets int64 as unsigned value.
+        case arith::CmpIPredicate::ult:
+          return static_cast<uint64_t>(lhs) < static_cast<uint64_t>(rhs);
+        case arith::CmpIPredicate::ule:
+          return static_cast<uint64_t>(lhs) <= static_cast<uint64_t>(rhs);
+        case arith::CmpIPredicate::ugt:
+          return static_cast<uint64_t>(lhs) > static_cast<uint64_t>(rhs);
+        case arith::CmpIPredicate::uge:
+          return static_cast<uint64_t>(lhs) >= static_cast<uint64_t>(rhs);
         }
-        case arith::CmpIPredicate::ule: {
-          result = static_cast<uint64_t>(lhs) <= static_cast<uint64_t>(rhs);
-          break;
-        }
-        case arith::CmpIPredicate::ugt: {
-          result = static_cast<uint64_t>(lhs) > static_cast<uint64_t>(rhs);
-          break;
-        }
-        case arith::CmpIPredicate::uge: {
-          result = static_cast<uint64_t>(lhs) >= static_cast<uint64_t>(rhs);
-          break;
-        }
-        }
-        return result;
       });
     }
 
@@ -929,14 +907,14 @@ private:
         return stepValue.takeError();
       }
       auto lowerBound = asIndex(*lowerBoundValue);
-      auto upperBound = asIndex(*upperBoundValue);
-      auto step = asIndex(*stepValue);
       if (!lowerBound) {
         return lowerBound.takeError();
       }
+      auto upperBound = asIndex(*upperBoundValue);
       if (!upperBound) {
         return upperBound.takeError();
       }
+      auto step = asIndex(*stepValue);
       if (!step) {
         return step.takeError();
       }
@@ -947,12 +925,13 @@ private:
       llvm::SmallVector<WitnessVal> iterValues = std::move(*iterValuesOrErr);
 
       if (usesUnsignedCmp(forOp)) {
+        // Unsigned comparison directly interprets int64 as unsigned value.
         auto lowerBoundUIntValue = static_cast<uint64_t>(*lowerBound);
         auto upperBoundUIntValue = static_cast<uint64_t>(*upperBound);
         auto stepUInt = static_cast<uint64_t>(*step);
         for (uint64_t iv = lowerBoundUIntValue, ub = upperBoundUIntValue, unsignedStep = stepUInt;
              iv < ub; iv += unsignedStep) {
-          auto signedIV = toCheckedInt64(iv);
+          auto signedIV = checkedCast<int64_t>(iv);
           if (!signedIV) {
             return signedIV.takeError();
           }
