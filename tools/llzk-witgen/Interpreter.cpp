@@ -30,6 +30,7 @@
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/MathExtras.h>
 
 #include <limits>
 #include <random>

@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <random>
+#include <utility>
 
 namespace llzk::witgen {
 

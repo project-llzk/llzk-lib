@@ -20,6 +20,7 @@
 #include <mlir/IR/Operation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/MathExtras.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;

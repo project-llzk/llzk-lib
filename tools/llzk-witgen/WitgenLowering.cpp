@@ -51,6 +51,7 @@
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/MathExtras.h>
 
 #include <limits>
 
