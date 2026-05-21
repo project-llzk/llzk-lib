@@ -35,6 +35,8 @@ auto llzk::function::FunctionDialect::initialize() -> void {
     #include "llzk/Dialect/Function/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Function/IR/Attrs.cpp.inc"

@@ -414,7 +414,7 @@ module attributes {llzk.main = !struct.type<@MyMain>, llzk.lang} {
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: 12}}
+// expected-error@+1 {{"llzk.main" on module must be a concrete 'struct.type' attribute. Found: 12}}
 module attributes {llzk.main = 12, llzk.lang} {
   poly.template @TMustBeStruct {
     poly.param @N
@@ -431,7 +431,7 @@ module attributes {llzk.main = 12, llzk.lang} {
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !felt.type}}
+// expected-error@+1 {{"llzk.main" on module must be a concrete 'struct.type' attribute. Found: !felt.type}}
 module attributes {llzk.main = !felt.type, llzk.lang} {
   poly.template @TMustBeStruct {
     poly.param @N
@@ -448,7 +448,7 @@ module attributes {llzk.main = !felt.type, llzk.lang} {
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotAffine::@NotAffine<[affine_map}}
+// expected-error@+1 {{"llzk.main" on module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotAffine::@NotAffine<[affine_map}}
 module attributes {llzk.main = !struct.type<@TNotAffine::@NotAffine<[affine_map<(i)->(i)>]>>, llzk.lang} {
   poly.template @TNotAffine {
     poly.param @N
@@ -465,7 +465,7 @@ module attributes {llzk.main = !struct.type<@TNotAffine::@NotAffine<[affine_map<
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotSymbol::@NotSymbol<[@X]>>}}
+// expected-error@+1 {{"llzk.main" on module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotSymbol::@NotSymbol<[@X]>>}}
 module attributes {llzk.main = !struct.type<@TNotSymbol::@NotSymbol<[@X]>>, llzk.lang} {
   poly.template @TNotSymbol {
     poly.param @N
@@ -482,7 +482,7 @@ module attributes {llzk.main = !struct.type<@TNotSymbol::@NotSymbol<[@X]>>, llzk
   }
 }
 // -----
-// expected-error@+1 {{"llzk.main" on top-level module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotVar::@NotVar<[!poly.tvar<@X>]>>}}
+// expected-error@+1 {{"llzk.main" on module must be a concrete 'struct.type' attribute. Found: !struct.type<@TNotVar::@NotVar<[!poly.tvar<@X>]>>}}
 module attributes {llzk.main = !struct.type<@TNotVar::@NotVar<[!poly.tvar<@X>]>>, llzk.lang} {
   poly.template @TNotVar {
     poly.param @N

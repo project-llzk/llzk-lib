@@ -30,6 +30,7 @@
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/MathExtras.h>
 
 #include <limits>
 #include <random>
@@ -46,14 +47,6 @@ static bool usesUnsignedCmp(scf::ForOp forOp) {
     return boolAttr.getValue();
   }
   return forOp->hasAttr("unsignedCmp");
-}
-
-/// Convert an unsigned intermediate back to `int64_t`, rejecting underflow.
-static llvm::Expected<int64_t> toCheckedInt64(uint64_t value) {
-  if (value > llzk::checkedCast<uint64_t>(std::numeric_limits<int64_t>::max())) {
-    return makeError("unsigned value does not fit in signed int64_t");
-  }
-  return llzk::checkedCast<int64_t>(value);
 }
 
 /// Represent the values yielded by a block or region along with termination state.
@@ -75,7 +68,7 @@ llvm::Expected<size_t> checkedLinearize(
     }
   }
   auto strides = mlir::computeStrides(shape);
-  return llzk::checkedCast<size_t>(mlir::linearize(indices, strides));
+  return checkedCast<size_t>(mlir::linearize(indices, strides));
 }
 
 } // namespace
@@ -86,7 +79,7 @@ FunctionInterpreter::FunctionInterpreter(
     UninitializedBehavior behavior, std::mt19937_64 r
 )
     : moduleOp(module), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
-      rng(std::move(r)) {}
+      rng(r) {}
 
 namespace {
 
@@ -689,19 +682,21 @@ private:
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
+      bool baseOverflow = false;
+      size_t base = llvm::SaturatingMultiply(*prefixOffset, *subArraySize, &baseOverflow);
+      if (baseOverflow) {
+        return makeError("array.extract element offset would overflow size_t");
+      }
       auto subArray = std::make_shared<ArrayValue>();
       subArray->type = extractArrayOp.getType();
       subArray->elements.reserve(*subArraySize);
-      llvm::DynamicAPInt base(*prefixOffset);
-      base *= *subArraySize;
       for (size_t i = 0; i < *subArraySize; ++i) {
-        auto elementOffset = base + i;
-        auto checkedElementOffset =
-            checkedDynamicAPIntToSize(elementOffset, "array.extract element offset");
-        if (!checkedElementOffset) {
-          return checkedElementOffset.takeError();
+        bool overflow = false;
+        size_t elementOffset = llvm::SaturatingAdd(base, i, &overflow);
+        if (overflow) {
+          return makeError("array.extract element offset would overflow size_t");
         }
-        subArray->elements.push_back((*arrayRef)->elements[*checkedElementOffset]);
+        subArray->elements.push_back((*arrayRef)->elements[elementOffset]);
       }
       return bind({subArray});
     }
@@ -735,26 +730,24 @@ private:
         indices.push_back(*index);
       }
       llvm::ArrayRef<int64_t> shape = (*arrayRef)->type.getShape();
-      llvm::DynamicAPInt subArraySize((*subArrayRef)->elements.size());
+      size_t subArraySize = (*subArrayRef)->elements.size();
       auto prefixOffset =
           checkedLinearize(shape.take_front(indices.size()), indices, "array index out of bounds");
       if (!prefixOffset) {
         return prefixOffset.takeError();
       }
-      llvm::DynamicAPInt base(*prefixOffset);
-      base *= subArraySize;
-      auto checkedSubArraySize = checkedDynamicAPIntToSize(subArraySize, "array.insert shape");
-      if (!checkedSubArraySize) {
-        return checkedSubArraySize.takeError();
+      bool baseOverflow = false;
+      size_t base = llvm::SaturatingMultiply(*prefixOffset, subArraySize, &baseOverflow);
+      if (baseOverflow) {
+        return makeError("array.insert element offset would overflow size_t");
       }
-      for (size_t i = 0; i < *checkedSubArraySize; ++i) {
-        llvm::DynamicAPInt elementOffset = base + i;
-        auto checkedElementOffset =
-            checkedDynamicAPIntToSize(elementOffset, "array.insert element offset");
-        if (!checkedElementOffset) {
-          return checkedElementOffset.takeError();
+      for (size_t i = 0; i < subArraySize; ++i) {
+        bool overflow = false;
+        size_t elementOffset = llvm::SaturatingAdd(base, i, &overflow);
+        if (overflow) {
+          return makeError("array.insert element offset would overflow size_t");
         }
-        (*arrayRef)->elements[*checkedElementOffset] = (*subArrayRef)->elements[i];
+        (*arrayRef)->elements[elementOffset] = (*subArrayRef)->elements[i];
       }
       return BlockResult {};
     }
@@ -828,50 +821,37 @@ private:
     }
     if (auto divUIOp = dyn_cast<arith::DivUIOp>(op)) {
       return handleBinaryIndex(divUIOp, [](int64_t lhs, int64_t rhs) {
+        // Unsigned division directly interprets int64 as unsigned value.
         auto divRes = static_cast<uint64_t>(lhs) / static_cast<uint64_t>(rhs);
         return static_cast<int64_t>(divRes);
       });
     }
     if (auto cmpIOp = dyn_cast<arith::CmpIOp>(op)) {
       return handleBinaryIndex(cmpIOp, [&cmpIOp](int64_t lhs, int64_t rhs) -> bool {
-        bool result = false;
         switch (cmpIOp.getPredicate()) {
         case arith::CmpIPredicate::eq:
-          result = lhs == rhs;
-          break;
+          return lhs == rhs;
         case arith::CmpIPredicate::ne:
-          result = lhs != rhs;
-          break;
+          return lhs != rhs;
         case arith::CmpIPredicate::slt:
-          result = lhs < rhs;
-          break;
+          return lhs < rhs;
         case arith::CmpIPredicate::sle:
-          result = lhs <= rhs;
-          break;
+          return lhs <= rhs;
         case arith::CmpIPredicate::sgt:
-          result = lhs > rhs;
-          break;
+          return lhs > rhs;
         case arith::CmpIPredicate::sge:
-          result = lhs >= rhs;
-          break;
-        case arith::CmpIPredicate::ult: {
-          result = static_cast<uint64_t>(lhs) < static_cast<uint64_t>(rhs);
-          break;
+          return lhs >= rhs;
+        // Unsigned comparisons directly interprets int64 as unsigned value.
+        case arith::CmpIPredicate::ult:
+          return static_cast<uint64_t>(lhs) < static_cast<uint64_t>(rhs);
+        case arith::CmpIPredicate::ule:
+          return static_cast<uint64_t>(lhs) <= static_cast<uint64_t>(rhs);
+        case arith::CmpIPredicate::ugt:
+          return static_cast<uint64_t>(lhs) > static_cast<uint64_t>(rhs);
+        case arith::CmpIPredicate::uge:
+          return static_cast<uint64_t>(lhs) >= static_cast<uint64_t>(rhs);
         }
-        case arith::CmpIPredicate::ule: {
-          result = static_cast<uint64_t>(lhs) <= static_cast<uint64_t>(rhs);
-          break;
-        }
-        case arith::CmpIPredicate::ugt: {
-          result = static_cast<uint64_t>(lhs) > static_cast<uint64_t>(rhs);
-          break;
-        }
-        case arith::CmpIPredicate::uge: {
-          result = static_cast<uint64_t>(lhs) >= static_cast<uint64_t>(rhs);
-          break;
-        }
-        }
-        return result;
+        llvm_unreachable("unknown comparison predicate");
       });
     }
 
@@ -929,14 +909,14 @@ private:
         return stepValue.takeError();
       }
       auto lowerBound = asIndex(*lowerBoundValue);
-      auto upperBound = asIndex(*upperBoundValue);
-      auto step = asIndex(*stepValue);
       if (!lowerBound) {
         return lowerBound.takeError();
       }
+      auto upperBound = asIndex(*upperBoundValue);
       if (!upperBound) {
         return upperBound.takeError();
       }
+      auto step = asIndex(*stepValue);
       if (!step) {
         return step.takeError();
       }
@@ -947,12 +927,13 @@ private:
       llvm::SmallVector<WitnessVal> iterValues = std::move(*iterValuesOrErr);
 
       if (usesUnsignedCmp(forOp)) {
+        // Unsigned comparison directly interprets int64 as unsigned value.
         auto lowerBoundUIntValue = static_cast<uint64_t>(*lowerBound);
         auto upperBoundUIntValue = static_cast<uint64_t>(*upperBound);
         auto stepUInt = static_cast<uint64_t>(*step);
         for (uint64_t iv = lowerBoundUIntValue, ub = upperBoundUIntValue, unsignedStep = stepUInt;
              iv < ub; iv += unsignedStep) {
-          auto signedIV = toCheckedInt64(iv);
+          auto signedIV = checkedCast<int64_t>(iv);
           if (!signedIV) {
             return signedIV.takeError();
           }

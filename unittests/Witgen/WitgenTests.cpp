@@ -33,6 +33,19 @@ using namespace llzk;
 
 class WitgenTests : public LLZKTest {};
 
+class WitgenFieldTests : public LLZKTest, public ::testing::WithParamInterface<std::string> {};
+
+static std::string substituteFieldName(llvm::StringRef source, llvm::StringRef fieldName) {
+  std::string result = source.str();
+  const std::string placeholder = "babybear";
+  size_t pos = 0;
+  while ((pos = result.find(placeholder, pos)) != std::string::npos) {
+    result.replace(pos, placeholder.size(), fieldName.str());
+    pos += fieldName.size();
+  }
+  return result;
+}
+
 static function::FuncDefOp getUniqueFuncByName(ModuleOp module, StringRef name) {
   function::FuncDefOp result;
   module.walk([&](function::FuncDefOp funcOp) {
@@ -43,13 +56,13 @@ static function::FuncDefOp getUniqueFuncByName(ModuleOp module, StringRef name) 
   return result;
 }
 
-TEST_F(WitgenTests, ParseJSONArrayInput) {
+TEST_P(WitgenFieldTests, ParseJSONArrayInput) {
   auto parsed = llvm::json::parse(R"([1, "2", 3])");
   ASSERT_TRUE(static_cast<bool>(parsed));
 
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {3});
-  auto field = Field::tryGetField("babybear");
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   auto value = witgen::parseJSONValue(&*parsed, arrayType, field->get(), nullptr);
@@ -62,13 +75,13 @@ TEST_F(WitgenTests, ParseJSONArrayInput) {
   EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[2]), field->get().reduce(3));
 }
 
-TEST_F(WitgenTests, ParseJSONArrayNestedInput) {
+TEST_P(WitgenFieldTests, ParseJSONArrayNestedInput) {
   auto parsed = llvm::json::parse(R"([[1, 2], [3, "4"]])");
   ASSERT_TRUE(static_cast<bool>(parsed));
 
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {2, 2});
-  auto field = Field::tryGetField("babybear");
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   auto value = witgen::parseJSONValue(&*parsed, arrayType, field->get(), nullptr);
@@ -82,9 +95,9 @@ TEST_F(WitgenTests, ParseJSONArrayNestedInput) {
   EXPECT_EQ(std::get<llvm::DynamicAPInt>(arrayValue->elements[3]), field->get().reduce(4));
 }
 
-TEST_F(WitgenTests, DefaultValueFailsOnUninitializedRead) {
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
-  auto field = Field::tryGetField("babybear");
+TEST_P(WitgenFieldTests, DefaultValueFailsOnUninitializedRead) {
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
@@ -98,10 +111,10 @@ TEST_F(WitgenTests, DefaultValueFailsOnUninitializedRead) {
   EXPECT_NE(llvm::toString(felt.takeError()).find("uninitialized felt value"), std::string::npos);
 }
 
-TEST_F(WitgenTests, RandomDefaultValueIsSeeded) {
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+TEST_P(WitgenFieldTests, RandomDefaultValueIsSeeded) {
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {2});
-  auto field = Field::tryGetField("babybear");
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
@@ -141,8 +154,8 @@ TEST_F(WitgenTests, SharedWitgenRngUsesDeterministicSeed) {
   EXPECT_EQ(lhs(), rhs());
 }
 
-TEST_F(WitgenTests, SharedRandomHelpersAreSeeded) {
-  auto field = Field::tryGetField("babybear");
+TEST_P(WitgenFieldTests, SharedRandomHelpersAreSeeded) {
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   std::mt19937_64 rngA(1234);
@@ -155,8 +168,8 @@ TEST_F(WitgenTests, SharedRandomHelpersAreSeeded) {
   EXPECT_EQ(witgen::randomBoolValue(rngA), witgen::randomBoolValue(rngB));
 }
 
-TEST_F(WitgenTests, RandomFieldHelperReturnsReducedValues) {
-  auto field = Field::tryGetField("babybear");
+TEST_P(WitgenFieldTests, RandomFieldHelperReturnsReducedValues) {
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   std::mt19937_64 rng(1234);
@@ -168,13 +181,13 @@ TEST_F(WitgenTests, RandomFieldHelperReturnsReducedValues) {
   }
 }
 
-TEST_F(WitgenTests, ParseJSONArrayRejectsDynamicShape) {
+TEST_P(WitgenFieldTests, ParseJSONArrayRejectsDynamicShape) {
   auto parsed = llvm::json::parse(R"([1])");
   ASSERT_TRUE(static_cast<bool>(parsed));
 
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {ShapedType::kDynamic});
-  auto field = Field::tryGetField("babybear");
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   auto value = witgen::parseJSONValue(&*parsed, arrayType, field->get(), nullptr);
@@ -182,13 +195,13 @@ TEST_F(WitgenTests, ParseJSONArrayRejectsDynamicShape) {
   EXPECT_NE(llvm::toString(value.takeError()).find("requires a static shape"), std::string::npos);
 }
 
-TEST_F(WitgenTests, SerializeJSONArrayRejectsDynamicShape) {
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+TEST_P(WitgenFieldTests, SerializeJSONArrayRejectsDynamicShape) {
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {ShapedType::kDynamic});
 
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
-  arrayValue->elements.push_back(Field::getField("babybear").reduce(1));
+  arrayValue->elements.push_back(Field::getField(GetParam()).reduce(1));
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -196,13 +209,13 @@ TEST_F(WitgenTests, SerializeJSONArrayRejectsDynamicShape) {
   EXPECT_NE(llvm::toString(value.takeError()).find("requires a static shape"), std::string::npos);
 }
 
-TEST_F(WitgenTests, SerializeJSONArrayNestedOutput) {
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {2, 2});
 
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
-  auto field = Field::getField("babybear");
+  auto field = Field::getField(GetParam());
   arrayValue->elements.push_back(field.reduce(1));
   arrayValue->elements.push_back(field.reduce(2));
   arrayValue->elements.push_back(field.reduce(3));
@@ -237,10 +250,10 @@ TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
   EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
 }
 
-TEST_F(WitgenTests, NestedAggregateFailModeMaterializesMonostate) {
-  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, "babybear"));
+TEST_P(WitgenFieldTests, NestedAggregateFailModeMaterializesMonostate) {
+  auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {2});
-  auto field = Field::tryGetField("babybear");
+  auto field = Field::tryGetField(GetParam());
   ASSERT_TRUE(succeeded(field));
 
   SymbolTableCollection tables;
@@ -255,8 +268,9 @@ TEST_F(WitgenTests, NestedAggregateFailModeMaterializesMonostate) {
   EXPECT_TRUE(std::holds_alternative<std::monostate>(arrayValue->elements[1]));
 }
 
-TEST_F(WitgenTests, SerializeStructOnlyEmitsPublicMembers) {
-  constexpr llvm::StringLiteral source = R"llzk(
+TEST_P(WitgenFieldTests, SerializeStructOnlyEmitsPublicMembers) {
+  std::string source = substituteFieldName(
+      R"llzk(
     module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       struct.def @Main {
         struct.member @out : !felt.type<"babybear"> {llzk.pub}
@@ -270,7 +284,9 @@ TEST_F(WitgenTests, SerializeStructOnlyEmitsPublicMembers) {
         }
       }
     }
-  )llzk";
+  )llzk",
+      GetParam()
+  );
 
   auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
   ASSERT_TRUE(static_cast<bool>(module));
@@ -282,8 +298,8 @@ TEST_F(WitgenTests, SerializeStructOnlyEmitsPublicMembers) {
 
   auto structValue = std::make_shared<witgen::StructValue>();
   structValue->type = *mainType;
-  structValue->members["out"] = Field::getField("babybear").reduce(7);
-  structValue->members["tmp"] = Field::getField("babybear").reduce(9);
+  structValue->members["out"] = Field::getField(GetParam()).reduce(7);
+  structValue->members["tmp"] = Field::getField(GetParam()).reduce(9);
 
   auto json = witgen::serializeJSONValue(structValue, *mainType, tables, module->getOperation());
   ASSERT_TRUE(static_cast<bool>(json)) << llvm::toString(json.takeError());
@@ -294,7 +310,7 @@ TEST_F(WitgenTests, SerializeStructOnlyEmitsPublicMembers) {
   EXPECT_EQ(obj->get("tmp"), nullptr);
 }
 
-TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
+TEST_P(WitgenFieldTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
       function.def @u_div(%lhs: index, %rhs: index) -> index {
@@ -312,7 +328,7 @@ TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
 
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
-      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Zero,
+      *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(2)};
@@ -324,7 +340,7 @@ TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedDivUIOperands) {
   EXPECT_EQ(*quotient, std::numeric_limits<int64_t>::max());
 }
 
-TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedForBounds) {
+TEST_P(WitgenFieldTests, InterpreterHandlesNegativeUnsignedForBounds) {
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
       function.def @count_unsigned(%lb: index, %ub: index, %step: index) -> index {
@@ -352,7 +368,7 @@ TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedForBounds) {
 
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
-      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Zero,
+      *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {int64_t(-1), int64_t(1), int64_t(2)};
@@ -364,7 +380,7 @@ TEST_F(WitgenTests, InterpreterHandlesNegativeUnsignedForBounds) {
   EXPECT_EQ(*count, 0);
 }
 
-TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenFalse) {
+TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenFalse) {
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
       function.def @if_without_else(%cond: i1) -> index {
@@ -386,7 +402,7 @@ TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenFalse) {
 
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
-      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Zero,
+      *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {false};
@@ -398,7 +414,7 @@ TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenFalse) {
   EXPECT_EQ(*value, 1);
 }
 
-TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenTrue) {
+TEST_P(WitgenFieldTests, InterpreterHandlesIfWithoutElseWhenTrue) {
   constexpr llvm::StringLiteral source = R"mlir(
     module attributes {llzk.lang} {
       function.def @if_without_else(%cond: i1) -> index {
@@ -420,7 +436,7 @@ TEST_F(WitgenTests, InterpreterHandlesIfWithoutElseWhenTrue) {
 
   SymbolTableCollection tables;
   witgen::FunctionInterpreter interpreter(
-      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Zero,
+      *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Zero,
       std::mt19937_64(0)
   );
   llvm::SmallVector<witgen::WitnessVal> args = {true};
@@ -463,8 +479,9 @@ TEST_F(WitgenTests, InterpreterRejectsUnsignedToSignedIndexUnderflow) {
   EXPECT_NE(llvm::toString(std::move(error)).find("fit in index"), std::string::npos);
 }
 
-TEST_F(WitgenTests, InterpreterFailsDuringFinalWitnessSerialization) {
-  constexpr llvm::StringLiteral source = R"mlir(
+TEST_P(WitgenFieldTests, InterpreterFailsDuringFinalWitnessSerialization) {
+  std::string source = substituteFieldName(
+      R"mlir(
     module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       struct.def @Main {
         struct.member @out : !felt.type<"babybear"> {llzk.pub}
@@ -479,14 +496,16 @@ TEST_F(WitgenTests, InterpreterFailsDuringFinalWitnessSerialization) {
         }
       }
     }
-  )mlir";
+  )mlir",
+      GetParam()
+  );
 
   auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
   ASSERT_TRUE(static_cast<bool>(module));
 
   SymbolTableCollection tables;
   witgen::Interpreter interpreter(
-      *module, tables, Field::getField("babybear"), witgen::UninitializedBehavior::Fail,
+      *module, tables, Field::getField(GetParam()), witgen::UninitializedBehavior::Fail,
       std::mt19937_64(0)
   );
   interpreter.setOutputScope(witgen::OutputScope::Public);
@@ -494,3 +513,9 @@ TEST_F(WitgenTests, InterpreterFailsDuringFinalWitnessSerialization) {
   ASSERT_FALSE(static_cast<bool>(result));
   EXPECT_NE(llvm::toString(result.takeError()).find("uninitialized felt value"), std::string::npos);
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    AllFields, WitgenFieldTests,
+    // Test small, medium, and large prime fields to cover different code paths.
+    ::testing::Values("babybear", "goldilocks", "bn254")
+);

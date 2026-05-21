@@ -26,6 +26,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -50,6 +51,7 @@
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/MathExtras.h>
 
 #include <limits>
 
@@ -87,7 +89,7 @@ static std::string mangleFunctionName(function::FuncDefOp funcOp) {
       result += "__";
     }
     for (char c : piece) {
-      result += llvm::isAlnum(static_cast<unsigned char>(c)) ? c : '_';
+      result += llvm::isAlnum(c) ? c : '_';
     }
   }
   return std::string(result);
@@ -366,8 +368,7 @@ getNamedSubType(Type ownerType, StringRef name, SymbolTableCollection &tables, O
 }
 
 /// Create one static memref filled with zeros.
-static FailureOr<Value>
-createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const Field &field) {
+static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType) {
   auto elementCount = getStaticElementCount(memrefType, "witgen zero memref");
   if (!elementCount) {
     emitError(loc) << llvm::toString(elementCount.takeError());
@@ -385,8 +386,13 @@ createZeroMemRef(OpBuilder &builder, Location loc, MemRefType memrefType, const 
   }
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
+    auto flatSigned = checkedCast<int64_t>(flat);
+    if (!flatSigned) {
+      emitError(loc) << llvm::toString(flatSigned.takeError());
+      return failure();
+    }
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, strides)) {
+    for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     builder.create<memref::StoreOp>(loc, zero, alloc, indices);
@@ -408,8 +414,13 @@ static FailureOr<Value> createRandomMemRef(
   auto elementType = memrefType.getElementType();
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
+    auto flatSigned = checkedCast<int64_t>(flat);
+    if (!flatSigned) {
+      emitError(loc) << llvm::toString(flatSigned.takeError());
+      return failure();
+    }
     SmallVector<Value> indices;
-    for (int64_t index : mlir::delinearize(flat, strides)) {
+    for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
     if (isa<IndexType>(elementType)) {
@@ -489,7 +500,7 @@ static FailureOr<LoweredValue> createDefaultValue(
       continue;
     }
     if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
-      auto zeroMemRef = createZeroMemRef(builder, loc, memrefType, field);
+      auto zeroMemRef = createZeroMemRef(builder, loc, memrefType);
       if (failed(zeroMemRef)) {
         return failure();
       }
@@ -689,35 +700,49 @@ static LogicalResult writeNamedAggregateValue(
 }
 
 /// Create a static subview representing one aggregate array element leaf.
-static Value
+static FailureOr<Value>
 createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange outerIndices) {
   auto sourceType = mlir::cast<MemRefType>(source.getType());
   SmallVector<OpFoldResult> mixedOffsets;
   SmallVector<OpFoldResult> mixedSizes;
   SmallVector<OpFoldResult> mixedStrides;
-  const int64_t indexedRank = llzk::checkedCast<int64_t>(outerIndices.size());
+  auto indexedRank = checkedCast<int64_t>(outerIndices.size());
+  if (!indexedRank) {
+    emitError(loc) << llvm::toString(indexedRank.takeError());
+    return failure();
+  }
   mixedOffsets.reserve(sourceType.getRank());
   mixedSizes.reserve(sourceType.getRank());
   mixedStrides.reserve(sourceType.getRank());
   for (Value index : outerIndices) {
     mixedOffsets.push_back(index);
   }
-  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+  for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
     mixedOffsets.push_back(builder.getIndexAttr(0));
   }
-  for (int64_t dim = 0; dim < indexedRank; ++dim) {
+  for (int64_t dim = 0; dim < *indexedRank; ++dim) {
     mixedSizes.push_back(builder.getIndexAttr(1));
   }
-  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
+  for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
     mixedSizes.push_back(memref::getMixedSize(builder, loc, source, dim));
   }
   for (int64_t dim = 0; dim < sourceType.getRank(); ++dim) {
     mixedStrides.push_back(builder.getIndexAttr(1));
   }
   SmallVector<int64_t> desiredShape;
-  desiredShape.reserve(llzk::checkedCast<size_t>(sourceType.getRank() - indexedRank));
-  for (int64_t dim = indexedRank; dim < sourceType.getRank(); ++dim) {
-    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[llzk::checkedCast<size_t>(dim)])) {
+  auto reserveSize = checkedCast<size_t>(sourceType.getRank() - *indexedRank);
+  if (!reserveSize) {
+    emitError(loc) << llvm::toString(reserveSize.takeError());
+    return failure();
+  }
+  desiredShape.reserve(*reserveSize);
+  for (int64_t dim = *indexedRank; dim < sourceType.getRank(); ++dim) {
+    auto dimIndex = checkedCast<size_t>(dim);
+    if (!dimIndex) {
+      emitError(loc) << llvm::toString(dimIndex.takeError());
+      return failure();
+    }
+    if (auto attr = llvm::dyn_cast<Attribute>(mixedSizes[*dimIndex])) {
       desiredShape.push_back(mlir::cast<IntegerAttr>(attr).getInt());
     } else {
       desiredShape.push_back(ShapedType::kDynamic);
@@ -729,15 +754,16 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   auto resultType = mlir::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
       desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
   ));
-  return builder.create<memref::SubViewOp>(
+  auto op = builder.create<memref::SubViewOp>(
       loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
   );
+  return success(op.getResult());
 }
 
 /// Read one LLZK array element.
 static FailureOr<LoweredValue> readArrayElement(
     OpBuilder &builder, Location loc, array::ArrayType arrayType, const LoweredValue &arrayValue,
-    ArrayRef<Value> indices, SymbolTableCollection &tables, Operation *origin, const Field &field
+    ArrayRef<Value> indices
 ) {
   Type elementType = arrayType.getElementType();
   LoweredValue result {elementType, {}};
@@ -749,7 +775,11 @@ static FailureOr<LoweredValue> readArrayElement(
   }
 
   for (Value sourceLeaf : arrayValue.leaves) {
-    result.leaves.push_back(createElementSubview(builder, loc, sourceLeaf, indices));
+    auto subview = createElementSubview(builder, loc, sourceLeaf, indices);
+    if (failed(subview)) {
+      return failure();
+    }
+    result.leaves.push_back(*subview);
   }
   return result;
 }
@@ -757,8 +787,7 @@ static FailureOr<LoweredValue> readArrayElement(
 /// Write one LLZK array element.
 static LogicalResult writeArrayElement(
     OpBuilder &builder, Location loc, array::ArrayType arrayType, LoweredValue &arrayValue,
-    ArrayRef<Value> indices, const LoweredValue &elementValue, SymbolTableCollection &tables,
-    Operation *origin, const Field &field
+    ArrayRef<Value> indices, const LoweredValue &elementValue
 ) {
   Type elementType = arrayType.getElementType();
   if (isScalarType(elementType)) {
@@ -769,8 +798,11 @@ static LogicalResult writeArrayElement(
   }
 
   for (auto [destLeaf, srcLeaf] : llvm::zip(arrayValue.leaves, elementValue.leaves)) {
-    Value subview = createElementSubview(builder, loc, destLeaf, indices);
-    builder.create<memref::CopyOp>(loc, srcLeaf, subview);
+    auto subview = createElementSubview(builder, loc, destLeaf, indices);
+    if (failed(subview)) {
+      return failure();
+    }
+    builder.create<memref::CopyOp>(loc, srcLeaf, *subview);
   }
   return success();
 }
@@ -1273,8 +1305,12 @@ private:
         return failure();
       }
       if (!arrayNewOp.getElements().empty()) {
-        size_t elementCount = llzk::checkedCast<size_t>(arrayNewOp.getType().getNumElements());
-        if (arrayNewOp.getElements().size() != elementCount) {
+        auto elementCount = checkedCast<size_t>(arrayNewOp.getType().getNumElements());
+        if (!elementCount) {
+          arrayNewOp.emitError() << llvm::toString(elementCount.takeError());
+          return failure();
+        }
+        if (arrayNewOp.getElements().size() != *elementCount) {
           arrayNewOp.emitError("expected one explicit element per array slot in witgen lowering");
           return failure();
         }
@@ -1286,12 +1322,16 @@ private:
           }
           SmallVector<Value> indices;
           auto strides = mlir::computeStrides(shape);
-          for (int64_t index : mlir::delinearize(flatIndex, strides)) {
+          auto flatSigned = checkedCast<int64_t>(flatIndex);
+          if (!flatSigned) {
+            arrayNewOp.emitError() << llvm::toString(flatSigned.takeError());
+            return failure();
+          }
+          for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
             indices.push_back(makeIndexConstant(builder, loc, index));
           }
           if (failed(writeArrayElement(
-                  builder, loc, arrayNewOp.getType(), *lowered, indices, *elementValue, tables,
-                  arrayNewOp.getOperation(), field
+                  builder, loc, arrayNewOp.getType(), *lowered, indices, *elementValue
               ))) {
             return failure();
           }
@@ -1314,7 +1354,7 @@ private:
       }
       auto lowered = readArrayElement(
           builder, loc, mlir::cast<array::ArrayType>(readArrayOp.getArrRef().getType()),
-          *arrayValue, indices, tables, readArrayOp.getOperation(), field
+          *arrayValue, indices
       );
       if (failed(lowered)) {
         return failure();
@@ -1336,8 +1376,7 @@ private:
       }
       return writeArrayElement(
           builder, loc, mlir::cast<array::ArrayType>(writeArrayOp.getArrRef().getType()),
-          valueMap[writeArrayOp.getArrRef()], indices, *elementValue, tables,
-          writeArrayOp.getOperation(), field
+          valueMap[writeArrayOp.getArrRef()], indices, *elementValue
       );
     }
 
@@ -1411,19 +1450,27 @@ private:
       }
       auto loweredCall =
           builder.create<func::CallOp>(loc, mangleFunctionName(callee), resultTypes, flatArgs);
-      unsigned cursor = 0;
+      auto loweredCallResults = loweredCall.getResults();
+      size_t totalResults = loweredCallResults.size();
+      size_t cursor = 0;
       for (auto [oldResult, oldType] : llvm::zip(callOp.getResults(), callOp.getResultTypes())) {
         auto leafCount = getLeafCount(oldType, tables, callOp.getOperation(), field);
         if (failed(leafCount)) {
           return failure();
         }
+        bool overflow = false;
+        size_t nextCursor = llvm::SaturatingAdd(cursor, *leafCount, &overflow);
+        if (overflow || nextCursor > totalResults) {
+          callOp.emitError("leaf count overflow while lowering function call results");
+          return failure();
+        }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
-            loweredCall.getResults().begin() + cursor,
-            loweredCall.getResults().begin() + cursor + *leafCount
+            loweredCallResults.begin() + static_cast<ptrdiff_t>(cursor),
+            loweredCallResults.begin() + static_cast<ptrdiff_t>(nextCursor)
         );
-        cursor += *leafCount;
         valueMap[oldResult] = std::move(lowered);
+        cursor = nextCursor;
       }
       return success();
     }
@@ -1437,7 +1484,7 @@ private:
       }
 
       SmallVector<Value> initArgs;
-      SmallVector<unsigned> initLeafCounts;
+      SmallVector<size_t> initLeafCounts;
       for (auto [init, resultType] : llvm::zip(forOp.getInitArgs(), forOp.getResultTypes())) {
         auto lowered = lookup(init, valueMap, forOp.getOperation());
         auto leafTypes = getABILeafTypes(resultType, tables, forOp.getOperation(), field);
@@ -1461,32 +1508,54 @@ private:
       DenseMap<Value, LoweredValue> bodyMap(valueMap.begin(), valueMap.end());
       bodyMap[forOp.getInductionVar()] =
           LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};
-      unsigned cursor = 0;
-      for (auto [oldIterArg, oldType, leafCount] :
-           llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {
-        LoweredValue lowered {oldType, {}};
-        lowered.leaves.append(
-            newFor.getRegionIterArgs().begin() + cursor,
-            newFor.getRegionIterArgs().begin() + cursor + leafCount
-        );
-        bodyMap[oldIterArg] = std::move(lowered);
-        cursor += leafCount;
+      {
+        auto newForIterArgs = newFor.getRegionIterArgs();
+        size_t totalIterArgs = newForIterArgs.size();
+        size_t cursor = 0;
+        for (auto [oldIterArg, oldType, leafCount] :
+             llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {
+          bool overflow = false;
+          size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+          if (overflow || nextCursor > totalIterArgs) {
+            forOp.emitError("leaf count overflow while lowering for-loop region iter args");
+            return failure();
+          }
+          LoweredValue lowered {oldType, {}};
+          lowered.leaves.append(
+              newForIterArgs.begin() + static_cast<ptrdiff_t>(cursor),
+              newForIterArgs.begin() + static_cast<ptrdiff_t>(nextCursor)
+          );
+          bodyMap[oldIterArg] = std::move(lowered);
+          cursor = nextCursor;
+        }
       }
+
       newFor.getBody()->clear();
       OpBuilder bodyBuilder = OpBuilder::atBlockBegin(newFor.getBody());
       if (failed(lowerBlock(bodyBuilder, *forOp.getBody(), bodyMap))) {
         return failure();
       }
 
-      cursor = 0;
-      for (auto [oldResult, oldType, leafCount] :
-           llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
-        LoweredValue lowered {oldType, {}};
-        lowered.leaves.append(
-            newFor.getResults().begin() + cursor, newFor.getResults().begin() + cursor + leafCount
-        );
-        valueMap[oldResult] = std::move(lowered);
-        cursor += leafCount;
+      {
+        auto newForResults = newFor.getResults();
+        size_t totalForResults = newForResults.size();
+        size_t cursor = 0;
+        for (auto [oldResult, oldType, leafCount] :
+             llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {
+          bool overflow = false;
+          size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+          if (overflow || nextCursor > totalForResults) {
+            forOp.emitError("leaf count overflow while lowering for-loop results");
+            return failure();
+          }
+          LoweredValue lowered {oldType, {}};
+          lowered.leaves.append(
+              newForResults.begin() + static_cast<ptrdiff_t>(cursor),
+              newForResults.begin() + static_cast<ptrdiff_t>(nextCursor)
+          );
+          valueMap[oldResult] = std::move(lowered);
+          cursor = nextCursor;
+        }
       }
       return success();
     }
@@ -1757,6 +1826,9 @@ public:
     }
     builder.create<func::ReturnOp>(computeFunc.getLoc());
 
+    // Remove `llzk.main` attribute because the main struct is deleted below.
+    moduleOp->removeAttr(MAIN_ATTR_NAME);
+
     SmallVector<Operation *> toErase;
     for (Operation &op : moduleOp.getBody()->getOperations()) {
       if (!isa<func::FuncOp>(op)) {
@@ -1775,10 +1847,10 @@ private:
 } // namespace
 
 void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &) {
-  llzk::polymorphic::FlatteningPassOptions flatteningOptions = {
-      .cleanupMode = llzk::polymorphic::StructCleanupMode::ConcreteAsRoot
-  };
-  pm.addPass(llzk::polymorphic::createFlatteningPass(std::move(flatteningOptions)));
+  using namespace llzk::polymorphic;
+  pm.addPass(
+      createFlatteningPass(FlatteningPassOptions {.cleanupMode = StructCleanupMode::ConcreteAsRoot})
+  );
   pm.addPass(mlir::createLowerAffinePass());
   pm.addPass(llzk::createInlineStructsPass());
   pm.addPass(mlir::createCanonicalizerPass());

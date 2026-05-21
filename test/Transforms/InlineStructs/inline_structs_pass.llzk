@@ -405,7 +405,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // -----
 
 // TESTS: no main struct
-module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+module attributes {llzk.lang} {
   struct.def @Component5A {
     struct.member @f1 : !felt.type
     struct.member @f2 : !felt.type

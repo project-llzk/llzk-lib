@@ -24,12 +24,16 @@
 #include "zklean/Dialect/ZKExpr/IR/ZKExprOps.cpp.inc"
 
 auto llzk::zkexpr::ZKExprDialect::initialize() -> void {
+  // clang-format off
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
-#define GET_TYPEDEF_LIST
-#include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.cpp.inc"
-      >();
+    #define GET_TYPEDEF_LIST
+    #include "zklean/Dialect/ZKExpr/IR/ZKExprTypes.cpp.inc"
+  >();
   addOperations<
-#define GET_OP_LIST
-#include "zklean/Dialect/ZKExpr/IR/ZKExprOps.cpp.inc"
-      >();
+    #define GET_OP_LIST
+    #include "zklean/Dialect/ZKExpr/IR/ZKExprOps.cpp.inc"
+  >();
+  // clang-format on
 }

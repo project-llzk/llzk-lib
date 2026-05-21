@@ -18,11 +18,17 @@
 
 #pragma once
 
+#include "llzk/Util/Compare.h"
+
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/SlowDynamicAPInt.h>
 #include <llvm/ADT/StringRef.h>
+
+#include <climits>
+#include <cstddef>
+#include <cstdint>
 
 namespace llzk {
 
@@ -38,6 +44,10 @@ llvm::DynamicAPInt toDynamicAPInt(const llvm::APSInt &i);
 
 inline llvm::DynamicAPInt toDynamicAPInt(const llvm::APInt &i) {
   return toDynamicAPInt(llvm::APSInt(i));
+}
+
+inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
+  return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));
 }
 
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);

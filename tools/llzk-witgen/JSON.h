@@ -18,7 +18,7 @@
 namespace llzk::witgen {
 
 /// Select how struct values are filtered during JSON serialization.
-enum class SerializationMode {
+enum class SerializationMode : std::uint8_t {
   PublicOutputsOnly,
   AllSignals,
 };
