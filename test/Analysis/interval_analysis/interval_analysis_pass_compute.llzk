@@ -534,6 +534,40 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @NoYieldWhile {
+    struct.member @a: !felt.type
+
+    function.def @compute(%x: index) -> !struct.type<@NoYieldWhile> {
+      %self = struct.new : !struct.type<@NoYieldWhile>
+      %0 = arith.constant 0 : index
+      %1 = arith.constant 1 : index
+      scf.while (%i = %0) : (index) -> index {
+        %cond = arith.cmpi slt, %i, %x : index
+        scf.condition(%cond) %i : index
+      } do {
+      ^bb0(%i: index):
+        %c = felt.const 3
+        struct.writem %self[@a] = %c : !struct.type<@NoYieldWhile>, !felt.type
+        %next = arith.addi %i, %1 : index
+        scf.yield %next : index
+      }
+      function.return %self : !struct.type<@NoYieldWhile>
+    }
+
+    function.def @constrain(%self: !struct.type<@NoYieldWhile>, %x: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NoYieldWhile StructIntervals {
+// CHECK-NEXT: compute {
+// CHECK-NEXT:    %arg0 in Entire
+// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @YieldForConst {
     struct.member @a: !felt.type
 

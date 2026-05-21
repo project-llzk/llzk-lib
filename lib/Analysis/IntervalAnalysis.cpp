@@ -70,7 +70,7 @@ bool isInMaybeSkippedScfRegion(Operation *op) {
     // `writeResults` is a storage side-channel, not a path-sensitive lattice.
     // Writes nested under branch/loop control may not be absolute on every path through the
     // enclosing op, so keep the prior state instead of treating the nested write as unconditional.
-    if (llvm::isa<scf::ForOp, scf::IfOp>(parent)) {
+    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp>(parent)) {
       return true;
     }
   }
