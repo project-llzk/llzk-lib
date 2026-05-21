@@ -162,13 +162,15 @@ $(function(){initNavTree('Bool_2IR_2Dialect_8cpp_source.html','',''); });
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Ops_8cpp_8inc.html">llzk/Dialect/Bool/IR/Ops.cpp.inc</a>&quot;</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  &gt;();</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  addAttributes&lt;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  &gt;();</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;BoolDialect&gt;&gt;();</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>}</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  addAttributes&lt;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="preprocessor">    #define GET_ATTRDEF_LIST</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="preprocessor">    #include &quot;<a class="code" href="Bool_2IR_2Attrs_8cpp_8inc.html">llzk/Dialect/Bool/IR/Attrs.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  &gt;();</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  addInterfaces&lt;LLZKDialectBytecodeInterface&lt;BoolDialect&gt;&gt;();</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
 <div class="ttc" id="aBool_2IR_2Attrs_8cpp_8inc_html"><div class="ttname"><a href="Bool_2IR_2Attrs_8cpp_8inc.html">Attrs.cpp.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8cpp_8inc_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8cpp_8inc.html">Dialect.cpp.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8h_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8h.html">Dialect.h</a></div></div>

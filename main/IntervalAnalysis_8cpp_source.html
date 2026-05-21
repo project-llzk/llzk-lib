@@ -1884,7 +1884,7 @@ $(function(){initNavTree('IntervalAnalysis_8cpp_source.html','',''); });
 <div class="line"><a id="l01704" name="l01704"></a><span class="lineno"> 1704</span>      os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line"><a id="l01705" name="l01705"></a><span class="lineno"> 1705</span>      os.indent(indent) &lt;&lt; ref &lt;&lt; <span class="stringliteral">&quot; in &quot;</span> &lt;&lt; interval;</div>
 <div class="line"><a id="l01706" name="l01706"></a><span class="lineno"> 1706</span>      <span class="keywordflow">if</span> (printUnreduced) {</div>
-<div class="line"><a id="l01707" name="l01707"></a><span class="lineno"> 1707</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {</div>
+<div class="line"><a id="l01707" name="l01707"></a><span class="lineno"> 1707</span>        <span class="keywordflow">if</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {</div>
 <div class="line"><a id="l01708" name="l01708"></a><span class="lineno"> 1708</span>          os &lt;&lt; <span class="stringliteral">&quot; ( &quot;</span> &lt;&lt; it-&gt;second &lt;&lt; <span class="stringliteral">&quot; )&quot;</span>;</div>
 <div class="line"><a id="l01709" name="l01709"></a><span class="lineno"> 1709</span>        }</div>
 <div class="line"><a id="l01710" name="l01710"></a><span class="lineno"> 1710</span>      }</div>

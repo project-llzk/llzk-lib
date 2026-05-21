@@ -110,7 +110,8 @@ $(function(){initNavTree('WitgenUtils_8h.html','',''); });
   <div class="headertitle"><div class="title">WitgenUtils.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="WitgenDriver_8h_source.html">WitgenDriver.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="Errors_8h_source.html">Errors.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="WitgenDriver_8h_source.html">WitgenDriver.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/BuiltinTypes.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/ArrayRef.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DynamicAPInt.h&gt;</code><br />
@@ -118,10 +119,11 @@ $(function(){initNavTree('WitgenUtils_8h.html','',''); });
 <code>#include &lt;llvm/Support/Error.h&gt;</code><br />
 <code>#include &lt;cstddef&gt;</code><br />
 <code>#include &lt;random&gt;</code><br />
+<code>#include &lt;utility&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for WitgenUtils.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="WitgenUtils_8h__incl.svg" width="3734" height="730"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="WitgenUtils_8h__incl.svg" width="3923" height="730"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -138,6 +140,8 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a04a272ab521ee001924704792f29f0c1" id="r_a04a272ab521ee001924704792f29f0c1"><td class="memTemplParams" colspan="2">template&lt;typename T, typename U&gt; </td></tr>
+<tr class="memitem:a04a272ab521ee001924704792f29f0c1 template"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; T &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a04a272ab521ee001924704792f29f0c1">llzk::witgen::checkedCast</a> (U u)</td></tr>
 <tr class="memitem:a23d7c44c1e254150720c92e81e68ebc2" id="r_a23d7c44c1e254150720c92e81e68ebc2"><td class="memItemLeft" align="right" valign="top">std::mt19937_64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">llzk::witgen::makeDefaultValueRng</a> (const <a class="el" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a23d7c44c1e254150720c92e81e68ebc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Seed an RNG for random/default witness value materialization.  <br /></td></tr>
 <tr class="memitem:a8d2926c72c7a53aec9e109f94845619b" id="r_a8d2926c72c7a53aec9e109f94845619b"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">llzk::witgen::randomFieldElement</a> (std::mt19937_64 &amp;rng, const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field)</td></tr>

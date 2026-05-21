@@ -12,22 +12,22 @@ var namespacellzk_1_1witgen =
     [ "PodValueRef", "namespacellzk_1_1witgen.html#a9e65c5d0cf5e310f8d4401ccc05e44a8", null ],
     [ "StructValueRef", "namespacellzk_1_1witgen.html#af5e835a0cc07cabd6b44397e9b1fa907", null ],
     [ "WitnessVal", "namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a", null ],
-    [ "Backend", "namespacellzk_1_1witgen.html#aa325351fc5bc984d12101b891aa219a6", [
-      [ "Interpreter", "namespacellzk_1_1witgen.html#aa325351fc5bc984d12101b891aa219a6adf608edb53fcc79c12759cdbdf58d9db", null ],
-      [ "ExecutionEngine", "namespacellzk_1_1witgen.html#aa325351fc5bc984d12101b891aa219a6a6209ce60deca82f58bb56892cbf73500", null ]
+    [ "Backend", "namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcc", [
+      [ "Interpreter", "namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bccadf608edb53fcc79c12759cdbdf58d9db", null ],
+      [ "ExecutionEngine", "namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500", null ]
     ] ],
-    [ "OutputScope", "namespacellzk_1_1witgen.html#ad79c46a9c7e0af68c4008edf0ad0fe2f", [
-      [ "Public", "namespacellzk_1_1witgen.html#ad79c46a9c7e0af68c4008edf0ad0fe2fa3d067bedfe2f4677470dd6ccf64d05ed", null ],
-      [ "FullWitness", "namespacellzk_1_1witgen.html#ad79c46a9c7e0af68c4008edf0ad0fe2fa62a6762e934b411a4f450cf83904840e", null ]
+    [ "OutputScope", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302", [
+      [ "Public", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed", null ],
+      [ "FullWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e", null ]
     ] ],
-    [ "SerializationMode", "namespacellzk_1_1witgen.html#ad5936d25516f647471a40d4139af637e", [
-      [ "PublicOutputsOnly", "namespacellzk_1_1witgen.html#ad5936d25516f647471a40d4139af637ea9567ec8d56b5f8bd0aef29382fae4944", null ],
-      [ "AllSignals", "namespacellzk_1_1witgen.html#ad5936d25516f647471a40d4139af637ea542d93e16fbe29d60bdc6e5eb7b22089", null ]
+    [ "SerializationMode", "namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8c", [
+      [ "PublicOutputsOnly", "namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8ca9567ec8d56b5f8bd0aef29382fae4944", null ],
+      [ "AllSignals", "namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8ca542d93e16fbe29d60bdc6e5eb7b22089", null ]
     ] ],
-    [ "UninitializedBehavior", "namespacellzk_1_1witgen.html#a39fbd8f45fc69db7d503c3e8551dfdce", [
-      [ "Zero", "namespacellzk_1_1witgen.html#a39fbd8f45fc69db7d503c3e8551dfdcead7ed4ee1df437474d005188535f74875", null ],
-      [ "Random", "namespacellzk_1_1witgen.html#a39fbd8f45fc69db7d503c3e8551dfdcea64663f4646781c9c0110838b905daa23", null ],
-      [ "Fail", "namespacellzk_1_1witgen.html#a39fbd8f45fc69db7d503c3e8551dfdceaceaa0734f0b3c738120c67344d8f3ec1", null ]
+    [ "UninitializedBehavior", "namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762", [
+      [ "Zero", "namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762ad7ed4ee1df437474d005188535f74875", null ],
+      [ "Random", "namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23", null ],
+      [ "Fail", "namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1", null ]
     ] ],
     [ "addWitgenPreparePipeline", "namespacellzk_1_1witgen.html#a054fb616e9cdd12d136efb6b37449d24", null ],
     [ "addWitgenPreparePipeline", "namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b", null ],
@@ -41,6 +41,7 @@ var namespacellzk_1_1witgen =
     [ "buildInputsJSONObject", "namespacellzk_1_1witgen.html#a1aa17170a5630ed6446dce1e4e88a315", null ],
     [ "buildSignalsJSONObject", "namespacellzk_1_1witgen.html#a3de4283756198d16d65986747a4c6699", null ],
     [ "buildSignalsJSONObject", "namespacellzk_1_1witgen.html#abde194ee10905bdf691214c71da09953", null ],
+    [ "checkedCast", "namespacellzk_1_1witgen.html#a04a272ab521ee001924704792f29f0c1", null ],
     [ "checkedDynamicAPIntToSize", "namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a", null ],
     [ "checkedShapeDimToSize", "namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5", null ],
     [ "collectInputBindings", "namespacellzk_1_1witgen.html#a1f06d3a4be9069abde9e602783b8e0d8", null ],

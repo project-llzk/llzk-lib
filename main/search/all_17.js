@@ -9,7 +9,7 @@ var searchData=
   ['selectvalue_6',['selectValue',['../namespacellzk.html#afdf1c2e6485144f772cc0cb6e28a7e24',1,'llzk']]],
   ['sell_7',['sell',['../LICENSE_8txt.html#a67c429701b1c89b199d427a731bf8d93',1,'LICENSE.txt']]],
   ['semantic_20rules_8',['Semantic Rules',['../syntax.html#semantic-rules',1,'']]],
-  ['serializationmode_9',['SerializationMode',['../namespacellzk_1_1witgen.html#ad5936d25516f647471a40d4139af637e',1,'llzk::witgen']]],
+  ['serializationmode_9',['SerializationMode',['../namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8c',1,'llzk::witgen']]],
   ['serializejsonvalue_10',['serializeJSONValue',['../namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925',1,'llzk::witgen::serializeJSONValue(const WitnessVal &amp;value, Type type, SymbolTableCollection &amp;tables, Operation *origin, SerializationMode mode)'],['../namespacellzk_1_1witgen.html#ab2f7ce26617ba7407a527d8f64a3624c',1,'llzk::witgen::serializeJSONValue(const WitnessVal &amp;value, mlir::Type type, mlir::SymbolTableCollection &amp;tables, mlir::Operation *origin, SerializationMode mode=SerializationMode::PublicOutputsOnly)']]],
   ['server_11',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]],
   ['setallowconstraintattr_12',['setAllowConstraintAttr',['../classllzk_1_1function_1_1FuncDefOp.html#acfe41482790b598561b59afbdfc7ca25',1,'llzk::function::FuncDefOp']]],

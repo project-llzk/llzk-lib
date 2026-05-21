@@ -1,5 +1,6 @@
 var WitgenUtils_8h =
 [
+    [ "llzk::witgen::checkedCast", "namespacellzk_1_1witgen.html#a04a272ab521ee001924704792f29f0c1", null ],
     [ "llzk::witgen::checkedDynamicAPIntToSize", "namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a", null ],
     [ "llzk::witgen::checkedShapeDimToSize", "namespacellzk_1_1witgen.html#ab60790824909c50e8aa2b661862d6cb5", null ],
     [ "llzk::witgen::getStaticElementCount", "namespacellzk_1_1witgen.html#a24298067aefc53e7983c2ca181ed571e", null ],

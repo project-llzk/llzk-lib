@@ -119,11 +119,12 @@ $(function(){initNavTree('JSON_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/TypeSwitch.h&gt;</code><br />
+<code>#include &lt;llvm/Support/MathExtras.h&gt;</code><br />
 <code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for JSON.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="JSON_8cpp__incl.svg" width="3196" height="712"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="JSON_8cpp__incl.svg" width="3335" height="712"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="JSON_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -137,7 +138,7 @@ Namespaces</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:abe0e4222eea1e16b772dd28790917999" id="r_abe0e4222eea1e16b772dd28790917999"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; <a class="el" href="namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#abe0e4222eea1e16b772dd28790917999">llzk::witgen::parseJSONValue</a> (const llvm::json::Value *json, Type type, const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field, Operation *origin)</td></tr>
 <tr class="memdesc:abe0e4222eea1e16b772dd28790917999"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse a supported LLZK input type from JSON.  <br /></td></tr>
-<tr class="memitem:a2ed6fa11171cff0889d0eb4ae4e03925" id="r_a2ed6fa11171cff0889d0eb4ae4e03925"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; llvm::json::Value &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925">llzk::witgen::serializeJSONValue</a> (const <a class="el" href="namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &amp;value, Type type, SymbolTableCollection &amp;tables, Operation *origin, <a class="el" href="namespacellzk_1_1witgen.html#ad5936d25516f647471a40d4139af637e">SerializationMode</a> mode)</td></tr>
+<tr class="memitem:a2ed6fa11171cff0889d0eb4ae4e03925" id="r_a2ed6fa11171cff0889d0eb4ae4e03925"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; llvm::json::Value &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925">llzk::witgen::serializeJSONValue</a> (const <a class="el" href="namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &amp;value, Type type, SymbolTableCollection &amp;tables, Operation *origin, <a class="el" href="namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8c">SerializationMode</a> mode)</td></tr>
 <tr class="memdesc:a2ed6fa11171cff0889d0eb4ae4e03925"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize a supported LLZK runtime value into JSON.  <br /></td></tr>
 <tr class="memitem:a16f6a9ef0cfcde99a7eb9586147b25f3" id="r_a16f6a9ef0cfcde99a7eb9586147b25f3"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; llvm::json::Object &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a16f6a9ef0cfcde99a7eb9586147b25f3">llzk::witgen::buildInputsJSONObject</a> (ArrayRef&lt; <a class="el" href="structllzk_1_1witgen_1_1InputBinding.html">InputBinding</a> &gt; bindings, ArrayRef&lt; <a class="el" href="namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &gt; values, SymbolTableCollection &amp;tables, Operation *origin)</td></tr>
 <tr class="memdesc:a16f6a9ef0cfcde99a7eb9586147b25f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize named input values into a JSON object.  <br /></td></tr>
