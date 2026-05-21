@@ -36,7 +36,7 @@ dynamicAPIntToSize(const llvm::DynamicAPInt &value, llvm::Twine context) {
   if (as.getActiveBits() > std::numeric_limits<size_t>::digits) {
     return makeError(context + " would overflow size_t");
   }
-  return llzk::checkedCast<size_t>(as.getZExtValue());
+  return static_cast<size_t>(as.getZExtValue());
 }
 
 llvm::Expected<size_t>
