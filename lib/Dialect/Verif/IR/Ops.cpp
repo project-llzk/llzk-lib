@@ -339,6 +339,13 @@ LogicalResult ContractOp::verify() {
   return success();
 }
 
+FailureOr<SymbolLookupResult<StructDefOp>>
+ContractOp::getStructTarget(SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<StructDefOp>(
+      tables, getTarget(), getParentOfType<ModuleOp>(getOperation())
+  );
+}
+
 //===------------------------------------------------------------------===//
 // IncludeOp
 //===------------------------------------------------------------------===//

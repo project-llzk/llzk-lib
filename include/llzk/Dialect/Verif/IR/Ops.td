@@ -171,7 +171,16 @@ def ContractOp
     ::mlir::SymbolRefAttr getFullyQualifiedName(bool requireParent = true);
 
     /// Return `true` iff the contract targets a struct type.
-    bool hasStructTarget();
+    bool hasStructTarget() { return succeeded(getStructTarget()); }
+
+    /// Return the StructDefOp that this contract targets, or failure if it does not
+    /// target a struct or the struct is not found.
+    ::mlir::FailureOr<SymbolLookupResult<component::StructDefOp>> getStructTarget(::mlir::SymbolTableCollection &tables);
+
+    ::mlir::FailureOr<SymbolLookupResult<component::StructDefOp>> getStructTarget() {
+      ::mlir::SymbolTableCollection tables;
+      return getStructTarget(tables);
+    }
 
     /// Return the "self" value (i.e. the first parameter) from the contract (the contract
     /// must target a struct).

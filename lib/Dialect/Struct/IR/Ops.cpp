@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/AffineHelper.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/Debug.h"
@@ -49,6 +50,7 @@ using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::pod;
 using namespace llzk::polymorphic;
+using namespace llzk::verif;
 
 namespace llzk::component {
 
@@ -711,9 +713,20 @@ LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(memberParentRes)) {
     return failure(); // verifyInStruct() already emits a sufficient error message
   }
+  // Can only read private members within the defining struct or from a verif
+  // contract targeting the struct.
   StructDefOp thisParent = getParentOfType<StructDefOp>(*this);
+  // Defaults to failure
+  FailureOr<SymbolLookupResult<StructDefOp>> contractTarget;
+  if (auto contractParent = getParentOfType<ContractOp>(*this)) {
+    contractTarget = contractParent.getStructTarget(tables);
+  }
   StructDefOp memberParentStruct = memberParentRes.value();
-  if (!member->get().hasPublicAttr() && (!thisParent || thisParent != memberParentStruct)) {
+  bool correctContractTarget =
+      succeeded(contractTarget) && memberParentStruct == contractTarget->get();
+  bool inMemberParent = thisParent && (thisParent == memberParentStruct);
+  bool validParent = inMemberParent || correctContractTarget;
+  if (!member->get().hasPublicAttr() && !validParent) {
     return emitOpError()
         .append(
             "cannot read from private member of struct \"", memberParentStruct.getHeaderString(),
