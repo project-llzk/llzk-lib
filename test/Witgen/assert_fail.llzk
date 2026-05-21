@@ -1,0 +1,32 @@
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=interpreter 2>&1 | FileCheck %s
+// COM: We can't reliably test assertions in the the execution-engine backend
+// COM: since we lower bool.assert to cf.assert, which will print the error, but doesn't
+// COM: flush it properly for tests.
+// COM: not --crash llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %x: !felt.type<"babybear"> {function.arg_name = "x"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c3 = felt.const 3 <"babybear">
+      %cond = bool.cmp lt(%x, %c3) : !felt.type<"babybear">, !felt.type<"babybear">
+      bool.assert %cond, "x must be less than 3"
+      struct.writem %self[@out] = %x : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK: x must be less than 3
+
+//--- input.json
+{"x": 4}

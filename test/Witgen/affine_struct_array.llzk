@@ -1,0 +1,112 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+#IdxToLen = affine_map<(i) -> (2 * i)>
+#Values = affine_map<(i, j) -> (5 * j + i)>
+!ToFelt = !struct.type<@TToFelt::@ToFelt<[#Values]>>
+!HeterArr = !struct.type<@TVarArray::@VarArray<[#IdxToLen, !ToFelt]>>
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @TVarArray {
+    poly.param @N
+    poly.param @T
+
+    struct.def @VarArray {
+      struct.member @val : !array.type<@N x !poly.tvar<@T>> {llzk.pub}
+      function.def @compute(%inp: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> {
+        %self = struct.new : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
+        struct.writem %self[@val] = %inp : !struct.type<@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
+        function.return %self : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %inp: !array.type<@N x !poly.tvar<@T>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TToFelt {
+    poly.param @A
+
+    struct.def @ToFelt {
+      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+      function.def @compute() -> !struct.type<@TToFelt::@ToFelt<[@A]>> {
+        %self = struct.new : !struct.type<@TToFelt::@ToFelt<[@A]>>
+        %constA = poly.read_const @A : !felt.type<"babybear">
+        struct.writem %self[@out] = %constA : !struct.type<@TToFelt::@ToFelt<[@A]>>, !felt.type<"babybear">
+        function.return %self : !struct.type<@TToFelt::@ToFelt<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TToFelt::@ToFelt<[@A]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TN {
+    poly.param @N
+
+    struct.def @TestLoopWithAffineArrayStruct {
+      struct.member @arrs : !array.type<@N x !HeterArr> {llzk.pub}
+
+      function.def @compute() -> !struct.type<@TN::@TestLoopWithAffineArrayStruct<[@N]>> {
+        %arrs_temp = array.new : !array.type<@N x !HeterArr>
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %n = poly.read_const @N : index
+        scf.for %i = %c1 to %n step %c1 {
+          %arr = array.new{(%i)} : !array.type<#IdxToLen x !ToFelt>
+          scf.for %j = %c0 to %i step %c1 {
+            %v = function.call @TToFelt::@ToFelt::@compute(){(%i, %j)} : () -> !ToFelt
+            array.write %arr[%j] = %v : !array.type<#IdxToLen x !ToFelt>, !ToFelt
+          }
+          %va = function.call @TVarArray::@VarArray::@compute(%arr){(%i)}
+              : (!array.type<#IdxToLen x !ToFelt>) -> !HeterArr
+          array.write %arrs_temp[%i] = %va : !array.type<@N x !HeterArr>, !HeterArr
+        }
+        %self = struct.new : !struct.type<@TN::@TestLoopWithAffineArrayStruct<[@N]>>
+        struct.writem %self[@arrs] = %arrs_temp : !struct.type<@TN::@TestLoopWithAffineArrayStruct<[@N]>>, !array.type<@N x !HeterArr>
+        function.return %self : !struct.type<@TN::@TestLoopWithAffineArrayStruct<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TN::@TestLoopWithAffineArrayStruct<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !array.type<2 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %aff = function.call @TN::@TestLoopWithAffineArrayStruct::@compute()
+          : () -> !struct.type<@TN::@TestLoopWithAffineArrayStruct<[2]>>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %arrs = struct.readm %aff[@arrs]
+          : !struct.type<@TN::@TestLoopWithAffineArrayStruct<[2]>>, !array.type<2 x !HeterArr>
+      %slot = array.read %arrs[%c1] : !array.type<2 x !HeterArr>, !HeterArr
+      %vals = struct.readm %slot[@val] : !HeterArr, !array.type<#IdxToLen x !ToFelt>
+      %first = array.read %vals[%c0] : !array.type<#IdxToLen x !ToFelt>, !ToFelt
+      %second = array.read %vals[%c1] : !array.type<#IdxToLen x !ToFelt>, !ToFelt
+      %firstOut = struct.readm %first[@out] : !ToFelt, !felt.type<"babybear">
+      %secondOut = struct.readm %second[@out] : !ToFelt, !felt.type<"babybear">
+      %out = array.new %firstOut, %secondOut : !array.type<2 x !felt.type<"babybear">>
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !array.type<2 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": [
+// CHECK-NEXT:     "1",
+// CHECK-NEXT:     "0"
+// CHECK-NEXT:   ]
+// CHECK-NEXT: }
+
+//--- input.json
+{}

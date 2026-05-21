@@ -21,11 +21,13 @@ using namespace llvm;
 using namespace std;
 
 static DynamicAPInt po2(const DynamicAPInt &e) {
-  // Ensure parameter is not negative and that it can be safely cast to unsigned.
+  // APInt/APSInt bitwidth is limited to max unsigned bits, so must be strictly
+  // less than the max to accommodate for the sign bit
   assert(e >= 0);
-  assert(e <= std::numeric_limits<unsigned>::max() /* upcast from unsigned -> int64_t */);
+  assert(e < std::numeric_limits<unsigned>::max());
   unsigned shiftAmt = llzk::toAPSInt(e).getZExtValue();
-  APSInt p = APSInt::get(1) << shiftAmt;
+  APSInt p(shiftAmt + 1, /* isUnsigned */ true);
+  p.setBit(shiftAmt);
   return llzk::toDynamicAPInt(p);
 }
 
@@ -94,8 +96,10 @@ DynamicAPInt toDynamicAPInt(StringRef str) {
 }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
-  if (i.getBitWidth() <= 64) {
-    // Fast path for smaller values, just use the int64_t conversion
+  // Fast path for smaller values, just use the `int64_t` conversion. However, that only works if
+  // the value is signed or if the sign bit is clear otherwise it will incorrectly interpret the
+  // value as a negative number.
+  if (i.getBitWidth() <= 64 && (i.isSigned() || i.isSignBitClear())) {
     return DynamicAPInt(i.isNegative() ? i.getSExtValue() : static_cast<int64_t>(i.getZExtValue()));
   }
 
@@ -140,6 +144,12 @@ APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
   SmallString<64> str;
   raw_svector_ostream(str) << val;
   return APInt(bitWidth + 1, str, 10);
+}
+
+APInt toExactWidthAPInt(const DynamicAPInt &val, unsigned bitWidth) {
+  SmallString<64> str;
+  raw_svector_ostream(str) << val;
+  return APInt(bitWidth, str, 10);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {

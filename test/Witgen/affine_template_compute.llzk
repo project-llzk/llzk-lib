@@ -1,0 +1,50 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+#sum = affine_map<()[s0, s1] -> (s0 + s1)>
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @TToFelt {
+    poly.param @A
+
+    struct.def @ToFelt {
+      struct.member @out : !felt.type<"babybear"> {llzk.pub}
+      function.def @compute() -> !struct.type<@TToFelt::@ToFelt<[@A]>> {
+        %self = struct.new : !struct.type<@TToFelt::@ToFelt<[@A]>>
+        %a = poly.read_const @A : !felt.type<"babybear">
+        struct.writem %self[@out] = %a : !struct.type<@TToFelt::@ToFelt<[@A]>>, !felt.type<"babybear">
+        function.return %self : !struct.type<@TToFelt::@ToFelt<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TToFelt::@ToFelt<[@A]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c2 = arith.constant 2 : index
+      %c3 = arith.constant 3 : index
+      %comp = function.call @TToFelt::@ToFelt::@compute(){()[%c2, %c3]}
+          : () -> !struct.type<@TToFelt::@ToFelt<[#sum]>>
+      %out = struct.readm %comp[@out] : !struct.type<@TToFelt::@ToFelt<[#sum]>>, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": "5"
+// CHECK-NEXT: }
+
+//--- input.json
+{}

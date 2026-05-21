@@ -27,11 +27,11 @@ class PODDialectType<string name, string typeMnemonic, list<Trait> traits = []>
 def LLZK_PODType : PODDialectType<"Pod", "type"> {
   let summary = "plain-old-data struct";
   let description = [{
-    Contains a list of `RecordAttr` defining structure of a pod. 
+    Contains a list of `RecordAttr` defining structure of a pod.
     The order of records in the pod matters and each record must have a unique name.
     It is possible to have a pod with no records.
 
-    Two `PODType` types unify if they have the same record names, defined in the 
+    Two `PODType` types unify if they have the same record names, defined in the
     same order, and if the types of corresponding records unify.
 
     This type can be used in the `struct.member` op, and it can be declared as a column,
@@ -55,20 +55,20 @@ def LLZK_PODType : PODDialectType<"Pod", "type"> {
   let assemblyFormat = "`<` custom<PodType>($records) `>`";
 
   let extraClassDeclaration = [{
-    /// Creates a new type from a set of initialized records. 
-    /// 
+    /// Creates a new type from a set of initialized records.
+    ///
     /// The records are derived from the names and the types of the values.
     static PodType fromInitialValues(::mlir::MLIRContext *ctx, InitializedRecords init);
 
     /// Searches a record by name.
     ///
-    /// If you plan to make several queries to this type, it's better to generate the map 
+    /// If you plan to make several queries to this type, it's better to generate the map
     /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.
     ::llvm::FailureOr<::mlir::Type> getRecord(::llvm::StringRef name, ::llvm::function_ref<::mlir::InFlightDiagnostic()>) const;
 
     /// Returns the records in map form.
-    /// 
-    /// If you plan to make several queries to this type, it's better to generate the map 
+    ///
+    /// If you plan to make several queries to this type, it's better to generate the map
     /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.
     ::llvm::StringMap<::mlir::Type> getRecordMap() const;
   }];

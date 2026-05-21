@@ -9,6 +9,7 @@
 
 #include "../LLZKTestUtils.h"
 
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
 
@@ -90,6 +91,36 @@ INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntStringTest, testing::ValuesIn(DynamicAPIntStringTest::TestingValues())
 );
 
+// Verify that size_t values above INT64_MAX are not mis-converted to negative.
+// SIZE_MAX has its MSB set; if the APSInt wrapper incorrectly interpreted the value
+// as signed, it would yield -1 instead of 18446744073709551615 (on 64-bit systems).
+TEST(DynamicAPIntSizeTTest, SizeMax1) {
+  DynamicAPInt a = toDynamicAPInt(SIZE_MAX);
+
+  std::string buffer;
+  llvm::raw_string_ostream(buffer) << a;
+
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
+}
+
+TEST(DynamicAPIntSizeTTest, SizeMax2) {
+  APSInt a = toAPSInt(toDynamicAPInt(SIZE_MAX));
+
+  std::string buffer;
+  llvm::raw_string_ostream(buffer) << a;
+
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
+}
+
+TEST(DynamicAPIntSizeTTest, SizeMax3) {
+  APInt a = toAPInt(toDynamicAPInt(SIZE_MAX), sizeof(size_t) * CHAR_BIT);
+
+  std::string buffer;
+  llvm::raw_string_ostream(buffer) << a;
+
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
+}
+
 //===----------------------------------------------------------------------===//
 // Test bitwise AND, OR, XOR operations
 //===----------------------------------------------------------------------===//
@@ -148,10 +179,8 @@ INSTANTIATE_TEST_SUITE_P(
 struct DynamicAPIntShiftTest : public testing::TestWithParam<std::pair<DynamicAPInt, unsigned>> {
   static const std::vector<std::pair<DynamicAPInt, unsigned>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, unsigned>> vals = {
-        {DynamicAPInt(-1), 0},
-        {bn254, 0},
-        {bn254, 32},
-        {DynamicAPInt(100), 32},
+        {DynamicAPInt(-1), 0},    {bn254, 0}, {bn254, 32}, {bn254, 100}, {DynamicAPInt(100), 32},
+        {DynamicAPInt(100), 100},
     };
     return vals;
   }
@@ -169,7 +198,10 @@ TEST_P(DynamicAPIntShiftTest, ShiftLeft) {
 TEST_P(DynamicAPIntShiftTest, ShiftRight) {
   auto [a, b] = GetParam();
   // Equivalent to APSInt operator
-  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(toAPSInt(a) >> b));
+  APSInt base = toAPSInt(a);
+  base = base.extend(max(base.getBitWidth(), b));
+
+  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(base >> b));
 }
 
 INSTANTIATE_TEST_SUITE_P(
