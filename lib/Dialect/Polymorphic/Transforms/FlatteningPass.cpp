@@ -1284,11 +1284,12 @@ public:
         FuncDefOp newFunc = callTgt.clone();
         convertCalleesInPlace(newFunc, paramNameToConcrete);
 
-        // Insert before body conversion so nested concrete callees verify from a root module.
+        // Insert before body conversion so nested concrete callees verify from the root module. Use
+        // the `SymbolTable::insert()` function so that the name will be made unique if necessary.
         symTables.getSymbolTable(newTemplate).insert(newFunc);
         symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
         if (failed(applyBodyConversions(newFunc))) {
-          std::string newFuncName = newFunc.getSymName().str();
+          StringRef newFuncName = newFunc.getSymName();
           LLVM_DEBUG(
               llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
                            << newFuncName << '\n'
