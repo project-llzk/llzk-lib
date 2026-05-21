@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
+#include "llzk/Dialect/Cast/IR/Enums.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -25,7 +26,57 @@
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
 using namespace mlir;
+
+static inline ParseResult
+parseOptionalOverflowSemantics(OpAsmParser &parser, llzk::cast::OverflowSemanticsAttr &overflow) {
+  StringRef keyword;
+  if (failed(parser.parseOptionalKeyword(&keyword))) {
+    return success();
+  }
+
+  std::optional<llzk::cast::OverflowSemantics> semantics =
+      llzk::cast::symbolizeOverflowSemantics(keyword);
+  if (!semantics) {
+    return parser.emitError(parser.getCurrentLocation()) << "expected overflow semantics keyword";
+  }
+
+  overflow = llzk::cast::OverflowSemanticsAttr::get(parser.getContext(), *semantics);
+  return success();
+}
+
+static inline void
+printOptionalOverflowSemantics(OpAsmPrinter &printer, llzk::cast::OverflowSemanticsAttr overflow) {
+  if (!overflow || overflow.getValue() == llzk::cast::OverflowSemantics::ASSERT) {
+    return;
+  }
+
+  printer << ' ' << stringifyOverflowSemantics(overflow.getValue());
+}
+
 namespace llzk::cast {
+
+ParseResult FeltToIndexOp::parseOptionalOverflowSemantics(
+    OpAsmParser &parser, OverflowSemanticsAttr &overflow
+) {
+  return ::parseOptionalOverflowSemantics(parser, overflow);
+}
+
+ParseResult
+IntToFeltOp::parseOptionalOverflowSemantics(OpAsmParser &parser, OverflowSemanticsAttr &overflow) {
+  return ::parseOptionalOverflowSemantics(parser, overflow);
+}
+
+void FeltToIndexOp::printOptionalOverflowSemantics(
+    OpAsmPrinter &printer, FeltToIndexOp /*op*/, OverflowSemanticsAttr overflow
+) {
+  ::printOptionalOverflowSemantics(printer, overflow);
+}
+
+void IntToFeltOp::printOptionalOverflowSemantics(
+    OpAsmPrinter &printer, IntToFeltOp /*op*/, OverflowSemanticsAttr overflow
+) {
+  ::printOptionalOverflowSemantics(printer, overflow);
+}
 
 bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs) {
   return lhs.size() == rhs.size() && llvm::all_of(llvm::zip_equal(lhs, rhs), [](auto pair) {

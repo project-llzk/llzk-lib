@@ -42,16 +42,25 @@ def LLZK_IntToFeltOp
     ```
   }];
 
-  let arguments = (ins LLZK_OverflowSemanticsAttr:$overflow,
+  let arguments = (ins DefaultValuedAttr<LLZK_OverflowSemanticsAttr,
+                                         "OverflowSemantics::ASSERT">:$overflow,
       AnyLLZKIntType:$value);
   let results = (outs LLZK_FeltType:$result);
   let assemblyFormat =
-      [{`` $overflow $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
+      [{`` custom<OptionalOverflowSemantics>($overflow) $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
 
   // Children of NaryOpBase must add their extra C++ code in the extra-extra
   // version.
   let extraExtraClassDeclaration = [{
     static bool isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs);
+    static ::mlir::ParseResult parseOptionalOverflowSemantics(
+        ::mlir::OpAsmParser &parser, ::llzk::cast::OverflowSemanticsAttr &overflow
+    );
+
+    static void printOptionalOverflowSemantics(
+        ::mlir::OpAsmPrinter &printer, IntToFeltOp op,
+        ::llzk::cast::OverflowSemanticsAttr overflow
+    );
   }];
 
   let hasCanonicalizeMethod = 1;
@@ -70,11 +79,23 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
     ```
   }];
 
-  let arguments = (ins LLZK_OverflowSemanticsAttr:$overflow,
+  let arguments = (ins DefaultValuedAttr<LLZK_OverflowSemanticsAttr,
+                                         "OverflowSemantics::ASSERT">:$overflow,
       LLZK_FeltType:$value);
   let results = (outs Index:$result);
   let assemblyFormat =
-      [{`` $overflow $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
+      [{`` custom<OptionalOverflowSemantics>($overflow) $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
+
+  let extraExtraClassDeclaration = [{
+  static ::mlir::ParseResult parseOptionalOverflowSemantics(
+      ::mlir::OpAsmParser &parser, ::llzk::cast::OverflowSemanticsAttr &overflow
+  );
+
+  static void printOptionalOverflowSemantics(
+      ::mlir::OpAsmPrinter &printer, FeltToIndexOp op,
+      ::llzk::cast::OverflowSemanticsAttr overflow
+  );
+  }];
 
   let hasCanonicalizeMethod = 1;
 }
