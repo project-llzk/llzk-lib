@@ -1,0 +1,60 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=A' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"babybear">
+
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @out : !F {llzk.pub}
+
+    function.def @compute(%x: !F, %y: !F, %target: !F) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      struct.writem %self[@out] = %x : <@A>, !F
+      function.return %self : !struct.type<@A>
+    }
+
+    function.def @constrain(%self: !struct.type<@A>, %x: !F, %y: !F, %target: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %quotient = felt.div %x, %y : !F, !F
+      constrain.eq %quotient, %target : !F
+      %flipped = felt.div %target, %y : !F, !F
+      constrain.eq %x, %flipped : !F
+      %multi_use = felt.div %target, %y : !F, !F
+      %sum = felt.add %multi_use, %x : !F, !F
+      constrain.eq %multi_use, %target : !F
+      constrain.eq %sum, %x : !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_A(%[[X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[Y:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK-DAG: %[[OUTC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
+// CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// CHECK: smt.assert
+// CHECK-NOT: smt.declare_fun : !smt.int
+// CHECK: %[[PRIME:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[DENOM_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[Y]], %[[ZERO]] : !smt.int
+// CHECK: %[[TARGET_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[TARGET]], %[[PRIME]]
+// CHECK: %[[TARGET_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[TARGET_MOD]], %[[ZERO]] : !smt.int
+// CHECK: %[[PRODUCT:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Y]], %[[TARGET]]
+// CHECK: %[[PRODUCT_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[PRODUCT]], %[[PRIME]]
+// CHECK: %[[NUMERATOR_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[X]], %[[PRIME]]
+// CHECK: %[[PRODUCT_EQ_NUMERATOR:[0-9a-zA-Z_\.]+]] = smt.eq %[[PRODUCT_MOD]], %[[NUMERATOR_MOD]] : !smt.int
+// CHECK: %[[DIV_CONSTRAINT:[0-9a-zA-Z_\.]+]] = smt.ite %[[DENOM_ZERO]], %[[TARGET_ZERO]], %[[PRODUCT_EQ_NUMERATOR]] : !smt.bool
+// CHECK: smt.assert %[[DIV_CONSTRAINT]]
+// CHECK-NOT: smt.declare_fun : !smt.int
+// CHECK: %[[PRIME2:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265921
+// CHECK: %[[ZERO2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
+// CHECK: %[[DENOM_ZERO2:[0-9a-zA-Z_\.]+]] = smt.eq %[[Y]], %[[ZERO2]] : !smt.int
+// CHECK: %[[TARGET2_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[X]], %[[PRIME2]]
+// CHECK: %[[TARGET2_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[TARGET2_MOD]], %[[ZERO2]] : !smt.int
+// CHECK: %[[PRODUCT2:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[Y]], %[[X]]
+// CHECK: %[[PRODUCT2_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[PRODUCT2]], %[[PRIME2]]
+// CHECK: %[[NUMERATOR2_MOD:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[TARGET]], %[[PRIME2]]
+// CHECK: %[[PRODUCT2_EQ_NUMERATOR:[0-9a-zA-Z_\.]+]] = smt.eq %[[PRODUCT2_MOD]], %[[NUMERATOR2_MOD]] : !smt.int
+// CHECK: %[[DIV_CONSTRAINT2:[0-9a-zA-Z_\.]+]] = smt.ite %[[DENOM_ZERO2]], %[[TARGET2_ZERO]], %[[PRODUCT2_EQ_NUMERATOR]] : !smt.bool
+// CHECK: smt.assert %[[DIV_CONSTRAINT2]]
+// CHECK-NOT: smt.declare_fun : !smt.int
+// CHECK: %[[DIVSYM:[0-9a-zA-Z_\.]+]] = smt.declare_fun : !smt.int
+// CHECK: return

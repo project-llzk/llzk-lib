@@ -140,9 +140,66 @@ public:
   FeltDivConverter(TypeConverter &_typeConverter, MLIRContext *context, APSInt _prime)
       : OpConversionPattern {_typeConverter, context, /*benefit=*/2}, prime {std::move(_prime)} {}
 
+private:
+  LogicalResult rewriteSingleUseEquality(
+      felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const {
+    Value divResult = op.getResult();
+    if (!divResult.hasOneUse()) {
+      return failure();
+    }
+
+    OpOperand &use = *divResult.getUses().begin();
+    auto equalityOp = dyn_cast<constrain::EmitEqualityOp>(use.getOwner());
+    if (!equalityOp) {
+      return failure();
+    }
+
+    Value equalityOperand = use.getOperandNumber() == 0 ? equalityOp.getRhs() : equalityOp.getLhs();
+    Value target = rewriter.getRemappedValue(equalityOperand);
+    if (!target) {
+      return failure();
+    }
+
+    OpBuilder::InsertionGuard insertionGuard {rewriter};
+    rewriter.setInsertionPoint(equalityOp);
+    Location loc = equalityOp->getLoc();
+
+    auto mod = rewriter.create<smt::IntConstantOp>(loc, IntegerAttr::get(getContext(), prime));
+    auto zero = rewriter.create<smt::IntConstantOp>(
+        loc, IntegerAttr::get(getContext(), APSInt {APInt {1, 0}})
+    );
+
+    // Since the quotient is only used by this equality, lower `%x / %y == %t`
+    // directly to `ite(%y == 0, %t mod p == 0, (%y * %t) mod p == %x mod p)`.
+    // The `%y == 0` branch matches the generic lowering's quotient-is-zero convention.
+    auto denominatorIsZero = rewriter.create<smt::EqOp>(loc, adaptor.getRhs(), zero.getResult());
+
+    auto targetMod = rewriter.create<smt::IntModOp>(loc, target, mod.getResult());
+    auto targetIsZero = rewriter.create<smt::EqOp>(loc, targetMod.getResult(), zero.getResult());
+    auto product = rewriter.create<smt::IntMulOp>(loc, ValueRange {adaptor.getRhs(), target});
+    auto productMod = rewriter.create<smt::IntModOp>(loc, product.getResult(), mod.getResult());
+    auto numeratorMod = rewriter.create<smt::IntModOp>(loc, adaptor.getLhs(), mod.getResult());
+    auto productEqualsNumerator =
+        rewriter.create<smt::EqOp>(loc, productMod.getResult(), numeratorMod.getResult());
+    auto divConstraint = rewriter.create<smt::IteOp>(
+        loc, denominatorIsZero.getResult(), targetIsZero.getResult(),
+        productEqualsNumerator.getResult()
+    );
+
+    rewriter.create<smt::AssertOp>(loc, divConstraint.getResult());
+    rewriter.eraseOp(equalityOp);
+    rewriter.eraseOp(op);
+    return success();
+  }
+
+public:
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (succeeded(rewriteSingleUseEquality(op, adaptor, rewriter))) {
+      return success();
+    }
 
     // Rewrite `%z = felt.div %x, %y` into:
     // %z = smt.declare_fun "z" : !smt.int
