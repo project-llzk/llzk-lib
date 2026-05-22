@@ -51,6 +51,8 @@ auto llzk::boolean::BoolDialect::initialize() -> void {
     #include "llzk/Dialect/Bool/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Bool/IR/Attrs.cpp.inc"

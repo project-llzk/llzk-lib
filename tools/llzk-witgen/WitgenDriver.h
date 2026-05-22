@@ -25,13 +25,13 @@
 namespace llzk::witgen {
 
 /// Select the execution backend used by `llzk-witgen`.
-enum class Backend {
+enum class Backend : std::uint8_t {
   Interpreter,
   ExecutionEngine,
 };
 
 /// Select the JSON scope emitted by `llzk-witgen`.
-enum class OutputScope {
+enum class OutputScope : std::uint8_t {
   Public,
   FullWitness,
 };

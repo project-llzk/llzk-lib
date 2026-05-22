@@ -1716,7 +1716,7 @@ void StructIntervals::print(
       os << '\n';
       os.indent(indent) << ref << " in " << interval;
       if (printUnreduced) {
-        if (auto it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {
+        if (const auto *it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {
           os << " ( " << it->second << " )";
         }
       }

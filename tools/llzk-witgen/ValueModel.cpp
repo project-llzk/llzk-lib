@@ -25,7 +25,7 @@ namespace llzk::witgen {
 
 /// Require a boolean value from the runtime variant.
 llvm::Expected<bool> asBool(const WitnessVal &value) {
-  if (auto boolValue = std::get_if<bool>(&value)) {
+  if (const auto *boolValue = std::get_if<bool>(&value)) {
     return *boolValue;
   }
   if (std::holds_alternative<std::monostate>(value)) {
@@ -36,7 +36,7 @@ llvm::Expected<bool> asBool(const WitnessVal &value) {
 
 /// Require an index value from the runtime variant.
 llvm::Expected<int64_t> asIndex(const WitnessVal &value) {
-  if (auto indexValue = std::get_if<int64_t>(&value)) {
+  if (const auto *indexValue = std::get_if<int64_t>(&value)) {
     return *indexValue;
   }
   if (std::holds_alternative<std::monostate>(value)) {
@@ -47,7 +47,7 @@ llvm::Expected<int64_t> asIndex(const WitnessVal &value) {
 
 /// Require a felt value from the runtime variant.
 llvm::Expected<llvm::DynamicAPInt> asFelt(const WitnessVal &value) {
-  if (auto feltValue = std::get_if<llvm::DynamicAPInt>(&value)) {
+  if (const auto *feltValue = std::get_if<llvm::DynamicAPInt>(&value)) {
     return *feltValue;
   }
   if (std::holds_alternative<std::monostate>(value)) {
@@ -58,7 +58,7 @@ llvm::Expected<llvm::DynamicAPInt> asFelt(const WitnessVal &value) {
 
 /// Require an array value from the runtime variant.
 llvm::Expected<ArrayValueRef> asArray(const WitnessVal &value) {
-  if (auto arrayValue = std::get_if<ArrayValueRef>(&value)) {
+  if (const auto *arrayValue = std::get_if<ArrayValueRef>(&value)) {
     return *arrayValue;
   }
   if (std::holds_alternative<std::monostate>(value)) {
@@ -69,7 +69,7 @@ llvm::Expected<ArrayValueRef> asArray(const WitnessVal &value) {
 
 /// Require a POD value from the runtime variant.
 llvm::Expected<PodValueRef> asPod(const WitnessVal &value) {
-  if (auto podValue = std::get_if<PodValueRef>(&value)) {
+  if (const auto *podValue = std::get_if<PodValueRef>(&value)) {
     return *podValue;
   }
   if (std::holds_alternative<std::monostate>(value)) {
@@ -80,7 +80,7 @@ llvm::Expected<PodValueRef> asPod(const WitnessVal &value) {
 
 /// Require a struct value from the runtime variant.
 llvm::Expected<StructValueRef> asStruct(const WitnessVal &value) {
-  if (auto structValue = std::get_if<StructValueRef>(&value)) {
+  if (const auto *structValue = std::get_if<StructValueRef>(&value)) {
     return *structValue;
   }
   if (std::holds_alternative<std::monostate>(value)) {

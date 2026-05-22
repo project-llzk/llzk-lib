@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "Errors.h"
 #include "WitgenDriver.h"
 
 #include <mlir/IR/BuiltinTypes.h>
@@ -20,8 +21,16 @@
 
 #include <cstddef>
 #include <random>
+#include <utility>
 
 namespace llzk::witgen {
+
+template <typename T, typename U> inline llvm::Expected<T> checkedCast(U u) {
+  if (std::in_range<T>(u)) {
+    return static_cast<T>(u);
+  }
+  return makeError("lossy integer conversion");
+}
 
 /// Seed an RNG for random/default witness value materialization.
 std::mt19937_64 makeDefaultValueRng(const WitgenOptions &options);

@@ -43,6 +43,7 @@
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/Support/Endian.h>
+#include <llvm/Support/MathExtras.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -106,9 +107,12 @@ static llvm::Expected<std::vector<int64_t>> computeStaticStrides(ArrayRef<int64_
 
 /// Populate the raw memref descriptor for a host buffer.
 static llvm::Error buildDescriptor(BufferPack &buffer) {
-  const size_t rank = buffer.shape.size();
+  auto rank = checkedCast<int64_t>(buffer.shape.size());
+  if (!rank) {
+    return rank.takeError();
+  }
   auto descriptorSize = llvm::DynamicAPInt(sizeof(void *)) * 2;
-  auto shapeAndStrideCount = llvm::DynamicAPInt(1) + rank + rank;
+  auto shapeAndStrideCount = llvm::DynamicAPInt(1) + *rank + *rank;
   auto dynamicPart = llvm::DynamicAPInt(sizeof(int64_t)) * shapeAndStrideCount;
   auto totalSize = descriptorSize + dynamicPart;
   auto checkedTotalSize =
@@ -118,10 +122,10 @@ static llvm::Error buildDescriptor(BufferPack &buffer) {
   }
   buffer.descriptor.resize(*checkedTotalSize);
   uint8_t *cursor = buffer.descriptor.data();
-  void *base = buffer.storage.data();
-  std::memcpy(cursor, &base, sizeof(void *));
+  uint8_t *base = buffer.storage.data();
+  std::memcpy(cursor, static_cast<const void *>(&base), sizeof(void *));
   cursor += sizeof(void *);
-  std::memcpy(cursor, &base, sizeof(void *));
+  std::memcpy(cursor, static_cast<const void *>(&base), sizeof(void *));
   cursor += sizeof(void *);
   const int64_t offset = 0;
   std::memcpy(cursor, &offset, sizeof(int64_t));
@@ -157,13 +161,12 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
   if (!elementCount) {
     return elementCount.takeError();
   }
-  auto storageBytes = llvm::DynamicAPInt(*elementCount) * buffer.elemBytes;
-  auto checkedStorageBytes =
-      checkedDynamicAPIntToSize(storageBytes, "execution-engine buffer storage");
-  if (!checkedStorageBytes) {
-    return checkedStorageBytes.takeError();
+  bool overflow = false;
+  size_t storageBytes = llvm::SaturatingMultiply(*elementCount, buffer.elemBytes, &overflow);
+  if (overflow) {
+    return makeError("execution-engine buffer storage would overflow size_t");
   }
-  buffer.storage.resize(*checkedStorageBytes);
+  buffer.storage.resize(storageBytes);
   if (auto error = buildDescriptor(buffer)) {
     return std::move(error);
   }
@@ -171,21 +174,35 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
 }
 
 /// Store one field element into the buffer at the given flat element index.
-static void storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &value) {
+static llvm::Error
+storeElement(BufferPack &buffer, size_t flatIndex, const llvm::DynamicAPInt &value) {
+  bool overflow = false;
+  size_t byteOffset = llvm::SaturatingMultiply(flatIndex, buffer.elemBytes, &overflow);
+  if (overflow) {
+    return makeError("execution-engine buffer store offset would overflow size_t");
+  }
+  auto elemBytesU = checkedCast<unsigned>(buffer.elemBytes);
+  if (!elemBytesU) {
+    return elemBytesU.takeError();
+  }
   llvm::APInt raw = toAPInt(value, buffer.feltBitWidth);
-  llvm::StoreIntToMemory(
-      raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
-      llzk::checkedCast<unsigned>(buffer.elemBytes)
-  );
+  llvm::StoreIntToMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
+  return llvm::Error::success();
 }
 
 /// Load one field element from the buffer at the given flat element index.
-static llvm::DynamicAPInt loadElement(const BufferPack &buffer, size_t flatIndex) {
+static llvm::Expected<llvm::DynamicAPInt> loadElement(const BufferPack &buffer, size_t flatIndex) {
+  bool overflow = false;
+  size_t byteOffset = llvm::SaturatingMultiply(flatIndex, buffer.elemBytes, &overflow);
+  if (overflow) {
+    return makeError("execution-engine buffer load offset would overflow size_t");
+  }
+  auto elemBytesU = checkedCast<unsigned>(buffer.elemBytes);
+  if (!elemBytesU) {
+    return elemBytesU.takeError();
+  }
   llvm::APInt raw(buffer.feltBitWidth, 0);
-  llvm::LoadIntFromMemory(
-      raw, buffer.storage.data() + flatIndex * buffer.elemBytes,
-      llzk::checkedCast<unsigned>(buffer.elemBytes)
-  );
+  llvm::LoadIntFromMemory(raw, buffer.storage.data() + byteOffset, *elemBytesU);
   return toDynamicAPInt(raw);
 }
 
@@ -196,8 +213,7 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
     if (!feltValue) {
       return feltValue.takeError();
     }
-    storeElement(buffer, 0, *feltValue);
-    return llvm::Error::success();
+    return storeElement(buffer, 0, *feltValue);
   }
 
   auto arrayValue = asArray(value);
@@ -216,22 +232,31 @@ static llvm::Error fillInputBuffer(BufferPack &buffer, const WitnessVal &value) 
     if (!feltValue) {
       return feltValue.takeError();
     }
-    storeElement(buffer, i, *feltValue);
+    if (auto err = storeElement(buffer, i, *feltValue)) {
+      return err;
+    }
   }
   return llvm::Error::success();
 }
 
 /// Render one field element buffer entry as the stable JSON decimal string form.
-static llvm::json::Value feltElementToJSON(const BufferPack &buffer, size_t flatIndex) {
+static llvm::Expected<llvm::json::Value>
+feltElementToJSON(const BufferPack &buffer, size_t flatIndex) {
+  auto element = loadElement(buffer, flatIndex);
+  if (!element) {
+    return element.takeError();
+  }
   std::string rendered;
-  llvm::raw_string_ostream os(rendered);
-  os << loadElement(buffer, flatIndex);
-  return llvm::json::Value(os.str());
+  llvm::raw_string_ostream(rendered) << *element;
+  return llvm::json::Value(rendered);
 }
 
 /// Recursively serialize a felt buffer into nested JSON arrays.
 static llvm::Expected<llvm::json::Value>
-bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::DynamicAPInt &flatOffset) {
+bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, size_t flatOffset) {
+  if (dimIndex == SIZE_MAX) {
+    return makeError("execution-engine JSON output would overflow size_t");
+  }
   auto dimSize = checkedShapeDimToSize(buffer.shape[dimIndex], "execution-engine JSON output");
   if (!dimSize) {
     return dimSize.takeError();
@@ -239,13 +264,16 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::Dynamic
   if (dimIndex + 1 == buffer.shape.size()) {
     llvm::json::Array result;
     for (size_t i = 0; i < *dimSize; ++i) {
-      llvm::DynamicAPInt elementOffset = flatOffset + i;
-      auto checkedElementOffset =
-          checkedDynamicAPIntToSize(elementOffset, "execution-engine JSON output");
-      if (!checkedElementOffset) {
-        return checkedElementOffset.takeError();
+      bool overflow = false;
+      size_t elementOffset = llvm::SaturatingAdd(i, flatOffset, &overflow);
+      if (overflow) {
+        return makeError("execution-engine JSON output would overflow size_t");
       }
-      result.push_back(feltElementToJSON(buffer, *checkedElementOffset));
+      auto element = feltElementToJSON(buffer, elementOffset);
+      if (!element) {
+        return element.takeError();
+      }
+      result.push_back(*element);
     }
     return llvm::json::Value(std::move(result));
   }
@@ -259,7 +287,11 @@ bufferToJSONArray(const BufferPack &buffer, size_t dimIndex, const llvm::Dynamic
 
   llvm::json::Array result;
   for (size_t i = 0; i < *dimSize; ++i) {
-    llvm::DynamicAPInt nextOffset = flatOffset + (llvm::DynamicAPInt(i) * *subArraySize);
+    bool overflow = false;
+    size_t nextOffset = llvm::SaturatingMultiplyAdd(i, *subArraySize, flatOffset, &overflow);
+    if (overflow) {
+      return makeError("execution-engine JSON output would overflow size_t");
+    }
     auto subArray = bufferToJSONArray(buffer, dimIndex + 1, nextOffset);
     if (!subArray) {
       return subArray.takeError();
@@ -274,7 +306,7 @@ static llvm::Expected<llvm::json::Value> bufferToJSON(const BufferPack &buffer) 
   if (isa<felt::FeltType>(buffer.originalType)) {
     return feltElementToJSON(buffer, 0);
   }
-  return bufferToJSONArray(buffer, 0, llvm::DynamicAPInt(0));
+  return bufferToJSONArray(buffer, 0, 0);
 }
 
 /// Lower the module through the shared LLZK-to-core witgen passes.
@@ -344,8 +376,8 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
 
   auto parsedArgs = [&]() -> llvm::Expected<llvm::SmallVector<WitnessVal>> {
     llvm::SmallVector<WitnessVal> args;
-    auto *jsonObject = input.getAsObject();
-    auto *jsonArray = input.getAsArray();
+    const auto *jsonObject = input.getAsObject();
+    const auto *jsonArray = input.getAsArray();
     if (!jsonObject && !jsonArray) {
       return makeError("inputs JSON must be either an object or an array");
     }
@@ -466,7 +498,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   llvm::SmallVector<void *> packedArgs;
   packedArgs.reserve(descriptorPtrs.size());
   for (void *&descriptorPtr : descriptorPtrs) {
-    packedArgs.push_back(&descriptorPtr);
+    packedArgs.push_back(static_cast<void *>(&descriptorPtr));
   }
 
   if (auto err = (*maybeEngine)->invokePacked("_mlir_ciface___llzk_witgen_main", packedArgs)) {

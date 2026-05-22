@@ -52,7 +52,7 @@ using WitnessVal = std::variant<
     std::monostate, bool, int64_t, llvm::DynamicAPInt, ArrayValueRef, PodValueRef, StructValueRef>;
 
 /// Control how witgen materializes uninitialized/default values.
-enum class UninitializedBehavior {
+enum class UninitializedBehavior : std::uint8_t {
   Zero,
   Random,
   Fail,

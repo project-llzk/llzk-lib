@@ -55,15 +55,15 @@ Interpreter::Interpreter(
     UninitializedBehavior behavior, std::mt19937_64 r
 )
     : moduleOp(mod), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
-      rng(std::move(r)) {}
+      rng(r) {}
 
 /// Parse main-function JSON arguments in either object or positional form.
 static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
     function::FuncDefOp computeFunc, const llvm::json::Value &input, const Field &field
 ) {
   llvm::SmallVector<WitnessVal> args;
-  auto *jsonObject = input.getAsObject();
-  auto *jsonArray = input.getAsArray();
+  const auto *jsonObject = input.getAsObject();
+  const auto *jsonArray = input.getAsArray();
   if (!jsonObject && !jsonArray) {
     return makeError("inputs JSON must be either an object or an array");
   }
@@ -126,7 +126,7 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
     return args.takeError();
   }
 
-  FunctionInterpreter interpreter(moduleOp, tables, field, uninitializedBehavior, std::move(rng));
+  FunctionInterpreter interpreter(moduleOp, tables, field, uninitializedBehavior, rng);
   auto results = interpreter.run(computeFunc, *args);
   if (!results) {
     return results.takeError();
