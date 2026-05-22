@@ -1,7 +1,15 @@
-// This is the plaintext source for `v1_syntax.llzk.bc` (converted at commit
-// 5bf26306ca09ff5b91f918787f5cb98a89d227fa) which is intended to test that migration
-// from v1 syntax to later versions works correctly. The test uses nearly all LLZK v1
-// syntax except for
+// This is the plaintext source for `v1_syntax.llzk.bc` (that was converted from this
+// file at commit 5bf26306ca09ff5b91f918787f5cb98a89d227fa) which is intended to test
+// that migration from v1 syntax to later versions works correctly. The test uses
+// nearly all LLZK v1 syntax except for `include.from`.
+//
+// Commands used to generate the test files:
+// [with v1 build]
+//   build/bin/llzk-opt -emit-bytecode test/Migration/v1_syntax.llzk.txt > test/Migration/v1_syntax.llzk.bc
+// [with current version build]
+//   build/bin/llzk-opt test/Migration/v1_syntax.llzk.bc | scripts/generate-test-checks.py
+// [use this output to update test/Migration/v1_syntax_check.llzk]
+
 
 #mapSum = affine_map<()[s0, s1] -> (s0 + s1)>
 #dynLen = affine_map<(d0) -> (d0 * 5 + 1)>
@@ -125,10 +133,10 @@ module attributes {
     struct.member @box  : !struct.type<@Box<[!felt.type]>>
 
     function.def @compute(%a: !felt.type, %pub: !felt.type {llzk.pub})
-        -> !struct.type<@Top> {
+        -> !struct.type<@Top> attributes {function.allow_witness} {
       %self = struct.new : !struct.type<@Top>
 
-      // felt: const, add, sub, mul, div
+      // felt: const, add, sub, mul, div, neg
       %c0  = felt.const 0
       %c1  = felt.const 1
       %c7  = felt.const 7
@@ -136,6 +144,7 @@ module attributes {
       %sub = felt.sub %a, %c1
       %mul = felt.mul %a, %c7
       %div = felt.div %a, %c7
+      %neg = felt.neg %div
 
       // bool: all six comparison predicates on felt
       %beq = bool.cmp eq(%a, %pub)
@@ -184,8 +193,8 @@ module attributes {
 
       // 1-D array: new (with values), read, write
       %arr4 = array.new %c0, %c1, %add, %mul : !array.type<4 x !felt.type>
-      %e0   = array.read  %arr4[%i0]          : !array.type<4 x !felt.type>, !felt.type
-      array.write %arr4[%i0] = %div            : !array.type<4 x !felt.type>, !felt.type
+      %e0   = array.read  %arr4[%i0]         : !array.type<4 x !felt.type>, !felt.type
+      array.write %arr4[%i0] = %neg          : !array.type<4 x !felt.type>, !felt.type
 
       // 2-D array: new, extract row, insert row, multi-index read, len
       %i1   = arith.constant 1 : index
@@ -246,7 +255,7 @@ module attributes {
     function.def @constrain(
         %self: !struct.type<@Top>,
         %a:   !felt.type,
-        %pub: !felt.type {llzk.pub}) {
+        %pub: !felt.type {llzk.pub}) attributes {function.allow_constraint} {
       // struct.readm
       %b   = struct.readm %self[@bit]  : !struct.type<@Top>, !felt.type
       %bxm = struct.readm %self[@box]  : !struct.type<@Top>, !struct.type<@Box<[!felt.type]>>
@@ -299,31 +308,58 @@ module attributes {
     function.return %a, %b : index, index
   }
 
-  // cast.toindex requires function.allow_non_native_field_ops;
-  // also demonstrates cast.tofelt with explicit result-type form.
+  // cast.toindex requires function.allow_non_native_field_ops.
   function.def @non_native(%f: !felt.type, %b: i1, %idx: index)
       -> (index, !felt.type, !felt.type)
       attributes {function.allow_non_native_field_ops} {
     %ti  = cast.toindex %f                      // felt -> index
+
+    // Also demonstrate cast.tofelt with explicit result-type form.
     %tf  = cast.tofelt  %b   : i1, !felt.type   // i1 -> felt  (explicit result type)
     %ti2 = cast.tofelt  %idx : index             // index -> felt
     function.return %ti, %tf, %ti2 : index, !felt.type, !felt.type
   }
 
   // Field-specific felt type + all non-native felt ops.
-  // Large felt constants (prime fields) also demonstrated here.
   function.def @babybear_ops(%a: !felt.type<"babybear">, %b: !felt.type<"babybear">)
-      -> !felt.type<"babybear">
-      attributes {function.allow_non_native_field_ops} {
+      -> !felt.type<"babybear"> attributes {function.allow_non_native_field_ops} {
     %k  = felt.const 5 <"babybear">            // felt.const with field specifier
     %pw = felt.pow      %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
     %ud = felt.uintdiv  %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
     %sd = felt.sintdiv  %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
     %um = felt.umod     %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %iv = felt.inv     %a     : !felt.type<"babybear">
+    %sm = felt.smod    %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %ba = felt.bit_and %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %bo = felt.bit_or  %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %bx = felt.bit_xor %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %bn = felt.bit_not %a     : !felt.type<"babybear">
+    %sl = felt.shl     %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+    %sr = felt.shr     %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
     function.return %pw : !felt.type<"babybear">
   }
 
+  // Field-specific felt type + all non-native felt ops.
+  function.def @bn254_ops(%a: !felt.type<"bn254">, %b: !felt.type<"bn254">)
+      -> !felt.type<"bn254"> attributes {function.allow_non_native_field_ops} {
+    %k  = felt.const 5 <"bn254">            // felt.const with field specifier
+    %pw = felt.pow      %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %ud = felt.uintdiv  %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %sd = felt.sintdiv  %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %um = felt.umod     %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %iv = felt.inv     %a     : !felt.type<"bn254">
+    %sm = felt.smod    %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %ba = felt.bit_and %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %bo = felt.bit_or  %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %bx = felt.bit_xor %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %bn = felt.bit_not %a     : !felt.type<"bn254">
+    %sl = felt.shl     %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    %sr = felt.shr     %a, %b : !felt.type<"bn254">, !felt.type<"bn254">
+    function.return %pw : !felt.type<"bn254">
+  }
+
   // Field-specific felt type with a user-defined prime field.
+  // Large felt constants (prime fields) also demonstrated here.
   function.def @foo_ops(%a: !felt.type<"foo">, %b: !felt.type<"foo">)
       -> !felt.type<"foo">
       attributes {function.allow_non_native_field_ops} {
