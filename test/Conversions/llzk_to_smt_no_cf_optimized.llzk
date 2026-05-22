@@ -24,6 +24,26 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @ConstrainEqCongruenceFreshNames {
+    function.def @product(%a: !felt.type) -> !struct.type<@ConstrainEqCongruenceFreshNames> {
+      %self = struct.new : <@ConstrainEqCongruenceFreshNames>
+      %sum0 = felt.add %a, %a : !felt.type, !felt.type
+      %sum1 = felt.add %sum0, %a : !felt.type, !felt.type
+      constrain.eq %sum0, %a : !felt.type
+      constrain.eq %sum1, %a : !felt.type
+      function.return %self : !struct.type<@ConstrainEqCongruenceFreshNames>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_ConstrainEqCongruenceFreshNames(
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
+// CHECK: %[[FIRSTQ:[0-9a-zA-Z_\.]+]] = smt.declare_fun "constrain_eq_q" : !smt.int
+// CHECK: %[[SECONDQ:[0-9a-zA-Z_\.]+]] = smt.declare_fun "constrain_eq_q_1" : !smt.int
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @OrderedReduction {
     function.def @product(%a: !felt.type) -> !struct.type<@OrderedReduction> {
       %self = struct.new : <@OrderedReduction>
@@ -90,7 +110,7 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: func.func @smt_DivNonZero(
 // CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
-// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
+// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "felt_div" : !smt.int
 // CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %{{[0-9a-zA-Z_\.]+}}, %[[DIV]]
 // CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[PROD]], %[[ARG]] : !smt.int
 // CHECK: smt.assert %[[EQ]]
@@ -112,7 +132,7 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: func.func @smt_DivMaybeZero(
 // CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int
-// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
+// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "felt_div" : !smt.int
 // CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[ARG]], %[[DIV]]
 // CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[PROD]], %{{[0-9a-zA-Z_\.]+}}
 // CHECK: %[[RED:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[DIFF]], %{{[0-9a-zA-Z_\.]+}}

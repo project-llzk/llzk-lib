@@ -109,6 +109,7 @@ public:
   smt::IntConstantOp createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
   smt::IntConstantOp createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
   Value createModPrimeExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
+  std::string getFreshName(StringRef baseName) const;
   void populatePatterns(
       RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
       const SignalSymbols &signalSymbols
@@ -116,6 +117,7 @@ public:
 
 private:
   llvm::APSInt prime;
+  mutable llvm::StringMap<unsigned> freshSymbolCounts;
 };
 
 class NaiveFeltDivConverter : public OpConversionPattern<felt::DivFeltOp> {
@@ -130,7 +132,8 @@ public:
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     auto div = rewriter.create<smt::DeclareFunOp>(
-        op->getLoc(), smt::IntType::get(getContext()), StringAttr::get(getContext(), "div")
+        op->getLoc(), smt::IntType::get(getContext()),
+        StringAttr::get(getContext(), strategy->getFreshName("felt_div"))
     );
     auto zero = strategy->createZeroConstant(rewriter, op->getLoc(), getContext());
     auto denominatorIsZero =
@@ -170,7 +173,8 @@ public:
       felt::InvFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     auto inv = rewriter.create<smt::DeclareFunOp>(
-        op->getLoc(), smt::IntType::get(getContext()), StringAttr::get(getContext(), "inv")
+        op->getLoc(), smt::IntType::get(getContext()),
+        StringAttr::get(getContext(), strategy->getFreshName("inv"))
     );
     auto zero = strategy->createZeroConstant(rewriter, op->getLoc(), getContext());
     auto one = strategy->createOneConstant(rewriter, op->getLoc(), getContext());
@@ -309,6 +313,18 @@ Value NaiveNonNativeStrategy::createModPrimeExpr(
     OpBuilder &builder, Location loc, Value value, MLIRContext *ctx
 ) const {
   return createSMTModPrimeExpr(builder, loc, value, ctx, prime);
+}
+
+std::string NaiveNonNativeStrategy::getFreshName(StringRef baseName) const {
+  unsigned count = freshSymbolCounts[baseName]++;
+  if (count == 0) {
+    return baseName.str();
+  }
+
+  std::string uniqueName(baseName);
+  uniqueName += "_";
+  uniqueName += std::to_string(count);
+  return uniqueName;
 }
 
 void NaiveNonNativeStrategy::populatePatterns(

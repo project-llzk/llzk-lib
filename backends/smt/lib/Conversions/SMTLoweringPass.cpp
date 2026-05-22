@@ -321,8 +321,9 @@ public:
   }
 
   Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const override {
+    std::string freshName = getFreshName(name);
     return builder
-        .create<smt::DeclareFunOp>(loc, smt::IntType::get(ctx), StringAttr::get(ctx, name))
+        .create<smt::DeclareFunOp>(loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName))
         .getResult();
   }
 
@@ -369,6 +370,20 @@ public:
 private:
   MLIRContext *ctx;
   const ModularReasoner &reasoner;
+  // `freshSymbolCounts` is a map to improve readability. We could just have a counter.
+  mutable llvm::StringMap<unsigned> freshSymbolCounts;
+
+  std::string getFreshName(StringRef baseName) const {
+    unsigned count = freshSymbolCounts[baseName]++;
+    if (count == 0) {
+      return baseName.str();
+    }
+
+    std::string uniqueName(baseName);
+    uniqueName += "_";
+    uniqueName += std::to_string(count);
+    return uniqueName;
+  }
 
   smt::IntConstantOp createPrimeConstant(OpBuilder &builder, Location loc) const {
     return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, reasoner.getPrime()));
@@ -784,7 +799,8 @@ Value OptimizedNonNativeStrategy::emitDivisionValue(
   // `felt.div x y` is encoded by a fresh witness `d` satisfying y * d ≡ x
   // (mod p). If the denominator may be zero modulo p, we preserve the LLZK
   // semantics with a branch that forces the result to zero in that case.
-  Value div = emitter->emitFreshSymbol(builder, loc, "div");
+  // Use a non-reserved SMT-LIB symbol base name for division witnesses.
+  Value div = emitter->emitFreshSymbol(builder, loc, "felt_div");
   UnreducedInterval zeroRange(0, 0);
   emitRangeConstraint(builder, loc, div, resultRange);
 

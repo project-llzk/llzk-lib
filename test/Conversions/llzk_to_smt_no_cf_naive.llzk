@@ -55,7 +55,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: func.func @smt_DivNaive(
-// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "div" : !smt.int
+// CHECK: %[[DIV:[0-9a-zA-Z_\.]+]] = smt.declare_fun "felt_div" : !smt.int
 // CHECK: %[[ZERO:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
 // CHECK: %[[DEN_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARG:[0-9a-zA-Z_\.]+]], %[[ZERO]] : !smt.int
 // CHECK: %[[DIV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[DIV]], %[[ZERO]] : !smt.int
