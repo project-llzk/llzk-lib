@@ -1,1 +1,192 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  function.def @check(%x: index) {
+    function.return
+  }
+
+  // expected-error@+1 {{'verif.contract' op 'function.arg_name' on argument 0 must be a string attribute}}
+  verif.contract @BadArgName for @check (%x: index {function.arg_name = 7 : i64}) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check(%x: index, %y: index) {
+    function.return
+  }
+
+  // expected-error@+1 {{'verif.contract' op duplicate 'function.arg_name' value "dup" on argument 1}}
+  verif.contract @DupArgName for @check (%x: index {function.arg_name = "dup"}, %y: index {function.arg_name = "dup"}) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check(%x: index) {
+    function.return
+  }
+
+  // expected-error@+1 {{'verif.contract' op expected a valid LLZK type but found 'i32'}}
+  verif.contract @BadType for @check (%x: i32) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Box { // expected-note {{target defined here}}
+    function.def @compute() -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      function.return %self : !struct.type<@Box>
+    }
+    function.def @constrain(%self: !struct.type<@Box>, %x: index) {
+      function.return
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op contract type does not match target type}}
+  verif.contract @WrongStructSig for @Box (%self: !struct.type<@Box>) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @outer(%x: index) {
+    function.return
+  }
+
+  poly.template @T { // expected-note {{contract template defined here}}
+    poly.param @N : index
+
+    // expected-error@+1 {{'verif.contract' op contract cannot be within a template that does not contain the target}}
+    verif.contract @TemplateMismatch for @outer (%x: index) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check(%x: index) {
+    function.return
+  }
+
+  verif.contract @Outer for @check (%x: index) {
+    // expected-error@+1 {{'function.def' op cannot be nested within 'verif.contract' operations}}
+    function.def @inner() {
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check(%x: index, %ok: i1) {
+    function.return
+  }
+
+  verif.contract @Base for @check (%x: index, %ok: i1) {
+    verif.require_compute %ok
+  }
+
+  verif.contract @Wrapper for @check (%x: index, %ok: i1) {
+    // expected-error@+1 {{'verif.include' op operand type mismatch: expected type 'index', but found 'i1' for operand number 0}}
+    verif.include @Base(%ok, %ok) : (i1, i1) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check() {
+    function.return
+  }
+
+  verif.contract @Base for @check () {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+
+  verif.contract @Wrapper for @check () {
+    // expected-error@+1 {{'verif.include' op can only have template instantiations when targeting a templated contract}}
+    verif.include @Base<[9]>() : () -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      %n = poly.read_const @N : index
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      // expected-error@+1 {{'verif.include' op must provide template instantiation parameters when calling "@Base" because not all template parameters of "@SpecTemplate" appear in the function type signature}}
+      verif.include @SpecTemplate::@Base() : () -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      %n = poly.read_const @N : index
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      // expected-error@+1 {{'verif.include' op instantiation value '#felt<const 9> : !felt.type' is not compatible with parameter "@N" type restriction 'index'}}
+      verif.include @SpecTemplate::@Base<[#felt<const 9>]>() : () -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ProductOnly { // expected-note {{target defined here}}
+    function.def @product(%a: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> {
+      %self = struct.new : !struct.type<@ProductOnly>
+      function.return %self : !struct.type<@ProductOnly>
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op contract arg attributes [{}, {function.arg_name = "bar"}] does not match target arg attributes [{}, {function.arg_name = "foo"}]}}
+  verif.contract @Unsupported for @ProductOnly (%self: !struct.type<@ProductOnly>, %a: !felt.type {function.arg_name = "bar"}) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}

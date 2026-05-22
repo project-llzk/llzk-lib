@@ -42,13 +42,14 @@ protected:
 
   template <typename Derived>
   void insertFreeFuncsWithIndexArgs(
-      llzk::ModuleLikeBuilder<Derived> &bldr, size_t numArgs,
+      llzk::ModuleLikeBuilder<Derived> &bldr, size_t numArgs, size_t numResults,
       const std::vector<std::string_view> &names
   ) {
     mlir::IndexType idxTy = mlir::IndexType::get(&ctx);
     llvm::SmallVector<mlir::Type> argTypes(numArgs, idxTy);
+    llvm::SmallVector<mlir::Type> resTypes(numResults, idxTy);
     mlir::FunctionType fTy =
-        mlir::FunctionType::get(&ctx, mlir::TypeRange(argTypes), mlir::TypeRange {idxTy});
+        mlir::FunctionType::get(&ctx, mlir::TypeRange(argTypes), mlir::TypeRange(resTypes));
     for (std::string_view n : names) {
       bldr.insertFreeFunc(n, fTy);
     }
@@ -56,17 +57,18 @@ protected:
 
   // Create 2 free functions with index-type arguments.
   llzk::ModuleBuilder newBasicFunctionsExample(
-      size_t numArgs = 0, const std::vector<std::string_view> &names = {funcNameB, funcNameA}
+      size_t numArgs = 0, size_t numResults = 0,
+      const std::vector<std::string_view> &names = {funcNameB, funcNameA}
   ) {
     llzk::ModuleBuilder modBldr(mod.get());
-    insertFreeFuncsWithIndexArgs(modBldr, numArgs, names);
+    insertFreeFuncsWithIndexArgs(modBldr, numArgs, numResults, names);
     return modBldr;
   }
 
   // Functions are nested in the template `templateName`. Returns both the ModuleBuilder (which
   // must stay alive to keep the TemplateBuilder valid) and a pointer to the TemplateBuilder.
   std::pair<llzk::ModuleBuilder, llzk::TemplateBuilder *> newTemplateFunctionsExample(
-      unsigned numParams, size_t numArgs = 0,
+      unsigned numParams, size_t numArgs = 0, size_t numResults = 0,
       const std::vector<std::string_view> &names = {funcNameB, funcNameA}
   ) {
     llzk::ModuleBuilder modBldr(mod.get());
@@ -74,7 +76,7 @@ protected:
     auto r = modBldr.insertTemplate(templateName, numParams).getTemplate(templateName);
     assert(mlir::succeeded(r));
     llzk::TemplateBuilder *tmplBldr = r.value();
-    insertFreeFuncsWithIndexArgs(*tmplBldr, numArgs, names);
+    insertFreeFuncsWithIndexArgs(*tmplBldr, numArgs, numResults, names);
     return {std::move(modBldr), tmplBldr};
   }
 

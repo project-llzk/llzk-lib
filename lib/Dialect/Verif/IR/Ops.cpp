@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
+#include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
@@ -157,6 +158,101 @@ ParseResult parseContractOp(
   return success();
 }
 
+// Check if the op is a valid contract target.
+bool isValidTarget(Operation *op) {
+  if (auto fnOp = dyn_cast<FuncDefOp>(op)) {
+    // Cannot target struct functions directly
+    return fnOp->getParentOfType<StructDefOp>() == nullptr;
+  }
+  // Only other supported target currently is a struct
+  return isa<StructDefOp>(op);
+}
+
+struct TargetTypeInfo {
+  FunctionType funcType {};
+  ArrayAttr argAttrs {};
+};
+
+FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
+  if (auto fnOp = dyn_cast<FuncDefOp>(op)) {
+    // Recreate the function type with return types appended to the arguments.
+    FunctionType fnTy = fnOp.getFunctionType();
+    ArrayRef<Type> curInputs = fnTy.getInputs(), curResults = fnTy.getResults();
+    SmallVector<Type> newInputs;
+    newInputs.reserve(curInputs.size() + curResults.size());
+    newInputs.insert(newInputs.end(), curInputs.begin(), curInputs.end());
+    newInputs.insert(newInputs.end(), curResults.begin(), curResults.end());
+    // And no return types
+    auto newFnTy = fnTy.clone(newInputs, {});
+    // Do the same appending to the return attrs
+    ArrayAttr curArgAttrs = fnOp.getArgAttrsAttr(), curResAttrs = fnOp.getResAttrsAttr();
+    ArrayAttr newArgAttrsAttr {};
+    if (curArgAttrs || curResAttrs) {
+      auto *ctx = op->getContext();
+      SmallVector<Attribute> newArgAttrs;
+      // Since there are some attributes, it must match the length of the input arguments
+      newArgAttrs.reserve(newInputs.size());
+      if (curArgAttrs) {
+        newArgAttrs.insert(newArgAttrs.end(), curArgAttrs.begin(), curArgAttrs.end());
+      } else {
+        // Pad
+        newArgAttrs.insert(newArgAttrs.end(), curInputs.size(), DictionaryAttr::get(ctx));
+      }
+      if (curResAttrs) {
+        newArgAttrs.insert(newArgAttrs.end(), curResAttrs.begin(), curResAttrs.end());
+      } else {
+        // pad
+        newArgAttrs.insert(newArgAttrs.end(), curResults.size(), DictionaryAttr::get(ctx));
+      }
+      newArgAttrsAttr = ArrayAttr::get(ctx, newArgAttrs);
+    }
+
+    return TargetTypeInfo {
+        .funcType = newFnTy,
+        .argAttrs = newArgAttrsAttr,
+    };
+  }
+  if (auto structOp = dyn_cast<StructDefOp>(op)) {
+    if (structOp.hasComputeConstrain()) {
+      auto fnOp = structOp.getConstrainFuncOp();
+      return TargetTypeInfo {
+          .funcType = fnOp.getFunctionType(),
+          .argAttrs = fnOp.getArgAttrsAttr(),
+      };
+    } else {
+      FuncDefOp productFn = structOp.getProductFuncOp();
+      assert(productFn);
+      // Augment the product function signature to accept the self argument.
+      FunctionType fnTy = productFn.getFunctionType();
+      ArrayRef<Type> curInputs = fnTy.getInputs();
+      // Accept the self struct type in addition to existing inputs
+      SmallVector<Type> newInputs;
+      newInputs.reserve(curInputs.size() + 1);
+      newInputs.push_back(structOp.getType());
+      newInputs.insert(newInputs.end(), curInputs.begin(), curInputs.end());
+      // And no return types
+      auto newFnTy = fnTy.clone(newInputs, {});
+      // We also need to expand the arg attributes by one
+      auto *ctx = op->getContext();
+      ArrayAttr curArgAttrs = productFn.getArgAttrsAttr();
+      ArrayAttr newArgAttrsAttr = curArgAttrs;
+      if (curArgAttrs) {
+        SmallVector<Attribute> newArgAttrs;
+        newArgAttrs.reserve(curArgAttrs.size() + 1);
+        newArgAttrs.push_back(DictionaryAttr::get(ctx));
+        newArgAttrs.insert(newArgAttrs.end(), curArgAttrs.begin(), curArgAttrs.end());
+        newArgAttrsAttr = ArrayAttr::get(ctx, newArgAttrs);
+      }
+      return TargetTypeInfo {
+          .funcType = newFnTy,
+          .argAttrs = newArgAttrsAttr,
+      };
+    }
+  }
+
+  return failure();
+}
+
 } // namespace
 
 namespace llzk::verif {
@@ -164,6 +260,82 @@ namespace llzk::verif {
 //===------------------------------------------------------------------===//
 // ContractOp
 //===------------------------------------------------------------------===//
+
+void ContractOp::build(
+    ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
+    llvm::StringRef target
+) {
+  SymbolTableCollection tables;
+  MLIRContext *ctx = odsBuilder.getContext();
+  SymbolRefAttr targetAttr = SymbolRefAttr::get(ctx, target);
+  // Find the target of the contract
+  FailureOr<SymbolLookupResultUntyped> targetRes =
+      lookupTopLevelSymbol(tables, targetAttr, odsBuilder.getBlock()->getParentOp());
+  if (failed(targetRes)) {
+    InFlightDiagnosticWrapper err(odsState.location);
+    err.append("could not find target \"@", targetAttr, "\"");
+    err.report();
+  }
+  Operation *targetOp = targetRes->get();
+  if (!isValidTarget(targetOp)) {
+    InFlightDiagnosticWrapper err(odsState.location);
+    err.append("target \"@", targetAttr, "\" is not a supported contract target")
+        .attachNote(targetOp->getLoc())
+        .append("target defined here");
+    err.report();
+  }
+  FailureOr<TargetTypeInfo> infoRes = getTargetTypeInfo(targetOp);
+  if (failed(infoRes)) {
+    InFlightDiagnosticWrapper err(odsState.location);
+    err.append("could not resolve target type information")
+        .attachNote(targetOp->getLoc())
+        .append("target defined here");
+    err.report();
+  }
+  TargetTypeInfo &info = *infoRes;
+  build(
+      odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target),
+      info.funcType, info.argAttrs
+  );
+}
+
+bool ContractOp::hasArgPublicAttr(unsigned index) {
+  if (index < this->getNumArguments()) {
+    DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);
+    return res ? res.contains(PublicAttr::name) : false;
+  }
+  return false;
+}
+
+bool ContractOp::hasArgName(unsigned index) { return static_cast<bool>(getArgNameAttr(index)); }
+
+std::optional<StringAttr> ContractOp::getArgNameAttr(unsigned index) {
+  if (index >= getNumArguments()) {
+    return std::nullopt;
+  }
+  if (StringAttr attr = getArgAttrOfType<StringAttr>(index, ARG_NAME_ATTR_NAME)) {
+    return attr;
+  }
+  return std::nullopt;
+}
+
+void ContractOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
+  assert(index < getNumArguments() && "argument index out of range");
+  setArgAttr(index, ARG_NAME_ATTR_NAME, attr);
+}
+
+void ContractOp::setArgName(unsigned index, llvm::StringRef name) {
+  setArgNameAttr(index, StringAttr::get(getContext(), name));
+}
+
+SymbolRefAttr ContractOp::getFullyQualifiedName(bool requireParent) {
+  if (!requireParent && getOperation()->getParentOp() == nullptr) {
+    return SymbolRefAttr::get(getOperation());
+  }
+  auto res = getPathFromRoot(*this);
+  assert(succeeded(res));
+  return res.value();
+}
 
 LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Verify the target of the contract
@@ -186,34 +358,34 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
 
   // Verify the target symbol
   Operation *targetOp = targetRes->get();
-  if (StructDefOp structTarget = dyn_cast<StructDefOp>(targetOp)) {
-    // Contract args must match constrain function arguments
-    // TODO: product program support?
-    if (!structTarget.hasComputeConstrain()) {
-      return emitOpError().append(
-          "contracts are not supported for \"@", FUNC_NAME_PRODUCT, "\"-style structs"
-      );
-    }
-    FuncDefOp constrainFn = structTarget.getConstrainFuncOp();
-    if (constrainFn.getFunctionType() != contractTy) {
-      return emitOpError()
-          .append(
-              "contract type does not match struct \"@", FUNC_NAME_CONSTRAIN, "\" function type"
-          )
-          .attachNote(constrainFn.getLoc())
-          .append("function defined here");
-    }
-  } else if (FuncDefOp funcTarget = dyn_cast<FuncDefOp>(targetOp)) {
-    // Function args must match exactly
-    if (funcTarget.getFunctionType() != contractTy) {
-      return emitOpError()
-          .append("contract type does not match function type")
-          .attachNote(funcTarget.getLoc())
-          .append("function defined here");
-    }
-  } else {
-    // Disallowed
-    return emitOpError().append("unsupported target type \"", targetOp->getName(), "\"");
+  if (!isValidTarget(targetOp)) {
+    return emitOpError()
+        .append("target \"@", getTargetAttr(), "\" is not a supported contract target")
+        .attachNote(targetOp->getLoc())
+        .append("target defined here");
+  }
+  FailureOr<TargetTypeInfo> targetInfoRes = getTargetTypeInfo(targetOp);
+  if (failed(targetInfoRes)) {
+    return emitOpError()
+        .append("unsupported target type \"", targetOp->getName(), "\"")
+        .attachNote(targetOp->getLoc())
+        .append("target defined here");
+  }
+  TargetTypeInfo &targetInfo = *targetInfoRes;
+  if (targetInfo.funcType != contractTy) {
+    return emitOpError()
+        .append("contract type does not match target type")
+        .attachNote(targetOp->getLoc())
+        .append("target defined here");
+  }
+  if (targetInfo.argAttrs != getArgAttrsAttr()) {
+    return emitOpError()
+        .append(
+            "contract arg attributes ", getArgAttrsAttr(), " does not match target arg attributes ",
+            targetInfo.argAttrs
+        )
+        .attachNote(targetOp->getLoc())
+        .append("target defined here");
   }
 
   // Also confirm that the types are in the same template op if they are.
@@ -342,8 +514,21 @@ LogicalResult ContractOp::verify() {
 FailureOr<SymbolLookupResult<StructDefOp>>
 ContractOp::getStructTarget(SymbolTableCollection &tables) {
   return lookupTopLevelSymbol<StructDefOp>(
-      tables, getTarget(), getParentOfType<ModuleOp>(getOperation())
+      tables, getTarget(), getParentOfType<ModuleOp>(getOperation()), /*reportMissing*/ false
   );
+}
+
+FailureOr<SymbolLookupResult<FuncDefOp>> ContractOp::getFuncTarget(SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<FuncDefOp>(
+      tables, getTarget(), getParentOfType<ModuleOp>(getOperation()), /*reportMissing*/ false
+  );
+}
+
+FailureOr<Value> ContractOp::getSelfValue() {
+  if (failed(getStructTarget()) || getNumArguments() == 0) {
+    return failure();
+  }
+  return getArgument(0);
 }
 
 //===------------------------------------------------------------------===//
@@ -667,6 +852,21 @@ IncludeOp::getCalleeTarget(SymbolTableCollection &tables) {
   auto root = getRootModule(thisOp);
   assert(succeeded(root));
   return llzk::lookupSymbolIn<ContractOp>(tables, getCallee(), root->getOperation(), thisOp);
+}
+
+bool IncludeOp::contractTargetsStruct() {
+  SymbolTableCollection tables;
+  auto callee = getCalleeTarget(tables);
+  return succeeded(callee) && callee->get().hasStructTarget();
+}
+
+Value IncludeOp::getSelfValue() {
+  SymbolTableCollection tables;
+  auto callee = getCalleeTarget(tables);
+  assert(succeeded(callee) && "include callee must resolve");
+  auto self = callee->get().getSelfValue();
+  assert(succeeded(self) && "include callee must target a struct");
+  return *self;
 }
 
 /// Return the callee of this operation.

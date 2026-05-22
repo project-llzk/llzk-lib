@@ -53,15 +53,11 @@ class RequireOpBase<string mnemonic, list<Trait> traits = []>
     : ConditionOp<mnemonic, traits#[PreconditionOpInterface]>;
 
 def RequireComputeOp : RequireOpBase<"require_compute"> {
-  let summary = "";
-  let description = [{
-  }];
+  let summary = "witness computation precondition";
 }
 
 def RequireConstrainOp : RequireOpBase<"require_constrain"> {
-  let summary = "";
-  let description = [{
-  }];
+  let summary = "constraint generation precondition";
 }
 
 //===------------------------------------------------------------------===//
@@ -72,15 +68,11 @@ class EnsureOpBase<string mnemonic, list<Trait> traits = []>
     : ConditionOp<mnemonic, traits#[PostconditionOpInterface]>;
 
 def EnsureComputeOp : EnsureOpBase<"ensure_compute"> {
-  let summary = "";
-  let description = [{
-  }];
+  let summary = "witness computation postcondition";
 }
 
 def EnsureConstrainOp : EnsureOpBase<"ensure_constrain"> {
-  let summary = "";
-  let description = [{
-  }];
+  let summary = "constraint generation postcondition";
 }
 
 //===------------------------------------------------------------------===//
@@ -98,12 +90,44 @@ def ContractOp
                        FunctionOpInterface, NoTerminator, IsolatedFromAbove]> {
   let summary = "defines a specification contract for a given symbol";
   let description = [{
+    A specification contract for a given function or struct in the circuit.
+    Contracts are "function-like", as they have arguments matching their targets,
+    and are "called" by the `verif.include` operation so that contracts can require
+    other contracts to hold on subcomponents, etc.
 
-    Example:
+    Contract argument rules:
+    - For function targets, the contract accepts arguments matching the function's arguments.
+    - For struct targets, the contract accepts arguments matching the argument list of the
+    struct's `@constrain` function.
 
-    verif.contract @FooContract for @Bar () {
+    Contracts do not return values. For function targets with return values, the
+    return values are appended to the end of the contract's argument list.
 
+    Contracts may not directly target struct functions; they must target the structs themselves.
+
+    For templated targets (i.e., functions or structs within a `poly.template`),
+    the contract must reside in the same template as their target.
+
+    Examples:
+
+    ```llzk
+
+    struct.def @Bar {
+      function.def @compute(%in : !felt.type) -> !struct.type<@Bar> { ... }
+      function.def @constrain(%self : !struct.type<@Bar>, %in : !felt.type -> !struct.type<@Bar> { ... }
     }
+
+    verif.contract @FooContract for @Bar (%self : !struct.type<@Bar>, %in : !felt.type) {
+      ...
+    }
+
+    function.def @free_func (%a : !felt.type) -> !felt.type { ... }
+
+    verif.contract @BarContract for @free_func (%a : !felt.type, %ret_value : !felt.type) {
+      ...
+    }
+
+    ```
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, SymbolRefAttr:$target,
@@ -115,6 +139,7 @@ def ContractOp
   let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
 
+  // Builder that infers all information from the target.
   let builders = [OpBuilder<(ins "::llvm::StringRef":$name,
       "llvm::StringRef":$target)>];
 
@@ -182,9 +207,21 @@ def ContractOp
       return getStructTarget(tables);
     }
 
-    /// Return the "self" value (i.e. the first parameter) from the contract (the contract
-    /// must target a struct).
-    ::mlir::Value getSelfValue();
+    /// Return the "self" value (i.e. the first parameter) from the contract, or
+    /// failure if the contract does not target a struct.
+    ::mlir::FailureOr<::mlir::Value> getSelfValue();
+
+    /// Return `true` iff the contract targets a function.
+    bool hasFuncTarget() { return succeeded(getFuncTarget()); }
+
+    /// Return the FuncDefOp that this contract targets, or failure if it does not
+    /// target a function or the function is not found.
+    ::mlir::FailureOr<SymbolLookupResult<function::FuncDefOp>> getFuncTarget(::mlir::SymbolTableCollection &tables);
+
+    ::mlir::FailureOr<SymbolLookupResult<function::FuncDefOp>> getFuncTarget() {
+      ::mlir::SymbolTableCollection tables;
+      return getFuncTarget(tables);
+    }
   }];
 }
 
