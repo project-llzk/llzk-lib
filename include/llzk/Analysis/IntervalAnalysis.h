@@ -32,11 +32,13 @@
 
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/MapVector.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/Support/SMTAPI.h>
 
 #include <array>
 #include <mutex>
 #include <optional>
+#include <unordered_set>
 
 namespace llzk {
 
@@ -520,17 +522,18 @@ public:
   /// @return
   static mlir::FailureOr<StructIntervals> compute(
       mlir::ModuleOp mod, component::StructDefOp s, mlir::DataFlowSolver &solver,
-      const IntervalAnalysisContext &ctx
+      mlir::AnalysisManager &am, const IntervalAnalysisContext &ctx
   ) {
     StructIntervals si(mod, s);
-    if (si.computeIntervals(solver, ctx).failed()) {
+    if (si.computeIntervals(solver, am, ctx).failed()) {
       return mlir::failure();
     }
     return si;
   }
 
-  mlir::LogicalResult
-  computeIntervals(mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx);
+  mlir::LogicalResult computeIntervals(
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, const IntervalAnalysisContext &ctx
+  );
 
   void print(
       mlir::raw_ostream &os, bool withConstraints = false, bool printCompute = false,
@@ -589,16 +592,29 @@ public:
   using StructAnalysis::StructAnalysis;
   ~StructIntervalAnalysis() override = default;
 
+  bool inProgress(const IntervalAnalysisContext &ctx) const {
+    return inProgressContexts.contains(ctx);
+  }
+
   mlir::LogicalResult runAnalysis(
-      mlir::DataFlowSolver &solver, mlir::AnalysisManager &, const IntervalAnalysisContext &ctx
+      mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, const IntervalAnalysisContext &ctx
   ) override {
-    auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, ctx);
+    if (inProgress(ctx)) {
+      return mlir::failure();
+    }
+    inProgressContexts.insert(ctx);
+    auto cleanup = llvm::make_scope_exit([this, &ctx] { inProgressContexts.erase(ctx); });
+
+    auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, am, ctx);
     if (mlir::failed(computeRes)) {
       return mlir::failure();
     }
     setResult(ctx, std::move(*computeRes));
     return mlir::success();
   }
+
+private:
+  std::unordered_set<IntervalAnalysisContext> inProgressContexts;
 };
 
 /* ModuleIntervalAnalysis */
