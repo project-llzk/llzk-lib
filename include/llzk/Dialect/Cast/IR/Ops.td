@@ -87,14 +87,14 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
       [{`` custom<OptionalOverflowSemantics>($overflow) $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
 
   let extraExtraClassDeclaration = [{
-  static ::mlir::ParseResult parseOptionalOverflowSemantics(
-      ::mlir::OpAsmParser &parser, ::llzk::cast::OverflowSemanticsAttr &overflow
-  );
-
-  static void printOptionalOverflowSemantics(
-      ::mlir::OpAsmPrinter &printer, FeltToIndexOp op,
-      ::llzk::cast::OverflowSemanticsAttr overflow
-  );
+    static ::mlir::ParseResult parseOptionalOverflowSemantics(
+        ::mlir::OpAsmParser &parser, ::llzk::cast::OverflowSemanticsAttr &overflow
+    );
+  
+    static void printOptionalOverflowSemantics(
+        ::mlir::OpAsmPrinter &printer, FeltToIndexOp op,
+        ::llzk::cast::OverflowSemanticsAttr overflow
+    );
   }];
 
   let hasCanonicalizeMethod = 1;
