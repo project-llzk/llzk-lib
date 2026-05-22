@@ -46,8 +46,11 @@ def LLZK_IntToFeltOp
                                          "OverflowSemantics::ASSERT">:$overflow,
       AnyLLZKIntType:$value);
   let results = (outs LLZK_FeltType:$result);
-  let assemblyFormat =
-      [{`` custom<OptionalOverflowSemantics>($overflow) $value `:` type($value) `` custom<InferredOrParsedType>(type($result), "false") attr-dict }];
+  let assemblyFormat = [{
+    `` custom<OptionalOverflowSemantics>($overflow) $value
+    `:` type($value)
+    `` custom<InferredOrParsedType>(type($result), "false") attr-dict
+  }];
 
   // Children of NaryOpBase must add their extra C++ code in the extra-extra
   // version.
@@ -83,14 +86,16 @@ def LLZK_FeltToIndexOp : CastOp<"toindex", [Pure, NotFieldNative]> {
                                          "OverflowSemantics::ASSERT">:$overflow,
       LLZK_FeltType:$value);
   let results = (outs Index:$result);
-  let assemblyFormat =
-      [{`` custom<OptionalOverflowSemantics>($overflow) $value `` custom<InferredOrParsedType>(type($value), "true") attr-dict }];
+  let assemblyFormat = [{
+    `` custom<OptionalOverflowSemantics>($overflow) $value
+    `` custom<InferredOrParsedType>(type($value), "true") attr-dict
+  }];
 
   let extraExtraClassDeclaration = [{
     static ::mlir::ParseResult parseOptionalOverflowSemantics(
         ::mlir::OpAsmParser &parser, ::llzk::cast::OverflowSemanticsAttr &overflow
     );
-  
+
     static void printOptionalOverflowSemantics(
         ::mlir::OpAsmPrinter &printer, FeltToIndexOp op,
         ::llzk::cast::OverflowSemanticsAttr overflow

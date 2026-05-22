@@ -55,29 +55,6 @@ printOptionalOverflowSemantics(OpAsmPrinter &printer, llzk::cast::OverflowSemant
 
 namespace llzk::cast {
 
-ParseResult FeltToIndexOp::parseOptionalOverflowSemantics(
-    OpAsmParser &parser, OverflowSemanticsAttr &overflow
-) {
-  return ::parseOptionalOverflowSemantics(parser, overflow);
-}
-
-ParseResult
-IntToFeltOp::parseOptionalOverflowSemantics(OpAsmParser &parser, OverflowSemanticsAttr &overflow) {
-  return ::parseOptionalOverflowSemantics(parser, overflow);
-}
-
-void FeltToIndexOp::printOptionalOverflowSemantics(
-    OpAsmPrinter &printer, FeltToIndexOp /*op*/, OverflowSemanticsAttr overflow
-) {
-  ::printOptionalOverflowSemantics(printer, overflow);
-}
-
-void IntToFeltOp::printOptionalOverflowSemantics(
-    OpAsmPrinter &printer, IntToFeltOp /*op*/, OverflowSemanticsAttr overflow
-) {
-  ::printOptionalOverflowSemantics(printer, overflow);
-}
-
 bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs) {
   return lhs.size() == rhs.size() && llvm::all_of(llvm::zip_equal(lhs, rhs), [](auto pair) {
     auto [lhsType, rhsType] = pair;
@@ -116,6 +93,17 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
   }).Default([](auto) { return failure(); });
 }
 
+ParseResult
+IntToFeltOp::parseOptionalOverflowSemantics(OpAsmParser &parser, OverflowSemanticsAttr &overflow) {
+  return ::parseOptionalOverflowSemantics(parser, overflow);
+}
+
+void IntToFeltOp::printOptionalOverflowSemantics(
+    OpAsmPrinter &printer, IntToFeltOp /*op*/, OverflowSemanticsAttr overflow
+) {
+  ::printOptionalOverflowSemantics(printer, overflow);
+}
+
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
@@ -126,6 +114,18 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
     }
   }
   return failure();
+}
+
+ParseResult FeltToIndexOp::parseOptionalOverflowSemantics(
+    OpAsmParser &parser, OverflowSemanticsAttr &overflow
+) {
+  return ::parseOptionalOverflowSemantics(parser, overflow);
+}
+
+void FeltToIndexOp::printOptionalOverflowSemantics(
+    OpAsmPrinter &printer, FeltToIndexOp /*op*/, OverflowSemanticsAttr overflow
+) {
+  ::printOptionalOverflowSemantics(printer, overflow);
 }
 
 } // namespace llzk::cast
