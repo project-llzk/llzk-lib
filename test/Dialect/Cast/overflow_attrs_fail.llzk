@@ -1,0 +1,20 @@
+// RUN: llzk-opt %s -verify-diagnostics -split-input-file
+
+module attributes {llzk.lang} {
+	function.def private @func() attributes {function.allow_non_native_field_ops} {
+		%f0 = felt.const 0 : !felt.type
+		// expected-error@+1 {{custom op 'cast.toindex' expected overflow semantics keyword}}
+		%c0 = cast.toindex asser %f0
+		function.return
+	}
+}
+// -----
+
+module attributes {llzk.lang} {
+	function.def private @func() attributes {function.allow_non_native_field_ops} {
+		%c0 = arith.constant 0 : index
+		// expected-error@+1 {{custom op 'cast.tofelt' expected overflow semantics keyword}}
+		%g0 = cast.tofelt asser %c0 : index
+		function.return
+	}
+}
