@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['allsignals_0',['AllSignals',['../namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8ca542d93e16fbe29d60bdc6e5eb7b22089',1,'llzk::witgen']]]
+  ['allsignals_0',['AllSignals',['../namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8ca542d93e16fbe29d60bdc6e5eb7b22089',1,'llzk::witgen']]],
+  ['assert_1',['ASSERT',['../namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476a1edce3bd99a335da00a27703a24f3dfc',1,'llzk::cast']]]
 ];

@@ -121,71 +121,100 @@ $(function(){initNavTree('Cast_2IR_2Ops_8td_source.html','',''); });
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>include &quot;llzk/Dialect/Shared/Types.td&quot;</div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>include &quot;llzk/Dialect/Cast/IR/Dialect.td&quot;</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>include &quot;llzk/Dialect/Felt/IR/Types.td&quot;</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>include &quot;llzk/Dialect/Shared/OpsBase.td&quot;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>include &quot;mlir/Interfaces/InferTypeOpInterface.td&quot;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>include &quot;llzk/Dialect/Function/IR/OpTraits.td&quot;</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>include &quot;mlir/IR/OpBase.td&quot;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>include &quot;mlir/Interfaces/SideEffectInterfaces.td&quot;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>include &quot;mlir/IR/SymbolInterfaces.td&quot;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>class CastOp&lt;string mnemonic, list&lt;Trait&gt; traits = []&gt;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    : NaryOpBase&lt;CastDialect, mnemonic, LLZK_FeltType.builderCall, traits&gt;;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>def LLZK_IntToFeltOp</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    : CastOp&lt;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>          &quot;tofelt&quot;, [Pure,</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                     DeclareOpInterfaceMethods&lt;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                         InferTypeOpInterface, [&quot;isCompatibleReturnTypes&quot;]&gt;]&gt; {</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  let summary = &quot;convert an integer into a field element&quot;;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  let description = [{</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    This operation converts a supported integer type value into a field element value.</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    Example:</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    ```llzk</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    %0 = bool.cmp lt(%a, %b)</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    %1 = cast.tofelt %0 : i1</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    ```</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  }];</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  let arguments = (ins AnyLLZKIntType:$value);</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  let results = (outs LLZK_FeltType:$result);</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  let assemblyFormat =</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      [{ $value `:` type($value) `` custom&lt;InferredOrParsedType&gt;(type($result), &quot;false&quot;) attr-dict }];</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  // Children of NaryOpBase must add their extra C++ code in the extra-extra</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  // version.</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  let extraExtraClassDeclaration = [{</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    static bool isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs);</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>include &quot;llzk/Dialect/Cast/IR/Attrs.td&quot;</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>include &quot;llzk/Dialect/Felt/IR/Types.td&quot;</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>include &quot;llzk/Dialect/Shared/OpsBase.td&quot;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>include &quot;mlir/Interfaces/InferTypeOpInterface.td&quot;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>include &quot;llzk/Dialect/Function/IR/OpTraits.td&quot;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>include &quot;mlir/IR/OpBase.td&quot;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>include &quot;mlir/Interfaces/SideEffectInterfaces.td&quot;</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>include &quot;mlir/IR/SymbolInterfaces.td&quot;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>class CastOp&lt;string mnemonic, list&lt;Trait&gt; traits = []&gt;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    : NaryOpBase&lt;CastDialect, mnemonic, LLZK_FeltType.builderCall, traits&gt;;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>def LLZK_IntToFeltOp</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    : CastOp&lt;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>          &quot;tofelt&quot;, [Pure,</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                     DeclareOpInterfaceMethods&lt;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>                         InferTypeOpInterface, [&quot;isCompatibleReturnTypes&quot;]&gt;]&gt; {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  let summary = &quot;convert an integer into a field element&quot;;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  let description = [{</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    This operation converts a supported integer type value into a field element value.</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    Example:</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    ```llzk</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    %0 = bool.cmp lt(%a, %b)</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    %1 = cast.tofelt %0 : i1</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    ```</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }];</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  let arguments = (ins DefaultValuedAttr&lt;LLZK_OverflowSemanticsAttr,</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                                         &quot;OverflowSemantics::ASSERT&quot;&gt;:$overflow,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      AnyLLZKIntType:$value);</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  let results = (outs LLZK_FeltType:$result);</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    `` custom&lt;OptionalOverflowSemantics&gt;($overflow) $value</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    `:` type($value)</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    `` custom&lt;InferredOrParsedType&gt;(type($result), &quot;false&quot;) attr-dict</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }];</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  let hasCanonicalizeMethod = 1;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>def LLZK_FeltToIndexOp : CastOp&lt;&quot;toindex&quot;, [Pure, NotFieldNative]&gt; {</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  let summary = &quot;convert a field element into an index&quot;;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  let description = [{</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    This operation converts a field element value into an index value to allow use</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    as an array index or loop bound.</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    Example:</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    ```llzk</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    %0 = cast.toindex %a</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    %1 = array.read %b[%0]</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    ```</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  }];</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  let arguments = (ins LLZK_FeltType:$value);</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  let results = (outs Index:$result);</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  let assemblyFormat =</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>      [{ $value `` custom&lt;InferredOrParsedType&gt;(type($value), &quot;true&quot;) attr-dict }];</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  let hasCanonicalizeMethod = 1;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>}</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>#endif // LLZK_CAST_OPS</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  // Children of NaryOpBase must add their extra C++ code in the extra-extra</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  // version.</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  let extraExtraClassDeclaration = [{</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    static bool isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    static ::mlir::ParseResult parseOptionalOverflowSemantics(</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        ::mlir::OpAsmParser &amp;parser, ::llzk::cast::OverflowSemanticsAttr &amp;overflow</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    );</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    static void printOptionalOverflowSemantics(</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>        ::mlir::OpAsmPrinter &amp;printer, IntToFeltOp op,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        ::llzk::cast::OverflowSemanticsAttr overflow</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    );</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  }];</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  let hasCanonicalizeMethod = 1;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>}</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>def LLZK_FeltToIndexOp : CastOp&lt;&quot;toindex&quot;, [Pure, NotFieldNative]&gt; {</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  let summary = &quot;convert a field element into an index&quot;;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  let description = [{</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    This operation converts a field element value into an index value to allow use</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    as an array index or loop bound.</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    Example:</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    ```llzk</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    %0 = cast.toindex %a</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    %1 = array.read %b[%0]</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    ```</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  }];</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  let arguments = (ins DefaultValuedAttr&lt;LLZK_OverflowSemanticsAttr,</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>                                         &quot;OverflowSemantics::ASSERT&quot;&gt;:$overflow,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      LLZK_FeltType:$value);</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  let results = (outs Index:$result);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    `` custom&lt;OptionalOverflowSemantics&gt;($overflow) $value</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    `` custom&lt;InferredOrParsedType&gt;(type($value), &quot;true&quot;) attr-dict</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  }];</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  let extraExtraClassDeclaration = [{</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    static ::mlir::ParseResult parseOptionalOverflowSemantics(</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>        ::mlir::OpAsmParser &amp;parser, ::llzk::cast::OverflowSemanticsAttr &amp;overflow</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    );</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    static void printOptionalOverflowSemantics(</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>        ::mlir::OpAsmPrinter &amp;printer, FeltToIndexOp op,</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>        ::llzk::cast::OverflowSemanticsAttr overflow</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    );</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  }];</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  let hasCanonicalizeMethod = 1;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>}</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>#endif // LLZK_CAST_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

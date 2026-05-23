@@ -126,6 +126,10 @@ Collaboration diagram for llzk::cast::CastDialect:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a4f25a4f77bb6ce6214612acc1e0170ac" id="r_a4f25a4f77bb6ce6214612acc1e0170ac"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4f25a4f77bb6ce6214612acc1e0170ac">~CastDialect</a> () override</td></tr>
+<tr class="memitem:a2c044b42cd4ce376e9f2b14c24c55274" id="r_a2c044b42cd4ce376e9f2b14c24c55274"><td class="memItemLeft" align="right" valign="top">::mlir::Attribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2c044b42cd4ce376e9f2b14c24c55274">parseAttribute</a> (::mlir::DialectAsmParser &amp;parser, ::mlir::Type type) const override</td></tr>
+<tr class="memdesc:a2c044b42cd4ce376e9f2b14c24c55274"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse an attribute registered to this dialect.  <br /></td></tr>
+<tr class="memitem:af48dd0277a7762873dc6a2f3755c3aa4" id="r_af48dd0277a7762873dc6a2f3755c3aa4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af48dd0277a7762873dc6a2f3755c3aa4">printAttribute</a> (::mlir::Attribute attr, ::mlir::DialectAsmPrinter &amp;os) const override</td></tr>
+<tr class="memdesc:af48dd0277a7762873dc6a2f3755c3aa4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print an attribute registered to this dialect.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -189,6 +193,68 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Cast_2IR_2Dialect_8h_8inc_source.html#l00020">20</a> of file <a class="el" href="Cast_2IR_2Dialect_8h_8inc_source.html">Dialect.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2c044b42cd4ce376e9f2b14c24c55274" name="a2c044b42cd4ce376e9f2b14c24c55274"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c044b42cd4ce376e9f2b14c24c55274">&#9670;&#160;</a></span>parseAttribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">::mlir::Attribute llzk::cast::CastDialect::parseAttribute </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::DialectAsmParser &amp;</td>          <td class="paramname"><span class="paramname"><em>parser</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Parse an attribute registered to this dialect. </p>
+
+</div>
+</div>
+<a id="af48dd0277a7762873dc6a2f3755c3aa4" name="af48dd0277a7762873dc6a2f3755c3aa4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af48dd0277a7762873dc6a2f3755c3aa4">&#9670;&#160;</a></span>printAttribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::cast::CastDialect::printAttribute </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::DialectAsmPrinter &amp;</td>          <td class="paramname"><span class="paramname"><em>os</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Print an attribute registered to this dialect. </p>
 
 </div>
 </div>

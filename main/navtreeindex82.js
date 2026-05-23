@@ -1,0 +1,21 @@
+var NAVTREEINDEX82 =
+{
+"tools.html#autotoc_md-llzk-while-to-for":[3,0,0,1,8],
+"tools.html#general-transformation-passes":[3,0,0,1],
+"tools.html#llzk-lsp-server":[3,2],
+"tools.html#llzk-opt":[3,0],
+"tools.html#llzk-witgen":[3,1],
+"tools.html#options":[3,0,0,0,2,0],
+"tools.html#options-1":[3,0,0,0,3,0],
+"tools.html#options-2":[3,0,0,0,4,0],
+"tools.html#options-3":[3,0,0,0,5,0],
+"tools.html#options-4":[3,0,0,0,6,0],
+"tools.html#options-5":[3,0,0,1,0,0],
+"tools.html#options-6":[3,0,0,1,5,0],
+"tools.html#options-7":[3,0,0,1,6,0],
+"tools.html#options-8":[3,0,0,1,7,0],
+"tools.html#options-9":[3,0,0,3,1,0],
+"tools.html#passes":[3,0,0],
+"tools.html#polymorphic-dialect-transformation-passes":[3,0,0,3],
+"tools.html#validation-passes":[3,0,0,4]
+};

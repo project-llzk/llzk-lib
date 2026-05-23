@@ -106,7 +106,9 @@ $(function(){initNavTree('namespacellzk_1_1cast.html','',''); });
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">llzk::cast Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -124,7 +126,202 @@ Classes</h2></td></tr>
 <tr class="memitem:IntToFeltOp" id="r_IntToFeltOp"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1cast_1_1IntToFeltOp.html">IntToFeltOp</a></td></tr>
 <tr class="memitem:IntToFeltOpAdaptor" id="r_IntToFeltOpAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1cast_1_1IntToFeltOpAdaptor.html">IntToFeltOpAdaptor</a></td></tr>
 <tr class="memitem:IntToFeltOpGenericAdaptor" id="r_IntToFeltOpGenericAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1cast_1_1IntToFeltOpGenericAdaptor.html">IntToFeltOpGenericAdaptor</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:af2ddac14777c44ed1ec080bdabb4b476" id="r_af2ddac14777c44ed1ec080bdabb4b476"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> : uint32_t { <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476a1edce3bd99a335da00a27703a24f3dfc">ASSERT</a> = 0
+, <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476a4729d95f983955f0d93a30179deb2b86">SATURATE</a> = 1
+, <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476ae1c8555fcf0ea2bb648a6fd527d658c0">WRAP</a> = 2
+, <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476a0a83d15fde12983f199bdeb76667660f">TRUNCATE</a> = 3
+ }</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a9573dcd567d133359a64b394708688af" id="r_a9573dcd567d133359a64b394708688af"><td class="memItemLeft" align="right" valign="top">::llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9573dcd567d133359a64b394708688af">stringifyOverflowSemantics</a> (<a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> val)</td></tr>
+<tr class="memitem:abf8499a17e799a0ec61562d0ffb7de51" id="r_abf8499a17e799a0ec61562d0ffb7de51"><td class="memItemLeft" align="right" valign="top">::std::optional&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abf8499a17e799a0ec61562d0ffb7de51">symbolizeOverflowSemantics</a> (::llvm::StringRef str)</td></tr>
+<tr class="memitem:ab44516dcf9381906d09742d9ca9afcbe" id="r_ab44516dcf9381906d09742d9ca9afcbe"><td class="memItemLeft" align="right" valign="top">::std::optional&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab44516dcf9381906d09742d9ca9afcbe">symbolizeOverflowSemantics</a> (uint32_t value)</td></tr>
+<tr class="memitem:a9ff83e8a5c3b5ac043102278ab41d90c" id="r_a9ff83e8a5c3b5ac043102278ab41d90c"><td class="memItemLeft" align="right" valign="top">constexpr unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9ff83e8a5c3b5ac043102278ab41d90c">getMaxEnumValForOverflowSemantics</a> ()</td></tr>
+<tr class="memitem:ab51826b028ec44978591c603bfcfdd96" id="r_ab51826b028ec44978591c603bfcfdd96"><td class="memItemLeft" align="right" valign="top">inline ::llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab51826b028ec44978591c603bfcfdd96">stringifyEnum</a> (<a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> enumValue)</td></tr>
+<tr class="memitem:a79e15bed55881fe2eb64529973a8aed5" id="r_a79e15bed55881fe2eb64529973a8aed5"><td class="memTemplParams" colspan="2">template&lt;typename EnumType&gt; </td></tr>
+<tr class="memitem:a79e15bed55881fe2eb64529973a8aed5 template"><td class="memItemLeft" align="right" valign="top">::std::optional&lt; EnumType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79e15bed55881fe2eb64529973a8aed5">symbolizeEnum</a> (::llvm::StringRef)</td></tr>
+<tr class="memitem:a07ef45120bd5543326237fd7c0789849" id="r_a07ef45120bd5543326237fd7c0789849"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
+<tr class="memitem:a07ef45120bd5543326237fd7c0789849 template"><td class="memItemLeft" align="right" valign="top">inline ::std::optional&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07ef45120bd5543326237fd7c0789849">symbolizeEnum&lt; OverflowSemantics &gt;</a> (::llvm::StringRef str)</td></tr>
 </table>
+<a name="doc-enum-members" id="doc-enum-members"></a><h2 id="header-doc-enum-members" class="groupheader">Enumeration Type Documentation</h2>
+<a id="af2ddac14777c44ed1ec080bdabb4b476" name="af2ddac14777c44ed1ec080bdabb4b476"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af2ddac14777c44ed1ec080bdabb4b476">&#9670;&#160;</a></span>OverflowSemantics</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">llzk::cast::OverflowSemantics</a> : uint32_t</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel strong">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="af2ddac14777c44ed1ec080bdabb4b476a1edce3bd99a335da00a27703a24f3dfc" name="af2ddac14777c44ed1ec080bdabb4b476a1edce3bd99a335da00a27703a24f3dfc"></a>ASSERT&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="af2ddac14777c44ed1ec080bdabb4b476a4729d95f983955f0d93a30179deb2b86" name="af2ddac14777c44ed1ec080bdabb4b476a4729d95f983955f0d93a30179deb2b86"></a>SATURATE&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="af2ddac14777c44ed1ec080bdabb4b476ae1c8555fcf0ea2bb648a6fd527d658c0" name="af2ddac14777c44ed1ec080bdabb4b476ae1c8555fcf0ea2bb648a6fd527d658c0"></a>WRAP&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="af2ddac14777c44ed1ec080bdabb4b476a0a83d15fde12983f199bdeb76667660f" name="af2ddac14777c44ed1ec080bdabb4b476a0a83d15fde12983f199bdeb76667660f"></a>TRUNCATE&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html#l00013">13</a> of file <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html">Enums.h.inc</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a9ff83e8a5c3b5ac043102278ab41d90c" name="a9ff83e8a5c3b5ac043102278ab41d90c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9ff83e8a5c3b5ac043102278ab41d90c">&#9670;&#160;</a></span>getMaxEnumValForOverflowSemantics()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned llzk::cast::getMaxEnumValForOverflowSemantics </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html#l00023">23</a> of file <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html">Enums.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab51826b028ec44978591c603bfcfdd96" name="ab51826b028ec44978591c603bfcfdd96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab51826b028ec44978591c603bfcfdd96">&#9670;&#160;</a></span>stringifyEnum()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">inline ::llvm::StringRef llzk::cast::stringifyEnum </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a></td>          <td class="paramname"><span class="paramname"><em>enumValue</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html#l00028">28</a> of file <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html">Enums.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a9573dcd567d133359a64b394708688af" name="a9573dcd567d133359a64b394708688af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9573dcd567d133359a64b394708688af">&#9670;&#160;</a></span>stringifyOverflowSemantics()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::StringRef llzk::cast::stringifyOverflowSemantics </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a></td>          <td class="paramname"><span class="paramname"><em>val</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8cpp_8inc_source.html#l00012">12</a> of file <a class="el" href="Cast_2IR_2Enums_8cpp_8inc_source.html">Enums.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a79e15bed55881fe2eb64529973a8aed5" name="a79e15bed55881fe2eb64529973a8aed5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a79e15bed55881fe2eb64529973a8aed5">&#9670;&#160;</a></span>symbolizeEnum()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename EnumType&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">::std::optional&lt; EnumType &gt; llzk::cast::symbolizeEnum </td>
+          <td>(</td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a07ef45120bd5543326237fd7c0789849" name="a07ef45120bd5543326237fd7c0789849"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07ef45120bd5543326237fd7c0789849">&#9670;&#160;</a></span>symbolizeEnum&lt; OverflowSemantics &gt;()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">inline ::std::optional&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt; <a class="el" href="#a79e15bed55881fe2eb64529973a8aed5">llzk::cast::symbolizeEnum</a>&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt; </td>
+          <td>(</td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>str</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html#l00033">33</a> of file <a class="el" href="Cast_2IR_2Enums_8h_8inc_source.html">Enums.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="abf8499a17e799a0ec61562d0ffb7de51" name="abf8499a17e799a0ec61562d0ffb7de51"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf8499a17e799a0ec61562d0ffb7de51">&#9670;&#160;</a></span>symbolizeOverflowSemantics() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt; llzk::cast::symbolizeOverflowSemantics </td>
+          <td>(</td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>str</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8cpp_8inc_source.html#l00022">22</a> of file <a class="el" href="Cast_2IR_2Enums_8cpp_8inc_source.html">Enums.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab44516dcf9381906d09742d9ca9afcbe" name="ab44516dcf9381906d09742d9ca9afcbe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab44516dcf9381906d09742d9ca9afcbe">&#9670;&#160;</a></span>symbolizeOverflowSemantics() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; <a class="el" href="#af2ddac14777c44ed1ec080bdabb4b476">OverflowSemantics</a> &gt; llzk::cast::symbolizeOverflowSemantics </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>value</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Cast_2IR_2Enums_8cpp_8inc_source.html#l00030">30</a> of file <a class="el" href="Cast_2IR_2Enums_8cpp_8inc_source.html">Enums.cpp.inc</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

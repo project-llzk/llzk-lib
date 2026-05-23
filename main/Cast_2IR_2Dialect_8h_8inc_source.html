@@ -132,16 +132,24 @@ $(function(){initNavTree('Cast_2IR_2Dialect_8h_8inc_source.html','',''); });
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    return ::llvm::StringLiteral(<span class="stringliteral">&quot;cast&quot;</span>);</div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  }</div>
 </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>};</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1CastDialect.html#a2c044b42cd4ce376e9f2b14c24c55274">   25</a></span>  ::mlir::Attribute <a class="code hl_function" href="classllzk_1_1cast_1_1CastDialect.html#a2c044b42cd4ce376e9f2b14c24c55274">parseAttribute</a>(::mlir::DialectAsmParser &amp;parser,</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>                                   ::mlir::Type type) <span class="keyword">const override</span>;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="classllzk_1_1cast_1_1CastDialect.html#af48dd0277a7762873dc6a2f3755c3aa4">   29</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1cast_1_1CastDialect.html#af48dd0277a7762873dc6a2f3755c3aa4">printAttribute</a>(::mlir::Attribute attr,</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                      ::mlir::DialectAsmPrinter &amp;os) <span class="keyword">const override</span>;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>};</div>
 </div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>} <span class="comment">// namespace cast</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(<a class="code hl_class" href="classllzk_1_1cast_1_1CastDialect.html">::llzk::cast::CastDialect</a>)</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>} <span class="comment">// namespace cast</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(<a class="code hl_class" href="classllzk_1_1cast_1_1CastDialect.html">::llzk::cast::CastDialect</a>)</div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html">llzk::cast::CastDialect</a></div><div class="ttdef"><b>Definition</b> <a href="#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_a16ba9f9fd76da17f6786169cf6c6079e"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#a16ba9f9fd76da17f6786169cf6c6079e">llzk::cast::CastDialect::MLIRContext</a></div><div class="ttdeci">friend class ::mlir::MLIRContext</div><div class="ttdef"><b>Definition</b> <a href="#l00017">Dialect.h.inc:17</a></div></div>
+<div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_a2c044b42cd4ce376e9f2b14c24c55274"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#a2c044b42cd4ce376e9f2b14c24c55274">llzk::cast::CastDialect::parseAttribute</a></div><div class="ttdeci">::mlir::Attribute parseAttribute(::mlir::DialectAsmParser &amp;parser, ::mlir::Type type) const override</div><div class="ttdoc">Parse an attribute registered to this dialect.</div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_a4f25a4f77bb6ce6214612acc1e0170ac"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#a4f25a4f77bb6ce6214612acc1e0170ac">llzk::cast::CastDialect::~CastDialect</a></div><div class="ttdeci">~CastDialect() override</div></div>
 <div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_af1fba1316aa927a234fbe4a412264c5f"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#af1fba1316aa927a234fbe4a412264c5f">llzk::cast::CastDialect::getDialectNamespace</a></div><div class="ttdeci">static constexpr ::llvm::StringLiteral getDialectNamespace()</div><div class="ttdef"><b>Definition</b> <a href="#l00020">Dialect.h.inc:20</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1cast_html"><div class="ttname"><a href="namespacellzk_1_1cast.html">llzk::cast</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8cpp_source.html#l00028">Ops.cpp:28</a></div></div>
+<div class="ttc" id="aclassllzk_1_1cast_1_1CastDialect_html_af48dd0277a7762873dc6a2f3755c3aa4"><div class="ttname"><a href="classllzk_1_1cast_1_1CastDialect.html#af48dd0277a7762873dc6a2f3755c3aa4">llzk::cast::CastDialect::printAttribute</a></div><div class="ttdeci">void printAttribute(::mlir::Attribute attr, ::mlir::DialectAsmPrinter &amp;os) const override</div><div class="ttdoc">Print an attribute registered to this dialect.</div></div>
+<div class="ttc" id="anamespacellzk_1_1cast_html"><div class="ttname"><a href="namespacellzk_1_1cast.html">llzk::cast</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8cpp_source.html#l00056">Ops.cpp:56</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

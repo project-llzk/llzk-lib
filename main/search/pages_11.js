@@ -11,6 +11,8 @@ var searchData=
   ['our_20pledge_8',['Our Pledge',['../code-of-conduct.html#our-pledge',1,'']]],
   ['our_20standards_9',['Our Standards',['../code-of-conduct.html#our-standards',1,'']]],
   ['output_20format_10',['Output Format',['../tools.html#output-format',1,'']]],
-  ['overview_11',['Overview',['../index.html',1,'Overview'],['../overview.html#project-overview',1,'Project Overview']]],
-  ['overwrite_12',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]]
+  ['overflowsemantics_11',['OverflowSemantics',['../dialects.html#overflowsemantics',1,'']]],
+  ['overflowsemanticsattr_12',['OverflowSemanticsAttr',['../dialects.html#overflowsemanticsattr',1,'']]],
+  ['overview_13',['Overview',['../index.html',1,'Overview'],['../overview.html#project-overview',1,'Project Overview']]],
+  ['overwrite_14',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]]
 ];

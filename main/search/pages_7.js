@@ -4,7 +4,7 @@ var searchData=
   ['call_20graph_1',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-call-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-call-graph',1,'']]],
   ['call_20graph_20sccs_2',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-call-graph-sccs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-call-graph-sccs',1,'']]],
   ['candidate_3',['Creating the Release Candidate',['../maintanence.html#creating-the-release-candidate',1,'']]],
-  ['cases_3a_4',['Cases:',['../dialects.html#cases',1,'']]],
+  ['cases_3a_4',['Cases:',['../dialects.html#cases',1,'Cases:'],['../dialects.html#cases-1',1,'Cases:']]],
   ['cast_20dialect_5',['&apos;cast&apos; Dialect',['../dialects.html#cast-dialect',1,'']]],
   ['cast_20tofelt_20_3a_3allzk_3a_3acast_3a_3ainttofeltop_6',['&lt;span class=&quot;tt&quot;&gt;cast.tofelt&lt;/span&gt; (llzk::cast::IntToFeltOp)',['../dialects.html#casttofelt-llzkcastinttofeltop',1,'']]],
   ['cast_20toindex_20_3a_3allzk_3a_3acast_3a_3afelttoindexop_7',['&lt;span class=&quot;tt&quot;&gt;cast.toindex&lt;/span&gt; (llzk::cast::FeltToIndexOp)',['../dialects.html#casttoindex-llzkcastfelttoindexop',1,'']]],
