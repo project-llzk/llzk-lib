@@ -11,6 +11,7 @@
 
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Cast/IR/Attrs.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
@@ -21,6 +22,9 @@ using namespace llzk;
 using namespace llzk::cast;
 
 // Include the generated CAPI
+#include "llzk/Dialect/Cast/IR/Enums.capi.cpp.inc"
+// Enums must come before Attrs and Ops
+#include "llzk/Dialect/Cast/IR/Attrs.capi.cpp.inc"
 #include "llzk/Dialect/Cast/IR/Ops.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast, CastDialect)
