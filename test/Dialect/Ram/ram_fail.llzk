@@ -1,0 +1,58 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// TEST: ram.load cannot be used in @constrain()
+module attributes {llzk.lang} {
+  struct.def @TestLoadInConstrain {
+    function.def @compute() -> !struct.type<@TestLoadInConstrain> {
+      %self = struct.new : !struct.type<@TestLoadInConstrain>
+      function.return %self : !struct.type<@TestLoadInConstrain>
+    }
+    function.def @constrain(%self: !struct.type<@TestLoadInConstrain>) {
+      %c0 = arith.constant 0 : index
+      // expected-error@+1 {{'ram.load' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+      %val = ram.load %c0 : !felt.type
+      function.return
+    }
+  }
+}
+// -----
+
+// TEST: ram.store cannot be used in @constrain()
+module attributes {llzk.lang} {
+  struct.def @TestStoreInConstrain {
+    function.def @compute() -> !struct.type<@TestStoreInConstrain> {
+      %self = struct.new : !struct.type<@TestStoreInConstrain>
+      function.return %self : !struct.type<@TestStoreInConstrain>
+    }
+    function.def @constrain(%self: !struct.type<@TestStoreInConstrain>) {
+      %c0 = arith.constant 0 : index
+      %v = felt.const 1
+      // expected-error@+1 {{'ram.store' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+      ram.store %c0, %v : !felt.type
+      function.return
+    }
+  }
+}
+// -----
+
+// TEST: ram.load cannot be used in a free function without allow_witness
+module attributes {llzk.lang} {
+  function.def @test() {
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'ram.load' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+    %val = ram.load %c0 : !felt.type
+    function.return
+  }
+}
+// -----
+
+// TEST: ram.store cannot be used in a free function without allow_witness
+module attributes {llzk.lang} {
+  function.def @test() {
+    %c0 = arith.constant 0 : index
+    %v = felt.const 1
+    // expected-error@+1 {{'ram.store' op only valid within a 'function.def' with 'function.allow_witness' attribute}}
+    ram.store %c0, %v : !felt.type
+    function.return
+  }
+}

@@ -460,7 +460,12 @@ private:
 
   /// @brief Record a write to the given SourceRef and eagerly refine any reads that
   /// are currently tracking the same storage location.
-  void recordRefWrite(const SourceRef &writtenRef, const ExpressionValue &writeVal);
+  ///
+  /// When `mayBeSkipped` is true, handle the write as control-dependent instead
+  /// of unconditional, so the stored value also keeps the prior/no-write state.
+  void recordRefWrite(
+      const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false
+  );
 
   /// @brief Get the SourceRef state that defines `val`.
   SourceRefLatticeValue getSourceRefState(mlir::Value val);
