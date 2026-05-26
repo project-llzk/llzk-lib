@@ -32,7 +32,6 @@ LLZK_DEFINE_OP_BUILD_METHOD(
     Verif, IncludeOp, MlirAttribute callee, MlirValueRange argOperands, MlirAttribute templateParams
 ) {
   SmallVector<Value> argOperandsSto;
-  SmallVector<Attribute> templateParamsSto;
   ArrayAttr paramsAttr;
   if (!mlirAttributeIsNull(templateParams)) {
     paramsAttr = cast<ArrayAttr>(unwrap(templateParams));

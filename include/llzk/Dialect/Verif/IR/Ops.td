@@ -114,7 +114,7 @@ def ContractOp
 
     struct.def @Bar {
       function.def @compute(%in : !felt.type) -> !struct.type<@Bar> { ... }
-      function.def @constrain(%self : !struct.type<@Bar>, %in : !felt.type -> !struct.type<@Bar> { ... }
+      function.def @constrain(%self : !struct.type<@Bar>, %in : !felt.type) { ... }
     }
 
     verif.contract @FooContract for @Bar (%self : !struct.type<@Bar>, %in : !felt.type) {
@@ -270,13 +270,6 @@ def IncludeOp
     custom<AttrDictWithWarnings>(attr-dict, prop-dict)
   }];
 
-  // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
-  // call `verifyAffineMapInstantiations()`. However, in this op that check must
-  // happen within `verifySymbolUses()` instead because the target FuncDefOp
-  // must be resolved to determine if a target function named
-  // "compute"/"constrain" is defined within a StructDefOp or within a ModuleOp
-  // because the verification differs for those cases.
-
   // Define builders manually so inference of operand layout attributes is not
   // circumvented.
   let skipDefaultBuilders = 1;
@@ -300,7 +293,7 @@ def IncludeOp
                           $_builder.getDenseI32ArrayAttr(numDimsPerMap),
                           argOperands, templateParams);
                   }]>,
-       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
+       OpBuilder<(ins "::llzk::verif::ContractOp":$callee,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands,
                      CArg<"::llvm::ArrayRef<::mlir::Attribute>",
                           "{}">:$templateParams),
@@ -309,7 +302,7 @@ def IncludeOp
                           callee.getFullyQualifiedName(false),
                           argOperands, templateParams);
                   }]>,
-       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
+       OpBuilder<(ins "::llzk::verif::ContractOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands,
@@ -320,7 +313,7 @@ def IncludeOp
                           callee.getFullyQualifiedName(false), mapOperands, numDimsPerMap,
                           argOperands, templateParams);
                   }]>,
-       OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
+       OpBuilder<(ins "::llzk::verif::ContractOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
                      CArg<"::mlir::ValueRange", "{}">:$argOperands,

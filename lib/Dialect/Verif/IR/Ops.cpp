@@ -275,6 +275,7 @@ void ContractOp::build(
     InFlightDiagnosticWrapper err(odsState.location);
     err.append("could not find target \"@", targetAttr, "\"");
     err.report();
+    return;
   }
   Operation *targetOp = targetRes->get();
   if (!isValidTarget(targetOp)) {
@@ -283,6 +284,7 @@ void ContractOp::build(
         .attachNote(targetOp->getLoc())
         .append("target defined here");
     err.report();
+    return;
   }
   FailureOr<TargetTypeInfo> infoRes = getTargetTypeInfo(targetOp);
   if (failed(infoRes)) {
@@ -291,6 +293,7 @@ void ContractOp::build(
         .attachNote(targetOp->getLoc())
         .append("target defined here");
     err.report();
+    return;
   }
   TargetTypeInfo &info = *infoRes;
   build(
@@ -864,9 +867,11 @@ Value IncludeOp::getSelfValue() {
   SymbolTableCollection tables;
   auto callee = getCalleeTarget(tables);
   assert(succeeded(callee) && "include callee must resolve");
-  auto self = callee->get().getSelfValue();
-  assert(succeeded(self) && "include callee must target a struct");
-  return *self;
+  if (!callee->get().hasStructTarget()) {
+    return nullptr;
+  }
+  assert(getNumOperands() > 0 && "include op must have a self operand");
+  return getOperand(0);
 }
 
 /// Return the callee of this operation.

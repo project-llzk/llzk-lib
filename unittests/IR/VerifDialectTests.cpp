@@ -28,7 +28,10 @@ class VerifDialectTests : public OpTests {
 protected:
   OwningOpRef<ModuleOp> parseModule(StringRef source) {
     auto parsed = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-    EXPECT_TRUE(parsed) << "failed to parse test module";
+    if (!parsed) {
+      ADD_FAILURE() << "failed to parse test module";
+      return {};
+    }
     return parsed;
   }
 

@@ -56,7 +56,7 @@ template <typename... Ancestors> struct HasAncestor {
       if (op->getParentOfType<Ancestors...>()) {
         return mlir::success();
       }
-      return mlir::failure();
+      return op->emitError("operation must have an ancestor of the given types");
     }
   };
 };
