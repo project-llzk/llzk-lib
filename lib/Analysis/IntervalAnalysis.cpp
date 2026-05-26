@@ -61,6 +61,22 @@ ExpressionValue refineReducedInterval(const ExpressionValue &expr, const Interva
   return refined;
 }
 
+bool isInMaybeSkippedScfRegion(Operation *op) {
+  for (Operation *parent = op->getParentOp(); parent != nullptr; parent = parent->getParentOp()) {
+    if (llvm::isa<FuncDefOp>(parent)) {
+      return false;
+    }
+
+    // `writeResults` is a storage side-channel, not a path-sensitive lattice.
+    // Writes nested under branch/loop control may not be absolute on every path through the
+    // enclosing op, so keep the prior state instead of treating the nested write as unconditional.
+    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp>(parent)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::optional<UnreducedInterval> getBooleanUnreducedInterval(const Interval &interval) {
   return interval.isBoolean() ? std::optional<UnreducedInterval>(interval.firstUnreduced())
                               : std::nullopt;
@@ -636,29 +652,41 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
 }
 
 void IntervalDataFlowAnalysis::recordRefWrite(
-    const SourceRef &writtenRef, const ExpressionValue &writeVal
+    const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped
 ) {
-  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
-    const ExpressionValue &old = it->second;
-    Interval combinedWrite = old.getInterval().join(writeVal.getInterval());
+  auto joinStoredWrite = [this, &writtenRef](
+                             const ExpressionValue &old, const ExpressionValue &next
+                         ) -> ExpressionValue {
+    Interval combinedWrite = old.getInterval().join(next.getInterval());
     auto combinedUnreduced = mergeUnreducedIntervals(
-        old.getOptionalUnreducedInterval(), writeVal.getOptionalUnreducedInterval()
+        old.getOptionalUnreducedInterval(), next.getOptionalUnreducedInterval()
     );
-    if (old.getExpr() != nullptr && writeVal.getExpr() != nullptr &&
-        *old.getExpr() == *writeVal.getExpr()) {
-      writeResults[writtenRef] =
-          old.withInterval(combinedWrite).withOptionalUnreducedInterval(combinedUnreduced);
-    } else {
-      llvm::SMTExprRef expr = getOrCreateSymbol(writtenRef);
-      writeResults[writtenRef] = ExpressionValue(expr, combinedWrite, std::move(combinedUnreduced));
+    if (old.getExpr() != nullptr && next.getExpr() != nullptr &&
+        *old.getExpr() == *next.getExpr()) {
+      return old.withInterval(combinedWrite).withOptionalUnreducedInterval(combinedUnreduced);
     }
+
+    return ExpressionValue(
+        getOrCreateSymbol(writtenRef), combinedWrite, std::move(combinedUnreduced)
+    );
+  };
+
+  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
+    it->second = joinStoredWrite(it->second, writeVal);
+  } else if (mayBeSkipped) {
+    ExpressionValue noWrite(
+        getOrCreateSymbol(writtenRef), getRefInterval(writtenRef),
+        getRefUnreducedInterval(writtenRef)
+    );
+    writeResults[writtenRef] = joinStoredWrite(noWrite, writeVal);
   } else {
     writeResults[writtenRef] = writeVal;
   }
 
+  const ExpressionValue &readerUpdate = mayBeSkipped ? writeResults[writtenRef] : writeVal;
   for (Lattice *readerLattice : readResults[writtenRef]) {
     ExpressionValue prior = readerLattice->getValue().getScalarValue();
-    Interval intersection = prior.getInterval().intersect(writeVal.getInterval());
+    Interval intersection = prior.getInterval().intersect(readerUpdate.getInterval());
     ExpressionValue newVal = prior.withInterval(intersection);
     propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
   }
@@ -852,6 +880,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
   } else if (auto writem = llvm::dyn_cast<MemberWriteOp>(op)) {
+    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     // Update values stored in a member
     ExpressionValue writeVal = operandVals[1].getScalarValue();
     auto cmp = writem.getComponent();
@@ -867,7 +896,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         Type memberTy = writem.getVal().getType();
         if (!llvm::isa<ArrayType, StructType>(memberTy)) {
           // Simple scalar update
-          recordRefWrite(memberRef, writeVal);
+          recordRefWrite(memberRef, writeVal, maySkipWrite);
         } else {
           // Map the intervals of aggregates to the written member
           std::optional<SourceRef> rhsPrefix;
@@ -892,17 +921,18 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
             }
 
             for (const auto &[translatedRef, translatedVal] : remappedWrites) {
-              recordRefWrite(translatedRef, translatedVal);
+              recordRefWrite(translatedRef, translatedVal, maySkipWrite);
             }
           }
         }
       }
     }
   } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
+    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     ExpressionValue writeVal = operandVals.back().getScalarValue();
     auto arrayRef = getArrayAccessRef(op, writeArr);
     if (succeeded(arrayRef)) {
-      recordRefWrite(*arrayRef, writeVal);
+      recordRefWrite(*arrayRef, writeVal, maySkipWrite);
     }
 
     SourceRefLatticeValue arrayVals = getSourceRefState(writeArr.getArrRef());
@@ -913,7 +943,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto [targetRefs, _] = *targetRefsRes;
       ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
       for (const SourceRef &ref : targetRefs.getScalarValue()) {
-        recordRefWrite(ref, writeVal);
+        recordRefWrite(ref, writeVal, maySkipWrite);
       }
     }
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
