@@ -489,13 +489,8 @@ LogicalResult ContractOp::verify() {
     }
   }
 
-  // Ensure that only valid LLZK types are used for contract arguments.
-  FunctionType type = getFunctionType();
-  for (Type t : type.getInputs()) {
-    if (llzk::checkValidType(emitErrorFunc, t).failed()) {
-      return failure();
-    }
-  }
+  // Unlike for FuncDefOps, we don't verify that the inputs are valid LLZK types,
+  // as we will check that the args match the target arguments in `verifySymbolUses()`
 
   // Ensure that the contract does not contain nested modules, structs, or functions.
   WalkResult res = this->walk<WalkOrder::PreOrder>([this](Operation *op) {

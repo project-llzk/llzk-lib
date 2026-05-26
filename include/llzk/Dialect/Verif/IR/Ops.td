@@ -79,8 +79,6 @@ def EnsureConstrainOp : EnsureOpBase<"ensure_constrain"> {
 // ContractDefOp
 //===------------------------------------------------------------------===//
 
-// TODO: Build methods directly from FuncDefOp and StructDefOp
-
 def ContractOp
     : VerifDialectOp<
           "contract", [ParentOneOf<["::mlir::ModuleOp",

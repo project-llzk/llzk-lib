@@ -29,11 +29,11 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @check(%x: index) {
+  function.def @check(%x: index) { // expected-note {{target defined here}}
     function.return
   }
 
-  // expected-error@+1 {{'verif.contract' op expected a valid LLZK type but found 'i32'}}
+  // expected-error@+1 {{'verif.contract' op contract type does not match target type}}
   verif.contract @BadType for @check (%x: i32) {
     %ok = arith.constant true
     verif.ensure_compute %ok
