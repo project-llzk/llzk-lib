@@ -236,6 +236,8 @@ auto llzk::component::StructDialect::initialize() -> void {
     #include "llzk/Dialect/Struct/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "llzk/Dialect/Struct/IR/Types.cpp.inc"

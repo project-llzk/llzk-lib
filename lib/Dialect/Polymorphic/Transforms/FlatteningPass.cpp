@@ -60,7 +60,6 @@
 
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
-#define GEN_PASS_DECL_FLATTENINGPASS
 #define GEN_PASS_DEF_FLATTENINGPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
@@ -367,6 +366,47 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return false;
 }
 
+static SymbolRefAttr
+convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> &paramNameToValue) {
+  auto it = paramNameToValue.find(FlatSymbolRefAttr::get(callee.getRootReference()));
+  if (it == paramNameToValue.end()) {
+    return callee;
+  }
+
+  auto tyAttr = llvm::dyn_cast<TypeAttr>(it->second);
+  if (!tyAttr) {
+    return callee;
+  }
+
+  auto structTy = llvm::dyn_cast<StructType>(tyAttr.getValue());
+  if (!structTy) {
+    return callee;
+  }
+
+  SmallVector<FlatSymbolRefAttr> newPieces = getPieces(structTy.getNameRef());
+  llvm::append_range(newPieces, callee.getNestedReferences());
+  return asSymbolRefAttr(newPieces);
+}
+
+static void
+convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &paramNameToValue) {
+  op->walk([&paramNameToValue](CallOp callOp) {
+    callOp.setCalleeAttr(convertCalleeSymRefs(callOp.getCalleeAttr(), paramNameToValue));
+  });
+}
+
+static bool calleeReferencesTemplateParam(CallOp op) {
+  SymbolRefAttr callee = op.getCalleeAttr();
+  if (!callee || callee.getNestedReferences().size() != 1) {
+    return false;
+  }
+  TemplateOp parentTemplate = getParentOfType<TemplateOp>(op);
+  if (!parentTemplate) {
+    return false;
+  }
+  return parentTemplate.hasConstNamed<TemplateParamOp>(callee.getRootReference());
+}
+
 /// Attempt to evaluate the concrete result of a single `TemplateExprOp` expression given
 /// the currently-known concrete param values in `paramNameToConcrete`. Returns the result
 /// attribute if all referenced params are concrete and all operations in the body can be
@@ -663,6 +703,7 @@ class StructCloner {
 
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
+    convertCalleesInPlace(newStruct, paramNameToConcrete);
     if (remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
@@ -990,6 +1031,10 @@ public:
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp] op: " << op << '\n');
 
+    if (calleeReferencesTemplateParam(op)) {
+      return failure();
+    }
+
     // Lookup callee target function
     SymbolTableCollection symTables;
     FailureOr<SymbolLookupResult<FuncDefOp>> callTgtOpt = op.getCalleeTarget(symTables);
@@ -1178,6 +1223,7 @@ public:
       if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
         FuncDefOp newFunc = callTgt.clone();
         newFunc.setSymName(newFuncName);
+        convertCalleesInPlace(newFunc, paramNameToConcrete);
         // Insert before the TemplateOp; symbol table may adjust the name to ensure uniqueness.
         symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
         actualNewFuncName = newFunc.getSymName();
@@ -1235,6 +1281,12 @@ public:
 
         // Clone and partially convert the function (concretize only the concrete params).
         FuncDefOp newFunc = callTgt.clone();
+        convertCalleesInPlace(newFunc, paramNameToConcrete);
+
+        // Insert before body conversion so nested concrete callees verify from the root module. Use
+        // the `SymbolTable::insert()` function so that the name will be made unique if necessary.
+        symTables.getSymbolTable(newTemplate).insert(newFunc);
+        symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
         if (failed(applyBodyConversions(newFunc))) {
           StringRef newFuncName = newFunc.getSymName();
           LLVM_DEBUG(
@@ -1247,10 +1299,6 @@ public:
           });
         }
 
-        // Insert the function into the new template, then the template into the module. Use the
-        // `SymbolTable::insert()` function so that the name will be made unique if necessary.
-        symTables.getSymbolTable(newTemplate).insert(newFunc);
-        symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
         LLVM_DEBUG(
             llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
                          << newTemplate.getSymName() << '\n'
@@ -1540,6 +1588,9 @@ public:
       auto callArgTypes = op.getArgOperands().getTypes();
       if (callArgTypes.empty()) {
         // no refinement possible if no function arguments
+        return failure();
+      }
+      if (calleeReferencesTemplateParam(op)) {
         return failure();
       }
       SymbolTableCollection tables;
@@ -1956,6 +2007,9 @@ public:
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
+    if (calleeReferencesTemplateParam(op)) {
+      return failure();
+    }
     SymbolTableCollection tables;
     auto lookupRes = lookupTopLevelSymbol<FuncDefOp>(tables, op.getCalleeAttr(), op);
     if (failed(lookupRes)) {
@@ -2316,7 +2370,12 @@ private:
 } // namespace Step5_Cleanup
 
 class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
+public:
+  using Base = llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass>;
+  // Allows us to use the default construction and explicit options constructor
+  using Base::Base;
 
+private:
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -2531,4 +2590,9 @@ class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<Flatte
 
 std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass() {
   return std::make_unique<FlatteningPass>();
+};
+
+std::unique_ptr<Pass>
+llzk::polymorphic::createFlatteningPass(llzk::polymorphic::FlatteningPassOptions &&options) {
+  return std::make_unique<FlatteningPass>(options);
 };

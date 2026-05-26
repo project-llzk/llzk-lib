@@ -36,6 +36,7 @@
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -536,7 +537,7 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
     auto selectedField = *(fields.begin());
     auto prime = toAPSInt(selectedField.get().prime());
 
-    mod.walk([this, &prime](component::StructDefOp structDef) {
+    auto result = mod.walk([this, &prime](component::StructDefOp structDef) {
       // Start by adding declare-funcs for each signal
       IRRewriter rewriter {&getContext()};
       rewriter.setInsertionPointToStart(&structDef.getProductFuncOp().getFunctionBody().front());
@@ -557,13 +558,17 @@ class SMTLoweringPass : public smt::impl::SMTLoweringPassBase<SMTLoweringPass> {
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
 
-      auto *result = convertFunction(convertBodies(structDef, signalSymbols, prime));
-      if (result == nullptr) {
+      if (convertFunction(convertBodies(structDef, signalSymbols, prime))) {
+        return WalkResult::advance();
+      } else {
         signalPassFailure();
         return WalkResult::interrupt();
       }
-      return WalkResult::advance();
     });
+    if (!result.wasInterrupted()) {
+      // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
+      mod->removeAttr(MAIN_ATTR_NAME);
+    }
   }
 };
 

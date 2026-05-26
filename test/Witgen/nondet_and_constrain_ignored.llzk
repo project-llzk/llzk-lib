@@ -1,0 +1,30 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %value = llzk.nondet : !felt.type<"babybear">
+      struct.writem %self[@out] = %value : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %v = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %c5 = felt.const 5 <"babybear">
+      constrain.eq %v, %c5 : !felt.type<"babybear">, !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": "0"
+// CHECK-NEXT: }
+
+//--- input.json
+{}

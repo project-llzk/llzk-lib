@@ -1,0 +1,158 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Poseidon_0::@Poseidon_0<[]>>} {
+  poly.template @POSEIDON_M_0 {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @POSEIDON_M_0(%arg0: !felt.type<"bn128">) -> !poly.tvar<@T_return> attributes {function.allow_non_native_field_ops} {
+      %two = felt.const 2 : <"bn128">
+      %cond1 = bool.cmp eq(%arg0, %two) : !felt.type<"bn128">, !felt.type<"bn128">
+      %result = scf.if %cond1 -> (!poly.tvar<@T_return>) {
+        %v00 = felt.const 2910766817845651019878574839501801340070030115151021261302834310722729507541 : <"bn128">
+        %v01 = felt.const 19727366863391167538122140361473584127147630672623100827934084310230022599144 : <"bn128">
+        %v10 = felt.const 5776684794125549462448597414050232243778680302179439492664047328281728356345 : <"bn128">
+        %v11 = felt.const 8348174920934122550483593999453880006756108121341067172388445916328941978568 : <"bn128">
+        %row0_2 = array.new %v00, %v01 : <2 x !felt.type<"bn128">>
+        %row1_2 = array.new %v10, %v11 : <2 x !felt.type<"bn128">>
+        %mat2 = array.new : <2,2 x !felt.type<"bn128">>
+        %i0 = arith.constant 0 : index
+        array.insert %mat2[%i0] = %row0_2 : <2,2 x !felt.type<"bn128">>, <2 x !felt.type<"bn128">>
+        %i1 = arith.constant 1 : index
+        array.insert %mat2[%i1] = %row1_2 : <2,2 x !felt.type<"bn128">>, <2 x !felt.type<"bn128">>
+        %cast2 = poly.unifiable_cast %mat2 : (!array.type<2,2 x !felt.type<"bn128">>) -> !poly.tvar<@T_return>
+        scf.yield %cast2 : !poly.tvar<@T_return>
+      } else {
+        %three = felt.const 3 : <"bn128">
+        %cond2 = bool.cmp eq(%arg0, %three) : !felt.type<"bn128">, !felt.type<"bn128">
+        %inner = scf.if %cond2 -> (!poly.tvar<@T_return>) {
+          %v200 = felt.const 7511745149465107256748700652201246547602992235352608707588321460060273774987 : <"bn128">
+          %v201 = felt.const 10370080108974718697676803824769673834027675643658433702224577712625900127200 : <"bn128">
+          %v202 = felt.const 19705173408229649878903981084052839426532978878058043055305024233888854471533 : <"bn128">
+          %v210 = felt.const 18732019378264290557468133440468564866454307626475683536618613112504878618481 : <"bn128">
+          %v211 = felt.const 20870176810702568768751421378473869562658540583882454726129544628203806653987 : <"bn128">
+          %v212 = felt.const 7266061498423634438633389053804536045105766754026813321943009179476902321146 : <"bn128">
+          %v220 = felt.const 9131299761947733513298312097611845208338517739621853568979632113419485819303 : <"bn128">
+          %v221 = felt.const 10595341252162738537912664445405114076324478519622938027420701542910180337937 : <"bn128">
+          %v222 = felt.const 11597556804922396090267472882856054602429588299176362916247939723151043581408 : <"bn128">
+          %row0_3 = array.new %v200, %v201, %v202 : <3 x !felt.type<"bn128">>
+          %row1_3 = array.new %v210, %v211, %v212 : <3 x !felt.type<"bn128">>
+          %row2_3 = array.new %v220, %v221, %v222 : <3 x !felt.type<"bn128">>
+          %mat3 = array.new : <3,3 x !felt.type<"bn128">>
+          %i0_3 = arith.constant 0 : index
+          array.insert %mat3[%i0_3] = %row0_3 : <3,3 x !felt.type<"bn128">>, <3 x !felt.type<"bn128">>
+          %i1_3 = arith.constant 1 : index
+          array.insert %mat3[%i1_3] = %row1_3 : <3,3 x !felt.type<"bn128">>, <3 x !felt.type<"bn128">>
+          %i2_3 = arith.constant 2 : index
+          array.insert %mat3[%i2_3] = %row2_3 : <3,3 x !felt.type<"bn128">>, <3 x !felt.type<"bn128">>
+          %cast3 = poly.unifiable_cast %mat3 : (!array.type<3,3 x !felt.type<"bn128">>) -> !poly.tvar<@T_return>
+          scf.yield %cast3 : !poly.tvar<@T_return>
+        } else {
+          %zero = felt.const 0 : <"bn128">
+          %row0_1 = array.new %zero : <1 x !felt.type<"bn128">>
+          %mat1 = array.new : <1,1 x !felt.type<"bn128">>
+          %i0_1 = arith.constant 0 : index
+          array.insert %mat1[%i0_1] = %row0_1 : <1,1 x !felt.type<"bn128">>, <1 x !felt.type<"bn128">>
+          %cast1 = poly.unifiable_cast %mat1 : (!array.type<1,1 x !felt.type<"bn128">>) -> !poly.tvar<@T_return>
+          scf.yield %cast1 : !poly.tvar<@T_return>
+        }
+        scf.yield %inner : !poly.tvar<@T_return>
+      }
+      function.return %result : !poly.tvar<@T_return>
+    }
+  }
+  poly.template @Poseidon_0 {
+    struct.def @Poseidon_0 {
+      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+      function.def @compute(%arg0: !array.type<1 x !felt.type<"bn128">>) -> !struct.type<@Poseidon_0::@Poseidon_0<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %self = struct.new : <@Poseidon_0::@Poseidon_0<[]>>
+        %one = felt.const 1 : <"bn128">
+        %t = felt.add %one, %one : !felt.type<"bn128">, !felt.type<"bn128">
+        %M = function.call @POSEIDON_M_0::@POSEIDON_M_0(%t) : (!felt.type<"bn128">) -> !array.type<2,2 x !felt.type<"bn128">>
+        function.return %self : !struct.type<@Poseidon_0::@Poseidon_0<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@Poseidon_0::@Poseidon_0<[]>>, %arg1: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+        %one = felt.const 1 : <"bn128">
+        %t = felt.add %one, %one : !felt.type<"bn128">, !felt.type<"bn128">
+        %M = function.call @POSEIDON_M_0::@POSEIDON_M_0(%t) : (!felt.type<"bn128">) -> !array.type<2,2 x !felt.type<"bn128">>
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Poseidon_0::@Poseidon_0<[]>>} {
+// CHECK-NEXT:    poly.template @POSEIDON_M_0 {
+// CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
+// CHECK-NEXT:      function.def @POSEIDON_M_0(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !poly.tvar<@T_return> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_0]], %[[VAL_1]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_2]] -> (!poly.tvar<@T_return>) {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2910766817845651019878574839501801340070030115151021261302834310722729507541 : <"bn128">
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  19727366863391167538122140361473584127147630672623100827934084310230022599144 : <"bn128">
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  5776684794125549462448597414050232243778680302179439492664047328281728356345 : <"bn128">
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.const  8348174920934122550483593999453880006756108121341067172388445916328941978568 : <"bn128">
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_4]], %[[VAL_5]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_6]], %[[VAL_7]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          array.insert %[[VAL_10]]{{\[}}%[[VAL_11]]] = %[[VAL_8]] : <2,2 x !felt.type<"bn128">>, <2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          array.insert %[[VAL_10]]{{\[}}%[[VAL_12]]] = %[[VAL_9]] : <2,2 x !felt.type<"bn128">>, <2 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_10]] : (!array.type<2,2 x !felt.type<"bn128">>) -> !poly.tvar<@T_return>
+// CHECK-NEXT:          scf.yield %[[VAL_13]] : !poly.tvar<@T_return>
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"bn128">
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_0]], %[[VAL_14]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_15]] -> (!poly.tvar<@T_return>) {
+// CHECK-NEXT:            %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.const  7511745149465107256748700652201246547602992235352608707588321460060273774987 : <"bn128">
+// CHECK-NEXT:            %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.const  10370080108974718697676803824769673834027675643658433702224577712625900127200 : <"bn128">
+// CHECK-NEXT:            %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.const  19705173408229649878903981084052839426532978878058043055305024233888854471533 : <"bn128">
+// CHECK-NEXT:            %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  18732019378264290557468133440468564866454307626475683536618613112504878618481 : <"bn128">
+// CHECK-NEXT:            %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.const  20870176810702568768751421378473869562658540583882454726129544628203806653987 : <"bn128">
+// CHECK-NEXT:            %[[VAL_22:[0-9a-zA-Z_\.]+]] = felt.const  7266061498423634438633389053804536045105766754026813321943009179476902321146 : <"bn128">
+// CHECK-NEXT:            %[[VAL_23:[0-9a-zA-Z_\.]+]] = felt.const  9131299761947733513298312097611845208338517739621853568979632113419485819303 : <"bn128">
+// CHECK-NEXT:            %[[VAL_24:[0-9a-zA-Z_\.]+]] = felt.const  10595341252162738537912664445405114076324478519622938027420701542910180337937 : <"bn128">
+// CHECK-NEXT:            %[[VAL_25:[0-9a-zA-Z_\.]+]] = felt.const  11597556804922396090267472882856054602429588299176362916247939723151043581408 : <"bn128">
+// CHECK-NEXT:            %[[VAL_26:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_17]], %[[VAL_18]], %[[VAL_19]] : <3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_20]], %[[VAL_21]], %[[VAL_22]] : <3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_23]], %[[VAL_24]], %[[VAL_25]] : <3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.new  : <3,3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_30:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:            array.insert %[[VAL_29]]{{\[}}%[[VAL_30]]] = %[[VAL_26]] : <3,3 x !felt.type<"bn128">>, <3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_31:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:            array.insert %[[VAL_29]]{{\[}}%[[VAL_31]]] = %[[VAL_27]] : <3,3 x !felt.type<"bn128">>, <3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_32:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:            array.insert %[[VAL_29]]{{\[}}%[[VAL_32]]] = %[[VAL_28]] : <3,3 x !felt.type<"bn128">>, <3 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_33:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_29]] : (!array.type<3,3 x !felt.type<"bn128">>) -> !poly.tvar<@T_return>
+// CHECK-NEXT:            scf.yield %[[VAL_33]] : !poly.tvar<@T_return>
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            %[[VAL_34:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:            %[[VAL_35:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_34]] : <1 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_36:[0-9a-zA-Z_\.]+]] = array.new  : <1,1 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_37:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:            array.insert %[[VAL_36]]{{\[}}%[[VAL_37]]] = %[[VAL_35]] : <1,1 x !felt.type<"bn128">>, <1 x !felt.type<"bn128">>
+// CHECK-NEXT:            %[[VAL_38:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_36]] : (!array.type<1,1 x !felt.type<"bn128">>) -> !poly.tvar<@T_return>
+// CHECK-NEXT:            scf.yield %[[VAL_38]] : !poly.tvar<@T_return>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          scf.yield %[[VAL_16]] : !poly.tvar<@T_return>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return %[[VAL_3]] : !poly.tvar<@T_return>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Poseidon_0 {
+// CHECK-NEXT:      struct.def @Poseidon_0 {
+// CHECK-NEXT:        struct.member @out : !felt.type<"bn128"> {llzk.pub}
+// CHECK-NEXT:        function.def @compute(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) -> !struct.type<@Poseidon_0::@Poseidon_0<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_40:[0-9a-zA-Z_\.]+]] = struct.new : <@Poseidon_0::@Poseidon_0<[]>>
+// CHECK-NEXT:          %[[VAL_41:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:          %[[VAL_42:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_41]], %[[VAL_41]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_43:[0-9a-zA-Z_\.]+]] = function.call @POSEIDON_M_0::@POSEIDON_M_0(%[[VAL_42]]) : (!felt.type<"bn128">) -> !array.type<2,2 x !felt.type<"bn128">>
+// CHECK-NEXT:          function.return %[[VAL_40]] : !struct.type<@Poseidon_0::@Poseidon_0<[]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_44:[0-9a-zA-Z_\.]+]]: !struct.type<@Poseidon_0::@Poseidon_0<[]>>, %[[VAL_45:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:          %[[VAL_46:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:          %[[VAL_47:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_46]], %[[VAL_46]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_48:[0-9a-zA-Z_\.]+]] = function.call @POSEIDON_M_0::@POSEIDON_M_0(%[[VAL_47]]) : (!felt.type<"bn128">) -> !array.type<2,2 x !felt.type<"bn128">>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

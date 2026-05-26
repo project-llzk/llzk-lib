@@ -9,19 +9,50 @@
 
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
+#include "llzk/Dialect/Cast/IR/Enums.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/BuilderHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Cast/IR/Ops.cpp.inc"
 using namespace mlir;
+
+static inline ParseResult
+parseOptionalOverflowSemantics(OpAsmParser &parser, llzk::cast::OverflowSemanticsAttr &overflow) {
+  StringRef keyword;
+  if (failed(parser.parseOptionalKeyword(&keyword))) {
+    return success();
+  }
+
+  std::optional<llzk::cast::OverflowSemantics> semantics =
+      llzk::cast::symbolizeOverflowSemantics(keyword);
+  if (!semantics) {
+    return parser.emitError(parser.getCurrentLocation()) << "expected overflow semantics keyword";
+  }
+
+  overflow = llzk::cast::OverflowSemanticsAttr::get(parser.getContext(), *semantics);
+  return success();
+}
+
+static inline void
+printOptionalOverflowSemantics(OpAsmPrinter &printer, llzk::cast::OverflowSemanticsAttr overflow) {
+  if (!overflow || overflow.getValue() == llzk::cast::OverflowSemantics::ASSERT) {
+    return;
+  }
+
+  printer << ' ' << stringifyOverflowSemantics(overflow.getValue());
+}
+
 namespace llzk::cast {
 
 bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs) {
@@ -47,7 +78,34 @@ bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRan
   });
 }
 
+LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter &rewriter) {
+  // Instead of casting an arith.constant to felt, just generate a felt.const
+  if (!op.getValue().getDefiningOp()) {
+    return failure();
+  }
+
+  return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
+      .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
+    rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
+        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
+    );
+    return success();
+  }).Default([](auto) { return failure(); });
+}
+
+ParseResult
+IntToFeltOp::parseOptionalOverflowSemantics(OpAsmParser &parser, OverflowSemanticsAttr &overflow) {
+  return ::parseOptionalOverflowSemantics(parser, overflow);
+}
+
+void IntToFeltOp::printOptionalOverflowSemantics(
+    OpAsmPrinter &printer, IntToFeltOp /*op*/, OverflowSemanticsAttr overflow
+) {
+  ::printOptionalOverflowSemantics(printer, overflow);
+}
+
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
+  // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     auto value = constOp.getValue().getValue();
     if (value.getBitWidth() <= 64) {
@@ -56,6 +114,18 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
     }
   }
   return failure();
+}
+
+ParseResult FeltToIndexOp::parseOptionalOverflowSemantics(
+    OpAsmParser &parser, OverflowSemanticsAttr &overflow
+) {
+  return ::parseOptionalOverflowSemantics(parser, overflow);
+}
+
+void FeltToIndexOp::printOptionalOverflowSemantics(
+    OpAsmPrinter &printer, FeltToIndexOp /*op*/, OverflowSemanticsAttr overflow
+) {
+  ::printOptionalOverflowSemantics(printer, overflow);
 }
 
 } // namespace llzk::cast

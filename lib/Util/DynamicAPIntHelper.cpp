@@ -96,8 +96,10 @@ DynamicAPInt toDynamicAPInt(StringRef str) {
 }
 
 DynamicAPInt toDynamicAPInt(const APSInt &i) {
-  if (i.getBitWidth() <= 64) {
-    // Fast path for smaller values, just use the int64_t conversion
+  // Fast path for smaller values, just use the `int64_t` conversion. However, that only works if
+  // the value is signed or if the sign bit is clear otherwise it will incorrectly interpret the
+  // value as a negative number.
+  if (i.getBitWidth() <= 64 && (i.isSigned() || i.isSignBitClear())) {
     return DynamicAPInt(i.isNegative() ? i.getSExtValue() : static_cast<int64_t>(i.getZExtValue()));
   }
 
@@ -142,6 +144,12 @@ APInt toAPInt(const DynamicAPInt &val, unsigned bitWidth) {
   SmallString<64> str;
   raw_svector_ostream(str) << val;
   return APInt(bitWidth + 1, str, 10);
+}
+
+APInt toExactWidthAPInt(const DynamicAPInt &val, unsigned bitWidth) {
+  SmallString<64> str;
+  raw_svector_ostream(str) << val;
+  return APInt(bitWidth, str, 10);
 }
 
 DynamicAPInt modExp(const DynamicAPInt &base, const DynamicAPInt &exp, const DynamicAPInt &mod) {

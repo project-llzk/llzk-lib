@@ -9,6 +9,7 @@ endfunction()
 add_subdirectory(Analysis)
 add_subdirectory(IR)
 add_subdirectory(Util)
+add_subdirectory(Witgen)
 add_subdirectory(CAPI)
 
 add_custom_target(
@@ -16,4 +17,3 @@ add_custom_target(
   DEPENDS ${LLZK_UNITTESTS}
   COMMAND "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target test
   COMMENT "Running the gtest-based unit tests")
-

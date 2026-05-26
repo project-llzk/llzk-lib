@@ -16,6 +16,7 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
 #include <mlir/IR/DialectImplementation.h>
@@ -30,12 +31,47 @@
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
 
+using namespace mlir;
+using namespace llzk;
+
 //===------------------------------------------------------------------===//
 // LLZKDialect
 //===------------------------------------------------------------------===//
 
-auto llzk::LLZKDialect::initialize() -> void {
+namespace {
+
+LogicalResult verifyLlzkMainAttr(Operation *op, Attribute attr) {
+  ModuleOp moduleOp = llvm::dyn_cast<ModuleOp>(op);
+  if (!moduleOp) {
+    return op->emitError().append(
+        '"', MAIN_ATTR_NAME, "\" attribute can only be specified on '",
+        ModuleOp::getOperationName(), '\''
+    );
+  }
+
+  FailureOr<component::StructType> mainStructTypeOpt = getTypeFromLlzkMainAttr(moduleOp, attr);
+  if (succeeded(mainStructTypeOpt)) {
+    if (component::StructType st = mainStructTypeOpt.value()) {
+      SymbolTableCollection symbolTables;
+      return st.getDefinition(symbolTables, op);
+    }
+  }
+  return failure();
+}
+
+} // namespace
+
+LogicalResult LLZKDialect::verifyOperationAttribute(Operation *op, NamedAttribute attr) {
+  if (attr.getName() == MAIN_ATTR_NAME) {
+    return verifyLlzkMainAttr(op, attr.getValue());
+  }
+  return success();
+}
+
+auto LLZKDialect::initialize() -> void {
   // clang-format off
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/LLZK/IR/Attrs.cpp.inc"
