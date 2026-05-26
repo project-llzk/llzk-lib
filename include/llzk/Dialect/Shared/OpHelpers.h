@@ -49,6 +49,15 @@ public:
 /// See `HasAncestor` ODS documentation for details.
 template <typename... Ancestors> struct HasAncestor {
   template <typename ConcreteType>
+  static void appendTypeName(mlir::InFlightDiagnostic &diag, bool &first) {
+    if (!first) {
+      diag << ", ";
+    }
+    first = false;
+    diag << '\'' << ConcreteType::getOperationName() << '\'';
+  }
+
+  template <typename ConcreteType>
   // Suppress false positive from `clang-tidy`
   // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
   struct Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
@@ -56,7 +65,18 @@ template <typename... Ancestors> struct HasAncestor {
       if (op->getParentOfType<Ancestors...>()) {
         return mlir::success();
       }
-      return op->emitError("operation must have an ancestor of the given types");
+      auto diag = op->emitOpError();
+
+      if constexpr (sizeof...(Ancestors) == 1) {
+        diag << "must have an ancestor of type ";
+      } else {
+        diag << "must have an ancestor of one of the following types: ";
+      }
+
+      bool first = true;
+      (HasAncestor::template appendTypeName<Ancestors>(diag, first), ...);
+
+      return diag;
     }
   };
 };

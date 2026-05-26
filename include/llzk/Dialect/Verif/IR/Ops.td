@@ -234,7 +234,8 @@ def IncludeOp
           "include", [MemRefsNormalizable, AttrSizedOperandSegments,
                       VerifySizesForMultiAffineOps<1>,
                       DeclareOpInterfaceMethods<CallOpInterface>,
-                      DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                      DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                      HasAncestor<"::llzk::verif::ContractOp">]> {
   let summary = "contract inclusion operation";
   let description = [{
     Invokes another specification contract from another contract, effectively including the

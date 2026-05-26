@@ -190,3 +190,21 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check() {
+    function.return
+  }
+
+  verif.contract @Base for @check () {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+
+  function.def @illegal_include() {
+    // expected-error@+1 {{'verif.include' op must have an ancestor of type 'verif.contract'}}
+    verif.include @Base() : () -> ()
+  }
+}
