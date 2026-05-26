@@ -142,17 +142,58 @@ static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
   return !*solver->check();
 }
 
+static std::optional<llvm::StringRef> getProductSource(mlir::Operation *op) {
+  if (mlir::StringAttr source = op->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+    return source.getValue();
+  }
+
+  // Loop fusion can preserve descendant provenance while dropping it from the control op.
+  std::optional<llvm::StringRef> inferredSource;
+  bool sourceConflict = false;
+  op->walk([&](mlir::Operation *nestedOp) {
+    if (nestedOp == op) {
+      return mlir::WalkResult::advance();
+    }
+
+    mlir::StringAttr nestedSource = nestedOp->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE);
+    if (!nestedSource) {
+      return mlir::WalkResult::advance();
+    }
+
+    llvm::StringRef source = nestedSource.getValue();
+    if (source != FUNC_NAME_COMPUTE && source != FUNC_NAME_CONSTRAIN) {
+      sourceConflict = true;
+      return mlir::WalkResult::interrupt();
+    }
+    if (!inferredSource) {
+      inferredSource = source;
+      return mlir::WalkResult::advance();
+    }
+    if (*inferredSource != source) {
+      sourceConflict = true;
+      return mlir::WalkResult::interrupt();
+    }
+    return mlir::WalkResult::advance();
+  });
+
+  if (sourceConflict) {
+    return std::nullopt;
+  }
+  return inferredSource;
+}
+
 static inline bool hasProductSource(mlir::Operation *op, llvm::StringRef source) {
-  return op->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) == source;
+  std::optional<llvm::StringRef> productSource = getProductSource(op);
+  return productSource && *productSource == source;
 }
 
 static inline bool areOppositeProductSources(mlir::Operation *a, mlir::Operation *b) {
-  if (!a->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ||
-      !b->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+  std::optional<llvm::StringRef> sourceA = getProductSource(a);
+  std::optional<llvm::StringRef> sourceB = getProductSource(b);
+  if (!sourceA || !sourceB) {
     return false;
   }
-  return a->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) !=
-         b->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE);
+  return *sourceA != *sourceB;
 }
 
 static bool isBetweenInBlock(mlir::Operation *op, mlir::Operation *before, mlir::Operation *after) {
@@ -366,12 +407,13 @@ static mlir::LogicalResult fuseIfPair(
 static mlir::LogicalResult fuseMatchingIfPairs(mlir::Region &body, mlir::MLIRContext *context) {
   llvm::SmallVector<mlir::scf::IfOp> witnessIfs, constraintIfs;
   body.walk<mlir::WalkOrder::PreOrder>([&](mlir::scf::IfOp ifOp) {
-    if (!ifOp->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+    std::optional<llvm::StringRef> productSource = getProductSource(ifOp);
+    if (!productSource) {
       return mlir::WalkResult::advance();
     }
-    if (hasProductSource(ifOp, FUNC_NAME_COMPUTE)) {
+    if (*productSource == FUNC_NAME_COMPUTE) {
       witnessIfs.push_back(ifOp);
-    } else if (hasProductSource(ifOp, FUNC_NAME_CONSTRAIN)) {
+    } else if (*productSource == FUNC_NAME_CONSTRAIN) {
       constraintIfs.push_back(ifOp);
     }
     return mlir::WalkResult::skip();
@@ -396,13 +438,13 @@ mlir::LogicalResult fuseMatchingLoopPairs(mlir::Region &body, mlir::MLIRContext 
   // Start by collecting all possible loops
   llvm::SmallVector<mlir::scf::ForOp> witnessLoops, constraintLoops;
   body.walk<mlir::WalkOrder::PreOrder>([&witnessLoops, &constraintLoops](mlir::scf::ForOp forOp) {
-    if (!forOp->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+    std::optional<llvm::StringRef> productSource = getProductSource(forOp);
+    if (!productSource) {
       return mlir::WalkResult::skip();
     }
-    auto productSource = forOp->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE);
-    if (productSource == FUNC_NAME_COMPUTE) {
+    if (*productSource == FUNC_NAME_COMPUTE) {
       witnessLoops.push_back(forOp);
-    } else if (productSource == FUNC_NAME_CONSTRAIN) {
+    } else if (*productSource == FUNC_NAME_CONSTRAIN) {
       constraintLoops.push_back(forOp);
     }
     // Skipping here, because any nested loops can't possibly be fused at this stage
