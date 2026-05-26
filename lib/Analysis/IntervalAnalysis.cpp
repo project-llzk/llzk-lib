@@ -9,6 +9,7 @@
 
 #include "llzk/Analysis/IntervalAnalysis.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
@@ -19,6 +20,7 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 
+#include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <functional>
@@ -36,18 +38,6 @@ using namespace felt;
 using namespace function;
 
 namespace {
-
-bool isOperationLive(DataFlowSolver &solver, Operation *op) {
-  if (!op->getBlock()) {
-    return true;
-  }
-  if (const auto *exec = solver.lookupState<mlir::dataflow::Executable>(
-          solver.getProgramPointBefore(op->getBlock())
-      )) {
-    return exec->isLive();
-  }
-  return true;
-}
 
 std::optional<UnreducedInterval> mergeUnreducedIntervals(
     const std::optional<UnreducedInterval> &lhs, const std::optional<UnreducedInterval> &rhs
@@ -138,6 +128,73 @@ translateRef(const SourceRef &ref, const SourceRefRemappings &translations) {
     return failure();
   }
   return refs;
+}
+
+bool isDirectSourceRefValue(Value value) {
+  if (llvm::isa<BlockArgument>(value)) {
+    return true;
+  }
+
+  Operation *definingOp = value.getDefiningOp();
+  return llvm::isa_and_present<MemberReadOp, ReadArrayOp, polymorphic::ConstReadOp>(definingOp);
+}
+
+std::optional<SourceRefLatticeValue>
+getIdentitySourceRefState(DataFlowSolver &solver, Value value) {
+  if (isDirectSourceRefValue(value)) {
+    SourceRefLatticeValue val = SourceRefAnalysis::getValueState(solver, value);
+    if (val.isScalar()) {
+      return val;
+    }
+    return std::nullopt;
+  }
+
+  auto createArray = llvm::dyn_cast_if_present<CreateArrayOp>(value.getDefiningOp());
+  if (!createArray) {
+    return std::nullopt;
+  }
+
+  SourceRefLatticeValue arrayVal(createArray.getType().getShape());
+  for (auto [idx, element] : llvm::enumerate(createArray.getElements())) {
+    std::optional<SourceRefLatticeValue> elementVal = getIdentitySourceRefState(solver, element);
+    if (!elementVal.has_value()) {
+      return std::nullopt;
+    }
+    (void)arrayVal.getElemFlatIdx(idx).setValue(*elementVal);
+  }
+  return arrayVal;
+}
+
+llvm::EquivalenceClasses<SourceRef>
+collectDirectEqualityRefs(DataFlowSolver &solver, FuncDefOp fn) {
+  llvm::EquivalenceClasses<SourceRef> eqRefs;
+  fn.walk([&](EmitEqualityOp eqOp) {
+    Operation *op = eqOp.getOperation();
+    if (!dataflow::isOperationLive(solver, op)) {
+      return;
+    }
+
+    Value lhs = eqOp.getLhs();
+    Value rhs = eqOp.getRhs();
+    if (!isDirectSourceRefValue(lhs) || !isDirectSourceRefValue(rhs)) {
+      return;
+    }
+
+    SourceRefLatticeValue lhsState = SourceRefAnalysis::getValueState(solver, lhs);
+    SourceRefLatticeValue rhsState = SourceRefAnalysis::getValueState(solver, rhs);
+    if (!lhsState.isScalar() || !rhsState.isScalar() || !lhsState.isSingleValue() ||
+        !rhsState.isSingleValue()) {
+      return;
+    }
+
+    const SourceRef &lhsRef = lhsState.getSingleValue();
+    const SourceRef &rhsRef = rhsState.getSingleValue();
+    if (lhsRef.isConstant() || rhsRef.isConstant()) {
+      return;
+    }
+    eqRefs.unionSets(lhsRef, rhsRef);
+  });
+  return eqRefs;
 }
 
 FailureOr<SymbolLookupResult<FuncDefOp>>
@@ -1764,7 +1821,7 @@ LogicalResult StructIntervals::computeIntervals(
     // which parent ref owns a child interval, the local overapproximation remains.
     if (fn.isStructConstrain()) {
       auto mergeChildConstrainIntervals = [&](CallOp fnCall) {
-        if (!isOperationLive(solver, fnCall.getOperation())) {
+        if (!dataflow::isOperationLive(solver, fnCall.getOperation())) {
           return;
         }
 
@@ -1794,17 +1851,20 @@ LogicalResult StructIntervals::computeIntervals(
           );
         }
 
-        SourceRefRemappings translations;
+        SourceRefRemappings identityTranslations;
         for (unsigned i = 0; i < calledFn.getNumArguments(); i++) {
           SourceRef prefix(calledFn.getArgument(i));
-          SourceRefLatticeValue val =
-              SourceRefAnalysis::getValueState(solver, fnCall.getOperand(i));
-          translations.push_back({prefix, val});
+          Value operand = fnCall.getOperand(i);
+          std::optional<SourceRefLatticeValue> identityVal =
+              getIdentitySourceRefState(solver, operand);
+          if (identityVal.has_value()) {
+            identityTranslations.push_back({prefix, *identityVal});
+          }
         }
 
         const StructIntervals &childIntervals = childAnalysis.getResult(ctx);
         for (const auto &[childRef, childInterval] : childIntervals.getConstrainIntervals()) {
-          auto translatedRefs = translateRef(childRef, translations);
+          auto translatedRefs = translateRef(childRef, identityTranslations);
           if (failed(translatedRefs)) {
             continue;
           }
@@ -1826,6 +1886,64 @@ LogicalResult StructIntervals::computeIntervals(
           const SourceRef &translatedRef = *uniqueTranslatedRefs.begin();
           if (functionRefs.contains(translatedRef)) {
             mergeInterval(translatedRef, childInterval, childUnreduced);
+            searchSet.erase(translatedRef);
+          }
+        }
+
+        llvm::EquivalenceClasses<SourceRef> directEqRefs =
+            collectDirectEqualityRefs(solver, calledFn);
+        for (auto leaderIt = directEqRefs.begin(); leaderIt != directEqRefs.end(); ++leaderIt) {
+          if (!leaderIt->isLeader()) {
+            continue;
+          }
+
+          llvm::MapVector<SourceRef, Interval> translatedEqRefs;
+          Interval contextualInterval = Interval::Entire(ctx.getField());
+          bool hasInterval = false;
+          bool ambiguousTranslation = false;
+
+          for (auto memberIt = directEqRefs.member_begin(leaderIt);
+               memberIt != directEqRefs.member_end(); ++memberIt) {
+            auto translatedRefs = translateRef(*memberIt, identityTranslations);
+            if (failed(translatedRefs)) {
+              continue;
+            }
+
+            SourceRefSet uniqueTranslatedRefs;
+            for (const SourceRef &translatedRef : *translatedRefs) {
+              uniqueTranslatedRefs.insert(translatedRef);
+            }
+            if (uniqueTranslatedRefs.size() != 1) {
+              ambiguousTranslation = true;
+              break;
+            }
+
+            const SourceRef &translatedRef = *uniqueTranslatedRefs.begin();
+            if (!functionRefs.contains(translatedRef)) {
+              continue;
+            }
+
+            Interval memberInterval = Interval::Entire(ctx.getField());
+            if (auto childIntervalIt = childIntervals.getConstrainIntervals().find(*memberIt);
+                childIntervalIt != childIntervals.getConstrainIntervals().end()) {
+              memberInterval = memberInterval.intersect(childIntervalIt->second);
+            }
+            if (auto parentIntervalIt = memberRanges.find(translatedRef);
+                parentIntervalIt != memberRanges.end()) {
+              memberInterval = memberInterval.intersect(parentIntervalIt->second);
+            }
+
+            translatedEqRefs[translatedRef] = memberInterval;
+            contextualInterval = contextualInterval.intersect(memberInterval);
+            hasInterval = true;
+          }
+
+          if (ambiguousTranslation || !hasInterval || translatedEqRefs.size() < 2) {
+            continue;
+          }
+
+          for (const auto &[translatedRef, _] : translatedEqRefs) {
+            mergeInterval(translatedRef, contextualInterval);
             searchSet.erase(translatedRef);
           }
         }

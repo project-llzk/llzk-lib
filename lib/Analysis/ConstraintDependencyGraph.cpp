@@ -37,18 +37,6 @@ using namespace component;
 using namespace constrain;
 using namespace function;
 
-static bool isOperationLive(DataFlowSolver &solver, Operation *op) {
-  if (!op->getBlock()) {
-    return true;
-  }
-  if (const auto *exec = solver.lookupState<mlir::dataflow::Executable>(
-          solver.getProgramPointBefore(op->getBlock())
-      )) {
-    return exec->isLive();
-  }
-  return true;
-}
-
 /* SourceRefAnalysis */
 
 const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
@@ -381,7 +369,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   // - Union all constraints from the analysis
   // This requires iterating over all of the emit operations
   constrainFnOp.walk([this, &solver](Operation *op) {
-    if (!isOperationLive(solver, op)) {
+    if (!dataflow::isOperationLive(solver, op)) {
       return;
     }
 
@@ -416,7 +404,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    * add them to the transitive closures.
    */
   auto fnCallWalker = [this, &solver, &am](CallOp fnCall) mutable {
-    if (!isOperationLive(solver, fnCall.getOperation())) {
+    if (!dataflow::isOperationLive(solver, fnCall.getOperation())) {
       return;
     }
     auto res = resolveCallable<FuncDefOp>(tables, fnCall);
