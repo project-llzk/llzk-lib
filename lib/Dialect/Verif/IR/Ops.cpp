@@ -762,7 +762,12 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
       FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
-      assert(succeeded(unifyResult) && "already checked by `verifyInputs()` and `verifyOutputs()`");
+      // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
+      // even if `verifyInputs()` fails for error aggregation, so we still need to return
+      // early here.
+      if (failed(unifyResult)) {
+        return failure();
+      }
       return includeOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
     } else {
       // Non-template functions cannot contain template parameter instantiations.
