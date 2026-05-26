@@ -1,5 +1,9 @@
 var NAVTREEINDEX74 =
 {
+"namespacellzk_1_1dataflow.html":[10,0,2,7],
+"namespacellzk_1_1dataflow.html#a5a0e40a7d27e4b40d03f068209422cbd":[10,0,2,7,7],
+"namespacellzk_1_1dataflow.html#a808826ef495ea3f34b187d7c36de37c3":[10,0,2,7,6],
+"namespacellzk_1_1dataflow.html#a992658fcc8a11511240851285c08e434":[10,0,2,7,8],
 "namespacellzk_1_1dataflow.html#ac3f1738d91d0b52e190cc39ec4a005dc":[10,0,2,7,9],
 "namespacellzk_1_1dataflow.html#af2cdcb3d15c44dab3ff6268ab8e7a03f":[10,0,2,7,4],
 "namespacellzk_1_1dataflow.html#afe5bfdfe65fb003920edcfdcc7f5e64b":[10,0,2,7,5],
@@ -245,9 +249,5 @@ var NAVTREEINDEX74 =
 "overview.html#llzk-ir-dialects":[1,0,0],
 "overview.html#pass-overview":[1,0,2],
 "overview.html#project-overview":[1,0],
-"pages.html":[],
-"setup.html":[2],
-"setup.html#dev-workflow":[2,2],
-"setup.html#manual-build-setup":[2,1],
-"setup.html#nix-setup":[2,0]
+"pages.html":[]
 };

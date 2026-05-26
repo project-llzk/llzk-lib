@@ -150,6 +150,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9424b9a0f39763499875bba0725f4079" id="r_a9424b9a0f39763499875bba0725f4079"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9424b9a0f39763499875bba0725f4079">getAsmResultNames</a> (::mlir::OpAsmSetValueNameFn setNameFn)</td></tr>
 <tr class="memitem:a273dfb53fcc22228e4e8e963fc3ab5db" id="r_a273dfb53fcc22228e4e8e963fc3ab5db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a273dfb53fcc22228e4e8e963fc3ab5db">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 <tr class="memitem:a6dab9929882e14dc87d1b695775a44eb" id="r_a6dab9929882e14dc87d1b695775a44eb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6dab9929882e14dc87d1b695775a44eb">getEffects</a> (::llvm::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect &gt; &gt; &amp;effects)</td></tr>
+<tr class="memitem:a9b8f1618e1d8eba26dc9981dd2f86696" id="r_a9b8f1618e1d8eba26dc9981dd2f86696"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9b8f1618e1d8eba26dc9981dd2f86696">getValueAPInt</a> () -&gt; ::llvm::APInt</td></tr>
+<tr class="memitem:a16f94a5e92704501f57a8d76294fb29f" id="r_a16f94a5e92704501f57a8d76294fb29f"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a16f94a5e92704501f57a8d76294fb29f">tryGetZExtValue</a> () -&gt; std::optional&lt; uint64_t &gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -808,6 +810,33 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="a9b8f1618e1d8eba26dc9981dd2f86696" name="a9b8f1618e1d8eba26dc9981dd2f86696"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b8f1618e1d8eba26dc9981dd2f86696">&#9670;&#160;</a></span>getValueAPInt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto llzk::felt::FeltConstantOp::getValueAPInt </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> -&gt; ::llvm::APInt </td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l00870">870</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
 <a id="a72e8df3452bf530c1b27d256e05bc4aa" name="a72e8df3452bf530c1b27d256e05bc4aa"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a72e8df3452bf530c1b27d256e05bc4aa">&#9670;&#160;</a></span>getValueAttr()</h2>
 
@@ -1226,6 +1255,33 @@ template&lt;typename RangeT&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l00830">830</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a16f94a5e92704501f57a8d76294fb29f" name="a16f94a5e92704501f57a8d76294fb29f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16f94a5e92704501f57a8d76294fb29f">&#9670;&#160;</a></span>tryGetZExtValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto llzk::felt::FeltConstantOp::tryGetZExtValue </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> -&gt; std::optional&lt;uint64_t&gt; </td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html#l00872">872</a> of file <a class="el" href="Felt_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>

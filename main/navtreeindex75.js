@@ -1,5 +1,9 @@
 var NAVTREEINDEX75 =
 {
+"setup.html":[2],
+"setup.html#dev-workflow":[2,2],
+"setup.html#manual-build-setup":[2,1],
+"setup.html#nix-setup":[2,0],
 "structAddFeltOpBuildFuncHelper.html":[12,0,5],
 "structAddFeltOpBuildFuncHelper.html#a4a422378ae7689f2b933a681356258ea":[12,0,5,1],
 "structAddFeltOpBuildFuncHelper.html#aaa9fc0b787db534f98c387d277baf709":[12,0,5,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX75 =
 "structReadArrayOpBuildFuncHelper.html#a248db0a2012b72df119e4d4b057131ce":[12,0,93,1],
 "structReadArrayOpBuildFuncHelper.html#a2b9bfb8fd08e59579b4cddce65502411":[12,0,93,0],
 "structReadPodOpBuildFuncHelper.html":[12,0,94],
-"structReadPodOpBuildFuncHelper.html#a42c5e6c58a3c74e6ed8ffac7509abfc1":[12,0,94,1],
-"structReadPodOpBuildFuncHelper.html#acecef7c1580f1971f75a417f535f96a5":[12,0,94,0],
-"structReturnOpBuildFuncHelper.html":[12,0,95],
-"structReturnOpBuildFuncHelper.html#a2d979fab1b5016fe755272a013a903e8":[12,0,95,0],
-"structReturnOpBuildFuncHelper.html#a38606f180cb31aaa1d4a24eb17ec4624":[12,0,95,1]
+"structReadPodOpBuildFuncHelper.html#a42c5e6c58a3c74e6ed8ffac7509abfc1":[12,0,94,1]
 };

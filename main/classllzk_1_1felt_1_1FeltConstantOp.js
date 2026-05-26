@@ -14,10 +14,12 @@ var classllzk_1_1felt_1_1FeltConstantOp =
     [ "getODSResults", "classllzk_1_1felt_1_1FeltConstantOp.html#aa0f097503858bcfd3fb9fbab7ce99274", null ],
     [ "getResult", "classllzk_1_1felt_1_1FeltConstantOp.html#a78a9d6f2e3cd5199638232c0e6a4998e", null ],
     [ "getValue", "classllzk_1_1felt_1_1FeltConstantOp.html#af08d5faefacf1bd55250ea6ad1f3a849", null ],
+    [ "getValueAPInt", "classllzk_1_1felt_1_1FeltConstantOp.html#a9b8f1618e1d8eba26dc9981dd2f86696", null ],
     [ "getValueAttr", "classllzk_1_1felt_1_1FeltConstantOp.html#a72e8df3452bf530c1b27d256e05bc4aa", null ],
     [ "getValueAttrName", "classllzk_1_1felt_1_1FeltConstantOp.html#aaec4939ca45993f9b41bb0bcc106dc3e", null ],
     [ "print", "classllzk_1_1felt_1_1FeltConstantOp.html#a273dfb53fcc22228e4e8e963fc3ab5db", null ],
     [ "setValueAttr", "classllzk_1_1felt_1_1FeltConstantOp.html#a7e57363509dba658fa4dc505ba00812d", null ],
+    [ "tryGetZExtValue", "classllzk_1_1felt_1_1FeltConstantOp.html#a16f94a5e92704501f57a8d76294fb29f", null ],
     [ "verifyInvariants", "classllzk_1_1felt_1_1FeltConstantOp.html#ad1239889f50426fe4f0eb15eb0ffd2f1", null ],
     [ "verifyInvariantsImpl", "classllzk_1_1felt_1_1FeltConstantOp.html#a60f7081815368187fb5d5c9d9a3a3eec", null ],
     [ "writeProperties", "classllzk_1_1felt_1_1FeltConstantOp.html#a1421c53628cb7b5d9a89488feeba871d", null ]

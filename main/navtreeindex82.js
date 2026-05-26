@@ -1,5 +1,9 @@
 var NAVTREEINDEX82 =
 {
+"tools.html#autotoc_md-llzk-print-symbol-def-tree":[3,0,0,0,5],
+"tools.html#autotoc_md-llzk-print-symbol-use-graph":[3,0,0,0,6],
+"tools.html#autotoc_md-llzk-unused-declaration-elim":[3,0,0,1,7],
+"tools.html#autotoc_md-llzk-validate-member-writes":[3,0,0,4,0],
 "tools.html#autotoc_md-llzk-while-to-for":[3,0,0,1,8],
 "tools.html#general-transformation-passes":[3,0,0,1],
 "tools.html#llzk-lsp-server":[3,2],

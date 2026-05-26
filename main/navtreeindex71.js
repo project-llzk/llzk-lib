@@ -1,5 +1,9 @@
 var NAVTREEINDEX71 =
 {
+"dir_e68e8157741866f444e17edd764ebbae.html":[13,0,1],
+"dir_eaf6f78923417f2b8c724e66e043489e.html":[13,0,2,0,2,8,0],
+"dir_eb82103dcc149a6c60866abd7bb0bab0.html":[13,0,2,1],
+"dir_ebd8d79cd9ab4664bce55f3a04d99761.html":[13,0,3,2,0],
 "dir_ed42ac16adfc29ef3353d7423047e29e.html":[13,0,2,0,2,15,0],
 "dir_ef30db57ea9a617a64ba3175a89faac6.html":[13,0,4,1],
 "dir_efa1308536135b3baa6e905f7a83b3e7.html":[13,0,0,0,0,2,5],
@@ -245,9 +249,5 @@ var NAVTREEINDEX71 =
 "namespaceStep1B__InstantiateFunctions.html":[10,0,6],
 "namespaceStep2__Unroll.html":[10,0,7],
 "namespaceStep3__InstantiateAffineMaps.html":[10,0,8],
-"namespaceStep4__PropagateTypes.html":[10,0,9],
-"namespaceStep5__Cleanup.html":[10,0,10],
-"namespaceclang.html":[10,0,0],
-"namespacellvm.html":[10,0,1],
-"namespacellvm.html#a0fc2145917e31225cbcd377de7b88080":[10,0,1,29]
+"namespaceStep4__PropagateTypes.html":[10,0,9]
 };
