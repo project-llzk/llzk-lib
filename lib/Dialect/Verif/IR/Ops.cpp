@@ -502,11 +502,7 @@ LogicalResult ContractOp::verify() {
     }
     return WalkResult::advance();
   });
-  if (res.wasInterrupted()) {
-    return failure();
-  }
-
-  return success();
+  return failure(res.wasInterrupted());
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>
@@ -636,10 +632,8 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
 
   for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
     // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
-    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-      if (isDynamic(intAttr)) {
-        continue;
-      }
+    if (isDynamic(llvm::dyn_cast<IntegerAttr>(attr))) {
+      continue;
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
     if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
@@ -844,9 +838,8 @@ FailureOr<UnificationMap> IncludeOp::unifyTypeSignature(FunctionType other) {
   UnificationMap unifications;
   if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
     return unifications;
-  } else {
-    return failure();
   }
+  return failure();
 }
 
 FailureOr<SymbolLookupResult<ContractOp>>
