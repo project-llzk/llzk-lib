@@ -1,0 +1,53 @@
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @MulOut {
+    struct.member @lhs_out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @rhs_out : !felt.type<"babybear"> {llzk.pub}
+
+    function.def @compute(
+      %a: !felt.type<"babybear">,
+      %b: !felt.type<"babybear">
+    ) -> !struct.type<@MulOut> {
+      %self = struct.new : !struct.type<@MulOut>
+      %prod_lhs = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@lhs_out] = %prod_lhs
+        : !struct.type<@MulOut>, !felt.type<"babybear">
+      %prod_rhs = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@rhs_out] = %prod_rhs
+        : !struct.type<@MulOut>, !felt.type<"babybear">
+      function.return %self : !struct.type<@MulOut>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@MulOut>,
+      %a: !felt.type<"babybear"> {llzk.pub},
+      %b: !felt.type<"babybear">
+    ) {
+      %lhs_out = struct.readm %self[@lhs_out]
+        : !struct.type<@MulOut>, !felt.type<"babybear">
+      %rhs_out = struct.readm %self[@rhs_out]
+        : !struct.type<@MulOut>, !felt.type<"babybear">
+      %prod_lhs = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %prod_lhs, %lhs_out : !felt.type<"babybear">
+      %prod_rhs = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %rhs_out, %prod_rhs : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   r1cs.circuit @MulOut inputs (
+// CHECK-SAME:                                  %[[A:[0-9a-zA-Z_\.]+]]: !r1cs.signal {#r1cs.pub},
+// CHECK-SAME:                                  %[[B:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK:           %[[LHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK:           %[[RHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK:           %[[A_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A]] : !r1cs.signal to !r1cs.linear
+// CHECK:           %[[B_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B]] : !r1cs.signal to !r1cs.linear
+// CHECK:           %[[LHS_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[LHS_OUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-NOT:       r1cs.mul_const %[[LHS_LIN]],  -1
+// CHECK:           r1cs.constrain %[[A_LIN]], %[[B_LIN]], %[[LHS_LIN]] : !r1cs.linear
+// CHECK:           %[[RHS_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[RHS_OUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-NOT:       r1cs.mul_const %[[RHS_LIN]],  -1
+// CHECK:           r1cs.constrain %[[A_LIN]], %[[B_LIN]], %[[RHS_LIN]] : !r1cs.linear
+// CHECK:         }

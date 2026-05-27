@@ -11,8 +11,15 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk/Dialect/Cast/IR/Enums.h"
+
+// Include necessary generated CAPI
+#include "llzk/Dialect/Cast/IR/Enums.capi.cpp.inc"
+
 // Include the auto-generated tests
+#include "llzk/Dialect/Cast/IR/Attrs.capi.test.cpp.inc"
 #include "llzk/Dialect/Cast/IR/Dialect.capi.test.cpp.inc"
+#include "llzk/Dialect/Cast/IR/Enums.capi.test.cpp.inc"
 #include "llzk/Dialect/Cast/IR/Ops.capi.test.cpp.inc"
 
 // Implementation for `IntToFeltOp_build_pass` test
@@ -42,7 +49,9 @@ std::unique_ptr<FeltToIndexOpBuildFuncHelper> FeltToIndexOpBuildFuncHelper::get(
       );
       testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
       mlir::Value val = testClass.cppGenFeltConstant(builder, location);
-      return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val));
+      MlirAttribute overflowAttr =
+          llzkCast_OverflowSemanticsAttrGet(testClass.context, LlzkCastOverflowSemantics_ASSERT);
+      return llzkCast_FeltToIndexOpBuild(builder, location, wrap(val), overflowAttr);
     }
   };
   return std::make_unique<Impl>();
