@@ -461,7 +461,18 @@ private:
     R1CSConstraint qconst = lowerPolyToR1CS(q);
 
     if (degreeMemo.at(p) == 2) {
-      return pconst.add(qconst.negated());
+      if (degreeMemo.at(q) == 2) {
+        llvm::errs() << "R1CS lowering only supports one quadratic side per equality.\n";
+        llvm_unreachable("Invalid R1CS equality: both sides are quadratic");
+      }
+      R1CSConstraint result(pconst);
+      result.c = qconst.c.add(pconst.c.negated());
+      return result;
+    }
+    if (degreeMemo.at(q) == 2) {
+      R1CSConstraint result(qconst);
+      result.c = pconst.c.add(qconst.c.negated());
+      return result;
     }
     return qconst.add(pconst.negated());
   }

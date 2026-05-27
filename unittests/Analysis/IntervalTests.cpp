@@ -280,6 +280,26 @@ TEST_F(IntervalTests, SignedIntDivByZero) {
   ASSERT_TRUE(failed(res));
 }
 
+TEST_F(IntervalTests, SignedMod) {
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto negTen = Interval::Degenerate(f, f.reduce(-10));
+  auto negSeven = Interval::Degenerate(f, f.reduce(-7));
+  auto two = Interval::Degenerate(f, f.felt(2));
+  auto rangeTenToFifteen = Interval::TypeA(f, f.felt(10), f.felt(15));
+
+  AssertIntervalEq(Interval::Degenerate(f, f.zero()), signedMod(ten, two));
+  AssertIntervalEq(Interval::Degenerate(f, f.reduce(-1)), signedMod(negSeven, two));
+  AssertIntervalEq(Interval::TypeA(f, f.zero(), f.felt(10)), signedMod(ten, rangeTenToFifteen));
+  AssertIntervalEq(UnreducedInterval(-10, 0).reduce(f), signedMod(negTen, rangeTenToFifteen));
+}
+
+TEST_F(IntervalTests, SignedModByZero) {
+  auto ten = Interval::Degenerate(f, f.felt(10));
+  auto minusOneToOne = UnreducedInterval(-1, 1).reduce(f);
+
+  AssertIntervalEq(entire, signedMod(ten, minusOneToOne));
+}
+
 TEST_F(IntervalTests, Mod) {
   AssertIntervalEq(interval(0, 7), entire % degen(8));
   AssertIntervalEq(interval(0, 9), interval(0, 100) % interval(1, 10));

@@ -289,6 +289,14 @@ mod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const Expressi
 }
 
 ExpressionValue
+sintMod(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
+  return ExpressionValue(
+      solver->mkBVSRem(lhs.getExpr(), rhs.getExpr()),
+      signedMod(lhs.getInterval(), rhs.getInterval())
+  );
+}
+
+ExpressionValue
 bitAnd(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs) {
   ExpressionValue res;
   res.i = lhs.i & rhs.i;
@@ -1107,6 +1115,7 @@ ExpressionValue IntervalDataFlowAnalysis::performBinaryArithmetic(
                  .Case<UnsignedIntDivFeltOp>([&](auto) {return uintDiv(smtSolver, op, lhs, rhs); })
                  .Case<SignedIntDivFeltOp>([&](auto) {return sintDiv(smtSolver, op, lhs, rhs); })
                  .Case<UnsignedModFeltOp>([&](auto) { return mod(smtSolver, lhs, rhs); })
+                 .Case<SignedModFeltOp>([&](auto) { return sintMod(smtSolver, lhs, rhs); })
                  .Case<AndFeltOp>([&](auto) { return bitAnd(smtSolver, lhs, rhs); })
                  .Case<OrFeltOp>([&](auto) { return bitOr(smtSolver, lhs, rhs); })
                  .Case<XorFeltOp, arith::XOrIOp>([&](auto) { return bitXor(smtSolver, lhs, rhs); })
@@ -1697,14 +1706,17 @@ LogicalResult StructIntervals::computeIntervals(
     }
   };
 
-  computeIntervalsImpl(
-      structDef.getComputeFuncOp(), computeMemberRanges, computeMemberUnreducedRanges,
-      computeSolverConstraints
-  );
-  computeIntervalsImpl(
-      structDef.getConstrainFuncOp(), constrainMemberRanges, constrainMemberUnreducedRanges,
-      constrainSolverConstraints
-  );
+  if (auto computeFn = structDef.getComputeFuncOp()) {
+    computeIntervalsImpl(
+        computeFn, computeMemberRanges, computeMemberUnreducedRanges, computeSolverConstraints
+    );
+  }
+  if (auto constrainFn = structDef.getConstrainFuncOp()) {
+    computeIntervalsImpl(
+        constrainFn, constrainMemberRanges, constrainMemberUnreducedRanges,
+        constrainSolverConstraints
+    );
+  }
 
   return success();
 }

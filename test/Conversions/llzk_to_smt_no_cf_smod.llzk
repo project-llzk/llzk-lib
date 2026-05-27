@@ -1,0 +1,31 @@
+// RUN: llzk-opt --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @out : !felt.type
+        function.def @product(%a: !felt.type) -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
+            %self = struct.new : <@A>
+            %c2 = felt.const 2
+            %q = felt.sintdiv %a, %c2 : !felt.type, !felt.type
+            %r = felt.smod %q, %c2 : !felt.type, !felt.type
+            struct.writem %self[@out] = %r : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\\.]+]]: !smt.int) {
+// CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\\.]+]] = smt.declare_fun "out_w" : !smt.int
+// CHECK: %[[C2:[0-9a-zA-Z_\\.]+]] = smt.int.constant 2{{$}}
+// CHECK: %[[ACAN:[0-9a-zA-Z_\\.]+]] = smt.int.mod %[[A]], %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[QABS:[0-9a-zA-Z_\\.]+]] = smt.int.div %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[QCAN:[0-9a-zA-Z_\\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[RABS:[0-9a-zA-Z_\\.]+]] = smt.int.div %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[RCAN:[0-9a-zA-Z_\\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[DIFF:[0-9a-zA-Z_\\.]+]] = smt.int.sub %[[OUTW]], %[[RCAN]]
+// CHECK: %[[Q:[0-9a-zA-Z_\\.]+]] = smt.declare_fun "member_write_q" : !smt.int
+// CHECK: %[[MUL:[0-9a-zA-Z_\\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\\.]+]] = smt.eq %[[DIFF]], %[[MUL]] : !smt.int
+// CHECK: smt.assert %[[EQ]]
+// CHECK: return
