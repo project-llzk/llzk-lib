@@ -73,6 +73,15 @@ using namespace llzk::smt::detail;
 
 namespace {
 
+/// Return the first canonical felt value interpreted as a negative integer.
+static llvm::APSInt getSignedFeltThreshold(const llvm::APSInt &prime) {
+  llvm::APSInt two(llvm::APInt(prime.getBitWidth(), 2), prime.isUnsigned());
+  llvm::APSInt one(llvm::APInt(prime.getBitWidth(), 1), prime.isUnsigned());
+  llvm::APSInt threshold = prime / two;
+  threshold += one;
+  return threshold;
+}
+
 /// Decide when modular reduction can be avoided or must be reintroduced.
 ///
 /// This helper owns the interval-analysis view of the current lowering target.
@@ -288,6 +297,9 @@ public:
   virtual Value emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
   virtual Value emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
   virtual Value emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
+  virtual Value emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
+  virtual Value emitSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
+  virtual Value emitSignedRem(OpBuilder &builder, Location loc, Value lhs, Value rhs) const = 0;
   virtual Value emitModPrime(OpBuilder &builder, Location loc, Value value) const = 0;
   virtual Value emitPrimeMultiple(OpBuilder &builder, Location loc, Value factor) const = 0;
   virtual Value emitOrderedComparison(
@@ -344,6 +356,20 @@ public:
     return builder.create<smt::IntMulOp>(loc, ValueRange {lhs, rhs}).getResult();
   }
 
+  Value emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
+    return builder.create<smt::IntDivOp>(loc, lhs, rhs).getResult();
+  }
+
+  Value emitSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
+    return emitTruncatingSignedDivision(builder, loc, lhs, rhs);
+  }
+
+  Value emitSignedRem(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
+    Value quotient = emitTruncatingSignedDivision(builder, loc, lhs, rhs);
+    Value product = emitMul(builder, loc, quotient, rhs);
+    return emitSub(builder, loc, lhs, product);
+  }
+
   Value emitModPrime(OpBuilder &builder, Location loc, Value value) const override {
     auto primeConst = createPrimeConstant(builder, loc);
     return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()})
@@ -368,6 +394,30 @@ public:
   }
 
 private:
+  /// |value| = if value < 0 then -value else value
+  Value emitAbsValue(OpBuilder &builder, Location loc, Value value) const {
+    Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
+    Value isNegative =
+        emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
+    Value negated = emitSub(builder, loc, zero, value);
+    return builder.create<smt::IteOp>(loc, isNegative, negated, value).getResult();
+  }
+
+  /// absQuotient = |lhs| / |rhs|
+  /// quotient = if sign(lhs) != sign(rhs) then -absQuotient else absQuotient
+  Value emitTruncatingSignedDivision(OpBuilder &builder, Location loc, Value lhs, Value rhs) const {
+    Value zero = emitConstant(builder, loc, llvm::DynamicAPInt(0));
+    Value lhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, lhs, zero);
+    Value rhsNeg = emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, rhs, zero);
+    Value lhsAbs = emitAbsValue(builder, loc, lhs);
+    Value rhsAbs = emitAbsValue(builder, loc, rhs);
+    Value absQuotient = emitDiv(builder, loc, lhsAbs, rhsAbs);
+    // we can use xor here because we are checking if the signs are different
+    Value signsDiffer = builder.create<smt::XOrOp>(loc, ValueRange {lhsNeg, rhsNeg}).getResult();
+    Value negatedQuotient = emitSub(builder, loc, zero, absQuotient);
+    return builder.create<smt::IteOp>(loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+  }
+
   MLIRContext *ctx;
   const ModularReasoner &reasoner;
   // `freshSymbolCounts` is a map to improve readability. We could just have a counter.
@@ -456,12 +506,15 @@ public:
   Value emitInverseValue(
       OpBuilder &builder, Location loc, Value operand, const UnreducedInterval &operandRange
   ) const;
+  Value emitSignedIntDivisionValue(OpBuilder &builder, Location loc, Value lhs, Value rhs) const;
+  Value emitSignedModValue(OpBuilder &builder, Location loc, Value lhs, Value rhs) const;
   void populatePatterns(
       RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
       const SignalSymbols &signalSymbols
   ) const;
 
 private:
+  Value emitSignedFeltExpr(OpBuilder &builder, Location loc, Value value) const;
   ModularReasoner reasoner;
   std::unique_ptr<NonNativeTheoryEmitter> emitter;
 };
@@ -510,6 +563,52 @@ public:
         strategy->emitInverseValue(rewriter, op.getLoc(), adaptor.getOperand(), operandRange);
     rewriter.replaceOp(op, inv);
 
+    return success();
+  }
+
+private:
+  const OptimizedNonNativeStrategy *strategy;
+};
+
+class SignedIntDivConverter : public OpConversionPattern<felt::SignedIntDivFeltOp> {
+public:
+  SignedIntDivConverter(
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<felt::SignedIntDivFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
+
+  LogicalResult matchAndRewrite(
+      felt::SignedIntDivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    rewriter.replaceOp(
+        op, strategy->emitSignedIntDivisionValue(
+                rewriter, op.getLoc(), adaptor.getLhs(), adaptor.getRhs()
+            )
+    );
+    return success();
+  }
+
+private:
+  const OptimizedNonNativeStrategy *strategy;
+};
+
+class SignedModConverter : public OpConversionPattern<felt::SignedModFeltOp> {
+public:
+  SignedModConverter(
+      TypeConverter &converter, MLIRContext *context,
+      const OptimizedNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<felt::SignedModFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
+
+  LogicalResult matchAndRewrite(
+      felt::SignedModFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    rewriter.replaceOp(
+        op, strategy->emitSignedModValue(rewriter, op.getLoc(), adaptor.getLhs(), adaptor.getRhs())
+    );
     return success();
   }
 
@@ -875,6 +974,50 @@ Value OptimizedNonNativeStrategy::emitInverseValue(
   return inv;
 }
 
+Value OptimizedNonNativeStrategy::emitSignedFeltExpr(
+    OpBuilder &builder, Location loc, Value value
+) const {
+  // Step 1: reduce `loc` to a canonical field element
+  Value canonical = emitter->emitModPrime(builder, loc, value);
+  Value threshold = emitter->emitConstant(
+      builder, loc, toDynamicAPInt(getSignedFeltThreshold(reasoner.getPrime()))
+  );
+  // Step 2: `isNonNegativeRange <=> canonical < p/2 + 1`
+  Value inNonNegativeRange = emitter->emitOrderedComparison(
+      builder, loc, boolean::FeltCmpPredicate::LT, canonical, threshold
+  );
+  Value prime = emitter->emitConstant(builder, loc, toDynamicAPInt(reasoner.getPrime()));
+  // Step 3: `negativeRep = canonical - p`
+  Value negativeRepresentative = emitter->emitSub(builder, loc, canonical, prime);
+  // Step 4: `result = if isNonNegative then canonical else canonical - p`
+  return builder.create<smt::IteOp>(loc, inNonNegativeRange, canonical, negativeRepresentative)
+      .getResult();
+}
+
+Value OptimizedNonNativeStrategy::emitSignedIntDivisionValue(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs
+) const {
+  // `felt.sintdiv` first interprets field elements as signed integers, then
+  // delegates signed division to the target theory, and finally converts the
+  // quotient back to a canonical field element.
+  Value signedLhs = emitSignedFeltExpr(builder, loc, lhs);
+  Value signedRhs = emitSignedFeltExpr(builder, loc, rhs);
+  Value signedQuotient = emitter->emitSignedDiv(builder, loc, signedLhs, signedRhs);
+  return emitter->emitModPrime(builder, loc, signedQuotient);
+}
+
+Value OptimizedNonNativeStrategy::emitSignedModValue(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs
+) const {
+  // `felt.smod` uses the signed remainder paired with `felt.sintdiv`. The
+  // field-level signed embedding happens here, but the target theory decides
+  // how to materialize the signed remainder primitive.
+  Value signedLhs = emitSignedFeltExpr(builder, loc, lhs);
+  Value signedRhs = emitSignedFeltExpr(builder, loc, rhs);
+  Value signedRemainder = emitter->emitSignedRem(builder, loc, signedLhs, signedRhs);
+  return emitter->emitModPrime(builder, loc, signedRemainder);
+}
+
 void OptimizedNonNativeStrategy::populatePatterns(
     RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
     const SignalSymbols &signalSymbols
@@ -884,14 +1027,14 @@ void OptimizedNonNativeStrategy::populatePatterns(
       BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
       BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
       BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
-      BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>,
-      BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>,
-      BasicConverter<felt::SignedModFeltOp, smt::IntModOp>, FeltConstConverter, ReturnConverter,
+      BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>, FeltConstConverter, ReturnConverter,
       SCFIfConverter, YieldConverter>(converter, context);
   patterns.add<FunctionDefConverter>(converter, context);
   patterns.add<BoolCmpConverter>(converter, context, this);
   patterns.add<FeltDivConverter>(converter, context, this);
   patterns.add<FeltInvConverter>(converter, context, this);
+  patterns.add<SignedIntDivConverter>(converter, context, this);
+  patterns.add<SignedModConverter>(converter, context, this);
   patterns.add<ConstrainConverter>(converter, context, this);
   patterns.add<MemberWriteConverter>(converter, context, signalSymbols, this);
   patterns.add<MemberReadConverter>(converter, context, signalSymbols);
@@ -918,7 +1061,7 @@ class SMTOptimizedNonNativeLoweringPass
     RewritePatternSet patterns {context};
     ConversionTarget target {*context};
 
-    configureSMTNoCFBodyConversionTarget(*context, target);
+    configureSMTNoCFBodyConversionTarget(target);
     strategy.populatePatterns(patterns, typeConverter, context, signalSymbols);
     return applySMTNoCFBodyConversion(op, target, std::move(patterns));
   }
@@ -942,10 +1085,6 @@ class SMTOptimizedNonNativeLoweringPass
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");
-        signalPassFailure();
-        return WalkResult::interrupt();
-      }
-      if (failed(validateSupportedSMTMemberAccesses(structDef))) {
         signalPassFailure();
         return WalkResult::interrupt();
       }

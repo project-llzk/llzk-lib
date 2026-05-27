@@ -94,7 +94,7 @@ Operation *convertStructProductToFunc(Operation *op, MLIRContext *context) {
   return op;
 }
 
-void configureSMTNoCFBodyConversionTarget(MLIRContext &context, ConversionTarget &target) {
+void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
   target.addIllegalDialect<felt::FeltDialect>();
   target.addIllegalDialect<constrain::ConstrainDialect>();
   target.addLegalDialect<smt::SMTDialect>();
@@ -133,7 +133,7 @@ applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatte
   }
 
   SmallVector<component::CreateStructOp> deadStructs;
-  op->walk([&](component::CreateStructOp createStructOp) {
+  op->walk([&deadStructs](component::CreateStructOp createStructOp) {
     if (createStructOp->use_empty()) {
       deadStructs.push_back(createStructOp);
     }
@@ -143,34 +143,6 @@ applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatte
   }
 
   return op;
-}
-
-LogicalResult validateSupportedSMTMemberAccesses(component::StructDefOp structDef) {
-  auto productFunc = structDef.getProductFuncOp();
-  if (!productFunc) {
-    return success();
-  }
-
-  WalkResult walkResult = productFunc.walk([&](Operation *op) -> WalkResult {
-    if (auto memberWrite = dyn_cast<component::MemberWriteOp>(op)) {
-      if (!isa<felt::FeltType>(memberWrite.getVal().getType())) {
-        memberWrite.emitError("SMT lowering currently only supports felt-valued struct.writem");
-        return WalkResult::interrupt();
-      }
-      return WalkResult::advance();
-    }
-
-    if (auto memberRead = dyn_cast<component::MemberReadOp>(op)) {
-      if (!isa<felt::FeltType>(memberRead.getResult().getType())) {
-        memberRead.emitError("SMT lowering currently only supports felt-valued struct.readm");
-        return WalkResult::interrupt();
-      }
-    }
-
-    return WalkResult::advance();
-  });
-
-  return walkResult.wasInterrupted() ? failure() : success();
 }
 
 LogicalResult FunctionDefConverter::matchAndRewrite(
@@ -232,7 +204,7 @@ LogicalResult StructDefConverter::matchAndRewrite(
   IRMapping mapping;
   productFunc.getFunctionBody().cloneInto(&smtFunc.getFunctionBody(), mapping);
 
-  smtFunc.walk([&](function::ReturnOp returnOp) {
+  smtFunc.walk([&rewriter](function::ReturnOp returnOp) {
     rewriter.setInsertionPoint(returnOp);
     rewriter.replaceOpWithNewOp<func::ReturnOp>(returnOp, returnOp.getOperands());
   });
@@ -251,7 +223,9 @@ LogicalResult ReturnConverter::matchAndRewrite(
     }
   }
 
-  rewriter.modifyOpInPlace(op, [&]() { op.getOperandsMutable().assign(returnedValues); });
+  rewriter.modifyOpInPlace(op, [&returnedValues, &op]() {
+    op.getOperandsMutable().assign(returnedValues);
+  });
   return success();
 }
 

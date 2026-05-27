@@ -70,6 +70,14 @@ using namespace llzk::smt::detail;
 
 namespace {
 
+static llvm::APSInt getSignedFeltThreshold(const llvm::APSInt &prime) {
+  llvm::APSInt two(llvm::APInt(prime.getBitWidth(), 2), prime.isUnsigned());
+  llvm::APSInt one(llvm::APInt(prime.getBitWidth(), 1), prime.isUnsigned());
+  llvm::APSInt threshold = prime / two;
+  threshold += one;
+  return threshold;
+}
+
 static smt::IntConstantOp createSMTIntConstant(
     OpBuilder &builder, Location loc, MLIRContext *ctx, const llvm::APSInt &value
 ) {
@@ -109,6 +117,12 @@ public:
   smt::IntConstantOp createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
   smt::IntConstantOp createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
   Value createModPrimeExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
+  Value emitSignedIntDivisionValue(
+      OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
+  ) const;
+  Value emitSignedModValue(
+      OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
+  ) const;
   std::string getFreshName(StringRef baseName) const;
   void populatePatterns(
       RewritePatternSet &patterns, TypeConverter &converter, MLIRContext *context,
@@ -116,6 +130,11 @@ public:
   ) const;
 
 private:
+  Value createSignedFeltExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
+  Value createAbsExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
+  Value createTruncatingSignedDivExpr(
+      OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
+  ) const;
   llvm::APSInt prime;
   mutable llvm::StringMap<unsigned> freshSymbolCounts;
 };
@@ -192,6 +211,52 @@ public:
     );
     rewriter.create<smt::AssertOp>(op->getLoc(), invConstraint.getResult());
     rewriter.replaceOp(op, inv.getResult());
+    return success();
+  }
+
+private:
+  const NaiveNonNativeStrategy *strategy;
+};
+
+class NaiveSignedIntDivConverter : public OpConversionPattern<felt::SignedIntDivFeltOp> {
+public:
+  NaiveSignedIntDivConverter(
+      TypeConverter &converter, MLIRContext *context, const NaiveNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<felt::SignedIntDivFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
+
+  LogicalResult matchAndRewrite(
+      felt::SignedIntDivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    rewriter.replaceOp(
+        op, strategy->emitSignedIntDivisionValue(
+                rewriter, op.getLoc(), adaptor.getLhs(), adaptor.getRhs(), getContext()
+            )
+    );
+    return success();
+  }
+
+private:
+  const NaiveNonNativeStrategy *strategy;
+};
+
+class NaiveSignedModConverter : public OpConversionPattern<felt::SignedModFeltOp> {
+public:
+  NaiveSignedModConverter(
+      TypeConverter &converter, MLIRContext *context, const NaiveNonNativeStrategy *loweringStrategy
+  )
+      : OpConversionPattern<felt::SignedModFeltOp>(converter, context, /*benefit=*/2),
+        strategy(loweringStrategy) {}
+
+  LogicalResult matchAndRewrite(
+      felt::SignedModFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    rewriter.replaceOp(
+        op, strategy->emitSignedModValue(
+                rewriter, op.getLoc(), adaptor.getLhs(), adaptor.getRhs(), getContext()
+            )
+    );
     return success();
   }
 
@@ -315,6 +380,73 @@ Value NaiveNonNativeStrategy::createModPrimeExpr(
   return createSMTModPrimeExpr(builder, loc, value, ctx, prime);
 }
 
+Value NaiveNonNativeStrategy::createSignedFeltExpr(
+    OpBuilder &builder, Location loc, Value value, MLIRContext *ctx
+) const {
+  Value canonical = createModPrimeExpr(builder, loc, value, ctx);
+  Value threshold =
+      createSMTIntConstant(builder, loc, ctx, getSignedFeltThreshold(prime)).getResult();
+  auto inNonNegativeRange =
+      builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, canonical, threshold);
+  Value primeValue = createSMTPrimeConstant(builder, loc, ctx, prime).getResult();
+  Value negativeRepresentative =
+      builder.create<smt::IntSubOp>(loc, canonical, primeValue).getResult();
+  return builder
+      .create<smt::IteOp>(loc, inNonNegativeRange.getResult(), canonical, negativeRepresentative)
+      .getResult();
+}
+
+Value NaiveNonNativeStrategy::createAbsExpr(
+    OpBuilder &builder, Location loc, Value value, MLIRContext *ctx
+) const {
+  Value zero = createZeroConstant(builder, loc, ctx).getResult();
+  auto isNegative = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, value, zero);
+  Value negated = builder.create<smt::IntSubOp>(loc, zero, value).getResult();
+  return builder.create<smt::IteOp>(loc, isNegative.getResult(), negated, value).getResult();
+}
+
+Value NaiveNonNativeStrategy::createTruncatingSignedDivExpr(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
+) const {
+  Value zero = createZeroConstant(builder, loc, ctx).getResult();
+  auto lhsNeg = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, lhs, zero);
+  auto rhsNeg = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, rhs, zero);
+  Value lhsAbs = createAbsExpr(builder, loc, lhs, ctx);
+  Value rhsAbs = createAbsExpr(builder, loc, rhs, ctx);
+  Value absQuotient = builder.create<smt::IntDivOp>(loc, lhsAbs, rhsAbs).getResult();
+  Value signsDiffer =
+      builder.create<smt::XOrOp>(loc, ValueRange {lhsNeg.getResult(), rhsNeg.getResult()})
+          .getResult();
+  Value negatedQuotient = builder.create<smt::IntSubOp>(loc, zero, absQuotient).getResult();
+  return builder.create<smt::IteOp>(loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+}
+
+Value NaiveNonNativeStrategy::emitSignedIntDivisionValue(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
+) const {
+  // `felt.sintdiv` interprets the felt operands as signed integers, divides
+  // with truncation toward zero, and then converts the quotient back to a felt.
+  Value signedLhs = createSignedFeltExpr(builder, loc, lhs, ctx);
+  Value signedRhs = createSignedFeltExpr(builder, loc, rhs, ctx);
+  Value signedQuotient = createTruncatingSignedDivExpr(builder, loc, signedLhs, signedRhs, ctx);
+  return createModPrimeExpr(builder, loc, signedQuotient, ctx);
+}
+
+Value NaiveNonNativeStrategy::emitSignedModValue(
+    OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
+) const {
+  // `felt.smod` uses the remainder paired with `felt.sintdiv`: compute
+  // q = trunc(lhs / rhs) in the signed embedding, then reduce lhs - q * rhs
+  // back into the field.
+  Value signedLhs = createSignedFeltExpr(builder, loc, lhs, ctx);
+  Value signedRhs = createSignedFeltExpr(builder, loc, rhs, ctx);
+  Value signedQuotient = createTruncatingSignedDivExpr(builder, loc, signedLhs, signedRhs, ctx);
+  Value product =
+      builder.create<smt::IntMulOp>(loc, ValueRange {signedQuotient, signedRhs}).getResult();
+  Value signedRemainder = builder.create<smt::IntSubOp>(loc, signedLhs, product).getResult();
+  return createModPrimeExpr(builder, loc, signedRemainder, ctx);
+}
+
 std::string NaiveNonNativeStrategy::getFreshName(StringRef baseName) const {
   unsigned count = freshSymbolCounts[baseName]++;
   if (count == 0) {
@@ -336,14 +468,14 @@ void NaiveNonNativeStrategy::populatePatterns(
       BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
       BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
       BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
-      BasicConverter<felt::SignedIntDivFeltOp, smt::IntDivOp>,
-      BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>,
-      BasicConverter<felt::SignedModFeltOp, smt::IntModOp>, FeltConstConverter,
+      BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>, FeltConstConverter,
       FunctionDefConverter, ReturnConverter, SCFIfConverter, YieldConverter, NaiveBoolCmpConverter>(
       converter, context
   );
   patterns.add<NaiveFeltDivConverter>(converter, context, this);
   patterns.add<NaiveFeltInvConverter>(converter, context, this);
+  patterns.add<NaiveSignedIntDivConverter>(converter, context, this);
+  patterns.add<NaiveSignedModConverter>(converter, context, this);
   patterns.add<NaiveConstrainConverter>(converter, context, this);
   patterns.add<NaiveMemberWriteConverter>(converter, context, signalSymbols, this);
   patterns.add<MemberReadConverter>(converter, context, signalSymbols);
@@ -368,7 +500,7 @@ class SMTNaiveNonNativeLoweringPass
     RewritePatternSet patterns {context};
     ConversionTarget target {*context};
 
-    configureSMTNoCFBodyConversionTarget(*context, target);
+    configureSMTNoCFBodyConversionTarget(target);
     strategy.populatePatterns(patterns, typeConverter, context, signalSymbols);
     return applySMTNoCFBodyConversion(op, target, std::move(patterns));
   }
@@ -381,18 +513,13 @@ class SMTNaiveNonNativeLoweringPass
     }
     auto prime = toAPSInt(selectedField->get().prime());
 
-    mod.walk([this, prime](component::StructDefOp structDef) {
+    auto walkResult = mod.walk([this, prime](component::StructDefOp structDef) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");
         signalPassFailure();
         return WalkResult::interrupt();
       }
-      if (failed(validateSupportedSMTMemberAccesses(structDef))) {
-        signalPassFailure();
-        return WalkResult::interrupt();
-      }
-
       IRRewriter rewriter {&getContext()};
       rewriter.setInsertionPointToStart(&productFunc.getFunctionBody().front());
       auto preamble = productFunc->getLoc();
@@ -425,6 +552,11 @@ class SMTNaiveNonNativeLoweringPass
       }
       return WalkResult::advance();
     });
+
+    if (!walkResult.wasInterrupted()) {
+      // Remove `llzk.main` attribute because `convertStructProductToFunc()` above deleted structs.
+      mod->removeAttr(MAIN_ATTR_NAME);
+    }
   }
 };
 

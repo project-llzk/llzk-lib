@@ -18,9 +18,12 @@ module attributes {llzk.lang} {
 // CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\\.]+]]: !smt.int) {
 // CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\\.]+]] = smt.declare_fun "out_w" : !smt.int
 // CHECK: %[[C2:[0-9a-zA-Z_\\.]+]] = smt.int.constant 2{{$}}
-// CHECK: %[[DIV:[0-9a-zA-Z_\\.]+]] = smt.int.div %[[A]], %[[C2]]
-// CHECK: %[[MOD:[0-9a-zA-Z_\\.]+]] = smt.int.mod %[[DIV]], %[[C2]]
-// CHECK: %[[DIFF:[0-9a-zA-Z_\\.]+]] = smt.int.sub %[[OUTW]], %[[MOD]]
+// CHECK: %[[ACAN:[0-9a-zA-Z_\\.]+]] = smt.int.mod %[[A]], %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[QABS:[0-9a-zA-Z_\\.]+]] = smt.int.div %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[QCAN:[0-9a-zA-Z_\\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[RABS:[0-9a-zA-Z_\\.]+]] = smt.int.div %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[RCAN:[0-9a-zA-Z_\\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\\.]+}}, %{{[0-9a-zA-Z_\\.]+}}
+// CHECK: %[[DIFF:[0-9a-zA-Z_\\.]+]] = smt.int.sub %[[OUTW]], %[[RCAN]]
 // CHECK: %[[Q:[0-9a-zA-Z_\\.]+]] = smt.declare_fun "member_write_q" : !smt.int
 // CHECK: %[[MUL:[0-9a-zA-Z_\\.]+]] = smt.int.mul %[[Q]], %{{[0-9a-zA-Z_\\.]+}}
 // CHECK: %[[EQ:[0-9a-zA-Z_\\.]+]] = smt.eq %[[DIFF]], %[[MUL]] : !smt.int

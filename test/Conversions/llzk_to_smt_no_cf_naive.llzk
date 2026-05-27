@@ -89,3 +89,45 @@ module attributes {llzk.lang} {
 // CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[PROD_MOD]], %[[ONE]] : !smt.int
 // CHECK: %[[ITE:[0-9a-zA-Z_\.]+]] = smt.ite %[[OPERAND_ZERO]], %[[INV_ZERO]], %[[EQ]] : !smt.bool
 // CHECK: smt.assert %[[ITE]]
+
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@MainCleanupNaive>} {
+  struct.def @MainCleanupNaive {
+    function.def @product(%a: !felt.type) -> !struct.type<@MainCleanupNaive> {
+      %self = struct.new : <@MainCleanupNaive>
+      function.return %self : !struct.type<@MainCleanupNaive>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang}
+// CHECK-NOT: llzk.main
+// CHECK-LABEL: func.func @smt_MainCleanupNaive(
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SignedModNaive {
+    struct.member @out : !felt.type
+
+    function.def @product(%a: !felt.type) -> !struct.type<@SignedModNaive> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@SignedModNaive>
+      %c2 = felt.const 2
+      %q = felt.sintdiv %a, %c2 : !felt.type, !felt.type
+      %r = felt.smod %q, %c2 : !felt.type, !felt.type
+      struct.writem %self[@out] = %r : <@SignedModNaive>, !felt.type
+      function.return %self : !struct.type<@SignedModNaive>
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_SignedModNaive(
+// CHECK: %[[C2:[0-9a-zA-Z_\.]+]] = smt.int.constant 2
+// CHECK: %[[ACAN:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[ARG:[0-9a-zA-Z_\.]+]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[QABS:[0-9a-zA-Z_\.]+]] = smt.int.div %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[QCAN:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[RABS:[0-9a-zA-Z_\.]+]] = smt.int.div %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[RCAN:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: smt.assert %[[EQ]]

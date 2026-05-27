@@ -55,15 +55,11 @@ bool containsFeltOrStruct(mlir::Type type);
 
 mlir::Operation *convertStructProductToFunc(mlir::Operation *op, mlir::MLIRContext *context);
 
-void configureSMTNoCFBodyConversionTarget(
-    mlir::MLIRContext &context, mlir::ConversionTarget &target
-);
+void configureSMTNoCFBodyConversionTarget(mlir::ConversionTarget &target);
 
 mlir::Operation *applySMTNoCFBodyConversion(
     mlir::Operation *op, mlir::ConversionTarget &target, mlir::RewritePatternSet &&patterns
 );
-
-mlir::LogicalResult validateSupportedSMTMemberAccesses(component::StructDefOp structDef);
 
 template <class From, class To> class BasicConverter : public mlir::OpConversionPattern<From> {
   using mlir::OpConversionPattern<From>::OpConversionPattern;
