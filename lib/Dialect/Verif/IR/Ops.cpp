@@ -50,114 +50,6 @@ namespace {
 
 using namespace llzk::verif;
 
-ParseResult parseContractOp(
-    OpAsmParser &parser, OperationState &result, StringAttr typeAttrName,
-    function_interface_impl::FuncTypeBuilder funcTypeBuilder, StringAttr argAttrsName
-) {
-  SmallVector<OpAsmParser::Argument> entryArgs;
-  SmallVector<DictionaryAttr> resultAttrs;
-  SmallVector<Type> resultTypes;
-  auto &builder = parser.getBuilder();
-
-  // Parse the name as a symbol.
-  StringAttr nameAttr;
-  if (parser.parseSymbolName(nameAttr, SymbolTable::getSymbolAttrName(), result.attributes)) {
-    return failure();
-  }
-
-  // Parse the target symbol
-  if (parser.parseKeyword("for")) {
-    return failure();
-  }
-
-  SymbolRefAttr targetAttr;
-  if (parser.parseCustomAttributeWithFallback(
-          targetAttr, parser.getBuilder().getType<::mlir::NoneType>()
-      )) {
-    return failure();
-  }
-  if (!targetAttr) {
-    return failure();
-  }
-  result.getOrAddProperties<ContractOp::Properties>().target = targetAttr;
-
-  // Parse the function signature.
-  SMLoc signatureLocation = parser.getCurrentLocation();
-  bool isVariadic = false;
-
-  if (function_interface_impl::parseFunctionSignature(
-          parser, /*allowVariadic*/ false, entryArgs, isVariadic, resultTypes, resultAttrs
-      )) {
-    return failure();
-  }
-  assert(isVariadic == false);
-  // There should be no return types or attributes.
-  if (!resultTypes.empty() || !resultAttrs.empty()) {
-    return failure();
-  }
-
-  std::string errorMessage;
-  SmallVector<Type> argTypes;
-  argTypes.reserve(entryArgs.size());
-  for (auto &arg : entryArgs) {
-    argTypes.push_back(arg.type);
-  }
-  Type type = funcTypeBuilder(
-      builder, argTypes, resultTypes, function_interface_impl::VariadicFlag(isVariadic),
-      errorMessage
-  );
-  if (!type) {
-    return parser.emitError(signatureLocation)
-           << "failed to construct function type" << (errorMessage.empty() ? "" : ": ")
-           << errorMessage;
-  }
-  result.addAttribute(typeAttrName, TypeAttr::get(type));
-
-  // If function attributes are present, parse them.
-  NamedAttrList parsedAttributes;
-  SMLoc attributeDictLocation = parser.getCurrentLocation();
-  if (parser.parseOptionalAttrDictWithKeyword(parsedAttributes)) {
-    return failure();
-  }
-
-  // Disallow attributes that are inferred from elsewhere in the attribute
-  // dictionary.
-  for (StringRef disallowed :
-       {SymbolTable::getVisibilityAttrName(), SymbolTable::getSymbolAttrName(),
-        typeAttrName.getValue()}) {
-    if (parsedAttributes.get(disallowed)) {
-      return parser.emitError(attributeDictLocation, "'")
-             << disallowed
-             << "' is an inferred attribute and should not be specified in the "
-                "explicit attribute dictionary";
-    }
-  }
-  result.attributes.append(parsedAttributes);
-
-  // Add the attributes to the function arguments.
-  function_interface_impl::addArgAndResultAttrs(
-      builder, result, entryArgs, resultAttrs, argAttrsName,
-      /*resAttrsName*/ StringAttr::get(parser.getContext())
-  );
-
-  // Parse the required contract body.
-  auto *body = result.addRegion();
-  SMLoc loc = parser.getCurrentLocation();
-  if (parser.parseRegion(
-          *body, entryArgs,
-          /*enableNameShadowing=*/false
-      )) {
-    return failure();
-  }
-
-  // Contract body was parsed, make sure its not empty.
-  if (body->empty()) {
-    return parser.emitError(loc, "expected non-empty contract body");
-  }
-
-  return success();
-}
-
 // Check if the op is a valid contract target.
 bool isValidTarget(Operation *op) {
   if (auto fnOp = dyn_cast<FuncDefOp>(op)) {
@@ -363,7 +255,7 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
   Operation *targetOp = targetRes->get();
   if (!isValidTarget(targetOp)) {
     return emitOpError()
-        .append("target \"@", getTargetAttr(), "\" is not a supported contract target")
+        .append("target \"", getTargetAttr(), "\" is not a supported contract target")
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
@@ -414,14 +306,108 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
 // Parse the ContractOp syntax using the built-in parsing of function-like
 // operations. We'll verify contract-specific restrictions in `verify`.
 ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
-  auto buildFuncType = [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
-                          function_interface_impl::VariadicFlag,
-                          std::string &) { return builder.getFunctionType(argTypes, results); };
+  StringAttr typeAttrName = getFunctionTypeAttrName(result.name);
+  StringAttr argAttrsName = getArgAttrsAttrName(result.name);
 
-  return parseContractOp(
-      parser, result, getFunctionTypeAttrName(result.name), buildFuncType,
-      getArgAttrsAttrName(result.name)
+  SmallVector<OpAsmParser::Argument> entryArgs;
+  SmallVector<DictionaryAttr> resultAttrs;
+  SmallVector<Type> resultTypes;
+  auto &builder = parser.getBuilder();
+
+  // Parse the name as a symbol.
+  StringAttr nameAttr;
+  if (parser.parseSymbolName(nameAttr, SymbolTable::getSymbolAttrName(), result.attributes)) {
+    return failure();
+  }
+
+  // Parse the target symbol
+  if (parser.parseKeyword("for")) {
+    return failure();
+  }
+
+  SymbolRefAttr targetAttr;
+  if (parser.parseCustomAttributeWithFallback(
+          targetAttr, parser.getBuilder().getType<::mlir::NoneType>()
+      )) {
+    return failure();
+  }
+  if (!targetAttr) {
+    return failure();
+  }
+  result.getOrAddProperties<ContractOp::Properties>().target = targetAttr;
+
+  // Parse the function signature.
+  SMLoc signatureLocation = parser.getCurrentLocation();
+  bool isVariadic = false;
+
+  if (function_interface_impl::parseFunctionSignature(
+          parser, /*allowVariadic*/ false, entryArgs, isVariadic, resultTypes, resultAttrs
+      )) {
+    return failure();
+  }
+  assert(isVariadic == false);
+  // There should be no return types or attributes.
+  if (!resultTypes.empty() || !resultAttrs.empty()) {
+    return failure();
+  }
+
+  std::string errorMessage;
+  SmallVector<Type> argTypes;
+  argTypes.reserve(entryArgs.size());
+  for (auto &arg : entryArgs) {
+    argTypes.push_back(arg.type);
+  }
+  Type type = builder.getFunctionType(argTypes, resultTypes);
+  if (!type) {
+    return parser.emitError(signatureLocation)
+           << "failed to construct function type" << (errorMessage.empty() ? "" : ": ")
+           << errorMessage;
+  }
+  result.addAttribute(typeAttrName, TypeAttr::get(type));
+
+  // If function attributes are present, parse them.
+  NamedAttrList parsedAttributes;
+  SMLoc attributeDictLocation = parser.getCurrentLocation();
+  if (parser.parseOptionalAttrDictWithKeyword(parsedAttributes)) {
+    return failure();
+  }
+
+  // Disallow attributes that are inferred from elsewhere in the attribute
+  // dictionary.
+  for (StringRef disallowed :
+       {SymbolTable::getVisibilityAttrName(), SymbolTable::getSymbolAttrName(),
+        typeAttrName.getValue()}) {
+    if (parsedAttributes.get(disallowed)) {
+      return parser.emitError(attributeDictLocation, "'")
+             << disallowed
+             << "' is an inferred attribute and should not be specified in the "
+                "explicit attribute dictionary";
+    }
+  }
+  result.attributes.append(parsedAttributes);
+
+  // Add the attributes to the function arguments.
+  function_interface_impl::addArgAndResultAttrs(
+      builder, result, entryArgs, resultAttrs, argAttrsName,
+      /*resAttrsName*/ StringAttr::get(parser.getContext())
   );
+
+  // Parse the required contract body.
+  auto *body = result.addRegion();
+  SMLoc loc = parser.getCurrentLocation();
+  if (parser.parseRegion(
+          *body, entryArgs,
+          /*enableNameShadowing=*/false
+      )) {
+    return failure();
+  }
+
+  // Contract body was parsed, make sure its not empty.
+  if (body->empty()) {
+    return parser.emitError(loc, "expected non-empty contract body");
+  }
+
+  return success();
 }
 
 void ContractOp::print(OpAsmPrinter &p) {
@@ -597,7 +583,6 @@ LogicalResult IncludeOp::verifyTemplateParamCompatibility(
       llvm_unreachable("inconsistent with `isValidConstReadType()`");
     }
     if (!compatible) {
-      // Tested in call_with_template_params_fail.llzk
       return this->emitOpError().append(
           "instantiation value '", paramFromIncludeOp, "' is not compatible with parameter \"@",
           targetParam.getName(), "\" type restriction ", *declaredType
@@ -637,7 +622,6 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
     if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
-      // Tested in call_with_template_params_fail.llzk
       return this->emitOpError().append(
           "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
           "\" conflicts with value '", it->second, "' inferred from function type signature"
@@ -674,7 +658,6 @@ protected:
 
   LogicalResult verifyNoTemplateInstantiations() {
     if (!isNullOrEmpty(includeOp->getTemplateParamsAttr())) {
-      // Tested in call_with_template_params_fail.llzk
       return includeOp->emitOpError().append(
           "can only have template instantiations when targeting a templated contract"
       );
@@ -718,7 +701,6 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
         if (allParamsReferenced) {
           return success();
         }
-        // Tested in call_with_template_params_fail.llzk
         return includeOp->emitOpError().append(
             "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
             "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
@@ -736,7 +718,6 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
       // The instantiation list is present. Check it has exactly one entry per template param.
       size_t numTemplateParams = llvm::range_size(realParams);
       if (callParams.size() != numTemplateParams) {
-        // Tested in call_with_template_params_fail.llzk
         return includeOp->emitOpError().append(
             "template instantiation has ", callParams.size(), " parameter(s) but \"@",
             tgtOpParent.getSymName(), "\" expects ", numTemplateParams, " template parameter(s)"
@@ -808,8 +789,9 @@ LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &tables) {
   // the subset of checks that can be done even though the target is unknown.
   if (calleeAttr.getNestedReferences().size() == 1) {
     if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
-      if (parent.hasConstNamed<TemplateParamOp>(calleeAttr.getRootReference())) {
+      if (auto constParam = parent.getConstNamed<TemplateParamOp>(calleeAttr.getRootReference())) {
         return this->emitError("expected parameterized callee to target a struct function")
+            .attachNote(constParam->getLoc())
             .append(
                 " (i.e. \"@", FUNC_NAME_PRODUCT, "\", \"@", FUNC_NAME_COMPUTE, "\", or \"@",
                 FUNC_NAME_CONSTRAIN, "\")"
@@ -878,17 +860,22 @@ void IncludeOp::setCalleeFromCallable(CallInterfaceCallable callee) {
 SmallVector<ValueRange> IncludeOp::toVectorOfValueRange(OperandRangeRange input) {
   llvm::SmallVector<ValueRange, 4> output;
   output.reserve(input.size());
-  for (OperandRange r : input) {
-    output.push_back(r);
-  }
+  output.insert(output.end(), input.begin(), input.end());
   return output;
 }
 
 Operation *IncludeOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {
   FailureOr<SymbolLookupResult<ContractOp>> res =
       llzk::resolveCallable<ContractOp>(*symbolTable, *this);
-  if (failed(res) || res->isManaged()) {
-    // Cannot return pointer to a managed Operation since it would cause memory errors.
+  if (failed(res)) {
+    return nullptr;
+  }
+  if (res->isManaged()) {
+    this->emitWarning(
+        "IncludeOp::resolveCallableInTable: cannot return "
+        "pointer to a managed Operation since it would cause memory errors. "
+        "Consider running -llzk-inline-includes to avoid encountering managed Operations."
+    );
     return nullptr;
   }
   return res->get();

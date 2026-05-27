@@ -68,7 +68,7 @@ static llzk::verif::ContractOp createCppContract(
 
 } // namespace
 
-TEST_F(CAPITest, llzk_verif_include_op_build_smoke) {
+TEST_F(CAPITest, llzkVerifIncludeOpBuildSmoke) {
   MlirOpBuilder builder = mlirOpBuilderCreate(context);
   MlirLocation location = mlirLocationUnknownGet(context);
   auto module = cppNewModuleAndSetInsertionPoint(builder, location);
@@ -95,7 +95,6 @@ TEST_F(CAPITest, llzk_verif_include_op_build_smoke) {
       mlirAttributeGetNull()
   );
 
-  EXPECT_NE(includeOp.ptr, (void *)NULL);
   EXPECT_TRUE(llzkOperationIsA_Verif_IncludeOp(includeOp));
   EXPECT_TRUE(mlirOperationVerify(includeOp));
   EXPECT_TRUE(mlirAttributeEqual(
@@ -105,7 +104,7 @@ TEST_F(CAPITest, llzk_verif_include_op_build_smoke) {
   mlirOpBuilderDestroy(builder);
 }
 
-TEST_F(CAPITest, llzk_verif_contract_op_build_and_verify_in_module) {
+TEST_F(CAPITest, llzkVerifContractOpBuildAndVerifyInModule) {
   MlirOpBuilder builder = mlirOpBuilderCreate(context);
   MlirLocation location = mlirLocationUnknownGet(context);
   auto module = cppNewModuleAndSetInsertionPoint(builder, location);
@@ -134,7 +133,7 @@ TEST_F(CAPITest, llzk_verif_contract_op_build_and_verify_in_module) {
   mlirOpBuilderDestroy(builder);
 }
 
-TEST_F(CAPITest, llzk_verif_include_op_build_and_resolve_callable) {
+TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
   MlirOpBuilder builder = mlirOpBuilderCreate(context);
   MlirLocation location = mlirLocationUnknownGet(context);
   auto module = cppNewModuleAndSetInsertionPoint(builder, location);

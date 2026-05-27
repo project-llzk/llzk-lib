@@ -200,12 +200,7 @@ TEST_F(VerifDialectTests, CustomBuilderInfersFunctionTargetContractInvariants) {
   OpBuilder builder(&ctx);
   builder.setInsertionPointToStart(mod->getBody());
 
-  OperationState state(loc, ContractOp::getOperationName());
-
-  ContractOp::build(builder, state, "BuiltContract", "TargetFn");
-
-  auto *raw = Operation::create(state);
-  auto contract = cast<ContractOp>(raw);
+  auto contract = builder.create<ContractOp>(loc, "BuiltContract", "TargetFn");
 
   EXPECT_EQ(contract.getSymName(), "BuiltContract");
   ASSERT_TRUE(contract.getTargetAttr());
@@ -215,7 +210,7 @@ TEST_F(VerifDialectTests, CustomBuilderInfersFunctionTargetContractInvariants) {
   EXPECT_TRUE(contract.getBody().empty());
 
   SymbolTable table(*mod);
-  table.insert(raw);
+  table.insert(contract);
 
   EXPECT_TRUE(verify(contract, true));
   EXPECT_TRUE(contract.hasFuncTarget());
@@ -233,13 +228,8 @@ TEST_F(VerifDialectTests, CustomBuilderInfersStructTargetSignatureAndArgAttrs) {
   OpBuilder builder(&ctx);
   builder.setInsertionPointToStart(mod->getBody());
 
-  OperationState state(loc, ContractOp::getOperationName());
-  ContractOp::build(builder, state, "StructContract", std::string(structNameA));
-
-  auto *raw = Operation::create(state);
-  auto contract = cast<ContractOp>(raw);
-  contract.setTargetAttr(SymbolRefAttr::get(&ctx, structNameA));
-  mod->push_back(raw);
+  auto contract = builder.create<ContractOp>(loc, "StructContract", std::string(structNameA));
+  mod->push_back(contract);
 
   EXPECT_EQ(contract.getSymName(), "StructContract");
   ASSERT_TRUE(contract.getTargetAttr());

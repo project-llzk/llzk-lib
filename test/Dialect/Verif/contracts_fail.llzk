@@ -44,7 +44,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   struct.def @Box { // expected-note {{target defined here}}
-    function.def @compute() -> !struct.type<@Box> {
+    function.def @compute(%x: index) -> !struct.type<@Box> {
       %self = struct.new : !struct.type<@Box>
       function.return %self : !struct.type<@Box>
     }
@@ -57,6 +57,57 @@ module attributes {llzk.lang} {
   verif.contract @WrongStructSig for @Box (%self: !struct.type<@Box>) {
     %ok = arith.constant true
     verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Box {
+    function.def @compute(%x: index) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      function.return %self : !struct.type<@Box>
+    }
+    function.def @constrain(%self: !struct.type<@Box>, %x: index) { // expected-note {{target defined here}}
+      function.return
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op target "@Box::@constrain" is not a supported contract target}}
+  verif.contract @CannotTargetStructConstraint for @Box::@constrain (%self: !struct.type<@Box>, %x: index) {
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Box {
+    function.def @compute(%x: index) -> !struct.type<@Box> { // expected-note {{target defined here}}
+      %self = struct.new : !struct.type<@Box>
+      function.return %self : !struct.type<@Box>
+    }
+    function.def @constrain(%self: !struct.type<@Box>, %x: index) {
+      function.return
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op target "@Box::@compute" is not a supported contract target}}
+  verif.contract @CannotTargetStructCompute for @Box::@compute (%self: !struct.type<@Box>, %x: index) {
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Box {
+    function.def @product(%x: index) -> !struct.type<@Box> { // expected-note {{target defined here}}
+      %self = struct.new : !struct.type<@Box>
+      function.return %self : !struct.type<@Box>
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op target "@Box::@product" is not a supported contract target}}
+  verif.contract @CannotTargetStructProduct for @Box::@product (%self: !struct.type<@Box>, %x: index) {
   }
 }
 
