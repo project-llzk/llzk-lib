@@ -229,7 +229,6 @@ TEST_F(VerifDialectTests, CustomBuilderInfersStructTargetSignatureAndArgAttrs) {
   builder.setInsertionPointToStart(mod->getBody());
 
   auto contract = builder.create<ContractOp>(loc, "StructContract", std::string(structNameA));
-  mod->push_back(contract);
 
   EXPECT_EQ(contract.getSymName(), "StructContract");
   ASSERT_TRUE(contract.getTargetAttr());
