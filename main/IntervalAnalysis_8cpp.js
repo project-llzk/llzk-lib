@@ -22,6 +22,7 @@ var IntervalAnalysis_8cpp =
     [ "llzk::shiftLeft", "namespacellzk.html#a1998bc2f299c5283fc5c74a324306f3b", null ],
     [ "llzk::shiftRight", "namespacellzk.html#ac7e06f695c4b1f9358e3a1d255352cf7", null ],
     [ "llzk::sintDiv", "namespacellzk.html#a6fc0f75dc297614006fe47db9a98d638", null ],
+    [ "llzk::sintMod", "namespacellzk.html#a0c2e430b9e6ac8a187bc21d80bff8e8a", null ],
     [ "llzk::sub", "namespacellzk.html#ad332be6d448049b9e437167d3b630fef", null ],
     [ "llzk::uintDiv", "namespacellzk.html#aac7d18d0d69dc644aad5c68eadb5c825", null ]
 ];

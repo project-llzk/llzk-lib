@@ -20,5 +20,6 @@ var Intervals_8cpp =
     [ "llzk::operator^", "namespacellzk.html#a41877dee22a597e2a10095dd80ceb786", null ],
     [ "llzk::operator|", "namespacellzk.html#a3f35b59bfdb8b8339f2e9a2978984a1b", null ],
     [ "llzk::signedIntDiv", "namespacellzk.html#a16ea3883a9e7284312007f6de4f7b809", null ],
+    [ "llzk::signedMod", "namespacellzk.html#a42c87397f5103f0624b2087fb40b1a2a", null ],
     [ "llzk::unsignedIntDiv", "namespacellzk.html#a7f16779a8290b3604ad7ee49256fb594", null ]
 ];
