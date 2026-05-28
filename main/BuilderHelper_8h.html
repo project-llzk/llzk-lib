@@ -110,17 +110,19 @@ $(function(){initNavTree('BuilderHelper_8h.html','',''); });
   <div class="headertitle"><div class="title">BuilderHelper.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="ErrorHelper_8h_source.html">llzk/Util/ErrorHelper.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
+<code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Location.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for BuilderHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__incl.svg" width="304" height="131"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__incl.svg" width="1579" height="283"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__dep__incl.svg" width="983" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="BuilderHelper_8h__dep__incl.svg" width="1146" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="BuilderHelper_8h_source.html">Go to the source code of this file.</a></p>
@@ -133,6 +135,8 @@ Namespaces</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a" id="r_ad19f7db21d0d9d7f998bb6f00782e35a"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename... Args&gt; </td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a">llzk::delegate_to_build</a> (mlir::Location location, Args &amp;&amp;...args)</td></tr>
+<tr class="memitem:ae84de17f3956dc25edb6816991ded1ef" id="r_ae84de17f3956dc25edb6816991ded1ef"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
+<tr class="memitem:ae84de17f3956dc25edb6816991ded1ef template"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ae84de17f3956dc25edb6816991ded1ef">llzk::addTemplateParams</a> (mlir::OpBuilder &amp;odsBuilder, typename OpClass::Properties &amp;props, llvm::ArrayRef&lt; mlir::Attribute &gt; templateParams)</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

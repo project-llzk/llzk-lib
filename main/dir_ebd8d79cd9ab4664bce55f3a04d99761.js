@@ -13,5 +13,6 @@ var dir_ebd8d79cd9ab4664bce55f3a04d99761 =
     [ "Poly.cpp", "Poly_8cpp.html", "Poly_8cpp" ],
     [ "RAM.cpp", "RAM_8cpp.html", null ],
     [ "String.cpp", "String_8cpp.html", null ],
-    [ "Struct.cpp", "Struct_8cpp.html", "Struct_8cpp" ]
+    [ "Struct.cpp", "Struct_8cpp.html", "Struct_8cpp" ],
+    [ "Verif.cpp", "Verif_8cpp.html", "Verif_8cpp" ]
 ];

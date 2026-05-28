@@ -1,0 +1,5 @@
+var Verif_8h =
+[
+    [ "LLZK_DECLARE_OP_BUILD_METHOD", "Verif_8h.html#a47819df4167f55322fcd189411b364d4", null ],
+    [ "MLIR_DECLARE_CAPI_DIALECT_REGISTRATION", "Verif_8h.html#aab84552d992c4180424839262be53a12", null ]
+];

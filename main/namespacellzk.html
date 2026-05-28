@@ -139,6 +139,7 @@ Namespaces</h2></td></tr>
 <tr class="memitem:ram" id="r_ram"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1ram.html">ram</a></td></tr>
 <tr class="memitem:smt" id="r_smt"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1smt.html">smt</a></td></tr>
 <tr class="memitem:string" id="r_string"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1string.html">string</a></td></tr>
+<tr class="memitem:verif" id="r_verif"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1verif.html">verif</a></td></tr>
 <tr class="memitem:witgen" id="r_witgen"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html">witgen</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
@@ -189,6 +190,8 @@ Classes</h2></td></tr>
 <tr class="memitem:FuzzySet" id="r_FuzzySet"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1FuzzySet.html">FuzzySet</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents a set where the membership predicate can take three values: true, false, and "unknown".  <a href="classllzk_1_1FuzzySet.html#details">More...</a><br /></td></tr>
 <tr class="memitem:GlobalSourceMgr" id="r_GlobalSourceMgr"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1GlobalSourceMgr.html">GlobalSourceMgr</a></td></tr>
+<tr class="memitem:HasAncestor" id="r_HasAncestor"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1HasAncestor.html">HasAncestor</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <span class="tt"><a class="el" href="structllzk_1_1HasAncestor.html" title="See HasAncestor ODS documentation for details.">HasAncestor</a></span> ODS documentation for details.  <a href="structllzk_1_1HasAncestor.html#details">More...</a><br /></td></tr>
 <tr class="memitem:InFlightDiagnosticWrapper" id="r_InFlightDiagnosticWrapper"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1InFlightDiagnosticWrapper.html">InFlightDiagnosticWrapper</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper around InFlightDiagnostic that can either be a regular InFlightDiagnostic or a special version that asserts false after reporting the diagnostic.  <a href="classllzk_1_1InFlightDiagnosticWrapper.html#details">More...</a><br /></td></tr>
 <tr class="memitem:InlineStructsPassOptions" id="r_InlineStructsPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1InlineStructsPassOptions.html">InlineStructsPassOptions</a></td></tr>
@@ -603,6 +606,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a79f7a98b4670512b82df5098ca84e99e" id="r_a79f7a98b4670512b82df5098ca84e99e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79f7a98b4670512b82df5098ca84e99e">registerTransformationPasses</a> ()</td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a" id="r_ad19f7db21d0d9d7f998bb6f00782e35a"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename... Args&gt; </td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build</a> (mlir::Location location, Args &amp;&amp;...args)</td></tr>
+<tr class="memitem:ae84de17f3956dc25edb6816991ded1ef" id="r_ae84de17f3956dc25edb6816991ded1ef"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
+<tr class="memitem:ae84de17f3956dc25edb6816991ded1ef template"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae84de17f3956dc25edb6816991ded1ef">addTemplateParams</a> (mlir::OpBuilder &amp;odsBuilder, typename OpClass::Properties &amp;props, llvm::ArrayRef&lt; mlir::Attribute &gt; templateParams)</td></tr>
 <tr class="memitem:afb284386fff71ad94c74a27f050076b8" id="r_afb284386fff71ad94c74a27f050076b8"><td class="memTemplParams" colspan="2">template&lt;OpComparable Op&gt; </td></tr>
 <tr class="memitem:afb284386fff71ad94c74a27f050076b8 template"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afb284386fff71ad94c74a27f050076b8">isLocationLess</a> (const Op &amp;l, const Op &amp;r)</td></tr>
 <tr class="memitem:a60ca7c6c3ae1d404296cec5b7fdf2237" id="r_a60ca7c6c3ae1d404296cec5b7fdf2237"><td class="memTemplParams" colspan="2">template&lt;typename T, typename U&gt; </td></tr>
@@ -1232,6 +1237,36 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Field_8cpp_source.html#l00183">183</a> of file <a class="el" href="Field_8cpp_source.html">Field.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ae84de17f3956dc25edb6816991ded1ef" name="ae84de17f3956dc25edb6816991ded1ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae84de17f3956dc25edb6816991ded1ef">&#9670;&#160;</a></span>addTemplateParams()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OpClass&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::addTemplateParams </td>
+          <td>(</td>
+          <td class="paramtype">mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>odsBuilder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">typename OpClass::Properties &amp;</td>          <td class="paramname"><span class="paramname"><em>props</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; mlir::Attribute &gt;</td>          <td class="paramname"><span class="paramname"><em>templateParams</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00027">27</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
 
 </div>
 </div>
@@ -2906,7 +2941,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00018">18</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="BuilderHelper_8h_source.html#l00021">21</a> of file <a class="el" href="BuilderHelper_8h_source.html">BuilderHelper.h</a>.</p>
 
 </div>
 </div>
@@ -3747,7 +3782,7 @@ template&lt;typename OpClass&gt; </div>
 <p>Get the operation name, like "constrain.eq" for the given OpClass. </p>
 <p>This function can be used when the compiler would complain about incomplete types if <span class="tt">OpClass::getOperationName()</span> were called directly. </p>
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00052">52</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00087">87</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -3778,7 +3813,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Return the closest surrounding parent operation that is of type 'OpClass'. </p>
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00070">70</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00105">105</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -4310,7 +4345,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Return the closest operation that is of type 'OpClass', either the op itself or an ancestor. </p>
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00057">57</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00092">92</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6757,7 +6792,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00148">148</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00183">183</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6795,7 +6830,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00118">118</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00153">153</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6831,7 +6866,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00133">133</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00168">168</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6862,7 +6897,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00162">162</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00197">197</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6971,7 +7006,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00155">155</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00190">190</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7066,7 +7101,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00126">126</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00161">161</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7107,7 +7142,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00141">141</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00176">176</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7168,7 +7203,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00195">195</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00230">230</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7204,7 +7239,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00202">202</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00237">237</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7287,7 +7322,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00034">34</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Dialect_2InitDialects_8cpp_source.html#l00035">35</a> of file <a class="el" href="Dialect_2InitDialects_8cpp_source.html">InitDialects.cpp</a>.</p>
 
 </div>
 </div>
