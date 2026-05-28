@@ -32,6 +32,13 @@ def LLZKSymbolTableImplTrait : NativeOpTrait<"LLZKSymbolTableImplTrait"> {
 // table.
 def LLZKSymbolTable : TraitList<[LLZKSymbolTableImplTrait, SymbolTable]>;
 
+/// Verify that the operation has a parent of type `op` somewhere in its
+/// ancestry.
+class HasAncestor<string op> : ParamNativeOpTrait<"HasAncestor", op>,
+                               StructuralOpTrait {
+  string cppNamespace = "::llzk";
+}
+
 // Implements verification for ops with an affine_map instantiation list. These
 // ops are expected to contain the following in their `arguments` list:
 //  - VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands

@@ -546,20 +546,6 @@ void CallOp::writeProperties(DialectBytecodeWriter &writer) {
   }
 }
 
-static void addTemplateParams(
-    OpBuilder &odsBuilder, CallOp::Properties &props, ArrayRef<Attribute> templateParams
-) {
-  if (!templateParams.empty()) {
-    // Must attempt to convert attribute types but `build()` functions do not have a failure path or
-    // error reporting. That comes during validation of the constructed op so ignore errors here.
-    FailureOr<SmallVector<Attribute>> r = llzk::forceIntAttrTypes(templateParams, [&odsBuilder]() {
-      return InFlightDiagnosticWrapper::createSilent(odsBuilder.getContext());
-    });
-    ArrayRef<Attribute> converted = succeeded(r) ? r.value() : templateParams;
-    props.setTemplateParams(odsBuilder.getArrayAttr(converted));
-  }
-}
-
 void CallOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, TypeRange resultTypes, SymbolRefAttr callee,
     ValueRange argOperands, ArrayRef<Attribute> templateParams
@@ -570,7 +556,7 @@ void CallOp::build(
       odsBuilder, odsState, llzk::checkedCast<int32_t>(argOperands.size())
   );
   props.setCallee(callee);
-  addTemplateParams(odsBuilder, props, templateParams);
+  addTemplateParams<CallOp>(odsBuilder, props, templateParams);
 }
 
 void CallOp::build(
@@ -585,7 +571,7 @@ void CallOp::build(
       llzk::checkedCast<int32_t>(argOperands.size())
   );
   props.setCallee(callee);
-  addTemplateParams(odsBuilder, props, templateParams);
+  addTemplateParams<CallOp>(odsBuilder, props, templateParams);
 }
 
 LogicalResult

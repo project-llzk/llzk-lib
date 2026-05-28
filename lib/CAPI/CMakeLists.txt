@@ -23,6 +23,7 @@ target_sources(LLZKCAPI PRIVATE
   Dialect/RAM.cpp
   Dialect/String.cpp
   Dialect/Struct.cpp
+  Dialect/Verif.cpp
   Target/PCL.cpp)
 target_link_libraries(
   LLZKCAPI PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS}

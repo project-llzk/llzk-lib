@@ -1,0 +1,259 @@
+//===-- VerifDialectTests.cpp - Unit tests for verif dialect ----*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+#include "OpTestBase.h"
+
+#include "llzk/Dialect/Verif/IR/Ops.h"
+
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/Verifier.h>
+#include <mlir/Parser/Parser.h>
+
+using namespace mlir;
+using namespace llzk;
+using namespace llzk::verif;
+
+namespace {
+
+class VerifDialectTests : public OpTests {
+protected:
+  OwningOpRef<ModuleOp> parseModule(StringRef source) {
+    auto parsed = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    if (!parsed) {
+      ADD_FAILURE() << "failed to parse test module";
+      return {};
+    }
+    return parsed;
+  }
+
+  template <typename OpTy> SmallVector<OpTy> findOps(ModuleOp module) {
+    SmallVector<OpTy> found;
+    module.walk([&](OpTy op) { found.push_back(op); });
+    return found;
+  }
+};
+
+TEST_F(VerifDialectTests, ContractAllowsReadingPrivateMembersOfItsTargetStruct) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+      constrain.eq %secret, %value : !felt.type
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecret for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %isEq = bool.cmp eq(%secret, %value) : !felt.type, !felt.type
+    verif.require_constrain %isEq
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto contracts = findOps<ContractOp>(*parsed);
+
+  ASSERT_EQ(contracts.size(), 1u);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+  ASSERT_TRUE(verify(contracts.front(), true));
+  ASSERT_TRUE(contracts.front().hasStructTarget());
+  ASSERT_TRUE(succeeded(contracts.front().getStructTarget()));
+  EXPECT_EQ(contracts.front().getStructTarget()->get().getName(), "SecretBox");
+}
+
+TEST_F(VerifDialectTests, FunctionTargetContractsAreNotStructContracts) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @check(%x: index, %y: index) {
+    function.return
+  }
+
+  verif.contract @Named for @check (%x: index, %y: index) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto contracts = findOps<ContractOp>(*parsed);
+
+  ASSERT_EQ(contracts.size(), 1u);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+  EXPECT_FALSE(contracts.front().hasStructTarget());
+}
+
+TEST_F(VerifDialectTests, IncludeVerifiesKnownCalleeContracts) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @check(%x: index, %ok: i1) {
+    function.return
+  }
+
+  verif.contract @Base for @check (%x: index, %ok: i1) {
+    verif.require_compute %ok
+    verif.ensure_constrain %ok
+  }
+
+  verif.contract @Wrapper for @check (%x: index, %ok: i1) {
+    verif.include @Base(%x, %ok) : (index, i1) -> ()
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto includes = findOps<IncludeOp>(*parsed);
+
+  ASSERT_EQ(includes.size(), 1u);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+  ASSERT_TRUE(verify(includes.front(), true));
+}
+
+TEST_F(VerifDialectTests, IncludeTypeSignatureMatchesOperandsAndResolvesCallable) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @check(%x: index, %ok: i1) {
+    function.return
+  }
+
+  verif.contract @Base for @check (%x: index, %ok: i1) {
+    verif.require_compute %ok
+  }
+
+  verif.contract @Wrapper for @check (%x: index, %ok: i1) {
+    verif.include @Base(%x, %ok) : (index, i1) -> ()
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto includes = findOps<IncludeOp>(*parsed);
+
+  ASSERT_EQ(includes.size(), 1u);
+  IncludeOp include = includes.front();
+
+  ASSERT_EQ(include.getTypeSignature().getNumInputs(), 2u);
+  EXPECT_EQ(include.getTypeSignature().getInput(0), IndexType::get(&ctx));
+  EXPECT_EQ(include.getTypeSignature().getInput(1), IntegerType::get(&ctx, 1));
+
+  auto *callable = include.resolveCallable();
+  ASSERT_NE(callable, nullptr);
+  auto callee = dyn_cast<ContractOp>(callable);
+  ASSERT_TRUE(callee);
+  EXPECT_EQ(callee.getSymName(), "Base");
+}
+
+TEST_F(VerifDialectTests, TemplateIncludeWithExplicitParametersVerifies) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      %n = poly.read_const @N : index
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      verif.include @SpecTemplate::@Base<[7]>() : () -> ()
+    }
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto includes = findOps<IncludeOp>(*parsed);
+
+  ASSERT_EQ(includes.size(), 1u);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+  ASSERT_TRUE(verify(includes.front(), true));
+}
+
+TEST_F(VerifDialectTests, CustomBuilderInfersFunctionTargetContractInvariants) {
+  auto modBldr = newBasicFunctionsExample(0, 0, {"TargetFn"});
+  auto target = modBldr.getFreeFunc("TargetFn");
+
+  ASSERT_TRUE(succeeded(target));
+
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToStart(mod->getBody());
+
+  auto contract = builder.create<ContractOp>(loc, "BuiltContract", "TargetFn");
+
+  EXPECT_EQ(contract.getSymName(), "BuiltContract");
+  ASSERT_TRUE(contract.getTargetAttr());
+  EXPECT_EQ(contract.getTarget().getRootReference().getValue(), "TargetFn");
+  EXPECT_EQ(contract.getFunctionType(), target->getFunctionType());
+  EXPECT_EQ(contract.getArgAttrsAttr(), target->getArgAttrsAttr());
+  EXPECT_TRUE(contract.getBody().empty());
+
+  SymbolTable table(*mod);
+  table.insert(contract);
+
+  EXPECT_TRUE(verify(contract, true));
+  EXPECT_TRUE(contract.hasFuncTarget());
+  EXPECT_FALSE(contract.hasStructTarget());
+}
+
+TEST_F(VerifDialectTests, CustomBuilderInfersStructTargetSignatureAndArgAttrs) {
+  auto modBldr = newStructExample();
+  auto targetStruct = modBldr.getStruct(structNameA);
+  auto targetConstrain = modBldr.getConstrainFn(structNameA);
+
+  ASSERT_TRUE(succeeded(targetStruct));
+  ASSERT_TRUE(succeeded(targetConstrain));
+
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToStart(mod->getBody());
+
+  auto contract = builder.create<ContractOp>(loc, "StructContract", std::string(structNameA));
+
+  EXPECT_EQ(contract.getSymName(), "StructContract");
+  ASSERT_TRUE(contract.getTargetAttr());
+  EXPECT_EQ(contract.getTarget().getRootReference().getValue(), structNameA);
+  EXPECT_EQ(contract.getFunctionType(), targetConstrain->getFunctionType());
+  EXPECT_EQ(contract.getArgAttrsAttr(), targetConstrain->getArgAttrsAttr());
+  EXPECT_TRUE(contract.getBody().empty());
+
+  EXPECT_TRUE(verify(contract, true));
+  EXPECT_TRUE(contract.hasStructTarget());
+  EXPECT_FALSE(contract.hasFuncTarget());
+}
+
+TEST_F(VerifDialectTests, CustomBuilderFailure) {
+  auto modBldr = newStructExample();
+
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToStart(mod->getBody());
+
+  // Build does not fail, since we defer to verify
+  auto contract = builder.create<ContractOp>(loc, "StructContract", "UnknownTarget");
+  ASSERT_NE(contract, nullptr);
+  // But verify will fail, since the contract op was not properly built due to
+  // target lookup failures.
+  ASSERT_FALSE(verify(contract, true));
+}
+
+} // namespace
