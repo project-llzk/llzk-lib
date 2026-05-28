@@ -299,3 +299,30 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NondetCSE {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@NondetCSE> {
+      %self = struct.new : !struct.type<@NondetCSE>
+      function.return %self : !struct.type<@NondetCSE>
+    }
+
+    function.def @constrain(%self: !struct.type<@NondetCSE>, %a: !felt.type, %b: !felt.type) {
+      %x = llzk.nondet : !felt.type
+      %y = llzk.nondet : !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @NondetCSE {
+// CHECK:        function.def @constrain
+// CHECK-NEXT:     %[[NONDET_0:.*]] = llzk.nondet : !felt.type
+// CHECK-NEXT:     %[[NONDET_1:.*]] = llzk.nondet : !felt.type
+// CHECK-NEXT:     constrain.eq %[[NONDET_0]], %{{.*}} : !felt.type, !felt.type
+// CHECK-NEXT:     constrain.eq %[[NONDET_1]], %{{.*}} : !felt.type, !felt.type
+// CHECK-NEXT:     function.return
