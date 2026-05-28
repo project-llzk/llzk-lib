@@ -242,4 +242,18 @@ TEST_F(VerifDialectTests, CustomBuilderInfersStructTargetSignatureAndArgAttrs) {
   EXPECT_FALSE(contract.hasFuncTarget());
 }
 
+TEST_F(VerifDialectTests, CustomBuilderFailure) {
+  auto modBldr = newStructExample();
+
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToStart(mod->getBody());
+
+  // Build does not fail, since we defer to verify
+  auto contract = builder.create<ContractOp>(loc, "StructContract", "UnknownTarget");
+  ASSERT_NE(contract, nullptr);
+  // But verify will fail, since the contract op was not properly built due to
+  // target lookup failures.
+  ASSERT_FALSE(verify(contract, true));
+}
+
 } // namespace

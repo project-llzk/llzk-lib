@@ -157,6 +157,9 @@ void ContractOp::build(
     ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
     llvm::StringRef target
 ) {
+  // Any errors here in the construction from the target information are not
+  // reported here, but will instead be reported when the verify function fails
+  // to verify this op.
   SymbolTableCollection tables;
   MLIRContext *ctx = odsBuilder.getContext();
   SymbolRefAttr targetAttr = SymbolRefAttr::get(ctx, target);
@@ -164,27 +167,14 @@ void ContractOp::build(
   FailureOr<SymbolLookupResultUntyped> targetRes =
       lookupTopLevelSymbol(tables, targetAttr, odsBuilder.getBlock()->getParentOp());
   if (failed(targetRes)) {
-    InFlightDiagnosticWrapper err(odsState.location);
-    err.append("could not find target \"@", targetAttr, "\"");
-    err.report();
     return;
   }
   Operation *targetOp = targetRes->get();
   if (!isValidTarget(targetOp)) {
-    InFlightDiagnosticWrapper err(odsState.location);
-    err.append("target \"@", targetAttr, "\" is not a supported contract target")
-        .attachNote(targetOp->getLoc())
-        .append("target defined here");
-    err.report();
     return;
   }
   FailureOr<TargetTypeInfo> infoRes = getTargetTypeInfo(targetOp);
   if (failed(infoRes)) {
-    InFlightDiagnosticWrapper err(odsState.location);
-    err.append("could not resolve target type information")
-        .attachNote(targetOp->getLoc())
-        .append("target defined here");
-    err.report();
     return;
   }
   TargetTypeInfo &info = *infoRes;
