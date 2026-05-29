@@ -1,5 +1,7 @@
 var NAVTREEINDEX74 =
 {
+"dialects.html#operations-12":[7,12,0],
+"dialects.html#operations-2":[7,2,0],
 "dialects.html#operations-3":[7,3,0],
 "dialects.html#operations-4":[7,4,0],
 "dialects.html#operations-5":[7,5,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX74 =
 "functions.html":[12,3,0,0],
 "functions_a.html":[12,3,0,1],
 "functions_b.html":[12,3,0,2],
-"functions_c.html":[12,3,0,3],
-"functions_d.html":[12,3,0,4],
-"functions_e.html":[12,3,0,5]
+"functions_c.html":[12,3,0,3]
 };

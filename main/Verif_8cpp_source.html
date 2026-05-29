@@ -137,42 +137,64 @@ $(function(){initNavTree('Verif_8cpp_source.html','',''); });
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif, <a class="code hl_class" href="classllzk_1_1verif_1_1VerifDialect.html">VerifDialect</a>)</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="foldopen" id="foldopen00031" data-start="{" data-end="}">
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno"><a class="line" href="Verif_8cpp.html#ac06d0480f1b3bb8192b5aa3d65428099">   31</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#a49a9508dcfa6502c1d009b1409f70fb5">LLZK_DEFINE_OP_BUILD_METHOD</a>(</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    Verif, <a class="code hl_class" href="classllzk_1_1verif_1_1IncludeOp.html">IncludeOp</a>, MlirAttribute callee, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> argOperands, MlirAttribute templateParams</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>) {</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  SmallVector&lt;Value&gt; argOperandsSto;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  ArrayAttr paramsAttr;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordflow">if</span> (!mlirAttributeIsNull(templateParams)) {</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    paramsAttr = <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast&lt;ArrayAttr&gt;</a>(unwrap(templateParams));</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  }</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      builder, wrap(</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>                   <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">llzk::create&lt;IncludeOp&gt;</a>(</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>                       builder, location, <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast&lt;SymbolRefAttr&gt;</a>(unwrap(callee)),</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                       unwrapList(argOperands.size, argOperands.values, argOperandsSto),</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                       paramsAttr ? paramsAttr.getValue() : ArrayRef&lt;Attribute&gt; {}</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                   )</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>               )</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  );</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>}</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">// ContractOp</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="foldopen" id="foldopen00035" data-start="{" data-end="}">
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="Verif_8cpp.html#a9cf9116ccaabd8084f7f68ab5f329099">   35</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#ac40521d1742d3d6e0277892780f6cff1">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a>(</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    Verif, <a class="code hl_class" href="classllzk_1_1verif_1_1ContractOp.html">ContractOp</a>, FromTarget, MlirIdentifier sym_name, MlirIdentifier target</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>) {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>      builder, wrap(<a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">llzk::create&lt;ContractOp&gt;</a>(builder, location, unwrap(sym_name), unwrap(target)))</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  );</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>}</div>
+</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="comment">// IncludeOp</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="foldopen" id="foldopen00047" data-start="{" data-end="}">
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="Verif_8cpp.html#ac06d0480f1b3bb8192b5aa3d65428099">   47</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#a49a9508dcfa6502c1d009b1409f70fb5">LLZK_DEFINE_OP_BUILD_METHOD</a>(</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    Verif, <a class="code hl_class" href="classllzk_1_1verif_1_1IncludeOp.html">IncludeOp</a>, MlirAttribute callee, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> argOperands, MlirAttribute templateParams</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>) {</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  SmallVector&lt;Value&gt; argOperandsSto;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  ArrayAttr paramsAttr;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordflow">if</span> (!mlirAttributeIsNull(templateParams)) {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    paramsAttr = <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast&lt;ArrayAttr&gt;</a>(unwrap(templateParams));</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      builder, wrap(</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                   <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">llzk::create&lt;IncludeOp&gt;</a>(</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>                       builder, location, <a class="code hl_namespace" href="namespacellzk_1_1cast.html">cast&lt;SymbolRefAttr&gt;</a>(unwrap(callee)),</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>                       unwrapList(argOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, argOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, argOperandsSto),</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                       paramsAttr ? paramsAttr.getValue() : ArrayRef&lt;Attribute&gt; {}</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>                   )</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>               )</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  );</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>}</div>
 </div>
 <div class="ttc" id="aBuilder_8cpp_html_ae83ea6c8112a8f7042f9962b06443d1c"><div class="ttname"><a href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a></div><div class="ttdeci">MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op)</div><div class="ttdoc">Inserts op at the current insertion point of builder and returns it.</div><div class="ttdef"><b>Definition</b> <a href="Builder_8cpp_source.html#l00108">Builder.cpp:108</a></div></div>
 <div class="ttc" id="aVerif_2IR_2Dialect_8h_html"><div class="ttname"><a href="Verif_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aVerif_2IR_2Ops_8capi_8cpp_8inc_html"><div class="ttname"><a href="Verif_2IR_2Ops_8capi_8cpp_8inc.html">Ops.capi.cpp.inc</a></div></div>
 <div class="ttc" id="aVerif_2IR_2Ops_8h_html"><div class="ttname"><a href="Verif_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aVerif_8h_html"><div class="ttname"><a href="Verif_8h.html">Verif.h</a></div></div>
+<div class="ttc" id="aclassllzk_1_1verif_1_1ContractOp_html"><div class="ttname"><a href="classllzk_1_1verif_1_1ContractOp.html">llzk::verif::ContractOp</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8h_8inc_source.html#l00204">Ops.h.inc:204</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1IncludeOp_html"><div class="ttname"><a href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8h_8inc_source.html#l00877">Ops.h.inc:877</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1VerifDialect_html"><div class="ttname"><a href="classllzk_1_1verif_1_1VerifDialect.html">llzk::verif::VerifDialect</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Dialect_8h_8inc_source.html#l00013">Dialect.h.inc:13</a></div></div>
 <div class="ttc" id="allzk_2CAPI_2Builder_8h_html"><div class="ttname"><a href="llzk_2CAPI_2Builder_8h.html">Builder.h</a></div></div>
 <div class="ttc" id="allzk_2CAPI_2Support_8h_html"><div class="ttname"><a href="llzk_2CAPI_2Support_8h.html">Support.h</a></div></div>
 <div class="ttc" id="allzk_2CAPI_2Support_8h_html_a49a9508dcfa6502c1d009b1409f70fb5"><div class="ttname"><a href="llzk_2CAPI_2Support_8h.html#a49a9508dcfa6502c1d009b1409f70fb5">LLZK_DEFINE_OP_BUILD_METHOD</a></div><div class="ttdeci">#define LLZK_DEFINE_OP_BUILD_METHOD(dialect, op,...)</div><div class="ttdef"><b>Definition</b> <a href="llzk_2CAPI_2Support_8h_source.html#l00031">Support.h:31</a></div></div>
+<div class="ttc" id="allzk_2CAPI_2Support_8h_html_ac40521d1742d3d6e0277892780f6cff1"><div class="ttname"><a href="llzk_2CAPI_2Support_8h.html#ac40521d1742d3d6e0277892780f6cff1">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a></div><div class="ttdeci">#define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix,...)</div><div class="ttdef"><b>Definition</b> <a href="llzk_2CAPI_2Support_8h_source.html#l00027">Support.h:27</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1cast_html"><div class="ttname"><a href="namespacellzk_1_1cast.html">llzk::cast</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8cpp_source.html#l00056">Ops.cpp:56</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1verif_html"><div class="ttname"><a href="namespacellzk_1_1verif.html">llzk::verif</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8cpp_source.html#l00150">Ops.cpp:150</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ae4e8d048536cc8cc728bec99f1f7c0f4"><div class="ttname"><a href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">llzk::create</a></div><div class="ttdeci">mlir::Operation * create(MlirOpBuilder cBuilder, MlirLocation cLocation, Args &amp;&amp;...args)</div><div class="ttdoc">Creates a new operation using an ODS build method.</div><div class="ttdef"><b>Definition</b> <a href="llzk_2CAPI_2Builder_8h_source.html#l00041">Builder.h:41</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 <div class="ttc" id="astructMlirValueRange_html"><div class="ttname"><a href="structMlirValueRange.html">MlirValueRange</a></div><div class="ttdoc">Representation of an mlir::ValueRange</div><div class="ttdef"><b>Definition</b> <a href="llzk-c_2Support_8h_source.html#l00047">Support.h:47</a></div></div>
+<div class="ttc" id="astructMlirValueRange_html_a60bb2ca633fa41244ec22b9610ee6c14"><div class="ttname"><a href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">MlirValueRange::values</a></div><div class="ttdeci">MlirValue const  * values</div><div class="ttdoc">Pointer to the first value in the range.</div><div class="ttdef"><b>Definition</b> <a href="llzk-c_2Support_8h_source.html#l00049">Support.h:49</a></div></div>
+<div class="ttc" id="astructMlirValueRange_html_aafbcc65a54341152d7c3cbeb48a30072"><div class="ttname"><a href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">MlirValueRange::size</a></div><div class="ttdeci">intptr_t size</div><div class="ttdoc">Number of values in the range.</div><div class="ttdef"><b>Definition</b> <a href="llzk-c_2Support_8h_source.html#l00051">Support.h:51</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
