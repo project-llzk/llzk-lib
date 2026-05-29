@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
@@ -98,6 +99,8 @@ static struct OpClassesWithStructTypes {
       global::GlobalDefOp,
       global::GlobalReadOp,
       global::GlobalWriteOp,
+      pod::ReadPodOp,
+      pod::WritePodOp,
       polymorphic::UnifiableCastOp,
       polymorphic::ConstReadOp
       // clang-format on
@@ -109,7 +112,7 @@ static struct OpClassesWithStructTypes {
   ///
   /// The `newGeneralRewritePatternSet()` function provides a default `OpConversionPattern` for
   /// each of these with benefit 0, allowing more specific higher-benefit patterns to override.
-  const std::tuple<function::CallOp, array::CreateArrayOp> NoGeneralBuilder {};
+  const std::tuple<function::CallOp, array::CreateArrayOp, pod::NewPodOp> NoGeneralBuilder {};
 
 } OpClassesWithStructTypes;
 
@@ -224,6 +227,30 @@ public:
   }
 };
 
+/// Pattern for `NewPodOp`, which lacks the default builder.
+class ContractOpClassReplacePattern : public mlir::OpConversionPattern<pod::NewPodOp> {
+public:
+  ContractOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
+      : mlir::OpConversionPattern<pod::NewPodOp>(converter, ctx, 0) {}
+
+  mlir::LogicalResult matchAndRewrite(
+      pod::NewPodOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &rewriter
+  ) const override {
+    auto newResultType = dyn_cast_if_present<pod::PodType>(getTypeConverter()->convertType(op.getResult().getType()));
+    if (!newResultType) {
+      return op->emitError("Could not convert Op result types.");
+    }
+    mlir::OperandRangeRange orr = op.getMapOperands();
+    mlir::SmallVector<mlir::ValueRange> mapOperands;
+    mapOperands.reserve(orr.size());
+    mapOperands.insert(mapOperands.end(), orr.begin(), orr.end());
+    replaceOpWithNewOp<pod::NewPodOp>(
+        rewriter, op, newResultType, mapOperands, op.getNumDimsPerMapAttr(), op.getInitializedRecordValues()
+    );
+    return mlir::success();
+  }
+};
+
 template <typename I, typename NextOpClass, typename... OtherOpClasses>
 inline void applyToMoreTypes(I inserter) {
   std::apply(inserter, std::tuple<NextOpClass, OtherOpClasses...> {});
@@ -247,7 +274,7 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);
   applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   // Special cases for ops where GeneralTypeReplacePattern doesn't work
-  patterns.add<CreateArrayOpClassReplacePattern, CallOpClassReplacePattern>(tyConv, ctx);
+  patterns.add<CreateArrayOpClassReplacePattern, CallOpClassReplacePattern, ContractOpClassReplacePattern>(tyConv, ctx);
   // Add builtin FunctionType and SCF op converters
   mlir::populateFunctionOpInterfaceTypeConversionPattern<function::FuncDefOp>(patterns, tyConv);
   mlir::scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);
