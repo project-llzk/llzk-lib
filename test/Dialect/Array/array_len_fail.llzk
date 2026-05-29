@@ -39,3 +39,23 @@ function.def @wrong_index_type(%a: !array.type<2,3 x !felt.type>) -> index {
   %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
   function.return %x: index
 }
+// -----
+
+function.def @out_of_bounds_constant_dim() -> index {
+  // expected-note@+1 {{array defined here}}
+  %a = array.new : !array.type<2,3 x !felt.type>
+  %0 = arith.constant 2 : index
+  // expected-error@+1 {{dimension index 2 is out of bounds for array rank 2}}
+  %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
+  function.return %x: index
+}
+// -----
+
+function.def @negative_constant_dim() -> index {
+  // expected-note@+1 {{array defined here}}
+  %a = array.new : !array.type<2,3 x !felt.type>
+  %0 = arith.constant -1 : index
+  // expected-error@+1 {{dimension index -1 is out of bounds for array rank 2}}
+  %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
+  function.return %x: index
+}
