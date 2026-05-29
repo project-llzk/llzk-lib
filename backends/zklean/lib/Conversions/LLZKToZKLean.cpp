@@ -374,10 +374,13 @@ struct FunctionConverter {
       state.builder.create<llzk::zkbuilder::ConstrainEqOp>(eq.getLoc(), stateType, lhs, rhs);
       return;
     }
-    if (op->getNumResults() != 0) {
-      op->emitError("unsupported op in ZKLean conversion").report();
-      state.hadError = true;
+    if (auto ret = dyn_cast<llzk::function::ReturnOp>(op)) {
+      if (ret.getOperands().empty()) {
+        return;
+      }
     }
+    op->emitError("unsupported op in ZKLean conversion").report();
+    state.hadError = true;
   }
 
   // Emit the final `mlir::func::ReturnOp` for the new function.
@@ -393,6 +396,11 @@ struct FunctionConverter {
 // Skips non-constrain functions and stops early on errors.
 static bool convertFunction(llzk::function::FuncDefOp func, LLZKToZKLeanState &state) {
   if (state.hadError || !shouldConvertFunc(func)) {
+    return false;
+  }
+  if (!func.getBody().hasOneBlock()) {
+    func.emitError("ZKLean conversion only supports single-block functions").report();
+    state.hadError = true;
     return false;
   }
 
