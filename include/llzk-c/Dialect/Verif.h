@@ -33,6 +33,11 @@ extern "C" {
 /// Get reference to the LLZK `verif` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif);
 
+/// Build a `verif.contract` with arguments and attributes derived from the target.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Verif, ContractOp, FromTarget, MlirIdentifier sym_name, MlirIdentifier target
+);
+
 /// Build a `verif.include` with a flat list of call operands and no affine-map
 /// instantiations.
 LLZK_DECLARE_OP_BUILD_METHOD(

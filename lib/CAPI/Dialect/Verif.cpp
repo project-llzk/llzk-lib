@@ -28,6 +28,22 @@ using namespace llzk::verif;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif, VerifDialect)
 
+//===----------------------------------------------------------------------===//
+// ContractOp
+//===----------------------------------------------------------------------===//
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Verif, ContractOp, FromTarget, MlirIdentifier sym_name, MlirIdentifier target
+) {
+  return mlirOpBuilderInsert(
+      builder, wrap(llzk::create<ContractOp>(builder, location, unwrap(sym_name), unwrap(target)))
+  );
+}
+
+//===----------------------------------------------------------------------===//
+// IncludeOp
+//===----------------------------------------------------------------------===//
+
 LLZK_DEFINE_OP_BUILD_METHOD(
     Verif, IncludeOp, MlirAttribute callee, MlirValueRange argOperands, MlirAttribute templateParams
 ) {

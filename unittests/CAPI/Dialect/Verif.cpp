@@ -133,6 +133,34 @@ TEST_F(CAPITest, llzkVerifContractOpBuildAndVerifyInModule) {
   mlirOpBuilderDestroy(builder);
 }
 
+TEST_F(CAPITest, llzkVerifContractOpBuildFromTarget) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = cppNewModuleAndSetInsertionPoint(builder, location);
+
+  llzk::ModuleBuilder modBuilder(module.get());
+  auto funcType = mlir::FunctionType::get(unwrap(context), {}, {});
+  modBuilder.insertFreeFunc("target", funcType, unwrap(location));
+  unwrap(builder)->setInsertionPointToStart(module->getBody());
+
+  MlirOperation op = llzkVerif_ContractOpBuildFromTarget(
+      builder, location,
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("ContractUnderTest")),
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("target"))
+  );
+
+  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
+  EXPECT_TRUE(mlirOperationVerify(op));
+  EXPECT_TRUE(mlirAttributeEqual(
+      llzkVerif_ContractOpGetTarget(op), createFlatSymbolRefAttr(context, "target")
+  ));
+  EXPECT_TRUE(!llzkVerif_ContractOpHasStructTarget(op));
+  EXPECT_TRUE(llzkVerif_ContractOpHasFuncTarget(op));
+
+  mlirOpBuilderDestroy(builder);
+}
+
 TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
   MlirOpBuilder builder = mlirOpBuilderCreate(context);
   MlirLocation location = mlirLocationUnknownGet(context);
