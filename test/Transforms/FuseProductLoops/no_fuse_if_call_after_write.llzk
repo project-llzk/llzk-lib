@@ -22,10 +22,10 @@ module attributes {llzk.lang = "llzk"} {
     function.def @constrain(%self: !struct.type<@A>, %b: i1) {
       scf.if %b {
         %zero = felt.const 0
-        function.call @check_foo(%self, %zero) : (!struct.type<@A>, !felt.type) -> ()
+        function.call @A::@check_foo(%self, %zero) : (!struct.type<@A>, !felt.type) -> ()
       } else {
         %one = felt.const 1
-        function.call @check_foo(%self, %one) : (!struct.type<@A>, !felt.type) -> ()
+        function.call @A::@check_foo(%self, %one) : (!struct.type<@A>, !felt.type) -> ()
       }
 
       function.return
@@ -45,6 +45,6 @@ module attributes {llzk.lang = "llzk"} {
 // CHECK:         %[[RESULT:[0-9a-zA-Z_\.]+]] = scf.if %[[B]] -> (!felt.type)
 // CHECK:         struct.writem %[[SELF]][@foo] = %[[RESULT]] : <@A>, !felt.type
 // CHECK:         scf.if %[[B]] {
-// CHECK:           function.call @check_foo(%[[SELF]]
+// CHECK:           function.call @A::@check_foo(%[[SELF]]
 // CHECK:         } else {
-// CHECK:           function.call @check_foo(%[[SELF]]
+// CHECK:           function.call @A::@check_foo(%[[SELF]]
