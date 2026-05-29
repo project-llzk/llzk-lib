@@ -30,12 +30,12 @@ module attributes {llzk.lang = "llzk"} {
 
       function.return
     }
-  }
 
-  function.def @check_foo(%self: !struct.type<@A>, %expected: !felt.type) attributes {function.allow_constraint} {
-    %foo = struct.readm %self[@foo] : <@A>, !felt.type
-    constrain.eq %foo, %expected : !felt.type
-    function.return
+    function.def @check_foo(%self: !struct.type<@A>, %expected: !felt.type) attributes {function.allow_constraint} {
+      %foo = struct.readm %self[@foo] : <@A>, !felt.type
+      constrain.eq %foo, %expected : !felt.type
+      function.return
+    }
   }
 }
 
