@@ -74,8 +74,17 @@ llzk-witgen <input.llzk> --inputs <input.json>
 The `--inputs` file must contain a top-level JSON object or JSON array.
 
 - A JSON object is keyed by `function.arg_name` attributes on the main
-  `compute()` function arguments.
+  `compute()` function arguments when every main argument has
+  `function.arg_name`.
 - A JSON array is interpreted positionally in declared argument order.
+- If the top-level input is a JSON object and any main `compute()` argument is
+  missing `function.arg_name`, `llzk-witgen` ignores the object keys and binds
+  inputs by JSON object field order instead.
+  - If no main arguments have `function.arg_name`, `llzk-witgen` emits a
+    warning that object inputs are being bound by field order.
+  - If only some main arguments have `function.arg_name`, `llzk-witgen` emits a
+    warning that labeling is incomplete, object keys are being ignored, and
+    inputs are being bound by field order.
 
 At the main boundary, `llzk-witgen` only supports `felt` and
 `array<... x felt>` inputs, due to the restrictions posed on `llzk.main` components.

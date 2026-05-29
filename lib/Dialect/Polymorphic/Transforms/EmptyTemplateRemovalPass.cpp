@@ -79,7 +79,9 @@ public:
       newRecords.reserve(records.size());
       MLIRContext *ctx = inputTy.getContext();
       for (RecordAttr attr : records) {
-        newRecords.push_back(RecordAttr::get(ctx, attr.getName(), this->convertType(attr.getType())));
+        newRecords.push_back(
+            RecordAttr::get(ctx, attr.getName(), this->convertType(attr.getType()))
+        );
       }
       return PodType::get(ctx, newRecords);
     });
@@ -163,7 +165,7 @@ class EmptyTemplateRemovalPass
     patterns.add<DeleteNoDefTemplatePattern>(tyConv, ctx);
     patterns.add<ReplaceNoParamTemplatePattern>(tyConv, ctx);
     if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
-      llvm::errs() <<"HELLO FROM HERE\n";
+      llvm::errs() << "HELLO FROM HERE\n";
       signalPassFailure();
     }
   }

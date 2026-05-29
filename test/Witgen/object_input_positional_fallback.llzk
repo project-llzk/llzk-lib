@@ -1,0 +1,49 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s --check-prefix=PUBLIC
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=PUBLIC
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness 2>&1 | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness 2>&1 | FileCheck %s --check-prefix=FULL
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%arg0: !array.type<2 x !felt.type<"babybear">>, %arg1: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c0 = arith.constant 0 : index
+      %lhs = array.read %arg0[%c0] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %c1 = arith.constant 1 : index
+      %rhs = array.read %arg0[%c1] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %sum0 = felt.add %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      %sum1 = felt.add %sum0, %arg1 : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@sum] = %sum1 : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %arg0: !array.type<2 x !felt.type<"babybear">>, %arg1: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// PUBLIC: warning: no function.arg_name attributes found on Main.compute arguments; binding JSON object inputs by field order
+// PUBLIC: {
+// PUBLIC-NEXT:   "sum": "37"
+// PUBLIC-NEXT: }
+
+// FULL: warning: no function.arg_name attributes found on Main.compute arguments; binding JSON object inputs by field order
+// FULL: {
+// FULL-NEXT:   "inputs": {
+// FULL-NEXT:     "arg0": [
+// FULL-NEXT:       "10",
+// FULL-NEXT:       "20"
+// FULL-NEXT:     ],
+// FULL-NEXT:     "arg1": "7"
+// FULL-NEXT:   },
+// FULL-NEXT:   "signals": {
+// FULL-NEXT:     "sum": "37"
+// FULL-NEXT:   }
+// FULL-NEXT: }
+
+//--- input.json
+{"in": [10, 20], "foo": 7}

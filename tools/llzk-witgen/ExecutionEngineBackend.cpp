@@ -374,47 +374,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     return interpreter.runMainFromJSON(input);
   }
 
-  auto parsedArgs = [&]() -> llvm::Expected<llvm::SmallVector<WitnessVal>> {
-    llvm::SmallVector<WitnessVal> args;
-    const auto *jsonObject = input.getAsObject();
-    const auto *jsonArray = input.getAsArray();
-    if (!jsonObject && !jsonArray) {
-      return makeError("inputs JSON must be either an object or an array");
-    }
-    if (jsonObject) {
-      for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
-        std::optional<StringAttr> argName = computeFunc.getArgNameAttr(i);
-        if (!argName) {
-          return makeError("JSON object input requires function.arg_name on every main argument");
-        }
-        const llvm::json::Value *value = jsonObject->get(argName->getValue());
-        if (!value) {
-          return makeError(llvm::Twine("missing JSON input field: ") + argName->getValue());
-        }
-        auto parsed = parseJSONValue(
-            value, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
-        );
-        if (!parsed) {
-          return parsed.takeError();
-        }
-        args.push_back(*parsed);
-      }
-      return args;
-    }
-    if (jsonArray->size() != computeFunc.getNumArguments()) {
-      return makeError("JSON positional input length does not match main compute arity");
-    }
-    for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
-      auto parsed = parseJSONValue(
-          &(*jsonArray)[i], computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
-      );
-      if (!parsed) {
-        return parsed.takeError();
-      }
-      args.push_back(*parsed);
-    }
-    return args;
-  }();
+  auto parsedArgs = parseMainArgumentsFromJSON(computeFunc, input, field);
   if (!parsedArgs) {
     return parsedArgs.takeError();
   }

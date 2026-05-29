@@ -1,0 +1,24 @@
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%arg0: !felt.type<"babybear">, %arg1: !felt.type<"babybear">) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      struct.writem %self[@out] = %arg0 : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %arg0: !felt.type<"babybear">, %arg1: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK: JSON object input length does not match main compute arity
+
+//--- input.json
+{"only": 4}

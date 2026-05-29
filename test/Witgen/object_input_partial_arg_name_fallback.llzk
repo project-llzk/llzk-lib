@@ -1,0 +1,31 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %lhs: !felt.type<"babybear"> {function.arg_name = "lhs"},
+      %rhs: !felt.type<"babybear">
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %sum = felt.add %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@sum] = %sum : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %lhs: !felt.type<"babybear">, %rhs: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+}
+
+// CHECK: warning: partial function.arg_name coverage on Main.compute arguments; ignoring JSON object keys and binding inputs by field order
+// CHECK: {
+// CHECK-NEXT:   "sum": "9"
+// CHECK-NEXT: }
+
+//--- input.json
+{"foo": 4, "lhs": 5}

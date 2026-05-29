@@ -26,6 +26,7 @@
 #include <mlir/Pass/PassManager.h>
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
 
@@ -57,8 +58,19 @@ Interpreter::Interpreter(
     : moduleOp(mod), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
       rng(r) {}
 
+static void warnPositionalObjectFallback(unsigned namedCount) {
+  llvm::errs() << "warning: ";
+  if (namedCount == 0) {
+    llvm::errs() << "no function.arg_name attributes found on Main.compute arguments; "
+                    "binding JSON object inputs by field order\n";
+    return;
+  }
+  llvm::errs() << "partial function.arg_name coverage on Main.compute arguments; "
+                  "ignoring JSON object keys and binding inputs by field order\n";
+}
+
 /// Parse main-function JSON arguments in either object or positional form.
-static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
+llvm::Expected<llvm::SmallVector<WitnessVal>> parseMainArgumentsFromJSON(
     function::FuncDefOp computeFunc, const llvm::json::Value &input, const Field &field
 ) {
   llvm::SmallVector<WitnessVal> args;
@@ -69,24 +81,46 @@ static llvm::Expected<llvm::SmallVector<WitnessVal>> parseArgumentsFromJSON(
   }
 
   if (jsonObject) {
+    unsigned namedCount = 0;
     for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
-      llvm::StringRef argName;
-      if (std::optional<StringAttr> attr = computeFunc.getArgNameAttr(i)) {
-        argName = attr->getValue();
-      } else {
-        return makeError("JSON object input requires function.arg_name on every main argument");
+      if (computeFunc.getArgNameAttr(i)) {
+        ++namedCount;
       }
-      const llvm::json::Value *value = jsonObject->get(argName);
-      if (!value) {
-        return makeError(llvm::Twine("missing JSON input field: ") + argName);
+    }
+
+    if (namedCount == computeFunc.getNumArguments()) {
+      for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
+        llvm::StringRef argName = computeFunc.getArgNameAttr(i)->getValue();
+        const llvm::json::Value *value = jsonObject->get(argName);
+        if (!value) {
+          return makeError(llvm::Twine("missing JSON input field: ") + argName);
+        }
+        auto parsed = parseJSONValue(
+            value, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
+        );
+        if (!parsed) {
+          return parsed.takeError();
+        }
+        args.push_back(*parsed);
       }
+      return args;
+    }
+
+    if (jsonObject->size() != computeFunc.getNumArguments()) {
+      return makeError("JSON object input length does not match main compute arity");
+    }
+    warnPositionalObjectFallback(namedCount);
+
+    unsigned i = 0;
+    for (const auto &entry : *jsonObject) {
       auto parsed = parseJSONValue(
-          value, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
+          &entry.second, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
       );
       if (!parsed) {
         return parsed.takeError();
       }
       args.push_back(*parsed);
+      ++i;
     }
     return args;
   }
@@ -121,7 +155,7 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
     return makeError("main compute must return exactly one value");
   }
 
-  auto args = parseArgumentsFromJSON(computeFunc, input, field);
+  auto args = parseMainArgumentsFromJSON(computeFunc, input, field);
   if (!args) {
     return args.takeError();
   }
@@ -191,6 +225,7 @@ static llvm::Error preprocessModule(ModuleOp moduleOp, const WitgenOptions &opti
   } else if (requiresFlattening(moduleOp)) {
     pm.addPass(llzk::polymorphic::createFlatteningPass());
   }
+  pm.printAsTextualPipeline(llvm::errs());
   if (failed(pm.run(moduleOp))) {
     return makeError("failed to preprocess LLZK module for llzk-witgen");
   }

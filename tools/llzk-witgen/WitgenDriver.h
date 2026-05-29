@@ -11,6 +11,7 @@
 
 #include "ValueModel.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Field.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -46,6 +47,11 @@ struct WitgenOptions {
   bool dumpJITCore = false;
   bool dumpJITLLVM = false;
 };
+
+/// Parse top-level JSON inputs for the main `compute()` function.
+llvm::Expected<llvm::SmallVector<WitnessVal>> parseMainArgumentsFromJSON(
+    function::FuncDefOp computeFunc, const llvm::json::Value &input, const Field &field
+);
 
 /// Drive witness generation for the concrete `llzk.main` instance.
 class Interpreter {
