@@ -1,7 +1,5 @@
 // RUN: llzk-opt -split-input-file --convert-llzk-to-zklean -verify-diagnostics %s
 
-// -----
-
 module attributes {llzk.lang = "llzk"} {
   function.def @contains(%xs: !array.type<2 x !felt.type<"babybear">>, %x: !felt.type<"babybear">) attributes {function.allow_constraint} {
     // expected-error@+1 {{unsupported op in ZKLean conversion}}
