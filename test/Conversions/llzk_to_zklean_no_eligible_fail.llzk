@@ -1,0 +1,8 @@
+// RUN: llzk-opt --convert-llzk-to-zklean -verify-diagnostics %s
+
+// expected-error@+1 {{failed to produce ZKLean module}}
+module attributes {llzk.lang = "llzk"} {
+  function.def @helper() {
+    function.return
+  }
+}

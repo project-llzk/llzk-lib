@@ -2,7 +2,6 @@
 
 // -----
 
-// expected-error@+1 {{failed to produce ZKLean module}}
 module attributes {llzk.lang = "llzk"} {
   function.def @contains(%xs: !array.type<2 x !felt.type<"babybear">>, %x: !felt.type<"babybear">) attributes {function.allow_constraint} {
     // expected-error@+1 {{unsupported op in ZKLean conversion}}
@@ -13,7 +12,6 @@ module attributes {llzk.lang = "llzk"} {
 
 // -----
 
-// expected-error@+1 {{failed to produce ZKLean module}}
 module attributes {llzk.lang = "llzk"} {
   struct.def @Child {
     struct.member @out : !felt.type<"babybear">
@@ -37,7 +35,6 @@ module attributes {llzk.lang = "llzk"} {
 
 // -----
 
-// expected-error@+1 {{failed to produce ZKLean module}}
 module attributes {llzk.lang = "llzk"} {
   function.def @returns_value(%x: !felt.type<"babybear">) -> !felt.type<"babybear"> attributes {function.allow_constraint} {
     // expected-error@+1 {{unsupported op in ZKLean conversion}}
