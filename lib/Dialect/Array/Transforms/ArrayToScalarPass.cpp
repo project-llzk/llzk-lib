@@ -69,6 +69,7 @@
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -840,6 +841,105 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+static bool mayWriteToIndex(WriteArrayOp writeOp, ArrayAttr index) {
+  ArrayAttr writeIndex = writeOp.indexOperandsToAttributeArray();
+  return !writeIndex || writeIndex == index;
+}
+
+static bool hasEarlierWriteInBlock(ReadArrayOp readOp, ArrayAttr readIndex) {
+  Value arrRef = readOp.getArrRef();
+  for (Operation &op : *readOp->getBlock()) {
+    if (&op == readOp.getOperation()) {
+      return false;
+    }
+
+    if (auto writeOp = dyn_cast<WriteArrayOp>(&op)) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        return true;
+      }
+      continue;
+    }
+
+    bool foundWrite = false;
+    op.walk([&](WriteArrayOp writeOp) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        foundWrite = true;
+      }
+    });
+    if (foundWrite) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readOp) {
+  ArrayAttr readIndex = readOp.indexOperandsToAttributeArray();
+  if (!readIndex) {
+    return std::nullopt;
+  }
+
+  auto ifOp = readOp->getParentOfType<scf::IfOp>();
+  if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
+    return std::nullopt;
+  }
+  if (hasEarlierWriteInBlock(readOp, readIndex)) {
+    return std::nullopt;
+  }
+
+  Block *ifBlock = ifOp->getBlock();
+  if (!ifBlock) {
+    return std::nullopt;
+  }
+
+  Value arrRef = readOp.getArrRef();
+  WriteArrayOp replacement;
+  for (Operation &op : *ifBlock) {
+    if (&op == ifOp.getOperation()) {
+      break;
+    }
+
+    if (auto writeOp = dyn_cast<WriteArrayOp>(&op)) {
+      if (writeOp.getArrRef() != arrRef) {
+        continue;
+      }
+
+      ArrayAttr writeIndex = writeOp.indexOperandsToAttributeArray();
+      if (!writeIndex) {
+        replacement = WriteArrayOp();
+      } else if (writeIndex == readIndex) {
+        replacement = writeOp;
+      }
+      continue;
+    }
+
+    op.walk([&](WriteArrayOp writeOp) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        replacement = WriteArrayOp();
+      }
+    });
+  }
+
+  if (!replacement) {
+    return std::nullopt;
+  }
+  return replacement;
+}
+
+static void forwardPrecedingArrayWritesIntoIf(ModuleOp modOp) {
+  SmallVector<std::pair<ReadArrayOp, Value>> replacements;
+  modOp.walk([&](ReadArrayOp readOp) {
+    if (std::optional<WriteArrayOp> writeOp = findPrecedingWriteForIfRead(readOp)) {
+      replacements.emplace_back(readOp, (*writeOp).getRvalue());
+    }
+  });
+
+  for (auto [readOp, value] : replacements) {
+    readOp.getResult().replaceAllUsesWith(value);
+    readOp.erase();
+  }
+}
+
 LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   SymbolTableCollection symTables;
   MemberReplacementMap memberRepMap;
@@ -880,6 +980,8 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
       signalPassFailure();
       return;
     }
+    forwardPrecedingArrayWritesIntoIf(module);
+
     OpPassManager nestedPM(ModuleOp::getOperationName());
     // Use SROA (Destructurable* interfaces) to split each array with linear size N into N arrays of
     // size 1. This is necessary because the mem2reg pass cannot deal with indexing and splitting up

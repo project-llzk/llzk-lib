@@ -1,0 +1,74 @@
+// RUN: llzk-opt -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @sums_0 : !F
+
+    function.def @constrain(%self: !struct.type<@A>, %arg1: !F, %arg2: !F, %cond: i1) {
+      %c0 = arith.constant 0 : index
+      %array = array.new  : !array.type<1 x !F>
+      %stored = struct.readm %self[@sums_0] : !struct.type<@A>, !F
+      array.write %array[%c0] = %stored : !array.type<1 x !F>, !F
+      scf.if %cond {
+        %sum = felt.add %arg1, %arg2 : !F, !F
+        %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+        constrain.eq %sum, %read : !F, !F
+      } else {
+        %sum = felt.add %arg1, %arg1 : !F, !F
+        %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+        constrain.eq %sum, %read : !F, !F
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @constrain(
+// CHECK: %[[STORED:[0-9a-zA-Z_\.]+]] = struct.readm
+// CHECK-NOT: array.
+// CHECK: scf.if
+// CHECK-NOT: array.read
+// CHECK-NOT: array.write
+// CHECK: %[[THEN_SUM:[0-9a-zA-Z_\.]+]] = felt.add
+// CHECK-NEXT: constrain.eq %[[THEN_SUM]], %[[STORED]]
+// CHECK: } else {
+// CHECK-NOT: array.read
+// CHECK-NOT: array.write
+// CHECK: %[[ELSE_SUM:[0-9a-zA-Z_\.]+]] = felt.add
+// CHECK-NEXT: constrain.eq %[[ELSE_SUM]], %[[STORED]]
+
+// -----
+
+!F = !felt.type
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @sums_0 : !F
+
+    function.def @do_not_forward_after_branch_write(%self: !struct.type<@A>, %arg1: !F, %arg2: !F, %cond: i1) {
+      %c0 = arith.constant 0 : index
+      %array = array.new  : !array.type<1 x !F>
+      %stored = struct.readm %self[@sums_0] : !struct.type<@A>, !F
+      array.write %array[%c0] = %stored : !array.type<1 x !F>, !F
+      scf.if %cond {
+        array.write %array[%c0] = %arg1 : !array.type<1 x !F>, !F
+      }
+      scf.if %cond {
+        %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+        constrain.eq %arg2, %read : !F, !F
+      } else {
+        %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+        constrain.eq %arg2, %read : !F, !F
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @do_not_forward_after_branch_write(
+// CHECK: scf.if
+// CHECK: array.write
+// CHECK: scf.if
+// CHECK: array.read
+// CHECK: } else {
+// CHECK: array.read
