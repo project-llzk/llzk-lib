@@ -40,6 +40,24 @@ function.def private @bad_arg_name_function_attr(i1) attributes {function.arg_na
 // expected-error@+1 {{'function.def' op 'function.arg_name' is only valid on function arguments but found on result 0}}
 function.def private @bad_arg_name_result_attr() -> (i1 {function.arg_name = "out"})
 // -----
+// expected-error@+1 {{'function.def' op 'function.res_name' on result 0 must be a string attribute}}
+function.def private @bad_res_name_non_string() -> (i1 {function.res_name = 7 : i64})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' on result 0 must not be empty}}
+function.def private @bad_res_name_empty() -> (i1 {function.res_name = ""})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' on result 0 must not have an explicit type}}
+function.def private @bad_res_name_typed_string() -> (i1 {function.res_name = "out" : i1})
+// -----
+// expected-error@+1 {{'function.def' op duplicate 'function.res_name' value "out" on result 1}}
+function.def private @bad_res_name_duplicate() -> (i1 {function.res_name = "out"}, index {function.res_name = "out"})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' is only valid on function results}}
+function.def private @bad_res_name_function_attr() -> i1 attributes {function.res_name = "out"}
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' is only valid on function results but found on argument 0}}
+function.def private @bad_res_name_arg_attr(%x: i1 {function.res_name = "in"})
+// -----
 function.def @fail_07() {
   // expected-error@+1 {{'function.def' op expects parent op to be one of 'builtin.module, struct.def, poly.template'}}
   function.def @inner() {

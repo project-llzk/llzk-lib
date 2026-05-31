@@ -33,6 +33,9 @@ namespace llzk::function {
 /// Attribute name for source-level function argument names.
 constexpr char ARG_NAME_ATTR_NAME[] = "function.arg_name";
 
+/// Attribute name for source-level function result names.
+constexpr char RES_NAME_ATTR_NAME[] = "function.res_name";
+
 /// @brief Kinds of functions in LLZK.
 enum class FunctionKind : std::uint8_t {
   /// @brief Function within a struct named `FUNC_NAME_COMPUTE`.

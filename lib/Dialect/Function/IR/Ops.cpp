@@ -269,13 +269,41 @@ LogicalResult FuncDefOp::verify() {
   if ((*this)->hasAttr(ARG_NAME_ATTR_NAME)) {
     return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
   }
+  if ((*this)->hasAttr(RES_NAME_ATTR_NAME)) {
+    return emitOpError() << "'" << RES_NAME_ATTR_NAME << "' is only valid on function results";
+  }
 
   if (ArrayAttr resAttrs = getAllResultAttrs()) {
+    llvm::DenseSet<StringAttr> seenNames;
     for (auto [i, attr] : llvm::enumerate(resAttrs)) {
       auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attr);
       if (dictAttr && dictAttr.contains(ARG_NAME_ATTR_NAME)) {
         return emitOpError() << "'" << ARG_NAME_ATTR_NAME
                              << "' is only valid on function arguments but found on result " << i;
+      }
+      if (!dictAttr) {
+        continue;
+      }
+      Attribute resNameAttr = dictAttr.get(RES_NAME_ATTR_NAME);
+      if (!resNameAttr) {
+        continue;
+      }
+      auto resName = llvm::dyn_cast<StringAttr>(resNameAttr);
+      if (!resName) {
+        return emitOpError() << "'" << RES_NAME_ATTR_NAME << "' on result " << i
+                             << " must be a string attribute";
+      }
+      if (!llvm::isa<NoneType>(resName.getType())) {
+        return emitOpError() << "'" << RES_NAME_ATTR_NAME << "' on result " << i
+                             << " must not have an explicit type";
+      }
+      if (resName.getValue().empty()) {
+        return emitOpError() << "'" << RES_NAME_ATTR_NAME << "' on result " << i
+                             << " must not be empty";
+      }
+      if (!seenNames.insert(resName).second) {
+        return emitOpError() << "duplicate '" << RES_NAME_ATTR_NAME << "' value \""
+                             << resName.getValue() << "\" on result " << i;
       }
     }
   }
@@ -286,6 +314,10 @@ LogicalResult FuncDefOp::verify() {
       auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attr);
       if (!dictAttr) {
         continue;
+      }
+      if (dictAttr.contains(RES_NAME_ATTR_NAME)) {
+        return emitOpError() << "'" << RES_NAME_ATTR_NAME
+                             << "' is only valid on function results but found on argument " << i;
       }
       Attribute argNameAttr = dictAttr.get(ARG_NAME_ATTR_NAME);
       if (!argNameAttr) {
