@@ -11,9 +11,18 @@
 
 #include "../LLZKTestBase.h"
 
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Util/Debug.h"
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/OwningOpRef.h>
+
+#include <llvm/ADT/APInt.h>
 
 #include <gtest/gtest.h>
 
@@ -89,3 +98,48 @@ TEST_F(ArrayTypeHelperTests, test_linearize_too_many_dims) {
   );
 }
 #endif
+
+// Demonstrate that `toI64` in `ArrayTypeHelper.cpp` should use `trySExtValue()` rather
+// than `getSExtValue()` to avoid asserting when the value does not fit in int64_t.
+TEST_F(ArrayTypeHelperTests, test_linearize_index_wider_than_64bits_returns_nullopt) {
+  ArrayType ty = ArrayType::get(IndexType::get(&ctx), {10});
+  ArrayIndexGen idxGen = ArrayIndexGen::from(ty);
+
+  mlir::OwningOpRef<mlir::ModuleOp> moduleOp = mlir::ModuleOp::create(loc);
+  mlir::OpBuilder builder(&ctx);
+  builder.setInsertionPointToStart(moduleOp->getBody());
+
+  llvm::APInt bigVal(128, 0);
+  bigVal.setBit(65); // 2^65 does not fit in int64_t
+  auto bigConst = builder.create<mlir::arith::ConstantOp>(
+      loc, mlir::IntegerAttr::get(mlir::IntegerType::get(&ctx, 128), bigVal)
+  );
+
+  SmallVector<Value> indices = {bigConst.getResult()};
+  std::optional<int64_t> r = idxGen.linearize(ArrayRef<Value>(indices));
+  ASSERT_FALSE(r.has_value());
+}
+
+// Another test demonstrating that `toI64` in `ArrayTypeHelper.cpp` should use `trySExtValue()`.
+TEST_F(ArrayTypeHelperTests, test_check_and_convert_index_wider_than_64bits_returns_nullopt) {
+  ArrayType ty = ArrayType::get(IndexType::get(&ctx), {10});
+  ArrayIndexGen idxGen = ArrayIndexGen::from(ty);
+
+  mlir::OwningOpRef<mlir::ModuleOp> moduleOp = mlir::ModuleOp::create(loc);
+  mlir::OpBuilder builder(&ctx);
+  builder.setInsertionPointToStart(moduleOp->getBody());
+
+  llvm::APInt bigVal(128, 0);
+  bigVal.setBit(65); // 2^65 does not fit in int64_t
+  auto bigConst = builder.create<mlir::arith::ConstantOp>(
+      loc, mlir::IntegerAttr::get(mlir::IntegerType::get(&ctx, 128), bigVal)
+  );
+
+  // Build an op containing bigConst, providing an OperandRange for checkAndConvert()
+  auto arrCreate = builder.create<CreateArrayOp>(loc, ty, ValueRange {});
+  auto readOp =
+      builder.create<ReadArrayOp>(loc, arrCreate.getResult(), ValueRange {bigConst.getResult()});
+
+  std::optional<SmallVector<Attribute>> r = idxGen.checkAndConvert(readOp.getIndices());
+  ASSERT_FALSE(r.has_value());
+}
