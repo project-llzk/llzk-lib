@@ -1082,9 +1082,7 @@ class SMTOptimizedNonNativeLoweringPass
     mia.ensureAnalysisRun(am);
 
     SmallVector<component::StructDefOp> structDefs;
-    mod.walk([&structDefs](component::StructDefOp structDef) {
-      structDefs.push_back(structDef);
-    });
+    mod.walk([&structDefs](component::StructDefOp structDef) { structDefs.push_back(structDef); });
 
     // Snapshot the interval results before lowering starts erasing `struct.def`
     // operations. The module analysis is keyed by `StructDefOp`, so querying it
