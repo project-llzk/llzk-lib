@@ -2056,7 +2056,8 @@ Results:</h4>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($lhs), &quot;true&quot;)</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($rhs), &quot;false&quot;)</div>
 <div class="line">              attr-dict</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
+</div><!-- fragment --><p>Treats both operands as unsigned integer representatives of field elements. <span class="tt">felt.shl a, b</span> computes <span class="tt">a * 2^b</span>, then converts the result back to a field element by reducing modulo the field prime.</p>
+<p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
 <h4 class="doxsection"><a class="anchor" id="operands-26"></a>
@@ -2085,7 +2086,8 @@ Results:</h4>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($lhs), &quot;true&quot;)</div>
 <div class="line">              `` custom&lt;InferredOrParsedType&gt;(type($rhs), &quot;false&quot;)</div>
 <div class="line">              attr-dict</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
+</div><!-- fragment --><p>Treats both operands as unsigned integer representatives of field elements. <span class="tt">felt.shr a, b</span> computes <span class="tt">a / 2^b</span> using unsigned integer division rounding towards zero, then converts the result back to a field element.</p>
+<p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
 <h4 class="doxsection"><a class="anchor" id="operands-27"></a>
