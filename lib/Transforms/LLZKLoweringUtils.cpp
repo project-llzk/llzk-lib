@@ -35,14 +35,15 @@ Value rebuildExprInCompute(
 
   if (auto barg = llvm::dyn_cast<BlockArgument>(val)) {
     unsigned index = barg.getArgNumber();
-    Value mapped = computeFunc.getArgument(index - 1);
+    Value mapped =
+        index == 0 ? computeFunc.getSelfValueFromCompute() : computeFunc.getArgument(index - 1);
     return memo[val] = mapped;
   }
 
   if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
-    Value self = computeFunc.getSelfValueFromCompute();
+    Value component = rebuildExprInCompute(readOp.getComponent(), computeFunc, builder, memo);
     Value rebuilt = builder.create<MemberReadOp>(
-        readOp.getLoc(), readOp.getType(), self, readOp.getMemberNameAttr().getAttr()
+        readOp.getLoc(), readOp.getType(), component, readOp.getMemberNameAttr().getAttr()
     );
     return memo[val] = rebuilt;
   }

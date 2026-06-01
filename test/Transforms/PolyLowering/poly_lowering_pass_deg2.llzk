@@ -193,11 +193,12 @@ module attributes {llzk.lang} {
 // CHECK:           struct.member @val : !felt.type
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@Mod1> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@Mod1>
-// CHECK:             %[[VAL_3:.*]] = struct.readm %[[VAL_2]][@val] : <@Mod1>, !felt.type
-// CHECK:             %[[VAL_4:.*]] = felt.mul %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
-// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_4]] : <@Mod1>, !felt.type
-// CHECK:             %[[VAL_5:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_2] = %[[VAL_5]] : <@Mod1>, !felt.type
+// CHECK:             %[[CHILD:.*]] = struct.readm %[[VAL_2]][@mod2] : <@Mod1>, !struct.type<@Mod2>
+// CHECK:             %[[CHILD_VAL:.*]] = struct.readm %[[CHILD]][@val] : <@Mod2>, !felt.type
+// CHECK:             %[[AUX_VAL:.*]] = felt.mul %[[CHILD_VAL]], %[[CHILD_VAL]] : !felt.type, !felt.type
+// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] = %[[AUX_VAL]] : <@Mod1>, !felt.type
+// CHECK:             %[[ARG_PRODUCT:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_2] = %[[ARG_PRODUCT]] : <@Mod1>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@Mod1>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_6:.*]]: !struct.type<@Mod1>, %[[VAL_7:.*]]: !felt.type, %[[VAL_8:.*]]: !felt.type) attributes {function.allow_constraint} {
