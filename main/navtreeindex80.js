@@ -1,5 +1,6 @@
 var NAVTREEINDEX80 =
 {
+"structReturnOpBuildFuncHelper.html#a2d979fab1b5016fe755272a013a903e8":[12,0,100,0],
 "structReturnOpBuildFuncHelper.html#a38606f180cb31aaa1d4a24eb17ec4624":[12,0,100,1],
 "structShlFeltOpBuildFuncHelper.html":[12,0,101],
 "structShlFeltOpBuildFuncHelper.html#a322f990e37850a0822c5ecd874c0dd77":[12,0,101,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX80 =
 "structllzk_1_1HasAncestor_1_1Impl.html":[12,0,1,49,0],
 "structllzk_1_1InlineStructsPassOptions.html":[10,0,2,54],
 "structllzk_1_1InlineStructsPassOptions.html":[12,0,1,51],
-"structllzk_1_1InlineStructsPassOptions.html#aacfbe685e26d5d1b82bffe293309e2c4":[10,0,2,54,0],
-"structllzk_1_1InlineStructsPassOptions.html#aacfbe685e26d5d1b82bffe293309e2c4":[12,0,1,51,0]
+"structllzk_1_1InlineStructsPassOptions.html#aacfbe685e26d5d1b82bffe293309e2c4":[10,0,2,54,0]
 };

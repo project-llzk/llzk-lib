@@ -27,5 +27,6 @@ var namespacellzk_1_1function =
     [ "verifyNotFieldNativeTraitImpl", "namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343", null ],
     [ "verifyWitnessGenTraitImpl", "namespacellzk_1_1function.html#acdb3662acbe5dfc265921ce88d2758ca", null ],
     [ "verifyWitnessGenTraitImpl", "namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6", null ],
-    [ "ARG_NAME_ATTR_NAME", "namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb", null ]
+    [ "ARG_NAME_ATTR_NAME", "namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb", null ],
+    [ "RES_NAME_ATTR_NAME", "namespacellzk_1_1function.html#a89c16c5ad2ce9eaa543c98b5d56711ac", null ]
 ];
