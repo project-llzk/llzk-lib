@@ -52,6 +52,8 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -1072,7 +1074,6 @@ class SMTOptimizedNonNativeLoweringPass
     if (failed(selectedField)) {
       return signalPassFailure();
     }
-    auto prime = toAPSInt(selectedField->get().prime());
 
     auto &mia = getAnalysis<ModuleIntervalAnalysis>();
     mia.setField(*selectedField);
@@ -1080,13 +1081,28 @@ class SMTOptimizedNonNativeLoweringPass
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
 
-    auto walkResult =
-        mod.walk([this, &mia, prime, &selectedField, &mod](component::StructDefOp structDef) {
+    SmallVector<component::StructDefOp> structDefs;
+    mod.walk([&structDefs](component::StructDefOp structDef) {
+      structDefs.push_back(structDef);
+    });
+
+    // Snapshot the interval results before lowering starts erasing `struct.def`
+    // operations. The module analysis is keyed by `StructDefOp`, so querying it
+    // after mutation can dereference invalid symbol handles.
+    DenseMap<Operation *, const StructIntervals *> intervalResults;
+    intervalResults.reserve(structDefs.size());
+    for (component::StructDefOp structDef : structDefs) {
+      if (mia.hasResult(structDef)) {
+        intervalResults[structDef.getOperation()] = &mia.getResult(structDef);
+      }
+    }
+
+    for (component::StructDefOp structDef : structDefs) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");
         signalPassFailure();
-        return WalkResult::interrupt();
+        return;
       }
       Operation *symbolTableOp = structDef->getParentOp();
 
@@ -1095,8 +1111,10 @@ class SMTOptimizedNonNativeLoweringPass
       rewriter.setInsertionPointToStart(&productFunc.getFunctionBody().front());
 
       auto preamble = productFunc->getLoc();
-      const StructIntervals *intervals =
-          mia.hasResult(structDef) ? &mia.getResult(structDef) : nullptr;
+      const StructIntervals *intervals = nullptr;
+      if (auto it = intervalResults.find(structDef.getOperation()); it != intervalResults.end()) {
+        intervals = it->second;
+      }
       OptimizedNonNativeStrategy strategy {
           &getContext(), selectedField->get(), mia.getSolver(), intervals
       };
@@ -1143,7 +1161,7 @@ class SMTOptimizedNonNativeLoweringPass
       );
       if (loweredProduct == nullptr) {
         signalPassFailure();
-        return WalkResult::interrupt();
+        return;
       }
 
       auto smtFunc =
@@ -1151,7 +1169,7 @@ class SMTOptimizedNonNativeLoweringPass
       if (!smtFunc) {
         mod.emitError() << "failed to locate lowered SMT function \"" << smtFuncName << "\"";
         signalPassFailure();
-        return WalkResult::interrupt();
+        return;
       }
 
       IRRewriter argRewriter {&getContext()};
@@ -1164,13 +1182,10 @@ class SMTOptimizedNonNativeLoweringPass
             argRewriter, smtFunc.getLoc(), smtFunc.getArgument(idx), *maybeRange
         );
       }
-
-      return WalkResult::advance();
-    });
-    if (!walkResult.wasInterrupted()) {
-      // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
-      mod->removeAttr(MAIN_ATTR_NAME);
     }
+
+    // Remove `llzk.main` attribute because `convertFunction()` above deleted structs.
+    mod->removeAttr(MAIN_ATTR_NAME);
   }
 };
 
