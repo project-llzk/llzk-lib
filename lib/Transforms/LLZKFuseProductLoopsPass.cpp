@@ -50,6 +50,9 @@ fuseMatchingRegionControlFlow(mlir::Region &body, mlir::MLIRContext *context);
 // Bitwidth of `index` for instantiating SMT variables
 constexpr int INDEX_WIDTH = 64;
 
+static std::optional<llvm::StringRef> getProductSource(mlir::Operation *op);
+static inline bool areOppositeProductSources(mlir::Operation *a, mlir::Operation *b);
+
 class FuseProductLoopsPass : public impl::FuseProductLoopsPassBase<FuseProductLoopsPass> {
 
 public:
@@ -107,14 +110,7 @@ static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
   }
 
   // Check 2.
-  if (!a->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ||
-      !b->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
-    // Ideally this should never happen, since the pass only runs on fused @product functions, but
-    // check anyway just to be safe
-    return false;
-  }
-  if (a->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ==
-      b->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+  if (!areOppositeProductSources(a, b)) {
     return false;
   }
 
