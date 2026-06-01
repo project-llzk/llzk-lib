@@ -515,9 +515,7 @@ class SMTNaiveNonNativeLoweringPass
     auto prime = toAPSInt(selectedField->get().prime());
 
     SmallVector<component::StructDefOp> structDefs;
-    mod.walk([&structDefs](component::StructDefOp structDef) {
-      structDefs.push_back(structDef);
-    });
+    mod.walk([&structDefs](component::StructDefOp structDef) { structDefs.push_back(structDef); });
 
     for (component::StructDefOp structDef : structDefs) {
       auto productFunc = structDef.getProductFuncOp();
