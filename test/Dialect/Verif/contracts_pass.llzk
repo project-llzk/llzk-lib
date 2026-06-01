@@ -1,0 +1,340 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    %1 = arith.constant true
+    verif.ensure_compute %1
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Top>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_3]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute(%a : !felt.type) -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>, %a : !felt.type)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>, %a: !felt.type) {
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Top>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N
+
+    struct.def @Top {
+      struct.member @m : !felt.type
+      function.def @compute(%a : !felt.type) -> !struct.type<@T::@Top<[@N]>> {
+        %self = struct.new : !struct.type<@T::@Top<[@N]>>
+        struct.writem %self[@m] = %a : !struct.type<@T::@Top<[@N]>>, !felt.type
+        function.return %self : !struct.type<@T::@Top<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Top<[@N]>>, %a : !felt.type) {
+        %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
+        constrain.eq %m, %a : !felt.type
+        function.return
+      }
+    }
+
+    verif.contract @Foo for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>, %a: !felt.type) {
+      %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
+      %eq = bool.cmp eq(%a, %m) : !felt.type, !felt.type
+
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @Top {
+// CHECK-NEXT:        struct.member @m : !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@T::@Top<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@Top<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@m] = %[[VAL_0]] : <@T::@Top<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@T::@Top<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@m] : <@T::@Top<[@N]>>, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_4]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Foo for @T::@Top (%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@m] : <@T::@Top<[@N]>>, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_6]], %[[VAL_7]]) : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check(%x: index, %ok: i1) {
+    function.return
+  }
+
+  verif.contract @Base for @check (%x: index, %ok: i1) {
+    verif.require_compute %ok
+    verif.ensure_constrain %ok
+  }
+
+  verif.contract @Wrapper for @check (%x: index, %ok: i1) {
+    verif.include @Base(%x, %ok) : (index, i1) -> ()
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @check(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Base for @check (%[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      verif.require_compute %[[VAL_3]]
+// CHECK-NEXT:      verif.ensure_constrain %[[VAL_3]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Wrapper for @check (%[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      verif.include @Base(%[[VAL_4]], %[[VAL_5]]) : (index, i1) -> ()
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+      constrain.eq %secret, %value : !felt.type
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecret for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %isEq = bool.cmp eq(%secret, %value) : !felt.type, !felt.type
+    verif.require_constrain %isEq
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @SecretBox {
+// CHECK-NEXT:      struct.member @secret : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@SecretBox> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@SecretBox>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@secret] = %[[VAL_0]] : <@SecretBox>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@SecretBox>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@SecretBox>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@secret] : <@SecretBox>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @CheckSecret for @SecretBox (%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@SecretBox>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@secret] : <@SecretBox>, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_7]], %[[VAL_6]]) : !felt.type, !felt.type
+// CHECK-NEXT:      verif.require_constrain %[[VAL_8]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      %n = poly.read_const @N : index
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      verif.include @SpecTemplate::@Base<[7]>() : () -> ()
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @SpecTemplate {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @token() {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @SpecTemplate::@token () {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_1]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Wrapper for @SpecTemplate::@token () {
+// CHECK-NEXT:        verif.include @SpecTemplate::@Base<[7]>() : () -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ProductOnly {
+    function.def @product(%a: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> {
+      %self = struct.new : !struct.type<@ProductOnly>
+      function.return %self : !struct.type<@ProductOnly>
+    }
+  }
+
+  verif.contract @ProductContract for @ProductOnly (%self: !struct.type<@ProductOnly>, %a: !felt.type {function.arg_name = "foo"}) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ProductOnly {
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ProductOnly>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ProductOnly>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @ProductContract for @ProductOnly (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ProductOnly>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "foo"}) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ProductOnlyEmptyArgs {
+    function.def @product() -> !struct.type<@ProductOnlyEmptyArgs> {
+      %self = struct.new : !struct.type<@ProductOnlyEmptyArgs>
+      function.return %self : !struct.type<@ProductOnlyEmptyArgs>
+    }
+  }
+
+  verif.contract @ProductContract for @ProductOnlyEmptyArgs (%self: !struct.type<@ProductOnlyEmptyArgs>) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ProductOnlyEmptyArgs {
+// CHECK-NEXT:      function.def @product() -> !struct.type<@ProductOnlyEmptyArgs> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@ProductOnlyEmptyArgs>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@ProductOnlyEmptyArgs>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @ProductContract for @ProductOnlyEmptyArgs (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@ProductOnlyEmptyArgs>) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @FuncWithRet for @passthrough (%a : !felt.type, %ret_value : !felt.type) {
+    %ret = function.call @passthrough(%a) : (!felt.type) -> !felt.type
+    %is_eq = bool.cmp eq(%a, %ret) : !felt.type
+    verif.ensure_compute %is_eq
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @passthrough(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @FuncWithRet for @passthrough (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @passthrough(%[[VAL_1]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_1]], %[[VAL_3]]) : !felt.type, !felt.type
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough(%a : !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @FuncWithRet for @passthrough (%a : !felt.type, %ret_value : !felt.type {function.res_name = "ret_value"}) {
+    %ret = function.call @passthrough(%a) : (!felt.type) -> !felt.type
+    %is_eq = bool.cmp eq(%a, %ret) : !felt.type
+    verif.ensure_compute %is_eq
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @passthrough(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @FuncWithRet for @passthrough (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type {function.res_name = "ret_value"}) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @passthrough(%[[VAL_1]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_1]], %[[VAL_3]]) : !felt.type, !felt.type
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

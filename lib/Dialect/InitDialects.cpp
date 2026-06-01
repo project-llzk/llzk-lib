@@ -24,6 +24,7 @@
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -49,6 +50,7 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::pod::PODDialect,
       llzk::polymorphic::PolymorphicDialect,
       llzk::smt::SMTDialect,
+      llzk::verif::VerifDialect,
       mlir::arith::ArithDialect,
       mlir::scf::SCFDialect
       // clang-format on

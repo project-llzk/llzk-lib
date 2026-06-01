@@ -103,7 +103,7 @@ TEST_F(OpTests, testCallNoAffine_TooFewValues) {
 }
 
 TEST_F(OpTests, testCallNoAffine_WrongRetTy) {
-  ModuleBuilder llzkBldr = newBasicFunctionsExample(1);
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(1, 1);
 
   auto funcA = llzkBldr.getFreeFunc(funcNameA);
   ASSERT_TRUE(succeeded(funcA));
@@ -653,7 +653,7 @@ TEST_F(OpTests, test_calleeIs_withStructConstrain) {
 }
 
 TEST_F(OpTests, test_calleeIs_withGlobalCompute) {
-  ModuleBuilder llzkBldr = newBasicFunctionsExample(0, {"compute", "entry"});
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(0, 1, {"compute", "entry"});
   auto funcEntry = llzkBldr.getFreeFunc("entry");
   ASSERT_TRUE(succeeded(funcEntry));
   llzkBldr.insertFreeCall(*funcEntry, "compute");
@@ -678,7 +678,7 @@ TEST_F(OpTests, test_calleeIs_withGlobalCompute) {
 }
 
 TEST_F(OpTests, test_calleeIs_withGlobalConstrain) {
-  ModuleBuilder llzkBldr = newBasicFunctionsExample(0, {"constrain", "entry"});
+  ModuleBuilder llzkBldr = newBasicFunctionsExample(0, 1, {"constrain", "entry"});
   auto funcEntry = llzkBldr.getFreeFunc("entry");
   ASSERT_TRUE(succeeded(funcEntry));
   llzkBldr.insertFreeCall(*funcEntry, "constrain");

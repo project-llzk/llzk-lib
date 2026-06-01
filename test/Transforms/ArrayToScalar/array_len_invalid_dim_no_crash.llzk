@@ -1,0 +1,14 @@
+// RUN: llzk-opt -llzk-array-to-scalar %s -verify-diagnostics
+
+// This intentionally malformed IR checks that array-to-scalar reports the
+// expected verifier diagnostic for an invalid constant dimension.
+module attributes {llzk.lang} {
+  function.def @bad_len() -> index {
+    // expected-note@+1 {{array defined here}}
+    %a = array.new : !array.type<2,3 x !felt.type>
+    %dim = arith.constant 2 : index
+    // expected-error@+1 {{dimension index 2 is out of bounds for array rank 2}}
+    %len = array.len %a, %dim : !array.type<2,3 x !felt.type>
+    function.return %len : index
+  }
+}

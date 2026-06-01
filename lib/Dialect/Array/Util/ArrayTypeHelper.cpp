@@ -46,7 +46,7 @@ template <typename TypeOfIndex> inline std::optional<int64_t> toI64(TypeOfIndex 
   if (!mlir::matchPattern(index, mlir::m_ConstantInt(&idxAP))) {
     return std::nullopt;
   }
-  return llzk::fromAPInt(idxAP);
+  return idxAP.trySExtValue();
 }
 
 template <typename OutType> struct CheckAndConvert {

@@ -69,3 +69,15 @@ function.def @example_arg_name_body(
 function.def private @example_arg_name_with_pub(%x: i1 {function.arg_name = "public", llzk.pub})
 //CHECK-LABEL:  function.def private @example_arg_name_with_pub(i1 {function.arg_name = "public", llzk.pub})
 // -----
+
+function.def private @example_res_name_external() -> (i1 {function.res_name = "out"})
+//CHECK-LABEL:  function.def private @example_res_name_external() -> (i1 {function.res_name = "out"})
+// -----
+
+function.def @example_res_name_body(%x: i1) -> (i1 {function.res_name = "out"}) {
+  function.return %x : i1
+}
+//CHECK-LABEL:  function.def @example_res_name_body(%arg0: i1) -> (i1 {function.res_name = "out"}) {
+//CHECK-NEXT:     function.return %arg0 : i1
+//CHECK-NEXT:   }
+// -----

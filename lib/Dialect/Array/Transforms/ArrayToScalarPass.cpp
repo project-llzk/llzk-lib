@@ -546,8 +546,16 @@ public:
     if (splittableArray(baseArrType)) {
       llvm::APInt idxAP;
       if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
-        size_t idx = llzk::checkedCast<size_t>(idxAP.getZExtValue());
-        Attribute dimSizeAttr = baseArrType.getDimensionSizes()[idx];
+        std::optional<int64_t> signedIdx = idxAP.trySExtValue();
+        if (!signedIdx || *signedIdx < 0) {
+          return std::nullopt;
+        }
+        size_t idx = llzk::checkedCast<size_t>(*signedIdx);
+        ArrayRef<Attribute> dimSizes = baseArrType.getDimensionSizes();
+        if (idx >= dimSizes.size()) {
+          return std::nullopt;
+        }
+        Attribute dimSizeAttr = dimSizes[idx];
         if (mlir::matchPattern(dimSizeAttr, mlir::m_ConstantInt(&idxAP))) {
           return idxAP;
         }

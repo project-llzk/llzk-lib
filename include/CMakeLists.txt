@@ -40,6 +40,7 @@ add_subdirectory(llzk/Dialect/Polymorphic/Transforms)
 add_subdirectory(llzk/Dialect/SMT/IR)
 add_subdirectory(llzk/Dialect/String/IR)
 add_subdirectory(llzk/Dialect/Struct/IR)
+add_subdirectory(llzk/Dialect/Verif/IR)
 
 add_subdirectory(llzk/Transforms)
 add_subdirectory(llzk/Util)

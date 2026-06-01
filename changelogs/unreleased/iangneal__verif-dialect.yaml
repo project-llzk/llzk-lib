@@ -1,0 +1,6 @@
+added:
+  - Added `verif` dialect:
+    - Added `verif.contract` for defining specs on structs and functions
+    - Added `verif.include` to invoke contracts from within contracts
+    - Added `verif.require_compute` and `verif.require_constrain` for encoding preconditions
+    - Added `verif.ensure_compute` and `verif.ensure_constrain` for encoding postconditions
