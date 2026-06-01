@@ -39,3 +39,15 @@ module attributes {llzk.lang = "llzk"} {
     function.return %x : !felt.type<"babybear">
   }
 }
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  // expected-error@+1 {{ZKLean conversion only supports single-block functions}}
+  function.def @multi_block(%x: !felt.type<"babybear">) attributes {function.allow_constraint} {
+    cf.br ^next
+  ^next:
+    constrain.eq %x, %x : !felt.type<"babybear">
+    function.return
+  }
+}
