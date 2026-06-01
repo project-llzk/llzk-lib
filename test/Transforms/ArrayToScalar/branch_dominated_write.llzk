@@ -21,7 +21,8 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @branch_dominated_write(%[[FORWARDED:[0-9a-zA-Z_\.]+]]: !felt.type
+// CHECK-LABEL: function.def @branch_dominated_write(
+// CHECK-SAME: %[[FORWARDED:[0-9a-zA-Z_\.]+]]: !felt.type
 // CHECK-NOT: array.
 // CHECK: scf.if
 // CHECK-NOT: array.read
