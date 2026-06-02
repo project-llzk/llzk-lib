@@ -54,7 +54,7 @@ LogicalResult verifyNotFieldNativeTraitImpl(Operation *op) {
   }
   return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName() << "' with '"
                            << AllowNonNativeFieldOpsAttr::name << "' attribute or a '"
-                           << llzk::polymorphic::TemplateExprOp::getOperationName() << "'";
+                           << llzk::polymorphic::TemplateExprOp::getOperationName() << '\'';
 }
 
 } // namespace llzk::function

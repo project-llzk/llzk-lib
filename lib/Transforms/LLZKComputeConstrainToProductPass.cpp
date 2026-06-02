@@ -188,7 +188,7 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
       llvm::outs() << "Asking for equivalence between calls\n"
                    << compute << "\nand\n"
                    << constrain << "\n\n";
-      llvm::outs() << "In block:\n\n" << *compute->getBlock() << "\n";
+      llvm::outs() << "In block:\n\n" << *compute->getBlock() << '\n';
     });
 
     auto computeStruct = getPrefixAsSymbolRefAttr(compute.getCallee());

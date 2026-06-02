@@ -477,7 +477,7 @@ public:
           }
           success = false;
         }
-      } else if (no_var && !llvm::isa<IntegerAttr>(p)) {
+      } else if (no_var && !llvm::isa<IntegerAttr, FeltConstAttr>(p)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
         success = false;
       } else if (failed(verifyAffineMapAttrType(emitError, p))) {

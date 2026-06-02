@@ -83,7 +83,7 @@ protected:
       );
     } else {
       modOp->emitWarning() << "could not detect a unique module field; falling back to '"
-                           << selectedField.get().name() << "'";
+                           << selectedField.get().name() << '\'';
       LLVM_DEBUG(
           llvm::dbgs() << "[IntervalAnalysisPrinterPass] no explicit or detectable module field; "
                           "falling back to '"

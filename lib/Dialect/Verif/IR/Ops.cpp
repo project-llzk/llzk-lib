@@ -416,7 +416,7 @@ LogicalResult ContractOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
 
   if ((*this)->hasAttr(ARG_NAME_ATTR_NAME)) {
-    return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
+    return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
   }
 
   if (ArrayAttr argAttrs = getAllArgAttrs()) {
@@ -432,15 +432,15 @@ LogicalResult ContractOp::verify() {
       }
       auto argName = llvm::dyn_cast<StringAttr>(argNameAttr);
       if (!argName) {
-        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+        return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must be a string attribute";
       }
       if (!llvm::isa<NoneType>(argName.getType())) {
-        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+        return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must not have an explicit type";
       }
       if (argName.getValue().empty()) {
-        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+        return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must not be empty";
       }
       if (!seenNames.insert(argName).second) {
