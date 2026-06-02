@@ -87,7 +87,7 @@ LogicalResult MemberOverwriteAnalysis::visitOperation(
 ) {
   ChangeResult result = after->join(before);
 
-  LLVM_DEBUG(llvm::dbgs() << "Visiting operation: " << *op << ": " << before << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "Visiting operation: " << *op << ": " << before << '\n');
 
   if (auto write = dyn_cast<MemberWriteOp>(op)) {
     result |= after->record(write);

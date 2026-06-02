@@ -347,7 +347,7 @@ static void maybeDumpModule(ModuleOp moduleOp, bool enabled, llvm::StringRef tit
   }
   llvm::errs() << title << ":\n";
   moduleOp.print(llvm::errs());
-  llvm::errs() << "\n";
+  llvm::errs() << '\n';
 }
 
 } // namespace

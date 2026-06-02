@@ -86,7 +86,7 @@ inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, const Twine &found
 ) {
   return errFn().append(
-      "with type ", rootType, " expected ", expected, " ", aspect, " but found ", found
+      "with type ", rootType, " expected ", expected, ' ', aspect, " but found ", found
   );
 }
 

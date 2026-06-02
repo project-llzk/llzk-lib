@@ -1461,7 +1461,7 @@ struct AffineMapFolder {
             // Diagnostic remark: could be removed for release builds if too noisy
             op->emitRemark()
                 .append(
-                    "Cannot fold affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                    "Cannot fold affine_map for ", aspect, ' ', out.paramsOfStructTy.size(),
                     " due to divide by 0 or modulus with negative divisor"
                 )
                 .report();
@@ -1471,7 +1471,7 @@ struct AffineMapFolder {
             // Diagnostic remark: could be removed for release builds if too noisy
             op->emitRemark()
                 .append(
-                    "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(), " failed"
+                    "Folding affine_map for ", aspect, ' ', out.paramsOfStructTy.size(), " failed"
                 )
                 .report();
             return failure();
@@ -1480,7 +1480,7 @@ struct AffineMapFolder {
             // Diagnostic remark: could be removed for release builds if too noisy
             op->emitRemark()
                 .append(
-                    "Folding affine_map for ", aspect, " ", out.paramsOfStructTy.size(),
+                    "Folding affine_map for ", aspect, ' ', out.paramsOfStructTy.size(),
                     " produced ", result.size(), " results but expected 1"
                 )
                 .report();
