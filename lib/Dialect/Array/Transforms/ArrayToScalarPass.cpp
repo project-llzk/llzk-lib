@@ -913,8 +913,8 @@ static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readO
         continue;
       }
 
-      ArrayAttr writeIndex = getIndexAsAttr(writeOp);
       if (mayWriteToIndex(writeOp, readIndex)) {
+        ArrayAttr writeIndex = getIndexAsAttr(writeOp);
         replacement = writeIndex == readIndex ? writeOp : WriteArrayOp();
       }
       continue;
