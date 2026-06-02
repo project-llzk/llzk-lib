@@ -236,9 +236,9 @@ public:
   mlir::LogicalResult matchAndRewrite(
       pod::NewPodOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &rewriter
   ) const override {
-    auto newResultType =
-        dyn_cast_if_present<pod::PodType>(getTypeConverter()->convertType(op.getResult().getType())
-        );
+    auto newResultType = dyn_cast_if_present<pod::PodType>(
+        getTypeConverter()->convertType(op.getResult().getType())
+    );
     if (!newResultType) {
       return op->emitError("Could not convert Op result types.");
     }
