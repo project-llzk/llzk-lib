@@ -358,7 +358,7 @@ FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, 
     FailureOr<SymbolLookupResultUntyped> targetRes =
         lookupSymbolIn(tables, contract.getTargetAttr(), rootRes->getOperation(), origin);
     if (failed(targetRes)) {
-      return failure();
+      return failure(); // lookupSymbolIn() already emits a sufficient error message
     }
 
     if (TemplateOp targetTemplate = targetRes->get()->getParentOfType<TemplateOp>()) {
