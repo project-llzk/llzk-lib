@@ -800,7 +800,7 @@ $(function(){initNavTree('Verif_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>  }</div>
 <div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span> </div>
 <div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>  LogicalResult verifyTemplateParams()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>    <span class="keyword">auto</span> tgtOp = tgt.getOperation();</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>    Operation *tgtOp = tgt.getOperation();</div>
 <div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>    <span class="keywordflow">if</span> (TemplateOp tgtOpParent = <a class="code hl_function" href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">getParentOfType&lt;TemplateOp&gt;</a>(tgtOp)) {</div>
 <div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>      <span class="comment">// When the target function is a free function within a TemplateOp, the IncludeOp may have</span></div>
 <div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>      <span class="comment">// template parameter instantiations that must be checked against the template parameters.</span></div>
