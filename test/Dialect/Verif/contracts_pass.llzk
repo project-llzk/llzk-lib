@@ -67,6 +67,71 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  module @lib {
+    function.def @token(%x: index) {
+      function.return
+    }
+  }
+
+  module @spec {
+    verif.contract @CrossModule for @lib::@token (%x: index) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @lib {
+// CHECK-NEXT:      function.def @token(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @spec {
+// CHECK-NEXT:      verif.contract @CrossModule for @lib::@token (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @outer(%x: index) {
+    function.return
+  }
+
+  poly.template @T {
+    poly.param @N : index
+
+    verif.contract @TemplateWrapper for @outer (%x: index) {
+      %n = poly.read_const @N : index
+      %zero = arith.constant 0 : index
+      %ok = arith.cmpi eq, %n, %zero : index
+      verif.ensure_compute %ok
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @outer(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      verif.contract @TemplateWrapper for @outer (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
   poly.template @T {
     poly.param @N
 
@@ -112,6 +177,124 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@m] : <@T::@Top<[@N]>>, !felt.type
 // CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_6]], %[[VAL_7]]) : !felt.type, !felt.type
 // CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+
+    function.def @templated_fn(%x: !array.type<@N x index>) {
+      function.return
+    }
+  }
+
+  verif.contract @OutsideFunc for @T::@templated_fn (%x: !array.type<@N x index>) {
+    %n = poly.read_const @N : index
+    %zero = arith.constant 0 : index
+    %ok = arith.cmpi sge, %n, %zero : index
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @templated_fn(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @OutsideFunc for @T::@templated_fn (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      function.return
+    }
+  }
+
+  verif.contract @Outside for @SpecTemplate::@token () {
+    %n = poly.read_const @N : index
+    %zero = arith.constant 0 : index
+    %ok = arith.cmpi eq, %n, %zero : index
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @SpecTemplate {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @token() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Outside for @SpecTemplate::@token () {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+
+    struct.def @Top {
+      struct.member @m : !felt.type
+      function.def @compute(%a : !felt.type) -> !struct.type<@T::@Top<[@N]>> {
+        %self = struct.new : !struct.type<@T::@Top<[@N]>>
+        struct.writem %self[@m] = %a : !struct.type<@T::@Top<[@N]>>, !felt.type
+        function.return %self : !struct.type<@T::@Top<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Top<[@N]>>, %a : !felt.type) {
+        function.return
+      }
+    }
+  }
+
+  verif.contract @OutsideStruct for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>, %a: !felt.type) {
+    %n = poly.read_const @N : index
+    %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Top {
+// CHECK-NEXT:        struct.member @m : !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@T::@Top<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@Top<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@m] = %[[VAL_0]] : <@T::@Top<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@T::@Top<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @OutsideStruct for @T::@Top (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@m] : <@T::@Top<[@N]>>, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 

@@ -114,24 +114,6 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @outer(%x: index) {
-    function.return
-  }
-
-  poly.template @T { // expected-note {{contract template defined here}}
-    poly.param @N : index
-
-    // expected-error@+1 {{'verif.contract' op contract cannot be within a template that does not contain the target}}
-    verif.contract @TemplateMismatch for @outer (%x: index) {
-      %ok = arith.constant true
-      verif.ensure_compute %ok
-    }
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
   function.def @check(%x: index) {
     function.return
   }

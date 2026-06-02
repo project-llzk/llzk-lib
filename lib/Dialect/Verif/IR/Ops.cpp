@@ -157,15 +157,20 @@ void ContractOp::build(
     ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
     llvm::StringRef target
 ) {
+  build(odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target));
+}
+
+void ContractOp::build(
+    ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
+    ::mlir::SymbolRefAttr target
+) {
   // Any errors here in the construction from the target information are not
   // reported here, but will instead be reported when the verify function fails
   // to verify this op.
   SymbolTableCollection tables;
-  MLIRContext *ctx = odsBuilder.getContext();
-  SymbolRefAttr targetAttr = SymbolRefAttr::get(ctx, target);
   // Find the target of the contract
   FailureOr<SymbolLookupResultUntyped> targetRes =
-      lookupTopLevelSymbol(tables, targetAttr, odsBuilder.getBlock()->getParentOp());
+      lookupTopLevelSymbol(tables, target, odsBuilder.getBlock()->getParentOp());
   if (failed(targetRes)) {
     return;
   }
@@ -178,10 +183,7 @@ void ContractOp::build(
     return;
   }
   TargetTypeInfo &info = *infoRes;
-  build(
-      odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target),
-      info.funcType, info.argAttrs
-  );
+  build(odsBuilder, odsState, name, target, info.funcType, info.argAttrs);
 }
 
 bool ContractOp::hasArgPublicAttr(unsigned index) {
@@ -271,23 +273,6 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         )
         .attachNote(targetOp->getLoc())
         .append("target defined here");
-  }
-
-  // Also confirm that the types are in the same template op if they are.
-  TemplateOp contractTmpl = getParentOfType<TemplateOp>(*this);
-  TemplateOp targetTmpl = targetOp->getParentOfType<TemplateOp>();
-  if (contractTmpl != targetTmpl) {
-    if (targetTmpl) {
-      return emitOpError()
-          .append("contract must reside within the template containing the target")
-          .attachNote(targetTmpl.getLoc())
-          .append("target template defined here");
-    } else if (contractTmpl) {
-      return emitOpError()
-          .append("contract cannot be within a template that does not contain the target")
-          .attachNote(contractTmpl.getLoc())
-          .append("contract template defined here");
-    }
   }
 
   return success();

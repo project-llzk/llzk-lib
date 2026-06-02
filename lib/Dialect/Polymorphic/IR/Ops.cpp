@@ -150,9 +150,13 @@ std::optional<Type> TemplateExprOp::getTypeOpt() { return getType(); }
 //===------------------------------------------------------------------===//
 
 LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  FailureOr<TemplateOp> getParentRes = verifyInTemplate(*this);
+  FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(tables, *this);
   if (failed(getParentRes)) {
-    return failure(); // verifyInTemplate() already emits a sufficient error message
+    return failure();
+  }
+  if (!*getParentRes) {
+    return this->emitOpError() << "only valid within a '" << TemplateOp::getOperationName()
+                               << "' ancestor";
   }
   // Ensure the named constant is a parameter of the parent struct
   FlatSymbolRefAttr name = this->getConstNameAttr();

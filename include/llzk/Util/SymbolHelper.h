@@ -26,6 +26,9 @@ class MemberDefOp;
 namespace function {
 class FuncDefOp;
 } // namespace function
+namespace polymorphic {
+class TemplateOp;
+} // namespace polymorphic
 
 llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
 llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
@@ -183,6 +186,14 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
   mlir::SymbolTableCollection symbolTable;
   return resolveCallable<T>(symbolTable, call);
 }
+
+/// Return the template scope that should be used to resolve flat constant
+/// references from the given origin. For ops nested in a `verif.contract`
+/// targeting a templated symbol, this is the target's template even when the
+/// contract is physically nested elsewhere. Otherwise this is the nearest
+/// physical `poly.template`, if any.
+mlir::FailureOr<polymorphic::TemplateOp>
+getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation *origin);
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
 mlir::LogicalResult verifyParamOfType(

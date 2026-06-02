@@ -20,6 +20,7 @@
 #include <mlir-c/IR.h>
 
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/Parser/Parser.h>
 
 #include <llvm/ADT/SmallVector.h>
 
@@ -31,6 +32,20 @@ namespace {
 
 static MlirAttribute createFlatSymbolRefAttr(MlirContext ctx, const char *name) {
   return mlirFlatSymbolRefAttrGet(ctx, mlirStringRefCreateFromCString(name));
+}
+
+static MlirAttribute createNestedSymbolRefAttr(
+    MlirContext ctx, const char *root, std::initializer_list<const char *> nested
+) {
+  llvm::SmallVector<MlirAttribute> nestedRefs;
+  nestedRefs.reserve(nested.size());
+  for (const char *piece : nested) {
+    nestedRefs.push_back(createFlatSymbolRefAttr(ctx, piece));
+  }
+  return mlirSymbolRefAttrGet(
+      ctx, mlirStringRefCreateFromCString(root), llzk::checkedCast<intptr_t>(nestedRefs.size()),
+      nestedRefs.data()
+  );
 }
 
 static MlirAttribute createStringAttr(MlirContext ctx, const char *value) {
@@ -143,7 +158,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildFromTarget) {
   modBuilder.insertFreeFunc("target", funcType, unwrap(location));
   unwrap(builder)->setInsertionPointToStart(module->getBody());
 
-  MlirOperation op = llzkVerif_ContractOpBuildFromTarget(
+  MlirOperation op = llzkVerif_ContractOpBuildFromTargetIdentifier(
       builder, location,
       mlirIdentifierGet(context, mlirStringRefCreateFromCString("ContractUnderTest")),
       mlirIdentifierGet(context, mlirStringRefCreateFromCString("target"))
@@ -157,6 +172,65 @@ TEST_F(CAPITest, llzkVerifContractOpBuildFromTarget) {
   ));
   EXPECT_TRUE(!llzkVerif_ContractOpHasStructTarget(op));
   EXPECT_TRUE(llzkVerif_ContractOpHasFuncTarget(op));
+
+  mlirOpBuilderDestroy(builder);
+}
+
+TEST_F(CAPITest, llzkVerifContractOpBuildFromTargetAttr) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = cppNewModuleAndSetInsertionPoint(builder, location);
+
+  llzk::ModuleBuilder modBuilder(module.get());
+  auto funcType = mlir::FunctionType::get(unwrap(context), {}, {});
+  modBuilder.insertFreeFunc("target", funcType, unwrap(location));
+  unwrap(builder)->setInsertionPointToStart(module->getBody());
+
+  MlirOperation op = llzkVerif_ContractOpBuildFromTargetAttr(
+      builder, location,
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("ContractUnderTest")),
+      createFlatSymbolRefAttr(context, "target")
+  );
+
+  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
+  EXPECT_TRUE(mlirOperationVerify(op));
+  EXPECT_TRUE(mlirAttributeEqual(
+      llzkVerif_ContractOpGetTarget(op), createFlatSymbolRefAttr(context, "target")
+  ));
+
+  mlirOpBuilderDestroy(builder);
+}
+
+TEST_F(CAPITest, llzkVerifContractOpBuildFromTargetAttrNested) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    function.def @target() {
+      function.return
+    }
+  }
+}
+)mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+  unwrap(builder)->setInsertionPointToStart(module->getBody());
+
+  MlirAttribute target = createNestedSymbolRefAttr(context, "T", {"target"});
+  MlirOperation op = llzkVerif_ContractOpBuildFromTargetAttr(
+      builder, location,
+      mlirIdentifierGet(context, mlirStringRefCreateFromCString("ContractUnderTest")), target
+  );
+
+  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
+  EXPECT_TRUE(mlirOperationVerify(op));
+  EXPECT_TRUE(mlirAttributeEqual(llzkVerif_ContractOpGetTarget(op), target));
 
   mlirOpBuilderDestroy(builder);
 }

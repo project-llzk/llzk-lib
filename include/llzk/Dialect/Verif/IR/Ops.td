@@ -104,7 +104,8 @@ def ContractOp
     Contracts may not directly target struct functions; they must target the structs themselves.
 
     For templated targets (i.e., functions or structs within a `poly.template`),
-    the contract must reside in the same template as their target.
+    the contract body may reference the target template's parameters and
+    expressions even if the contract is physically nested elsewhere.
 
     Examples:
 
@@ -139,7 +140,9 @@ def ContractOp
 
   // Builder that infers all information from the target.
   let builders = [OpBuilder<(ins "::llvm::StringRef":$name,
-      "llvm::StringRef":$target)>];
+                      "llvm::StringRef":$target)>,
+                  OpBuilder<(ins "::llvm::StringRef":$name,
+                      "::mlir::SymbolRefAttr":$target)>];
 
   let extraClassDeclaration = [{
     /// Create a deep copy of this contract and all of its blocks, remapping any
