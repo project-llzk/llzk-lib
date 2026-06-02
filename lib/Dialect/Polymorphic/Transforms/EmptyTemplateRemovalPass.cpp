@@ -14,6 +14,8 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
@@ -36,6 +38,7 @@ using namespace mlir;
 using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::function;
+using namespace llzk::pod;
 using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
@@ -64,6 +67,23 @@ public:
       return ArrayType::get(
           this->convertType(inputTy.getElementType()), inputTy.getDimensionSizes()
       );
+    });
+
+    addConversion([this](PodType inputTy) {
+      // Recursively convert record types
+      llvm::ArrayRef<RecordAttr> records = inputTy.getRecords();
+      if (records.empty()) {
+        return inputTy;
+      }
+      llvm::SmallVector<RecordAttr> newRecords;
+      newRecords.reserve(records.size());
+      MLIRContext *ctx = inputTy.getContext();
+      for (RecordAttr attr : records) {
+        newRecords.push_back(
+            RecordAttr::get(ctx, attr.getName(), this->convertType(attr.getType()))
+        );
+      }
+      return PodType::get(ctx, newRecords);
     });
   }
 };
