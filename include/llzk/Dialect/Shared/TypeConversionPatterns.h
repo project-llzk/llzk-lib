@@ -228,9 +228,9 @@ public:
 };
 
 /// Pattern for `NewPodOp`, which lacks the default builder.
-class ContractOpClassReplacePattern : public mlir::OpConversionPattern<pod::NewPodOp> {
+class NewPodOpClassReplacePattern : public mlir::OpConversionPattern<pod::NewPodOp> {
 public:
-  ContractOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
+  NewPodOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
       : mlir::OpConversionPattern<pod::NewPodOp>(converter, ctx, 0) {}
 
   mlir::LogicalResult matchAndRewrite(
@@ -278,7 +278,7 @@ inline mlir::RewritePatternSet newGeneralRewritePatternSet(
   applyToMoreTypes<decltype(inserter), AdditionalOpClasses...>(inserter);
   // Special cases for ops where GeneralTypeReplacePattern doesn't work
   patterns.add<
-      CreateArrayOpClassReplacePattern, CallOpClassReplacePattern, ContractOpClassReplacePattern>(
+      CreateArrayOpClassReplacePattern, CallOpClassReplacePattern, NewPodOpClassReplacePattern>(
       tyConv, ctx
   );
   // Add builtin FunctionType and SCF op converters
