@@ -44,18 +44,39 @@ function.def @wrong_index_type(%a: !array.type<2,3 x !felt.type>) -> index {
 function.def @out_of_bounds_constant_dim() -> index {
   // expected-note@+1 {{array defined here}}
   %a = array.new : !array.type<2,3 x !felt.type>
+  // expected-note@+1 {{dimension defined here}}
   %0 = arith.constant 2 : index
-  // expected-error@+1 {{dimension index 2 is out of bounds for array rank 2}}
+  // expected-error@+1 {{dimension index 2 is not valid for array with 2 dimensions}}
   %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
   function.return %x: index
 }
 // -----
 
 function.def @negative_constant_dim() -> index {
-  // expected-note@+1 {{array defined here}}
   %a = array.new : !array.type<2,3 x !felt.type>
+  // expected-note@+1 {{dimension defined here}}
   %0 = arith.constant -1 : index
-  // expected-error@+1 {{dimension index -1 is out of bounds for array rank 2}}
+  // expected-error@+1 {{'array.len' op dimension must be a non-negative 64-bit integer}}
   %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
+  function.return %x: index
+}
+// -----
+
+function.def @too_large_constant() -> index {
+  %a = array.new : !array.type<2,3 x !felt.type>
+  // expected-error@+1 {{integer constant out of range for attribute}}
+  %0 = arith.constant 0x8000000000000000 : index
+  %x = array.len %a, %0 : !array.type<2,3 x !felt.type>
+  function.return %x: index
+}
+// -----
+
+function.def @largest_constant() -> index {
+  // expected-note@+1 {{array defined here}}
+  %a = array.new : !array.type<12,35,23,53,63 x !felt.type>
+  // expected-note@+1 {{dimension defined here}}
+  %0 = arith.constant 0x7FFFFFFFFFFFFFFF : index
+  // expected-error@+1 {{dimension index 9223372036854775807 is not valid for array with 5 dimensions}}
+  %x = array.len %a, %0 : !array.type<12,35,23,53,63 x !felt.type>
   function.return %x: index
 }

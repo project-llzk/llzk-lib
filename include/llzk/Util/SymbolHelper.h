@@ -149,6 +149,35 @@ resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface 
   return lookupTopLevelSymbol<T>(symbolTable, symbolRef, call.getOperation());
 }
 
+/// Resolve a callable without emitting a diagnostic for missing top-level symbols.
+///
+/// Use this when an unresolved call should make an analysis conservatively skip the call instead of
+/// reporting a verifier-style symbol error.
+template <typename T>
+inline mlir::FailureOr<SymbolLookupResult<T>>
+resolveCallableSilently(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call) {
+  mlir::CallInterfaceCallable callable = call.getCallableForCallee();
+  if (auto symbolVal = llvm::dyn_cast<mlir::Value>(callable)) {
+    SymbolLookupResult<T> result(symbolVal.getDefiningOp());
+    if (!result) {
+      return mlir::failure();
+    }
+    return result;
+  }
+
+  auto symbolRef = llvm::cast<mlir::SymbolRefAttr>(callable);
+  if (mlir::Operation *op = symbolTable.lookupNearestSymbolFrom(call.getOperation(), symbolRef)) {
+    SymbolLookupResult<T> result(op);
+    if (!result) {
+      return mlir::failure();
+    }
+    return result;
+  }
+  return lookupTopLevelSymbol<T>(
+      symbolTable, symbolRef, call.getOperation(), /*reportMissing=*/false
+  );
+}
+
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterface call) {
   mlir::SymbolTableCollection symbolTable;

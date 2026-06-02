@@ -11,6 +11,7 @@
 
 #include <mlir/Analysis/DataFlow/ConstantPropagationAnalysis.h>
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
+#include <mlir/IR/Operation.h>
 
 using namespace mlir;
 
@@ -26,6 +27,17 @@ void loadRequiredAnalyses(DataFlowSolver &solver) {
 LogicalResult loadAndRunRequiredAnalyses(DataFlowSolver &solver, Operation *op) {
   loadRequiredAnalyses(solver);
   return solver.initializeAndRun(op);
+}
+
+bool isOperationLive(DataFlowSolver &solver, Operation *op) {
+  if (!op->getBlock()) {
+    return true;
+  }
+  if (const auto *exec =
+          solver.lookupState<Executable>(solver.getProgramPointBefore(op->getBlock()))) {
+    return exec->isLive();
+  }
+  return true;
 }
 
 } // namespace llzk::dataflow

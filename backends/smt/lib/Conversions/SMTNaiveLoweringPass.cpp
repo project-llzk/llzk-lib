@@ -52,6 +52,7 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -513,12 +514,15 @@ class SMTNaiveNonNativeLoweringPass
     }
     auto prime = toAPSInt(selectedField->get().prime());
 
-    auto walkResult = mod.walk([this, prime](component::StructDefOp structDef) {
+    SmallVector<component::StructDefOp> structDefs;
+    mod.walk([&structDefs](component::StructDefOp structDef) { structDefs.push_back(structDef); });
+
+    for (component::StructDefOp structDef : structDefs) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");
         signalPassFailure();
-        return WalkResult::interrupt();
+        return;
       }
       IRRewriter rewriter {&getContext()};
       rewriter.setInsertionPointToStart(&productFunc.getFunctionBody().front());
@@ -548,15 +552,12 @@ class SMTNaiveNonNativeLoweringPass
       );
       if (result == nullptr) {
         signalPassFailure();
-        return WalkResult::interrupt();
+        return;
       }
-      return WalkResult::advance();
-    });
-
-    if (!walkResult.wasInterrupted()) {
-      // Remove `llzk.main` attribute because `convertStructProductToFunc()` above deleted structs.
-      mod->removeAttr(MAIN_ATTR_NAME);
     }
+
+    // Remove `llzk.main` attribute because `convertStructProductToFunc()` above deleted structs.
+    mod->removeAttr(MAIN_ATTR_NAME);
   }
 };
 

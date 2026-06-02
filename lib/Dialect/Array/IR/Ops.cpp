@@ -476,22 +476,33 @@ LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
     return failure();
   }
 
+  auto dimValue = getDim();
   llvm::APInt dim;
-  if (!matchPattern(getDim(), m_ConstantInt(&dim))) {
+  if (!matchPattern(dimValue, m_ConstantInt(&dim))) {
     return success();
   }
 
-  std::optional<int64_t> idx = dim.trySExtValue();
-  size_t rank = getArrRefType().getDimensionSizes().size();
-  if (!idx || *idx < 0 || llzk::checkedCast<size_t>(*idx) >= rank) {
-    InFlightDiagnostic diag = emitOpError("dimension index ");
-    if (idx) {
-      diag << *idx;
-    } else {
-      diag << "outside the supported index range";
+  std::optional<int64_t> idxOpt = dim.trySExtValue();
+  if (!idxOpt || *idxOpt < 0) {
+    auto diag = emitOpError("dimension must be a non-negative 64-bit integer");
+    if (!llvm::isa<UnknownLoc>(dimValue.getLoc())) {
+      diag.attachNote(dimValue.getLoc()).append("dimension defined here");
     }
-    diag << " is out of bounds for array rank " << rank;
-    return diag.attachNote(getArrRef().getLoc()).append("array defined here");
+    return diag;
+  }
+  size_t idx = checkedCast<size_t>(*idxOpt);
+  size_t rank = getArrRefType().getDimensionSizes().size();
+  if (idx >= rank) {
+    InFlightDiagnostic diag = emitOpError().append(
+        "dimension index ", idx, " is not valid for array with ", rank, " dimensions"
+    );
+    if (!llvm::isa<UnknownLoc>(getArrRef().getLoc())) {
+      diag.attachNote(getArrRef().getLoc()).append("array defined here");
+    }
+    if (!llvm::isa<UnknownLoc>(dimValue.getLoc())) {
+      diag.attachNote(dimValue.getLoc()).append("dimension defined here");
+    }
+    return diag;
   }
   return success();
 }

@@ -353,12 +353,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     %arg0[@$temp_1][@$super] in Entire
 // CHECK-NEXT:     %arg0[@$temp_1][@reg] in Entire
 // CHECK-NEXT:     %arg0[@$temp_0][@$super] in Entire
-// CHECK-NEXT:     %arg0[@$temp_0][@reciprocal] in Entire
+// CHECK-NEXT:     %arg0[@$temp_0][@reciprocal] in TypeC:[ 1, 2013265920 ]
 // CHECK-NEXT:     %arg0[@$temp][@$super] in Entire
 // CHECK-NEXT:     %arg0[@$temp][@reg] in Entire
 // CHECK-NEXT:     %arg0[@v][@$super] in Entire
-// CHECK-NEXT:     %arg0[@v][@reciprocal] in Entire
-// CHECK-NEXT:     %arg1[0] in Entire
+// CHECK-NEXT:     %arg0[@v][@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CHECK-NEXT:     %arg1[0] in TypeC:[ 1, 2013265920 ]
 // CHECK-NEXT:     %arg1[1] in Entire
 // CHECK-NEXT: }
 
