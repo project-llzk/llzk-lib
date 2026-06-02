@@ -146,3 +146,71 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// POD types referencing empty-template structs should be legalized recursively.
+module attributes {llzk.lang} {
+  poly.template @TLeaf {
+    struct.def @Leaf {
+      function.def @compute() -> !struct.type<@TLeaf::@Leaf<[]>> {
+        %self = struct.new : !struct.type<@TLeaf::@Leaf<[]>>
+        function.return %self : !struct.type<@TLeaf::@Leaf<[]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TLeaf::@Leaf<[]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TPodUser {
+    poly.param @Flag
+
+    struct.def @UsesPod {
+      struct.member @payload : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+      function.def @compute(%arg0: !struct.type<@TLeaf::@Leaf<[]>>) -> !struct.type<@TPodUser::@UsesPod<[@Flag]>> {
+        %self = struct.new : !struct.type<@TPodUser::@UsesPod<[@Flag]>>
+        %pod = pod.new : <[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+        pod.write %pod[@leaf] = %arg0 : <[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>, !struct.type<@TLeaf::@Leaf<[]>>
+        struct.writem %self[@payload] = %pod : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+        function.return %self : !struct.type<@TPodUser::@UsesPod<[@Flag]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TPodUser::@UsesPod<[@Flag]>>, %arg1: !struct.type<@TLeaf::@Leaf<[]>>) {
+        %0 = struct.readm %arg0[@payload] : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>
+        %1 = pod.read %0[@leaf] : <[@leaf: !struct.type<@TLeaf::@Leaf<[]>>]>, !struct.type<@TLeaf::@Leaf<[]>>
+        function.call @TLeaf::@Leaf::@constrain(%1) : (!struct.type<@TLeaf::@Leaf<[]>>) -> ()
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module @TLeaf {
+// CHECK-NEXT:    struct.def @Leaf {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TLeaf::@Leaf> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[LEAF:[0-9a-zA-Z_\.]+]] = struct.new : <@TLeaf::@Leaf>
+// CHECK-NEXT:        function.return %[[LEAF]] : !struct.type<@TLeaf::@Leaf>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @TPodUser {
+// CHECK-NEXT:    poly.param @Flag
+// CHECK-NEXT:    struct.def @UsesPod {
+// CHECK-NEXT:      struct.member @payload : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:      function.def @compute(%[[IN:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) -> !struct.type<@TPodUser::@UsesPod<[@Flag]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@TPodUser::@UsesPod<[@Flag]>>
+// CHECK-NEXT:        %[[POD:[0-9a-zA-Z_\.]+]] = pod.new : <[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:        pod.write %[[POD]][@leaf] = %[[IN]] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
+// CHECK-NEXT:        struct.writem %[[SELF]][@payload] = %[[POD]] : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@TPodUser::@UsesPod<[@Flag]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[SELFARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TPodUser::@UsesPod<[@Flag]>>, %[[LEAFARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[PODVAL:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELFARG]][@payload] : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:        %[[LEAFVAL:[0-9a-zA-Z_\.]+]] = pod.read %[[PODVAL]][@leaf] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
+// CHECK-NEXT:        function.call @TLeaf::@Leaf::@constrain(%[[LEAFVAL]]) : (!struct.type<@TLeaf::@Leaf>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
