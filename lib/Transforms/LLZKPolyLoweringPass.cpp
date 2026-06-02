@@ -121,6 +121,47 @@ private:
       return val;
     }
 
+    if (auto addOp = val.getDefiningOp<AddFeltOp>()) {
+      Value lhs = lowerExpression(
+          addOp.getLhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+      );
+      Value rhs = lowerExpression(
+          addOp.getRhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+      );
+
+      addOp.getLhsMutable().set(lhs);
+      addOp.getRhsMutable().set(rhs);
+      degreeMemo[val] = std::max(getDegree(lhs, degreeMemo), getDegree(rhs, degreeMemo));
+      rewrites[val] = val;
+      return val;
+    }
+
+    if (auto subOp = val.getDefiningOp<SubFeltOp>()) {
+      Value lhs = lowerExpression(
+          subOp.getLhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+      );
+      Value rhs = lowerExpression(
+          subOp.getRhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+      );
+
+      subOp.getLhsMutable().set(lhs);
+      subOp.getRhsMutable().set(rhs);
+      degreeMemo[val] = std::max(getDegree(lhs, degreeMemo), getDegree(rhs, degreeMemo));
+      rewrites[val] = val;
+      return val;
+    }
+
+    if (auto negOp = val.getDefiningOp<NegFeltOp>()) {
+      Value operand = lowerExpression(
+          negOp.getOperand(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+      );
+
+      negOp.getOperandMutable().set(operand);
+      degreeMemo[val] = getDegree(operand, degreeMemo);
+      rewrites[val] = val;
+      return val;
+    }
+
     if (auto mulOp = val.getDefiningOp<MulFeltOp>()) {
       // Recursively lower operands first
       Value lhs = lowerExpression(
@@ -206,7 +247,7 @@ private:
       return mulVal;
     }
 
-    // For non-mul ops, leave untouched (they're degree-1 safe)
+    // Unsupported roots are left unchanged.
     rewrites[val] = val;
     return val;
   }
