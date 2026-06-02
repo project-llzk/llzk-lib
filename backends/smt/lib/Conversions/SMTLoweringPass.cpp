@@ -95,7 +95,7 @@ class ModularReasoner {
 public:
   static constexpr uint64_t explicitReductionQuotientThreshold = 1000;
 
-  enum class ReductionKind {
+  enum class ReductionKind : std::uint8_t {
     Direct,
     NativeMod,
     // Given a constraint of the form e % p = 0, `ExplicitWitness` reduces the constraint to

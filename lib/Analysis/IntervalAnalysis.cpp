@@ -1748,14 +1748,14 @@ LogicalResult StructIntervals::computeIntervals(
                              const SourceRef &ref, const Interval &interval,
                              std::optional<UnreducedInterval> unreducedInterval = std::nullopt
                          ) {
-      auto existing = memberRanges.find(ref);
+      auto *existing = memberRanges.find(ref);
       if (existing != memberRanges.end()) {
         Interval mergedInterval = existing->second.intersect(interval);
         bool intervalChanged = mergedInterval != existing->second;
         existing->second = mergedInterval;
 
         if (unreducedInterval.has_value()) {
-          auto existingUnreduced = memberUnreducedRanges.find(ref);
+          auto *existingUnreduced = memberUnreducedRanges.find(ref);
           if (existingUnreduced != memberUnreducedRanges.end()) {
             existingUnreduced->second = existingUnreduced->second.intersect(*unreducedInterval);
           } else {
@@ -1899,7 +1899,7 @@ LogicalResult StructIntervals::computeIntervals(
           }
 
           std::optional<UnreducedInterval> childUnreduced = std::nullopt;
-          if (auto childUnreducedIt = constrainUnreducedIntervals.find(childRef);
+          if (auto *childUnreducedIt = constrainUnreducedIntervals.find(childRef);
               childUnreducedIt != constrainUnreducedIntervals.end()) {
             childUnreduced = childUnreducedIt->second;
           }
@@ -1936,11 +1936,11 @@ LogicalResult StructIntervals::computeIntervals(
           for (auto memberIt = directEqRefs.member_begin(leaderIt);
                memberIt != directEqRefs.member_end(); ++memberIt) {
             Interval memberInterval = Interval::Entire(ctx.getField());
-            if (auto childIntervalIt = constrainIntervals.find(*memberIt);
+            if (const auto *childIntervalIt = constrainIntervals.find(*memberIt);
                 childIntervalIt != constrainIntervals.end()) {
               memberInterval = memberInterval.intersect(childIntervalIt->second);
             }
-            if (auto callOperandIt = callOperandIntervals.find(*memberIt);
+            if (auto *callOperandIt = callOperandIntervals.find(*memberIt);
                 callOperandIt != callOperandIntervals.end()) {
               memberInterval = memberInterval.intersect(callOperandIt->second);
               contextualInterval = contextualInterval.intersect(memberInterval);
@@ -1966,7 +1966,7 @@ LogicalResult StructIntervals::computeIntervals(
               continue;
             }
 
-            if (auto parentIntervalIt = memberRanges.find(translatedRef);
+            if (auto *parentIntervalIt = memberRanges.find(translatedRef);
                 parentIntervalIt != memberRanges.end()) {
               memberInterval = memberInterval.intersect(parentIntervalIt->second);
             }
@@ -2067,7 +2067,7 @@ void StructIntervals::print(
       os << '\n';
       os.indent(indent) << ref << " in " << interval;
       if (printUnreduced) {
-        auto unreducedIt = memberUnreducedRanges.find(ref);
+        const auto *unreducedIt = memberUnreducedRanges.find(ref);
         if (unreducedIt != memberUnreducedRanges.end()) {
           os << " ( " << unreducedIt->second << " )";
         }

@@ -666,7 +666,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
   }
 
   LogicalResult verifyTemplateParams() override {
-    auto tgtOp = tgt.getOperation();
+    Operation *tgtOp = tgt.getOperation();
     if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
       // When the target function is a free function within a TemplateOp, the IncludeOp may have
       // template parameter instantiations that must be checked against the template parameters.
