@@ -133,12 +133,15 @@ Typedefs</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:a5a0e40a7d27e4b40d03f068209422cbd" id="r_a5a0e40a7d27e4b40d03f068209422cbd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a0e40a7d27e4b40d03f068209422cbd">loadRequiredAnalyses</a> (DataFlowSolver &amp;solver)</td></tr>
 <tr class="memitem:afe5bfdfe65fb003920edcfdcc7f5e64b" id="r_afe5bfdfe65fb003920edcfdcc7f5e64b"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afe5bfdfe65fb003920edcfdcc7f5e64b">loadAndRunRequiredAnalyses</a> (DataFlowSolver &amp;solver, Operation *op)</td></tr>
+<tr class="memitem:affda3a18ae6f5d8f4d75752c6b2ad2ab" id="r_affda3a18ae6f5d8f4d75752c6b2ad2ab"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#affda3a18ae6f5d8f4d75752c6b2ad2ab">isOperationLive</a> (DataFlowSolver &amp;solver, Operation *op)</td></tr>
 <tr class="memitem:ac3f1738d91d0b52e190cc39ec4a005dc" id="r_ac3f1738d91d0b52e190cc39ec4a005dc"><td class="memTemplParams" colspan="2">template&lt;typename Derived, ScalarLatticeValue ScalarTy&gt; </td></tr>
 <tr class="memitem:ac3f1738d91d0b52e190cc39ec4a005dc template"><td class="memItemLeft" align="right" valign="top">mlir::raw_ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac3f1738d91d0b52e190cc39ec4a005dc">operator&lt;&lt;</a> (mlir::raw_ostream &amp;os, const <a class="el" href="classllzk_1_1dataflow_1_1AbstractLatticeValue.html">AbstractLatticeValue</a>&lt; Derived, ScalarTy &gt; &amp;v)</td></tr>
 <tr class="memitem:a992658fcc8a11511240851285c08e434" id="r_a992658fcc8a11511240851285c08e434"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a992658fcc8a11511240851285c08e434">loadRequiredAnalyses</a> (mlir::DataFlowSolver &amp;solver)</td></tr>
 <tr class="memdesc:a992658fcc8a11511240851285c08e434"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads analyses required to initialize the <a class="el" href="AnalysisUtil_8cpp.html#a5dd3d913c9830d74c21442c269cba8c2">Executable</a> and PredecessorState analysis states, which are required for the MLIR Dataflow analyses to properly traverse the LLZK IR.  <br /></td></tr>
 <tr class="memitem:a808826ef495ea3f34b187d7c36de37c3" id="r_a808826ef495ea3f34b187d7c36de37c3"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a808826ef495ea3f34b187d7c36de37c3">loadAndRunRequiredAnalyses</a> (mlir::DataFlowSolver &amp;solver, mlir::Operation *op)</td></tr>
 <tr class="memdesc:a808826ef495ea3f34b187d7c36de37c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads and runs analyses required to initialize the <a class="el" href="AnalysisUtil_8cpp.html#a5dd3d913c9830d74c21442c269cba8c2">Executable</a> and PredecessorState analysis states, which are required for the MLIR Dataflow analyses to properly traverse the LLZK IR.  <br /></td></tr>
+<tr class="memitem:a04e43ac87fdb11c64ede8a6d6253f782" id="r_a04e43ac87fdb11c64ede8a6d6253f782"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a04e43ac87fdb11c64ede8a6d6253f782">isOperationLive</a> (mlir::DataFlowSolver &amp;solver, mlir::Operation *op)</td></tr>
+<tr class="memdesc:a04e43ac87fdb11c64ede8a6d6253f782"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether the operation's containing block is live according to the solver's dead-code analysis state.  <br /></td></tr>
 </table>
 <a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
 <a id="af2cdcb3d15c44dab3ff6268ab8e7a03f" name="af2cdcb3d15c44dab3ff6268ab8e7a03f"></a>
@@ -158,6 +161,53 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="affda3a18ae6f5d8f4d75752c6b2ad2ab" name="affda3a18ae6f5d8f4d75752c6b2ad2ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affda3a18ae6f5d8f4d75752c6b2ad2ab">&#9670;&#160;</a></span>isOperationLive() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::dataflow::isOperationLive </td>
+          <td>(</td>
+          <td class="paramtype">DataFlowSolver &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="AnalysisUtil_8cpp_source.html#l00032">32</a> of file <a class="el" href="AnalysisUtil_8cpp_source.html">AnalysisUtil.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a04e43ac87fdb11c64ede8a6d6253f782" name="a04e43ac87fdb11c64ede8a6d6253f782"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04e43ac87fdb11c64ede8a6d6253f782">&#9670;&#160;</a></span>isOperationLive() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::dataflow::isOperationLive </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DataFlowSolver &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns whether the operation's containing block is live according to the solver's dead-code analysis state. </p>
+<p>Operations without a containing block or without a known executable state are treated as live. </p>
+
+</div>
+</div>
 <a id="afe5bfdfe65fb003920edcfdcc7f5e64b" name="afe5bfdfe65fb003920edcfdcc7f5e64b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afe5bfdfe65fb003920edcfdcc7f5e64b">&#9670;&#160;</a></span>loadAndRunRequiredAnalyses() <span class="overload">[1/2]</span></h2>
 
@@ -177,7 +227,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisUtil_8cpp_source.html#l00026">26</a> of file <a class="el" href="AnalysisUtil_8cpp_source.html">AnalysisUtil.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisUtil_8cpp_source.html#l00027">27</a> of file <a class="el" href="AnalysisUtil_8cpp_source.html">AnalysisUtil.cpp</a>.</p>
 
 </div>
 </div>
@@ -231,7 +281,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AnalysisUtil_8cpp_source.html#l00021">21</a> of file <a class="el" href="AnalysisUtil_8cpp_source.html">AnalysisUtil.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AnalysisUtil_8cpp_source.html#l00022">22</a> of file <a class="el" href="AnalysisUtil_8cpp_source.html">AnalysisUtil.cpp</a>.</p>
 
 </div>
 </div>

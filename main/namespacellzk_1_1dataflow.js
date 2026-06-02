@@ -5,6 +5,8 @@ var namespacellzk_1_1dataflow =
     [ "SparseForwardDataFlowAnalysis", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis" ],
     [ "ScalarLatticeValue", "conceptllzk_1_1dataflow_1_1ScalarLatticeValue.html", null ],
     [ "AbstractSparseLattice", "namespacellzk_1_1dataflow.html#af2cdcb3d15c44dab3ff6268ab8e7a03f", null ],
+    [ "isOperationLive", "namespacellzk_1_1dataflow.html#affda3a18ae6f5d8f4d75752c6b2ad2ab", null ],
+    [ "isOperationLive", "namespacellzk_1_1dataflow.html#a04e43ac87fdb11c64ede8a6d6253f782", null ],
     [ "loadAndRunRequiredAnalyses", "namespacellzk_1_1dataflow.html#afe5bfdfe65fb003920edcfdcc7f5e64b", null ],
     [ "loadAndRunRequiredAnalyses", "namespacellzk_1_1dataflow.html#a808826ef495ea3f34b187d7c36de37c3", null ],
     [ "loadRequiredAnalyses", "namespacellzk_1_1dataflow.html#a5a0e40a7d27e4b40d03f068209422cbd", null ],

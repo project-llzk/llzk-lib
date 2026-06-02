@@ -29,6 +29,7 @@ var SymbolHelper_8h =
     [ "llzk::replaceLeaf", "namespacellzk.html#a4a4d8a892b01f7f72b16fe911432e32f", null ],
     [ "llzk::resolveCallable", "namespacellzk.html#a043fe7093faebb4db2da50ae89f82b71", null ],
     [ "llzk::resolveCallable", "namespacellzk.html#a76f6ee502fe0bb6ab1986e1ad9090c77", null ],
+    [ "llzk::resolveCallableSilently", "namespacellzk.html#a955ceb911210b69bc82ee311eb2edf77", null ],
     [ "llzk::verifyParamOfType", "namespacellzk.html#acc811579523974df9a00a8e969ea1ffc", null ],
     [ "llzk::verifyParamsOfType", "namespacellzk.html#ad11e39677b93aea53264f2ffcd504f3c", null ],
     [ "llzk::verifyStructTypeResolution", "namespacellzk.html#a6a440b2851118a528c4cf09f990ae4a5", null ],

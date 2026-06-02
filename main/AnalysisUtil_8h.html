@@ -119,7 +119,7 @@ Include dependency graph for AnalysisUtil.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AnalysisUtil_8h__dep__incl.svg" width="1568" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AnalysisUtil_8h__dep__incl.svg" width="2176" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="AnalysisUtil_8h_source.html">Go to the source code of this file.</a></p>
@@ -135,6 +135,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a992658fcc8a11511240851285c08e434"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads analyses required to initialize the <a class="el" href="AnalysisUtil_8cpp.html#a5dd3d913c9830d74c21442c269cba8c2">Executable</a> and PredecessorState analysis states, which are required for the MLIR Dataflow analyses to properly traverse the LLZK IR.  <br /></td></tr>
 <tr class="memitem:a808826ef495ea3f34b187d7c36de37c3" id="r_a808826ef495ea3f34b187d7c36de37c3"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1dataflow.html#a808826ef495ea3f34b187d7c36de37c3">llzk::dataflow::loadAndRunRequiredAnalyses</a> (mlir::DataFlowSolver &amp;solver, mlir::Operation *op)</td></tr>
 <tr class="memdesc:a808826ef495ea3f34b187d7c36de37c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads and runs analyses required to initialize the <a class="el" href="AnalysisUtil_8cpp.html#a5dd3d913c9830d74c21442c269cba8c2">Executable</a> and PredecessorState analysis states, which are required for the MLIR Dataflow analyses to properly traverse the LLZK IR.  <br /></td></tr>
+<tr class="memitem:a04e43ac87fdb11c64ede8a6d6253f782" id="r_a04e43ac87fdb11c64ede8a6d6253f782"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1dataflow.html#a04e43ac87fdb11c64ede8a6d6253f782">llzk::dataflow::isOperationLive</a> (mlir::DataFlowSolver &amp;solver, mlir::Operation *op)</td></tr>
+<tr class="memdesc:a04e43ac87fdb11c64ede8a6d6253f782"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether the operation's containing block is live according to the solver's dead-code analysis state.  <br /></td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -117,7 +117,7 @@ $(function(){initNavTree('classllzk_1_1StructIntervals.html','','classllzk_1_1St
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:adcdf4f748f6a861177930efc428e2ba6" id="r_adcdf4f748f6a861177930efc428e2ba6"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adcdf4f748f6a861177930efc428e2ba6">computeIntervals</a> (mlir::DataFlowSolver &amp;solver, const <a class="el" href="structllzk_1_1IntervalAnalysisContext.html">IntervalAnalysisContext</a> &amp;ctx)</td></tr>
+<tr class="memitem:af6d7895ce3ce155ebc666486832df65d" id="r_af6d7895ce3ce155ebc666486832df65d"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af6d7895ce3ce155ebc666486832df65d">computeIntervals</a> (mlir::DataFlowSolver &amp;solver, mlir::AnalysisManager &amp;am, const <a class="el" href="structllzk_1_1IntervalAnalysisContext.html">IntervalAnalysisContext</a> &amp;ctx)</td></tr>
 <tr class="memitem:a91f41e7e5aa189f28fe908f2a481ad1b" id="r_a91f41e7e5aa189f28fe908f2a481ad1b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a91f41e7e5aa189f28fe908f2a481ad1b">print</a> (mlir::raw_ostream &amp;os, bool withConstraints=false, bool printCompute=false, bool printUnreduced=false) const</td></tr>
 <tr class="memitem:a054934f1a85e494ca568ff939e9e6c8b" id="r_a054934f1a85e494ca568ff939e9e6c8b"><td class="memItemLeft" align="right" valign="top">const llvm::MapVector&lt; <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a>, <a class="el" href="classllzk_1_1Interval.html">Interval</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a054934f1a85e494ca568ff939e9e6c8b">getConstrainIntervals</a> () const</td></tr>
 <tr class="memitem:a345cf4f34766463650586f389959fe77" id="r_a345cf4f34766463650586f389959fe77"><td class="memItemLeft" align="right" valign="top">const llvm::MapVector&lt; <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a>, <a class="el" href="classllzk_1_1UnreducedInterval.html">UnreducedInterval</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a345cf4f34766463650586f389959fe77">getConstrainUnreducedIntervals</a> () const</td></tr>
@@ -128,8 +128,8 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ac91bd5fa4fd1654899a4d03647176160" id="r_ac91bd5fa4fd1654899a4d03647176160"><td class="memItemLeft" align="right" valign="top">static mlir::FailureOr&lt; <a class="el" href="classllzk_1_1StructIntervals.html">StructIntervals</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac91bd5fa4fd1654899a4d03647176160">compute</a> (mlir::ModuleOp mod, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> s, mlir::DataFlowSolver &amp;solver, const <a class="el" href="structllzk_1_1IntervalAnalysisContext.html">IntervalAnalysisContext</a> &amp;ctx)</td></tr>
-<tr class="memdesc:ac91bd5fa4fd1654899a4d03647176160"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the struct intervals.  <br /></td></tr>
+<tr class="memitem:a0bc1a4a94af4d887b0cd9272392daed1" id="r_a0bc1a4a94af4d887b0cd9272392daed1"><td class="memItemLeft" align="right" valign="top">static mlir::FailureOr&lt; <a class="el" href="classllzk_1_1StructIntervals.html">StructIntervals</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0bc1a4a94af4d887b0cd9272392daed1">compute</a> (mlir::ModuleOp mod, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> s, mlir::DataFlowSolver &amp;solver, mlir::AnalysisManager &amp;am, const <a class="el" href="structllzk_1_1IntervalAnalysisContext.html">IntervalAnalysisContext</a> &amp;ctx)</td></tr>
+<tr class="memdesc:a0bc1a4a94af4d887b0cd9272392daed1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the struct intervals.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -137,10 +137,10 @@ Friends</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00515">515</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00517">517</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="ac91bd5fa4fd1654899a4d03647176160" name="ac91bd5fa4fd1654899a4d03647176160"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac91bd5fa4fd1654899a4d03647176160">&#9670;&#160;</a></span>compute()</h2>
+<a id="a0bc1a4a94af4d887b0cd9272392daed1" name="a0bc1a4a94af4d887b0cd9272392daed1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0bc1a4a94af4d887b0cd9272392daed1">&#9670;&#160;</a></span>compute()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -162,6 +162,11 @@ Friends</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">mlir::DataFlowSolver &amp;</td>          <td class="paramname"><span class="paramname"><em>solver</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::AnalysisManager &amp;</td>          <td class="paramname"><span class="paramname"><em>am</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -188,12 +193,12 @@ Friends</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00526">526</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00528">528</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
-<a id="adcdf4f748f6a861177930efc428e2ba6" name="adcdf4f748f6a861177930efc428e2ba6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adcdf4f748f6a861177930efc428e2ba6">&#9670;&#160;</a></span>computeIntervals()</h2>
+<a id="af6d7895ce3ce155ebc666486832df65d" name="af6d7895ce3ce155ebc666486832df65d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af6d7895ce3ce155ebc666486832df65d">&#9670;&#160;</a></span>computeIntervals()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -206,12 +211,17 @@ Friends</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">mlir::AnalysisManager &amp;</td>          <td class="paramname"><span class="paramname"><em>am</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">const <a class="el" href="structllzk_1_1IntervalAnalysisContext.html">IntervalAnalysisContext</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>ctx</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l01585">1585</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l01716">1716</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -238,7 +248,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00557">557</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00560">560</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -265,7 +275,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00565">565</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00568">568</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -292,7 +302,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00561">561</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00564">564</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -319,7 +329,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00545">545</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00548">548</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -346,7 +356,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00553">553</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00556">556</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -373,7 +383,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00549">549</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00552">552</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -406,7 +416,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l01724">1724</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l02045">2045</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -438,7 +448,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00569">569</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00572">572</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>

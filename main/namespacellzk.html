@@ -693,6 +693,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a76f6ee502fe0bb6ab1986e1ad9090c77" id="r_a76f6ee502fe0bb6ab1986e1ad9090c77"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:a76f6ee502fe0bb6ab1986e1ad9090c77 template"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; T &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a76f6ee502fe0bb6ab1986e1ad9090c77">resolveCallable</a> (mlir::SymbolTableCollection &amp;symbolTable, mlir::CallOpInterface call)</td></tr>
 <tr class="memdesc:a76f6ee502fe0bb6ab1986e1ad9090c77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers.  <br /></td></tr>
+<tr class="memitem:a955ceb911210b69bc82ee311eb2edf77" id="r_a955ceb911210b69bc82ee311eb2edf77"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a955ceb911210b69bc82ee311eb2edf77 template"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; T &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a955ceb911210b69bc82ee311eb2edf77">resolveCallableSilently</a> (mlir::SymbolTableCollection &amp;symbolTable, mlir::CallOpInterface call)</td></tr>
+<tr class="memdesc:a955ceb911210b69bc82ee311eb2edf77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resolve a callable without emitting a diagnostic for missing top-level symbols.  <br /></td></tr>
 <tr class="memitem:a043fe7093faebb4db2da50ae89f82b71" id="r_a043fe7093faebb4db2da50ae89f82b71"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:a043fe7093faebb4db2da50ae89f82b71 template"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; T &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a043fe7093faebb4db2da50ae89f82b71">resolveCallable</a> (mlir::CallOpInterface call)</td></tr>
 <tr class="memitem:acc811579523974df9a00a8e969ea1ffc" id="r_acc811579523974df9a00a8e969ea1ffc"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acc811579523974df9a00a8e969ea1ffc">verifyParamOfType</a> (mlir::SymbolTableCollection &amp;tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType, mlir::Operation *origin)</td></tr>
@@ -1075,7 +1078,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00177">177</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00308">308</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1745,7 +1748,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00300">300</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00431">431</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1773,7 +1776,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00308">308</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00439">439</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1801,7 +1804,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00316">316</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00447">447</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1852,7 +1855,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00411">411</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00542">542</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1894,7 +1897,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00457">457</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00588">588</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1945,7 +1948,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00420">420</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00551">551</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -1973,7 +1976,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00128">128</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00259">259</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2024,7 +2027,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00429">429</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00560">560</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2285,7 +2288,7 @@ template&lt;typename T, typename U&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00346">346</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00477">477</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2521,7 +2524,7 @@ template&lt;typename OpTy, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00089">89</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00220">220</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -2974,7 +2977,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00204">204</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00335">335</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -3033,7 +3036,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00466">466</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00597">597</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -4881,7 +4884,7 @@ template&lt;typename GraphT&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00168">168</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00299">299</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -5877,7 +5880,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00284">284</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00415">415</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -6003,7 +6006,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00195">195</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00326">326</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -6026,7 +6029,7 @@ template&lt;typename OpType, typename LhsMatcher, typename RhsMatcher&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00440">440</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00571">571</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -6091,7 +6094,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00450">450</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00581">581</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8677,7 +8680,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00153">153</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00182">182</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8727,6 +8730,42 @@ template&lt;typename T&gt; </div>
 <dl class="section return"><dt>Returns</dt><dd>the symbol or failure </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00132">132</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a955ceb911210b69bc82ee311eb2edf77" name="a955ceb911210b69bc82ee311eb2edf77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a955ceb911210b69bc82ee311eb2edf77">&#9670;&#160;</a></span>resolveCallableSilently()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; T &gt; &gt; llzk::resolveCallableSilently </td>
+          <td>(</td>
+          <td class="paramtype">mlir::SymbolTableCollection &amp;</td>          <td class="paramname"><span class="paramname"><em>symbolTable</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::CallOpInterface</td>          <td class="paramname"><span class="paramname"><em>call</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Resolve a callable without emitting a diagnostic for missing top-level symbols. </p>
+<p>Use this when an unresolved call should make an analysis conservatively skip the call instead of reporting a verifier-style symbol error. </p>
+
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00158">158</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -8786,7 +8825,7 @@ template&lt;typename T&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00135">135</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00266">266</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8814,7 +8853,7 @@ template&lt;typename T&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00327">327</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00458">458</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8842,7 +8881,7 @@ template&lt;typename T&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00336">336</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00467">467</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8970,7 +9009,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00263">263</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00394">394</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -8998,7 +9037,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00292">292</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00423">423</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -9157,7 +9196,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00186">186</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00317">317</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -9957,7 +9996,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00243">243</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00374">374</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
@@ -10530,7 +10569,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 <p>Ensure that all symbols used within all Type instances can be resolved. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00182">182</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00211">211</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
