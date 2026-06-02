@@ -418,9 +418,10 @@ static bool convertFunction(llzk::function::FuncDefOp func, LLZKToZKLeanState &s
 
 // Convert all eligible LLZK functions into a new ZKLean module.
 // Emits struct defs first, then lowers each function via `convertFunction`.
-static LogicalResult convertModule(ModuleOp source, ModuleOp dest, bool &hadError) {
+static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
   OpBuilder builder(dest.getContext());
   auto zkType = llzk::zkexpr::ZKExprType::get(dest.getContext());
+  bool hadError = false;
   bool createdAny = false;
 
   LLZKToZKLeanState state {dest, builder, zkType, hadError};
@@ -433,11 +434,11 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest, bool &hadErro
   });
 
   if (!hadError && !createdAny) {
-    source.emitError("failed to produce ZKLean module").report();
+    source.emitError("did not produce any ops in ZKLean module").report();
     hadError = true;
   }
 
-  return success(!hadError && createdAny);
+  return failure(hadError);
 }
 
 // Pass wrapper that appends a converted ZKLean module to the source.
@@ -457,8 +458,7 @@ public:
       zkLeanModule->setAttr(llzk::LANG_ATTR_NAME, lang);
     }
 
-    bool hadError = false;
-    if (failed(convertModule(original, zkLeanModule, hadError))) {
+    if (failed(convertModule(original, zkLeanModule))) {
       signalPassFailure();
       return;
     }
