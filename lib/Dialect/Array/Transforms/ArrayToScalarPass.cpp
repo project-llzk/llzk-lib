@@ -841,15 +841,18 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-static ArrayAttr getIndexAsAttr(Operation *op) {
-  return mlir::cast<ArrayAccessOpInterface>(op).indexOperandsToAttributeArray();
+/// Return a static index attribute for an array access, or null if any index is dynamic.
+inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
+  return op.indexOperandsToAttributeArray();
 }
 
+/// Return whether `writeOp` may update `index`.
 static bool mayWriteToIndex(WriteArrayOp writeOp, ArrayAttr index) {
-  ArrayAttr writeIndex = getIndexAsAttr(writeOp.getOperation());
+  ArrayAttr writeIndex = getIndexAsAttr(writeOp);
   return !writeIndex || writeIndex == index;
 }
 
+/// Return whether the read is preceded by a write to the same array and index within its block.
 static bool hasEarlierWriteInBlock(ReadArrayOp readOp, ArrayAttr readIndex) {
   Value arrRef = readOp.getArrRef();
   for (Operation &op : *readOp->getBlock()) {
@@ -864,25 +867,27 @@ static bool hasEarlierWriteInBlock(ReadArrayOp readOp, ArrayAttr readIndex) {
       continue;
     }
 
-    bool foundWrite = false;
-    op.walk([&](WriteArrayOp writeOp) {
+    // Writes nested inside earlier operations may conditionally clobber the read's value.
+    if (op.walk([arrRef, readIndex](WriteArrayOp writeOp) {
       if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
-        foundWrite = true;
+        return WalkResult::interrupt();
       }
-    });
-    if (foundWrite) {
+      return WalkResult::advance();
+    }).wasInterrupted()) {
       return true;
     }
   }
   return false;
 }
 
+/// Find a statically indexed write before the parent `scf.if` that can be forwarded to `readOp`.
 static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readOp) {
-  ArrayAttr readIndex = getIndexAsAttr(readOp.getOperation());
+  ArrayAttr readIndex = getIndexAsAttr(readOp);
   if (!readIndex) {
     return std::nullopt;
   }
 
+  // Only handle reads that are direct children of an `scf.if` branch.
   auto ifOp = readOp->getParentOfType<scf::IfOp>();
   if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
     return std::nullopt;
@@ -908,33 +913,34 @@ static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readO
         continue;
       }
 
-      ArrayAttr writeIndex = getIndexAsAttr(writeOp.getOperation());
-      if (!writeIndex) {
-        replacement = WriteArrayOp();
-      } else if (writeIndex == readIndex) {
-        replacement = writeOp;
+      ArrayAttr writeIndex = getIndexAsAttr(writeOp);
+      if (mayWriteToIndex(writeOp, readIndex)) {
+        replacement = writeIndex == readIndex ? writeOp : WriteArrayOp();
       }
       continue;
     }
 
-    op.walk([&](WriteArrayOp writeOp) {
+    // A nested write before the `scf.if` may overwrite the current candidate.
+    if (op.walk([arrRef, readIndex, &replacement](WriteArrayOp writeOp) {
       if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
         replacement = WriteArrayOp();
+        return WalkResult::interrupt();
       }
-    });
+      return WalkResult::advance();
+    }).wasInterrupted()) {
+      continue;
+    }
   }
 
-  if (!replacement) {
-    return std::nullopt;
-  }
-  return replacement;
+  return replacement ? std::make_optional(replacement) : std::nullopt;
 }
 
+/// Forward branch-local reads to a same-index write that dominates the parent `scf.if`.
 static void forwardPrecedingArrayWritesIntoIf(ModuleOp modOp) {
   SmallVector<std::pair<ReadArrayOp, Value>> replacements;
-  modOp.walk([&](ReadArrayOp readOp) {
+  modOp.walk([&replacements](ReadArrayOp readOp) {
     if (std::optional<WriteArrayOp> writeOp = findPrecedingWriteForIfRead(readOp)) {
-      replacements.emplace_back(readOp, (*writeOp).getRvalue());
+      replacements.emplace_back(readOp, writeOp->getRvalue());
     }
   });
 

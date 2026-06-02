@@ -25,14 +25,12 @@ module attributes {llzk.lang} {
 // CHECK-SAME: %[[FORWARDED:[0-9a-zA-Z_\.]+]]: !felt.type
 // CHECK-NOT: array.
 // CHECK: scf.if
-// CHECK-NOT: array.read
-// CHECK-NOT: array.write
+// CHECK-NOT: array.
 // CHECK: %[[THEN_SUM:[0-9a-zA-Z_\.]+]] = felt.add
 // CHECK-NEXT: %[[THEN_OUT:[0-9a-zA-Z_\.]+]] = felt.add %[[THEN_SUM]], %[[FORWARDED]]
 // CHECK-NEXT: scf.yield %[[THEN_OUT]]
 // CHECK: } else {
-// CHECK-NOT: array.read
-// CHECK-NOT: array.write
+// CHECK-NOT: array.
 // CHECK: %[[ELSE_SUM:[0-9a-zA-Z_\.]+]] = felt.add
 // CHECK-NEXT: %[[ELSE_OUT:[0-9a-zA-Z_\.]+]] = felt.add %[[ELSE_SUM]], %[[FORWARDED]]
 // CHECK-NEXT: scf.yield %[[ELSE_OUT]]
