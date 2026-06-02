@@ -152,7 +152,7 @@ std::optional<Type> TemplateExprOp::getTypeOpt() { return getType(); }
 LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(tables, *this);
   if (failed(getParentRes)) {
-    return failure();
+    return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error message
   }
   if (!*getParentRes) {
     return this->emitOpError() << "only valid within a '" << TemplateOp::getOperationName()
