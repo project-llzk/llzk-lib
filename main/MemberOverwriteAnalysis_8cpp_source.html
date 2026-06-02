@@ -205,7 +205,7 @@ $(function(){initNavTree('MemberOverwriteAnalysis_8cpp_source.html','',''); });
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>) {</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  ChangeResult result = after-&gt;<a class="code hl_function" href="classllzk_1_1MemberOverwriteLattice.html#a5f5c27fb60a78683642783ecb0c486c2">join</a>(before);</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Visiting operation: &quot;</span> &lt;&lt; *op &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; before &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;Visiting operation: &quot;</span> &lt;&lt; *op &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; before &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> write = dyn_cast&lt;MemberWriteOp&gt;(op)) {</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    result |= after-&gt;<a class="code hl_function" href="classllzk_1_1MemberOverwriteLattice.html#ae0a8558cea208d140cb83ba9ad0dc57b">record</a>(write);</div>
