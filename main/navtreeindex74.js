@@ -1,5 +1,7 @@
 var NAVTREEINDEX74 =
 {
+"dialects.html#operations":[7,0,0],
+"dialects.html#operations-1":[7,1,0],
 "dialects.html#operations-10":[7,10,0],
 "dialects.html#operations-11":[7,11,0],
 "dialects.html#operations-12":[7,12,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX74 =
 "dir_fbb5839660df89f0c7872b7fe52b5d6c.html":[13,0,3,3,4],
 "dir_fe0ef27a24ecf63102ca83760db7d332.html":[13,0,3,2,1],
 "files.html":[13,0],
-"functions.html":[12,3,0],
-"functions.html":[12,3,0,0],
-"functions_a.html":[12,3,0,1]
+"functions.html":[12,3,0]
 };

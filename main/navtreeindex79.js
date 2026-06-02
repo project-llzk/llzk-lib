@@ -1,5 +1,9 @@
 var NAVTREEINDEX79 =
 {
+"structAndBoolOpBuildFuncHelper.html#a2b22dd8cab7068af3be0c62f59425826":[12,0,6,1],
+"structAndBoolOpBuildFuncHelper.html#ad21d8e0abe933c30ef36ee80d2cb3136":[12,0,6,0],
+"structAndFeltOpBuildFuncHelper.html":[12,0,7],
+"structAndFeltOpBuildFuncHelper.html#a0ea8e010be93b63abc646ef39108a69d":[12,0,7,0],
 "structAndFeltOpBuildFuncHelper.html#ab3ccae89b307b28d9c7a0242e7a93ab0":[12,0,7,1],
 "structArrayLengthOpBuildFuncHelper.html":[12,0,9],
 "structArrayLengthOpBuildFuncHelper.html#a4019fe7df59cf0dc048672a545c9db79":[12,0,9,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX79 =
 "structReadArrayOpBuildFuncHelper.html":[12,0,96],
 "structReadArrayOpBuildFuncHelper.html#a248db0a2012b72df119e4d4b057131ce":[12,0,96,1],
 "structReadArrayOpBuildFuncHelper.html#a2b9bfb8fd08e59579b4cddce65502411":[12,0,96,0],
-"structReadPodOpBuildFuncHelper.html":[12,0,97],
-"structReadPodOpBuildFuncHelper.html#a42c5e6c58a3c74e6ed8ffac7509abfc1":[12,0,97,1],
-"structReadPodOpBuildFuncHelper.html#acecef7c1580f1971f75a417f535f96a5":[12,0,97,0],
-"structRequireComputeOpBuildFuncHelper.html":[12,0,98],
-"structRequireComputeOpBuildFuncHelper.html#aa6a8ca153e1e079f99ab36a559849d76":[12,0,98,1]
+"structReadPodOpBuildFuncHelper.html":[12,0,97]
 };

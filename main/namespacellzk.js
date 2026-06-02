@@ -256,6 +256,8 @@ var namespacellzk =
     [ "getAllChildren", "namespacellzk.html#a4f05d37ad335a901ee40a3eed866b8d0", null ],
     [ "getAtIndex", "namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7", null ],
     [ "getCheckRegisteredInfo", "namespacellzk.html#ad88b760d7ab8123cfff035385a670683", null ],
+    [ "getConstResolutionTemplate", "namespacellzk.html#a652a95f337d2ea0ddd530e8b92d60f5a", null ],
+    [ "getConstResolutionTemplate", "namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53", null ],
     [ "getEmitOpErrFn", "namespacellzk.html#a9b8e8dff43891ffe5045760d87d2899b", null ],
     [ "getEmitOpErrFn", "namespacellzk.html#ae652b6e04c6c655275407417dccd48f9", null ],
     [ "getFeltDegree", "namespacellzk.html#a07235a51b81f09557523887e9b11ca93", null ],

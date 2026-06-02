@@ -218,6 +218,7 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a0330b0b612a2280ba1871607206eac93" id="r_a0330b0b612a2280ba1871607206eac93"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0330b0b612a2280ba1871607206eac93">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
 <tr class="memitem:ac3f726153e3fde3b4be584cf098f869f" id="r_ac3f726153e3fde3b4be584cf098f869f"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac3f726153e3fde3b4be584cf098f869f">readProperties</a> (::mlir::DialectBytecodeReader &amp;reader, ::mlir::OperationState &amp;state)</td></tr>
 <tr class="memitem:a527a36fb960cc37d2c65976b8323a06e" id="r_a527a36fb960cc37d2c65976b8323a06e"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a527a36fb960cc37d2c65976b8323a06e">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::llvm::StringRef name, llvm::StringRef target)</td></tr>
+<tr class="memitem:af4c13d6bcf73b8d1380ea5390492ce42" id="r_af4c13d6bcf73b8d1380ea5390492ce42"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af4c13d6bcf73b8d1380ea5390492ce42">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::llvm::StringRef name, ::mlir::SymbolRefAttr target)</td></tr>
 <tr class="memitem:ac937c158ea82da97ab37bc1d2701499c" id="r_ac937c158ea82da97ab37bc1d2701499c"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac937c158ea82da97ab37bc1d2701499c">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::StringAttr sym_name, ::mlir::SymbolRefAttr target, ::mlir::TypeAttr function_type, ::mlir::ArrayAttr arg_attrs)</td></tr>
 <tr class="memitem:a9523419d3fc557e2f9a4a2bd2d7636e2" id="r_a9523419d3fc557e2f9a4a2bd2d7636e2"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9523419d3fc557e2f9a4a2bd2d7636e2">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::StringAttr sym_name, ::mlir::SymbolRefAttr target, ::mlir::TypeAttr function_type, ::mlir::ArrayAttr arg_attrs)</td></tr>
 <tr class="memitem:a5cbc7507846be6e26c20b1c6a74f4d12" id="r_a5cbc7507846be6e26c20b1c6a74f4d12"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5cbc7507846be6e26c20b1c6a74f4d12">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::llvm::StringRef sym_name, ::mlir::SymbolRefAttr target, ::mlir::FunctionType function_type, ::mlir::ArrayAttr arg_attrs)</td></tr>
@@ -297,7 +298,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="ab45ac2b5e7beae2f1793dfccaf90659d" name="ab45ac2b5e7beae2f1793dfccaf90659d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab45ac2b5e7beae2f1793dfccaf90659d">&#9670;&#160;</a></span>build() <span class="overload">[1/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab45ac2b5e7beae2f1793dfccaf90659d">&#9670;&#160;</a></span>build() <span class="overload">[1/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -342,8 +343,49 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="af4c13d6bcf73b8d1380ea5390492ce42" name="af4c13d6bcf73b8d1380ea5390492ce42"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4c13d6bcf73b8d1380ea5390492ce42">&#9670;&#160;</a></span>build() <span class="overload">[2/7]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::verif::ContractOp::build </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>odsBuilder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OperationState &amp;</td>          <td class="paramname"><span class="paramname"><em>odsState</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::SymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00163">163</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a527a36fb960cc37d2c65976b8323a06e" name="a527a36fb960cc37d2c65976b8323a06e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a527a36fb960cc37d2c65976b8323a06e">&#9670;&#160;</a></span>build() <span class="overload">[2/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a527a36fb960cc37d2c65976b8323a06e">&#9670;&#160;</a></span>build() <span class="overload">[3/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -384,7 +426,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 </div>
 <a id="a5cbc7507846be6e26c20b1c6a74f4d12" name="a5cbc7507846be6e26c20b1c6a74f4d12"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5cbc7507846be6e26c20b1c6a74f4d12">&#9670;&#160;</a></span>build() <span class="overload">[3/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a5cbc7507846be6e26c20b1c6a74f4d12">&#9670;&#160;</a></span>build() <span class="overload">[4/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -435,7 +477,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 </div>
 <a id="ac937c158ea82da97ab37bc1d2701499c" name="ac937c158ea82da97ab37bc1d2701499c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac937c158ea82da97ab37bc1d2701499c">&#9670;&#160;</a></span>build() <span class="overload">[4/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac937c158ea82da97ab37bc1d2701499c">&#9670;&#160;</a></span>build() <span class="overload">[5/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -486,7 +528,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 </div>
 <a id="a2df043c5eba6ca3cf35309602caa32ed" name="a2df043c5eba6ca3cf35309602caa32ed"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2df043c5eba6ca3cf35309602caa32ed">&#9670;&#160;</a></span>build() <span class="overload">[5/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a2df043c5eba6ca3cf35309602caa32ed">&#9670;&#160;</a></span>build() <span class="overload">[6/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -542,7 +584,7 @@ template&lt;typename RangeT&gt; </div>
 </div>
 </div>
 <a id="a9523419d3fc557e2f9a4a2bd2d7636e2" name="a9523419d3fc557e2f9a4a2bd2d7636e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9523419d3fc557e2f9a4a2bd2d7636e2">&#9670;&#160;</a></span>build() <span class="overload">[6/6]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a9523419d3fc557e2f9a4a2bd2d7636e2">&#9670;&#160;</a></span>build() <span class="overload">[7/7]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -802,7 +844,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the <span class="tt">function.arg_name</span> attribute for the argument at the given index. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00197">197</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00199">199</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -832,7 +874,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the argument types of this contract. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00394">394</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00395">395</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -916,7 +958,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the region on the current operation that is callable. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00390">390</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00391">391</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -937,7 +979,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the full name for this contract from the root module, including all surrounding symbol table names (i.e., modules and structs). </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00216">216</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00218">218</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -964,7 +1006,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00431">431</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00432">432</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1315,7 +1357,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the result types of this contract. Since contracts don't have return values, the returned ArrayRef will always be empty. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00399">399</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00400">400</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1337,7 +1379,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the contract, or failure if the contract does not target a struct. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00497">497</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00482">482</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1364,7 +1406,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00415">415</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00416">416</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1604,7 +1646,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00195">195</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00197">197</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1625,7 +1667,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has <span class="tt">pub</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00187">187</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00189">189</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1654,7 +1696,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the contract targets a function. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00425">425</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00426">426</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1683,7 +1725,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the contract targets a struct type. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00409">409</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00410">410</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1712,7 +1754,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by SymbolOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00402">402</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html#l00403">403</a> of file <a class="el" href="Verif_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1743,7 +1785,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00298">298</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00283">283</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1798,7 +1840,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00403">403</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00388">388</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1908,7 +1950,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the <span class="tt">function.arg_name</span> attribute for the argument at the given index from a string. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00212">212</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00214">214</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1933,7 +1975,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the <span class="tt">function.arg_name</span> attribute for the argument at the given index. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00207">207</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00209">209</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2143,7 +2185,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00430">430</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00415">415</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2236,7 +2278,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00225">225</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00227">227</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
