@@ -34,4 +34,9 @@ void loadRequiredAnalyses(mlir::DataFlowSolver &solver);
 /// @return Whether the pre-run analysis was successful.
 mlir::LogicalResult loadAndRunRequiredAnalyses(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
+/// @brief Returns whether the operation's containing block is live according to
+/// the solver's dead-code analysis state. Operations without a containing block
+/// or without a known executable state are treated as live.
+bool isOperationLive(mlir::DataFlowSolver &solver, mlir::Operation *op);
+
 } // namespace llzk::dataflow

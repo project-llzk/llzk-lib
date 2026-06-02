@@ -1,0 +1,13 @@
+// RUN: llzk-opt %s --canonicalize -verify-diagnostics
+
+// Testing a value larger than 64-bit max requires canonicalization since
+//  `arith.constant` literal cannot be larger than 0x7FFFFFFFFFFFFFFF
+function.def @too_large_constant_dim() -> index {
+  %a = array.new : !array.type<2,3 x !felt.type>
+  %0 = arith.constant 0x7FFFFFFFFFFFFFFF : index
+  %1 = arith.constant 1 : index
+  %2 = arith.addi %0, %1 : index
+  // expected-error@+1 {{'array.len' op dimension must be a non-negative 64-bit integer}}
+  %x = array.len %a, %2 : !array.type<2,3 x !felt.type>
+  function.return %x: index
+}

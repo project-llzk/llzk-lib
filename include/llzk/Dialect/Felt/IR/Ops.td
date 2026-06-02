@@ -242,12 +242,20 @@ def LLZK_NotFeltOp : FeltDialectUnaryOp<"bit_not", [NotFieldNative]> {
 
 def LLZK_ShlFeltOp : FeltDialectBinaryOp<"shl", [NotFieldNative]> {
   let summary = "left shift operator for field elements";
-  let description = [{}];
+  let description = [{
+    Treats both operands as unsigned integer representatives of field elements.
+    `felt.shl %a, %b` computes `%a * 2^%b`, then converts the result back to a
+    field element by reducing modulo the field prime.
+  }];
 }
 
 def LLZK_ShrFeltOp : FeltDialectBinaryOp<"shr", [NotFieldNative]> {
   let summary = "right shift operator for field elements";
-  let description = [{}];
+  let description = [{
+    Treats both operands as unsigned integer representatives of field elements.
+    `felt.shr %a, %b` computes `%a / 2^%b` using unsigned integer division
+    rounding towards zero, then converts the result back to a field element.
+  }];
 }
 
 #endif // LLZK_FELT_OPS

@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
@@ -26,6 +27,7 @@
 
 using namespace mlir;
 using namespace llzk::component;
+using namespace llzk::verif;
 
 namespace llzk::polymorphic {
 
@@ -150,9 +152,15 @@ std::optional<Type> TemplateExprOp::getTypeOpt() { return getType(); }
 //===------------------------------------------------------------------===//
 
 LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  FailureOr<TemplateOp> getParentRes = verifyInTemplate(*this);
+  FailureOr<TemplateOp> getParentRes = getConstResolutionTemplate(tables, *this);
   if (failed(getParentRes)) {
-    return failure(); // verifyInTemplate() already emits a sufficient error message
+    return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error message
+  }
+  if (!*getParentRes) {
+    return this->emitOpError() << "only valid within a '" << TemplateOp::getOperationName()
+                               << "' ancestor or '" << ContractOp::getOperationName()
+                               << "' that targets an operation with a '"
+                               << TemplateOp::getOperationName() << "' ancestor";
   }
   // Ensure the named constant is a parameter of the parent struct
   FlatSymbolRefAttr name = this->getConstNameAttr();

@@ -6,8 +6,9 @@ module attributes {llzk.lang} {
   function.def @bad_len() -> index {
     // expected-note@+1 {{array defined here}}
     %a = array.new : !array.type<2,3 x !felt.type>
+    // expected-note@+1 {{dimension defined here}}
     %dim = arith.constant 2 : index
-    // expected-error@+1 {{dimension index 2 is out of bounds for array rank 2}}
+    // expected-error@+1 {{dimension index 2 is not valid for array with 2 dimensions}}
     %len = array.len %a, %dim : !array.type<2,3 x !felt.type>
     function.return %len : index
   }

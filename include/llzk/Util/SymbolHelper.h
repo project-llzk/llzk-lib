@@ -26,6 +26,9 @@ class MemberDefOp;
 namespace function {
 class FuncDefOp;
 } // namespace function
+namespace polymorphic {
+class TemplateOp;
+} // namespace polymorphic
 
 llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
 llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
@@ -149,11 +152,48 @@ resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface 
   return lookupTopLevelSymbol<T>(symbolTable, symbolRef, call.getOperation());
 }
 
+/// Resolve a callable without emitting a diagnostic for missing top-level symbols.
+///
+/// Use this when an unresolved call should make an analysis conservatively skip the call instead of
+/// reporting a verifier-style symbol error.
+template <typename T>
+inline mlir::FailureOr<SymbolLookupResult<T>>
+resolveCallableSilently(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call) {
+  mlir::CallInterfaceCallable callable = call.getCallableForCallee();
+  if (auto symbolVal = llvm::dyn_cast<mlir::Value>(callable)) {
+    SymbolLookupResult<T> result(symbolVal.getDefiningOp());
+    if (!result) {
+      return mlir::failure();
+    }
+    return result;
+  }
+
+  auto symbolRef = llvm::cast<mlir::SymbolRefAttr>(callable);
+  if (mlir::Operation *op = symbolTable.lookupNearestSymbolFrom(call.getOperation(), symbolRef)) {
+    SymbolLookupResult<T> result(op);
+    if (!result) {
+      return mlir::failure();
+    }
+    return result;
+  }
+  return lookupTopLevelSymbol<T>(
+      symbolTable, symbolRef, call.getOperation(), /*reportMissing=*/false
+  );
+}
+
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterface call) {
   mlir::SymbolTableCollection symbolTable;
   return resolveCallable<T>(symbolTable, call);
 }
+
+/// Return the template scope that should be used to resolve flat constant
+/// references from the given origin. For ops nested in a `verif.contract`
+/// targeting a templated symbol, this is the target's template even when the
+/// contract is physically nested elsewhere. Otherwise this is the nearest
+/// physical `poly.template`, if any.
+mlir::FailureOr<polymorphic::TemplateOp>
+getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation *origin);
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
 mlir::LogicalResult verifyParamOfType(

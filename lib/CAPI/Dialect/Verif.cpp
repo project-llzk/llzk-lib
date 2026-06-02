@@ -33,10 +33,22 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif, VerifDialect)
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    Verif, ContractOp, FromTarget, MlirIdentifier sym_name, MlirIdentifier target
+    Verif, ContractOp, FromTargetIdentifier, MlirIdentifier sym_name, MlirIdentifier target
 ) {
   return mlirOpBuilderInsert(
       builder, wrap(llzk::create<ContractOp>(builder, location, unwrap(sym_name), unwrap(target)))
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Verif, ContractOp, FromTargetAttr, MlirIdentifier sym_name, MlirAttribute target
+) {
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   llzk::create<ContractOp>(
+                       builder, location, unwrap(sym_name), cast<SymbolRefAttr>(unwrap(target))
+                   )
+               )
   );
 }
 

@@ -68,6 +68,11 @@ def FuncDefOp
     names for generated arguments, such as `input[0]` for array elements or
     `self.member` for struct members.
 
+    Function results may similarly carry an optional `function.res_name`
+    attribute. The value must be a non-empty, untyped `StringAttr`, all attached
+    result names must be unique within the function, and the attribute is only
+    valid on function results.
+
     Example:
 
     ```llzk
@@ -79,7 +84,8 @@ def FuncDefOp
 
     // A function that returns its argument twice:
     function.def @count(%x: !felt.type {function.arg_name = "x"})
-        -> (!felt.type, !felt.type) {
+        -> (!felt.type {function.res_name = "first"},
+            !felt.type {function.res_name = "second"}) {
       function.return %x, %x: !felt.type, !felt.type
     }
 

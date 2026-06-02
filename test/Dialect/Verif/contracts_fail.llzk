@@ -114,24 +114,6 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @outer(%x: index) {
-    function.return
-  }
-
-  poly.template @T { // expected-note {{contract template defined here}}
-    poly.param @N : index
-
-    // expected-error@+1 {{'verif.contract' op contract cannot be within a template that does not contain the target}}
-    verif.contract @TemplateMismatch for @outer (%x: index) {
-      %ok = arith.constant true
-      verif.ensure_compute %ok
-    }
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
   function.def @check(%x: index) {
     function.return
   }
@@ -257,5 +239,25 @@ module attributes {llzk.lang} {
   function.def @illegal_include() {
     // expected-error@+1 {{'verif.include' op must have an ancestor of type 'verif.contract'}}
     verif.include @Base() : () -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    // expected-error@+1 {{'poly.read_const' op only valid within a 'poly.template' ancestor or 'verif.contract' that targets an operation with a 'poly.template' ancestor}}
+    %1 = poly.read_const @DNE : i1
+    verif.ensure_compute %1
   }
 }

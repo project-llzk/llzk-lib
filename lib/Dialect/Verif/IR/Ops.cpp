@@ -157,15 +157,20 @@ void ContractOp::build(
     ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
     llvm::StringRef target
 ) {
+  build(odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target));
+}
+
+void ContractOp::build(
+    ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
+    ::mlir::SymbolRefAttr target
+) {
   // Any errors here in the construction from the target information are not
   // reported here, but will instead be reported when the verify function fails
   // to verify this op.
   SymbolTableCollection tables;
-  MLIRContext *ctx = odsBuilder.getContext();
-  SymbolRefAttr targetAttr = SymbolRefAttr::get(ctx, target);
   // Find the target of the contract
   FailureOr<SymbolLookupResultUntyped> targetRes =
-      lookupTopLevelSymbol(tables, targetAttr, odsBuilder.getBlock()->getParentOp());
+      lookupTopLevelSymbol(tables, target, odsBuilder.getBlock()->getParentOp());
   if (failed(targetRes)) {
     return;
   }
@@ -178,10 +183,7 @@ void ContractOp::build(
     return;
   }
   TargetTypeInfo &info = *infoRes;
-  build(
-      odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target),
-      info.funcType, info.argAttrs
-  );
+  build(odsBuilder, odsState, name, target, info.funcType, info.argAttrs);
 }
 
 bool ContractOp::hasArgPublicAttr(unsigned index) {
@@ -271,23 +273,6 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         )
         .attachNote(targetOp->getLoc())
         .append("target defined here");
-  }
-
-  // Also confirm that the types are in the same template op if they are.
-  TemplateOp contractTmpl = getParentOfType<TemplateOp>(*this);
-  TemplateOp targetTmpl = targetOp->getParentOfType<TemplateOp>();
-  if (contractTmpl != targetTmpl) {
-    if (targetTmpl) {
-      return emitOpError()
-          .append("contract must reside within the template containing the target")
-          .attachNote(targetTmpl.getLoc())
-          .append("target template defined here");
-    } else if (contractTmpl) {
-      return emitOpError()
-          .append("contract cannot be within a template that does not contain the target")
-          .attachNote(contractTmpl.getLoc())
-          .append("contract template defined here");
-    }
   }
 
   return success();
@@ -431,7 +416,7 @@ LogicalResult ContractOp::verify() {
   OwningEmitErrorFn emitErrorFunc = getEmitOpErrFn(this);
 
   if ((*this)->hasAttr(ARG_NAME_ATTR_NAME)) {
-    return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
+    return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' is only valid on function arguments";
   }
 
   if (ArrayAttr argAttrs = getAllArgAttrs()) {
@@ -447,15 +432,15 @@ LogicalResult ContractOp::verify() {
       }
       auto argName = llvm::dyn_cast<StringAttr>(argNameAttr);
       if (!argName) {
-        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+        return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must be a string attribute";
       }
       if (!llvm::isa<NoneType>(argName.getType())) {
-        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+        return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must not have an explicit type";
       }
       if (argName.getValue().empty()) {
-        return emitOpError() << "'" << ARG_NAME_ATTR_NAME << "' on argument " << i
+        return emitOpError() << '\'' << ARG_NAME_ATTR_NAME << "' on argument " << i
                              << " must not be empty";
       }
       if (!seenNames.insert(argName).second) {
@@ -666,7 +651,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
   }
 
   LogicalResult verifyTemplateParams() override {
-    auto tgtOp = tgt.getOperation();
+    Operation *tgtOp = tgt.getOperation();
     if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
       // When the target function is a free function within a TemplateOp, the IncludeOp may have
       // template parameter instantiations that must be checked against the template parameters.

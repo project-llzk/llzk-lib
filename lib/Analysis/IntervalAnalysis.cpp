@@ -9,14 +9,18 @@
 
 #include "llzk/Analysis/IntervalAnalysis.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
+#include "llzk/Util/SymbolHelper.h"
 
+#include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 
+#include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <functional>
@@ -80,6 +84,133 @@ bool isInMaybeSkippedScfRegion(Operation *op) {
 std::optional<UnreducedInterval> getBooleanUnreducedInterval(const Interval &interval) {
   return interval.isBoolean() ? std::optional<UnreducedInterval>(interval.firstUnreduced())
                               : std::nullopt;
+}
+
+FailureOr<std::vector<SourceRef>>
+translateRef(const SourceRef &ref, const SourceRefRemappings &translations) {
+  std::vector<SourceRef> refs;
+  for (const auto &[prefix, vals] : translations) {
+    if (!ref.isValidPrefix(prefix)) {
+      continue;
+    }
+
+    if (vals.isArray()) {
+      auto suffix = ref.getSuffix(prefix);
+      ensure(succeeded(suffix), "prefix checked before SourceRef suffix extraction");
+
+      std::vector<SourceRefIndex> arraySuffix, remainingSuffix;
+      bool suffixIsPastArray = false;
+      for (const SourceRefIndex &idx : *suffix) {
+        if (!suffixIsPastArray && arraySuffix.size() < vals.getNumArrayDims() &&
+            (idx.isIndex() || idx.isIndexRange())) {
+          arraySuffix.push_back(idx);
+          continue;
+        }
+        suffixIsPastArray = true;
+        remainingSuffix.push_back(idx);
+      }
+
+      auto resolvedValsRes = vals.extract(arraySuffix);
+      ensure(succeeded(resolvedValsRes), "could not resolve translated SourceRef array child");
+      SourceRefSet folded = resolvedValsRes->first.foldToScalar();
+      if (remainingSuffix.empty()) {
+        refs.insert(refs.end(), folded.begin(), folded.end());
+        continue;
+      }
+
+      for (const SourceRef &baseRef : folded) {
+        auto translatedRef = mlir::FailureOr<SourceRef>(baseRef);
+        for (const SourceRefIndex &idx : remainingSuffix) {
+          if (failed(translatedRef)) {
+            break;
+          }
+          translatedRef = translatedRef->createChild(idx);
+        }
+        if (succeeded(translatedRef)) {
+          refs.push_back(*translatedRef);
+        }
+      }
+    } else {
+      for (const SourceRef &replacement : vals.getScalarValue()) {
+        auto translated = ref.translate(prefix, replacement);
+        if (succeeded(translated)) {
+          refs.push_back(*translated);
+        }
+      }
+    }
+  }
+
+  if (refs.empty()) {
+    return failure();
+  }
+  return refs;
+}
+
+bool isDirectSourceRefValue(Value value) {
+  if (llvm::isa<BlockArgument>(value)) {
+    return true;
+  }
+
+  Operation *definingOp = value.getDefiningOp();
+  return llvm::isa_and_present<MemberReadOp, ReadArrayOp, polymorphic::ConstReadOp>(definingOp);
+}
+
+std::optional<SourceRefLatticeValue>
+getIdentitySourceRefState(DataFlowSolver &solver, Value value) {
+  if (isDirectSourceRefValue(value)) {
+    SourceRefLatticeValue val = SourceRefAnalysis::getValueState(solver, value);
+    if (val.isScalar()) {
+      return val;
+    }
+    return std::nullopt;
+  }
+
+  auto createArray = llvm::dyn_cast_if_present<CreateArrayOp>(value.getDefiningOp());
+  if (!createArray) {
+    return std::nullopt;
+  }
+
+  SourceRefLatticeValue arrayVal(createArray.getType().getShape());
+  for (auto [idx, element] : llvm::enumerate(createArray.getElements())) {
+    std::optional<SourceRefLatticeValue> elementVal = getIdentitySourceRefState(solver, element);
+    if (!elementVal.has_value()) {
+      return std::nullopt;
+    }
+    (void)arrayVal.getElemFlatIdx(idx).setValue(*elementVal);
+  }
+  return arrayVal;
+}
+
+llvm::EquivalenceClasses<SourceRef>
+collectDirectEqualityRefs(DataFlowSolver &solver, FuncDefOp fn) {
+  llvm::EquivalenceClasses<SourceRef> eqRefs;
+  fn.walk([&](EmitEqualityOp eqOp) {
+    Operation *op = eqOp.getOperation();
+    if (!dataflow::isOperationLive(solver, op)) {
+      return;
+    }
+
+    Value lhs = eqOp.getLhs();
+    Value rhs = eqOp.getRhs();
+    if (!isDirectSourceRefValue(lhs) || !isDirectSourceRefValue(rhs)) {
+      return;
+    }
+
+    SourceRefLatticeValue lhsState = SourceRefAnalysis::getValueState(solver, lhs);
+    SourceRefLatticeValue rhsState = SourceRefAnalysis::getValueState(solver, rhs);
+    if (!lhsState.isScalar() || !rhsState.isScalar() || !lhsState.isSingleValue() ||
+        !rhsState.isSingleValue()) {
+      return;
+    }
+
+    const SourceRef &lhsRef = lhsState.getSingleValue();
+    const SourceRef &rhsRef = rhsState.getSingleValue();
+    if (lhsRef.isConstant() || rhsRef.isConstant()) {
+      return;
+    }
+    eqRefs.unionSets(lhsRef, rhsRef);
+  });
+  return eqRefs;
 }
 
 } // namespace
@@ -1583,11 +1714,12 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
 /* StructIntervals */
 
 LogicalResult StructIntervals::computeIntervals(
-    mlir::DataFlowSolver &solver, const IntervalAnalysisContext &ctx
+    mlir::DataFlowSolver &solver, mlir::AnalysisManager &am, const IntervalAnalysisContext &ctx
 ) {
+  SymbolTableCollection tables;
 
   auto computeIntervalsImpl =
-      [&solver, &ctx, this](
+      [&solver, &am, &ctx, &tables, this](
           FuncDefOp fn, llvm::MapVector<SourceRef, Interval> &memberRanges,
           llvm::MapVector<SourceRef, UnreducedInterval> &memberUnreducedRanges,
           llvm::SetVector<ExpressionValue> & /*solverConstraints*/
@@ -1610,6 +1742,36 @@ LogicalResult StructIntervals::computeIntervals(
       }
       searchSet.insert(ref);
     }
+    SourceRefSet functionRefs = searchSet;
+
+    auto mergeInterval = [&memberRanges, &memberUnreducedRanges](
+                             const SourceRef &ref, const Interval &interval,
+                             std::optional<UnreducedInterval> unreducedInterval = std::nullopt
+                         ) {
+      auto *existing = memberRanges.find(ref);
+      if (existing != memberRanges.end()) {
+        Interval mergedInterval = existing->second.intersect(interval);
+        bool intervalChanged = mergedInterval != existing->second;
+        existing->second = mergedInterval;
+
+        if (unreducedInterval.has_value()) {
+          auto *existingUnreduced = memberUnreducedRanges.find(ref);
+          if (existingUnreduced != memberUnreducedRanges.end()) {
+            existingUnreduced->second = existingUnreduced->second.intersect(*unreducedInterval);
+          } else {
+            memberUnreducedRanges.insert({ref, *unreducedInterval});
+          }
+        } else if (intervalChanged) {
+          memberUnreducedRanges.erase(ref);
+        }
+        return;
+      }
+
+      memberRanges[ref] = interval;
+      if (unreducedInterval.has_value()) {
+        memberUnreducedRanges.insert({ref, *unreducedInterval});
+      }
+    };
 
     // Iterate over arguments
     for (BlockArgument arg : fn.getArguments()) {
@@ -1667,6 +1829,165 @@ LogicalResult StructIntervals::computeIntervals(
         }
         assert(memberRanges[ref].getField() == ctx.getField() && "bad interval defaults");
       }
+    }
+
+    // Child constrain calls refine parent-visible storage, but only after the callee
+    // summary is translated through the call operands. If translation cannot prove
+    // which parent ref owns a child interval, the local overapproximation remains.
+    if (fn.isStructConstrain()) {
+      auto mergeChildConstrainIntervals = [&](CallOp fnCall) {
+        if (!dataflow::isOperationLive(solver, fnCall.getOperation())) {
+          return;
+        }
+
+        auto res = resolveCallableSilently<FuncDefOp>(tables, fnCall);
+        if (failed(res)) {
+          return;
+        }
+
+        FuncDefOp calledFn = res->get();
+        if (!calledFn.isStructConstrain()) {
+          return;
+        }
+
+        auto calledStruct = calledFn->getParentOfType<StructDefOp>();
+        if (calledStruct == structDef) {
+          return;
+        }
+
+        auto &childAnalysis = am.getChildAnalysis<StructIntervalAnalysis>(calledStruct);
+        if (childAnalysis.inProgress(ctx)) {
+          return;
+        }
+        if (!childAnalysis.constructed(ctx)) {
+          ensure(
+              succeeded(childAnalysis.runAnalysis(solver, am, ctx)),
+              "could not construct interval analysis for child struct"
+          );
+        }
+
+        // Translate callee argument refs into parent refs and capture scalar call-site intervals
+        // that can refine direct equality groups inside the child constrain function.
+        SourceRefRemappings identityTranslations;
+        llvm::MapVector<SourceRef, Interval> callOperandIntervals;
+        for (unsigned i = 0; i < calledFn.getNumArguments(); i++) {
+          SourceRef prefix(calledFn.getArgument(i));
+          Value operand = fnCall.getOperand(i);
+          std::optional<SourceRefLatticeValue> identityVal =
+              getIdentitySourceRefState(solver, operand);
+          if (identityVal.has_value()) {
+            identityTranslations.push_back({prefix, *identityVal});
+          }
+
+          if (!llvm::isa<ArrayType, StructType>(operand.getType())) {
+            const IntervalAnalysisLattice *lattice =
+                solver.lookupState<IntervalAnalysisLattice>(operand);
+            if (lattice != nullptr) {
+              const ExpressionValue &expr = lattice->getValue().getScalarValue();
+              callOperandIntervals[prefix] = expr.getInterval();
+            }
+          }
+        }
+
+        const StructIntervals &childIntervals = childAnalysis.getResult(ctx);
+        const auto &constrainIntervals = childIntervals.getConstrainIntervals();
+        const auto &constrainUnreducedIntervals = childIntervals.getConstrainUnreducedIntervals();
+        for (const auto &[childRef, childInterval] : constrainIntervals) {
+          auto translatedRefs = translateRef(childRef, identityTranslations);
+          if (failed(translatedRefs)) {
+            continue;
+          }
+
+          std::optional<UnreducedInterval> childUnreduced = std::nullopt;
+          if (auto *childUnreducedIt = constrainUnreducedIntervals.find(childRef);
+              childUnreducedIt != constrainUnreducedIntervals.end()) {
+            childUnreduced = childUnreducedIt->second;
+          }
+
+          SourceRefSet uniqueTranslatedRefs;
+          for (const SourceRef &translatedRef : *translatedRefs) {
+            uniqueTranslatedRefs.insert(translatedRef);
+          }
+          if (uniqueTranslatedRefs.size() != 1) {
+            continue;
+          }
+
+          const SourceRef &translatedRef = *uniqueTranslatedRefs.begin();
+          if (functionRefs.contains(translatedRef)) {
+            mergeInterval(translatedRef, childInterval, childUnreduced);
+            searchSet.erase(translatedRef);
+          }
+        }
+
+        // Direct equalities in the child can combine child summaries, call operand intervals, and
+        // existing parent intervals before merging back into each translated parent ref.
+        llvm::EquivalenceClasses<SourceRef> directEqRefs =
+            collectDirectEqualityRefs(solver, calledFn);
+        for (auto leaderIt = directEqRefs.begin(); leaderIt != directEqRefs.end(); ++leaderIt) {
+          if (!leaderIt->isLeader()) {
+            continue;
+          }
+
+          llvm::MapVector<SourceRef, Interval> translatedEqRefs;
+          Interval contextualInterval = Interval::Entire(ctx.getField());
+          bool hasInterval = false;
+          bool ambiguousTranslation = false;
+
+          for (auto memberIt = directEqRefs.member_begin(leaderIt);
+               memberIt != directEqRefs.member_end(); ++memberIt) {
+            Interval memberInterval = Interval::Entire(ctx.getField());
+            if (const auto *childIntervalIt = constrainIntervals.find(*memberIt);
+                childIntervalIt != constrainIntervals.end()) {
+              memberInterval = memberInterval.intersect(childIntervalIt->second);
+            }
+            if (auto *callOperandIt = callOperandIntervals.find(*memberIt);
+                callOperandIt != callOperandIntervals.end()) {
+              memberInterval = memberInterval.intersect(callOperandIt->second);
+              contextualInterval = contextualInterval.intersect(memberInterval);
+              hasInterval = true;
+            }
+
+            auto translatedRefs = translateRef(*memberIt, identityTranslations);
+            if (failed(translatedRefs)) {
+              continue;
+            }
+
+            SourceRefSet uniqueTranslatedRefs;
+            for (const SourceRef &translatedRef : *translatedRefs) {
+              uniqueTranslatedRefs.insert(translatedRef);
+            }
+            if (uniqueTranslatedRefs.size() != 1) {
+              ambiguousTranslation = true;
+              break;
+            }
+
+            const SourceRef &translatedRef = *uniqueTranslatedRefs.begin();
+            if (!functionRefs.contains(translatedRef)) {
+              continue;
+            }
+
+            if (auto *parentIntervalIt = memberRanges.find(translatedRef);
+                parentIntervalIt != memberRanges.end()) {
+              memberInterval = memberInterval.intersect(parentIntervalIt->second);
+            }
+
+            translatedEqRefs[translatedRef] = memberInterval;
+            contextualInterval = contextualInterval.intersect(memberInterval);
+            hasInterval = true;
+          }
+
+          if (ambiguousTranslation || !hasInterval || translatedEqRefs.empty()) {
+            continue;
+          }
+
+          for (const auto &[translatedRef, _] : translatedEqRefs) {
+            mergeInterval(translatedRef, contextualInterval);
+            searchSet.erase(translatedRef);
+          }
+        }
+      };
+
+      fn.walk(mergeChildConstrainIntervals);
     }
 
     // For all unfound refs, default to the entire range.
@@ -1746,8 +2067,9 @@ void StructIntervals::print(
       os << '\n';
       os.indent(indent) << ref << " in " << interval;
       if (printUnreduced) {
-        if (const auto *it = memberUnreducedRanges.find(ref); it != memberUnreducedRanges.end()) {
-          os << " ( " << it->second << " )";
+        const auto *unreducedIt = memberUnreducedRanges.find(ref);
+        if (unreducedIt != memberUnreducedRanges.end()) {
+          os << " ( " << unreducedIt->second << " )";
         }
       }
     }

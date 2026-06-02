@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
@@ -347,6 +348,22 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
   }
 }
 
+FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {
+  if (auto contract = origin->getParentOfType<verif::ContractOp>()) {
+    FailureOr<SymbolLookupResultUntyped> targetRes =
+        lookupTopLevelSymbol(tables, contract.getTargetAttr(), origin);
+    if (failed(targetRes)) {
+      return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
+    }
+
+    if (TemplateOp targetTemplate = targetRes->get()->getParentOfType<TemplateOp>()) {
+      return targetTemplate;
+    }
+  }
+
+  return getParentOfType<TemplateOp>(origin);
+}
+
 LogicalResult verifyParamOfType(
     SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin
 ) {
@@ -354,10 +371,14 @@ LogicalResult verifyParamOfType(
   // the template that the current Operation is nested within. These are always flat references
   // (i.e., contain no nested references).
   if (param.getNestedReferences().empty()) {
-    if (TemplateOp parent = getParentOfType<TemplateOp>(origin)) {
-      if (parent.hasConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
-        return success();
-      }
+    FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
+    if (failed(parent)) {
+      return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error
+                        // message
+    }
+    if (*parent &&
+        parent->hasConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
+      return success();
     }
   }
   // Otherwise, see if the symbol can be found via lookup from the `origin` Operation.

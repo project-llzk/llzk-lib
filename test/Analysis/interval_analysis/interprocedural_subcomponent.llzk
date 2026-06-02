@@ -1,0 +1,385 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis %s 2>&1 | FileCheck %s --implicit-check-not=error:
+
+module attributes {llzk.lang} {
+  struct.def @Child {
+    struct.member @out : !felt.type
+
+    function.def @compute() -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>) {
+      %out = struct.readm %self[@out] : !struct.type<@Child>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %out, %seven : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute() -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>) {
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      function.call @Child::@constrain(%child) : (!struct.type<@Child>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Child StructIntervals {
+// CHECK-NEXT:     %arg0[@out] in Degenerate(7)
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @Parent StructIntervals {
+// CHECK-NEXT:     %arg0[@child][@out] in Degenerate(7)
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayChild {
+    struct.member @out : !felt.type
+
+    function.def @compute() -> !struct.type<@ArrayChild> {
+      %self = struct.new : !struct.type<@ArrayChild>
+      function.return %self : !struct.type<@ArrayChild>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayChild>) {
+      %out = struct.readm %self[@out] : !struct.type<@ArrayChild>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %out, %seven : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @DynamicArrayParent {
+    struct.member @children : !array.type<2 x !struct.type<@ArrayChild>>
+
+    function.def @compute(%idx: index) -> !struct.type<@DynamicArrayParent> {
+      %self = struct.new : !struct.type<@DynamicArrayParent>
+      function.return %self : !struct.type<@DynamicArrayParent>
+    }
+
+    function.def @constrain(%self: !struct.type<@DynamicArrayParent>, %idx: index) {
+      %children = struct.readm %self[@children] : !struct.type<@DynamicArrayParent>, !array.type<2 x !struct.type<@ArrayChild>>
+      %child = array.read %children[%idx] : !array.type<2 x !struct.type<@ArrayChild>>, !struct.type<@ArrayChild>
+      function.call @ArrayChild::@constrain(%child) : (!struct.type<@ArrayChild>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @ArrayConsumer {
+    function.def @compute(%items: !array.type<2 x !struct.type<@ArrayChild>>) -> !struct.type<@ArrayConsumer> {
+      %self = struct.new : !struct.type<@ArrayConsumer>
+      function.return %self : !struct.type<@ArrayConsumer>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayConsumer>, %items: !array.type<2 x !struct.type<@ArrayChild>>) {
+      %c0 = arith.constant 0 : index
+      %item = array.read %items[%c0] : !array.type<2 x !struct.type<@ArrayChild>>, !struct.type<@ArrayChild>
+      function.call @ArrayChild::@constrain(%item) : (!struct.type<@ArrayChild>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @ArrayValueParent {
+    struct.member @left : !struct.type<@ArrayChild>
+    struct.member @right : !struct.type<@ArrayChild>
+    struct.member @consumer : !struct.type<@ArrayConsumer>
+
+    function.def @compute() -> !struct.type<@ArrayValueParent> {
+      %self = struct.new : !struct.type<@ArrayValueParent>
+      function.return %self : !struct.type<@ArrayValueParent>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayValueParent>) {
+      %left = struct.readm %self[@left] : !struct.type<@ArrayValueParent>, !struct.type<@ArrayChild>
+      %right = struct.readm %self[@right] : !struct.type<@ArrayValueParent>, !struct.type<@ArrayChild>
+      %items = array.new %left, %right : !array.type<2 x !struct.type<@ArrayChild>>
+      %consumer = struct.readm %self[@consumer] : !struct.type<@ArrayValueParent>, !struct.type<@ArrayConsumer>
+      function.call @ArrayConsumer::@constrain(%consumer, %items) : (!struct.type<@ArrayConsumer>, !array.type<2 x !struct.type<@ArrayChild>>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayChild StructIntervals {
+// CHECK-NEXT:     %arg0[@out] in Degenerate(7)
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @DynamicArrayParent StructIntervals {
+// CHECK-NEXT:     %arg0[@children][0][@out] in Entire
+// CHECK-NEXT:     %arg0[@children][1][@out] in Entire
+// CHECK-NEXT:     %arg1 in Entire
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @ArrayConsumer StructIntervals {
+// CHECK-DAG:     %arg1[0][@out] in Degenerate(7)
+// CHECK-DAG:     %arg1[1][@out] in Entire
+// CHECK: }
+
+// CHECK-LABEL: @ArrayValueParent StructIntervals {
+// CHECK-DAG:     %arg0[@left][@out] in Degenerate(7)
+// CHECK-DAG:     %arg0[@right][@out] in Entire
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @accept_child(%child: !struct.type<@SkippedChild>) {
+    function.return
+  }
+
+  struct.def @SkippedChild {
+    struct.member @out : !felt.type
+
+    function.def @compute() -> !struct.type<@SkippedChild> {
+      %self = struct.new : !struct.type<@SkippedChild>
+      function.return %self : !struct.type<@SkippedChild>
+    }
+
+    function.def @constrain(%self: !struct.type<@SkippedChild>) {
+      %out = struct.readm %self[@out] : !struct.type<@SkippedChild>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %out, %seven : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @FreeFunctionParent {
+    struct.member @child : !struct.type<@SkippedChild>
+
+    function.def @compute() -> !struct.type<@FreeFunctionParent> {
+      %self = struct.new : !struct.type<@FreeFunctionParent>
+      function.return %self : !struct.type<@FreeFunctionParent>
+    }
+
+    function.def @constrain(%self: !struct.type<@FreeFunctionParent>) {
+      %child = struct.readm %self[@child] : !struct.type<@FreeFunctionParent>, !struct.type<@SkippedChild>
+      function.call @accept_child(%child) : (!struct.type<@SkippedChild>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SkippedChild StructIntervals {
+// CHECK-NEXT:     %arg0[@out] in Degenerate(7)
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @FreeFunctionParent StructIntervals {
+// CHECK-DAG:     %arg0[@child][@out] in Entire
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CycleA {
+    struct.member @out : !felt.type
+
+    function.def @compute(%other: !struct.type<@CycleB>) -> !struct.type<@CycleA> {
+      %self = struct.new : !struct.type<@CycleA>
+      function.return %self : !struct.type<@CycleA>
+    }
+
+    function.def @constrain(%self: !struct.type<@CycleA>, %other: !struct.type<@CycleB>) {
+      function.call @CycleB::@constrain(%other, %self) : (!struct.type<@CycleB>, !struct.type<@CycleA>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @CycleB {
+    struct.member @out : !felt.type
+
+    function.def @compute(%other: !struct.type<@CycleA>) -> !struct.type<@CycleB> {
+      %self = struct.new : !struct.type<@CycleB>
+      function.return %self : !struct.type<@CycleB>
+    }
+
+    function.def @constrain(%self: !struct.type<@CycleB>, %other: !struct.type<@CycleA>) {
+      function.call @CycleA::@constrain(%other, %self) : (!struct.type<@CycleA>, !struct.type<@CycleB>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CycleA StructIntervals {
+// CHECK-DAG:     %arg0[@out] in Entire
+// CHECK-DAG:     %arg1[@out] in Entire
+// CHECK: }
+
+// CHECK-LABEL: @CycleB StructIntervals {
+// CHECK-DAG:     %arg0[@out] in Entire
+// CHECK-DAG:     %arg1[@out] in Entire
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Child {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute() -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>) {
+      %out = struct.readm %self[@out] : !struct.type<@Child>, !felt.type
+      %seven = felt.const 7
+      %res = bool.cmp le(%out, %seven)
+      %true = arith.constant true
+      constrain.eq %res, %true : i1
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute() -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>) {
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      function.call @Child::@constrain(%child) : (!struct.type<@Child>) -> ()
+
+      %out = struct.readm %child[@out] : !struct.type<@Child>, !felt.type
+      %one = felt.const 1
+      %res = bool.cmp ge(%out, %one)
+      %true = arith.constant true
+      constrain.eq %res, %true : i1
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Child StructIntervals {
+// CHECK-NEXT:     %arg0[@out] in TypeA:[ 0, 7 ]
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @Parent StructIntervals {
+// CHECK-NEXT:     %arg0[@child][@out] in TypeA:[ 1, 7 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Child {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%in : !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>, %in : !felt.type) {
+      %out = struct.readm %self[@out] : !struct.type<@Child>, !felt.type
+      constrain.eq %out, %in : !felt.type
+      %seven = felt.const 7
+      %res = bool.cmp le(%out, %seven)
+      %true = arith.constant true
+      constrain.eq %res, %true : i1
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child_in : !felt.type
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute() -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>) {
+      %in = struct.readm %self[@child_in] : !struct.type<@Parent>, !felt.type
+      %three = felt.const 3
+      %res = bool.cmp ge(%in, %three)
+      %true = arith.constant true
+      constrain.eq %res, %true : i1
+
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      function.call @Child::@constrain(%child, %in) : (!struct.type<@Child>, !felt.type) -> ()
+
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Child StructIntervals {
+// CHECK-NEXT:     %arg0[@out] in TypeA:[ 0, 7 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 0, 7 ]
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @Parent StructIntervals {
+// CHECK-NEXT:     %arg0[@child_in] in TypeA:[ 3, 7 ]
+// CHECK-NEXT:     %arg0[@child][@out] in TypeA:[ 3, 7 ]
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Child {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%in : !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>, %in : !felt.type) {
+      %out = struct.readm %self[@out] : !struct.type<@Child>, !felt.type
+      constrain.eq %out, %in : !felt.type
+      %seven = felt.const 7
+      %res = bool.cmp le(%out, %seven)
+      %true = arith.constant true
+      constrain.eq %res, %true : i1
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child_in : !felt.type
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute() -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>) {
+      %in = struct.readm %self[@child_in] : !struct.type<@Parent>, !felt.type
+      %three = felt.const 3
+      %res = bool.cmp ge(%in, %three)
+      %true = arith.constant true
+      constrain.eq %res, %true : i1
+
+      %neg = felt.neg %in : !felt.type
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      function.call @Child::@constrain(%child, %neg) : (!struct.type<@Child>, !felt.type) -> ()
+
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Child StructIntervals {
+// CHECK-NEXT:     %arg0[@out] in TypeA:[ 0, 7 ]
+// CHECK-NEXT:     %arg1 in TypeA:[ 0, 7 ]
+// CHECK-NEXT: }
+
+// CHECK-LABEL: @Parent StructIntervals {
+// CHECK-NEXT:     %arg0[@child_in] in TypeC:[ 3, 21888242871839275222246405745257275088696311157297823662689037894645226208582 ]
+// CHECK-NEXT:     %arg0[@child][@out] in TypeA:[ 1, 7 ]
+// CHECK-NEXT: }
