@@ -241,3 +241,23 @@ module attributes {llzk.lang} {
     verif.include @Base() : () -> ()
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    // expected-error@+1 {{'poly.read_const' op only valid within a 'poly.template' ancestor or 'verif.contract' that targets an operation with a 'poly.template' ancestor}}
+    %1 = poly.read_const @DNE : i1
+    verif.ensure_compute %1
+  }
+}

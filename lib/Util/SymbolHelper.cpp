@@ -350,15 +350,10 @@ getMainInstanceDef(SymbolTableCollection &symbolTable, Operation *lookupFrom) {
 
 FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, Operation *origin) {
   if (auto contract = origin->getParentOfType<verif::ContractOp>()) {
-    FailureOr<ModuleOp> rootRes = getRootModule(origin);
-    if (failed(rootRes)) {
-      return origin->emitError("could not lookup root module");
-    }
-
     FailureOr<SymbolLookupResultUntyped> targetRes =
-        lookupSymbolIn(tables, contract.getTargetAttr(), rootRes->getOperation(), origin);
+        lookupTopLevelSymbol(tables, contract.getTargetAttr(), origin);
     if (failed(targetRes)) {
-      return failure(); // lookupSymbolIn() already emits a sufficient error message
+      return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
     }
 
     if (TemplateOp targetTemplate = targetRes->get()->getParentOfType<TemplateOp>()) {
@@ -378,7 +373,8 @@ LogicalResult verifyParamOfType(
   if (param.getNestedReferences().empty()) {
     FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
     if (failed(parent)) {
-      return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error message
+      return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error
+                        // message
     }
     if (*parent &&
         parent->hasConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
