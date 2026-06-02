@@ -165,7 +165,6 @@ class EmptyTemplateRemovalPass
     patterns.add<DeleteNoDefTemplatePattern>(tyConv, ctx);
     patterns.add<ReplaceNoParamTemplatePattern>(tyConv, ctx);
     if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
-      llvm::errs() << "HELLO FROM HERE\n";
       signalPassFailure();
     }
   }

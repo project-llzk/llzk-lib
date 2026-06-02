@@ -96,7 +96,7 @@ form used by the witgen tests, namely JSON integers or decimal strings.
 When `--check-output` is provided, `llzk-witgen` reads the expected JSON from
 that file, compares it against the generated result, and exits with status `0`
 only if they match. On mismatch, it exits nonzero and prints differing field
-paths to stderr. In check mode, stdout is not used for an extra success banner.
+paths to stderr.
 
 - `--output-scope=public` is the default.
   - The output JSON contains only the public outputs of the main component.
