@@ -378,7 +378,7 @@ LogicalResult verifyParamOfType(
   if (param.getNestedReferences().empty()) {
     FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
     if (failed(parent)) {
-      return failure();
+      return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error message
     }
     if (*parent &&
         parent->hasConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
