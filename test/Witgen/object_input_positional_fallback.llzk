@@ -1,8 +1,6 @@
 // RUN: split-file %s %t
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s --check-prefix=PUBLIC
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s --check-prefix=PUBLIC
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness 2>&1 | FileCheck %s --check-prefix=FULL
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness 2>&1 | FileCheck %s --check-prefix=FULL
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
 
 //--- test.llzk
 
@@ -26,24 +24,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
-// PUBLIC: warning: no function.arg_name attributes found on Main.compute arguments; binding JSON object inputs by field order
-// PUBLIC: {
-// PUBLIC-NEXT:   "sum": "37"
-// PUBLIC-NEXT: }
-
-// FULL: warning: no function.arg_name attributes found on Main.compute arguments; binding JSON object inputs by field order
-// FULL: {
-// FULL-NEXT:   "inputs": {
-// FULL-NEXT:     "arg0": [
-// FULL-NEXT:       "10",
-// FULL-NEXT:       "20"
-// FULL-NEXT:     ],
-// FULL-NEXT:     "arg1": "7"
-// FULL-NEXT:   },
-// FULL-NEXT:   "signals": {
-// FULL-NEXT:     "sum": "37"
-// FULL-NEXT:   }
-// FULL-NEXT: }
+// CHECK: llzk-witgen error: JSON object inputs require function.arg_name attributes on every Main.compute argument; found none.
+// CHECK-SAME: Encountered object key order
+// CHECK-SAME: Use a positional JSON array instead.
 
 //--- input.json
 {"in": [10, 20], "foo": 7}

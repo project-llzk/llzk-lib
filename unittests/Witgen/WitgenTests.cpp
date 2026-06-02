@@ -250,6 +250,101 @@ TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
   EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
 }
 
+TEST_F(WitgenTests, JSONDiffEqualObjectsProduceNoDiffs) {
+  auto expected = llvm::json::parse(R"({"sum":"9","arr":["4","5"]})");
+  auto actual = llvm::json::parse(R"({"sum":"9","arr":["4","5"]})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  EXPECT_TRUE(diff->empty());
+  EXPECT_FALSE(diff->truncated);
+}
+
+TEST_F(WitgenTests, JSONDiffReportsMissingAndUnexpectedKeys) {
+  auto expected = llvm::json::parse(R"({"sum":"9"})");
+  auto actual = llvm::json::parse(R"({"sum":"9","secret":"4"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  ASSERT_EQ(diff->entries.size(), 1u);
+  EXPECT_EQ(diff->entries[0].path, "secret");
+  EXPECT_NE(diff->entries[0].message.find("unexpected field"), std::string::npos);
+}
+
+TEST_F(WitgenTests, JSONDiffReportsNestedObjectPath) {
+  auto expected = llvm::json::parse(R"({"signals":{"secret":"4"}})");
+  auto actual = llvm::json::parse(R"({"signals":{"secret":"5"}})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  ASSERT_EQ(diff->entries.size(), 1u);
+  EXPECT_EQ(diff->entries[0].path, "signals.secret");
+}
+
+TEST_F(WitgenTests, JSONDiffReportsArrayIndexPath) {
+  auto expected = llvm::json::parse(R"({"arr":["4","6"]})");
+  auto actual = llvm::json::parse(R"({"arr":["4","5"]})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  ASSERT_EQ(diff->entries.size(), 1u);
+  EXPECT_EQ(diff->entries[0].path, "arr[1]");
+}
+
+TEST_F(WitgenTests, JSONDiffNormalizesNegativeStringModuloField) {
+  auto expected = llvm::json::parse(R"({"sum":"-1"})");
+  auto actual = llvm::json::parse(R"({"sum":"2013265920"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  EXPECT_TRUE(diff->empty());
+}
+
+TEST_F(WitgenTests, JSONDiffNormalizesNegativeIntegerModuloField) {
+  auto expected = llvm::json::parse(R"({"sum":-1})");
+  auto actual = llvm::json::parse(R"({"sum":"2013265920"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  EXPECT_TRUE(diff->empty());
+}
+
+TEST_F(WitgenTests, JSONDiffReportsScalarMismatchValues) {
+  auto expected = llvm::json::parse(R"({"sum":"8"})");
+  auto actual = llvm::json::parse(R"({"sum":"9"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"));
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  ASSERT_EQ(diff->entries.size(), 1u);
+  EXPECT_NE(diff->entries[0].message.find(R"(expected "8", actual "9")"), std::string::npos);
+}
+
+TEST_F(WitgenTests, JSONDiffTruncatesLongReports) {
+  auto expected = llvm::json::parse(R"({"a":"1","b":"2","c":"3"})");
+  auto actual = llvm::json::parse(R"({"a":"0","b":"0","c":"0"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  auto diff = witgen::compareJSONValues(*expected, *actual, Field::getField("babybear"), 2);
+  ASSERT_TRUE(static_cast<bool>(diff)) << llvm::toString(diff.takeError());
+  EXPECT_EQ(diff->entries.size(), 2u);
+  EXPECT_TRUE(diff->truncated);
+}
+
 TEST_P(WitgenFieldTests, NestedAggregateFailModeMaterializesMonostate) {
   auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {2});

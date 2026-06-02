@@ -16,11 +16,15 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DynamicAPInt.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Error.h>
+#include <llvm/Support/JSON.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <cstddef>
 #include <random>
+#include <string>
 #include <utility>
 
 namespace llzk::witgen {
@@ -57,5 +61,24 @@ getStaticShapeElementCount(llvm::ArrayRef<int64_t> shape, llvm::StringRef contex
 
 /// Return the static element count for one shaped type.
 llvm::Expected<size_t> getStaticElementCount(mlir::ShapedType type, llvm::StringRef context);
+
+struct JSONDiffEntry {
+  std::string path;
+  std::string message;
+};
+
+struct JSONDiffResult {
+  llvm::SmallVector<JSONDiffEntry> entries;
+  bool truncated = false;
+
+  bool empty() const { return entries.empty(); }
+};
+
+llvm::Expected<JSONDiffResult> compareJSONValues(
+    const llvm::json::Value &expected, const llvm::json::Value &actual, const Field &field,
+    size_t maxDifferences = 20
+);
+
+void printJSONDiffReport(llvm::raw_ostream &os, const JSONDiffResult &diff);
 
 } // namespace llzk::witgen

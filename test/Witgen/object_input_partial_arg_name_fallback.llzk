@@ -1,6 +1,6 @@
 // RUN: split-file %s %t
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s
-// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json 2>&1 | FileCheck %s
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine 2>&1 | FileCheck %s
 
 //--- test.llzk
 
@@ -22,10 +22,9 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 
-// CHECK: warning: partial function.arg_name coverage on Main.compute arguments; ignoring JSON object keys and binding inputs by field order
-// CHECK: {
-// CHECK-NEXT:   "sum": "9"
-// CHECK-NEXT: }
+// CHECK: llzk-witgen error: JSON object inputs require function.arg_name attributes on every Main.compute argument; found only 1 of 2.
+// CHECK-SAME: Encountered object key order
+// CHECK-SAME: Use a positional JSON array instead.
 
 //--- input.json
 {"foo": 4, "lhs": 5}

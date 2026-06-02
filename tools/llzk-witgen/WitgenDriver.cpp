@@ -26,6 +26,7 @@
 #include <mlir/Pass/PassManager.h>
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
@@ -58,15 +59,41 @@ Interpreter::Interpreter(
     : moduleOp(mod), tables(symbolTables), field(moduleField), uninitializedBehavior(behavior),
       rng(r) {}
 
-static void warnPositionalObjectFallback(unsigned namedCount) {
-  llvm::errs() << "warning: ";
-  if (namedCount == 0) {
-    llvm::errs() << "no function.arg_name attributes found on Main.compute arguments; "
-                    "binding JSON object inputs by field order\n";
-    return;
+static std::string renderType(Type type) {
+  std::string rendered;
+  llvm::raw_string_ostream os(rendered);
+  os << type;
+  return rendered;
+}
+
+static std::string renderKeyOrder(const llvm::json::Object &jsonObject) {
+  std::string rendered;
+  llvm::raw_string_ostream os(rendered);
+  os << '[';
+  bool first = true;
+  for (const auto &entry : jsonObject) {
+    if (!first) {
+      os << ", ";
+    }
+    first = false;
+    os << entry.first;
   }
-  llvm::errs() << "partial function.arg_name coverage on Main.compute arguments; "
-                  "ignoring JSON object keys and binding inputs by field order\n";
+  os << ']';
+  return rendered;
+}
+
+static std::string renderComputeSignature(function::FuncDefOp computeFunc) {
+  std::string rendered;
+  llvm::raw_string_ostream os(rendered);
+  os << '[';
+  for (unsigned i = 0; i < computeFunc.getNumArguments(); ++i) {
+    if (i != 0) {
+      os << ", ";
+    }
+    os << "arg" << i << ": " << computeFunc.getArgumentTypes()[i];
+  }
+  os << ']';
+  return rendered;
 }
 
 /// Parse main-function JSON arguments in either object or positional form.
@@ -99,30 +126,39 @@ llvm::Expected<llvm::SmallVector<WitnessVal>> parseMainArgumentsFromJSON(
             value, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
         );
         if (!parsed) {
-          return parsed.takeError();
+          return makeError(
+              llvm::formatv(
+                  "failed to parse JSON input field '{0}' for Main.compute argument {1} "
+                  "(expected type {2}): {3}",
+                  argName, i, renderType(computeFunc.getArgumentTypes()[i]),
+                  llvm::toString(parsed.takeError())
+              )
+          );
         }
         args.push_back(*parsed);
       }
       return args;
     }
 
-    if (jsonObject->size() != computeFunc.getNumArguments()) {
-      return makeError("JSON object input length does not match main compute arity");
-    }
-    warnPositionalObjectFallback(namedCount);
-
-    unsigned i = 0;
-    for (const auto &entry : *jsonObject) {
-      auto parsed = parseJSONValue(
-          &entry.second, computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
+    if (namedCount == 0) {
+      return makeError(
+          llvm::formatv(
+              "JSON object inputs require function.arg_name attributes on every Main.compute "
+              "argument; found none. Encountered object key order {0}, while Main.compute expects "
+              "{1}. Use a positional JSON array instead.",
+              renderKeyOrder(*jsonObject), renderComputeSignature(computeFunc)
+          )
       );
-      if (!parsed) {
-        return parsed.takeError();
-      }
-      args.push_back(*parsed);
-      ++i;
     }
-    return args;
+    return makeError(
+        llvm::formatv(
+            "JSON object inputs require function.arg_name attributes on every Main.compute "
+            "argument; found only {0} of {1}. Encountered object key order {2}, while Main.compute "
+            "expects {3}. Use a positional JSON array instead.",
+            namedCount, computeFunc.getNumArguments(), renderKeyOrder(*jsonObject),
+            renderComputeSignature(computeFunc)
+        )
+    );
   }
 
   if (jsonArray->size() != computeFunc.getNumArguments()) {
@@ -133,7 +169,14 @@ llvm::Expected<llvm::SmallVector<WitnessVal>> parseMainArgumentsFromJSON(
         &(*jsonArray)[i], computeFunc.getArgumentTypes()[i], field, computeFunc.getOperation()
     );
     if (!parsed) {
-      return parsed.takeError();
+      return makeError(
+          llvm::formatv(
+              "failed to parse JSON positional input {0} for Main.compute argument {1} "
+              "(expected type {2}): {3}",
+              i, i, renderType(computeFunc.getArgumentTypes()[i]),
+              llvm::toString(parsed.takeError())
+          )
+      );
     }
     args.push_back(*parsed);
   }

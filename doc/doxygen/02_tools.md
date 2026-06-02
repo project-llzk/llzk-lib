@@ -60,6 +60,7 @@ llzk-witgen <input.llzk> --inputs <input.json>
 
 ```
 --inputs <file>              JSON file containing main compute inputs
+--check-output <file>        Compare generated JSON against expected JSON from file
 -I <directory>               Directory of include files
 --backend=<name>             Execution backend: interpreter or execution-engine
 --output-scope=<name>        Output scope: public or full-witness
@@ -78,13 +79,9 @@ The `--inputs` file must contain a top-level JSON object or JSON array.
   `function.arg_name`.
 - A JSON array is interpreted positionally in declared argument order.
 - If the top-level input is a JSON object and any main `compute()` argument is
-  missing `function.arg_name`, `llzk-witgen` ignores the object keys and binds
-  inputs by JSON object field order instead.
-  - If no main arguments have `function.arg_name`, `llzk-witgen` emits a
-    warning that object inputs are being bound by field order.
-  - If only some main arguments have `function.arg_name`, `llzk-witgen` emits a
-    warning that labeling is incomplete, object keys are being ignored, and
-    inputs are being bound by field order.
+  missing `function.arg_name`, `llzk-witgen` rejects the input and reports the
+  encountered object key order plus the expected main argument signature.
+  Use a top-level JSON array instead for positional binding.
 
 At the main boundary, `llzk-witgen` only supports `felt` and
 `array<... x felt>` inputs, due to the restrictions posed on `llzk.main` components.
@@ -95,6 +92,11 @@ form used by the witgen tests, namely JSON integers or decimal strings.
 
 `llzk-witgen` writes one JSON object to stdout. The exact shape depends on
 `--output-scope`.
+
+When `--check-output` is provided, `llzk-witgen` reads the expected JSON from
+that file, compares it against the generated result, and exits with status `0`
+only if they match. On mismatch, it exits nonzero and prints differing field
+paths to stderr. In check mode, stdout is not used for an extra success banner.
 
 - `--output-scope=public` is the default.
   - The output JSON contains only the public outputs of the main component.
@@ -112,6 +114,11 @@ form used by the witgen tests, namely JSON integers or decimal strings.
     still appear when needed to reach nested signals.
   - Felt arrays remain JSON arrays and field element leaves remain decimal
     strings.
+
+For `--check-output`, scalar field-element leaves are compared modulo the
+module prime. This means expected JSON may use negative decimal strings or
+negative JSON integers, and they will compare equal to the canonical reduced
+field values emitted by `llzk-witgen`.
 
 #### Backends
 

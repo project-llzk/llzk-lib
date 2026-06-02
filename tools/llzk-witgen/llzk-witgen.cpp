@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "WitgenDriver.h"
+#include "WitgenUtils.h"
 #include "tools/config.h"
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
@@ -52,6 +53,9 @@ using namespace mlir;
 static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional, llvm::cl::Required);
 static llvm::cl::opt<std::string>
     InputsFilename("inputs", llvm::cl::Required, llvm::cl::desc("JSON input file"));
+static llvm::cl::opt<std::string> CheckOutputFilename(
+    "check-output", llvm::cl::desc("Compare generated JSON against expected JSON from file")
+);
 static llvm::cl::list<std::string> IncludeDirs(
     "I", llvm::cl::desc("Directory of include files"), llvm::cl::value_desc("directory"),
     llvm::cl::Prefix
@@ -166,6 +170,44 @@ int main(int argc, char **argv) {
   if (!result) {
     llvm::errs() << "llzk-witgen error: " << llvm::toString(result.takeError()) << '\n';
     return EXIT_FAILURE;
+  }
+
+  if (CheckOutputFilename.getNumOccurrences() > 0) {
+    auto expectedBuffer = llvm::MemoryBuffer::getFileOrSTDIN(CheckOutputFilename);
+    if (!expectedBuffer) {
+      llvm::errs() << expectedBuffer.getError().message() << '\n';
+      return EXIT_FAILURE;
+    }
+
+    auto expectedJSON = llvm::json::parse(expectedBuffer.get()->getBuffer());
+    if (!expectedJSON) {
+      llvm::errs() << "failed to parse expected JSON output: "
+                   << llvm::toString(expectedJSON.takeError()) << '\n';
+      return EXIT_FAILURE;
+    }
+
+    llzk::FieldSet fields;
+    if (failed(llzk::collectFields(moduleOp->getOperation(), fields))) {
+      llvm::errs() << "llzk-witgen error: failed to collect fields for JSON comparison\n";
+      return EXIT_FAILURE;
+    }
+    if (fields.size() != 1) {
+      llvm::errs(
+      ) << "llzk-witgen error: JSON comparison requires exactly one field in the module\n";
+      return EXIT_FAILURE;
+    }
+
+    const llzk::Field &field = (*fields.begin()).get();
+    auto diff = llzk::witgen::compareJSONValues(*expectedJSON, *result, field);
+    if (!diff) {
+      llvm::errs() << "llzk-witgen error: " << llvm::toString(diff.takeError()) << '\n';
+      return EXIT_FAILURE;
+    }
+    if (!diff->empty()) {
+      llzk::witgen::printJSONDiffReport(llvm::errs(), *diff);
+      return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
   }
 
   llvm::outs() << llvm::formatv("{0:2}", *result) << '\n';
