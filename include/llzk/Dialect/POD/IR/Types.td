@@ -24,7 +24,10 @@ class PODDialectType<string name, string typeMnemonic, list<Trait> traits = []>
   let mnemonic = typeMnemonic;
 }
 
-def LLZK_PODType : PODDialectType<"Pod", "type"> {
+def LLZK_PODType
+    : PODDialectType<
+          "Pod",
+          "type", [DeclareTypeInterfaceMethods<DestructurableTypeInterface>]> {
   let summary = "plain-old-data struct";
   let description = [{
     Contains a list of `RecordAttr` defining structure of a pod.
@@ -71,6 +74,9 @@ def LLZK_PODType : PODDialectType<"Pod", "type"> {
     /// If you plan to make several queries to this type, it's better to generate the map
     /// once via `getRecordMap()` and query it instead of repeatedly calling `getRecord()`.
     ::llvm::StringMap<::mlir::Type> getRecordMap() const;
+
+    /// Creates a PodType containing only the requested record.
+    ::mlir::Type getSingleRecordType(::mlir::StringAttr name) const;
   }];
 }
 
