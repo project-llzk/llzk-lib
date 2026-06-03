@@ -7,5 +7,6 @@ var dir_8c19de2196b4b9037b2ef87455b6f2bd =
     [ "LLZKLoweringUtils.h", "LLZKLoweringUtils_8h.html", "LLZKLoweringUtils_8h" ],
     [ "LLZKTransformationPasses.h", "LLZKTransformationPasses_8h.html", "LLZKTransformationPasses_8h" ],
     [ "LLZKTransformationPasses.td", "LLZKTransformationPasses_8td.html", null ],
-    [ "Parsers.h", "Parsers_8h.html", "Parsers_8h" ]
+    [ "Parsers.h", "Parsers_8h.html", "Parsers_8h" ],
+    [ "SpecializedMemoryPasses.h", "SpecializedMemoryPasses_8h.html", "SpecializedMemoryPasses_8h" ]
 ];

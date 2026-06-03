@@ -770,6 +770,8 @@ var annotated_dup =
       [ "SourceRefLattice", "classllzk_1_1SourceRefLattice.html", "classllzk_1_1SourceRefLattice" ],
       [ "SourceRefLatticeValue", "classllzk_1_1SourceRefLatticeValue.html", "classllzk_1_1SourceRefLatticeValue" ],
       [ "SourceRefSet", "classllzk_1_1SourceRefSet.html", "classllzk_1_1SourceRefSet" ],
+      [ "SpecializedMem2Reg", "structllzk_1_1SpecializedMem2Reg.html", "structllzk_1_1SpecializedMem2Reg" ],
+      [ "SpecializedSROA", "structllzk_1_1SpecializedSROA.html", "structllzk_1_1SpecializedSROA" ],
       [ "StructAnalysis", "classllzk_1_1StructAnalysis.html", "classllzk_1_1StructAnalysis" ],
       [ "StructIntervalAnalysis", "classllzk_1_1StructIntervalAnalysis.html", "classllzk_1_1StructIntervalAnalysis" ],
       [ "StructIntervals", "classllzk_1_1StructIntervals.html", "classllzk_1_1StructIntervals" ],

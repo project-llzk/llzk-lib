@@ -117,6 +117,8 @@ var NAVTREEINDEX11 =
 "SparseAnalysis_8cpp_source.html":[13,0,3,0,15],
 "SparseAnalysis_8h.html":[13,0,2,0,0,17],
 "SparseAnalysis_8h_source.html":[13,0,2,0,0,17],
+"SpecializedMemoryPasses_8h.html":[13,0,2,0,4,8],
+"SpecializedMemoryPasses_8h_source.html":[13,0,2,0,4,8],
 "StreamHelper_8cpp.html":[13,0,3,5,4],
 "StreamHelper_8cpp_source.html":[13,0,3,5,4],
 "StreamHelper_8h.html":[13,0,2,0,5,11],
@@ -247,7 +249,5 @@ var NAVTREEINDEX11 =
 "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a83e83ec66595a4e4931e340ff62a698d":[13,0,0,0,0,2,14,0,5,48],
 "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a878adb744a9253f46e19b27375d1ffcf":[13,0,0,0,0,2,14,0,5,10],
 "Struct_2IR_2Ops_8capi_8cpp_8inc.html#a89e67993219916a02f2eb0ed93be8660":[13,0,0,0,0,2,14,0,5,12],
-"Struct_2IR_2Ops_8capi_8cpp_8inc.html#a8be006fa8bca315daf3ac601bf187dfb":[13,0,0,0,0,2,14,0,5,13],
-"Struct_2IR_2Ops_8capi_8cpp_8inc.html#a8f7d3fd9559c8edd2e814daa808d7378":[13,0,0,0,0,2,14,0,5,1],
-"Struct_2IR_2Ops_8capi_8cpp_8inc.html#a9d456c1cc83ca08c61c7672e09328074":[13,0,0,0,0,2,14,0,5,33]
+"Struct_2IR_2Ops_8capi_8cpp_8inc.html#a8be006fa8bca315daf3ac601bf187dfb":[13,0,0,0,0,2,14,0,5,13]
 };

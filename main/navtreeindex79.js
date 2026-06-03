@@ -1,5 +1,9 @@
 var NAVTREEINDEX79 =
 {
+"namespacemlir.html":[10,0,3],
+"namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e":[10,0,3,14],
+"namespacemlir__hotfix.html":[10,0,4],
+"namespaces.html":[10,0],
 "namespacetest__templates.html":[10,0,11],
 "overview.html":[1],
 "overview.html#backends":[1,0,3],
@@ -245,9 +249,5 @@ var NAVTREEINDEX79 =
 "structOpImplementationGenerator.html#a54559b2687f8ba2040b896ac0722f284":[12,0,83,12],
 "structOpImplementationGenerator.html#a7411c2e33f5ba3678d855edc003cc9bf":[12,0,83,13],
 "structOpImplementationGenerator.html#a80fd640b34c7f15fc09b8715bcad6ec1":[12,0,83,9],
-"structOpImplementationGenerator.html#a89cd4335b0ca81139e6d4e9c885def59":[12,0,83,3],
-"structOpImplementationGenerator.html#a91eb6c0882b01e151d82a515bbddc228":[12,0,83,8],
-"structOpImplementationGenerator.html#a92fa5731cbb2be85bf73c23fe6c715ad":[12,0,83,0],
-"structOpImplementationGenerator.html#ac1c861972ab5d8b9b30d0c9b28891a6b":[12,0,83,5],
-"structOpImplementationGenerator.html#ac69df75784c30f46db1441c4a77885f3":[12,0,83,10]
+"structOpImplementationGenerator.html#a89cd4335b0ca81139e6d4e9c885def59":[12,0,83,3]
 };

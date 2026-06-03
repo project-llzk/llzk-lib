@@ -1147,6 +1147,8 @@ var hierarchy =
       [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", null ]
     ] ],
     [ "mlir::PassWrapper", null, [
+      [ "llzk::SpecializedMem2Reg< AllocOpTy >", "structllzk_1_1SpecializedMem2Reg.html", null ],
+      [ "llzk::SpecializedSROA< AllocOpTy >", "structllzk_1_1SpecializedSROA.html", null ],
       [ "mlir_hotfix::RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", null ]
     ] ],
     [ "llzk::witgen::PodValue", "structllzk_1_1witgen_1_1PodValue.html", null ],
