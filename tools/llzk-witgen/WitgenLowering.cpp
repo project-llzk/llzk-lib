@@ -1013,6 +1013,27 @@ private:
       builder.create<scf::YieldOp>(loc, results);
       return success();
     }
+    if (auto conditionOp = dyn_cast<scf::ConditionOp>(op)) {
+      auto condition =
+          lookupScalar(conditionOp.getCondition(), valueMap, conditionOp.getOperation());
+      if (failed(condition)) {
+        return failure();
+      }
+      SmallVector<Value> results;
+      for (Value operand : conditionOp.getArgs()) {
+        auto lowered = lookup(operand, valueMap, conditionOp.getOperation());
+        auto leafTypes =
+            getABILeafTypes(operand.getType(), tables, conditionOp.getOperation(), field);
+        if (failed(lowered) || failed(leafTypes) ||
+            failed(appendFlatLeavesToTypes(
+                builder, loc, *lowered, *leafTypes, results, conditionOp.getOperation()
+            ))) {
+          return failure();
+        }
+      }
+      builder.create<scf::ConditionOp>(loc, *condition, results);
+      return success();
+    }
 
     if (auto constantOp = dyn_cast<arith::ConstantOp>(op)) {
       Operation *clone = builder.clone(op);
@@ -1378,6 +1399,20 @@ private:
       );
     }
 
+    if (auto cmpiOp = dyn_cast<arith::CmpIOp>(op)) {
+      auto lhs = lookupScalar(cmpiOp.getLhs(), valueMap, cmpiOp.getOperation());
+      auto rhs = lookupScalar(cmpiOp.getRhs(), valueMap, cmpiOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          cmpiOp.getResult(),
+          LoweredValue {
+              cmpiOp.getType(),
+              {builder.create<arith::CmpIOp>(loc, cmpiOp.getPredicate(), *lhs, *rhs)}
+          }
+      );
+    }
     if (auto selectOp = dyn_cast<arith::SelectOp>(op)) {
       auto cond = lookupScalar(selectOp.getCondition(), valueMap, selectOp.getOperation());
       auto trueValue = lookupScalar(selectOp.getTrueValue(), valueMap, selectOp.getOperation());
@@ -1466,6 +1501,105 @@ private:
         lowered.leaves.append(
             loweredCallResults.begin() + static_cast<ptrdiff_t>(cursor),
             loweredCallResults.begin() + static_cast<ptrdiff_t>(nextCursor)
+        );
+        valueMap[oldResult] = std::move(lowered);
+        cursor = nextCursor;
+      }
+      return success();
+    }
+
+    if (auto whileOp = dyn_cast<scf::WhileOp>(op)) {
+      SmallVector<Value> initArgs;
+      SmallVector<size_t> initLeafCounts;
+      for (auto [init, resultType] : llvm::zip(whileOp.getInits(), whileOp.getResultTypes())) {
+        auto lowered = lookup(init, valueMap, whileOp.getOperation());
+        auto leafTypes = getABILeafTypes(resultType, tables, whileOp.getOperation(), field);
+        if (failed(lowered) || failed(leafTypes) ||
+            failed(appendFlatLeavesToTypes(
+                builder, loc, *lowered, *leafTypes, initArgs, whileOp.getOperation()
+            ))) {
+          return failure();
+        }
+        auto count = getLeafCount(resultType, tables, whileOp.getOperation(), field);
+        if (failed(count)) {
+          return failure();
+        }
+        initLeafCounts.push_back(*count);
+      }
+
+      SmallVector<Type> loweredResultTypes;
+      loweredResultTypes.reserve(initArgs.size());
+      for (Value initArg : initArgs) {
+        loweredResultTypes.push_back(initArg.getType());
+      }
+
+      auto mapRegionArguments = [&](auto oldArgs, auto newArgs, StringRef overflowMessage,
+                                    DenseMap<Value, LoweredValue> &regionMap) -> LogicalResult {
+        size_t totalArgs = newArgs.size();
+        size_t cursor = 0;
+        for (auto [oldArg, oldType, leafCount] :
+             llvm::zip(oldArgs, whileOp.getResultTypes(), initLeafCounts)) {
+          bool overflow = false;
+          size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+          if (overflow || nextCursor > totalArgs) {
+            whileOp.emitError(overflowMessage);
+            return failure();
+          }
+          LoweredValue lowered {oldType, {}};
+          lowered.leaves.append(
+              newArgs.begin() + static_cast<ptrdiff_t>(cursor),
+              newArgs.begin() + static_cast<ptrdiff_t>(nextCursor)
+          );
+          regionMap[oldArg] = std::move(lowered);
+          cursor = nextCursor;
+        }
+        return success();
+      };
+
+      LogicalResult whileLoweringStatus = success();
+      auto newWhile = builder.create<scf::WhileOp>(
+          loc, loweredResultTypes, initArgs,
+          [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange beforeArgs) {
+        DenseMap<Value, LoweredValue> beforeMap(valueMap.begin(), valueMap.end());
+        if (failed(mapRegionArguments(
+                whileOp.getBeforeArguments(), beforeArgs,
+                "leaf count overflow while lowering while-loop before-region args", beforeMap
+            )) ||
+            failed(lowerBlock(regionBuilder, whileOp.getBefore().front(), beforeMap))) {
+          whileLoweringStatus = failure();
+        }
+      },
+          [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange afterArgs) {
+        DenseMap<Value, LoweredValue> afterMap(valueMap.begin(), valueMap.end());
+        if (failed(mapRegionArguments(
+                whileOp.getAfterArguments(), afterArgs,
+                "leaf count overflow while lowering while-loop after-region args", afterMap
+            )) ||
+            failed(lowerBlock(regionBuilder, whileOp.getAfter().front(), afterMap))) {
+          whileLoweringStatus = failure();
+        }
+      }
+      );
+      if (failed(whileLoweringStatus)) {
+        newWhile.erase();
+        return failure();
+      }
+
+      auto newWhileResults = newWhile.getResults();
+      size_t totalResults = newWhileResults.size();
+      size_t cursor = 0;
+      for (auto [oldResult, oldType, leafCount] :
+           llvm::zip(whileOp.getResults(), whileOp.getResultTypes(), initLeafCounts)) {
+        bool overflow = false;
+        size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+        if (overflow || nextCursor > totalResults) {
+          whileOp.emitError("leaf count overflow while lowering while-loop results");
+          return failure();
+        }
+        LoweredValue lowered {oldType, {}};
+        lowered.leaves.append(
+            newWhileResults.begin() + static_cast<ptrdiff_t>(cursor),
+            newWhileResults.begin() + static_cast<ptrdiff_t>(nextCursor)
         );
         valueMap[oldResult] = std::move(lowered);
         cursor = nextCursor;
