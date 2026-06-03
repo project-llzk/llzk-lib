@@ -337,13 +337,16 @@ void NewPodOp::print(OpAsmPrinter &printer) {
   );
 }
 
-SmallVector<RecordValue> NewPodOp::getInitializedRecordValues() {
-  return llvm::map_to_vector(
-      llvm::zip_equal(getInitialValues(), getInitializedRecords()), [](auto pair) {
+SmallVector<RecordValue>
+getInitializedRecordValues(ValueRange initialValues, ArrayAttr initializedRecords) {
+  return llvm::map_to_vector(llvm::zip_equal(initialValues, initializedRecords), [](auto pair) {
     auto [value, name] = pair;
     return RecordValue {.name = llvm::cast<StringAttr>(name).getValue(), .value = value};
-  }
-  );
+  });
+}
+
+SmallVector<RecordValue> NewPodOp::getInitializedRecordValues() {
+  return llzk::pod::getInitializedRecordValues(getInitialValues(), getInitializedRecords());
 }
 
 //===----------------------------------------------------------------------===//

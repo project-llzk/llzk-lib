@@ -234,7 +234,7 @@ public:
       : mlir::OpConversionPattern<pod::NewPodOp>(converter, ctx, 0) {}
 
   mlir::LogicalResult matchAndRewrite(
-      pod::NewPodOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &rewriter
+      pod::NewPodOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override {
     auto newResultType = dyn_cast_if_present<pod::PodType>(
         getTypeConverter()->convertType(op.getResult().getType())
@@ -242,13 +242,9 @@ public:
     if (!newResultType) {
       return op->emitError("Could not convert Op result types.");
     }
-    mlir::OperandRangeRange orr = op.getMapOperands();
-    mlir::SmallVector<mlir::ValueRange> mapOperands;
-    mapOperands.reserve(orr.size());
-    mapOperands.insert(mapOperands.end(), orr.begin(), orr.end());
     replaceOpWithNewOp<pod::NewPodOp>(
-        rewriter, op, newResultType, mapOperands, op.getNumDimsPerMapAttr(),
-        op.getInitializedRecordValues()
+        rewriter, op, newResultType, adaptor.getMapOperands(), op.getNumDimsPerMapAttr(),
+        pod::getInitializedRecordValues(adaptor.getInitialValues(), op.getInitializedRecords())
     );
     return mlir::success();
   }
