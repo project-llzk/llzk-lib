@@ -445,7 +445,7 @@ static FailureOr<Value> createRandomMemRef(
     builder.create<memref::StoreOp>(
         loc,
         builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(intType, toAPSInt(candidate).trunc(intType.getWidth()))
+            loc, IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
         ),
         alloc, indices
     );
@@ -495,7 +495,7 @@ static FailureOr<LoweredValue> createDefaultValue(
       }
       auto candidate = randomFieldElement(rng, field);
       lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-          loc, IntegerAttr::get(intType, toAPSInt(candidate).trunc(intType.getWidth()))
+          loc, IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
       ));
       continue;
     }
@@ -1023,12 +1023,10 @@ private:
 
     if (auto feltConst = dyn_cast<felt::FeltConstantOp>(op)) {
       auto intType = IntegerType::get(builder.getContext(), field.bitWidth());
-      // Do a safe conversion to an APInt of the right bitwidth: mod prime before truncation
+      // Reduce into the field first, then build an APInt with the exact storage width.
       auto constVal = toDynamicAPInt(feltConst.getValue().getValue());
       auto modVal = constVal % field.prime();
-      auto intVal = toAPSInt(modVal);
-      intVal.setIsUnsigned(true);
-      intVal = intVal.trunc(field.bitWidth());
+      auto intVal = llzk::toExactWidthAPInt(modVal, field.bitWidth());
       Value lowered = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, intVal));
       return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
     }
