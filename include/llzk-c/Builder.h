@@ -82,8 +82,7 @@ MLIR_CAPI_EXPORTED void
 mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block);
 
 /// Sets the insertion point to the end of the given block.
-MLIR_CAPI_EXPORTED void
-mlirOpBuilderSetInsertionPointToEnd(MlirOpBuilder builder, MlirBlock block);
+MLIR_CAPI_EXPORTED void mlirOpBuilderSetInsertionPointToEnd(MlirOpBuilder builder, MlirBlock block);
 
 /// Sets the insertion point right before the given operation.
 MLIR_CAPI_EXPORTED void
@@ -101,7 +100,8 @@ mlirOpBuilderSetInsertionPointAfterValue(MlirOpBuilder builder, MlirValue value)
 MLIR_CAPI_EXPORTED MlirOpBuilderInsertPoint mlirOpBuilderSaveInsertionPoint(MlirOpBuilder builder);
 
 /// Restore the insert point to a previously saved point.
-MLIR_CAPI_EXPORTED void mlirOpBuilderRestoreInsertionPoint(MlirOpBuilder builder, MlirOpBuilderInsertPoint ip);
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderRestoreInsertionPoint(MlirOpBuilder builder, MlirOpBuilderInsertPoint ip);
 
 /// Reset the insertion point to no location.
 MLIR_CAPI_EXPORTED void mlirOpBuilderClearInsertionPoint(MlirOpBuilder builder);

@@ -10,6 +10,7 @@
 #include "llzk-c/Builder.h"
 
 #include "CAPITestBase.h"
+
 #include <mlir-c/IR.h>
 
 namespace {
