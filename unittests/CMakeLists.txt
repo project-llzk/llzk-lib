@@ -1,5 +1,5 @@
 function(llzk_gtest_suite target)
-  gtest_discover_tests(${target})
+  gtest_discover_tests(${target} DISCOVERY_TIMEOUT 30)
   list(APPEND LLZK_UNITTESTS ${target})
   set(LLZK_UNITTESTS
       ${LLZK_UNITTESTS}
