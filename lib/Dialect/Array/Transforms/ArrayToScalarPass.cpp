@@ -66,6 +66,7 @@
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
@@ -996,9 +997,9 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
     // Use SROA (Destructurable* interfaces) to split each array with linear size N into N arrays of
     // size 1. This is necessary because the mem2reg pass cannot deal with indexing and splitting up
     // memory, i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSROA());
+    nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
     // The mem2reg pass converts all of the size 1 array allocation and access into SSA values.
-    nestedPM.addPass(createMem2Reg());
+    nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
     // Cleanup SSA values made dead by the transformations
     nestedPM.addPass(createRemoveDeadValuesPass());
     if (failed(runPipeline(nestedPM, module))) {
