@@ -101,7 +101,7 @@ void mlirOpBuilderSetInsertionPointAfter(MlirOpBuilder builder, MlirOperation op
   unwrap(builder)->setInsertionPointAfter(unwrap(operation));
 }
 
-/// Sets the insertion point right after the given operation.
+/// Sets the insertion point right after the given value is defined.
 void mlirOpBuilderSetInsertionPointAfterValue(MlirOpBuilder builder, MlirValue value) {
   unwrap(builder)->setInsertionPointAfterValue(unwrap(value));
 }

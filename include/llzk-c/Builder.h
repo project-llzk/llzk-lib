@@ -92,7 +92,7 @@ mlirOpBuilderSetInsertionPoint(MlirOpBuilder builder, MlirOperation operation);
 MLIR_CAPI_EXPORTED void
 mlirOpBuilderSetInsertionPointAfter(MlirOpBuilder builder, MlirOperation operation);
 
-/// Sets the insertion point right after the given value.
+/// Sets the insertion point right after the given value is defined.
 MLIR_CAPI_EXPORTED void
 mlirOpBuilderSetInsertionPointAfterValue(MlirOpBuilder builder, MlirValue value);
 
