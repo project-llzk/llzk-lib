@@ -69,6 +69,7 @@
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
@@ -840,6 +841,115 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// Return a static index attribute for an array access, or null if any index is dynamic.
+inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
+  return op.indexOperandsToAttributeArray();
+}
+
+/// Return whether `writeOp` may update `index`.
+static bool mayWriteToIndex(WriteArrayOp writeOp, ArrayAttr index) {
+  ArrayAttr writeIndex = getIndexAsAttr(writeOp);
+  return !writeIndex || writeIndex == index;
+}
+
+/// Return whether the read is preceded by a write to the same array and index within its block.
+static bool hasEarlierWriteInBlock(ReadArrayOp readOp, ArrayAttr readIndex) {
+  Value arrRef = readOp.getArrRef();
+  for (Operation &op : *readOp->getBlock()) {
+    if (&op == readOp.getOperation()) {
+      return false;
+    }
+
+    if (auto writeOp = dyn_cast<WriteArrayOp>(&op)) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        return true;
+      }
+      continue;
+    }
+
+    // Writes nested inside earlier operations may conditionally clobber the read's value.
+    if (op.walk([arrRef, readIndex](WriteArrayOp writeOp) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    }).wasInterrupted()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Find a statically indexed write before the parent `scf.if` that can be forwarded to `readOp`.
+static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readOp) {
+  ArrayAttr readIndex = getIndexAsAttr(readOp);
+  if (!readIndex) {
+    return std::nullopt;
+  }
+
+  // Only handle reads that are direct children of an `scf.if` branch.
+  auto ifOp = readOp->getParentOfType<scf::IfOp>();
+  if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
+    return std::nullopt;
+  }
+  if (hasEarlierWriteInBlock(readOp, readIndex)) {
+    return std::nullopt;
+  }
+
+  Block *ifBlock = ifOp->getBlock();
+  if (!ifBlock) {
+    return std::nullopt;
+  }
+
+  Value arrRef = readOp.getArrRef();
+  WriteArrayOp replacement;
+  for (Operation &op : *ifBlock) {
+    if (&op == ifOp.getOperation()) {
+      break;
+    }
+
+    if (auto writeOp = dyn_cast<WriteArrayOp>(&op)) {
+      if (writeOp.getArrRef() != arrRef) {
+        continue;
+      }
+
+      if (mayWriteToIndex(writeOp, readIndex)) {
+        ArrayAttr writeIndex = getIndexAsAttr(writeOp);
+        replacement = writeIndex == readIndex ? writeOp : WriteArrayOp();
+      }
+      continue;
+    }
+
+    // A nested write before the `scf.if` may overwrite the current candidate.
+    if (op.walk([arrRef, readIndex, &replacement](WriteArrayOp writeOp) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        replacement = WriteArrayOp();
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    }).wasInterrupted()) {
+      continue;
+    }
+  }
+
+  return replacement ? std::make_optional(replacement) : std::nullopt;
+}
+
+/// Forward branch-local reads to a same-index write that dominates the parent `scf.if`.
+static void forwardPrecedingArrayWritesIntoIf(ModuleOp modOp) {
+  SmallVector<std::pair<ReadArrayOp, Value>> replacements;
+  modOp.walk([&replacements](ReadArrayOp readOp) {
+    if (std::optional<WriteArrayOp> writeOp = findPrecedingWriteForIfRead(readOp)) {
+      replacements.emplace_back(readOp, writeOp->getRvalue());
+    }
+  });
+
+  for (auto [readOp, value] : replacements) {
+    readOp.getResult().replaceAllUsesWith(value);
+    readOp.erase();
+  }
+}
+
 LogicalResult splitArrayCreateInit(ModuleOp modOp) {
   SymbolTableCollection symTables;
   MemberReplacementMap memberRepMap;
@@ -880,6 +990,8 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
       signalPassFailure();
       return;
     }
+    forwardPrecedingArrayWritesIntoIf(module);
+
     OpPassManager nestedPM(ModuleOp::getOperationName());
     // Use SROA (Destructurable* interfaces) to split each array with linear size N into N arrays of
     // size 1. This is necessary because the mem2reg pass cannot deal with indexing and splitting up

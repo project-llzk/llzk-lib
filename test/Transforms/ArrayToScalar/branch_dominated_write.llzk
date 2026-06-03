@@ -1,0 +1,65 @@
+// RUN: llzk-opt -split-input-file -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type
+module attributes {llzk.lang} {
+  function.def @branch_dominated_write(%arg1: !F, %arg2: !F, %cond: i1) -> !F {
+    %c0 = arith.constant 0 : index
+    %array = array.new : !array.type<1 x !F>
+    array.write %array[%c0] = %arg1 : !array.type<1 x !F>, !F
+    %result = scf.if %cond -> !F {
+      %sum = felt.add %arg1, %arg2 : !F, !F
+      %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+      %out = felt.add %sum, %read : !F, !F
+      scf.yield %out : !F
+    } else {
+      %sum = felt.add %arg2, %arg2 : !F, !F
+      %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+      %out = felt.add %sum, %read : !F, !F
+      scf.yield %out : !F
+    }
+    function.return %result : !F
+  }
+}
+
+// CHECK-LABEL: function.def @branch_dominated_write(
+// CHECK-SAME: %[[FORWARDED:[0-9a-zA-Z_\.]+]]: !felt.type
+// CHECK-NOT: array.
+// CHECK: scf.if
+// CHECK-NOT: array.
+// CHECK: %[[THEN_SUM:[0-9a-zA-Z_\.]+]] = felt.add
+// CHECK-NEXT: %[[THEN_OUT:[0-9a-zA-Z_\.]+]] = felt.add %[[THEN_SUM]], %[[FORWARDED]]
+// CHECK-NEXT: scf.yield %[[THEN_OUT]]
+// CHECK: } else {
+// CHECK-NOT: array.
+// CHECK: %[[ELSE_SUM:[0-9a-zA-Z_\.]+]] = felt.add
+// CHECK-NEXT: %[[ELSE_OUT:[0-9a-zA-Z_\.]+]] = felt.add %[[ELSE_SUM]], %[[FORWARDED]]
+// CHECK-NEXT: scf.yield %[[ELSE_OUT]]
+
+// -----
+
+!F = !felt.type
+module attributes {llzk.lang} {
+  function.def @do_not_forward_after_branch_write(%arg1: !F, %arg2: !F, %cond: i1) -> !F {
+    %c0 = arith.constant 0 : index
+    %array = array.new : !array.type<1 x !F>
+    array.write %array[%c0] = %arg1 : !array.type<1 x !F>, !F
+    %result = scf.if %cond -> !F {
+      array.write %array[%c0] = %arg2 : !array.type<1 x !F>, !F
+      %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+      scf.yield %read : !F
+    } else {
+      array.write %array[%c0] = %arg2 : !array.type<1 x !F>, !F
+      %read = array.read %array[%c0] : !array.type<1 x !F>, !F
+      scf.yield %read : !F
+    }
+    function.return %result : !F
+  }
+}
+
+// CHECK-LABEL: function.def @do_not_forward_after_branch_write(
+// CHECK: scf.if
+// CHECK: array.write
+// CHECK: array.read
+// CHECK: } else {
+// CHECK: array.write
+// CHECK: array.read
