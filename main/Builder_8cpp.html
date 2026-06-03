@@ -141,6 +141,20 @@ Functions</h2></td></tr>
 <tr class="memdesc:ad83c5bf0544fd2339e064ba21e666687"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the MLIR context associated with <span class="tt">builder</span>.  <br /></td></tr>
 <tr class="memitem:a540cdc88064575df2efa5b0f8aa36f0c" id="r_a540cdc88064575df2efa5b0f8aa36f0c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a540cdc88064575df2efa5b0f8aa36f0c">mlirOpBuilderSetInsertionPointToStart</a> (MlirOpBuilder builder, MlirBlock block)</td></tr>
 <tr class="memdesc:a540cdc88064575df2efa5b0f8aa36f0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the insertion point of <span class="tt">builder</span> to the beginning of <span class="tt">block</span> so that subsequent insertions prepend to that block.  <br /></td></tr>
+<tr class="memitem:aae138a93d83f26c2e38b81f5c17627e6" id="r_aae138a93d83f26c2e38b81f5c17627e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aae138a93d83f26c2e38b81f5c17627e6">mlirOpBuilderSetInsertionPointToEnd</a> (MlirOpBuilder builder, MlirBlock block)</td></tr>
+<tr class="memdesc:aae138a93d83f26c2e38b81f5c17627e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the insertion point to the end of the given block.  <br /></td></tr>
+<tr class="memitem:ac52ad59034bd19b7f062423e8243a0e2" id="r_ac52ad59034bd19b7f062423e8243a0e2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac52ad59034bd19b7f062423e8243a0e2">mlirOpBuilderSetInsertionPoint</a> (MlirOpBuilder builder, MlirOperation operation)</td></tr>
+<tr class="memdesc:ac52ad59034bd19b7f062423e8243a0e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the insertion point right before the given operation.  <br /></td></tr>
+<tr class="memitem:a7da87fae6f81e7ee3ee81d945a14b846" id="r_a7da87fae6f81e7ee3ee81d945a14b846"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7da87fae6f81e7ee3ee81d945a14b846">mlirOpBuilderSetInsertionPointAfter</a> (MlirOpBuilder builder, MlirOperation operation)</td></tr>
+<tr class="memdesc:a7da87fae6f81e7ee3ee81d945a14b846"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the insertion point right after the given operation.  <br /></td></tr>
+<tr class="memitem:aea50e58a5ef76bc05912c0c29d0c864c" id="r_aea50e58a5ef76bc05912c0c29d0c864c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aea50e58a5ef76bc05912c0c29d0c864c">mlirOpBuilderSetInsertionPointAfterValue</a> (MlirOpBuilder builder, MlirValue value)</td></tr>
+<tr class="memdesc:aea50e58a5ef76bc05912c0c29d0c864c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the insertion point right after the given value is defined.  <br /></td></tr>
+<tr class="memitem:a5dba3cec4229d097d78cde7de5350345" id="r_a5dba3cec4229d097d78cde7de5350345"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structMlirOpBuilderInsertPoint.html">MlirOpBuilderInsertPoint</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5dba3cec4229d097d78cde7de5350345">mlirOpBuilderSaveInsertionPoint</a> (MlirOpBuilder builder)</td></tr>
+<tr class="memdesc:a5dba3cec4229d097d78cde7de5350345"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a saved insertion point.  <br /></td></tr>
+<tr class="memitem:a0199ba7a8dd075257f71ddae9a9956fa" id="r_a0199ba7a8dd075257f71ddae9a9956fa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0199ba7a8dd075257f71ddae9a9956fa">mlirOpBuilderRestoreInsertionPoint</a> (MlirOpBuilder builder, <a class="el" href="structMlirOpBuilderInsertPoint.html">MlirOpBuilderInsertPoint</a> rawIp)</td></tr>
+<tr class="memdesc:a0199ba7a8dd075257f71ddae9a9956fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Restore the insert point to a previously saved point.  <br /></td></tr>
+<tr class="memitem:a382de1fd0e8194cbb6b28c307966c0f0" id="r_a382de1fd0e8194cbb6b28c307966c0f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a382de1fd0e8194cbb6b28c307966c0f0">mlirOpBuilderClearInsertionPoint</a> (MlirOpBuilder builder)</td></tr>
+<tr class="memdesc:a382de1fd0e8194cbb6b28c307966c0f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the insertion point to no location.  <br /></td></tr>
 <tr class="memitem:a93aa434937eb5c89e92974a87eb426e5" id="r_a93aa434937eb5c89e92974a87eb426e5"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a93aa434937eb5c89e92974a87eb426e5">mlirOpBuilderGetInsertionPoint</a> (MlirOpBuilder builder)</td></tr>
 <tr class="memdesc:a93aa434937eb5c89e92974a87eb426e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the operation before which new operations will be inserted, or a null <span class="tt">MlirOperation</span> if there is no current insertion block or the insertion point is at the end of the block.  <br /></td></tr>
 <tr class="memitem:ac441404c01a06c1fc8134f1ed238d57b" id="r_ac441404c01a06c1fc8134f1ed238d57b"><td class="memItemLeft" align="right" valign="top">MlirBlock&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac441404c01a06c1fc8134f1ed238d57b">mlirOpBuilderGetInsertionBlock</a> (MlirOpBuilder builder)</td></tr>
@@ -170,6 +184,27 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a382de1fd0e8194cbb6b28c307966c0f0" name="a382de1fd0e8194cbb6b28c307966c0f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a382de1fd0e8194cbb6b28c307966c0f0">&#9670;&#160;</a></span>mlirOpBuilderClearInsertionPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void mlirOpBuilderClearInsertionPoint </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reset the insertion point to no location. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00123">123</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a3b0d4556e70ed87d310933c909132c23" name="a3b0d4556e70ed87d310933c909132c23"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3b0d4556e70ed87d310933c909132c23">&#9670;&#160;</a></span>mlirOpBuilderCreate()</h2>
 
@@ -278,7 +313,7 @@ Functions</h2></td></tr>
 <p>Returns the block that <span class="tt">builder</span> is currently inserting into, or a null <span class="tt">MlirBlock</span> if no insertion point has been set. </p>
 <p>Returns the current insertion block in the builder. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00103">103</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00141">141</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -300,7 +335,7 @@ Functions</h2></td></tr>
 <p>Returns the operation before which new operations will be inserted, or a null <span class="tt">MlirOperation</span> if there is no current insertion block or the insertion point is at the end of the block. </p>
 <p>Returns the current insertion point in the builder. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00091">91</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00129">129</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -326,7 +361,7 @@ Functions</h2></td></tr>
 <p>Inserts <span class="tt">op</span> at the current insertion point of <span class="tt">builder</span> and returns it. </p>
 <p>Insert the given operation at the current insertion point and return it. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00108">108</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00146">146</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -358,7 +393,7 @@ Functions</h2></td></tr>
 <p>Creates a new mlir::OpBuilder::Listener.</p>
 <p><span class="tt">userData</span> is an opaque pointer forwarded unchanged to each callback. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00119">119</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00157">157</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>
@@ -380,7 +415,153 @@ Functions</h2></td></tr>
 <p>Destroys <span class="tt">listener</span> and frees the underlying <span class="tt">ListenerT</span> object. </p>
 <p>Destroys the given listener. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00126">126</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00164">164</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a0199ba7a8dd075257f71ddae9a9956fa" name="a0199ba7a8dd075257f71ddae9a9956fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0199ba7a8dd075257f71ddae9a9956fa">&#9670;&#160;</a></span>mlirOpBuilderRestoreInsertionPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void mlirOpBuilderRestoreInsertionPoint </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structMlirOpBuilderInsertPoint.html">MlirOpBuilderInsertPoint</a></td>          <td class="paramname"><span class="paramname"><em>rawIp</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Restore the insert point to a previously saved point. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00117">117</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5dba3cec4229d097d78cde7de5350345" name="a5dba3cec4229d097d78cde7de5350345"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dba3cec4229d097d78cde7de5350345">&#9670;&#160;</a></span>mlirOpBuilderSaveInsertionPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structMlirOpBuilderInsertPoint.html">MlirOpBuilderInsertPoint</a> mlirOpBuilderSaveInsertionPoint </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return a saved insertion point. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00110">110</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac52ad59034bd19b7f062423e8243a0e2" name="ac52ad59034bd19b7f062423e8243a0e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac52ad59034bd19b7f062423e8243a0e2">&#9670;&#160;</a></span>mlirOpBuilderSetInsertionPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void mlirOpBuilderSetInsertionPoint </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>operation</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the insertion point right before the given operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00095">95</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a7da87fae6f81e7ee3ee81d945a14b846" name="a7da87fae6f81e7ee3ee81d945a14b846"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7da87fae6f81e7ee3ee81d945a14b846">&#9670;&#160;</a></span>mlirOpBuilderSetInsertionPointAfter()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void mlirOpBuilderSetInsertionPointAfter </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>operation</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the insertion point right after the given operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00100">100</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aea50e58a5ef76bc05912c0c29d0c864c" name="aea50e58a5ef76bc05912c0c29d0c864c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea50e58a5ef76bc05912c0c29d0c864c">&#9670;&#160;</a></span>mlirOpBuilderSetInsertionPointAfterValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void mlirOpBuilderSetInsertionPointAfterValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the insertion point right after the given value is defined. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00105">105</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aae138a93d83f26c2e38b81f5c17627e6" name="aae138a93d83f26c2e38b81f5c17627e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae138a93d83f26c2e38b81f5c17627e6">&#9670;&#160;</a></span>mlirOpBuilderSetInsertionPointToEnd()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void mlirOpBuilderSetInsertionPointToEnd </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirBlock</td>          <td class="paramname"><span class="paramname"><em>block</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the insertion point to the end of the given block. </p>
+
+<p class="definition">Definition at line <a class="el" href="Builder_8cpp_source.html#l00090">90</a> of file <a class="el" href="Builder_8cpp_source.html">Builder.cpp</a>.</p>
 
 </div>
 </div>

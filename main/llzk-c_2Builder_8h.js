@@ -9,6 +9,7 @@ var llzk_c_2Builder_8h =
     [ "MlirOpBuilderInsertPoint", "llzk-c_2Builder_8h.html#a52388a91942e35e6e807ce7b791b8706", null ],
     [ "DEFINE_C_API_STRUCT", "llzk-c_2Builder_8h.html#ab2cd74dc8ee9bae70e059f7d502ebb6e", null ],
     [ "DEFINE_C_API_STRUCT", "llzk-c_2Builder_8h.html#aa7e8d7ec5df47b54ff0d6138d1768b4e", null ],
+    [ "mlirOpBuilderClearInsertionPoint", "llzk-c_2Builder_8h.html#a6a6eb2755df42adecd872f25ba6c8c5a", null ],
     [ "mlirOpBuilderDestroy", "llzk-c_2Builder_8h.html#a67777e0ee0114bab61b82a8ff83170dc", null ],
     [ "mlirOpBuilderGetContext", "llzk-c_2Builder_8h.html#a6db7719e2a53ff40c4fd7ea59d71d7fd", null ],
     [ "mlirOpBuilderGetInsertionBlock", "llzk-c_2Builder_8h.html#a9ac0ee6685fe772b268d2a8d78e65349", null ],
@@ -16,5 +17,11 @@ var llzk_c_2Builder_8h =
     [ "mlirOpBuilderInsert", "llzk-c_2Builder_8h.html#ae72308214f6df44cca50c5b17a64388f", null ],
     [ "mlirOpBuilderListenerCreate", "llzk-c_2Builder_8h.html#a1ee06e8bba1dbcfb4e30b527754e0d63", null ],
     [ "mlirOpBuilderListenerDestroy", "llzk-c_2Builder_8h.html#aa1480bc854ed5fd0ae26e0714f914ab8", null ],
+    [ "mlirOpBuilderRestoreInsertionPoint", "llzk-c_2Builder_8h.html#a80c885b2fc60050a5d99b81699739c15", null ],
+    [ "mlirOpBuilderSaveInsertionPoint", "llzk-c_2Builder_8h.html#a8ae46c8dff6194a87edb92870a8d7ce0", null ],
+    [ "mlirOpBuilderSetInsertionPoint", "llzk-c_2Builder_8h.html#ad4f8f693f52a54b92f35c60e2f91a494", null ],
+    [ "mlirOpBuilderSetInsertionPointAfter", "llzk-c_2Builder_8h.html#a6a12d31e954ebea11f6559ad2ebce35b", null ],
+    [ "mlirOpBuilderSetInsertionPointAfterValue", "llzk-c_2Builder_8h.html#a1085a69d294a57f6e31bee3fb5949dcd", null ],
+    [ "mlirOpBuilderSetInsertionPointToEnd", "llzk-c_2Builder_8h.html#a06ad0c8d14f5522ca399255a29246470", null ],
     [ "mlirOpBuilderSetInsertionPointToStart", "llzk-c_2Builder_8h.html#aef0efbe551060d38ff551336182e779f", null ]
 ];
