@@ -1,5 +1,7 @@
 var NAVTREEINDEX79 =
 {
+"structAddFeltOpBuildFuncHelper.html#aaa9fc0b787db534f98c387d277baf709":[12,0,5,0],
+"structAndBoolOpBuildFuncHelper.html":[12,0,6],
 "structAndBoolOpBuildFuncHelper.html#a2b22dd8cab7068af3be0c62f59425826":[12,0,6,1],
 "structAndBoolOpBuildFuncHelper.html#ad21d8e0abe933c30ef36ee80d2cb3136":[12,0,6,0],
 "structAndFeltOpBuildFuncHelper.html":[12,0,7],
@@ -247,7 +249,5 @@ var NAVTREEINDEX79 =
 "structPowFeltOpBuildFuncHelper.html#acf26ee7b66c4ed11649fa14756ff6189":[12,0,93,1],
 "structPowFeltOpBuildFuncHelper.html#ad1fe397213460be0b98145f60deb25e8":[12,0,93,0],
 "structReadArrayOpBuildFuncHelper.html":[12,0,96],
-"structReadArrayOpBuildFuncHelper.html#a248db0a2012b72df119e4d4b057131ce":[12,0,96,1],
-"structReadArrayOpBuildFuncHelper.html#a2b9bfb8fd08e59579b4cddce65502411":[12,0,96,0],
-"structReadPodOpBuildFuncHelper.html":[12,0,97]
+"structReadArrayOpBuildFuncHelper.html#a248db0a2012b72df119e4d4b057131ce":[12,0,96,1]
 };

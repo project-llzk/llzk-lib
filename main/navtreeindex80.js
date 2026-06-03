@@ -1,5 +1,7 @@
 var NAVTREEINDEX80 =
 {
+"structReadArrayOpBuildFuncHelper.html#a2b9bfb8fd08e59579b4cddce65502411":[12,0,96,0],
+"structReadPodOpBuildFuncHelper.html":[12,0,97],
 "structReadPodOpBuildFuncHelper.html#a42c5e6c58a3c74e6ed8ffac7509abfc1":[12,0,97,1],
 "structReadPodOpBuildFuncHelper.html#acecef7c1580f1971f75a417f535f96a5":[12,0,97,0],
 "structRequireComputeOpBuildFuncHelper.html":[12,0,98],
@@ -247,7 +249,5 @@ var NAVTREEINDEX80 =
 "structllzk_1_1ForOpInfo.html#a7df559a9d2cd34a06f8948778892cd50":[10,0,2,46,5],
 "structllzk_1_1ForOpInfo.html#a7df559a9d2cd34a06f8948778892cd50":[12,0,1,43,5],
 "structllzk_1_1ForOpInfo.html#af91c33a41bcea41e9d4a75a86ec0f081":[10,0,2,46,2],
-"structllzk_1_1ForOpInfo.html#af91c33a41bcea41e9d4a75a86ec0f081":[12,0,1,43,2],
-"structllzk_1_1FullPolyLoweringOptions.html":[10,0,2,47],
-"structllzk_1_1FullPolyLoweringOptions.html":[12,0,1,44]
+"structllzk_1_1ForOpInfo.html#af91c33a41bcea41e9d4a75a86ec0f081":[12,0,1,43,2]
 };

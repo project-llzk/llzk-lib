@@ -125,231 +125,261 @@ $(function(){initNavTree('TypeConversionPatterns_8h_source.html','',''); });
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Function_2IR_2Ops_8h.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="Global_2IR_2Ops_8h.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="AttributeHelper_8h.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Ops_8h.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/Transforms/Patterns.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/IR/Attributes.h&gt;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinAttributes.h&gt;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinTypes.h&gt;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;mlir/IR/MLIRContext.h&gt;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;mlir/IR/Operation.h&gt;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;mlir/IR/PatternMatch.h&gt;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;mlir/Transforms/DialectConversion.h&gt;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;tuple&gt;</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
-<div class="foldopen" id="foldopen00043" data-start="{" data-end="}">
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">   43</a></span><span class="keyword">inline</span> <span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">defaultLegalityCheck</a>(<span class="keyword">const</span> mlir::TypeConverter &amp;tyConv, mlir::Operation *op) {</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="comment">// Check operand types and result types</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordflow">if</span> (!tyConv.isLegal(op)) {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  }</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="comment">// Check type attributes</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="comment">// Extend lifetime of temporary to suppress warnings.</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  mlir::DictionaryAttr dictAttr = op-&gt;getAttrDictionary();</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">for</span> (mlir::NamedAttribute n : dictAttr.getValue()) {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordflow">if</span> (mlir::TypeAttr tyAttr = llvm::dyn_cast&lt;mlir::TypeAttr&gt;(n.getValue())) {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      mlir::Type t = tyAttr.getValue();</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      <span class="keywordflow">if</span> (mlir::FunctionType funcTy = llvm::dyn_cast&lt;mlir::FunctionType&gt;(t)) {</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>        <span class="keywordflow">if</span> (!tyConv.isSignatureLegal(funcTy)) {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>          <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>        }</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        <span class="keywordflow">if</span> (!tyConv.isLegal(t)) {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>          <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>        }</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      }</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    }</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="POD_2IR_2Ops_8h.html">llzk/Dialect/POD/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Ops_8h.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/Transforms/Patterns.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/IR/Attributes.h&gt;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinAttributes.h&gt;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinTypes.h&gt;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;mlir/IR/MLIRContext.h&gt;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;mlir/IR/Operation.h&gt;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;mlir/IR/PatternMatch.h&gt;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;mlir/Transforms/DialectConversion.h&gt;</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;tuple&gt;</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span></div>
+<div class="foldopen" id="foldopen00044" data-start="{" data-end="}">
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">   44</a></span><span class="keyword">inline</span> <span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">defaultLegalityCheck</a>(<span class="keyword">const</span> mlir::TypeConverter &amp;tyConv, mlir::Operation *op) {</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="comment">// Check operand types and result types</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordflow">if</span> (!tyConv.isLegal(op)) {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  }</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="comment">// Check type attributes</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="comment">// Extend lifetime of temporary to suppress warnings.</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  mlir::DictionaryAttr dictAttr = op-&gt;getAttrDictionary();</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordflow">for</span> (mlir::NamedAttribute n : dictAttr.getValue()) {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">if</span> (mlir::TypeAttr tyAttr = llvm::dyn_cast&lt;mlir::TypeAttr&gt;(n.getValue())) {</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      mlir::Type t = tyAttr.getValue();</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      <span class="keywordflow">if</span> (mlir::FunctionType funcTy = llvm::dyn_cast&lt;mlir::FunctionType&gt;(t)) {</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        <span class="keywordflow">if</span> (!tyConv.isSignatureLegal(funcTy)) {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>          <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        }</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        <span class="keywordflow">if</span> (!tyConv.isLegal(t)) {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>          <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        }</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      }</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    }</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  }</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>}</div>
 </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span></div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpClass, <span class="keyword">typename</span> Rewriter, <span class="keyword">typename</span>... Args&gt;</div>
-<div class="foldopen" id="foldopen00071" data-start="{" data-end="}">
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno"><a class="line" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">   71</a></span><span class="keyword">inline</span> OpClass <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp</a>(Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args) {</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  mlir::DictionaryAttr attrs = op-&gt;getDiscardableAttrDictionary();</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  OpClass newOp = rewriter.template <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;OpClass&gt;</a>(op, std::forward&lt;Args&gt;(args)...);</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  newOp-&gt;setDiscardableAttrs(attrs);</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordflow">return</span> newOp;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span></div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpClass, <span class="keyword">typename</span> Rewriter, <span class="keyword">typename</span>... Args&gt;</div>
+<div class="foldopen" id="foldopen00072" data-start="{" data-end="}">
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">   72</a></span><span class="keyword">inline</span> OpClass <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp</a>(Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args) {</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  mlir::DictionaryAttr attrs = op-&gt;getDiscardableAttrDictionary();</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  OpClass newOp = rewriter.template <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;OpClass&gt;</a>(op, std::forward&lt;Args&gt;(args)...);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  newOp-&gt;setDiscardableAttrs(attrs);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordflow">return</span> newOp;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>}</div>
 </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span><span class="keyword">static</span> <span class="keyword">struct </span>OpClassesWithStructTypes {</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span></div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keyword">const</span> std::tuple&lt;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>      <span class="comment">// clang-format off</span></div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      array::ArrayLengthOp,</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      array::ReadArrayOp,</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      array::WriteArrayOp,</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      array::InsertArrayOp,</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>      array::ExtractArrayOp,</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      constrain::EmitEqualityOp,</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>      constrain::EmitContainmentOp,</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>      component::MemberDefOp,</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>      component::MemberReadOp,</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>      component::MemberWriteOp,</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      component::CreateStructOp,</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      function::FuncDefOp,</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      function::ReturnOp,</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      global::GlobalDefOp,</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      global::GlobalReadOp,</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      global::GlobalWriteOp,</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>      polymorphic::UnifiableCastOp,</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>      polymorphic::ConstReadOp</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      <span class="comment">// clang-format on</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      &gt;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>      WithGeneralBuilder {};</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span></div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keyword">const</span> std::tuple&lt;function::CallOp, array::CreateArrayOp&gt; NoGeneralBuilder {};</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>} OpClassesWithStructTypes;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span></div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpClass&gt;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span><span class="keyword">class </span>GeneralTypeReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;OpClass&gt; {</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  GeneralTypeReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>      : mlir::OpConversionPattern&lt;OpClass&gt;(converter, ctx, 0) {}</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  mlir::LogicalResult matchAndRewrite(</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>      OpClass op, <span class="keyword">typename</span> OpClass::Adaptor adaptor, mlir::ConversionPatternRewriter &amp;rewriter</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  )<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    <span class="keyword">const</span> mlir::TypeConverter *converter = mlir::OpConversionPattern&lt;OpClass&gt;::getTypeConverter();</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    assert(converter);</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    <span class="comment">// Convert result types</span></div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    mlir::SmallVector&lt;mlir::Type&gt; newResultTypes;</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    <span class="keywordflow">if</span> (mlir::failed(converter-&gt;convertTypes(op-&gt;getResultTypes(), newResultTypes))) {</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    }</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <span class="comment">// ASSERT: &#39;adaptor.getAttributes()&#39; is empty or a subset of &#39;op-&gt;getAttrDictionary()&#39; so the</span></div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="comment">// former can be ignored without losing anything.</span></div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    assert(</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>        adaptor.getAttributes().empty() ||</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>        llvm::all_of(</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>            adaptor.getAttributes(), [d = op-&gt;getAttrDictionary()](mlir::NamedAttribute a) {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>      return d.contains(a.getName());</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    }</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>        )</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    );</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    <span class="comment">// Convert any TypeAttr in the attribute list.</span></div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    mlir::SmallVector&lt;mlir::NamedAttribute&gt; newAttrs(op-&gt;getAttrDictionary().getValue());</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    <span class="keywordflow">for</span> (mlir::NamedAttribute &amp;n : newAttrs) {</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>      <span class="keywordflow">if</span> (mlir::TypeAttr t = llvm::dyn_cast&lt;mlir::TypeAttr&gt;(n.getValue())) {</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>        <span class="keywordflow">if</span> (mlir::Type newType = converter-&gt;convertType(t.getValue())) {</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>          n.setValue(mlir::TypeAttr::get(newType));</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>          <span class="keywordflow">return</span> op-&gt;emitError().append(<span class="stringliteral">&quot;Could not convert type in attribute: &quot;</span>, t);</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>        }</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>      }</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    }</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    <span class="comment">// Build a new Op in place of the current one</span></div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;OpClass&gt;</a>(</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>        rewriter, op, mlir::TypeRange(newResultTypes), adaptor.getOperands(),</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        mlir::ArrayRef(newAttrs)</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    );</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    <span class="keywordflow">return</span> mlir::success();</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  }</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>};</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span></div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span><span class="keyword">class </span>CreateArrayOpClassReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;array::CreateArrayOp&gt; {</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  CreateArrayOpClassReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      : mlir::OpConversionPattern&lt;array::CreateArrayOp&gt;(converter, ctx, 0) {}</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span> </div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  mlir::LogicalResult match(array::CreateArrayOp op)<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    <span class="keywordflow">if</span> (getTypeConverter()-&gt;convertType(op.getType())) {</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>      <span class="keywordflow">return</span> mlir::success();</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    }</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result type.&quot;</span>);</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  }</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  <span class="keywordtype">void</span> rewrite(</div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      array::CreateArrayOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &amp;rewriter</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  )<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    mlir::Type newType = getTypeConverter()-&gt;convertType(op.getType());</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    assert(llvm::isa&lt;array::ArrayType&gt;(newType) &amp;&amp; <span class="stringliteral">&quot;CreateArrayOp must produce ArrayType result&quot;</span>);</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    mlir::DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">isNullOrEmpty</a>(numDimsPerMap)) {</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>      <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;array::CreateArrayOp&gt;</a>(</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>          rewriter, op, llvm::cast&lt;array::ArrayType&gt;(newType), adapter.getElements()</div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>      );</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>      <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;array::CreateArrayOp&gt;</a>(</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>          rewriter, op, llvm::cast&lt;array::ArrayType&gt;(newType), adapter.getMapOperands(),</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>          numDimsPerMap</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>      );</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    }</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  }</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>};</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span></div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span><span class="keyword">class </span>CallOpClassReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;function::CallOp&gt; {</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  CallOpClassReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>      : mlir::OpConversionPattern&lt;function::CallOp&gt;(converter, ctx, 0) {}</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  mlir::LogicalResult matchAndRewrite(</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>      function::CallOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &amp;rewriter</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  )<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    mlir::SmallVector&lt;mlir::Type&gt; newResultTypes;</div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    <span class="keywordflow">if</span> (mlir::failed(getTypeConverter()-&gt;convertTypes(op.getResultTypes(), newResultTypes))) {</div>
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    }</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;function::CallOp&gt;</a>(</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>        rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>        op.getNumDimsPerMapAttr(), adapter.getArgOperands()</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    );</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    <span class="keywordflow">return</span> mlir::success();</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  }</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>};</div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span> </div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> I, <span class="keyword">typename</span> NextOpClass, <span class="keyword">typename</span>... OtherOpClasses&gt;</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span><span class="keyword">inline</span> <span class="keywordtype">void</span> applyToMoreTypes(I inserter) {</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  std::apply(inserter, std::tuple&lt;NextOpClass, OtherOpClasses...&gt; {});</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>}</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> I&gt; <span class="keyword">inline</span> <span class="keywordtype">void</span> applyToMoreTypes(I) {}</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span> </div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>} <span class="comment">// namespace</span></div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span></div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... AdditionalOpClasses&gt;</div>
-<div class="foldopen" id="foldopen00240" data-start="{" data-end="}">
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno"><a class="line" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">  240</a></span><span class="keyword">inline</span> mlir::RewritePatternSet <a class="code hl_function" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a>(</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>) {</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  mlir::RewritePatternSet patterns(ctx);</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  <span class="keyword">auto</span> inserter = [&amp;](<span class="keyword">auto</span>... opClasses) {</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    patterns.add&lt;GeneralTypeReplacePattern&lt;<span class="keyword">decltype</span>(opClasses)&gt;...&gt;(tyConv, ctx);</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  };</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  applyToMoreTypes&lt;<span class="keyword">decltype</span>(inserter), AdditionalOpClasses...&gt;(inserter);</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  <span class="comment">// Special cases for ops where GeneralTypeReplacePattern doesn&#39;t work</span></div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  patterns.add&lt;CreateArrayOpClassReplacePattern, CallOpClassReplacePattern&gt;(tyConv, ctx);</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  <span class="comment">// Add builtin FunctionType and SCF op converters</span></div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  mlir::populateFunctionOpInterfaceTypeConversionPattern&lt;function::FuncDefOp&gt;(patterns, tyConv);</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  mlir::scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <span class="keywordflow">return</span> patterns;</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>}</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span></div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span><span class="keyword">static</span> <span class="keyword">struct </span>OpClassesWithStructTypes {</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span></div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keyword">const</span> std::tuple&lt;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      <span class="comment">// clang-format off</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      array::ArrayLengthOp,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      array::ReadArrayOp,</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      array::WriteArrayOp,</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>      array::InsertArrayOp,</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      array::ExtractArrayOp,</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>      constrain::EmitEqualityOp,</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>      constrain::EmitContainmentOp,</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>      component::MemberDefOp,</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>      component::MemberReadOp,</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      component::MemberWriteOp,</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      component::CreateStructOp,</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      function::FuncDefOp,</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      function::ReturnOp,</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      global::GlobalDefOp,</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      global::GlobalReadOp,</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>      global::GlobalWriteOp,</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>      pod::ReadPodOp,</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      pod::WritePodOp,</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      polymorphic::UnifiableCastOp,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>      polymorphic::ConstReadOp</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>      <span class="comment">// clang-format on</span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>      &gt;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>      WithGeneralBuilder {};</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span></div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keyword">const</span> std::tuple&lt;function::CallOp, array::CreateArrayOp, pod::NewPodOp&gt; NoGeneralBuilder {};</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>} OpClassesWithStructTypes;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span></div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> OpClass&gt;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="keyword">class </span>GeneralTypeReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;OpClass&gt; {</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  GeneralTypeReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>      : mlir::OpConversionPattern&lt;OpClass&gt;(converter, ctx, 0) {}</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  mlir::LogicalResult matchAndRewrite(</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>      OpClass op, <span class="keyword">typename</span> OpClass::Adaptor adaptor, mlir::ConversionPatternRewriter &amp;rewriter</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  )<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    <span class="keyword">const</span> mlir::TypeConverter *converter = mlir::OpConversionPattern&lt;OpClass&gt;::getTypeConverter();</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    assert(converter);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    <span class="comment">// Convert result types</span></div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    mlir::SmallVector&lt;mlir::Type&gt; newResultTypes;</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <span class="keywordflow">if</span> (mlir::failed(converter-&gt;convertTypes(op-&gt;getResultTypes(), newResultTypes))) {</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    }</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    <span class="comment">// ASSERT: &#39;adaptor.getAttributes()&#39; is empty or a subset of &#39;op-&gt;getAttrDictionary()&#39; so the</span></div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    <span class="comment">// former can be ignored without losing anything.</span></div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    assert(</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>        adaptor.getAttributes().empty() ||</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>        llvm::all_of(</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>            adaptor.getAttributes(), [d = op-&gt;getAttrDictionary()](mlir::NamedAttribute a) {</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>      return d.contains(a.getName());</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    }</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>        )</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    );</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    <span class="comment">// Convert any TypeAttr in the attribute list.</span></div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    mlir::SmallVector&lt;mlir::NamedAttribute&gt; newAttrs(op-&gt;getAttrDictionary().getValue());</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="keywordflow">for</span> (mlir::NamedAttribute &amp;n : newAttrs) {</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      <span class="keywordflow">if</span> (mlir::TypeAttr t = llvm::dyn_cast&lt;mlir::TypeAttr&gt;(n.getValue())) {</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>        <span class="keywordflow">if</span> (mlir::Type newType = converter-&gt;convertType(t.getValue())) {</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>          n.setValue(mlir::TypeAttr::get(newType));</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>          <span class="keywordflow">return</span> op-&gt;emitError().append(<span class="stringliteral">&quot;Could not convert type in attribute: &quot;</span>, t);</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>        }</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>      }</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    }</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    <span class="comment">// Build a new Op in place of the current one</span></div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;OpClass&gt;</a>(</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>        rewriter, op, mlir::TypeRange(newResultTypes), adaptor.getOperands(),</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>        mlir::ArrayRef(newAttrs)</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    );</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    <span class="keywordflow">return</span> mlir::success();</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  }</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>};</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span></div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span><span class="keyword">class </span>CreateArrayOpClassReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;array::CreateArrayOp&gt; {</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  CreateArrayOpClassReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      : mlir::OpConversionPattern&lt;array::CreateArrayOp&gt;(converter, ctx, 0) {}</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  mlir::LogicalResult match(array::CreateArrayOp op)<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="keywordflow">if</span> (getTypeConverter()-&gt;convertType(op.getType())) {</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>      <span class="keywordflow">return</span> mlir::success();</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    }</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result type.&quot;</span>);</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  }</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <span class="keywordtype">void</span> rewrite(</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>      array::CreateArrayOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &amp;rewriter</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  )<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    mlir::Type newType = getTypeConverter()-&gt;convertType(op.getType());</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>    assert(llvm::isa&lt;array::ArrayType&gt;(newType) &amp;&amp; <span class="stringliteral">&quot;CreateArrayOp must produce ArrayType result&quot;</span>);</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    mlir::DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">isNullOrEmpty</a>(numDimsPerMap)) {</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>      <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;array::CreateArrayOp&gt;</a>(</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>          rewriter, op, llvm::cast&lt;array::ArrayType&gt;(newType), adapter.getElements()</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>      );</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>      <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;array::CreateArrayOp&gt;</a>(</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>          rewriter, op, llvm::cast&lt;array::ArrayType&gt;(newType), adapter.getMapOperands(),</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>          numDimsPerMap</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      );</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    }</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  }</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>};</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span></div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span><span class="keyword">class </span>CallOpClassReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;function::CallOp&gt; {</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  CallOpClassReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>      : mlir::OpConversionPattern&lt;function::CallOp&gt;(converter, ctx, 0) {}</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  mlir::LogicalResult matchAndRewrite(</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>      function::CallOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &amp;rewriter</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  )<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    mlir::SmallVector&lt;mlir::Type&gt; newResultTypes;</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    <span class="keywordflow">if</span> (mlir::failed(getTypeConverter()-&gt;convertTypes(op.getResultTypes(), newResultTypes))) {</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    }</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;function::CallOp&gt;</a>(</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>        rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>        op.getNumDimsPerMapAttr(), adapter.getArgOperands()</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>    );</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    <span class="keywordflow">return</span> mlir::success();</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  }</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>};</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span></div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span><span class="keyword">class </span>NewPodOpClassReplacePattern : <span class="keyword">public</span> mlir::OpConversionPattern&lt;pod::NewPodOp&gt; {</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  NewPodOpClassReplacePattern(mlir::TypeConverter &amp;converter, mlir::MLIRContext *ctx)</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>      : mlir::OpConversionPattern&lt;pod::NewPodOp&gt;(converter, ctx, 0) {}</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>  mlir::LogicalResult matchAndRewrite(</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>      pod::NewPodOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &amp;rewriter</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  )<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    <span class="keyword">auto</span> newResultType = dyn_cast_if_present&lt;pod::PodType&gt;(</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>        getTypeConverter()-&gt;convertType(op.getResult().getType())</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    );</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    <span class="keywordflow">if</span> (!newResultType) {</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>      <span class="keywordflow">return</span> op-&gt;emitError(<span class="stringliteral">&quot;Could not convert Op result types.&quot;</span>);</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>    }</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    <a class="code hl_function" href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">replaceOpWithNewOp&lt;pod::NewPodOp&gt;</a>(</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>        rewriter, op, newResultType, adaptor.getMapOperands(), op.getNumDimsPerMapAttr(),</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>        <a class="code hl_function" href="namespacellzk_1_1pod.html#ab92aa32aadfe5364bc75ddb90128801b">pod::getInitializedRecordValues</a>(adaptor.getInitialValues(), op.getInitializedRecords())</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    );</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    <span class="keywordflow">return</span> mlir::success();</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>  }</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>};</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> I, <span class="keyword">typename</span> NextOpClass, <span class="keyword">typename</span>... OtherOpClasses&gt;</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span><span class="keyword">inline</span> <span class="keywordtype">void</span> applyToMoreTypes(I inserter) {</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  std::apply(inserter, std::tuple&lt;NextOpClass, OtherOpClasses...&gt; {});</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>}</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> I&gt; <span class="keyword">inline</span> <span class="keywordtype">void</span> applyToMoreTypes(I) {}</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span></div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... AdditionalOpClasses&gt;</div>
+<div class="foldopen" id="foldopen00266" data-start="{" data-end="}">
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno"><a class="line" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">  266</a></span><span class="keyword">inline</span> mlir::RewritePatternSet <a class="code hl_function" href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a>(</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>) {</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  mlir::RewritePatternSet patterns(ctx);</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  <span class="keyword">auto</span> inserter = [&amp;](<span class="keyword">auto</span>... opClasses) {</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    patterns.add&lt;GeneralTypeReplacePattern&lt;<span class="keyword">decltype</span>(opClasses)&gt;...&gt;(tyConv, ctx);</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  };</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  std::apply(inserter, OpClassesWithStructTypes.WithGeneralBuilder);</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  applyToMoreTypes&lt;<span class="keyword">decltype</span>(inserter), AdditionalOpClasses...&gt;(inserter);</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  <span class="comment">// Special cases for ops where GeneralTypeReplacePattern doesn&#39;t work</span></div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  patterns.add&lt;</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>      CreateArrayOpClassReplacePattern, CallOpClassReplacePattern, NewPodOpClassReplacePattern&gt;(</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>      tyConv, ctx</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  );</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  <span class="comment">// Add builtin FunctionType and SCF op converters</span></div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  mlir::populateFunctionOpInterfaceTypeConversionPattern&lt;function::FuncDefOp&gt;(patterns, tyConv);</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  mlir::scf::populateSCFStructuralTypeConversionsAndLegality(tyConv, patterns, target);</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  <span class="keywordflow">return</span> patterns;</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>}</div>
 </div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aConstrain_2IR_2Ops_8h_html"><div class="ttname"><a href="Constrain_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aGlobal_2IR_2Ops_8h_html"><div class="ttname"><a href="Global_2IR_2Ops_8h.html">Ops.h</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Ops_8h_html"><div class="ttname"><a href="POD_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Ops_8h_html"><div class="ttname"><a href="Struct_2IR_2Ops_8h.html">Ops.h</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1pod_html_ab92aa32aadfe5364bc75ddb90128801b"><div class="ttname"><a href="namespacellzk_1_1pod.html#ab92aa32aadfe5364bc75ddb90128801b">llzk::pod::getInitializedRecordValues</a></div><div class="ttdeci">SmallVector&lt; RecordValue &gt; getInitializedRecordValues(ValueRange initialValues, ArrayAttr initializedRecords)</div><div class="ttdef"><b>Definition</b> <a href="POD_2IR_2Ops_8cpp_source.html#l00341">Ops.cpp:341</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a1427f2f608259bf0a8ccfac39383aa89"><div class="ttname"><a href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">llzk::replaceOpWithNewOp</a></div><div class="ttdeci">OpClass replaceOpWithNewOp(Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</div><div class="ttdoc">Wrapper for PatternRewriter::replaceOpWithNewOp() that automatically copies discardable attributes (i...</div><div class="ttdef"><b>Definition</b> <a href="#l00071">TypeConversionPatterns.h:71</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a1427f2f608259bf0a8ccfac39383aa89"><div class="ttname"><a href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">llzk::replaceOpWithNewOp</a></div><div class="ttdeci">OpClass replaceOpWithNewOp(Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</div><div class="ttdoc">Wrapper for PatternRewriter::replaceOpWithNewOp() that automatically copies discardable attributes (i...</div><div class="ttdef"><b>Definition</b> <a href="#l00072">TypeConversionPatterns.h:72</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5a58995f554b579f9f32b1454376fa38"><div class="ttname"><a href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">llzk::isNullOrEmpty</a></div><div class="ttdeci">bool isNullOrEmpty(mlir::ArrayAttr a)</div><div class="ttdef"><b>Definition</b> <a href="AttributeHelper_8h_source.html#l00036">AttributeHelper.h:36</a></div></div>
-<div class="ttc" id="anamespacellzk_html_aaa4a11b9841dc711843a40d178fea482"><div class="ttname"><a href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">llzk::newGeneralRewritePatternSet</a></div><div class="ttdeci">mlir::RewritePatternSet newGeneralRewritePatternSet(mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</div><div class="ttdoc">Return a new RewritePatternSet covering all LLZK op types that may contain a StructType.</div><div class="ttdef"><b>Definition</b> <a href="#l00240">TypeConversionPatterns.h:240</a></div></div>
-<div class="ttc" id="anamespacellzk_html_af3181672011649b0e7987f2ae2453386"><div class="ttname"><a href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">llzk::defaultLegalityCheck</a></div><div class="ttdeci">bool defaultLegalityCheck(const mlir::TypeConverter &amp;tyConv, mlir::Operation *op)</div><div class="ttdoc">Check whether an op is legal with respect to the given type converter, including TypeAttr attributes ...</div><div class="ttdef"><b>Definition</b> <a href="#l00043">TypeConversionPatterns.h:43</a></div></div>
+<div class="ttc" id="anamespacellzk_html_aaa4a11b9841dc711843a40d178fea482"><div class="ttname"><a href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">llzk::newGeneralRewritePatternSet</a></div><div class="ttdeci">mlir::RewritePatternSet newGeneralRewritePatternSet(mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</div><div class="ttdoc">Return a new RewritePatternSet covering all LLZK op types that may contain a StructType.</div><div class="ttdef"><b>Definition</b> <a href="#l00266">TypeConversionPatterns.h:266</a></div></div>
+<div class="ttc" id="anamespacellzk_html_af3181672011649b0e7987f2ae2453386"><div class="ttname"><a href="namespacellzk.html#af3181672011649b0e7987f2ae2453386">llzk::defaultLegalityCheck</a></div><div class="ttdeci">bool defaultLegalityCheck(const mlir::TypeConverter &amp;tyConv, mlir::Operation *op)</div><div class="ttdoc">Check whether an op is legal with respect to the given type converter, including TypeAttr attributes ...</div><div class="ttdef"><b>Definition</b> <a href="#l00044">TypeConversionPatterns.h:44</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
