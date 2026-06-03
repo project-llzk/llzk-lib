@@ -1,0 +1,5 @@
+added:
+  - "`SpecializedSROA` and `SpecializedMem2Reg` passes"
+
+changed:
+  - Update ArrayToScalarPass to use these new passes instead of the builtin ones
