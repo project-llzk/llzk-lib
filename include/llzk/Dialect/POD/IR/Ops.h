@@ -16,6 +16,10 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Value.h>
+#include <mlir/Interfaces/MemorySlotInterfaces.h>
+
+// Include TableGen'd declarations
+#include "llzk/Dialect/POD/IR/OpInterfaces.h.inc"
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
