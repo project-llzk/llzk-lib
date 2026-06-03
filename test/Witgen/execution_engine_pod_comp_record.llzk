@@ -1,0 +1,46 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+!State = !pod.type<[@comp: !struct.type<@Inner>]>
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Inner {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Inner> {
+      %self = struct.new : !struct.type<@Inner>
+      %c7 = felt.const 7 <"babybear">
+      struct.writem %self[@out] = %c7 : !struct.type<@Inner>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Inner>
+    }
+    function.def @constrain(%self: !struct.type<@Inner>) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %state = pod.new : !State
+      %inner = function.call @Inner::@compute() : () -> !struct.type<@Inner>
+      pod.write %state[@comp] = %inner : !State, !struct.type<@Inner>
+      %loaded = pod.read %state[@comp] : !State, !struct.type<@Inner>
+      %out = struct.readm %loaded[@out] : !struct.type<@Inner>, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": "7"
+// CHECK-NEXT: }
+
+//--- input.json
+{}

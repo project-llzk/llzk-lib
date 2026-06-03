@@ -35,6 +35,8 @@
 
 #include "llzk/Util/SymbolTableLLZK.h"
 
+#include "llzk/Dialect/POD/IR/Ops.h"
+
 #include <llvm/ADT/SmallPtrSet.h>
 
 using namespace mlir;
@@ -130,7 +132,6 @@ static std::optional<WalkResult> walkSymbolTable(
 /// `callback` for each found use. The `callback` takes the use of the symbol as input.
 static WalkResult
 walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> callback) {
-  // This is modified for LLZK.
   auto walkFn = [&op, &callback](SymbolRefAttr symbolRef) {
     if (callback({op, symbolRef}).wasInterrupted()) {
       return WalkResult::interrupt();
@@ -147,7 +148,23 @@ walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> c
       return WalkResult::interrupt();
     }
   }
-  return op->getAttrDictionary().walk<WalkOrder::PreOrder>(walkFn);
+
+  // POD record names are encoded as FlatSymbolRefAttr for parsing/printing
+  // convenience, but they are not real symbol references and must not be
+  // surfaced as symbol uses.
+  auto shouldSkipAttr = [op](NamedAttribute attr) {
+    return attr.getName() == "record_name" &&
+           (isa<llzk::pod::ReadPodOp>(op) || isa<llzk::pod::WritePodOp>(op));
+  };
+  for (NamedAttribute attr : op->getAttrs()) {
+    if (shouldSkipAttr(attr)) {
+      continue;
+    }
+    if (attr.getValue().walk<WalkOrder::PreOrder>(walkFn).wasInterrupted()) {
+      return WalkResult::interrupt();
+    }
+  }
+  return WalkResult::advance();
 }
 
 /// Walk all of the uses, for any symbol, that are nested within the given
