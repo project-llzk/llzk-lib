@@ -150,6 +150,7 @@ walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> c
     }
   }
 
+  // TODO: Remove this when POD types are updated to use StringAttr.
   // POD record names are encoded as FlatSymbolRefAttr for parsing/printing
   // convenience, but they are not real symbol references and must not be
   // surfaced as symbol uses.
