@@ -681,6 +681,26 @@ lowerFeltShl(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
   return lowerFeltMul(builder, loc, lhs, lowerFeltPow(builder, loc, two, rhs, field), field);
 }
 
+/// Lower field bitwise-or with explicit modular reduction.
+static Value
+lowerFeltOr(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = field.bitWidth();
+  auto wideType = IntegerType::get(builder.getContext(), width + 1);
+  Value orValue = builder.create<arith::OrIOp>(loc, lhs, rhs);
+  Value orWide = builder.create<arith::ExtUIOp>(loc, wideType, orValue);
+  return normalizeWideValue(builder, loc, orWide, width, field);
+}
+
+/// Lower field bitwise-xor with explicit modular reduction.
+static Value
+lowerFeltXor(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = field.bitWidth();
+  auto wideType = IntegerType::get(builder.getContext(), width + 1);
+  Value xorValue = builder.create<arith::XOrIOp>(loc, lhs, rhs);
+  Value xorWide = builder.create<arith::ExtUIOp>(loc, wideType, xorValue);
+  return normalizeWideValue(builder, loc, xorWide, width, field);
+}
+
 /// Lower unsigned integer division on felt representatives.
 static Value lowerFeltUnsignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) {
   return builder.create<arith::DivUIOp>(loc, lhs, rhs);
@@ -1240,7 +1260,7 @@ private:
       }
       return bind(
           orOp.getResult(),
-          LoweredValue {orOp.getType(), {builder.create<arith::OrIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {orOp.getType(), {lowerFeltOr(builder, loc, *lhs, *rhs, field)}}
       );
     }
     if (auto xorOp = dyn_cast<felt::XorFeltOp>(op)) {
@@ -1251,7 +1271,7 @@ private:
       }
       return bind(
           xorOp.getResult(),
-          LoweredValue {xorOp.getType(), {builder.create<arith::XOrIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {xorOp.getType(), {lowerFeltXor(builder, loc, *lhs, *rhs, field)}}
       );
     }
     if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {

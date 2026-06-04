@@ -548,7 +548,8 @@ private:
       if (!rhs) {
         return rhs.takeError();
       }
-      return bind({WitnessVal(field.reduce(*lhs << *rhs))});
+      llvm::DynamicAPInt two(2);
+      return bind({WitnessVal(field.reduce(*lhs * modExp(two, *rhs, field.prime())))});
     }
     if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
       auto operand = lookup(negOp.getOperand(), scope);
