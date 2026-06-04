@@ -333,7 +333,7 @@ Options</h5>
 <p><em>Print interval analysis results for all LLZK structs.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options-1"></a>
 Options</h5>
-<div class="fragment"><div class="line">-field                       : The field to use for interval analysis. If supplied, this always overrides the module&#39;s detected field. If omitted, the pass first tries to detect a single field from the enclosing module&#39;s felt usage and otherwise falls back to bn128. Supported fields: bn128/bn254, babybear, goldilocks, koalabear, mersenne31</div>
+<div class="fragment"><div class="line">-field                       : The field to use for interval analysis. If supplied, this always overrides the module&#39;s detected field. If omitted, the pass first tries to detect a single field from the enclosing module&#39;s felt usage and otherwise falls back to bn128. Supported fields: bn128/bn254, babybear, goldilocks, grumpkin, koalabear, mersenne31</div>
 <div class="line">-propagate-input-constraints : Whether to propagate constraints on inputs from @constrain to @compute functions. This allows for tighter intervals to possibly be found for computed values, assuming that the witness generator would include constraints as assertions during the computation.</div>
 <div class="line">-print-solver-constraints    : Whether to output SMT solver constraints along with intervals.</div>
 <div class="line">-print-compute-intervals     : Whether to print compute function intervals (default only prints constrain function intervals).</div>
