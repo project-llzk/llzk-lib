@@ -166,6 +166,25 @@ TEST_F(CAPITest, MlirOpBuilderSaveInsertionPoint) {
   mlirOperationDestroy(module);
 }
 
+TEST_F(CAPITest, MlirOpBuilderSaveInsertionPointWithoutOperation) {
+  MlirBlock block;
+  MlirOperation module = createContainerOp(context, &block);
+  MlirOperation first = createIndexOperation();
+  MlirOperation second = createIndexOperation();
+  mlirBlockAppendOwnedOperation(block, first);
+  mlirBlockAppendOwnedOperation(block, second);
+
+  auto builder = mlirOpBuilderCreate(context);
+
+  mlirOpBuilderSetInsertionPointToEnd(builder, block);
+  MlirOpBuilderInsertPoint saved = mlirOpBuilderSaveInsertionPoint(builder);
+  EXPECT_EQ(saved.block.ptr, block.ptr);
+  EXPECT_EQ(saved.point.ptr, nullptr);
+
+  mlirOpBuilderDestroy(builder);
+  mlirOperationDestroy(module);
+}
+
 TEST_F(CAPITest, MlirOpBuilderRestoreInsertionPoint) {
   MlirBlock block;
   MlirOperation module = createContainerOp(context, &block);
