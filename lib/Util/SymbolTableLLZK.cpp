@@ -132,6 +132,7 @@ static std::optional<WalkResult> walkSymbolTable(
 /// `callback` for each found use. The `callback` takes the use of the symbol as input.
 static WalkResult
 walkSymbolRefs(Operation *op, function_ref<WalkResult(SymbolTable::SymbolUse)> callback) {
+  // This is modified for LLZK.
   auto walkFn = [&op, &callback](SymbolRefAttr symbolRef) {
     if (callback({op, symbolRef}).wasInterrupted()) {
       return WalkResult::interrupt();
