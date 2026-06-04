@@ -167,6 +167,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8ffa485b706ddbbde96d4e9a984c1a39"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set RecordName attribute of <a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">llzk::pod::ReadPodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a080df44abdc5ffb493a4c35358de645e" id="r_a080df44abdc5ffb493a4c35358de645e"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a080df44abdc5ffb493a4c35358de645e">llzkPod_ReadPodOpGetResult</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:a080df44abdc5ffb493a4c35358de645e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Result result from <a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">llzk::pod::ReadPodOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a93481c70af272b95ec035a2a6cbe574e" id="r_a93481c70af272b95ec035a2a6cbe574e"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a93481c70af272b95ec035a2a6cbe574e">llzkPod_ReadPodOpGetPodRefType</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a93481c70af272b95ec035a2a6cbe574e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the type of the referenced pod.  <br /></td></tr>
 <tr class="memitem:a8abf7e6c935bffe2198c777bf7a83734" id="r_a8abf7e6c935bffe2198c777bf7a83734"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8abf7e6c935bffe2198c777bf7a83734">llzkPod_WritePodOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue pod_ref, MlirValue value, MlirAttribute record_name)</td></tr>
 <tr class="memdesc:a8abf7e6c935bffe2198c777bf7a83734"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ace75ce79594ecc7733a87f6bdab2b222" id="r_ace75ce79594ecc7733a87f6bdab2b222"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ace75ce79594ecc7733a87f6bdab2b222">llzkOperationIsA_Pod_WritePodOp</a> (MlirOperation inp)</td></tr>
@@ -183,6 +185,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a37b88a4b859aac6810c652a97e69ffdd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get RecordName attribute from <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a057f0abad887901af68732f0fc8fb1c0" id="r_a057f0abad887901af68732f0fc8fb1c0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a057f0abad887901af68732f0fc8fb1c0">llzkPod_WritePodOpSetRecordName</a> (MlirOperation op, MlirAttribute attr)</td></tr>
 <tr class="memdesc:a057f0abad887901af68732f0fc8fb1c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set RecordName attribute of <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a38952919d568fc2e3c19a48db4761977" id="r_a38952919d568fc2e3c19a48db4761977"><td class="memItemLeft" align="right" valign="top">MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a38952919d568fc2e3c19a48db4761977">llzkPod_WritePodOpGetPodRefType</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a38952919d568fc2e3c19a48db4761977"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the type of the referenced pod.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a779866fe21553c63eeee0e738fdabf95" name="a779866fe21553c63eeee0e738fdabf95"></a>
@@ -244,7 +248,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00185">185</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00189">189</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -621,6 +625,27 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a93481c70af272b95ec035a2a6cbe574e" name="a93481c70af272b95ec035a2a6cbe574e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93481c70af272b95ec035a2a6cbe574e">&#9670;&#160;</a></span>llzkPod_ReadPodOpGetPodRefType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirType llzkPod_ReadPodOpGetPodRefType </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the type of the referenced pod. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00171">171</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a439bcdb331c82a4deda29b33c8f1b51c" name="a439bcdb331c82a4deda29b33c8f1b51c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a439bcdb331c82a4deda29b33c8f1b51c">&#9670;&#160;</a></span>llzkPod_ReadPodOpGetRecordName()</h2>
 
@@ -749,7 +774,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00171">171</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00175">175</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -770,7 +795,28 @@ Functions</h2></td></tr>
 
 <p>Get PodRef operand from <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00189">189</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00193">193</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a38952919d568fc2e3c19a48db4761977" name="a38952919d568fc2e3c19a48db4761977"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38952919d568fc2e3c19a48db4761977">&#9670;&#160;</a></span>llzkPod_WritePodOpGetPodRefType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirType llzkPod_WritePodOpGetPodRefType </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets the type of the referenced pod. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00241">241</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -791,7 +837,7 @@ Functions</h2></td></tr>
 
 <p>Get RecordName attribute from <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00229">229</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00233">233</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -812,7 +858,7 @@ Functions</h2></td></tr>
 
 <p>Get Value operand from <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00209">209</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00213">213</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -837,7 +883,7 @@ Functions</h2></td></tr>
 
 <p>Set PodRef operand of <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00199">199</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00203">203</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -862,7 +908,7 @@ Functions</h2></td></tr>
 
 <p>Set RecordName attribute of <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00233">233</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00237">237</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -887,7 +933,7 @@ Functions</h2></td></tr>
 
 <p>Set Value operand of <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00219">219</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html#l00223">223</a> of file <a class="el" href="POD_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

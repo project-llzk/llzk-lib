@@ -9,7 +9,7 @@ var searchData=
   ['degenerate_6',['Degenerate',['../classllzk_1_1Interval.html#abff97a7dbafea1f92e848bdb9bc17586',1,'llzk::Interval']]],
   ['delegate_5fto_5fbuild_7',['delegate_to_build',['../namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a',1,'llzk']]],
   ['delinearize_8',['delinearize',['../classllzk_1_1array_1_1ArrayIndexGen.html#af299e13df8ee265e88b7f2a95eec2c1e',1,'llzk::array::ArrayIndexGen::delinearize(int64_t, mlir::Location, mlir::OpBuilder &amp;) const'],['../classllzk_1_1array_1_1ArrayIndexGen.html#a9cca9dae0a74200132ee9f2e619f7d68',1,'llzk::array::ArrayIndexGen::delinearize(int64_t, mlir::MLIRContext *) const']]],
-  ['destructure_9',['destructure',['../classllzk_1_1array_1_1CreateArrayOp.html#aae1030958526bf817461c049881ff15f',1,'llzk::array::CreateArrayOp']]],
+  ['destructure_9',['destructure',['../classllzk_1_1array_1_1CreateArrayOp.html#aae1030958526bf817461c049881ff15f',1,'llzk::array::CreateArrayOp::destructure()'],['../classllzk_1_1pod_1_1NewPodOp.html#abffc915e5b76bb3db8868a91544a499e',1,'llzk::pod::NewPodOp::destructure()']]],
   ['dialectname_10',['DialectName',['../CommonCAPIGen_8cpp.html#a45ee32b3d971409d34413873af110661',1,'CommonCAPIGen.cpp']]],
   ['difference_11',['difference',['../classllzk_1_1Interval.html#adf403ad8a32b3ce99f950f2db365f6ea',1,'llzk::Interval']]],
   ['dispatchsmtopvisitor_12',['dispatchSMTOpVisitor',['../classllzk_1_1smt_1_1SMTOpVisitor.html#a6397e48623417df05707a9c696e9514a',1,'llzk::smt::SMTOpVisitor']]],

@@ -115,12 +115,12 @@ $(function(){initNavTree('classllzk_1_1pod_1_1PodType.html','','classllzk_1_1pod
 <div class="dynheader">
 Inheritance diagram for llzk::pod::PodType:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1PodType__inherit__graph.svg" width="200" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1PodType__inherit__graph.svg" width="448" height="107"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for llzk::pod::PodType:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1PodType__coll__graph.svg" width="200" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1PodType__coll__graph.svg" width="448" height="107"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -129,8 +129,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a312d54e1e6493eb0aea561fcfe1409c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Searches a record by name.  <br /></td></tr>
 <tr class="memitem:a72981aadbae2fc5bfa3ed23d9dd0d10f" id="r_a72981aadbae2fc5bfa3ed23d9dd0d10f"><td class="memItemLeft" align="right" valign="top">::llvm::StringMap&lt;::mlir::Type &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a72981aadbae2fc5bfa3ed23d9dd0d10f">getRecordMap</a> () const</td></tr>
 <tr class="memdesc:a72981aadbae2fc5bfa3ed23d9dd0d10f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the records in map form.  <br /></td></tr>
+<tr class="memitem:ad4a244d4bc6cdccd95c348f9cf9f5beb" id="r_ad4a244d4bc6cdccd95c348f9cf9f5beb"><td class="memItemLeft" align="right" valign="top">::mlir::Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4a244d4bc6cdccd95c348f9cf9f5beb">getSingleRecordType</a> (::mlir::StringAttr <a class="el" href="#ac50030b47252131e700e00542813f90e">name</a>) const</td></tr>
+<tr class="memdesc:ad4a244d4bc6cdccd95c348f9cf9f5beb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> containing only the requested record.  <br /></td></tr>
 <tr class="memitem:a2c2d29b52d695b6f12d4fc800da2a3dd" id="r_a2c2d29b52d695b6f12d4fc800da2a3dd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2c2d29b52d695b6f12d4fc800da2a3dd">print</a> (::mlir::AsmPrinter &amp;odsPrinter) const</td></tr>
 <tr class="memitem:acfd4313b3e24d3c31a87d35d78f35c6f" id="r_acfd4313b3e24d3c31a87d35d78f35c6f"><td class="memItemLeft" align="right" valign="top">::llvm::ArrayRef&lt;::llzk::pod::RecordAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acfd4313b3e24d3c31a87d35d78f35c6f">getRecords</a> () const</td></tr>
+<tr class="memitem:ac6212eb45892bcae85b26567b2bde512" id="r_ac6212eb45892bcae85b26567b2bde512"><td class="memItemLeft" align="right" valign="top">::std::optional&lt;::llvm::DenseMap&lt;::mlir::Attribute, ::mlir::Type &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac6212eb45892bcae85b26567b2bde512">getSubelementIndexMap</a> () const</td></tr>
+<tr class="memdesc:ac6212eb45892bcae85b26567b2bde512"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by DestructurableTypeInterface / SROA pass.  <br /></td></tr>
+<tr class="memitem:a78c45eae25c0cb7edc47c94ef6a3c5c0" id="r_a78c45eae25c0cb7edc47c94ef6a3c5c0"><td class="memItemLeft" align="right" valign="top">::mlir::Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a78c45eae25c0cb7edc47c94ef6a3c5c0">getTypeAtIndex</a> (::mlir::Attribute index) const</td></tr>
+<tr class="memdesc:a78c45eae25c0cb7edc47c94ef6a3c5c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by DestructurableTypeInterface / SROA pass.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -276,7 +282,7 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8h_8inc_source.html#l00049">49</a> of file <a class="el" href="POD_2IR_2Types_8h_8inc_source.html">Types.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8h_8inc_source.html#l00052">52</a> of file <a class="el" href="POD_2IR_2Types_8h_8inc_source.html">Types.h.inc</a>.</p>
 
 </div>
 </div>
@@ -344,6 +350,69 @@ Static Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8cpp_8inc_source.html#l00115">115</a> of file <a class="el" href="POD_2IR_2Types_8cpp_8inc_source.html">Types.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ad4a244d4bc6cdccd95c348f9cf9f5beb" name="ad4a244d4bc6cdccd95c348f9cf9f5beb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4a244d4bc6cdccd95c348f9cf9f5beb">&#9670;&#160;</a></span>getSingleRecordType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Type llzk::pod::PodType::getSingleRecordType </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::StringAttr</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a> containing only the requested record. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8cpp_source.html#l00067">67</a> of file <a class="el" href="POD_2IR_2Types_8cpp_source.html">Types.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac6212eb45892bcae85b26567b2bde512" name="ac6212eb45892bcae85b26567b2bde512"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6212eb45892bcae85b26567b2bde512">&#9670;&#160;</a></span>getSubelementIndexMap()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; DenseMap&lt; Attribute, Type &gt; &gt; llzk::pod::PodType::getSubelementIndexMap </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by DestructurableTypeInterface / SROA pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8cpp_source.html#l00077">77</a> of file <a class="el" href="POD_2IR_2Types_8cpp_source.html">Types.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a78c45eae25c0cb7edc47c94ef6a3c5c0" name="a78c45eae25c0cb7edc47c94ef6a3c5c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78c45eae25c0cb7edc47c94ef6a3c5c0">&#9670;&#160;</a></span>getTypeAtIndex()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Type llzk::pod::PodType::getTypeAtIndex </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>index</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by DestructurableTypeInterface / SROA pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8cpp_source.html#l00086">86</a> of file <a class="el" href="POD_2IR_2Types_8cpp_source.html">Types.cpp</a>.</p>
 
 </div>
 </div>
@@ -476,7 +545,7 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8h_8inc_source.html#l00043">43</a> of file <a class="el" href="POD_2IR_2Types_8h_8inc_source.html">Types.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8h_8inc_source.html#l00046">46</a> of file <a class="el" href="POD_2IR_2Types_8h_8inc_source.html">Types.h.inc</a>.</p>
 
 </div>
 </div>
@@ -500,7 +569,7 @@ Static Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8h_8inc_source.html#l00042">42</a> of file <a class="el" href="POD_2IR_2Types_8h_8inc_source.html">Types.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8h_8inc_source.html#l00045">45</a> of file <a class="el" href="POD_2IR_2Types_8h_8inc_source.html">Types.h.inc</a>.</p>
 
 </div>
 </div>

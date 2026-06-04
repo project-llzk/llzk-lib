@@ -380,6 +380,20 @@ var hierarchy =
       [ "llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
       [ "llzk::global::detail::GlobalRefOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceInterfaceTraits_1_1Model.html", null ]
     ] ],
+    [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits::Concept", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
+    [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits::Concept", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
     [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::Concept", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1Concept.html", [
       [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
         [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
@@ -1115,6 +1129,8 @@ var hierarchy =
       [ "llzk::constrain::ConstraintOpInterface", "classllzk_1_1constrain_1_1ConstraintOpInterface.html", null ],
       [ "llzk::felt::FeltBinaryOpInterface", "classllzk_1_1felt_1_1FeltBinaryOpInterface.html", null ],
       [ "llzk::global::GlobalRefOpInterface", "classllzk_1_1global_1_1GlobalRefOpInterface.html", null ],
+      [ "llzk::pod::PodAccessOpInterface", "classllzk_1_1pod_1_1PodAccessOpInterface.html", null ],
+      [ "llzk::pod::PodRefOpInterface", "classllzk_1_1pod_1_1PodRefOpInterface.html", null ],
       [ "llzk::polymorphic::TemplateSymbolBindingOpInterface", "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html", null ],
       [ "llzk::verif::ConditionOpInterface", "classllzk_1_1verif_1_1ConditionOpInterface.html", null ],
       [ "llzk::verif::PostconditionOpInterface", "classllzk_1_1verif_1_1PostconditionOpInterface.html", null ],
@@ -1151,6 +1167,8 @@ var hierarchy =
       [ "llzk::SpecializedSROA< AllocOpTy >", "structllzk_1_1SpecializedSROA.html", null ],
       [ "mlir_hotfix::RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", null ]
     ] ],
+    [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits.html", null ],
+    [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::witgen::PodValue", "structllzk_1_1witgen_1_1PodValue.html", null ],
     [ "llzk::PolyLoweringPassOptions", "structllzk_1_1PolyLoweringPassOptions.html", null ],
     [ "llzk::smt::detail::PopOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PopOpGenericAdaptorBase.html", [
@@ -1457,6 +1475,12 @@ var hierarchy =
       ] ],
       [ "llzk::global::detail::GlobalRefOpInterfaceTrait< ConcreteOp >", "structllzk_1_1global_1_1detail_1_1GlobalRefOpInterfaceTrait.html", [
         [ "llzk::global::GlobalRefOpInterface::Trait< ConcreteOp >", "structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::pod::detail::PodAccessOpInterfaceTrait< ConcreteOp >", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceTrait.html", [
+        [ "llzk::pod::PodAccessOpInterface::Trait< ConcreteOp >", "structllzk_1_1pod_1_1PodAccessOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::pod::detail::PodRefOpInterfaceTrait< ConcreteOp >", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceTrait.html", [
+        [ "llzk::pod::PodRefOpInterface::Trait< ConcreteOp >", "structllzk_1_1pod_1_1PodRefOpInterface_1_1Trait.html", null ]
       ] ],
       [ "llzk::polymorphic::detail::TemplateSymbolBindingOpInterfaceTrait< ConcreteOp >", "structllzk_1_1polymorphic_1_1detail_1_1TemplateSymbolBindingOpInterfaceTrait.html", [
         [ "llzk::polymorphic::TemplateSymbolBindingOpInterface::Trait< ConcreteOp >", "structllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface_1_1Trait.html", null ]

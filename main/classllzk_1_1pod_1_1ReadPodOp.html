@@ -115,12 +115,12 @@ $(function(){initNavTree('classllzk_1_1pod_1_1ReadPodOp.html','','classllzk_1_1p
 <div class="dynheader">
 Inheritance diagram for llzk::pod::ReadPodOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1ReadPodOp__inherit__graph.svg" width="568" height="158"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1ReadPodOp__inherit__graph.svg" width="556" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for llzk::pod::ReadPodOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1ReadPodOp__coll__graph.svg" width="568" height="158"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1pod_1_1ReadPodOp__coll__graph.svg" width="556" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -150,7 +150,25 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a644ea445558458b8c394930bb89d69ec" id="r_a644ea445558458b8c394930bb89d69ec"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a644ea445558458b8c394930bb89d69ec">verifyInvariantsImpl</a> ()</td></tr>
 <tr class="memitem:a00586a5ad3cc3a0f098ed9e1c5b7bda9" id="r_a00586a5ad3cc3a0f098ed9e1c5b7bda9"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a00586a5ad3cc3a0f098ed9e1c5b7bda9">verifyInvariants</a> ()</td></tr>
 <tr class="memitem:a71f2c38c10f0ddccdcc3ff9936455b7a" id="r_a71f2c38c10f0ddccdcc3ff9936455b7a"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71f2c38c10f0ddccdcc3ff9936455b7a">verify</a> ()</td></tr>
+<tr class="memitem:ac554c412dd4aa95d4b3b5d37179046d5" id="r_ac554c412dd4aa95d4b3b5d37179046d5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac554c412dd4aa95d4b3b5d37179046d5">canRewire</a> (const ::mlir::DestructurableMemorySlot &amp;slot, ::llvm::SmallPtrSetImpl&lt;::mlir::Attribute &gt; &amp;usedIndices, ::mlir::SmallVectorImpl&lt;::mlir::MemorySlot &gt; &amp;mustBeSafelyUsed, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:ac554c412dd4aa95d4b3b5d37179046d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by DestructurableAllocationOpInterface / SROA pass.  <br /></td></tr>
+<tr class="memitem:afd4c3d501e0ff046d9c1151a67e50335" id="r_afd4c3d501e0ff046d9c1151a67e50335"><td class="memItemLeft" align="right" valign="top">::mlir::DeletionKind&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afd4c3d501e0ff046d9c1151a67e50335">rewire</a> (const ::mlir::DestructurableMemorySlot &amp;slot, ::llvm::DenseMap&lt;::mlir::Attribute, ::mlir::MemorySlot &gt; &amp;subslots, ::mlir::OpBuilder &amp;builder, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:afd4c3d501e0ff046d9c1151a67e50335"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by DestructurableAllocationOpInterface / SROA pass.  <br /></td></tr>
+<tr class="memitem:ac20e3bf4a7d91c69fea06bb1c29e9083" id="r_ac20e3bf4a7d91c69fea06bb1c29e9083"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac20e3bf4a7d91c69fea06bb1c29e9083">loadsFrom</a> (const ::mlir::MemorySlot &amp;slot)</td></tr>
+<tr class="memdesc:ac20e3bf4a7d91c69fea06bb1c29e9083"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a505ca920ddfd5073c23d74ec17dc48ab" id="r_a505ca920ddfd5073c23d74ec17dc48ab"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a505ca920ddfd5073c23d74ec17dc48ab">storesTo</a> (const ::mlir::MemorySlot &amp;slot)</td></tr>
+<tr class="memdesc:a505ca920ddfd5073c23d74ec17dc48ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a75571e0059716a9a8e4bbe4b015c290f" id="r_a75571e0059716a9a8e4bbe4b015c290f"><td class="memItemLeft" align="right" valign="top">::mlir::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a75571e0059716a9a8e4bbe4b015c290f">getStored</a> (const ::mlir::MemorySlot &amp;slot, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDef, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:a75571e0059716a9a8e4bbe4b015c290f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableAllocationOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a2ce7252f2d13dacb1a42558b0df1d0e8" id="r_a2ce7252f2d13dacb1a42558b0df1d0e8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2ce7252f2d13dacb1a42558b0df1d0e8">canUsesBeRemoved</a> (const ::mlir::MemorySlot &amp;slot, const ::llvm::SmallPtrSetImpl&lt;::mlir::OpOperand * &gt; &amp;blockingUses, ::llvm::SmallVectorImpl&lt;::mlir::OpOperand * &gt; &amp;newBlockingUses, const ::mlir::DataLayout &amp;datalayout)</td></tr>
+<tr class="memdesc:a2ce7252f2d13dacb1a42558b0df1d0e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a4243bee6dc6924e7aa2a948001e0044a" id="r_a4243bee6dc6924e7aa2a948001e0044a"><td class="memItemLeft" align="right" valign="top">::mlir::DeletionKind&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4243bee6dc6924e7aa2a948001e0044a">removeBlockingUses</a> (const ::mlir::MemorySlot &amp;slot, const ::llvm::SmallPtrSetImpl&lt; mlir::OpOperand * &gt; &amp;blockingUses, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDefinition, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:a4243bee6dc6924e7aa2a948001e0044a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a5735003d7585a89d91693e57082a5638" id="r_a5735003d7585a89d91693e57082a5638"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5735003d7585a89d91693e57082a5638">isRead</a> ()</td></tr>
+<tr class="memdesc:a5735003d7585a89d91693e57082a5638"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write.  <br /></td></tr>
 <tr class="memitem:a79a1e752879679dc02b658865f96cd69" id="r_a79a1e752879679dc02b658865f96cd69"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79a1e752879679dc02b658865f96cd69">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
+<tr class="memitem:a670bbf071a1015289f852656b333591f" id="r_a670bbf071a1015289f852656b333591f"><td class="memItemLeft" align="right" valign="top">inline <a class="el" href="classllzk_1_1pod_1_1PodType.html">::llzk::pod::PodType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a670bbf071a1015289f852656b333591f">getPodRefType</a> ()</td></tr>
+<tr class="memdesc:a670bbf071a1015289f852656b333591f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the type of the referenced pod.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -173,7 +191,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00437">437</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00444">444</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ae224b101afac01d40a50deff5de5d079" name="ae224b101afac01d40a50deff5de5d079"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae224b101afac01d40a50deff5de5d079">&#9670;&#160;</a></span>Adaptor</h2>
@@ -187,7 +205,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00441">441</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00448">448</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -203,7 +221,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00444">444</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00451">451</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -221,7 +239,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00443">443</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00450">450</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -237,7 +255,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00445">445</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00452">452</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -472,6 +490,76 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="ac554c412dd4aa95d4b3b5d37179046d5" name="ac554c412dd4aa95d4b3b5d37179046d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac554c412dd4aa95d4b3b5d37179046d5">&#9670;&#160;</a></span>canRewire()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::pod::ReadPodOp::canRewire </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::DestructurableMemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::SmallPtrSetImpl&lt;::mlir::Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>usedIndices</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::SmallVectorImpl&lt;::mlir::MemorySlot &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>mustBeSafelyUsed</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::DataLayout &amp;</td>          <td class="paramname"><span class="paramname"><em>dataLayout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00814">814</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a2ce7252f2d13dacb1a42558b0df1d0e8" name="a2ce7252f2d13dacb1a42558b0df1d0e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ce7252f2d13dacb1a42558b0df1d0e8">&#9670;&#160;</a></span>canUsesBeRemoved()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::pod::ReadPodOp::canUsesBeRemoved </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::llvm::SmallPtrSetImpl&lt;::mlir::OpOperand * &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>blockingUses</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::SmallVectorImpl&lt;::mlir::OpOperand * &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>newBlockingUses</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::DataLayout &amp;</td>          <td class="paramname"><span class="paramname"><em>datalayout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by PromotableMemOpInterface / mem2reg pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00847">847</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a7badd2bc73daaac4aa47b23cb798d3c6" name="a7badd2bc73daaac4aa47b23cb798d3c6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7badd2bc73daaac4aa47b23cb798d3c6">&#9670;&#160;</a></span>computePropertiesHash()</h2>
 
@@ -522,7 +610,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00446">446</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00453">453</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -585,7 +673,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00463">463</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00470">470</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -612,7 +700,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00467">467</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00474">474</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -639,7 +727,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00482">482</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00489">489</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -666,7 +754,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00486">486</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00493">493</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -693,7 +781,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00459">459</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00466">466</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -720,7 +808,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00473">473</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00480">480</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -747,7 +835,36 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00477">477</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00484">484</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a670bbf071a1015289f852656b333591f" name="a670bbf071a1015289f852656b333591f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a670bbf071a1015289f852656b333591f">&#9670;&#160;</a></span>getPodRefType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">inline <a class="el" href="classllzk_1_1pod_1_1PodType.html">::llzk::pod::PodType</a> llzk::pod::ReadPodOp::getPodRefType </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gets the type of the referenced pod. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00555">555</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -824,7 +941,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00505">505</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00512">512</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -851,7 +968,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00451">451</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00458">458</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -878,7 +995,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00455">455</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00462">462</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -905,7 +1022,84 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00492">492</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00499">499</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a75571e0059716a9a8e4bbe4b015c290f" name="a75571e0059716a9a8e4bbe4b015c290f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a75571e0059716a9a8e4bbe4b015c290f">&#9670;&#160;</a></span>getStored()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Value llzk::pod::ReadPodOp::getStored </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>reachingDef</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::DataLayout &amp;</td>          <td class="paramname"><span class="paramname"><em>dataLayout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by PromotableAllocationOpInterface / mem2reg pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00841">841</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a5735003d7585a89d91693e57082a5638" name="a5735003d7585a89d91693e57082a5638"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5735003d7585a89d91693e57082a5638">&#9670;&#160;</a></span>isRead()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::pod::ReadPodOp::isRead </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00869">869</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac20e3bf4a7d91c69fea06bb1c29e9083" name="ac20e3bf4a7d91c69fea06bb1c29e9083"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac20e3bf4a7d91c69fea06bb1c29e9083">&#9670;&#160;</a></span>loadsFrom()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::pod::ReadPodOp::loadsFrom </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by PromotableMemOpInterface / mem2reg pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00831">831</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1026,6 +1220,81 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="a4243bee6dc6924e7aa2a948001e0044a" name="a4243bee6dc6924e7aa2a948001e0044a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4243bee6dc6924e7aa2a948001e0044a">&#9670;&#160;</a></span>removeBlockingUses()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::DeletionKind llzk::pod::ReadPodOp::removeBlockingUses </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::llvm::SmallPtrSetImpl&lt; mlir::OpOperand * &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>blockingUses</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>reachingDefinition</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::DataLayout &amp;</td>          <td class="paramname"><span class="paramname"><em>dataLayout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by PromotableMemOpInterface / mem2reg pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00861">861</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="afd4c3d501e0ff046d9c1151a67e50335" name="afd4c3d501e0ff046d9c1151a67e50335"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afd4c3d501e0ff046d9c1151a67e50335">&#9670;&#160;</a></span>rewire()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::DeletionKind llzk::pod::ReadPodOp::rewire </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::DestructurableMemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::DenseMap&lt;::mlir::Attribute, ::mlir::MemorySlot &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>subslots</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::mlir::OpBuilder &amp;</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::DataLayout &amp;</td>          <td class="paramname"><span class="paramname"><em>dataLayout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00823">823</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a828e203fe10cdfb328d91fbf64ceabe0" name="a828e203fe10cdfb328d91fbf64ceabe0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a828e203fe10cdfb328d91fbf64ceabe0">&#9670;&#160;</a></span>setInherentAttr()</h2>
 
@@ -1140,7 +1409,28 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00510">510</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html#l00517">517</a> of file <a class="el" href="POD_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a505ca920ddfd5073c23d74ec17dc48ab" name="a505ca920ddfd5073c23d74ec17dc48ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a505ca920ddfd5073c23d74ec17dc48ab">&#9670;&#160;</a></span>storesTo()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::pod::ReadPodOp::storesTo </td>
+          <td>(</td>
+          <td class="paramtype">const ::mlir::MemorySlot &amp;</td>          <td class="paramname"><span class="paramname"><em>slot</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by PromotableMemOpInterface / mem2reg pass. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00836">836</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1159,7 +1449,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00356">356</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00501">501</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

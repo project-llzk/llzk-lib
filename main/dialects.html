@@ -2679,7 +2679,7 @@ Operations</h2>
 <div class="line">%1 = felt.const 5</div>
 <div class="line">%2 = pod.new { @f = %1 }(%0)[%c] : !pod.type&lt;[@f: !felt.type, @a: !array.type&lt;#map, !felt.type&gt;]&gt;</div>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">OpAsmOpInterface</span></p>
+<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">DestructurableAllocationOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">OpAsmOpInterface</span>, <span class="tt">PromotableAllocationOpInterface</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-16"></a>
 Attributes:</h4>
@@ -2719,7 +2719,8 @@ Results:</h4>
 </div><!-- fragment --><p>Reads the current value of a named record from a pod instance. Returns one value of the type of the record.</p>
 <p>The name of the record must be a valid record name for the pod type and the result type must match the type of the record.</p>
 <p>Example: </p><div class="fragment"><div class="line">%1 = pod.read %0[@sym] : !pod.type&lt;[@sym: !type, ...]&gt;, !type</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="attributes-17"></a>
+</div><!-- fragment --><p>Interfaces: <span class="tt">DestructurableAccessorOpInterface</span>, <span class="tt">PodAccessOpInterface</span>, <span class="tt">PodRefOpInterface</span>, <span class="tt">PromotableMemOpInterface</span></p>
+<h4 class="doxsection"><a class="anchor" id="attributes-17"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
@@ -2752,7 +2753,8 @@ Results:</h4>
 <p>The name of the record must be a valid record name for the pod type and the source value type must match the type of the record.</p>
 <p>Writing a record that was written or initialized earlier overwrites the previous value.</p>
 <p>Example: </p><div class="fragment"><div class="line">pod.write %0[@sym] = %1 : !pod.type&lt;[@sym: !type, ...]&gt;, !type</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="attributes-18"></a>
+</div><!-- fragment --><p>Interfaces: <span class="tt">DestructurableAccessorOpInterface</span>, <span class="tt">PodAccessOpInterface</span>, <span class="tt">PodRefOpInterface</span>, <span class="tt">PromotableMemOpInterface</span></p>
+<h4 class="doxsection"><a class="anchor" id="attributes-18"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>

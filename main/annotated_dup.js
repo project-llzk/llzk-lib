@@ -325,6 +325,10 @@ var annotated_dup =
       [ "pod", "namespacellzk_1_1pod.html", [
         [ "detail", "namespacellzk_1_1pod_1_1detail.html", [
           [ "NewPodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1NewPodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1NewPodOpGenericAdaptorBase" ],
+          [ "PodAccessOpInterfaceInterfaceTraits", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits.html", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits" ],
+          [ "PodAccessOpInterfaceTrait", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceTrait.html", null ],
+          [ "PodRefOpInterfaceInterfaceTraits", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits.html", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits" ],
+          [ "PodRefOpInterfaceTrait", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceTrait.html", null ],
           [ "PodTypeStorage", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage" ],
           [ "ReadPodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase" ],
           [ "WritePodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase" ]
@@ -332,7 +336,9 @@ var annotated_dup =
         [ "NewPodOp", "classllzk_1_1pod_1_1NewPodOp.html", "classllzk_1_1pod_1_1NewPodOp" ],
         [ "NewPodOpAdaptor", "classllzk_1_1pod_1_1NewPodOpAdaptor.html", "classllzk_1_1pod_1_1NewPodOpAdaptor" ],
         [ "NewPodOpGenericAdaptor", "classllzk_1_1pod_1_1NewPodOpGenericAdaptor.html", "classllzk_1_1pod_1_1NewPodOpGenericAdaptor" ],
+        [ "PodAccessOpInterface", "classllzk_1_1pod_1_1PodAccessOpInterface.html", "classllzk_1_1pod_1_1PodAccessOpInterface" ],
         [ "PODDialect", "classllzk_1_1pod_1_1PODDialect.html", "classllzk_1_1pod_1_1PODDialect" ],
+        [ "PodRefOpInterface", "classllzk_1_1pod_1_1PodRefOpInterface.html", "classllzk_1_1pod_1_1PodRefOpInterface" ],
         [ "PodType", "classllzk_1_1pod_1_1PodType.html", "classllzk_1_1pod_1_1PodType" ],
         [ "ReadPodOp", "classllzk_1_1pod_1_1ReadPodOp.html", "classllzk_1_1pod_1_1ReadPodOp" ],
         [ "ReadPodOpAdaptor", "classllzk_1_1pod_1_1ReadPodOpAdaptor.html", "classllzk_1_1pod_1_1ReadPodOpAdaptor" ],

@@ -39,7 +39,7 @@ var searchData=
   ['densemapinfo_3c_3a_3allzk_3a_3asmt_3a_3aintpredicate_20_3e_36',['DenseMapInfo&lt;::llzk::smt::IntPredicate &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html',1,'llvm']]],
   ['dependency_20graphs_37',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-constraint-dependency-graphs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-constraint-dependency-graphs',1,'']]],
   ['derived_5fattr_5fname_38',['DERIVED_ATTR_NAME',['../namespacellzk.html#a5f5340f593130ab06a01b2458d243be7',1,'llzk']]],
-  ['destructure_39',['destructure',['../classllzk_1_1array_1_1CreateArrayOp.html#aae1030958526bf817461c049881ff15f',1,'llzk::array::CreateArrayOp']]],
+  ['destructure_39',['destructure',['../classllzk_1_1array_1_1CreateArrayOp.html#aae1030958526bf817461c049881ff15f',1,'llzk::array::CreateArrayOp::destructure()'],['../classllzk_1_1pod_1_1NewPodOp.html#abffc915e5b76bb3db8868a91544a499e',1,'llzk::pod::NewPodOp::destructure()']]],
   ['development_20workflow_40',['Development Workflow',['../setup.html#dev-workflow',1,'']]],
   ['diagids_41',['diagIDs',['../structClangLexerContext_1_1Impl.html#abbc46387c906edb94ddb0bcde7a11398',1,'ClangLexerContext::Impl']]],
   ['diagopts_42',['diagOpts',['../structClangLexerContext_1_1Impl.html#a7953aa6b37402eb8d083dfec0594803b',1,'ClangLexerContext::Impl']]],

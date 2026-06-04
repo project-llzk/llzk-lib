@@ -134,6 +134,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a4d64e26e69d15d99e45a6d740eadf954"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get count of 'records' parameter from a <a class="el" href="classllzk_1_1pod_1_1PodType.html">llzk::pod::PodType</a> Type.  <br /></td></tr>
 <tr class="memitem:a53f378e996e279a0e17ec01302fd96fb" id="r_a53f378e996e279a0e17ec01302fd96fb"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a53f378e996e279a0e17ec01302fd96fb">llzkPod_PodTypeGetRecordsAt</a> (MlirType, intptr_t pos)</td></tr>
 <tr class="memdesc:a53f378e996e279a0e17ec01302fd96fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get element at index from 'records' parameter from a <a class="el" href="classllzk_1_1pod_1_1PodType.html">llzk::pod::PodType</a> Type.  <br /></td></tr>
+<tr class="memitem:a11c28274d1adb10b7112694ddac201f1" id="r_a11c28274d1adb10b7112694ddac201f1"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a11c28274d1adb10b7112694ddac201f1">llzkPod_PodTypeGetSingleRecordType</a> (MlirType inp, MlirIdentifier name)</td></tr>
+<tr class="memdesc:a11c28274d1adb10b7112694ddac201f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a PodType containing only the requested record.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a2e9bb01dea4d1dc20ab837937cccc0e6" name="a2e9bb01dea4d1dc20ab837937cccc0e6"></a>
@@ -209,6 +211,31 @@ Functions</h2></td></tr>
 <p>Get count of 'records' parameter from a <a class="el" href="classllzk_1_1pod_1_1PodType.html">llzk::pod::PodType</a> Type. </p>
 
 <p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8capi_8cpp_8inc_source.html#l00028">28</a> of file <a class="el" href="POD_2IR_2Types_8capi_8cpp_8inc_source.html">Types.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a11c28274d1adb10b7112694ddac201f1" name="a11c28274d1adb10b7112694ddac201f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11c28274d1adb10b7112694ddac201f1">&#9670;&#160;</a></span>llzkPod_PodTypeGetSingleRecordType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirType llzkPod_PodTypeGetSingleRecordType </td>
+          <td>(</td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a PodType containing only the requested record. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Types_8capi_8cpp_8inc_source.html#l00038">38</a> of file <a class="el" href="POD_2IR_2Types_8capi_8cpp_8inc_source.html">Types.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
