@@ -64,6 +64,30 @@ llvm::StringMap<Type> PodType::getRecordMap() const {
   return map;
 }
 
+Type PodType::getSingleRecordType(StringAttr recordName) const {
+  for (RecordAttr record : getRecords()) {
+    if (record.getName() == recordName.getValue()) {
+      return PodType::get(getContext(), {record});
+    }
+  }
+  return nullptr;
+}
+
+/// Required by DestructurableTypeInterface / SROA pass
+std::optional<DenseMap<Attribute, Type>> PodType::getSubelementIndexMap() const {
+  DenseMap<Attribute, Type> ret;
+  for (RecordAttr record : getRecords()) {
+    ret[record.getName()] = PodType::get(getContext(), {record});
+  }
+  return ret;
+}
+
+/// Required by DestructurableTypeInterface / SROA pass
+Type PodType::getTypeAtIndex(Attribute index) const {
+  auto recordName = llvm::dyn_cast<StringAttr>(index);
+  return recordName ? getSingleRecordType(recordName) : nullptr;
+}
+
 ParseResult parsePodType(AsmParser &parser, SmallVector<RecordAttr> &records) {
   return parser.parseCommaSeparatedList(AsmParser::Delimiter::Square, [&records, &parser]() {
     StringAttr name;

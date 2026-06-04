@@ -10,6 +10,7 @@
 #include "llzk/Dialect/POD/IR/Ops.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
@@ -29,6 +30,10 @@
 #include <llvm/Support/Debug.h>
 
 #include <cstdint>
+#include <optional>
+
+// TableGen'd implementation files
+#include "llzk/Dialect/POD/IR/OpInterfaces.cpp.inc"
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -82,6 +87,109 @@ void NewPodOp::build(
 
 void NewPodOp::getAsmResultNames(llvm::function_ref<void(Value, StringRef)> setNameFn) {
   setNameFn(getResult(), "pod");
+}
+
+/// Required by DestructurableAllocationOpInterface / SROA pass
+SmallVector<DestructurableMemorySlot> NewPodOp::getDestructurableSlots() {
+  PodType podType = getType();
+  if (podType.getRecords().size() <= 1 || !getMapOperands().empty()) {
+    return {};
+  }
+  if (auto destructured = podType.getSubelementIndexMap()) {
+    return {DestructurableMemorySlot {{getResult(), podType}, std::move(*destructured)}};
+  }
+  return {};
+}
+
+/// Required by DestructurableAllocationOpInterface / SROA pass
+DenseMap<Attribute, MemorySlot> NewPodOp::destructure(
+    const DestructurableMemorySlot &slot, const SmallPtrSetImpl<Attribute> &usedIndices,
+    OpBuilder &builder, SmallVectorImpl<DestructurableAllocationOpInterface> &newAllocators
+) {
+  assert(slot.ptr == getResult());
+  assert(slot.elemType == getType());
+
+  builder.setInsertionPointAfter(*this);
+
+  SmallVector<RecordValue> initializedRecords = getInitializedRecordValues();
+  DenseMap<Attribute, MemorySlot> slotMap;
+  for (Attribute index : usedIndices) {
+    auto recordName = llvm::dyn_cast<StringAttr>(index);
+    assert(recordName && "expected StringAttr");
+
+    Type destructAs = getType().getTypeAtIndex(recordName);
+    assert(destructAs == slot.subelementTypes.lookup(recordName));
+
+    auto destructAsPodTy = llvm::dyn_cast<PodType>(destructAs);
+    assert(destructAsPodTy && "expected PodType");
+
+    SmallVector<RecordValue, 1> initialValue;
+    for (RecordValue record : initializedRecords) {
+      if (record.name == recordName.getValue()) {
+        initialValue.push_back(record);
+        break;
+      }
+    }
+
+    auto subNew = builder.create<NewPodOp>(getLoc(), destructAsPodTy, initialValue);
+    newAllocators.push_back(subNew);
+    slotMap.try_emplace<MemorySlot>(index, {subNew.getResult(), destructAs});
+  }
+
+  return slotMap;
+}
+
+/// Required by DestructurableAllocationOpInterface / SROA pass
+std::optional<DestructurableAllocationOpInterface> NewPodOp::handleDestructuringComplete(
+    const DestructurableMemorySlot &slot, OpBuilder & /*builder*/
+) {
+  assert(slot.ptr == getResult());
+  this->erase();
+  return std::nullopt;
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+SmallVector<MemorySlot> NewPodOp::getPromotableSlots() {
+  ArrayRef<RecordAttr> records = getType().getRecords();
+  if (records.size() != 1) {
+    return {};
+  }
+  return {MemorySlot {getResult(), records.front().getType()}};
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+Value NewPodOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
+  assert(slot.ptr == getResult());
+  ArrayRef<RecordAttr> records = getType().getRecords();
+  assert(records.size() == 1 && "only single-record pods are promotable");
+  assert(records.front().getType() == slot.elemType);
+
+  StringRef recordName = records.front().getName().getValue();
+  for (RecordValue record : getInitializedRecordValues()) {
+    if (record.name == recordName) {
+      return record.value;
+    }
+  }
+  return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
+}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+void NewPodOp::handleBlockArgument(const MemorySlot &, BlockArgument, OpBuilder &) {}
+
+/// Required by PromotableAllocationOpInterface / mem2reg pass
+std::optional<PromotableAllocationOpInterface> NewPodOp::handlePromotionComplete(
+    const MemorySlot &slot, Value defaultValue, OpBuilder & /*builder*/
+) {
+  assert(slot.ptr == getResult());
+  if (defaultValue && defaultValue.use_empty()) {
+    if (Operation *defOp = defaultValue.getDefiningOp()) {
+      if (llvm::isa<llzk::NonDetOp>(defOp)) {
+        defOp->erase();
+      }
+    }
+  }
+  this->erase();
+  return std::nullopt;
 }
 
 namespace {
@@ -347,6 +455,43 @@ getInitializedRecordValues(ValueRange initialValues, ArrayAttr initializedRecord
 
 SmallVector<RecordValue> NewPodOp::getInitializedRecordValues() {
   return llzk::pod::getInitializedRecordValues(getInitialValues(), getInitializedRecords());
+}
+
+//===----------------------------------------------------------------------===//
+// PodAccessOpInterface
+//===----------------------------------------------------------------------===//
+
+/// Required by DestructurableAllocationOpInterface / SROA pass
+bool PodAccessOpInterface::canRewire(
+    const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
+    SmallVectorImpl<MemorySlot> & /*mustBeSafelyUsed*/, const DataLayout & /*dataLayout*/
+) {
+  if (slot.ptr != getPodRef()) {
+    return false;
+  }
+
+  StringAttr recordName = getRecordNameAsStringAttr();
+  if (!slot.subelementTypes.contains(recordName)) {
+    return false;
+  }
+
+  usedIndices.insert(recordName);
+  return true;
+}
+
+/// Required by DestructurableAllocationOpInterface / SROA pass
+DeletionKind PodAccessOpInterface::rewire(
+    const DestructurableMemorySlot &slot, DenseMap<Attribute, MemorySlot> &subslots,
+    OpBuilder & /*builder*/, const DataLayout & /*dataLayout*/
+) {
+  assert(slot.ptr == getPodRef());
+  assert(slot.elemType == getPodRefType());
+
+  StringAttr recordName = getRecordNameAsStringAttr();
+  const MemorySlot &memorySlot = subslots.at(recordName);
+  getPodRefMutable().set(memorySlot.ptr);
+
+  return DeletionKind::Keep;
 }
 
 //===----------------------------------------------------------------------===//

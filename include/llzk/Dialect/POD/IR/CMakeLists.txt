@@ -19,6 +19,10 @@ llzk_tablegen(Types.capi.h.inc -gen-type-capi-header -prefix=llzk -dialect=pod)
 llzk_tablegen(Types.capi.cpp.inc -gen-type-capi-impl -prefix=llzk -dialect=pod)
 llzk_tablegen(Types.capi.test.cpp.inc -gen-type-capi-tests -prefix=llzk -dialect=pod)
 
+set(LLVM_TARGET_DEFINITIONS "OpInterfaces.td")
+mlir_tablegen(OpInterfaces.h.inc --gen-op-interface-decls)
+mlir_tablegen(OpInterfaces.cpp.inc --gen-op-interface-defs)
+
 set(LLVM_TARGET_DEFINITIONS "Ops.td")
 mlir_tablegen(Ops.h.inc -gen-op-decls -dialect=pod)
 mlir_tablegen(Ops.cpp.inc -gen-op-defs -dialect=pod)
