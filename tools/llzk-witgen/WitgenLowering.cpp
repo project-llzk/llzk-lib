@@ -1568,8 +1568,7 @@ private:
             failed(lowerBlock(regionBuilder, whileOp.getBefore().front(), beforeMap))) {
           whileLoweringStatus = failure();
         }
-      },
-          [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange afterArgs) {
+      }, [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange afterArgs) {
         DenseMap<Value, LoweredValue> afterMap(valueMap.begin(), valueMap.end());
         if (failed(mapRegionArguments(
                 whileOp.getAfterArguments(), afterArgs,
