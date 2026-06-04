@@ -15,7 +15,7 @@
 /// 0. Scan to find `llzk.nondet` ops that allocate uninitialized arrays and replace them with
 ///    an equivalent `array.new`
 ///
-/// 1. Run a dialect conversion that replaces `ArrayType` members with `N` scalar members.
+/// 1. Run a dialect conversion that replaces `ArrayType` struct members with `N` scalar members.
 ///
 /// 2. Run a dialect conversion that does the following:
 ///
@@ -39,10 +39,13 @@
 ///      create/read/write ops so the changes are as local as possible (just as described for
 ///      `MemberReadOp` and `MemberWriteOp`)
 ///
-/// 3. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1 (to
-///    prepare for "mem2reg" pass because it's API does not allow for indexing to split aggregates).
+/// 3. Replace branch-local reads (in `scf.if`) with the value written by a same-index write op that
+///    dominates the parent `scf.if` (because the passes below cannot handle that case).
 ///
-/// 4. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
+/// 4. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1
+///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
+///
+/// 5. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
 ///    values. This pass also runs several standard optimizations so the final result is condensed.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
@@ -774,6 +777,7 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
   }
 };
 
+/// Prepare the module by replacing `llzk.nondet` array allocation ops with `array.new`.
 static LogicalResult step0(ModuleOp modOp) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns {ctx};
@@ -786,6 +790,7 @@ static LogicalResult step0(ModuleOp modOp) {
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// Replace `ArrayType` struct members with `N` scalar members.
 static LogicalResult
 step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
@@ -802,6 +807,8 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &me
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// Special handling to split arrays in struct members and function signatures, desugar ranged
+/// array access ops to scalar access ops, and replace `ArrayLengthOp` with the known size.
 static LogicalResult
 step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
@@ -936,8 +943,9 @@ static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readO
   return replacement ? std::make_optional(replacement) : std::nullopt;
 }
 
-/// Forward branch-local reads to a same-index write that dominates the parent `scf.if`.
-static void forwardPrecedingArrayWritesIntoIf(ModuleOp modOp) {
+/// Replace branch-local reads (in `scf.if`) with the value written by a same-index
+/// write op that dominates the parent `scf.if`.
+static void step3(ModuleOp modOp) {
   SmallVector<std::pair<ReadArrayOp, Value>> replacements;
   modOp.walk([&replacements](ReadArrayOp readOp) {
     if (std::optional<WriteArrayOp> writeOp = findPrecedingWriteForIfRead(readOp)) {
@@ -951,54 +959,54 @@ static void forwardPrecedingArrayWritesIntoIf(ModuleOp modOp) {
   }
 }
 
-LogicalResult splitArrayCreateInit(ModuleOp modOp) {
-  SymbolTableCollection symTables;
-  MemberReplacementMap memberRepMap;
-
-  // This is divided into 2 steps to simplify the implementation for member-related ops. The issue
-  // is that the conversions for member read/write expect the mapping of array index to member
-  // name+type to already be populated for the referenced member (although this could be computed on
-  // demand if desired but it complicates the implementation a bit).
-  if (failed(step1(modOp, symTables, memberRepMap))) {
-    return failure();
-  }
-  LLVM_DEBUG({
-    llvm::dbgs() << "After step 1:\n";
-    modOp.dump();
-  });
-  if (failed(step2(modOp, symTables, memberRepMap))) {
-    return failure();
-  }
-  LLVM_DEBUG({
-    llvm::dbgs() << "After step 2:\n";
-    modOp.dump();
-  });
-  return success();
-}
-
 class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
 
-    // Prepare the module by replacing llzk.nondet array allocation ops with array.new
     if (failed(step0(module))) {
       return signalPassFailure();
     }
+    LLVM_DEBUG({
+      llvm::dbgs() << "After step 0:\n";
+      module.dump();
+    });
 
-    // Separate array initialization from creation by removing the initialization list from
-    // CreateArrayOp and inserting the corresponding WriteArrayOp following it.
-    if (failed(splitArrayCreateInit(module))) {
-      signalPassFailure();
-      return;
+    {
+      // This is divided into 2 steps to simplify the implementation for member-related ops. The
+      // issue is that the conversions for member read/write expect the mapping of array index to
+      // member name+type to already be populated for the referenced member (although this could be
+      // computed on demand if desired but it complicates the implementation a bit).
+      SymbolTableCollection symTables;
+      MemberReplacementMap memberRepMap;
+      if (failed(step1(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 1:\n";
+        module.dump();
+      });
+
+      if (failed(step2(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 2:\n";
+        module.dump();
+      });
     }
-    forwardPrecedingArrayWritesIntoIf(module);
+
+    step3(module);
+    LLVM_DEBUG({
+      llvm::dbgs() << "After step 3:\n";
+      module.dump();
+    });
 
     OpPassManager nestedPM(ModuleOp::getOperationName());
-    // Use SROA (Destructurable* interfaces) to split each array with linear size N into N arrays of
-    // size 1. This is necessary because the mem2reg pass cannot deal with indexing and splitting up
-    // memory, i.e., it can only convert scalar memory access into SSA values.
+    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
+    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
+    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
     nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
-    // The mem2reg pass converts all of the size 1 array allocation and access into SSA values.
+    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
     nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
     // Cleanup SSA values made dead by the transformations
     nestedPM.addPass(createRemoveDeadValuesPass());
