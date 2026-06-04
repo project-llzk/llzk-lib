@@ -395,6 +395,9 @@ private:
     if (auto addOp = dyn_cast<felt::AddFeltOp>(op)) {
       return handleBinaryFelt(addOp, [](const auto &lhs, const auto &rhs) { return lhs + rhs; });
     }
+    if (auto andOp = dyn_cast<felt::AndFeltOp>(op)) {
+      return handleBinaryFelt(andOp, [](const auto &lhs, const auto &rhs) { return lhs & rhs; });
+    }
     if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
       return handleBinaryFelt(subOp, [](const auto &lhs, const auto &rhs) { return lhs - rhs; });
     }
@@ -405,6 +408,29 @@ private:
       return handleBinaryFelt(divOp, [&](const auto &lhs, const auto &rhs) {
         return lhs * field.inv(rhs);
       });
+    }
+    if (auto shrOp = dyn_cast<felt::ShrFeltOp>(op)) {
+      auto lhsValue = lookup(shrOp.getLhs(), scope);
+      auto rhsValue = lookup(shrOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      llvm::DynamicAPInt result(0);
+      if (*rhs < llvm::DynamicAPInt(field.bitWidth())) {
+        result = *lhs >> *rhs;
+      }
+      return bind({WitnessVal(result)});
     }
     if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
       auto operand = lookup(negOp.getOperand(), scope);

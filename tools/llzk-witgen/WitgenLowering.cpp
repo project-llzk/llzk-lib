@@ -605,6 +605,19 @@ lowerFeltDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
   return lowerFeltMul(builder, loc, lhs, lowerFeltInv(builder, loc, rhs, field), field);
 }
 
+/// Lower field right shift on unsigned representatives.
+static Value
+lowerFeltShr(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
+  Value width = builder.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth()))
+  );
+  Value shiftTooLarge = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::uge, rhs, width);
+  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 0));
+  Value shifted = builder.create<arith::ShRUIOp>(loc, lhs, rhs);
+  return builder.create<arith::SelectOp>(loc, shiftTooLarge, zero, shifted);
+}
+
 /// Load one scalar leaf from aggregate storage.
 static Value loadStorageScalar(OpBuilder &builder, Location loc, Value storageLeaf) {
   auto memrefType = mlir::cast<MemRefType>(storageLeaf.getType());
@@ -1074,6 +1087,17 @@ private:
           LoweredValue {addOp.getType(), {lowerFeltAdd(builder, loc, *lhs, *rhs, field)}}
       );
     }
+    if (auto andOp = dyn_cast<felt::AndFeltOp>(op)) {
+      auto lhs = lookupScalar(andOp.getLhs(), valueMap, andOp.getOperation());
+      auto rhs = lookupScalar(andOp.getRhs(), valueMap, andOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          andOp.getResult(),
+          LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}}
+      );
+    }
     if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
       auto lhs = lookupScalar(subOp.getLhs(), valueMap, subOp.getOperation());
       auto rhs = lookupScalar(subOp.getRhs(), valueMap, subOp.getOperation());
@@ -1125,6 +1149,17 @@ private:
       return bind(
           divOp.getResult(),
           LoweredValue {divOp.getType(), {lowerFeltDiv(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto shrOp = dyn_cast<felt::ShrFeltOp>(op)) {
+      auto lhs = lookupScalar(shrOp.getLhs(), valueMap, shrOp.getOperation());
+      auto rhs = lookupScalar(shrOp.getRhs(), valueMap, shrOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          shrOp.getResult(),
+          LoweredValue {shrOp.getType(), {lowerFeltShr(builder, loc, *lhs, *rhs, field)}}
       );
     }
 
