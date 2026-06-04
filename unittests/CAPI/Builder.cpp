@@ -166,6 +166,25 @@ TEST_F(CAPITest, MlirOpBuilderSaveInsertionPoint) {
   mlirOperationDestroy(module);
 }
 
+TEST_F(CAPITest, MlirOpBuilderSaveInsertionPointWithoutOperation) {
+  MlirBlock block;
+  MlirOperation module = createContainerOp(context, &block);
+  MlirOperation first = createIndexOperation();
+  MlirOperation second = createIndexOperation();
+  mlirBlockAppendOwnedOperation(block, first);
+  mlirBlockAppendOwnedOperation(block, second);
+
+  auto builder = mlirOpBuilderCreate(context);
+
+  mlirOpBuilderSetInsertionPointToEnd(builder, block);
+  MlirOpBuilderInsertPoint saved = mlirOpBuilderSaveInsertionPoint(builder);
+  EXPECT_EQ(saved.block.ptr, block.ptr);
+  EXPECT_EQ(saved.point.ptr, nullptr);
+
+  mlirOpBuilderDestroy(builder);
+  mlirOperationDestroy(module);
+}
+
 TEST_F(CAPITest, MlirOpBuilderRestoreInsertionPoint) {
   MlirBlock block;
   MlirOperation module = createContainerOp(context, &block);
@@ -183,6 +202,33 @@ TEST_F(CAPITest, MlirOpBuilderRestoreInsertionPoint) {
   mlirOpBuilderRestoreInsertionPoint(builder, saved);
   EXPECT_EQ(mlirOpBuilderGetInsertionBlock(builder).ptr, block.ptr);
   EXPECT_TRUE(mlirOperationEqual(mlirOpBuilderGetInsertionPoint(builder), second));
+
+  mlirOpBuilderDestroy(builder);
+  mlirOperationDestroy(module);
+}
+
+TEST_F(CAPITest, MlirOpBuilderRestoreInsertionPointWithoutOperation) {
+  MlirBlock block;
+  MlirOperation module = createContainerOp(context, &block);
+  MlirOperation first = createIndexOperation();
+  MlirOperation second = createIndexOperation();
+  MlirOperation third = createIndexOperation();
+  mlirBlockAppendOwnedOperation(block, first);
+  mlirBlockAppendOwnedOperation(block, second);
+
+  auto builder = mlirOpBuilderCreate(context);
+
+  mlirOpBuilderSetInsertionPointToEnd(builder, block);
+  MlirOpBuilderInsertPoint saved = mlirOpBuilderSaveInsertionPoint(builder);
+  EXPECT_EQ(saved.block.ptr, block.ptr);
+  EXPECT_EQ(saved.point.ptr, nullptr);
+  mlirOpBuilderSetInsertionPointToStart(builder, block);
+  EXPECT_TRUE(mlirOperationEqual(mlirOpBuilderGetInsertionPoint(builder), first));
+  mlirOpBuilderRestoreInsertionPoint(builder, saved);
+  mlirOpBuilderInsert(builder, third);
+  EXPECT_EQ(mlirOpBuilderGetInsertionBlock(builder).ptr, block.ptr);
+  EXPECT_EQ(mlirOpBuilderGetInsertionPoint(builder).ptr, nullptr);
+  EXPECT_TRUE(mlirOperationEqual(mlirOperationGetNextInBlock(second), third));
 
   mlirOpBuilderDestroy(builder);
   mlirOperationDestroy(module);

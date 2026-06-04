@@ -1,7 +1,0 @@
-added:
-  - "`toDynamicAPInt(size_t)` helper function"
-
-fixed:
-  - "Avoid unnecessary narrowing to `int` in `Field::reduce()`"
-  - "Ensure distribution of random numbers is uniform for large primes (>64 bits)"
-  - "`toDynamicAPInt(APSInt)` incorrectly produced negative results for values larger than MAX(int64_t) and up to 64 bits"

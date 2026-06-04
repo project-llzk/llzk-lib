@@ -1,0 +1,35 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out128 : !felt.type<"bn128"> {llzk.pub}
+    struct.member @out254 : !felt.type<"bn254"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %zero128 = felt.const 0 <"bn128">
+      %one128 = felt.const 1 <"bn128">
+      %negOne128 = felt.sub %zero128, %one128 : !felt.type<"bn128">, !felt.type<"bn128">
+      %zero254 = felt.const 0 <"bn254">
+      %one254 = felt.const 1 <"bn254">
+      %negOne254 = felt.sub %zero254, %one254 : !felt.type<"bn254">, !felt.type<"bn254">
+      struct.writem %self[@out128] = %negOne128 : !struct.type<@Main>, !felt.type<"bn128">
+      struct.writem %self[@out254] = %negOne254 : !struct.type<@Main>, !felt.type<"bn254">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out128": "21888242871839275222246405745257275088548364400416034343698204186575808495616",
+// CHECK-NEXT:   "out254": "21888242871839275222246405745257275088548364400416034343698204186575808495616"
+// CHECK-NEXT: }
+
+//--- input.json
+{}
