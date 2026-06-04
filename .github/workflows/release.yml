@@ -11,4 +11,6 @@ jobs:
   release:
     if: endsWith(github.head_ref, 'pre-release') && github.event.pull_request.merged == true
     uses: project-llzk/open-source-release-helpers/.github/workflows/release.yml@main
+    with:
+      release_pr_number: ${{ github.event.pull_request.number }}
     secrets: inherit
