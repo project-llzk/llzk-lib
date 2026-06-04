@@ -1553,8 +1553,8 @@ private:
           }
           LoweredValue lowered {oldType, {}};
           lowered.leaves.append(
-              newArgs.begin() + static_cast<ptrdiff_t>(cursor),
-              newArgs.begin() + static_cast<ptrdiff_t>(nextCursor)
+              newArgs.begin() + llzk::checkedCast<ptrdiff_t>(cursor),
+              newArgs.begin() + llzk::checkedCast<ptrdiff_t>(nextCursor)
           );
           regionMap[oldArg] = std::move(lowered);
           cursor = nextCursor;
