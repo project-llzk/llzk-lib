@@ -1,0 +1,55 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @bit_and : !felt.type<"babybear"> {llzk.pub}
+    struct.member @bit_or : !felt.type<"babybear"> {llzk.pub}
+    struct.member @bit_xor : !felt.type<"babybear"> {llzk.pub}
+    struct.member @bit_not : !felt.type<"babybear"> {llzk.pub}
+    struct.member @shl : !felt.type<"babybear"> {llzk.pub}
+    struct.member @shr_small : !felt.type<"babybear"> {llzk.pub}
+    struct.member @shr_large : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %lhs = felt.const 6 <"babybear">
+      %rhs = felt.const 3 <"babybear">
+      %bit_and = felt.bit_and %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      %bit_or = felt.bit_or %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      %bit_xor = felt.bit_xor %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      %bit_not = felt.bit_not %lhs : !felt.type<"babybear">
+      %shift_amount = felt.const 2 <"babybear">
+      %shl = felt.shl %lhs, %shift_amount : !felt.type<"babybear">, !felt.type<"babybear">
+      %shr_small = felt.shr %lhs, %shift_amount : !felt.type<"babybear">, !felt.type<"babybear">
+      %large_shift_amount = felt.const 32 <"babybear">
+      %shr_large = felt.shr %lhs, %large_shift_amount : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@bit_and] = %bit_and : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@bit_or] = %bit_or : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@bit_xor] = %bit_xor : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@bit_not] = %bit_not : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@shl] = %shl : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@shr_small] = %shr_small : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@shr_large] = %shr_large : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-DAG:   "bit_and": "2"
+// CHECK-DAG:   "bit_or": "7"
+// CHECK-DAG:   "bit_xor": "5"
+// CHECK-DAG:   "bit_not": "134217720"
+// CHECK-DAG:   "shl": "24"
+// CHECK-DAG:   "shr_small": "1"
+// CHECK-DAG:   "shr_large": "0"
+// CHECK: }
+
+//--- input.json
+{}
