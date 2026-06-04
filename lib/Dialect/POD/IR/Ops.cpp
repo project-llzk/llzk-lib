@@ -470,7 +470,7 @@ bool PodAccessOpInterface::canRewire(
     return false;
   }
 
-  StringAttr recordName = getRecordNameAsStringAttr();
+  StringAttr recordName = getRecordNameAttr();
   if (!slot.subelementTypes.contains(recordName)) {
     return false;
   }
@@ -487,7 +487,7 @@ DeletionKind PodAccessOpInterface::rewire(
   assert(slot.ptr == getPodRef());
   assert(slot.elemType == getPodRefType());
 
-  StringAttr recordName = getRecordNameAsStringAttr();
+  StringAttr recordName = getRecordNameAttr();
   const MemorySlot &memorySlot = subslots.at(recordName);
   getPodRefMutable().set(memorySlot.ptr);
 
@@ -546,11 +546,16 @@ LogicalResult WritePodOp::verify() {
 // Parsing/Printing helpers
 //===----------------------------------------------------------------------===//
 
-ParseResult parseRecordName(AsmParser &parser, FlatSymbolRefAttr &name) {
-  return parser.parseCustomAttributeWithFallback(name);
+ParseResult parseRecordName(AsmParser &parser, StringAttr &name) {
+  FlatSymbolRefAttr symRef;
+  auto result = parser.parseCustomAttributeWithFallback(symRef);
+  if (succeeded(result)) {
+    name = symRef.getAttr();
+  }
+  return result;
 }
 
-void printRecordName(AsmPrinter &printer, Operation *, FlatSymbolRefAttr name) {
+void printRecordName(AsmPrinter &printer, Operation *, StringAttr name) {
   printer.printSymbolName(name.getValue());
 }
 
