@@ -129,8 +129,15 @@ MlirOpBuilderInsertPoint mlirOpBuilderSaveInsertionPoint(MlirOpBuilder builder) 
 
 /// Restore the insert point to a previously saved point.
 void mlirOpBuilderRestoreInsertionPoint(MlirOpBuilder builder, MlirOpBuilderInsertPoint rawIp) {
-  OpBuilderT::InsertPoint ip(unwrap(rawIp.block), Block::iterator(unwrap(rawIp.point)));
-  unwrap(builder)->restoreInsertionPoint(ip);
+  auto *block = unwrap(rawIp.block);
+  if (!block) {
+    OpBuilderT::InsertPoint ip;
+    unwrap(builder)->restoreInsertionPoint(ip);
+  } else {
+    Block::iterator it = rawIp.point.ptr ? Block::iterator(unwrap(rawIp.point)) : block->end();
+    OpBuilderT::InsertPoint ip(block, it);
+    unwrap(builder)->restoreInsertionPoint(ip);
+  }
 }
 
 /// Reset the insertion point to no location.
