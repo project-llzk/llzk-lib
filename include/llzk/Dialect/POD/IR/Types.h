@@ -12,6 +12,8 @@
 #include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 
+#include <mlir/Interfaces/MemorySlotInterfaces.h>
+
 namespace llzk::pod {
 
 struct RecordValue {

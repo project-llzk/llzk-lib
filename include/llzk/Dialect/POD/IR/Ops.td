@@ -11,6 +11,7 @@
 #define LLZK_POD_OPS
 
 include "llzk/Dialect/POD/IR/Dialect.td"
+include "llzk/Dialect/POD/IR/OpInterfaces.td"
 include "llzk/Dialect/POD/IR/Types.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 
@@ -22,11 +23,99 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 class PODDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<PODDialect, mnemonic, traits>;
 
+class PODAccessOpBase<string mnemonic, list<Trait> traits = []>
+    : PODDialectOp<mnemonic,
+                   traits#[DeclareOpInterfaceMethods<PodAccessOpInterface>]> {
+  let extraClassDeclaration = [{
+    /// Gets the type of the referenced pod.
+    inline ::llzk::pod::PodType getPodRefType() {
+      return ::llvm::cast<PodAccessOpInterface>(getOperation()).getPodRefType();
+    }
+  }];
+}
+
+// isRead: read(1) vs write(0) ops
+class ScalarPODAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
+    : PODAccessOpBase<
+          mnemonic,
+          traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
+  let extraClassDefinition = [{
+    /// Required by DestructurableAllocationOpInterface / SROA pass
+    bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
+                ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,
+                ::mlir::SmallVectorImpl<::mlir::MemorySlot> &mustBeSafelyUsed,
+                const ::mlir::DataLayout &dataLayout) {
+      return ::llvm::cast<PodAccessOpInterface>(getOperation())
+                .canRewire(slot, usedIndices, mustBeSafelyUsed, dataLayout);
+    }
+
+    /// Required by DestructurableAllocationOpInterface / SROA pass
+    ::mlir::DeletionKind $cppClass::rewire(const ::mlir::DestructurableMemorySlot &slot,
+                ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
+                ::mlir::OpBuilder &builder, const ::mlir::DataLayout &dataLayout) {
+      return ::llvm::cast<PodAccessOpInterface>(getOperation())
+                .rewire(slot, subslots, builder, dataLayout);
+    }
+
+    /// Required by PromotableMemOpInterface / mem2reg pass
+    bool $cppClass::loadsFrom(const ::mlir::MemorySlot &slot) {
+      return }]#!if(isRead, "getPodRef() == slot.ptr", "false")#[{;
+    }
+
+    /// Required by PromotableMemOpInterface / mem2reg pass
+    bool $cppClass::storesTo(const ::mlir::MemorySlot &slot) {
+      return }]#!if(isRead, "false", "getPodRef() == slot.ptr")#[{;
+    }
+
+    /// Required by PromotableAllocationOpInterface / mem2reg pass
+    ::mlir::Value $cppClass::getStored(const ::mlir::MemorySlot &, ::mlir::OpBuilder &,
+                                       ::mlir::Value, const ::mlir::DataLayout &) {
+      }]#!if(
+      isRead,
+      "llvm_unreachable(\"getStored() should not be called on $cppClass\")",
+      "return getValue()")#[{;
+    }
+
+    /// Required by PromotableMemOpInterface / mem2reg pass
+    bool $cppClass::canUsesBeRemoved(
+        const ::mlir::MemorySlot &slot,
+        const ::llvm::SmallPtrSetImpl<::mlir::OpOperand *> &blockingUses,
+        ::llvm::SmallVectorImpl<::mlir::OpOperand *> & /*newBlockingUses*/,
+        const ::mlir::DataLayout & /*datalayout*/) {
+      if (blockingUses.size() != 1) {
+        return false;
+      }
+      ::mlir::Value blockingUse = (*blockingUses.begin())->get();
+      return blockingUse == slot.ptr && getPodRef() == slot.ptr &&
+      }]#!if(isRead, "getResult().getType() == slot.elemType",
+             "getValue() != slot.ptr && getValue().getType() == slot.elemType")#[{;
+    }
+
+    /// Required by PromotableMemOpInterface / mem2reg pass
+    ::mlir::DeletionKind $cppClass::removeBlockingUses(
+        const ::mlir::MemorySlot &, const ::llvm::SmallPtrSetImpl<::mlir::OpOperand *> &,
+        ::mlir::OpBuilder &, ::mlir::Value reachingDefinition, const ::mlir::DataLayout &) {
+      }]#!if(isRead, "getResult().replaceAllUsesWith(reachingDefinition)",
+             "")#[{;
+      return ::mlir::DeletionKind::Delete;
+    }
+
+    /// Return `true` if the op is a read, `false` if it's a write.
+    bool $cppClass::isRead() {
+      return }]#!if(isRead, "true", "false")#[{;
+    }
+  }];
+}
+
 def LLZK_NewPodOp
-    : PODDialectOp<"new", [Pure, AttrSizedOperandSegments,
-                           VerifySizesForMultiAffineOps<1>,
-                           DeclareOpInterfaceMethods<
-                               OpAsmOpInterface, ["getAsmResultNames"]>]> {
+    : PODDialectOp<
+          "new",
+          [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
+           DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,
+           DeclareOpInterfaceMethods<DestructurableAllocationOpInterface>,
+           DeclareOpInterfaceMethods<
+               OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "create a new plain-old-data struct";
   let description = [{
     Creates a new, uninitialized, pod instance. Optionally, the user can pass a list of record names and values
@@ -113,7 +202,7 @@ def LLZK_NewPodOp
   }];
 }
 
-def LLZK_ReadPodOp : PODDialectOp<"read"> {
+def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
   let summary = "reads the contents of a plain-old-data struct record";
   let description = [{
     Reads the current value of a named record from a pod instance.
@@ -137,7 +226,7 @@ def LLZK_ReadPodOp : PODDialectOp<"read"> {
   let hasVerifier = 1;
 }
 
-def LLZK_WritePodOp : PODDialectOp<"write"> {
+def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
   let summary = "writes content into a plain-old-data struct record";
   let description = [{
     Writes a value into a named record of a pod instance. This operation has no result values.
