@@ -86,6 +86,44 @@ void mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock bloc
   unwrap(builder)->setInsertionPointToStart(unwrap(block));
 }
 
+/// Sets the insertion point to the end of the given block.
+void mlirOpBuilderSetInsertionPointToEnd(MlirOpBuilder builder, MlirBlock block) {
+  unwrap(builder)->setInsertionPointToEnd(unwrap(block));
+}
+
+/// Sets the insertion point right before the given operation.
+void mlirOpBuilderSetInsertionPoint(MlirOpBuilder builder, MlirOperation operation) {
+  unwrap(builder)->setInsertionPoint(unwrap(operation));
+}
+
+/// Sets the insertion point right after the given operation.
+void mlirOpBuilderSetInsertionPointAfter(MlirOpBuilder builder, MlirOperation operation) {
+  unwrap(builder)->setInsertionPointAfter(unwrap(operation));
+}
+
+/// Sets the insertion point right after the given value is defined.
+void mlirOpBuilderSetInsertionPointAfterValue(MlirOpBuilder builder, MlirValue value) {
+  unwrap(builder)->setInsertionPointAfterValue(unwrap(value));
+}
+
+/// Return a saved insertion point.
+MlirOpBuilderInsertPoint mlirOpBuilderSaveInsertionPoint(MlirOpBuilder builder) {
+  auto ip = unwrap(builder)->saveInsertionPoint();
+  MlirOpBuilderInsertPoint rawIp = {.block = wrap(ip.getBlock()), .point = wrap(&*ip.getPoint())};
+  return rawIp;
+}
+
+/// Restore the insert point to a previously saved point.
+void mlirOpBuilderRestoreInsertionPoint(MlirOpBuilder builder, MlirOpBuilderInsertPoint rawIp) {
+  OpBuilderT::InsertPoint ip(unwrap(rawIp.block), Block::iterator(unwrap(rawIp.point)));
+  unwrap(builder)->restoreInsertionPoint(ip);
+}
+
+/// Reset the insertion point to no location.
+void mlirOpBuilderClearInsertionPoint(MlirOpBuilder builder) {
+  unwrap(builder)->clearInsertionPoint();
+}
+
 /// Returns the operation before which new operations will be inserted, or a null `MlirOperation` if
 /// there is no current insertion block or the insertion point is at the end of the block.
 MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder) {

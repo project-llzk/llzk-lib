@@ -81,6 +81,31 @@ MLIR_CAPI_EXPORTED MlirContext mlirOpBuilderGetContext(MlirOpBuilder builder);
 MLIR_CAPI_EXPORTED void
 mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block);
 
+/// Sets the insertion point to the end of the given block.
+MLIR_CAPI_EXPORTED void mlirOpBuilderSetInsertionPointToEnd(MlirOpBuilder builder, MlirBlock block);
+
+/// Sets the insertion point right before the given operation.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPoint(MlirOpBuilder builder, MlirOperation operation);
+
+/// Sets the insertion point right after the given operation.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPointAfter(MlirOpBuilder builder, MlirOperation operation);
+
+/// Sets the insertion point right after the given value is defined.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPointAfterValue(MlirOpBuilder builder, MlirValue value);
+
+/// Return a saved insertion point.
+MLIR_CAPI_EXPORTED MlirOpBuilderInsertPoint mlirOpBuilderSaveInsertionPoint(MlirOpBuilder builder);
+
+/// Restore the insert point to a previously saved point.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderRestoreInsertionPoint(MlirOpBuilder builder, MlirOpBuilderInsertPoint ip);
+
+/// Reset the insertion point to no location.
+MLIR_CAPI_EXPORTED void mlirOpBuilderClearInsertionPoint(MlirOpBuilder builder);
+
 /// Returns the current insertion point in the builder.
 MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder);
 
