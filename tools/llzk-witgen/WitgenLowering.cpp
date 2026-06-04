@@ -1510,35 +1510,41 @@ private:
 
     if (auto whileOp = dyn_cast<scf::WhileOp>(op)) {
       SmallVector<Value> initArgs;
-      SmallVector<size_t> initLeafCounts;
-      for (auto [init, resultType] : llvm::zip(whileOp.getInits(), whileOp.getResultTypes())) {
+      SmallVector<size_t> beforeLeafCounts;
+      for (auto [init, initType] : llvm::zip(whileOp.getInits(), whileOp.getOperandTypes())) {
         auto lowered = lookup(init, valueMap, whileOp.getOperation());
-        auto leafTypes = getABILeafTypes(resultType, tables, whileOp.getOperation(), field);
+        auto leafTypes = getABILeafTypes(initType, tables, whileOp.getOperation(), field);
         if (failed(lowered) || failed(leafTypes) ||
             failed(appendFlatLeavesToTypes(
                 builder, loc, *lowered, *leafTypes, initArgs, whileOp.getOperation()
             ))) {
           return failure();
         }
-        auto count = getLeafCount(resultType, tables, whileOp.getOperation(), field);
+        auto count = getLeafCount(initType, tables, whileOp.getOperation(), field);
         if (failed(count)) {
           return failure();
         }
-        initLeafCounts.push_back(*count);
+        beforeLeafCounts.push_back(*count);
       }
 
+      SmallVector<size_t> resultLeafCounts;
       SmallVector<Type> loweredResultTypes;
-      loweredResultTypes.reserve(initArgs.size());
-      for (Value initArg : initArgs) {
-        loweredResultTypes.push_back(initArg.getType());
+      for (Type resultType : whileOp.getResultTypes()) {
+        auto leafTypes = getABILeafTypes(resultType, tables, whileOp.getOperation(), field);
+        auto count = getLeafCount(resultType, tables, whileOp.getOperation(), field);
+        if (failed(leafTypes) || failed(count)) {
+          return failure();
+        }
+        loweredResultTypes.append(leafTypes->begin(), leafTypes->end());
+        resultLeafCounts.push_back(*count);
       }
 
-      auto mapRegionArguments = [&](auto oldArgs, auto newArgs, StringRef overflowMessage,
+      auto mapRegionArguments = [&](auto oldArgs, auto oldTypes, auto leafCounts, auto newArgs,
+                                    StringRef overflowMessage,
                                     DenseMap<Value, LoweredValue> &regionMap) -> LogicalResult {
         size_t totalArgs = newArgs.size();
         size_t cursor = 0;
-        for (auto [oldArg, oldType, leafCount] :
-             llvm::zip(oldArgs, whileOp.getResultTypes(), initLeafCounts)) {
+        for (auto [oldArg, oldType, leafCount] : llvm::zip(oldArgs, oldTypes, leafCounts)) {
           bool overflow = false;
           size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
           if (overflow || nextCursor > totalArgs) {
@@ -1562,8 +1568,9 @@ private:
           [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange beforeArgs) {
         DenseMap<Value, LoweredValue> beforeMap(valueMap.begin(), valueMap.end());
         if (failed(mapRegionArguments(
-                whileOp.getBeforeArguments(), beforeArgs,
-                "leaf count overflow while lowering while-loop before-region args", beforeMap
+                whileOp.getBeforeArguments(), whileOp.getOperandTypes(), beforeLeafCounts,
+                beforeArgs, "leaf count overflow while lowering while-loop before-region args",
+                beforeMap
             )) ||
             failed(lowerBlock(regionBuilder, whileOp.getBefore().front(), beforeMap))) {
           whileLoweringStatus = failure();
@@ -1571,7 +1578,7 @@ private:
       }, [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange afterArgs) {
         DenseMap<Value, LoweredValue> afterMap(valueMap.begin(), valueMap.end());
         if (failed(mapRegionArguments(
-                whileOp.getAfterArguments(), afterArgs,
+                whileOp.getAfterArguments(), whileOp.getResultTypes(), resultLeafCounts, afterArgs,
                 "leaf count overflow while lowering while-loop after-region args", afterMap
             )) ||
             failed(lowerBlock(regionBuilder, whileOp.getAfter().front(), afterMap))) {
@@ -1588,7 +1595,7 @@ private:
       size_t totalResults = newWhileResults.size();
       size_t cursor = 0;
       for (auto [oldResult, oldType, leafCount] :
-           llvm::zip(whileOp.getResults(), whileOp.getResultTypes(), initLeafCounts)) {
+           llvm::zip(whileOp.getResults(), whileOp.getResultTypes(), resultLeafCounts)) {
         bool overflow = false;
         size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
         if (overflow || nextCursor > totalResults) {
