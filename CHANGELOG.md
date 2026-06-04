@@ -1,3 +1,9 @@
+## v2.1.1 - 2026-06-04
+### Fixed
+- Fixed prime field definitions
+- Fixed execution-engine backend handling for circom-compiled LLZK IR
+- CAPI:
+  - Properly reconstruct insertion point when restoring
 ## v2.1.0 - 2026-06-04
 ### Added
 - Getters and builders for `TemplateParamOp` and `TemplateExprOp` in `TemplateBuilder`
