@@ -74,3 +74,18 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @requires_step0(%i: index) -> index {
+    %0 = llzk.nondet : !pod.type<[@n: !felt.type, @m: index]>
+    pod.write %0[@m] = %i : !pod.type<[@n: !felt.type, @m: index]>, index
+    %ret = pod.read %0[@m] : !pod.type<[@n: !felt.type, @m: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @requires_step0(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
