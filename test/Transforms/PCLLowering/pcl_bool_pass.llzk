@@ -70,7 +70,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088696311157297823662689037894645226208583 : i256>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617 : i256>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.ge %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.not %0

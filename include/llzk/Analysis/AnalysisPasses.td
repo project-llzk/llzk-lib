@@ -81,7 +81,8 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
               "pass first tries to detect a single field from the enclosing "
               "module's felt usage "
               "and otherwise falls back to bn128. Supported fields: "
-              "bn128/bn254, babybear, goldilocks, koalabear, mersenne31">,
+              "bn128/bn254, babybear, goldilocks, grumpkin, koalabear, "
+              "mersenne31">,
        Option<"propagateInputConstraints", "propagate-input-constraints",
               "bool", /* default */ "false",
               "Whether to propagate constraints on inputs from @constrain to "
