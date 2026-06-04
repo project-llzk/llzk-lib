@@ -330,6 +330,7 @@ static llvm::Error finalizeExecutionEngineModule(ModuleOp moduleOp) {
   pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::memref::createExpandStridedMetadataPass());
   pm.addPass(mlir::createLowerAffinePass());
+  pm.addPass(mlir::createConvertSCFToCFPass());
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
   pm.addPass(mlir::createConvertToLLVMPass());

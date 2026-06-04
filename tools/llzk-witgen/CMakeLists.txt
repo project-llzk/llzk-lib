@@ -22,6 +22,7 @@ target_link_libraries(
     MLIRArithDialect
     MLIRControlFlowDialect
     MLIRFuncDialect
+    MLIRFuncInlinerExtension
     MLIRAffineToStandard
     MLIRIR
     MLIRPass
@@ -44,6 +45,7 @@ target_link_libraries(
     MLIRMemRefToLLVM
     MLIRMemRefTransforms
     MLIRReconcileUnrealizedCasts
+    MLIRSCFToControlFlow
     MLIRTargetLLVMIRExport
     MLIRTransforms
     MLIRUBToLLVM

@@ -30,6 +30,7 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
+#include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/MemRef/IR/MemRef.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -90,6 +91,7 @@ int main(int argc, char **argv) {
 
   DialectRegistry registry;
   llzk::registerAllDialects(registry);
+  mlir::func::registerInlinerExtension(registry);
   registry.insert<
       mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
       mlir::memref::MemRefDialect, mlir::scf::SCFDialect>();
