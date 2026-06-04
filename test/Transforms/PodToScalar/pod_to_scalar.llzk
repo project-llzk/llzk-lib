@@ -1,0 +1,76 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @new_empty() -> index {
+    %0 = pod.new : !pod.type<[]>
+    %ret = arith.constant 0 : index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_empty() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_only() -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    %ret = arith.constant 0 : index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_only() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_then_write(%i: index) -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    pod.write %0[@m] = %i : !pod.type<[@n: !felt.type, @m: index]>, index
+    %ret = arith.constant 0 : index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_then_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_then_write_then_read(%i: index) -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    pod.write %0[@m] = %i : !pod.type<[@n: !felt.type, @m: index]>, index
+    %ret = pod.read %0[@m] : !pod.type<[@n: !felt.type, @m: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_then_write_then_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_then_read_without_write() -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    %ret = pod.read %0[@m] : !pod.type<[@n: !felt.type, @m: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_then_read_without_write() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
