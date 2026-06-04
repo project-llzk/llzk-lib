@@ -22,6 +22,7 @@ target_link_libraries(
     MLIRArithDialect
     MLIRControlFlowDialect
     MLIRFuncDialect
+    MLIRFuncInlinerExtension
     MLIRAffineToStandard
     MLIRIR
     MLIRPass
