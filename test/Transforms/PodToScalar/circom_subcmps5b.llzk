@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -llzk-inline-structs %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -llzk-flatten -llzk-pod-to-scalar %s 2>&1 | FileCheck --enable-var-scope %s
 // XFAIL: *
 
 //////////////////////////////////////////////////////////////////////////////////
