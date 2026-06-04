@@ -54,7 +54,6 @@ public:
   /// Called after a block is inserted. Wraps `block`, `previous` region, and the
   /// iterator position, then forwards them to the `MlirNotifyBlockInserted` callback.
   void notifyBlockInserted(Block *block, Region *previous, Region::iterator previousIt) final {
-
     blockInsertedCb(
         wrap(block), wrap(previous),
         (!previous || previous->end() == previousIt) ? MlirBlock {.ptr = nullptr}
