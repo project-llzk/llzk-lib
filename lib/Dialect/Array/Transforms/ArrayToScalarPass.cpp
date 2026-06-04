@@ -58,16 +58,24 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
@@ -757,10 +765,11 @@ public:
 
 static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, constrain::ConstrainDialect,
-      component::StructDialect, felt::FeltDialect, function::FunctionDialect, global::GlobalDialect,
-      include::IncludeDialect, polymorphic::PolymorphicDialect, arith::ArithDialect,
-      cast::CastDialect, scf::SCFDialect>();
+      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
+      constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
+      function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
+      polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
+      scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
 }
 
