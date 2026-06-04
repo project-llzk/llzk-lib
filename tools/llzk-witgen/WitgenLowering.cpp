@@ -1604,8 +1604,8 @@ private:
         }
         LoweredValue lowered {oldType, {}};
         lowered.leaves.append(
-            newWhileResults.begin() + static_cast<ptrdiff_t>(cursor),
-            newWhileResults.begin() + static_cast<ptrdiff_t>(nextCursor)
+            newWhileResults.begin() + llzk::checkedCast<ptrdiff_t>(cursor),
+            newWhileResults.begin() + llzk::checkedCast<ptrdiff_t>(nextCursor)
         );
         valueMap[oldResult] = std::move(lowered);
         cursor = nextCursor;
