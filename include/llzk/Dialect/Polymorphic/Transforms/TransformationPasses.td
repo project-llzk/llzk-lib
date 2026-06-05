@@ -14,23 +14,23 @@ include "llzk/Pass/PassBase.td"
 include "mlir/IR/EnumAttr.td"
 
 def StructCleanupModeDescription {
-  string r = "Specifies the extent to which unused parameterized structs (i.e. "
-             "structs within a `poly.template`) are removed during the "
+  string r = "Specifies the extent to which unused parameterized definitions (i.e. "
+             "structs or free functions within a `poly.template`) are removed during the "
              "flattening pass.";
 }
 
 def StructCleanupMode
     : I32EnumAttr<"StructCleanupMode", StructCleanupModeDescription.r,
                   [
-                      // Disabled: No structs are deleted.
+                      // Disabled: No definitions are deleted.
                       I32EnumAttrCase<"Disabled", 0, "disabled">,
-                      // Preimage: Only structs that were replaced with concrete
+                      // Preimage: Only definitions that were replaced with concrete
                       // instantiations are deleted.
                       I32EnumAttrCase<"Preimage", 1, "preimage">,
-                      // ConcreteAsRoot: All structs that cannot be reached by a
-                      // use-def chain from some concrete struct are deleted.
+                      // ConcreteAsRoot: All definitions that cannot be reached by a
+                      // use-def chain from some concrete definition are deleted.
                       I32EnumAttrCase<"ConcreteAsRoot", 2, "concrete-as-root">,
-                      // MainAsRoot: All structs that cannot be reached by a
+                      // MainAsRoot: All definitions that cannot be reached by a
                       // use-def chain from the main struct are deleted.
                       I32EnumAttrCase<"MainAsRoot", 3, "main-as-root">,
 ]> {
@@ -76,16 +76,16 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
                         "::llzk::polymorphic::StructCleanupMode::Preimage",
                         StructCleanupModeDescription.r, [{::llvm::cl::values(
                 clEnumValN(::llzk::polymorphic::StructCleanupMode::Disabled,
-                           stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::Disabled), "No structs are deleted."),
+                           stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::Disabled), "No definitions are deleted."),
                 clEnumValN(::llzk::polymorphic::StructCleanupMode::Preimage,
                            stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::Preimage),
-                           "Only structs that were replaced with concrete instantiations are deleted."),
+                           "Only definitions that were replaced with concrete instantiations are deleted."),
                 clEnumValN(::llzk::polymorphic::StructCleanupMode::ConcreteAsRoot,
                            stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::ConcreteAsRoot),
-                           "All structs that cannot be reached by a use-def chain from some concrete struct are deleted."),
+                           "All definitions that cannot be reached by a use-def chain from some concrete definition are deleted."),
                 clEnumValN(::llzk::polymorphic::StructCleanupMode::MainAsRoot,
                            stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::MainAsRoot),
-                           "All structs that cannot be reached by a use-def chain from the \"Main\" struct are deleted.")
+                           "All definitions that cannot be reached by a use-def chain from the \"Main\" struct are deleted.")
           )}]>,
   ];
 }

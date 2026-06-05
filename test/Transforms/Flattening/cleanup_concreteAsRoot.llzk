@@ -1,9 +1,9 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=concrete-as-root})' %s | FileCheck --enable-var-scope %s
 
-// TEST: With "cleanup=concrete-as-root", all structs without parameters are preserved. Structs
-// that are reachable from one of these "concrete" structs or reachable from a global def or
-// free function (since those are not subject to removal during this pass) are also preserved.
-// All other structs are removed.
+// TEST: With "cleanup=concrete-as-root", all structs and free functions without parameters
+// are preserved. Structs and free functions that are reachable from one of these "concrete"
+// definitions or reachable from a global def are also preserved. All other structs and free
+// functions are removed.
 
 module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUseFromGlobal>
@@ -574,3 +574,26 @@ module attributes {llzk.lang} {
 // CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @TransitiveUseFromMain {
 // CHECK-NOT: poly.template @TNoUse {
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @concrete(%inp: !array.type<4 x !felt.type>) -> !felt.type {
+    %c0 = arith.constant 0 : index
+    %r = array.read %inp[%c0] : !array.type<4 x !felt.type>, !felt.type
+    function.return %r : !felt.type
+  }
+
+  poly.template @TNoUseFunc {
+    poly.param @N : index
+
+    function.def @no_use(%inp: !array.type<@N x !felt.type>) -> !felt.type {
+      %c0 = arith.constant 0 : index
+      %r = array.read %inp[%c0] : !array.type<@N x !felt.type>, !felt.type
+      function.return %r : !felt.type
+    }
+  }
+}
+// CHECK-NOT: poly.template @TNoUseFunc {
+// CHECK:     function.def @concrete
+// CHECK-NOT: poly.template @TNoUseFunc {
