@@ -532,6 +532,50 @@ static Value normalizeWideValue(
   );
 }
 
+/// Normalize a signed widened integer back into the field modulus and truncate it.
+static Value normalizeSignedWideValue(
+    OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field
+) {
+  auto wideType = mlir::cast<IntegerType>(wideValue.getType());
+  Value modulus = builder.create<arith::ConstantOp>(
+      loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
+  );
+  Value reduced = builder.create<arith::RemSIOp>(loc, wideValue, modulus);
+  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(wideType, 0));
+  Value isNegative = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::slt, reduced, zero);
+  Value adjusted = builder.create<arith::AddIOp>(loc, reduced, modulus);
+  Value canonical = builder.create<arith::SelectOp>(loc, isNegative, adjusted, reduced);
+  return builder.create<arith::TruncIOp>(
+      loc, IntegerType::get(builder.getContext(), dstWidth), canonical
+  );
+}
+
+/// Reinterpret a canonical field element as a signed integer in a widened type.
+static Value
+lowerFeltToSignedWide(OpBuilder &builder, Location loc, Value operand, const Field &field) {
+  unsigned width = field.bitWidth();
+  unsigned wideWidth = width + 1;
+  auto feltType = IntegerType::get(builder.getContext(), width);
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value operandWide = builder.create<arith::ExtUIOp>(loc, wideType, operand);
+  Value prime =
+      builder.create<arith::ConstantOp>(loc, field.getPrimeAttr(builder.getContext(), wideWidth));
+  Value half = builder.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(feltType, toExactWidthAPInt(field.half(), width))
+  );
+  Value isNegative = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::uge, operand, half);
+  Value signedOperand = builder.create<arith::SubIOp>(loc, operandWide, prime);
+  return builder.create<arith::SelectOp>(loc, isNegative, signedOperand, operandWide);
+}
+
+/// Emit a runtime assertion that a felt divisor is non-zero.
+static void assertNonZeroFelt(OpBuilder &builder, Location loc, Value operand, StringRef message) {
+  auto operandType = mlir::cast<IntegerType>(operand.getType());
+  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(operandType, 0));
+  Value isNonZero = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ne, operand, zero);
+  builder.create<cf::AssertOp>(loc, isNonZero, message);
+}
+
 /// Lower field addition with explicit modular reduction.
 static Value
 lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
@@ -603,6 +647,129 @@ static Value lowerFeltInv(OpBuilder &builder, Location loc, Value operand, const
 static Value
 lowerFeltDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   return lowerFeltMul(builder, loc, lhs, lowerFeltInv(builder, loc, rhs, field), field);
+}
+
+/// Lower field exponentiation with an unsigned exponent representative.
+static Value
+lowerFeltPow(OpBuilder &builder, Location loc, Value base, Value exponent, const Field &field) {
+  auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
+  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 0));
+  Value one = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 1));
+  Value result = makeOneFelt(builder, loc, field);
+  Value currentBase = base;
+  for (unsigned bit = 0; bit < field.bitWidth(); ++bit) {
+    Value bitIndex = builder.create<arith::ConstantOp>(
+        loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), bit))
+    );
+    Value shifted = builder.create<arith::ShRUIOp>(loc, exponent, bitIndex);
+    Value masked = builder.create<arith::AndIOp>(loc, shifted, one);
+    Value bitIsSet = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ne, masked, zero);
+    auto ifOp = builder.create<scf::IfOp>(loc, TypeRange {feltType}, bitIsSet, true);
+    {
+      OpBuilder::InsertionGuard guard(builder);
+      builder.setInsertionPointToStart(&ifOp.getThenRegion().front());
+      Value multiplied = lowerFeltMul(builder, loc, result, currentBase, field);
+      builder.create<scf::YieldOp>(loc, multiplied);
+    }
+    {
+      OpBuilder::InsertionGuard guard(builder);
+      builder.setInsertionPointToStart(&ifOp.getElseRegion().front());
+      builder.create<scf::YieldOp>(loc, result);
+    }
+    result = ifOp.getResult(0);
+    if (bit + 1 < field.bitWidth()) {
+      currentBase = lowerFeltMul(builder, loc, currentBase, currentBase, field);
+    }
+  }
+  return result;
+}
+
+/// Lower field left shift on unsigned representatives.
+static Value
+lowerFeltShl(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
+  Value two = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 2));
+  return lowerFeltMul(builder, loc, lhs, lowerFeltPow(builder, loc, two, rhs, field), field);
+}
+
+/// Lower field bitwise-or with explicit modular reduction.
+static Value
+lowerFeltOr(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = field.bitWidth();
+  auto wideType = IntegerType::get(builder.getContext(), width + 1);
+  Value orValue = builder.create<arith::OrIOp>(loc, lhs, rhs);
+  Value orWide = builder.create<arith::ExtUIOp>(loc, wideType, orValue);
+  return normalizeWideValue(builder, loc, orWide, width, field);
+}
+
+/// Lower field bitwise-xor with explicit modular reduction.
+static Value
+lowerFeltXor(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = field.bitWidth();
+  auto wideType = IntegerType::get(builder.getContext(), width + 1);
+  Value xorValue = builder.create<arith::XOrIOp>(loc, lhs, rhs);
+  Value xorWide = builder.create<arith::ExtUIOp>(loc, wideType, xorValue);
+  return normalizeWideValue(builder, loc, xorWide, width, field);
+}
+
+/// Lower unsigned integer division on felt representatives.
+static Value lowerFeltUnsignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) {
+  return builder.create<arith::DivUIOp>(loc, lhs, rhs);
+}
+
+/// Lower signed integer division on felt representatives.
+static Value
+lowerFeltSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = field.bitWidth();
+  Value lhsSigned = lowerFeltToSignedWide(builder, loc, lhs, field);
+  Value rhsSigned = lowerFeltToSignedWide(builder, loc, rhs, field);
+  Value quotient = builder.create<arith::DivSIOp>(loc, lhsSigned, rhsSigned);
+  return normalizeSignedWideValue(builder, loc, quotient, width, field);
+}
+
+/// Lower unsigned modulus on felt representatives.
+static Value lowerFeltUnsignedMod(OpBuilder &builder, Location loc, Value lhs, Value rhs) {
+  return builder.create<arith::RemUIOp>(loc, lhs, rhs);
+}
+
+/// Lower signed modulus on felt representatives.
+static Value
+lowerFeltSignedMod(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  unsigned width = field.bitWidth();
+  Value lhsSigned = lowerFeltToSignedWide(builder, loc, lhs, field);
+  Value rhsSigned = lowerFeltToSignedWide(builder, loc, rhs, field);
+  Value remainder = builder.create<arith::RemSIOp>(loc, lhsSigned, rhsSigned);
+  return normalizeSignedWideValue(builder, loc, remainder, width, field);
+}
+
+/// Lower field right shift on unsigned representatives.
+static Value
+lowerFeltShr(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
+  auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
+  Value width = builder.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth()))
+  );
+  Value shiftTooLarge = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::uge, rhs, width);
+  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 0));
+  Value maxValidShift = builder.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth() - 1))
+  );
+  Value clampedShift = builder.create<arith::MinUIOp>(loc, rhs, maxValidShift);
+  Value shifted = builder.create<arith::ShRUIOp>(loc, lhs, clampedShift);
+  return builder.create<arith::SelectOp>(loc, shiftTooLarge, zero, shifted);
+}
+
+/// Lower one's complement on field-width representatives, then reduce mod prime.
+static Value lowerFeltNot(OpBuilder &builder, Location loc, Value operand, const Field &field) {
+  unsigned width = field.bitWidth();
+  auto feltType = IntegerType::get(builder.getContext(), width);
+  auto wideType = IntegerType::get(builder.getContext(), width + 1);
+  Value maxMask = builder.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(feltType, llvm::APInt::getAllOnes(width))
+  );
+  Value complement = builder.create<arith::XOrIOp>(loc, operand, maxMask);
+  Value complementWide = builder.create<arith::ExtUIOp>(loc, wideType, complement);
+  return normalizeWideValue(builder, loc, complementWide, width, field);
 }
 
 /// Load one scalar leaf from aggregate storage.
@@ -1074,6 +1241,50 @@ private:
           LoweredValue {addOp.getType(), {lowerFeltAdd(builder, loc, *lhs, *rhs, field)}}
       );
     }
+    if (auto powOp = dyn_cast<felt::PowFeltOp>(op)) {
+      auto lhs = lookupScalar(powOp.getLhs(), valueMap, powOp.getOperation());
+      auto rhs = lookupScalar(powOp.getRhs(), valueMap, powOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          powOp.getResult(),
+          LoweredValue {powOp.getType(), {lowerFeltPow(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto andOp = dyn_cast<felt::AndFeltOp>(op)) {
+      auto lhs = lookupScalar(andOp.getLhs(), valueMap, andOp.getOperation());
+      auto rhs = lookupScalar(andOp.getRhs(), valueMap, andOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          andOp.getResult(),
+          LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}}
+      );
+    }
+    if (auto orOp = dyn_cast<felt::OrFeltOp>(op)) {
+      auto lhs = lookupScalar(orOp.getLhs(), valueMap, orOp.getOperation());
+      auto rhs = lookupScalar(orOp.getRhs(), valueMap, orOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          orOp.getResult(),
+          LoweredValue {orOp.getType(), {lowerFeltOr(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto xorOp = dyn_cast<felt::XorFeltOp>(op)) {
+      auto lhs = lookupScalar(xorOp.getLhs(), valueMap, xorOp.getOperation());
+      auto rhs = lookupScalar(xorOp.getRhs(), valueMap, xorOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          xorOp.getResult(),
+          LoweredValue {xorOp.getType(), {lowerFeltXor(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
     if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
       auto lhs = lookupScalar(subOp.getLhs(), valueMap, subOp.getOperation());
       auto rhs = lookupScalar(subOp.getRhs(), valueMap, subOp.getOperation());
@@ -1125,6 +1336,86 @@ private:
       return bind(
           divOp.getResult(),
           LoweredValue {divOp.getType(), {lowerFeltDiv(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto uintDivOp = dyn_cast<felt::UnsignedIntDivFeltOp>(op)) {
+      auto lhs = lookupScalar(uintDivOp.getLhs(), valueMap, uintDivOp.getOperation());
+      auto rhs = lookupScalar(uintDivOp.getRhs(), valueMap, uintDivOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      assertNonZeroFelt(builder, loc, *rhs, "felt.uintdiv divisor must be non-zero");
+      return bind(
+          uintDivOp.getResult(),
+          LoweredValue {uintDivOp.getType(), {lowerFeltUnsignedDiv(builder, loc, *lhs, *rhs)}}
+      );
+    }
+    if (auto sintDivOp = dyn_cast<felt::SignedIntDivFeltOp>(op)) {
+      auto lhs = lookupScalar(sintDivOp.getLhs(), valueMap, sintDivOp.getOperation());
+      auto rhs = lookupScalar(sintDivOp.getRhs(), valueMap, sintDivOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      assertNonZeroFelt(builder, loc, *rhs, "felt.sintdiv divisor must be non-zero");
+      return bind(
+          sintDivOp.getResult(),
+          LoweredValue {sintDivOp.getType(), {lowerFeltSignedDiv(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto umodOp = dyn_cast<felt::UnsignedModFeltOp>(op)) {
+      auto lhs = lookupScalar(umodOp.getLhs(), valueMap, umodOp.getOperation());
+      auto rhs = lookupScalar(umodOp.getRhs(), valueMap, umodOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      assertNonZeroFelt(builder, loc, *rhs, "felt.umod divisor must be non-zero");
+      return bind(
+          umodOp.getResult(),
+          LoweredValue {umodOp.getType(), {lowerFeltUnsignedMod(builder, loc, *lhs, *rhs)}}
+      );
+    }
+    if (auto smodOp = dyn_cast<felt::SignedModFeltOp>(op)) {
+      auto lhs = lookupScalar(smodOp.getLhs(), valueMap, smodOp.getOperation());
+      auto rhs = lookupScalar(smodOp.getRhs(), valueMap, smodOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      assertNonZeroFelt(builder, loc, *rhs, "felt.smod divisor must be non-zero");
+      return bind(
+          smodOp.getResult(),
+          LoweredValue {smodOp.getType(), {lowerFeltSignedMod(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto shrOp = dyn_cast<felt::ShrFeltOp>(op)) {
+      auto lhs = lookupScalar(shrOp.getLhs(), valueMap, shrOp.getOperation());
+      auto rhs = lookupScalar(shrOp.getRhs(), valueMap, shrOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          shrOp.getResult(),
+          LoweredValue {shrOp.getType(), {lowerFeltShr(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto shlOp = dyn_cast<felt::ShlFeltOp>(op)) {
+      auto lhs = lookupScalar(shlOp.getLhs(), valueMap, shlOp.getOperation());
+      auto rhs = lookupScalar(shlOp.getRhs(), valueMap, shlOp.getOperation());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      return bind(
+          shlOp.getResult(),
+          LoweredValue {shlOp.getType(), {lowerFeltShl(builder, loc, *lhs, *rhs, field)}}
+      );
+    }
+    if (auto notOp = dyn_cast<felt::NotFeltOp>(op)) {
+      auto operand = lookupScalar(notOp.getOperand(), valueMap, notOp.getOperation());
+      if (failed(operand)) {
+        return failure();
+      }
+      return bind(
+          notOp.getResult(),
+          LoweredValue {notOp.getType(), {lowerFeltNot(builder, loc, *operand, field)}}
       );
     }
 

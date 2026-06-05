@@ -1,0 +1,52 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @pow : !felt.type<"babybear"> {llzk.pub}
+    struct.member @div : !felt.type<"babybear"> {llzk.pub}
+    struct.member @uintdiv : !felt.type<"babybear"> {llzk.pub}
+    struct.member @sintdiv : !felt.type<"babybear"> {llzk.pub}
+    struct.member @umod : !felt.type<"babybear"> {llzk.pub}
+    struct.member @smod : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %six = felt.const 6 <"babybear">
+      %three = felt.const 3 <"babybear">
+      %seven = felt.const 7 <"babybear">
+      %five = felt.const 5 <"babybear">
+      %neg_seven = felt.const 2013265914 <"babybear">
+      %pow = felt.pow %seven, %five : !felt.type<"babybear">, !felt.type<"babybear">
+      %div = felt.div %six, %three : !felt.type<"babybear">, !felt.type<"babybear">
+      %uintdiv = felt.uintdiv %seven, %three : !felt.type<"babybear">, !felt.type<"babybear">
+      %sintdiv = felt.sintdiv %neg_seven, %three : !felt.type<"babybear">, !felt.type<"babybear">
+      %umod = felt.umod %seven, %three : !felt.type<"babybear">, !felt.type<"babybear">
+      %smod = felt.smod %neg_seven, %three : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@pow] = %pow : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@div] = %div : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@uintdiv] = %uintdiv : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@sintdiv] = %sintdiv : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@umod] = %umod : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@smod] = %smod : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-DAG:   "pow": "16807"
+// CHECK-DAG:   "div": "2"
+// CHECK-DAG:   "uintdiv": "2"
+// CHECK-DAG:   "sintdiv": "2013265919"
+// CHECK-DAG:   "umod": "1"
+// CHECK-DAG:   "smod": "2013265920"
+// CHECK: }
+
+//--- input.json
+{}
