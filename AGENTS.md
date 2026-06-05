@@ -53,6 +53,7 @@
 ## Code change workflow
 
 - For bug fixes or behavior changes, identify the affected component, update the implementation, and add or update focused tests.
+- When adding or generating new functions, classes, methods, passes, operations, or other non-trivial symbols, include appropriate documentation as part of the same change. Prefer Doxygen-style comments for declarations and keep implementation comments concise and behavior-focused.
 - Keep diffs minimal and aligned with existing style and architecture.
 - Validate changes with relevant build/test commands in the Nix environment.
 
