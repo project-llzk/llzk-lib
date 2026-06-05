@@ -15,7 +15,8 @@
 /// 0. Scan to find `llzk.nondet` ops that allocate uninitialized pods and replace them with
 ///    an equivalent `pod.new`
 ///
-/// 1. Run a dialect conversion that replaces `PodType` struct members with scalar members.
+/// 1. Run a dialect conversion that replaces `PodType` struct members with one scalar member per
+///    record and remembers how each original member was split.
 ///
 /// 2. Run a dialect conversion that does the following:
 ///
@@ -35,14 +36,17 @@
 ///      create/read/write ops so the changes are as local as possible (just as described for
 ///      `MemberReadOp` and `MemberWriteOp`)
 ///
-/// 3. Promote pod read/write within `scf.if` regions to the parent block so the pod reads/writes
-///    that mem2reg must convert are in the same block.
+/// 3. Promote pod reads and writes out of `scf.if`, `scf.for`, and `scf.while` regions when the
+///    access can be modeled as an SSA value flowing through the region boundary. This puts the
+///    pod accesses that mem2reg must eliminate into a parent block or loop-carried value.
 ///
 /// 4. Run MLIR "sroa" pass to split each pod with `N` records into `N` pods with 1 record each
-///    (to prepare for "mem2reg" pass because it's API cannot deal with splitting up memory).
+///    (to prepare for the "mem2reg" pass because its API cannot split memory by itself).
 ///
 /// 5. Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA
-///    values. This pass also runs several standard optimizations so the final result is condensed.
+///    values.
+///
+/// ** Steps 4 and 5 are rerun while nested POD types are still being exposed, until a fixpoint.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on pod records. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -130,6 +134,7 @@ template <typename T> bool containsSplittablePodType(ValueTypeRange<T> types) {
   return false;
 }
 
+/// Register the dialects and operations that remain legal across the conversion-based stages.
 static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
@@ -140,6 +145,8 @@ static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalOp<ModuleOp>();
 }
 
+/// Rewrite pod-typed `llzk.nondet` allocations into explicit `pod.new` allocations so the rest of
+/// the pass only needs to reason about POD storage through POD dialect operations.
 class NondetToNewPod : public OpConversionPattern<NonDetOp> {
   using OpConversionPattern<NonDetOp>::OpConversionPattern;
   LogicalResult matchAndRewrite(
@@ -168,22 +175,28 @@ static LogicalResult step0(ModuleOp modOp) {
 
 /// new member name and type
 using MemberInfo = std::pair<StringAttr, Type>;
-/// original pod record name -> scalar member info
+/// original pod record name -> split scalar member info
 using LocalMemberReplacementMap = DenseMap<StringAttr, MemberInfo>;
 /// struct -> original pod-type member name -> LocalMemberReplacementMap
 using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
 
+/// Create a `pod.read` for one record of `podRef`.
 inline ReadPodOp genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) {
   Type resultType =
       llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
   return rewriter.create<ReadPodOp>(loc, resultType, podRef, recordName);
 }
 
+/// Create a `pod.write` for one record of `podRef`.
 inline WritePodOp
 genWrite(Location loc, Value podRef, StringAttr recordName, Value value, OpBuilder &rewriter) {
   return rewriter.create<WritePodOp>(loc, podRef, recordName, value);
 }
 
+/// Split a pod-typed struct member definition into one scalar member definition per POD record.
+///
+/// The replacement map records the fresh member symbols so later rewrites can retarget
+/// `component.member_read` and `component.member_write` operations to the split members.
 class SplitPodInMemberDefOp : public OpConversionPattern<MemberDefOp> {
   SymbolTableCollection &tables;
   MemberReplacementMap &repMapRef;
@@ -204,7 +217,7 @@ public:
     assert(inStruct);
     LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
 
-    // Use type come from adaptor so it's an updated type in case of nested pods as member.
+    // Use the adaptor type so nested POD members are already expressed in their converted form.
     PodType podTy = dyn_cast<PodType>(adaptor.getType());
     assert(podTy); // follows from legal() check
 
@@ -429,6 +442,10 @@ public:
 };
 */
 
+/// Rewrite a write to a pod-typed struct member into writes to the corresponding split members.
+///
+/// The incoming pod operand is decomposed by record with `pod.read`, then each scalar value is
+/// written to the matching replacement member introduced by step 1.
 class SplitPodInMemberWriteOp : public SplitAggregateInMemberRefOp<
                                     SplitPodInMemberWriteOp, MemberWriteOp, void *, StringAttr> {
 public:
@@ -450,6 +467,10 @@ public:
   }
 };
 
+/// Rewrite a read from a pod-typed struct member into reads from the split members.
+///
+/// The rewrite creates a fresh `pod.new`, reads each replacement scalar member, and reconstructs a
+/// local pod value with `pod.write` operations so downstream uses still see a POD-typed result.
 class SplitPodInMemberReadOp : public SplitAggregateInMemberRefOp<
                                    SplitPodInMemberReadOp, MemberReadOp, NewPodOp, StringAttr> {
 public:
@@ -513,6 +534,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// Normalize the record name representation used by POD access ops to a plain `StringAttr`.
 static StringAttr getRecordNameAsStringAttr(ReadPodOp readOp) {
   return readOp.getRecordNameAttr().getLeafReference();
 }
@@ -521,6 +543,7 @@ static StringAttr getRecordNameAsStringAttr(WritePodOp writeOp) {
   return writeOp.getRecordNameAttr().getLeafReference();
 }
 
+/// Return whether the given read/write access targets the same POD record.
 static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
   return readOp.getPodRef() == podRef && getRecordNameAsStringAttr(readOp) == recordName;
 }
@@ -529,6 +552,7 @@ static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordN
   return writeOp.getPodRef() == podRef && getRecordNameAsStringAttr(writeOp) == recordName;
 }
 
+/// Return whether `op` contains a nested write to `podRef.recordName`.
 static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recordName) {
   return op
       .walk([&](WritePodOp writeOp) {
@@ -539,6 +563,7 @@ static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recor
   }).wasInterrupted();
 }
 
+/// Return whether `op` contains any read from `podRef.recordName`.
 static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
   return op
       .walk([&](ReadPodOp readOp) {
@@ -573,6 +598,10 @@ static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
   return false;
 }
 
+/// Return whether `value` is defined within `ancestor` or one of its nested regions.
+///
+/// Values defined inside a control-flow operation cannot be hoisted across that operation without
+/// introducing an explicit region result or loop-carried value.
 static bool isValueDefinedInside(Operation *ancestor, Value value) {
   if (Operation *defOp = value.getDefiningOp()) {
     return ancestor->isAncestor(defOp);
@@ -665,6 +694,7 @@ struct IfWriteSlot {
   Value incomingValue;
 };
 
+/// Find the tracked branch-write slot for `podRef.recordName`.
 static IfWriteSlot *
 lookupSlot(SmallVectorImpl<IfWriteSlot> &slots, Value podRef, StringAttr recordName) {
   for (IfWriteSlot &slot : slots) {
@@ -675,6 +705,7 @@ lookupSlot(SmallVectorImpl<IfWriteSlot> &slots, Value podRef, StringAttr recordN
   return nullptr;
 }
 
+/// Return the tracked branch-write slot for `podRef.recordName`, creating it on first use.
 static IfWriteSlot &getOrCreateSlot(
     SmallVectorImpl<IfWriteSlot> &slots, Value podRef, StringAttr recordName, Type type
 ) {
@@ -685,10 +716,12 @@ static IfWriteSlot &getOrCreateSlot(
   return slots.back();
 }
 
+/// Return the else block when present; otherwise null.
 static Block *getElseBlockOrNull(scf::IfOp ifOp) {
   return ifOp.getElseRegion().empty() ? nullptr : &ifOp.getElseRegion().front();
 }
 
+/// Collect direct `pod.write` operations from a branch, grouped by POD reference and record name.
 static void
 collectDirectWrites(Block *block, bool isThenBlock, SmallVectorImpl<IfWriteSlot> &slots) {
   if (!block) {
@@ -716,6 +749,10 @@ collectDirectWrites(Block *block, bool isThenBlock, SmallVectorImpl<IfWriteSlot>
   }
 }
 
+/// Return whether writes to `podRef.recordName` can be lifted out of the branch as an SSA result.
+///
+/// Lifting is rejected when nested writes may alias the same record or when a later read in the
+/// branch would observe branch-local mutation ordering that the lifted form would not preserve.
 static bool branchSlotCanBeLifted(Block *block, Value podRef, StringAttr recordName) {
   if (!block) {
     return true;
@@ -744,6 +781,7 @@ static bool branchSlotCanBeLifted(Block *block, Value podRef, StringAttr recordN
   return true;
 }
 
+/// Return whether `op` is one of the branch writes that will be recreated after the lifted `if`.
 static bool isLiftedWrite(Operation &op, ArrayRef<IfWriteSlot> slots) {
   auto writeOp = dyn_cast<WritePodOp>(&op);
   if (!writeOp) {
@@ -755,12 +793,14 @@ static bool isLiftedWrite(Operation &op, ArrayRef<IfWriteSlot> slots) {
   });
 }
 
+/// Remove the default terminator from a freshly created SCF block before cloning contents into it.
 static void dropTerminatorIfPresent(Block *block) {
   if (!block->empty() && block->back().hasTrait<OpTrait::IsTerminator>()) {
     block->back().erase();
   }
 }
 
+/// Move non-lifted branch operations into the replacement branch block.
 static void
 moveBranchWithoutLiftedWrites(Block *srcBlock, Block *destBlock, ArrayRef<IfWriteSlot> slots) {
   if (!srcBlock) {
@@ -776,6 +816,7 @@ moveBranchWithoutLiftedWrites(Block *srcBlock, Block *destBlock, ArrayRef<IfWrit
   }
 }
 
+/// Finish a lifted branch by yielding one SSA value per tracked POD record.
 static void appendYield(
     Location loc, Block *block, ArrayRef<IfWriteSlot> slots, bool isThenBlock, OpBuilder &builder
 ) {
@@ -796,6 +837,7 @@ struct LoopPodSlot {
   Type type;
 };
 
+/// Find the tracked loop slot for `podRef.recordName`.
 static LoopPodSlot *
 lookupLoopSlot(SmallVectorImpl<LoopPodSlot> &slots, Value podRef, StringAttr recordName) {
   for (LoopPodSlot &slot : slots) {
@@ -816,6 +858,7 @@ lookupLoopSlot(ArrayRef<LoopPodSlot> slots, Value podRef, StringAttr recordName)
   return nullptr;
 }
 
+/// Return the tracked loop slot for `podRef.recordName`, creating it on first use.
 static LoopPodSlot &getOrCreateLoopSlot(
     SmallVectorImpl<LoopPodSlot> &slots, Value podRef, StringAttr recordName, Type type
 ) {
@@ -826,6 +869,7 @@ static LoopPodSlot &getOrCreateLoopSlot(
   return slots.back();
 }
 
+/// Find the stable index of the tracked loop slot for `podRef.recordName`.
 static std::optional<size_t>
 findLoopSlotIndex(ArrayRef<LoopPodSlot> slots, Value podRef, StringAttr recordName) {
   for (auto [idx, slot] : llvm::enumerate(slots)) {
@@ -836,6 +880,8 @@ findLoopSlotIndex(ArrayRef<LoopPodSlot> slots, Value podRef, StringAttr recordNa
   return std::nullopt;
 }
 
+/// Collect direct POD reads and writes that cross the loop boundary and therefore need an
+/// explicit loop-carried scalar value when lifted.
 static void
 collectDirectLoopPodSlots(Block *block, Operation *ancestor, SmallVectorImpl<LoopPodSlot> &slots) {
   for (Operation &op : *block) {
@@ -859,12 +905,14 @@ collectDirectLoopPodSlots(Block *block, Operation *ancestor, SmallVectorImpl<Loo
   }
 }
 
+/// Return whether `op` directly uses a POD reference tracked for loop lifting.
 static bool opUsesTrackedPodRefDirectly(Operation &op, ArrayRef<LoopPodSlot> slots) {
   return llvm::any_of(op.getOperands(), [&](Value operand) {
     return llvm::any_of(slots, [&](const LoopPodSlot &slot) { return slot.podRef == operand; });
   });
 }
 
+/// Return whether `op` contains nested POD accesses tracked for loop lifting.
 static bool hasNestedTrackedPodAccess(Operation &op, ArrayRef<LoopPodSlot> slots) {
   return op
       .walk([&](Operation *nestedOp) {
@@ -888,6 +936,8 @@ static bool hasNestedTrackedPodAccess(Operation &op, ArrayRef<LoopPodSlot> slots
   }).wasInterrupted();
 }
 
+/// Return whether the loop body contains non-POD operations that still observe the tracked POD
+/// references directly, which would make the simple lifting rewrite invalid.
 static bool hasUnliftableLoopPodUses(Block *block, ArrayRef<LoopPodSlot> slots) {
   for (Operation &op : *block) {
     if (isa<ReadPodOp, WritePodOp>(op)) {
@@ -900,6 +950,8 @@ static bool hasUnliftableLoopPodUses(Block *block, ArrayRef<LoopPodSlot> slots) 
   return false;
 }
 
+/// Rewrite loop-local POD reads and writes in an `scf.for` into extra iter args/results carrying
+/// one SSA value per touched POD record.
 static bool liftForPodAccesses(scf::ForOp forOp) {
   Block *body = forOp.getBody();
   SmallVector<LoopPodSlot> slots;
@@ -986,6 +1038,8 @@ static bool liftForPodAccesses(scf::ForOp forOp) {
   return true;
 }
 
+/// Rewrite loop-local POD reads and writes in an `scf.while` into extra block arguments/results
+/// carrying one SSA value per touched POD record.
 static bool liftWhilePodAccesses(scf::WhileOp whileOp) {
   Block *beforeBody = whileOp.getBeforeBody();
   Block *afterBody = whileOp.getAfterBody();
@@ -1197,7 +1251,8 @@ static bool liftIfWrites(scf::IfOp ifOp) {
   return true;
 }
 
-/// Promote pod read/write within `scf.if` to the outside so SROA + mem2reg can remove the pods.
+/// Repeatedly lift pod accesses out of supported SCF regions so SROA + mem2reg can eliminate the
+/// remaining POD storage.
 static void step3(ModuleOp modOp) {
   bool changed;
   do {
