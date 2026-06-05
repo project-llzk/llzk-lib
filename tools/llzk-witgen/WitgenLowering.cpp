@@ -664,8 +664,19 @@ lowerFeltPow(OpBuilder &builder, Location loc, Value base, Value exponent, const
     Value shifted = builder.create<arith::ShRUIOp>(loc, exponent, bitIndex);
     Value masked = builder.create<arith::AndIOp>(loc, shifted, one);
     Value bitIsSet = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ne, masked, zero);
-    Value multiplied = lowerFeltMul(builder, loc, result, currentBase, field);
-    result = builder.create<arith::SelectOp>(loc, bitIsSet, multiplied, result);
+    auto ifOp = builder.create<scf::IfOp>(loc, TypeRange {feltType}, bitIsSet, true);
+    {
+      OpBuilder::InsertionGuard guard(builder);
+      builder.setInsertionPointToStart(&ifOp.getThenRegion().front());
+      Value multiplied = lowerFeltMul(builder, loc, result, currentBase, field);
+      builder.create<scf::YieldOp>(loc, multiplied);
+    }
+    {
+      OpBuilder::InsertionGuard guard(builder);
+      builder.setInsertionPointToStart(&ifOp.getElseRegion().front());
+      builder.create<scf::YieldOp>(loc, result);
+    }
+    result = ifOp.getResult(0);
     if (bit + 1 < field.bitWidth()) {
       currentBase = lowerFeltMul(builder, loc, currentBase, currentBase, field);
     }

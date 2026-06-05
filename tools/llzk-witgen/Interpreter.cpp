@@ -549,6 +549,9 @@ private:
         return rhs.takeError();
       }
       llvm::DynamicAPInt two(2);
+      // It's more efficient to use modExp than native shift left, as for large
+      // exponents, << could allocate large temporaries, whereas modExp will be bounded
+      // by the field prime.
       return bind({WitnessVal(field.reduce(*lhs * modExp(two, *rhs, field.prime())))});
     }
     if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
