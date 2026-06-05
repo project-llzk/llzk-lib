@@ -157,7 +157,7 @@ protected:
   /// Executed for each scalar id in the aggregate type of the original member to generate the
   /// per-scalar operations on the new scalar members.
   static void forId(
-      mlir::Location, GenHeaderType, IdType, MemberInfo, OpAdaptor,
+      mlir::Location, GenHeaderType &, IdType, MemberInfo, OpAdaptor,
       mlir::ConversionPatternRewriter &
   ) {
     ensureImplementedAtCompile();
@@ -200,6 +200,9 @@ public:
     // Split the aggregate member into a series of scalar member ops.
     for (auto [id, newMember] : idToName) {
       ImplClass::forId(op.getLoc(), prefixResult, id, newMember, adaptor, rewriter);
+    }
+    if constexpr (requires { ImplClass::finalize(op, prefixResult, adaptor, rewriter); }) {
+      ImplClass::finalize(op, prefixResult, adaptor, rewriter);
     }
     rewriter.eraseOp(op);
   }

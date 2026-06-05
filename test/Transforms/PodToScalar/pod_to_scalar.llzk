@@ -382,6 +382,69 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+!Inner = !pod.type<[@x: index, @y: index]>
+!Outer = !pod.type<[@a: !Inner, @b: index]>
+module attributes {llzk.lang} {
+  struct.def @NestedMemberPod {
+    struct.member @p : !Outer
+    struct.member @out : index
+    function.def @compute(%x: index, %y: index, %b: index) -> !struct.type<@NestedMemberPod> {
+      %self = struct.new : !struct.type<@NestedMemberPod>
+      %inner = pod.new : !Inner
+      pod.write %inner[@x] = %x : !Inner, index
+      pod.write %inner[@y] = %y : !Inner, index
+      %outer = pod.new : !Outer
+      pod.write %outer[@a] = %inner : !Outer, !Inner
+      pod.write %outer[@b] = %b : !Outer, index
+      struct.writem %self[@p] = %outer : !struct.type<@NestedMemberPod>, !Outer
+      %loaded = struct.readm %self[@p] : !struct.type<@NestedMemberPod>, !Outer
+      %a = pod.read %loaded[@a] : !Outer, !Inner
+      %ax = pod.read %a[@x] : !Inner, index
+      %rb = pod.read %loaded[@b] : !Outer, index
+      %sum = arith.addi %ax, %rb : index
+      struct.writem %self[@out] = %sum : !struct.type<@NestedMemberPod>, index
+      function.return %self : !struct.type<@NestedMemberPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@NestedMemberPod>, %x: index, %y: index, %b: index
+    ) {
+      %loaded = struct.readm %self[@p] : !struct.type<@NestedMemberPod>, !Outer
+      %a = pod.read %loaded[@a] : !Outer, !Inner
+      %ax = pod.read %a[@x] : !Inner, index
+      %rb = pod.read %loaded[@b] : !Outer, index
+      %sum = arith.addi %ax, %rb : index
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @NestedMemberPod {
+// CHECK-DAG:       struct.member @p_a_x : index
+// CHECK-DAG:       struct.member @p_a_y : index
+// CHECK-DAG:       struct.member @p_b : index
+// CHECK-DAG:       struct.member @out : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@NestedMemberPod> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedMemberPod>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@p_b] = %[[VAL_2]] : <@NestedMemberPod>, index
+// CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_y] = %[[VAL_1]] : <@NestedMemberPod>, index
+// CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_x] = %[[VAL_0]] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_b] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_y] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_x] : <@NestedMemberPod>, index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_4]] : index
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_7]] : <@NestedMemberPod>, index
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@NestedMemberPod>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedMemberPod>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-DAG:         %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_b] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_a_y] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_a_x] : <@NestedMemberPod>, index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 module attributes {llzk.lang} {
   function.def @while_local_pod(%start: index, %count: index) -> index {
     %c0 = arith.constant 0 : index

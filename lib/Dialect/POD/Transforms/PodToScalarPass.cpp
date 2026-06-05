@@ -173,12 +173,64 @@ static LogicalResult step0(ModuleOp modOp) {
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// Path of nested POD record names from the original member to a scalar leaf record.
+using RecordChain = ArrayAttr;
 /// new member name and type
 using MemberInfo = std::pair<StringAttr, Type>;
-/// original pod record name -> split scalar member info
-using LocalMemberReplacementMap = DenseMap<StringAttr, MemberInfo>;
+/// original nested pod record name chain -> split scalar member info
+using LocalMemberReplacementMap = DenseMap<RecordChain, MemberInfo>;
 /// struct -> original pod-type member name -> LocalMemberReplacementMap
 using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
+
+/// Convert a nested record-name path to an `ArrayAttr` key for the replacement map.
+static ArrayAttr getRecordChainAttr(MLIRContext *ctx, ArrayRef<StringAttr> recordChain) {
+  SmallVector<Attribute> attrs;
+  attrs.reserve(recordChain.size());
+  for (StringAttr recordName : recordChain) {
+    attrs.push_back(recordName);
+  }
+  return ArrayAttr::get(ctx, attrs);
+}
+
+/// Build a flattened struct-member name like `member_outer_inner_leaf`.
+static StringAttr
+getFlattenedMemberName(MLIRContext *ctx, StringAttr memberName, ArrayRef<StringAttr> recordChain) {
+  std::string flatName = memberName.getValue().str();
+  for (StringAttr recordName : recordChain) {
+    flatName += "_" + recordName.getValue().str();
+  }
+  return StringAttr::get(ctx, flatName);
+}
+
+/// Recursively create scalar leaf members for a POD-typed struct member.
+static void flattenPodMemberIntoLeaves(
+    MemberDefOp originalMember, PodType podTy, SmallVectorImpl<StringAttr> &recordChain,
+    LocalMemberReplacementMap &localRepMapRef, SymbolTable &structSymbolTable,
+    ConversionPatternRewriter &rewriter
+) {
+  for (RecordAttr record : podTy.getRecords()) {
+    recordChain.push_back(record.getName());
+    if (PodType nestedPodTy = dyn_cast<PodType>(record.getType())) {
+      flattenPodMemberIntoLeaves(
+          originalMember, nestedPodTy, recordChain, localRepMapRef, structSymbolTable, rewriter
+      );
+      recordChain.pop_back();
+      continue;
+    }
+
+    StringAttr name = getFlattenedMemberName(
+        originalMember.getContext(), originalMember.getSymNameAttr(), recordChain
+    );
+    Type ty = record.getType();
+    MemberDefOp newMember = rewriter.create<MemberDefOp>(
+        originalMember.getLoc(), name, ty, originalMember.getSignal(), originalMember.getColumn()
+    );
+    newMember.setPublicAttr(originalMember.hasPublicAttr());
+    localRepMapRef[getRecordChainAttr(originalMember.getContext(), recordChain)] =
+        std::make_pair(structSymbolTable.insert(newMember), ty);
+    recordChain.pop_back();
+  }
+}
 
 /// Create a `pod.read` for one record of `podRef`.
 inline ReadPodOp genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) {
@@ -217,23 +269,12 @@ public:
     assert(inStruct);
     LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
 
-    // Use the adaptor type so nested POD members are already expressed in their converted form.
     PodType podTy = dyn_cast<PodType>(adaptor.getType());
     assert(podTy); // follows from legal() check
 
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
-    for (RecordAttr record : podTy.getRecords()) {
-      // Create scalar version of the member
-      StringAttr name = StringAttr::get(
-          op.getContext(), op.getSymNameAttr().getValue() + "_" + record.getName().str()
-      );
-      Type ty = record.getType();
-      MemberDefOp newMember =
-          rewriter.create<MemberDefOp>(op.getLoc(), name, ty, op.getSignal(), op.getColumn());
-      newMember.setPublicAttr(op.hasPublicAttr());
-      // Use SymbolTable to ensure name is unique and store to the replacement map
-      localRepMapRef[record.getName()] = std::make_pair(structSymbolTable.insert(newMember), ty);
-    }
+    SmallVector<StringAttr> recordChain;
+    flattenPodMemberIntoLeaves(op, podTy, recordChain, localRepMapRef, structSymbolTable, rewriter);
     rewriter.eraseOp(op);
   }
 };
@@ -442,59 +483,109 @@ public:
 };
 */
 
-/// Rewrite a write to a pod-typed struct member into writes to the corresponding split members.
-///
-/// The incoming pod operand is decomposed by record with `pod.read`, then each scalar value is
-/// written to the matching replacement member introduced by step 1.
+/// Read a nested POD leaf by following each record name in `recordChain`.
+static Value
+genReadAlongPath(Location loc, Value podRef, RecordChain recordChain, OpBuilder &rewriter) {
+  Value value = podRef;
+  for (Attribute attr : recordChain) {
+    value = genRead(loc, value, llvm::cast<StringAttr>(attr), rewriter);
+  }
+  return value;
+}
+
+/// State used while rebuilding a POD from flattened struct-member leaves.
+struct RebuildPodReadState {
+  NewPodOp pod;
+  DenseMap<RecordChain, Value> leafValues;
+};
+
+/// Reconstruct a POD record from the leaf values collected while splitting `struct.readm`.
+static Value rebuildFlattenedPodRecord(
+    Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
+    const DenseMap<RecordChain, Value> &leafValues, ConversionPatternRewriter &rewriter
+) {
+  if (PodType nestedPodTy = dyn_cast<PodType>(recordType)) {
+    NewPodOp nestedPod = rewriter.create<NewPodOp>(loc, nestedPodTy);
+    for (RecordAttr record : nestedPodTy.getRecords()) {
+      recordChain.push_back(record.getName());
+      Value recordValue =
+          rebuildFlattenedPodRecord(loc, record.getType(), recordChain, leafValues, rewriter);
+      genWrite(loc, nestedPod, record.getName(), recordValue, rewriter);
+      recordChain.pop_back();
+    }
+    return nestedPod;
+  }
+
+  auto it = leafValues.find(getRecordChainAttr(rewriter.getContext(), recordChain));
+  assert(it != leafValues.end() && "missing flattened POD leaf value");
+  return it->second;
+}
+
+/// Rewrite a write to a pod-typed struct member into writes to the corresponding scalar leaves.
 class SplitPodInMemberWriteOp : public SplitAggregateInMemberRefOp<
-                                    SplitPodInMemberWriteOp, MemberWriteOp, void *, StringAttr> {
+                                    SplitPodInMemberWriteOp, MemberWriteOp, void *, RecordChain> {
 public:
   using SplitAggregateInMemberRefOp<
-      SplitPodInMemberWriteOp, MemberWriteOp, void *, StringAttr>::SplitAggregateInMemberRefOp;
+      SplitPodInMemberWriteOp, MemberWriteOp, void *, RecordChain>::SplitAggregateInMemberRefOp;
 
   static bool legal(MemberWriteOp op) { return !containsSplittablePodType(op.getVal().getType()); }
 
   static void *genHeader(MemberWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
   static void forId(
-      Location loc, void *, StringAttr id, MemberInfo newMember, OpAdaptor adaptor,
+      Location loc, void *&, RecordChain id, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    ReadPodOp scalarRead = genRead(loc, adaptor.getVal(), id, rewriter);
+    Value scalarRead = genReadAlongPath(loc, adaptor.getVal(), id, rewriter);
     rewriter.create<MemberWriteOp>(
         loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
 
-/// Rewrite a read from a pod-typed struct member into reads from the split members.
-///
-/// The rewrite creates a fresh `pod.new`, reads each replacement scalar member, and reconstructs a
-/// local pod value with `pod.write` operations so downstream uses still see a POD-typed result.
-class SplitPodInMemberReadOp : public SplitAggregateInMemberRefOp<
-                                   SplitPodInMemberReadOp, MemberReadOp, NewPodOp, StringAttr> {
+/// Rewrite a read from a pod-typed struct member into reads from the corresponding scalar leaves.
+class SplitPodInMemberReadOp
+    : public SplitAggregateInMemberRefOp<
+          SplitPodInMemberReadOp, MemberReadOp, RebuildPodReadState, RecordChain> {
 public:
   using SplitAggregateInMemberRefOp<
-      SplitPodInMemberReadOp, MemberReadOp, NewPodOp, StringAttr>::SplitAggregateInMemberRefOp;
+      SplitPodInMemberReadOp, MemberReadOp, RebuildPodReadState,
+      RecordChain>::SplitAggregateInMemberRefOp;
 
   static bool legal(MemberReadOp op) {
     return !containsSplittablePodType(op.getResult().getType());
   }
 
-  static NewPodOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
-    NewPodOp newAgg = rewriter.create<NewPodOp>(op.getLoc(), llvm::cast<PodType>(op.getType()));
-    rewriter.replaceAllUsesWith(op, newAgg);
-    return newAgg;
+  static RebuildPodReadState genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
+    RebuildPodReadState state;
+    state.pod = rewriter.create<NewPodOp>(op.getLoc(), llvm::cast<PodType>(op.getType()));
+    rewriter.replaceAllUsesWith(op, state.pod);
+    return state;
   }
 
   static void forId(
-      Location loc, NewPodOp newAgg, StringAttr id, MemberInfo newMember, OpAdaptor adaptor,
-      ConversionPatternRewriter &rewriter
+      Location loc, RebuildPodReadState &state, RecordChain id, MemberInfo newMember,
+      OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) {
-    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
+    Value scalarRead = rewriter.create<MemberReadOp>(
         loc, newMember.second, adaptor.getComponent(), newMember.first
     );
-    genWrite(loc, newAgg, id, scalarRead, rewriter);
+    state.leafValues[id] = scalarRead;
+  }
+
+  static void finalize(
+      MemberReadOp op, RebuildPodReadState &state, OpAdaptor, ConversionPatternRewriter &rewriter
+  ) {
+    auto podTy = llvm::cast<PodType>(op.getType());
+    SmallVector<StringAttr> recordChain;
+    for (RecordAttr record : podTy.getRecords()) {
+      recordChain.push_back(record.getName());
+      Value recordValue = rebuildFlattenedPodRecord(
+          op.getLoc(), record.getType(), recordChain, state.leafValues, rewriter
+      );
+      genWrite(op.getLoc(), state.pod, record.getName(), recordValue, rewriter);
+      recordChain.pop_back();
+    }
   }
 };
 
