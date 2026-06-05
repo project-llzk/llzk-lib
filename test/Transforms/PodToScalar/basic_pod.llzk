@@ -1,0 +1,218 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @new_empty() -> index {
+    %0 = pod.new : !pod.type<[]>
+    %ret = arith.constant 0 : index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_empty() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_only() -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    %ret = arith.constant 0 : index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_only() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_then_write(%i: index) -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    pod.write %0[@m] = %i : !pod.type<[@n: !felt.type, @m: index]>, index
+    %ret = arith.constant 0 : index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_then_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_then_write_then_read(%i: index) -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    pod.write %0[@m] = %i : !pod.type<[@n: !felt.type, @m: index]>, index
+    %ret = pod.read %0[@m] : !pod.type<[@n: !felt.type, @m: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_then_write_then_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @new_then_read_without_write() -> index {
+    %0 = pod.new : !pod.type<[@n: !felt.type, @m: index]>
+    %ret = pod.read %0[@m] : !pod.type<[@n: !felt.type, @m: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @new_then_read_without_write() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @requires_step0(%i: index) -> index {
+    %0 = llzk.nondet : !pod.type<[@n: !felt.type, @m: index]>
+    pod.write %0[@m] = %i : !pod.type<[@n: !felt.type, @m: index]>, index
+    %ret = pod.read %0[@m] : !pod.type<[@n: !felt.type, @m: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @requires_step0(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Leaf = !pod.type<[@a: index, @b: index, @c: index]>
+!Branch = !pod.type<[@left: !Leaf, @right: !Leaf, @bias: index]>
+!Root = !pod.type<[@main: !Branch, @fallback: !Branch, @scale: index, @offset: index]>
+module attributes {llzk.lang} {
+  function.def @nested_pod_type(
+      %x0: index, %x1: index, %x2: index, %x3: index, %x4: index, %x5: index
+  ) -> index {
+    %leaf0 = pod.new : !Leaf
+    pod.write %leaf0[@a] = %x0 : !Leaf, index
+    pod.write %leaf0[@b] = %x1 : !Leaf, index
+    pod.write %leaf0[@c] = %x2 : !Leaf, index
+    %leaf1 = pod.new : !Leaf
+    pod.write %leaf1[@a] = %x3 : !Leaf, index
+    pod.write %leaf1[@b] = %x4 : !Leaf, index
+    pod.write %leaf1[@c] = %x5 : !Leaf, index
+    %branch0 = pod.new : !Branch
+    pod.write %branch0[@left] = %leaf0 : !Branch, !Leaf
+    pod.write %branch0[@right] = %leaf1 : !Branch, !Leaf
+    pod.write %branch0[@bias] = %x2 : !Branch, index
+    %branch1 = pod.new : !Branch
+    pod.write %branch1[@left] = %leaf1 : !Branch, !Leaf
+    pod.write %branch1[@right] = %leaf0 : !Branch, !Leaf
+    pod.write %branch1[@bias] = %x3 : !Branch, index
+    %root = pod.new : !Root
+    pod.write %root[@main] = %branch0 : !Root, !Branch
+    pod.write %root[@fallback] = %branch1 : !Root, !Branch
+    pod.write %root[@scale] = %x4 : !Root, index
+    pod.write %root[@offset] = %x5 : !Root, index
+    %readMain = pod.read %root[@main] : !Root, !Branch
+    %readMainLeft = pod.read %readMain[@left] : !Branch, !Leaf
+    %readMainLeftA = pod.read %readMainLeft[@a] : !Leaf, index
+    %readMainRight = pod.read %readMain[@right] : !Branch, !Leaf
+    %readMainRightC = pod.read %readMainRight[@c] : !Leaf, index
+    %readMainBias = pod.read %readMain[@bias] : !Branch, index
+    %readFallback = pod.read %root[@fallback] : !Root, !Branch
+    %readFallbackLeft = pod.read %readFallback[@left] : !Branch, !Leaf
+    %readFallbackLeftB = pod.read %readFallbackLeft[@b] : !Leaf, index
+    %readFallbackRight = pod.read %readFallback[@right] : !Branch, !Leaf
+    %readFallbackRightB = pod.read %readFallbackRight[@b] : !Leaf, index
+    %readScale = pod.read %root[@scale] : !Root, index
+    %readOffset = pod.read %root[@offset] : !Root, index
+    %sum0 = arith.addi %readMainLeftA, %readMainRightC : index
+    %sum1 = arith.addi %sum0, %readMainBias : index
+    %sum2 = arith.addi %sum1, %readFallbackLeftB : index
+    %sum3 = arith.addi %sum2, %readFallbackRightB : index
+    %sum4 = arith.addi %sum3, %readScale : index
+    %sum5 = arith.addi %sum4, %readOffset : index
+    function.return %sum5 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_pod_type(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_5]] : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_7]], %[[VAL_4]] : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_8]], %[[VAL_1]] : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_9]], %[[VAL_4]] : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_10]], %[[VAL_5]] : index
+// CHECK-NEXT:      function.return %[[VAL_11]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Inner = !pod.type<[@x: index, @y: index]>
+!Outer = !pod.type<[@a: !Inner, @b: index]>
+module attributes {llzk.lang} {
+  struct.def @NestedMemberPod {
+    struct.member @p : !Outer
+    struct.member @out : index
+    function.def @compute(%x: index, %y: index, %b: index) -> !struct.type<@NestedMemberPod> {
+      %self = struct.new : !struct.type<@NestedMemberPod>
+      %inner = pod.new : !Inner
+      pod.write %inner[@x] = %x : !Inner, index
+      pod.write %inner[@y] = %y : !Inner, index
+      %outer = pod.new : !Outer
+      pod.write %outer[@a] = %inner : !Outer, !Inner
+      pod.write %outer[@b] = %b : !Outer, index
+      struct.writem %self[@p] = %outer : !struct.type<@NestedMemberPod>, !Outer
+      %loaded = struct.readm %self[@p] : !struct.type<@NestedMemberPod>, !Outer
+      %a = pod.read %loaded[@a] : !Outer, !Inner
+      %ax = pod.read %a[@x] : !Inner, index
+      %rb = pod.read %loaded[@b] : !Outer, index
+      %sum = arith.addi %ax, %rb : index
+      struct.writem %self[@out] = %sum : !struct.type<@NestedMemberPod>, index
+      function.return %self : !struct.type<@NestedMemberPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@NestedMemberPod>, %x: index, %y: index, %b: index
+    ) {
+      %loaded = struct.readm %self[@p] : !struct.type<@NestedMemberPod>, !Outer
+      %a = pod.read %loaded[@a] : !Outer, !Inner
+      %ax = pod.read %a[@x] : !Inner, index
+      %rb = pod.read %loaded[@b] : !Outer, index
+      %sum = arith.addi %ax, %rb : index
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @NestedMemberPod {
+// CHECK-DAG:       struct.member @p_a_x : index
+// CHECK-DAG:       struct.member @p_a_y : index
+// CHECK-DAG:       struct.member @p_b : index
+// CHECK-DAG:       struct.member @out : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@NestedMemberPod> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedMemberPod>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@p_b] = %[[VAL_2]] : <@NestedMemberPod>, index
+// CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_y] = %[[VAL_1]] : <@NestedMemberPod>, index
+// CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_x] = %[[VAL_0]] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_b] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_y] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_x] : <@NestedMemberPod>, index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_4]] : index
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_7]] : <@NestedMemberPod>, index
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@NestedMemberPod>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedMemberPod>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-DAG:         %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_b] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_a_y] : <@NestedMemberPod>, index
+// CHECK-DAG:         %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_a_x] : <@NestedMemberPod>, index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
