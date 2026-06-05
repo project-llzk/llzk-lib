@@ -15,10 +15,33 @@
 /// 0. Scan to find `llzk.nondet` ops that allocate uninitialized pods and replace them with
 ///    an equivalent `pod.new`
 ///
-/// 1. Run MLIR "sroa" pass to split each pod with `N` records into `N` pods with 1 record each
+/// 1. Run a dialect conversion that replaces `PodType` struct members with scalar members.
+///
+/// 2. Run a dialect conversion that does the following:
+///
+///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the members that were split in step 1
+///      so they instead perform scalar reads and writes from the new members. The transformation is
+///      local to the current op. Therefore, when replacing the `MemberReadOp` a new pod is
+///      created locally and all uses of the `MemberReadOp` are replaced with the new pod Value,
+///      then each scalar member read is followed by scalar write into the new pod. Similarly,
+///      when replacing a `MemberWriteOp`, each element in the pod operand needs a scalar read
+///      from the pod followed by a scalar write to the new member. Making only local changes
+///      keeps this step simple and later steps will optimize.
+///
+///    - Remove optional initialization from `NewPodOp` and instead insert a list of `WritePodOp`
+///      immediately following.
+///
+///    - Split pods to scalars in `FuncDefOp`, `CallOp`, and `ReturnOp` and insert the necessary
+///      create/read/write ops so the changes are as local as possible (just as described for
+///      `MemberReadOp` and `MemberWriteOp`)
+///
+/// 3. Promote pod read/write within `scf.if` regions to the parent block so the pod reads/writes
+///    that mem2reg must convert are in the same block.
+///
+/// 4. Run MLIR "sroa" pass to split each pod with `N` records into `N` pods with 1 record each
 ///    (to prepare for "mem2reg" pass because it's API cannot deal with splitting up memory).
 ///
-/// 2. Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA
+/// 5. Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA
 ///    values. This pass also runs several standard optimizations so the final result is condensed.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on pod records. If
@@ -37,6 +60,7 @@
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -47,12 +71,17 @@
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
+#include "llzk/Util/Concepts.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/Passes.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Debug.h>
 
 // Include the generated base pass class definitions.
@@ -64,10 +93,42 @@ namespace llzk::pod {
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::pod;
+using namespace llzk::function;
+using namespace llzk::component;
 
 #define DEBUG_TYPE "llzk-pod-to-scalar"
 
 namespace {
+
+/// If the given PodType can be split into scalars (always true for PodType).
+inline PodType splittablePod(PodType pt) { return pt; }
+
+/// If the given Type is a PodType that can be split into scalars, return it, otherwise nullptr.
+inline PodType splittablePod(Type t) {
+  if (PodType pt = dyn_cast<PodType>(t)) {
+    return splittablePod(pt);
+  } else {
+    return nullptr;
+  }
+}
+
+/// Return `true` iff the given type is or contains a PodType that can be split into scalars.
+inline bool containsSplittablePodType(Type t) {
+  return t
+      .walk([](PodType p) {
+    return splittablePod(p) ? WalkResult::interrupt() : WalkResult::skip();
+  }).wasInterrupted();
+}
+
+/// Return `true` iff the given range contains any PodType that can be split into scalars.
+template <typename T> bool containsSplittablePodType(ValueTypeRange<T> types) {
+  for (Type t : types) {
+    if (containsSplittablePodType(t)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
@@ -105,6 +166,701 @@ static LogicalResult step0(ModuleOp modOp) {
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// new member name and type
+using MemberInfo = std::pair<StringAttr, Type>;
+/// original pod record name -> scalar member info
+using LocalMemberReplacementMap = DenseMap<StringAttr, MemberInfo>;
+/// struct -> original pod-type member name -> LocalMemberReplacementMap
+using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
+
+inline ReadPodOp genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) {
+  Type resultType =
+      llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
+  return rewriter.create<ReadPodOp>(loc, resultType, podRef, recordName);
+}
+
+inline WritePodOp
+genWrite(Location loc, Value podRef, StringAttr recordName, Value value, OpBuilder &rewriter) {
+  return rewriter.create<WritePodOp>(loc, podRef, recordName, value);
+}
+
+class SplitPodInMemberDefOp : public OpConversionPattern<MemberDefOp> {
+  SymbolTableCollection &tables;
+  MemberReplacementMap &repMapRef;
+
+public:
+  SplitPodInMemberDefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap
+  )
+      : OpConversionPattern<MemberDefOp>(ctx), tables(symTables), repMapRef(memberRepMap) {}
+
+  inline static bool legal(MemberDefOp op) { return !splittablePod(op.getType()); }
+
+  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(MemberDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    StructDefOp inStruct = op->getParentOfType<StructDefOp>();
+    assert(inStruct);
+    LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
+
+    // Use type come from adaptor so it's an updated type in case of nested pods as member.
+    PodType podTy = dyn_cast<PodType>(adaptor.getType());
+    assert(podTy); // follows from legal() check
+
+    SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
+    for (RecordAttr record : podTy.getRecords()) {
+      // Create scalar version of the member
+      StringAttr name = StringAttr::get(
+          op.getContext(), op.getSymNameAttr().getValue() + "_" + record.getName().str()
+      );
+      Type ty = record.getType();
+      MemberDefOp newMember =
+          rewriter.create<MemberDefOp>(op.getLoc(), name, ty, op.getSignal(), op.getColumn());
+      newMember.setPublicAttr(op.hasPublicAttr());
+      // Use SymbolTable to ensure name is unique and store to the replacement map
+      localRepMapRef[record.getName()] = std::make_pair(structSymbolTable.insert(newMember), ty);
+    }
+    rewriter.eraseOp(op);
+  }
+};
+
+/// Replace `PodType` struct members with scalar members.
+static LogicalResult
+step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap) {
+  MLIRContext *ctx = modOp.getContext();
+
+  RewritePatternSet patterns(ctx);
+
+  patterns.add<SplitPodInMemberDefOp>(ctx, symTables, memberRepMap);
+
+  ConversionTarget target(*ctx);
+  baseTargetSetup(target);
+  target.addDynamicallyLegalOp<MemberDefOp>(SplitPodInMemberDefOp::legal);
+
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split pod-type members\n";);
+  return applyFullConversion(modOp, target, std::move(patterns));
+}
+
+class SplitInitFromNewPodOp : public OpConversionPattern<NewPodOp> {
+public:
+  using OpConversionPattern<NewPodOp>::OpConversionPattern;
+
+  static bool legal(NewPodOp op) { return op.getInitialValues().empty(); }
+
+  LogicalResult match(NewPodOp op) const override { return failure(legal(op)); }
+
+  void rewrite(NewPodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    // Generate an individual write for each initialization
+    rewriter.setInsertionPointAfter(op);
+    Location loc = op.getLoc();
+    for (auto [name, init] :
+         llvm::zip_equal(adaptor.getInitializedRecords(), adaptor.getInitialValues())) {
+      // Create the write
+      rewriter.create<WritePodOp>(loc, op.getResult(), llvm::cast<StringAttr>(name), init);
+    }
+    // Remove initializations from `op`
+    rewriter.modifyOpInPlace(op, [&op]() {
+      op.getInitialValuesMutable().clear();
+      op.setInitializedRecordsAttr(ArrayAttr::get(op.getContext(), {})); // DefaultValuedAttr:{}
+    });
+  }
+};
+
+/*
+class SplitPodInFuncDefOp : public OpConversionPattern<FuncDefOp> {
+public:
+  using OpConversionPattern<FuncDefOp>::OpConversionPattern;
+
+  inline static bool legal(FuncDefOp op) {
+    return !containsSplittablePodType(op.getFunctionType());
+  }
+
+  // Create a new ArrayAttr like the one given but with repetitions of the elements according to the
+  // mapping defined by `originalIdxToSize`. In other words, if `originalIdxToSize[i] = n`, then `n`
+  // copies of `origAttrs[i]` are appended in its place.
+  static ArrayAttr replicateAttributesAsNeeded(
+      ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize,
+      const SmallVector<Type> &newTypes, ArrayRef<std::optional<std::string>> origArgNames = {},
+      ArrayRef<std::string> existingArgNames = {}
+  ) {
+    if (origAttrs) {
+      assert(originalIdxToSize.size() == origAttrs.size());
+      if (originalIdxToSize.size() != newTypes.size()) {
+        SmallVector<Attribute> newArgAttrs;
+        llvm::StringSet<> usedArgNames;
+        if (!origArgNames.empty()) {
+          for (StringRef argName : existingArgNames) {
+            usedArgNames.insert(argName);
+          }
+        }
+        for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
+          Attribute attr = origAttrs[i];
+          if (!origArgNames.empty() && s != 1 && origArgNames[i]) {
+            auto dictAttr = llvm::cast<DictionaryAttr>(attr);
+            StringRef argName = *origArgNames[i];
+            for (size_t j = 0; j < s; ++j) {
+              std::string desiredName = (argName + "[" + llvm::Twine(j) + "]").str();
+              newArgAttrs.push_back(withFunctionArgNameAttr(
+                  dictAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
+              ));
+            }
+            continue;
+          }
+          newArgAttrs.append(s, attr);
+        }
+        return ArrayAttr::get(origAttrs.getContext(), newArgAttrs);
+      }
+    }
+    return nullptr;
+  }
+
+  LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
+
+  void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    // Update in/out types of the function to replace arrays with scalars
+    class Impl : public FunctionTypeConverter {
+      SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+      SmallVector<std::optional<std::string>> originalInputArgNames;
+      SmallVector<std::string> existingInputArgNames;
+
+    protected:
+      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
+        return SplitPodType(origTypes, &originalInputIdxToSize);
+      }
+      SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
+        return SplitPodType(origTypes, &originalResultIdxToSize);
+      }
+      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+        return replicateAttributesAsNeeded(
+            origAttrs, originalInputIdxToSize, newTypes, originalInputArgNames,
+            existingInputArgNames
+        );
+      }
+      ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+        return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);
+      }
+
+      /// For each argument to the Block that has a splittable ArrayType, replace it with the
+      /// necessary number of scalar arguments, generate a CreateArrayOp, and generate writes from
+      /// the new block scalar arguments to the new array. All users of the original block argument
+      /// are updated to target the result of the CreateArrayOp.
+      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
+        OpBuilder::InsertionGuard guard(rewriter);
+        rewriter.setInsertionPointToStart(&entryBlock);
+
+        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+          Value oldV = entryBlock.getArgument(i);
+          if (ArrayType at = splittableArray(oldV.getType())) {
+            Location loc = oldV.getLoc();
+            // Generate `CreateArrayOp` and replace uses of the argument with it.
+            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+            rewriter.replaceAllUsesWith(oldV, newArray);
+            // Remove the argument from the block
+            entryBlock.eraseArgument(i);
+            // For all indices in the ArrayType (i.e., the element count), generate a new block
+            // argument and a write of that argument to the new array.
+            std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+            assert(allIndices); // follows from legal() check
+            assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
+            for (ArrayAttr subIdx : allIndices.value()) {
+              BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
+              genWrite(loc, newArray, subIdx, newArg, rewriter);
+              ++i;
+            }
+          } else {
+            ++i;
+          }
+        }
+      }
+
+    public:
+      Impl(FuncDefOp op) {
+        originalInputArgNames.reserve(op.getNumArguments());
+        for (unsigned i = 0, e = op.getNumArguments(); i < e; ++i) {
+          if (std::optional<StringAttr> argName = op.getArgNameAttr(i)) {
+            originalInputArgNames.push_back(argName->getValue().str());
+            existingInputArgNames.push_back(argName->getValue().str());
+          } else {
+            originalInputArgNames.push_back(std::nullopt);
+          }
+        }
+      }
+    };
+    Impl(op).convert(op, rewriter);
+  }
+};
+
+class SplitPodInReturnOp : public OpConversionPattern<ReturnOp> {
+public:
+  using OpConversionPattern<ReturnOp>::OpConversionPattern;
+
+  inline static bool legal(ReturnOp op) {
+    return !containsSplittablePodType(op.getOperands().getTypes());
+  }
+
+  LogicalResult match(ReturnOp op) const override { return failure(legal(op)); }
+
+  void rewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    processInputOperands(adaptor.getOperands(), op.getOperandsMutable(), op, rewriter);
+  }
+};
+
+class SplitPodInCallOp : public OpConversionPattern<CallOp> {
+public:
+  using OpConversionPattern<CallOp>::OpConversionPattern;
+
+  inline static bool legal(CallOp op) {
+    return !containsSplittablePodType(op.getArgOperands().getTypes()) &&
+           !containsSplittablePodType(op.getResultTypes());
+  }
+
+  LogicalResult match(CallOp op) const override { return failure(legal(op)); }
+
+  void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    assert(isNullOrEmpty(op.getMapOpGroupSizesAttr()) && "structs must be previously flattened");
+
+    // Create new CallOp with split results first so, then process its inputs to split types
+    CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
+    processInputOperands(
+        newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter
+    );
+  }
+};
+*/
+
+class SplitPodInMemberWriteOp : public SplitAggregateInMemberRefOp<
+                                    SplitPodInMemberWriteOp, MemberWriteOp, void *, StringAttr> {
+public:
+  using SplitAggregateInMemberRefOp<
+      SplitPodInMemberWriteOp, MemberWriteOp, void *, StringAttr>::SplitAggregateInMemberRefOp;
+
+  static bool legal(MemberWriteOp op) { return !containsSplittablePodType(op.getVal().getType()); }
+
+  static void *genHeader(MemberWriteOp, ConversionPatternRewriter &) { return nullptr; }
+
+  static void forId(
+      Location loc, void *, StringAttr id, MemberInfo newMember, OpAdaptor adaptor,
+      ConversionPatternRewriter &rewriter
+  ) {
+    ReadPodOp scalarRead = genRead(loc, adaptor.getVal(), id, rewriter);
+    rewriter.create<MemberWriteOp>(
+        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
+    );
+  }
+};
+
+class SplitPodInMemberReadOp : public SplitAggregateInMemberRefOp<
+                                   SplitPodInMemberReadOp, MemberReadOp, NewPodOp, StringAttr> {
+public:
+  using SplitAggregateInMemberRefOp<
+      SplitPodInMemberReadOp, MemberReadOp, NewPodOp, StringAttr>::SplitAggregateInMemberRefOp;
+
+  static bool legal(MemberReadOp op) {
+    return !containsSplittablePodType(op.getResult().getType());
+  }
+
+  static NewPodOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
+    NewPodOp newAgg = rewriter.create<NewPodOp>(op.getLoc(), llvm::cast<PodType>(op.getType()));
+    rewriter.replaceAllUsesWith(op, newAgg);
+    return newAgg;
+  }
+
+  static void forId(
+      Location loc, NewPodOp newAgg, StringAttr id, MemberInfo newMember, OpAdaptor adaptor,
+      ConversionPatternRewriter &rewriter
+  ) {
+    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
+        loc, newMember.second, adaptor.getComponent(), newMember.first
+    );
+    genWrite(loc, newAgg, id, scalarRead, rewriter);
+  }
+};
+
+/// Special handling to split pods in struct member refs and function signatures and desugar
+/// initializations on pod.new into pod writes.
+static LogicalResult
+step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
+  MLIRContext *ctx = modOp.getContext();
+
+  RewritePatternSet patterns(ctx);
+  patterns.add<
+      // clang-format off
+      SplitInitFromNewPodOp
+      // SplitPodInFuncDefOp,
+      // SplitPodInReturnOp,
+      // SplitPodInCallOp
+      // clang-format on
+      >(ctx);
+
+  patterns.add<
+      // clang-format off
+      SplitPodInMemberWriteOp,
+      SplitPodInMemberReadOp
+      // clang-format on
+      >(ctx, symTables, memberRepMap);
+
+  ConversionTarget target(*ctx);
+  baseTargetSetup(target);
+  target.addDynamicallyLegalOp<NewPodOp>(SplitInitFromNewPodOp::legal);
+  // target.addDynamicallyLegalOp<FuncDefOp>(SplitPodInFuncDefOp::legal);
+  // target.addDynamicallyLegalOp<ReturnOp>(SplitPodInReturnOp::legal);
+  // target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
+  target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
+  target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
+
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 2: update/split other pod ops\n";);
+  return applyFullConversion(modOp, target, std::move(patterns));
+}
+
+static StringAttr getRecordNameAsStringAttr(ReadPodOp readOp) {
+  return readOp.getRecordNameAttr().getLeafReference();
+}
+
+static StringAttr getRecordNameAsStringAttr(WritePodOp writeOp) {
+  return writeOp.getRecordNameAttr().getLeafReference();
+}
+
+static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
+  return readOp.getPodRef() == podRef && getRecordNameAsStringAttr(readOp) == recordName;
+}
+
+static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
+  return writeOp.getPodRef() == podRef && getRecordNameAsStringAttr(writeOp) == recordName;
+}
+
+static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recordName) {
+  return op
+      .walk([&](WritePodOp writeOp) {
+    if (writeOp.getOperation() != &op && isSamePodRecord(writeOp, podRef, recordName)) {
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
+static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
+  return op
+      .walk([&](ReadPodOp readOp) {
+    if (isSamePodRecord(readOp, podRef, recordName)) {
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
+/// Return whether the read is preceded by a write to the same pod record within its block.
+static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = getRecordNameAsStringAttr(readOp);
+
+  for (Operation &op : *readOp->getBlock()) {
+    if (&op == readOp.getOperation()) {
+      return false;
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      if (isSamePodRecord(writeOp, podRef, recordName)) {
+        return true;
+      }
+      continue;
+    }
+
+    if (hasNestedWriteToRecord(op, podRef, recordName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool isValueDefinedInside(Operation *ancestor, Value value) {
+  if (Operation *defOp = value.getDefiningOp()) {
+    return ancestor->isAncestor(defOp);
+  }
+
+  auto blockArg = llvm::dyn_cast<BlockArgument>(value);
+  Operation *parentOp = blockArg.getOwner()->getParentOp();
+  return parentOp && ancestor->isAncestor(parentOp);
+}
+
+/// Find a write before the parent `scf.if` that can be forwarded to `readOp`.
+static WritePodOp findPrecedingWriteForIfRead(ReadPodOp readOp) {
+  auto ifOp = readOp->getParentOfType<scf::IfOp>();
+  if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
+    return nullptr;
+  }
+  if (hasEarlierWriteInBlock(readOp)) {
+    return nullptr;
+  }
+
+  Block *ifBlock = ifOp->getBlock();
+  if (!ifBlock) {
+    return nullptr;
+  }
+
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = getRecordNameAsStringAttr(readOp);
+  WritePodOp replacement;
+  for (Operation &op : *ifBlock) {
+    if (&op == ifOp.getOperation()) {
+      break;
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      if (isSamePodRecord(writeOp, podRef, recordName)) {
+        replacement = writeOp;
+      }
+      continue;
+    }
+
+    if (hasNestedWriteToRecord(op, podRef, recordName)) {
+      replacement = WritePodOp();
+    }
+  }
+
+  return replacement;
+}
+
+/// Replace branch-local reads with a value available in the parent block.
+static void replaceIfReads(ModuleOp modOp) {
+  SmallVector<std::pair<ReadPodOp, Value>> replacements;
+  OpBuilder builder(modOp.getContext());
+  modOp.walk([&](ReadPodOp readOp) {
+    auto ifOp = readOp->getParentOfType<scf::IfOp>();
+    if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
+      return;
+    }
+    if (isValueDefinedInside(ifOp, readOp.getPodRef())) {
+      return;
+    }
+    if (hasEarlierWriteInBlock(readOp)) {
+      return;
+    }
+
+    if (WritePodOp writeOp = findPrecedingWriteForIfRead(readOp)) {
+      replacements.emplace_back(readOp, writeOp.getValue());
+      return;
+    }
+
+    builder.setInsertionPoint(ifOp);
+    replacements.emplace_back(
+        readOp,
+        genRead(readOp.getLoc(), readOp.getPodRef(), getRecordNameAsStringAttr(readOp), builder)
+    );
+  });
+
+  for (auto [readOp, value] : replacements) {
+    readOp.getResult().replaceAllUsesWith(value);
+    readOp.erase();
+  }
+}
+
+struct IfWriteSlot {
+  Value podRef;
+  StringAttr recordName;
+  Type type;
+  WritePodOp thenWrite;
+  WritePodOp elseWrite;
+  Value incomingValue;
+};
+
+static IfWriteSlot *
+lookupSlot(SmallVectorImpl<IfWriteSlot> &slots, Value podRef, StringAttr recordName) {
+  for (IfWriteSlot &slot : slots) {
+    if (slot.podRef == podRef && slot.recordName == recordName) {
+      return &slot;
+    }
+  }
+  return nullptr;
+}
+
+static IfWriteSlot &getOrCreateSlot(
+    SmallVectorImpl<IfWriteSlot> &slots, Value podRef, StringAttr recordName, Type type
+) {
+  if (IfWriteSlot *slot = lookupSlot(slots, podRef, recordName)) {
+    return *slot;
+  }
+  slots.push_back(IfWriteSlot {podRef, recordName, type, WritePodOp(), WritePodOp(), Value()});
+  return slots.back();
+}
+
+static Block *getElseBlockOrNull(scf::IfOp ifOp) {
+  return ifOp.getElseRegion().empty() ? nullptr : &ifOp.getElseRegion().front();
+}
+
+static void
+collectDirectWrites(Block *block, bool isThenBlock, SmallVectorImpl<IfWriteSlot> &slots) {
+  if (!block) {
+    return;
+  }
+
+  for (Operation &op : *block) {
+    if (op.hasTrait<OpTrait::IsTerminator>()) {
+      break;
+    }
+
+    auto writeOp = dyn_cast<WritePodOp>(&op);
+    if (!writeOp) {
+      continue;
+    }
+
+    IfWriteSlot &slot = getOrCreateSlot(
+        slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp), writeOp.getValue().getType()
+    );
+    if (isThenBlock) {
+      slot.thenWrite = writeOp;
+    } else {
+      slot.elseWrite = writeOp;
+    }
+  }
+}
+
+static bool branchSlotCanBeLifted(Block *block, Value podRef, StringAttr recordName) {
+  if (!block) {
+    return true;
+  }
+
+  bool seenDirectWrite = false;
+  for (Operation &op : *block) {
+    if (op.hasTrait<OpTrait::IsTerminator>()) {
+      return true;
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      if (isSamePodRecord(writeOp, podRef, recordName)) {
+        seenDirectWrite = true;
+        continue;
+      }
+    }
+
+    if (hasNestedWriteToRecord(op, podRef, recordName)) {
+      return false;
+    }
+    if (seenDirectWrite && hasReadFromRecord(op, podRef, recordName)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool isLiftedWrite(Operation &op, ArrayRef<IfWriteSlot> slots) {
+  auto writeOp = dyn_cast<WritePodOp>(&op);
+  if (!writeOp) {
+    return false;
+  }
+
+  return llvm::any_of(slots, [&](const IfWriteSlot &slot) {
+    return isSamePodRecord(writeOp, slot.podRef, slot.recordName);
+  });
+}
+
+static void dropTerminatorIfPresent(Block *block) {
+  if (!block->empty() && block->back().hasTrait<OpTrait::IsTerminator>()) {
+    block->back().erase();
+  }
+}
+
+static void
+moveBranchWithoutLiftedWrites(Block *srcBlock, Block *destBlock, ArrayRef<IfWriteSlot> slots) {
+  if (!srcBlock) {
+    return;
+  }
+
+  for (auto it = srcBlock->begin(), end = srcBlock->end(); it != end;) {
+    Operation &op = *it++;
+    if (op.hasTrait<OpTrait::IsTerminator>() || isLiftedWrite(op, slots)) {
+      continue;
+    }
+    op.moveBefore(destBlock, destBlock->end());
+  }
+}
+
+static void appendYield(
+    Location loc, Block *block, ArrayRef<IfWriteSlot> slots, bool isThenBlock, OpBuilder &builder
+) {
+  SmallVector<Value> yieldValues;
+  yieldValues.reserve(slots.size());
+  for (const IfWriteSlot &slot : slots) {
+    WritePodOp writeOp = isThenBlock ? slot.thenWrite : slot.elseWrite;
+    yieldValues.push_back(writeOp ? writeOp.getValue() : slot.incomingValue);
+  }
+
+  builder.setInsertionPointToEnd(block);
+  builder.create<scf::YieldOp>(loc, yieldValues);
+}
+
+/// Lift direct branch-local writes out of `scf.if` as yielded values, then write those values in
+/// the parent block. This gives mem2reg parent-block pod writes instead of nested-region writes.
+static bool liftIfWrites(scf::IfOp ifOp) {
+  if (!ifOp.getResults().empty()) {
+    return false;
+  }
+
+  SmallVector<IfWriteSlot> slots;
+  Block *thenBlock = ifOp.thenBlock();
+  Block *elseBlock = getElseBlockOrNull(ifOp);
+  collectDirectWrites(thenBlock, true, slots);
+  collectDirectWrites(elseBlock, false, slots);
+  if (slots.empty()) {
+    return false;
+  }
+
+  llvm::erase_if(slots, [&](const IfWriteSlot &slot) {
+    return isValueDefinedInside(ifOp, slot.podRef) ||
+           !branchSlotCanBeLifted(thenBlock, slot.podRef, slot.recordName) ||
+           !branchSlotCanBeLifted(elseBlock, slot.podRef, slot.recordName);
+  });
+  if (slots.empty()) {
+    return false;
+  }
+
+  OpBuilder builder(ifOp);
+  for (IfWriteSlot &slot : slots) {
+    if (slot.thenWrite && slot.elseWrite) {
+      continue;
+    }
+    builder.setInsertionPoint(ifOp);
+    slot.incomingValue = genRead(ifOp.getLoc(), slot.podRef, slot.recordName, builder);
+  }
+
+  SmallVector<Type> resultTypes;
+  resultTypes.reserve(slots.size());
+  for (const IfWriteSlot &slot : slots) {
+    resultTypes.push_back(slot.type);
+  }
+
+  builder.setInsertionPoint(ifOp);
+  auto newIf = builder.create<scf::IfOp>(ifOp.getLoc(), resultTypes, ifOp.getCondition(), true);
+  Block *newThenBlock = newIf.thenBlock();
+  Block *newElseBlock = newIf.elseBlock();
+  dropTerminatorIfPresent(newThenBlock);
+  dropTerminatorIfPresent(newElseBlock);
+
+  moveBranchWithoutLiftedWrites(thenBlock, newThenBlock, slots);
+  moveBranchWithoutLiftedWrites(elseBlock, newElseBlock, slots);
+  appendYield(ifOp.getLoc(), newThenBlock, slots, true, builder);
+  appendYield(ifOp.getLoc(), newElseBlock, slots, false, builder);
+
+  builder.setInsertionPointAfter(newIf);
+  for (auto [idx, slot] : llvm::enumerate(slots)) {
+    genWrite(ifOp.getLoc(), slot.podRef, slot.recordName, newIf.getResult(idx), builder);
+  }
+
+  ifOp.erase();
+  return true;
+}
+
+/// Promote pod read/write within `scf.if` to the outside so SROA + mem2reg can remove the pods.
+static void step3(ModuleOp modOp) {
+  replaceIfReads(modOp);
+
+  SmallVector<scf::IfOp> ifOps;
+  modOp.walk([&](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
+  for (scf::IfOp ifOp : ifOps) {
+    liftIfWrites(ifOp);
+  }
+}
+
 class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -114,6 +870,36 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
     }
     LLVM_DEBUG({
       llvm::dbgs() << "After step 0:\n";
+      module.dump();
+    });
+
+    {
+      // This is divided into 2 steps to simplify the implementation for member-related ops. The
+      // issue is that the conversions for member read/write expect the mapping of record name to
+      // member name+type to already be populated for the referenced member (although this could be
+      // computed on demand if desired but it complicates the implementation a bit).
+      SymbolTableCollection symTables;
+      MemberReplacementMap memberRepMap;
+      if (failed(step1(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 1:\n";
+        module.dump();
+      });
+
+      if (failed(step2(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 2:\n";
+        module.dump();
+      });
+    }
+
+    step3(module);
+    LLVM_DEBUG({
+      llvm::dbgs() << "After step 3:\n";
       module.dump();
     });
 

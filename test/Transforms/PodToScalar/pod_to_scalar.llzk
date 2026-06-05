@@ -89,3 +89,82 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!F = !felt.type<"bn128">
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp>} {
+  struct.def @Nop {
+    function.def @compute(%arg0: !F) -> !struct.type<@Nop> {
+      %self = struct.new : !struct.type<@Nop>
+      function.return %self : !struct.type<@Nop>
+    }
+    function.def @constrain(%arg0: !struct.type<@Nop>, %arg1: !F) {
+      function.return
+    }
+  }
+
+  struct.def @SubCmp {
+    struct.member @n : !struct.type<@Nop>
+    struct.member @n$inputs : !pod.type<[@i: !F]>
+
+    function.def @compute(%arg0: !F) -> !struct.type<@SubCmp> {
+      %self = struct.new : !struct.type<@SubCmp>
+      %pod_1 = pod.new : !pod.type<[@i: !F]>
+      pod.write %pod_1[@i] = %arg0 : !pod.type<[@i: !F]>, !F
+      %c1 = arith.constant 1 : index
+      %pod_2 = pod.new { @count = %c1 }  : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>
+      %0 = pod.read %pod_2[@count] : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, index
+      %1 = arith.subi %0, %c1 : index
+      pod.write %pod_2[@count] = %1 : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, index
+      %c0 = arith.constant 0 : index
+      %2 = arith.cmpi eq, %1, %c0 : index
+      scf.if %2 {
+        %3 = pod.read %pod_1[@i] : !pod.type<[@i: !F]>, !F
+        %4 = function.call @Nop::@compute(%3) : (!F) -> !struct.type<@Nop>
+        pod.write %pod_2[@comp] = %4 : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, !struct.type<@Nop>
+      }
+      struct.writem %self[@n$inputs] = %pod_1 : !struct.type<@SubCmp>, !pod.type<[@i: !F]>
+      %5 = pod.read %pod_2[@comp] : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, !struct.type<@Nop>
+      struct.writem %self[@n] = %5 : !struct.type<@SubCmp>, !struct.type<@Nop>
+      function.return %self : !struct.type<@SubCmp>
+    }
+    function.def @constrain(%arg0: !struct.type<@SubCmp>, %arg1: !F) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp>} {
+// CHECK-NEXT:    struct.def @Nop {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Nop> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Nop>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Nop>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Nop>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @SubCmp {
+// CHECK-NEXT:      struct.member @n : !struct.type<@Nop>
+// CHECK-NEXT:      struct.member @n$inputs_i : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@SubCmp> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@Nop>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@SubCmp>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_7]], %[[VAL_7]] : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_8]], %[[VAL_9]] : index
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_10]] -> (!struct.type<@Nop>) {
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Nop::@compute(%[[VAL_4]]) : (!felt.type<"bn128">) -> !struct.type<@Nop>
+// CHECK-NEXT:          scf.yield %[[VAL_12]] : !struct.type<@Nop>
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : !struct.type<@Nop>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@n$inputs_i] = %[[VAL_4]] : <@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@n] = %[[VAL_11]] : <@SubCmp>, !struct.type<@Nop>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@SubCmp>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@SubCmp>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
