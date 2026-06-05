@@ -105,10 +105,10 @@ using namespace llzk::component;
 namespace {
 
 /// If the given PodType can be split into scalars (always true for PodType).
-inline PodType splittablePod(PodType pt) { return pt; }
+inline static PodType splittablePod(PodType pt) { return pt; }
 
 /// If the given Type is a PodType that can be split into scalars, return it, otherwise nullptr.
-inline PodType splittablePod(Type t) {
+inline static PodType splittablePod(Type t) {
   if (PodType pt = dyn_cast<PodType>(t)) {
     return splittablePod(pt);
   } else {
@@ -117,7 +117,7 @@ inline PodType splittablePod(Type t) {
 }
 
 /// Return `true` iff the given type is or contains a PodType that can be split into scalars.
-inline bool containsSplittablePodType(Type t) {
+inline static bool containsSplittablePodType(Type t) {
   return t
       .walk([](PodType p) {
     return splittablePod(p) ? WalkResult::interrupt() : WalkResult::skip();
@@ -125,7 +125,7 @@ inline bool containsSplittablePodType(Type t) {
 }
 
 /// Return `true` iff the given range contains any PodType that can be split into scalars.
-template <typename T> bool containsSplittablePodType(ValueTypeRange<T> types) {
+template <typename T> static bool containsSplittablePodType(ValueTypeRange<T> types) {
   for (Type t : types) {
     if (containsSplittablePodType(t)) {
       return true;
@@ -134,8 +134,90 @@ template <typename T> bool containsSplittablePodType(ValueTypeRange<T> types) {
   return false;
 }
 
+/// If the given Type is a PodType that can be split into scalars, append `collect` with all of
+/// the scalar types that result from splitting the PodType. Otherwise, just push the `Type`.
+size_t splitPodTypeTo(Type t, SmallVector<Type> &collect) {
+  if (PodType pt = splittablePod(t)) {
+    auto records = pt.getRecords();
+    for (RecordAttr record : records) {
+      collect.push_back(record.getType());
+    }
+    return records.size();
+  } else {
+    collect.push_back(t);
+    return 1;
+  }
+}
+
+/// For each Type in the given input collection, call `splitPodTypeTo(Type,...)`.
+template <typename TypeCollection>
+inline void splitPodTypeTo(
+    TypeCollection types, SmallVector<Type> &collect, SmallVector<size_t> *originalIdxToSize
+) {
+  for (Type t : types) {
+    size_t count = splitPodTypeTo(t, collect);
+    if (originalIdxToSize) {
+      originalIdxToSize->push_back(count);
+    }
+  }
+}
+
+/// Return a list such that each scalar Type is directly added to the list but for each splittable
+/// PodType, the proper number of scalar element types are added instead.
+template <typename TypeCollection>
+inline SmallVector<Type>
+splitPodType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nullptr) {
+  SmallVector<Type> collect;
+  splitPodTypeTo(types, collect, originalIdxToSize);
+  return collect;
+}
+
+/// Create a `pod.read` for one record of `podRef`.
+inline static ReadPodOp
+genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) {
+  Type resultType =
+      llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
+  return rewriter.create<ReadPodOp>(loc, resultType, podRef, recordName);
+}
+
+/// Create a `pod.write` for one record of `podRef`.
+inline static WritePodOp
+genWrite(Location loc, Value podRef, StringAttr recordName, Value value, OpBuilder &rewriter) {
+  return rewriter.create<WritePodOp>(loc, podRef, recordName, value);
+}
+
+// If the operand has PodType, add reads from all pod records to the `newOperands` list otherwise
+// add the original operand to the list.
+static void processInputOperand(
+    Location loc, Value operand, SmallVector<Value> &newOperands,
+    ConversionPatternRewriter &rewriter
+) {
+  if (PodType pt = splittablePod(operand.getType())) {
+    for (RecordAttr record : pt.getRecords()) {
+      newOperands.push_back(genRead(loc, operand, record.getName(), rewriter));
+    }
+  } else {
+    newOperands.push_back(operand);
+  }
+}
+
+/// For each operand with PodType, add reads from all pod records in place of the original operand
+/// and update the op to use the new operands.
+static void processInputOperands(
+    ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
+    ConversionPatternRewriter &rewriter
+) {
+  SmallVector<Value> newOperands;
+  for (Value v : operands) {
+    processInputOperand(op->getLoc(), v, newOperands, rewriter);
+  }
+  rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
+    outputOpRef.assign(ValueRange(newOperands));
+  });
+}
+
 /// Register the dialects and operations that remain legal across the conversion-based stages.
-static void baseTargetSetup(ConversionTarget &target) {
+inline static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
@@ -152,8 +234,8 @@ class NondetToNewPod : public OpConversionPattern<NonDetOp> {
   LogicalResult matchAndRewrite(
       NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    if (auto at = dyn_cast<PodType>(nondetOp.getType())) {
-      rewriter.replaceOpWithNewOp<NewPodOp>(nondetOp, at);
+    if (auto pt = dyn_cast<PodType>(nondetOp.getType())) {
+      rewriter.replaceOpWithNewOp<NewPodOp>(nondetOp, pt);
       return success();
     }
     return failure();
@@ -232,19 +314,6 @@ static void flattenPodMemberIntoLeaves(
   }
 }
 
-/// Create a `pod.read` for one record of `podRef`.
-inline ReadPodOp genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) {
-  Type resultType =
-      llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
-  return rewriter.create<ReadPodOp>(loc, resultType, podRef, recordName);
-}
-
-/// Create a `pod.write` for one record of `podRef`.
-inline WritePodOp
-genWrite(Location loc, Value podRef, StringAttr recordName, Value value, OpBuilder &rewriter) {
-  return rewriter.create<WritePodOp>(loc, podRef, recordName, value);
-}
-
 /// Split a pod-typed struct member definition into one scalar member definition per POD record.
 ///
 /// The replacement map records the fresh member symbols so later rewrites can retarget
@@ -321,7 +390,13 @@ public:
   }
 };
 
-/*
+/// Rewrite pod-typed function signatures to pass one scalar per POD record instead.
+///
+/// Each pod argument is expanded into one scalar argument per record, and each pod result is
+/// expanded into one scalar result per record. Inside the rewritten function body, the original
+/// POD-typed block arguments are reconstructed locally with `pod.new` plus `pod.write` so the
+/// rest of the function can continue to use POD values until later cleanup passes scalarize those
+/// local temporaries away.
 class SplitPodInFuncDefOp : public OpConversionPattern<FuncDefOp> {
 public:
   using OpConversionPattern<FuncDefOp>::OpConversionPattern;
@@ -372,7 +447,7 @@ public:
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    // Update in/out types of the function to replace arrays with scalars
+    // Update in/out types of the function to replace pods with scalars
     class Impl : public FunctionTypeConverter {
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
       SmallVector<std::optional<std::string>> originalInputArgNames;
@@ -380,10 +455,10 @@ public:
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
-        return SplitPodType(origTypes, &originalInputIdxToSize);
+        return splitPodType(origTypes, &originalInputIdxToSize);
       }
       SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
-        return SplitPodType(origTypes, &originalResultIdxToSize);
+        return splitPodType(origTypes, &originalResultIdxToSize);
       }
       ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
         return replicateAttributesAsNeeded(
@@ -395,31 +470,28 @@ public:
         return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);
       }
 
-      /// For each argument to the Block that has a splittable ArrayType, replace it with the
-      /// necessary number of scalar arguments, generate a CreateArrayOp, and generate writes from
-      /// the new block scalar arguments to the new array. All users of the original block argument
-      /// are updated to target the result of the CreateArrayOp.
+      /// For each argument to the Block that has a splittable PodType, replace it with the
+      /// necessary number of scalar arguments, generate a NewPodOp, and generate writes from
+      /// the new block scalar arguments to the new pod. All users of the original block
+      /// argument are updated to target the result of the NewPodOp.
       void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
         OpBuilder::InsertionGuard guard(rewriter);
         rewriter.setInsertionPointToStart(&entryBlock);
 
         for (unsigned i = 0; i < entryBlock.getNumArguments();) {
           Value oldV = entryBlock.getArgument(i);
-          if (ArrayType at = splittableArray(oldV.getType())) {
+          if (PodType pt = splittablePod(oldV.getType())) {
             Location loc = oldV.getLoc();
-            // Generate `CreateArrayOp` and replace uses of the argument with it.
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
+            // Generate `NewPodOp` and replace uses of the argument with it.
+            auto newPod = rewriter.create<NewPodOp>(loc, pt);
+            rewriter.replaceAllUsesWith(oldV, newPod);
             // Remove the argument from the block
             entryBlock.eraseArgument(i);
-            // For all indices in the ArrayType (i.e., the element count), generate a new block
-            // argument and a write of that argument to the new array.
-            std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
-            assert(allIndices); // follows from legal() check
-            assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
-            for (ArrayAttr subIdx : allIndices.value()) {
-              BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-              genWrite(loc, newArray, subIdx, newArg, rewriter);
+            // For all indices in the PodType (i.e., the element count), generate a new
+            // block argument and a write of that argument to the new pod.
+            for (RecordAttr record : pt.getRecords()) {
+              BlockArgument newArg = entryBlock.insertArgument(i, record.getType(), loc);
+              genWrite(loc, newPod, record.getName(), newArg, rewriter);
               ++i;
             }
           } else {
@@ -445,6 +517,11 @@ public:
   }
 };
 
+/// Rewrite `function.return` to flatten any POD operands into their scalar record values.
+///
+/// This mirrors the function-signature conversion performed by `SplitPodInFuncDefOp`: POD results
+/// are returned as one SSA value per record, using local `pod.read` operations to extract the
+/// scalar pieces immediately before the return.
 class SplitPodInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
   using OpConversionPattern<ReturnOp>::OpConversionPattern;
@@ -460,6 +537,50 @@ public:
   }
 };
 
+/// Replace the given CallOp with a new one where any PodType in the results are split into their
+/// scalar records. Also, after the CallOp, generate a NewPodOp for each PodType result and
+/// generate writes from the corresponding scalar result values to the new pod.
+static CallOp newCallOpWithSplitResults(
+    CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
+) {
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPointAfter(oldCall);
+
+  Operation::result_range oldResults = oldCall.getResults();
+  CallOp newCall = rewriter.create<CallOp>(
+      oldCall.getLoc(), splitPodType(oldResults.getTypes()), oldCall.getCallee(),
+      adaptor.getArgOperands()
+  );
+
+  auto newResults = newCall.getResults().begin();
+  for (Value oldVal : oldResults) {
+    if (PodType pt = splittablePod(oldVal.getType())) {
+      Location loc = oldVal.getLoc();
+      // Generate `NewPodOp` and replace uses of the result with it.
+      auto newPod = rewriter.create<NewPodOp>(loc, pt);
+      rewriter.replaceAllUsesWith(oldVal, newPod);
+
+      // For each record in the PodType, write the next result from the new CallOp to the new pod.
+      for (RecordAttr record : pt.getRecords()) {
+        genWrite(loc, newPod, record.getName(), *newResults, rewriter);
+        newResults++;
+      }
+    } else {
+      newResults++;
+    }
+  }
+  // erase the original CallOp
+  rewriter.eraseOp(oldCall);
+
+  return newCall;
+}
+
+/// Rewrite calls whose arguments or results contain PODs to use flattened scalar signatures.
+///
+/// POD arguments are decomposed into scalar record operands before the new call is formed. POD
+/// results are reconstructed locally after the call with `pod.new` plus `pod.write`, preserving
+/// the original POD-typed uses in the caller until later optimization passes remove the temporary
+/// POD allocations.
 class SplitPodInCallOp : public OpConversionPattern<CallOp> {
 public:
   using OpConversionPattern<CallOp>::OpConversionPattern;
@@ -481,7 +602,6 @@ public:
     );
   }
 };
-*/
 
 /// Read a nested POD leaf by following each record name in `recordChain`.
 static Value
@@ -598,10 +718,10 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   RewritePatternSet patterns(ctx);
   patterns.add<
       // clang-format off
-      SplitInitFromNewPodOp
-      // SplitPodInFuncDefOp,
-      // SplitPodInReturnOp,
-      // SplitPodInCallOp
+      SplitInitFromNewPodOp,
+      SplitPodInFuncDefOp,
+      SplitPodInReturnOp,
+      SplitPodInCallOp
       // clang-format on
       >(ctx);
 
@@ -615,9 +735,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
   target.addDynamicallyLegalOp<NewPodOp>(SplitInitFromNewPodOp::legal);
-  // target.addDynamicallyLegalOp<FuncDefOp>(SplitPodInFuncDefOp::legal);
-  // target.addDynamicallyLegalOp<ReturnOp>(SplitPodInReturnOp::legal);
-  // target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
+  target.addDynamicallyLegalOp<FuncDefOp>(SplitPodInFuncDefOp::legal);
+  target.addDynamicallyLegalOp<ReturnOp>(SplitPodInReturnOp::legal);
+  target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
 
@@ -626,20 +746,20 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
 }
 
 /// Normalize the record name representation used by POD access ops to a plain `StringAttr`.
-static StringAttr getRecordNameAsStringAttr(ReadPodOp readOp) {
+inline static StringAttr getRecordNameAsStringAttr(ReadPodOp readOp) {
   return readOp.getRecordNameAttr().getLeafReference();
 }
 
-static StringAttr getRecordNameAsStringAttr(WritePodOp writeOp) {
+inline static StringAttr getRecordNameAsStringAttr(WritePodOp writeOp) {
   return writeOp.getRecordNameAttr().getLeafReference();
 }
 
 /// Return whether the given read/write access targets the same POD record.
-static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
+inline static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
   return readOp.getPodRef() == podRef && getRecordNameAsStringAttr(readOp) == recordName;
 }
 
-static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
+inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
   return writeOp.getPodRef() == podRef && getRecordNameAsStringAttr(writeOp) == recordName;
 }
 
