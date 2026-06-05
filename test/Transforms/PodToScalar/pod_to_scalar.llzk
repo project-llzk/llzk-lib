@@ -447,3 +447,92 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_4]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!counter_pod = !pod.type<[@acc: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @stateful_pod_accumulator(%init: !felt.type, %step: !felt.type) -> !felt.type {
+    %state = pod.new { @acc = %init } : !counter_pod
+
+    %lb = arith.constant 0 : index
+    %ub = arith.constant 8 : index
+    %one = arith.constant 1 : index
+
+    scf.for %i = %lb to %ub step %one {
+      %old_acc = pod.read %state[@acc] : !counter_pod, !felt.type
+      %new_acc = felt.add %old_acc, %step : !felt.type
+      pod.write %state[@acc] = %new_acc : !counter_pod, !felt.type
+    }
+
+    %result = pod.read %state[@acc] : !counter_pod, !felt.type
+    function.return %result : !felt.type
+  }
+}
+// CHECK: TODO
+// -----
+
+!loop_state = !pod.type<[
+  @i: !felt.type, // current loop index, as felt
+  @sum: !felt.type, // running sum
+  @values: !array.type<8 x !felt.type> // array updated on each iteration
+]>
+module attributes {llzk.lang} {
+  function.def @stateful_pod_array_while(
+    %lo: !felt.type,
+    %hi: !felt.type,
+    %step: !felt.type
+  ) -> !felt.type attributes {function.allow_non_native_field_ops} {
+    %state = pod.new : !loop_state
+    %zero_felt = felt.const 0
+    %zero_index = arith.constant 0 : index
+    %initial_values = array.new : !array.type<8 x !felt.type>
+
+    // Initialize POD records before any reads.
+    pod.write %state[@i] = %lo : !loop_state, !felt.type
+    pod.write %state[@sum] = %zero_felt : !loop_state, !felt.type
+    pod.write %state[@values] = %initial_values : !loop_state, !array.type<8 x !felt.type>
+
+    %final_i = scf.while (%loop_i = %lo) : (!felt.type) -> !felt.type {
+      // Read the current loop index from the POD.
+      %cur_i = pod.read %state[@i] : !loop_state, !felt.type
+
+      // Continue while cur_i < hi.
+      %cond = bool.cmp lt(%cur_i, %hi)
+      scf.condition(%cond) %cur_i : !felt.type
+    } do {
+    ^bb0(%body_i: !felt.type):
+      // Read current scalar state.
+      %cur_sum = pod.read %state[@sum] : !loop_state, !felt.type
+
+      // Read the array record from the POD.
+      %cur_values = pod.read %state[@values] : !loop_state, !array.type<8 x !felt.type>
+
+      // Convert the loop index to an array index and store a value.
+      %idx = cast.toindex %body_i
+      %next_sum = felt.add %cur_sum, %body_i : !felt.type
+      array.write %cur_values[%idx] = %next_sum : !array.type<8 x !felt.type>, !felt.type
+
+      // Write the updated array back into the POD.
+      pod.write %state[@values] = %cur_values : !loop_state, !array.type<8 x !felt.type>
+
+      // Update scalar POD records.
+      %next_i = felt.add %body_i, %step : !felt.type
+      pod.write %state[@sum] = %next_sum : !loop_state, !felt.type
+      pod.write %state[@i] = %next_i : !loop_state, !felt.type
+
+      // Yield the next control value.
+      scf.yield %next_i : !felt.type
+    }
+
+    // Read final state after the loop.
+    %final_sum = pod.read %state[@sum] : !loop_state, !felt.type
+    %final_values = pod.read %state[@values] : !loop_state, !array.type<8 x !felt.type>
+
+    // Return one value from the final array just to make the array update observable.
+    %first = array.read %final_values[%zero_index] : !array.type<8 x !felt.type>, !felt.type
+
+    %result = felt.add %final_sum, %first : !felt.type
+    function.return %result : !felt.type
+  }
+}
+// CHECK: TODO
