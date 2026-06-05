@@ -19,7 +19,7 @@ module attributes {llzk.lang} {
 
 // DEFAULT: warning: could not detect a unique module field; falling back to 'bn128'
 // DEFAULT-LABEL: @FallbackBn128 StructIntervals {
-// DEFAULT-NEXT:     %arg1 in TypeC:[ 2, 21888242871839275222246405745257275088696311157297823662689037894645226208582 ]
+// DEFAULT-NEXT:     %arg1 in TypeC:[ 2, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
 // DEFAULT-NEXT: }
 
 // OVERRIDE-NOT: warning: could not detect a unique module field; falling back to 'bn128'

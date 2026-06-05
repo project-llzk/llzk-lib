@@ -39,6 +39,28 @@ TEST_F(FieldTests, ToSigned) {
   ASSERT_EQ(f.zero(), signedVal);
 }
 
+TEST(FieldAliasTests, BuiltinAliasesUseExpectedPrimes) {
+  auto bn128 = Field::tryGetField("bn128");
+  auto bn254 = Field::tryGetField("bn254");
+  auto grumpkin = Field::tryGetField("grumpkin");
+  ASSERT_TRUE(succeeded(bn128));
+  ASSERT_TRUE(succeeded(bn254));
+  ASSERT_TRUE(succeeded(grumpkin));
+  EXPECT_EQ(
+      bn128->get().prime(),
+      toDynamicAPInt(
+          "21888242871839275222246405745257275088548364400416034343698204186575808495617"
+      )
+  );
+  EXPECT_EQ(bn128->get().prime(), bn254->get().prime());
+  EXPECT_EQ(
+      grumpkin->get().prime(),
+      toDynamicAPInt(
+          "21888242871839275222246405745257275088696311157297823662689037894645226208583"
+      )
+  );
+}
+
 //===------------------------------------------------------------------===//
 // Suite of tests over all `TestingValues()`
 //===------------------------------------------------------------------===//

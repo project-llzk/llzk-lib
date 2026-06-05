@@ -19,7 +19,7 @@ using namespace std;
 
 static DynamicAPInt goldilocks = toDynamicAPInt("18446744069414584321");
 static DynamicAPInt bn254 =
-    toDynamicAPInt("21888242871839275222246405745257275088696311157297823662689037894645226208583");
+    toDynamicAPInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
 
 static void extendAPSInts(APSInt &a, APSInt &b) {
   unsigned maxBitwidth = max(a.getBitWidth(), b.getBitWidth());
@@ -71,7 +71,7 @@ struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
         "2147483647",           // mersenne31
         "2130706433",           // koalabear
         "18446744069414584321", // goldilocks
-        "21888242871839275222246405745257275088696311157297823662689037894645226208583", // bn254
+        "21888242871839275222246405745257275088548364400416034343698204186575808495617", // bn254
         "0",
     };
     return vals;

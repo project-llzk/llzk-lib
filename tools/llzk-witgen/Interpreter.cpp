@@ -395,6 +395,20 @@ private:
     if (auto addOp = dyn_cast<felt::AddFeltOp>(op)) {
       return handleBinaryFelt(addOp, [](const auto &lhs, const auto &rhs) { return lhs + rhs; });
     }
+    if (auto powOp = dyn_cast<felt::PowFeltOp>(op)) {
+      return handleBinaryFelt(powOp, [&](const auto &lhs, const auto &rhs) {
+        return modExp(lhs, rhs, field.prime());
+      });
+    }
+    if (auto andOp = dyn_cast<felt::AndFeltOp>(op)) {
+      return handleBinaryFelt(andOp, [](const auto &lhs, const auto &rhs) { return lhs & rhs; });
+    }
+    if (auto orOp = dyn_cast<felt::OrFeltOp>(op)) {
+      return handleBinaryFelt(orOp, [](const auto &lhs, const auto &rhs) { return lhs | rhs; });
+    }
+    if (auto xorOp = dyn_cast<felt::XorFeltOp>(op)) {
+      return handleBinaryFelt(xorOp, [](const auto &lhs, const auto &rhs) { return lhs ^ rhs; });
+    }
     if (auto subOp = dyn_cast<felt::SubFeltOp>(op)) {
       return handleBinaryFelt(subOp, [](const auto &lhs, const auto &rhs) { return lhs - rhs; });
     }
@@ -405,6 +419,140 @@ private:
       return handleBinaryFelt(divOp, [&](const auto &lhs, const auto &rhs) {
         return lhs * field.inv(rhs);
       });
+    }
+    if (auto uintDivOp = dyn_cast<felt::UnsignedIntDivFeltOp>(op)) {
+      auto lhsValue = lookup(uintDivOp.getLhs(), scope);
+      auto rhsValue = lookup(uintDivOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      if (*rhs == 0) {
+        return makeError("felt.uintdiv divisor must be non-zero");
+      }
+      return bind({WitnessVal(*lhs / *rhs)});
+    }
+    if (auto sintDivOp = dyn_cast<felt::SignedIntDivFeltOp>(op)) {
+      auto lhsValue = lookup(sintDivOp.getLhs(), scope);
+      auto rhsValue = lookup(sintDivOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      if (*rhs == 0) {
+        return makeError("felt.sintdiv divisor must be non-zero");
+      }
+      return bind({WitnessVal(field.reduce(field.toSigned(*lhs) / field.toSigned(*rhs)))});
+    }
+    if (auto umodOp = dyn_cast<felt::UnsignedModFeltOp>(op)) {
+      auto lhsValue = lookup(umodOp.getLhs(), scope);
+      auto rhsValue = lookup(umodOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      if (*rhs == 0) {
+        return makeError("felt.umod divisor must be non-zero");
+      }
+      return bind({WitnessVal(*lhs % *rhs)});
+    }
+    if (auto smodOp = dyn_cast<felt::SignedModFeltOp>(op)) {
+      auto lhsValue = lookup(smodOp.getLhs(), scope);
+      auto rhsValue = lookup(smodOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      if (*rhs == 0) {
+        return makeError("felt.smod divisor must be non-zero");
+      }
+      return bind({WitnessVal(field.reduce(field.toSigned(*lhs) % field.toSigned(*rhs)))});
+    }
+    if (auto shrOp = dyn_cast<felt::ShrFeltOp>(op)) {
+      auto lhsValue = lookup(shrOp.getLhs(), scope);
+      auto rhsValue = lookup(shrOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      llvm::DynamicAPInt result(0);
+      if (*rhs < llvm::DynamicAPInt(field.bitWidth())) {
+        result = *lhs >> *rhs;
+      }
+      return bind({WitnessVal(result)});
+    }
+    if (auto shlOp = dyn_cast<felt::ShlFeltOp>(op)) {
+      auto lhsValue = lookup(shlOp.getLhs(), scope);
+      auto rhsValue = lookup(shlOp.getRhs(), scope);
+      if (!lhsValue) {
+        return lhsValue.takeError();
+      }
+      if (!rhsValue) {
+        return rhsValue.takeError();
+      }
+      auto lhs = asFelt(*lhsValue);
+      if (!lhs) {
+        return lhs.takeError();
+      }
+      auto rhs = asFelt(*rhsValue);
+      if (!rhs) {
+        return rhs.takeError();
+      }
+      llvm::DynamicAPInt two(2);
+      // It's more efficient to use modExp than native shift left, as for large
+      // exponents, << could allocate large temporaries, whereas modExp will be bounded
+      // by the field prime.
+      return bind({WitnessVal(field.reduce(*lhs * modExp(two, *rhs, field.prime())))});
     }
     if (auto negOp = dyn_cast<felt::NegFeltOp>(op)) {
       auto operand = lookup(negOp.getOperand(), scope);
@@ -427,6 +575,19 @@ private:
         return feltValue.takeError();
       }
       return bind({WitnessVal(field.inv(*feltValue))});
+    }
+    if (auto notOp = dyn_cast<felt::NotFeltOp>(op)) {
+      auto operand = lookup(notOp.getOperand(), scope);
+      if (!operand) {
+        return operand.takeError();
+      }
+      auto feltValue = asFelt(*operand);
+      if (!feltValue) {
+        return feltValue.takeError();
+      }
+      llvm::DynamicAPInt maxMask =
+          (llvm::DynamicAPInt(1) << llvm::DynamicAPInt(field.bitWidth())) - llvm::DynamicAPInt(1);
+      return bind({WitnessVal(field.reduce(maxMask ^ *feltValue))});
     }
     // Reduces signed integers to unsigned field elements using Field::reduce.
     // Negative results are reduced by subtracting from the prime (e.g., -1 -> p - 1).

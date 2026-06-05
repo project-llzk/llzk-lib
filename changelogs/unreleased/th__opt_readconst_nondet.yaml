@@ -1,7 +1,0 @@
-added:
-  - "`Pure` trait on `poly.read_const` op"
-  - "`AlwaysSpeculatable` trait on `llzk.nondet` op"
-  - "canonicalizer for `llzk.nondet` op to remove it when its result is not used"
-
-fixed:
-  - "assertion failure in `remove-dead-values` pass when there are empty `else` regions"

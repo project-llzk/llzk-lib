@@ -37,7 +37,13 @@ using namespace mlir;
 
 namespace llzk {
 
-static DenseMap<StringRef, Field> knownFields;
+// Having `knownFields` as a static local object ensures it is initialized when
+// `getKnownFields` is called, rather than relying on non-local static initialization
+// order (https://en.cppreference.com/cpp/language/initialization).
+static DenseMap<StringRef, Field> &getKnownFields() {
+  static DenseMap<StringRef, Field> knownFields;
+  return knownFields;
+}
 
 Field::Field(std::string_view primeStr, StringRef name) : Field(APSInt(primeStr), name) {}
 
@@ -51,6 +57,7 @@ FailureOr<std::reference_wrapper<const Field>> Field::tryGetField(StringRef fiel
   static std::once_flag fieldsInit;
   std::call_once(fieldsInit, initKnownFields);
 
+  auto &knownFields = getKnownFields();
   if (auto it = knownFields.find(fieldName); it != knownFields.end()) {
     return {it->second};
   }
@@ -93,21 +100,24 @@ void Field::addField(Field &&f, EmitErrorFn errFn) {
     return;
   }
   // Field does not exist, add it.
-  knownFields.try_emplace(f.name(), f);
+  getKnownFields().try_emplace(f.name(), f);
 }
 
 void Field::initKnownFields() {
-  static constexpr const char BN128[] = "bn128", BN254[] = "bn254", BABYBEAR[] = "babybear",
-                              GOLDILOCKS[] = "goldilocks", MERSENNE31[] = "mersenne31",
-                              KOALABEAR[] = "koalabear";
+  static constexpr const char BN128[] = "bn128", BN254[] = "bn254", GRUMPKIN[] = "grumpkin",
+                              BABYBEAR[] = "babybear", GOLDILOCKS[] = "goldilocks",
+                              MERSENNE31[] = "mersenne31", KOALABEAR[] = "koalabear";
 
   auto insert = [](const char *name, const char *primeStr) {
-    knownFields.try_emplace(name, Field(primeStr, name));
+    getKnownFields().try_emplace(name, Field(primeStr, name));
   };
 
+  // Reference: https://github.com/iden3/circom/blob/master/program_structure/src/utils/constants.rs
   // bn128/254, default for circom
-  insert(BN128, "21888242871839275222246405745257275088696311157297823662689037894645226208583");
-  insert(BN254, "21888242871839275222246405745257275088696311157297823662689037894645226208583");
+  insert(BN128, "21888242871839275222246405745257275088548364400416034343698204186575808495617");
+  insert(BN254, "21888242871839275222246405745257275088548364400416034343698204186575808495617");
+  // Grumpkin scalar field
+  insert(GRUMPKIN, "21888242871839275222246405745257275088696311157297823662689037894645226208583");
   // 15 * 2^27 + 1, default for zirgen
   insert(BABYBEAR, "2013265921");
   // 2^64 - 2^32 + 1, used for plonky2

@@ -86,6 +86,7 @@ def LLZK_FieldSpecAttr : AttrDef<FeltDialect, "FieldSpec"> {
     - babybear
     - bn128/bn254
     - goldilocks
+    - grumpkin
     - koalabear
     - mersenne31
   }];

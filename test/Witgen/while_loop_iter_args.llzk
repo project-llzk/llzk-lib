@@ -12,15 +12,16 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %c3 = arith.constant 3 : index
       %c0 = arith.constant 0 : index
       %c1 = arith.constant 1 : index
-      %res = scf.while (%i = %c3) : (index) -> index {
+      %res:2 = scf.while (%i = %c3, %acc = %c0) : (index, index) -> (index, index) {
         %cond = arith.cmpi sgt, %i, %c0 : index
-        scf.condition(%cond) %i : index
+        scf.condition(%cond) %i, %acc : index, index
       } do {
-      ^bb0(%i2: index):
-        %next = arith.subi %i2, %c1 : index
-        scf.yield %next : index
+      ^bb0(%i2: index, %acc2: index):
+        %nextI = arith.subi %i2, %c1 : index
+        %nextAcc = arith.addi %acc2, %i2 : index
+        scf.yield %nextI, %nextAcc : index, index
       }
-      %out = cast.tofelt %res : index, !felt.type<"babybear">
+      %out = cast.tofelt %res#1 : index, !felt.type<"babybear">
       struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
       function.return %self : !struct.type<@Main>
     }
@@ -31,7 +32,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK: {
-// CHECK-NEXT:   "out": "0"
+// CHECK-NEXT:   "out": "6"
 // CHECK-NEXT: }
 
 //--- input.json
