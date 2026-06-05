@@ -948,11 +948,11 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
         signalPassFailure();
         return;
       }
-      // Nested PODs can become visible only after an outer single-record POD has been promoted.
-      // Keep iterating while that strictly reduces the remaining allocation weight.
+      // Nested PODs can become visible only after an outer single-record POD has been promoted,
+      // and SROA can transiently increase allocation count while splitting aggregates. Keep
+      // iterating until the allocation-weight heuristic reaches a fixed point.
       size_t nextPodAllocWeight = podAllocScalarizationWeight(module);
-      if (nextPodAllocWeight >= podAllocWeight) {
-        assert(nextPodAllocWeight == podAllocWeight && "weight shouldn't increase");
+      if (nextPodAllocWeight == podAllocWeight) {
         break;
       }
       podAllocWeight = nextPodAllocWeight;
