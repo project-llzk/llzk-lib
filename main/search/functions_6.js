@@ -25,7 +25,7 @@ var searchData=
   ['genextramethod_22',['genExtraMethod',['../structGenerator.html#aa2b1a3ac5a465fd6830c634d272ed5ce',1,'Generator::genExtraMethod()'],['../structHeaderGenerator.html#a7cbcad14ba5a655c3914dc5bef32f3c3',1,'HeaderGenerator::genExtraMethod()'],['../structImplementationGenerator.html#aa363d2070e29f72d73f18ea8f66cd9a9',1,'ImplementationGenerator::genExtraMethod()'],['../structTestGenerator.html#a7bcbca1a4137bfdf81619f8f11a81498',1,'TestGenerator::genExtraMethod()']]],
   ['genextramethods_23',['genExtraMethods',['../structGenerator.html#a6ae562a5d6398ae4e3697ac8c1ce8564',1,'Generator']]],
   ['gengetbuildertest_24',['genGetBuilderTest',['../structAttrOrTypeTestGenerator.html#a45cef84dc532497cb27617d0f0f52b53',1,'AttrOrTypeTestGenerator']]],
-  ['genheader_25',['genHeader',['../structGenStringFromOpPieces.html#a5210bcfde43f1cd02faca3d68b12ddd1',1,'GenStringFromOpPieces']]],
+  ['genheader_25',['genHeader',['../structGenStringFromOpPieces.html#a5210bcfde43f1cd02faca3d68b12ddd1',1,'GenStringFromOpPieces::genHeader()'],['../classllzk_1_1SplitAggregateInMemberRefOp.html#ad8c20dffa00a86980651405bfbfaf082',1,'llzk::SplitAggregateInMemberRefOp::genHeader()']]],
   ['genisa_26',['GenIsA',['../CommonCAPIGen_8cpp.html#a92a41bc929402a972b691ddbf41fb8bb',1,'CommonCAPIGen.cpp']]],
   ['genisadecl_27',['genIsADecl',['../structHeaderGenerator.html#af55bea69ad04c7bb3ceec5d9dddab60b',1,'HeaderGenerator']]],
   ['genisaimpl_28',['genIsAImpl',['../structImplementationGenerator.html#a8230efdf8474265e4e9118fc10c243fe',1,'ImplementationGenerator']]],

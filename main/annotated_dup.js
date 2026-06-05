@@ -778,6 +778,7 @@ var annotated_dup =
       [ "SourceRefSet", "classllzk_1_1SourceRefSet.html", "classllzk_1_1SourceRefSet" ],
       [ "SpecializedMem2Reg", "structllzk_1_1SpecializedMem2Reg.html", "structllzk_1_1SpecializedMem2Reg" ],
       [ "SpecializedSROA", "structllzk_1_1SpecializedSROA.html", "structllzk_1_1SpecializedSROA" ],
+      [ "SplitAggregateInMemberRefOp", "classllzk_1_1SplitAggregateInMemberRefOp.html", "classllzk_1_1SplitAggregateInMemberRefOp" ],
       [ "StructAnalysis", "classllzk_1_1StructAnalysis.html", "classllzk_1_1StructAnalysis" ],
       [ "StructIntervalAnalysis", "classllzk_1_1StructIntervalAnalysis.html", "classllzk_1_1StructIntervalAnalysis" ],
       [ "StructIntervals", "classllzk_1_1StructIntervals.html", "classllzk_1_1StructIntervals" ],

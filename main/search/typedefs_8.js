@@ -8,6 +8,7 @@ var searchData=
   ['llzkcastoverflowsemantics_5',['LlzkCastOverflowSemantics',['../Cast_2IR_2Enums_8capi_8h_8inc.html#a30735da5a63324073d08f673478f77f9',1,'Enums.capi.h.inc']]],
   ['llzkrecordvalue_6',['LlzkRecordValue',['../POD_8h.html#a93b6acd8b62ded56afafc63117a6c1ca',1,'POD.h']]],
   ['llzksymbollookupresult_7',['LlzkSymbolLookupResult',['../llzk-c_2Support_8h.html#a29c0dc24cbb3588550b4a6b51de56308',1,'Support.h']]],
-  ['logicty_8',['logicTy',['../structllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase_1_1Properties.html#a5895e80abe2db00a4413ede12d71d79f',1,'llzk::smt::detail::SetLogicOpGenericAdaptorBase::Properties']]],
-  ['lowbitty_9',['lowBitTy',['../structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html#ae862ef9b91eddf22de5a5f885585a747',1,'llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties']]]
+  ['localmemberreplacementmap_8',['LocalMemberReplacementMap',['../classllzk_1_1SplitAggregateInMemberRefOp.html#ae4eedd61623ef572784cb2fa0f379425',1,'llzk::SplitAggregateInMemberRefOp']]],
+  ['logicty_9',['logicTy',['../structllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase_1_1Properties.html#a5895e80abe2db00a4413ede12d71d79f',1,'llzk::smt::detail::SetLogicOpGenericAdaptorBase::Properties']]],
+  ['lowbitty_10',['lowBitTy',['../structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html#ae862ef9b91eddf22de5a5f885585a747',1,'llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties']]]
 ];

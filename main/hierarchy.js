@@ -1060,6 +1060,9 @@ var hierarchy =
       [ "llzk::verif::RequireComputeOp", "classllzk_1_1verif_1_1RequireComputeOp.html", null ],
       [ "llzk::verif::RequireConstrainOp", "classllzk_1_1verif_1_1RequireConstrainOp.html", null ]
     ] ],
+    [ "mlir::OpConversionPattern", null, [
+      [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", null ]
+    ] ],
     [ "mlir::OperationPass", null, [
       [ "llzk::impl::CallGraphPrinterPassBase< CallGraphPrinterPass >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", [
         [ "llzk::CallGraphPrinterPass", "classllzk_1_1CallGraphPrinterPass.html", null ]

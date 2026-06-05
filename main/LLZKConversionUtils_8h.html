@@ -112,13 +112,18 @@ $(function(){initNavTree('LLZKConversionUtils_8h.html','',''); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Concepts_8h_source.html">llzk/Util/Concepts.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/PatternMatch.h&gt;</code><br />
+<code>#include &lt;mlir/IR/SymbolTable.h&gt;</code><br />
+<code>#include &lt;mlir/Transforms/DialectConversion.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/StringSet.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/Twine.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKConversionUtils.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKConversionUtils_8h__incl.svg" width="4015" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKConversionUtils_8h__incl.svg" width="3034" height="671"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -132,6 +137,8 @@ This graph shows which files directly or indirectly include this file:</div>
 Classes</h2></td></tr>
 <tr class="memitem:llzk_3A_3AFunctionTypeConverter" id="r_llzk_3A_3AFunctionTypeConverter"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1FunctionTypeConverter.html">llzk::FunctionTypeConverter</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">General helper for converting a <span class="tt"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></span> by changing its input and/or result types and the associated attributes for those types.  <a href="classllzk_1_1FunctionTypeConverter.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llzk_3A_3ASplitAggregateInMemberRefOp_3C_20ImplClass_2C_20MemberRefOpClass_2C_20GenHeaderType_2C_20IdType_20_3E" id="r_llzk_3A_3ASplitAggregateInMemberRefOp_3C_20ImplClass_2C_20MemberRefOpClass_2C_20GenHeaderType_2C_20IdType_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SplitAggregateInMemberRefOp.html">llzk::SplitAggregateInMemberRefOp&lt; ImplClass, MemberRefOpClass, GenHeaderType, IdType &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Common implementation for handling <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a></span> and <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> while destructuring an aggregate type (e.g., <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> or <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a>) stored in a struct member.  <a href="classllzk_1_1SplitAggregateInMemberRefOp.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
