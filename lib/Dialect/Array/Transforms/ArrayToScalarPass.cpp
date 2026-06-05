@@ -597,7 +597,7 @@ public:
 
 /// member name and type
 using MemberInfo = std::pair<StringAttr, Type>;
-/// original ArrayAttr index -> scalar member info
+/// original multi-dimensional index -> scalar member info
 using LocalMemberReplacementMap = DenseMap<ArrayAttr, MemberInfo>;
 /// struct -> original array-type member name -> LocalMemberReplacementMap
 using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
