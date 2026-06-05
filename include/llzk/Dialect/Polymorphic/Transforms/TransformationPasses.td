@@ -14,9 +14,10 @@ include "llzk/Pass/PassBase.td"
 include "mlir/IR/EnumAttr.td"
 
 def StructCleanupModeDescription {
-  string r = "Specifies the extent to which unused parameterized definitions (i.e. "
-             "structs or free functions within a `poly.template`) are removed during the "
-             "flattening pass.";
+  string r =
+      "Specifies the extent to which unused parameterized definitions (i.e. "
+      "structs or free functions within a `poly.template`) are removed during "
+      "the flattening pass.";
 }
 
 def StructCleanupMode
@@ -24,11 +25,12 @@ def StructCleanupMode
                   [
                       // Disabled: No definitions are deleted.
                       I32EnumAttrCase<"Disabled", 0, "disabled">,
-                      // Preimage: Only definitions that were replaced with concrete
-                      // instantiations are deleted.
+                      // Preimage: Only definitions that were replaced with
+                      // concrete instantiations are deleted.
                       I32EnumAttrCase<"Preimage", 1, "preimage">,
-                      // ConcreteAsRoot: All definitions that cannot be reached by a
-                      // use-def chain from some concrete definition are deleted.
+                      // ConcreteAsRoot: All definitions that cannot be reached
+                      // by a use-def chain from some concrete definition are
+                      // deleted.
                       I32EnumAttrCase<"ConcreteAsRoot", 2, "concrete-as-root">,
                       // MainAsRoot: All definitions that cannot be reached by a
                       // use-def chain from the main struct are deleted.

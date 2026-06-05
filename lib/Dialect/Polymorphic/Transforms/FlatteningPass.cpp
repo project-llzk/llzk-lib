@@ -2223,8 +2223,7 @@ struct FromKeepSet : public CleanupBase {
                 (void)insertRes; // tell compiler it's intentionally unused in release builds
                 LLVM_DEBUG({
                   if (insertRes) {
-                    llvm::dbgs() << "[EraseUnreachable]  found another root: " << asSymbol
-                                 << '\n';
+                    llvm::dbgs() << "[EraseUnreachable]  found another root: " << asSymbol << '\n';
                   }
                 });
               }
@@ -2612,7 +2611,8 @@ private:
           .append(
               "using option '", cleanupMode.getArgStr(), '=',
               stringifyStructCleanupMode(StructCleanupMode::MainAsRoot), "' with no \"",
-              MAIN_ATTR_NAME, "\" attribute on the top-level module may remove all cleanup-candidate definitions!"
+              MAIN_ATTR_NAME,
+              "\" attribute on the top-level module may remove all cleanup-candidate definitions!"
           )
           .report();
     }
