@@ -622,7 +622,7 @@ static WritePodOp findPrecedingWriteForIfRead(ReadPodOp readOp) {
 }
 
 /// Replace branch-local reads with a value available in the parent block.
-static void replaceIfReads(ModuleOp modOp) {
+static bool replaceIfReads(ModuleOp modOp) {
   SmallVector<std::pair<ReadPodOp, Value>> replacements;
   OpBuilder builder(modOp.getContext());
   modOp.walk([&](ReadPodOp readOp) {
@@ -653,6 +653,7 @@ static void replaceIfReads(ModuleOp modOp) {
     readOp.getResult().replaceAllUsesWith(value);
     readOp.erase();
   }
+  return !replacements.empty();
 }
 
 struct IfWriteSlot {
@@ -852,13 +853,42 @@ static bool liftIfWrites(scf::IfOp ifOp) {
 
 /// Promote pod read/write within `scf.if` to the outside so SROA + mem2reg can remove the pods.
 static void step3(ModuleOp modOp) {
-  replaceIfReads(modOp);
+  bool changed;
+  do {
+    changed = replaceIfReads(modOp);
 
-  SmallVector<scf::IfOp> ifOps;
-  modOp.walk([&](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
-  for (scf::IfOp ifOp : ifOps) {
-    liftIfWrites(ifOp);
+    SmallVector<scf::IfOp> ifOps;
+    modOp.walk([&](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
+    for (scf::IfOp ifOp : ifOps) {
+      changed |= liftIfWrites(ifOp);
+    }
+  } while (changed);
+}
+
+/// Return a simple measure of how many POD allocation layers are represented by this type.
+/// Non-POD records have weight zero; each POD layer contributes one plus its nested POD records.
+static size_t podTypeScalarizationWeight(Type type) {
+  auto podTy = dyn_cast<PodType>(type);
+  if (!podTy) {
+    return 0;
   }
+
+  size_t weight = 1;
+  for (RecordAttr record : podTy.getRecords()) {
+    weight += podTypeScalarizationWeight(record.getType());
+  }
+  return weight;
+}
+
+/// Return the total remaining POD allocation work in the module. This is used to rerun
+/// SROA+mem2reg while recursive POD layers are being exposed, and to stop if a pass round cannot
+/// make progress.
+static size_t podAllocScalarizationWeight(ModuleOp modOp) {
+  size_t weight = 0;
+  modOp.walk([&weight](NewPodOp newPodOp) {
+    weight += podTypeScalarizationWeight(newPodOp.getType());
+  });
+  return weight;
 }
 
 class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarPass> {
@@ -903,18 +933,29 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
       module.dump();
     });
 
-    OpPassManager nestedPM(ModuleOp::getOperationName());
-    // Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods with 1
-    // record each. This is necessary because the mem2reg pass cannot deal with splitting up memory,
-    // i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSpecializedSROAPass<NewPodOp>());
-    // The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
-    nestedPM.addPass(createSpecializedMem2RegPass<NewPodOp>());
-    // Cleanup SSA values made dead by the transformations
-    nestedPM.addPass(createRemoveDeadValuesPass());
-    if (failed(runPipeline(nestedPM, module))) {
-      signalPassFailure();
-      return;
+    size_t podAllocWeight = podAllocScalarizationWeight(module);
+    while (podAllocWeight != 0) {
+      OpPassManager nestedPM(ModuleOp::getOperationName());
+      // Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
+      // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
+      // up memory, i.e., it can only convert scalar memory access into SSA values.
+      nestedPM.addPass(createSpecializedSROAPass<NewPodOp>());
+      // The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
+      nestedPM.addPass(createSpecializedMem2RegPass<NewPodOp>());
+      // Cleanup SSA values made dead by the transformations
+      nestedPM.addPass(createRemoveDeadValuesPass());
+      if (failed(runPipeline(nestedPM, module))) {
+        signalPassFailure();
+        return;
+      }
+      // Nested PODs can become visible only after an outer single-record POD has been promoted.
+      // Keep iterating while that strictly reduces the remaining allocation weight.
+      size_t nextPodAllocWeight = podAllocScalarizationWeight(module);
+      if (nextPodAllocWeight >= podAllocWeight) {
+        assert(nextPodAllocWeight == podAllocWeight && "weight shouldn't increase");
+        break;
+      }
+      podAllocWeight = nextPodAllocWeight;
     }
     LLVM_DEBUG({
       llvm::dbgs() << "After SROA+Mem2Reg pipeline:\n";
