@@ -15,9 +15,6 @@ module attributes {llzk.lang} {
         function.return %self : !struct.type<@TToFelt::@ToFelt<[@A]>>
       }
 
-      function.def @constrain(%self: !struct.type<@TToFelt::@ToFelt<[@A]>>) {
-        function.return
-      }
     }
   }
 
