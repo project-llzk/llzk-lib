@@ -2277,9 +2277,9 @@ private:
 
 void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &) {
   using namespace llzk::polymorphic;
-  pm.addPass(
-      createFlatteningPass(FlatteningPassOptions {.cleanupMode = StructCleanupMode::ConcreteAsRoot})
-  );
+  pm.addPass(createFlatteningPass(
+      FlatteningPassOptions {.cleanupMode = FlatteningCleanupMode::ConcreteAsRoot}
+  ));
   pm.addPass(mlir::createLowerAffinePass());
   pm.addPass(llzk::createInlineStructsPass());
   pm.addPass(mlir::createCanonicalizerPass());

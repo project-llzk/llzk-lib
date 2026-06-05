@@ -2430,7 +2430,7 @@ private:
     // initial pass to remove things that are not reachable (as an optimization) because creating
     // an instantiated version of a struct will not cause something to become reachable that was
     // not already reachable in parameterized form.
-    if (cleanupMode == StructCleanupMode::MainAsRoot) {
+    if (cleanupMode == FlatteningCleanupMode::MainAsRoot) {
       if (failed(eraseUnreachableFromMainStruct(modOp))) {
         return failure();
       }
@@ -2529,13 +2529,13 @@ private:
   LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
     switch (cleanupMode) {
-    case StructCleanupMode::MainAsRoot:
+    case FlatteningCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);
-    case StructCleanupMode::ConcreteAsRoot:
+    case FlatteningCleanupMode::ConcreteAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(concrete definitions mode)\n");
       return eraseUnreachableFromConcreteDefinitions(modOp);
-    case StructCleanupMode::Preimage:
+    case FlatteningCleanupMode::Preimage:
       LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
     default:
@@ -2610,7 +2610,7 @@ private:
       rootMod.emitWarning()
           .append(
               "using option '", cleanupMode.getArgStr(), '=',
-              stringifyStructCleanupMode(StructCleanupMode::MainAsRoot), "' with no \"",
+              stringifyFlatteningCleanupMode(FlatteningCleanupMode::MainAsRoot), "' with no \"",
               MAIN_ATTR_NAME,
               "\" attribute on the top-level module may remove all cleanup-candidate definitions!"
           )
