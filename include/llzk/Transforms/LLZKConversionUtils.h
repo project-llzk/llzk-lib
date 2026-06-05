@@ -14,9 +14,14 @@
 #pragma once
 
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Concepts.h"
 
 #include <mlir/IR/PatternMatch.h>
+#include <mlir/IR/SymbolTable.h>
+#include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 
@@ -104,6 +109,99 @@ public:
         assert(std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()));
       }
     }
+  }
+};
+
+/// Common implementation for handling `MemberWriteOp` and `MemberReadOp` while destructuring
+/// an aggregate type (e.g., ArrayType or PodType) stored in a struct member.
+///
+/// @tparam ImplClass         the concrete subclass (CRTP)
+/// @tparam MemberRefOpClass  the concrete op class (must implement `MemberRefOpInterface`)
+/// @tparam GenHeaderType     return type of `genHeader()`, used to pass data to `forId()`
+/// @tparam IdType            the type used to identify a scalar element within the aggregate
+template <
+    typename ImplClass, HasInterface<component::MemberRefOpInterface> MemberRefOpClass,
+    typename GenHeaderType, typename IdType>
+class SplitAggregateInMemberRefOp : public mlir::OpConversionPattern<MemberRefOpClass> {
+public:
+  /// Scalar member name and type.
+  using MemberInfo = std::pair<mlir::StringAttr, mlir::Type>;
+  /// Maps a scalar element identifier within the aggregate to its new scalar member info.
+  using LocalMemberReplacementMap = llvm::DenseMap<IdType, MemberInfo>;
+  /// Maps struct -> original aggregate-type member name -> LocalMemberReplacementMap.
+  using MemberReplacementMap = llvm::DenseMap<
+      component::StructDefOp, llvm::DenseMap<mlir::StringAttr, LocalMemberReplacementMap>>;
+
+private:
+  mlir::SymbolTableCollection &tables;
+  const MemberReplacementMap &repMapRef;
+
+  // Static check to ensure the methods are implemented in all subclasses.
+  inline static void ensureImplementedAtCompile() {
+    static_assert(
+        sizeof(MemberRefOpClass) == 0,
+        "SplitAggregateInMemberRefOp not implemented for requested type."
+    );
+  }
+
+protected:
+  using OpAdaptor = typename MemberRefOpClass::Adaptor;
+
+  /// Executed at the start of `rewrite()` to (optionally) generate anything that should appear
+  /// before the per-scalar operations that will be added by `forId()`.
+  static GenHeaderType genHeader(MemberRefOpClass, mlir::ConversionPatternRewriter &) {
+    ensureImplementedAtCompile();
+    llvm_unreachable("must have concrete instantiation");
+  }
+
+  /// Executed for each scalar id in the aggregate type of the original member to generate the
+  /// per-scalar operations on the new scalar members.
+  static void forId(
+      mlir::Location, GenHeaderType, IdType, MemberInfo, OpAdaptor,
+      mlir::ConversionPatternRewriter &
+  ) {
+    ensureImplementedAtCompile();
+    llvm_unreachable("must have concrete instantiation");
+  }
+
+public:
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
+  SplitAggregateInMemberRefOp(
+      mlir::MLIRContext *ctx, mlir::SymbolTableCollection &symTables,
+      const MemberReplacementMap &memberRepMap
+  )
+      : mlir::OpConversionPattern<MemberRefOpClass>(ctx), tables(symTables),
+        repMapRef(memberRepMap) {}
+
+  static bool legal(MemberRefOpClass) {
+    ensureImplementedAtCompile();
+    llvm_unreachable("must have concrete instantiation");
+    return false;
+  }
+
+  mlir::LogicalResult match(MemberRefOpClass op) const override {
+    return mlir::failure(ImplClass::legal(op));
+  }
+
+  void rewrite(
+      MemberRefOpClass op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override {
+    component::StructType tgtStructTy =
+        llvm::cast<component::MemberRefOpInterface>(op.getOperation()).getStructType();
+    assert(tgtStructTy);
+    auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
+    assert(mlir::succeeded(tgtStructDef));
+
+    GenHeaderType prefixResult = ImplClass::genHeader(op, rewriter);
+
+    const LocalMemberReplacementMap &idToName =
+        repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
+    // Split the aggregate member into a series of scalar member ops.
+    for (auto [id, newMember] : idToName) {
+      ImplClass::forId(op.getLoc(), prefixResult, id, newMember, adaptor, rewriter);
+    }
+    rewriter.eraseOp(op);
   }
 };
 

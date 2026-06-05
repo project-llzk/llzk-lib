@@ -597,9 +597,9 @@ public:
 
 /// member name and type
 using MemberInfo = std::pair<StringAttr, Type>;
-/// ArrayAttr index -> scalar member info
+/// original multi-dimensional index -> scalar member info
 using LocalMemberReplacementMap = DenseMap<ArrayAttr, MemberInfo>;
-/// struct -> array-type member name -> LocalMemberReplacementMap
+/// struct -> original array-type member name -> LocalMemberReplacementMap
 using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
 
 class SplitArrayInMemberDefOp : public OpConversionPattern<MemberDefOp> {
@@ -641,83 +641,11 @@ public:
   }
 };
 
-/// Common implementation for handling `MemberWriteOp` and `MemberReadOp`.
-///
-/// @tparam ImplClass         the concrete subclass
-/// @tparam MemberRefOpClass   the concrete op class
-/// @tparam GenHeaderType     return type of `genHeader()`, used to pass data to `forIndex()`
-template <
-    typename ImplClass, HasInterface<MemberRefOpInterface> MemberRefOpClass, typename GenHeaderType>
-class SplitArrayInMemberRefOp : public OpConversionPattern<MemberRefOpClass> {
-  SymbolTableCollection &tables;
-  const MemberReplacementMap &repMapRef;
-
-  // static check to ensure the functions are implemented in all subclasses
-  inline static void ensureImplementedAtCompile() {
-    static_assert(
-        sizeof(MemberRefOpClass) == 0, "SplitArrayInMemberRefOp not implemented for requested type."
-    );
-  }
-
-protected:
-  using OpAdaptor = typename MemberRefOpClass::Adaptor;
-
-  /// Executed at the start of `rewrite()` to (optionally) generate anything that should be before
-  /// the element-wise operations that will be added by `forIndex()`.
-  static GenHeaderType genHeader(MemberRefOpClass, ConversionPatternRewriter &) {
-    ensureImplementedAtCompile();
-    llvm_unreachable("must have concrete instantiation");
-  }
-
-  /// Executed for each multi-dimensional array index in the ArrayType of the original member to
-  /// generate the element-wise scalar operations on the new scalar members.
-  static void
-  forIndex(Location, GenHeaderType, ArrayAttr, MemberInfo, OpAdaptor, ConversionPatternRewriter &) {
-    ensureImplementedAtCompile();
-    llvm_unreachable("must have concrete instantiation");
-  }
-
+class SplitArrayInMemberWriteOp : public SplitAggregateInMemberRefOp<
+                                      SplitArrayInMemberWriteOp, MemberWriteOp, void *, ArrayAttr> {
 public:
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
-  SplitArrayInMemberRefOp(
-      MLIRContext *ctx, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap
-  )
-      : OpConversionPattern<MemberRefOpClass>(ctx), tables(symTables), repMapRef(memberRepMap) {}
-
-  static bool legal(MemberRefOpClass) {
-    ensureImplementedAtCompile();
-    llvm_unreachable("must have concrete instantiation");
-    return false;
-  }
-
-  LogicalResult match(MemberRefOpClass op) const override { return failure(ImplClass::legal(op)); }
-
-  void rewrite(
-      MemberRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
-    assert(tgtStructTy);
-    auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
-    assert(succeeded(tgtStructDef));
-
-    GenHeaderType prefixResult = ImplClass::genHeader(op, rewriter);
-
-    const LocalMemberReplacementMap &idxToName =
-        repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
-    // Split the array member write into a series of read array + write scalar member
-    for (auto [idx, newMember] : idxToName) {
-      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newMember, adaptor, rewriter);
-    }
-    rewriter.eraseOp(op);
-  }
-};
-
-class SplitArrayInMemberWriteOp
-    : public SplitArrayInMemberRefOp<SplitArrayInMemberWriteOp, MemberWriteOp, void *> {
-public:
-  using SplitArrayInMemberRefOp<
-      SplitArrayInMemberWriteOp, MemberWriteOp, void *>::SplitArrayInMemberRefOp;
+  using SplitAggregateInMemberRefOp<
+      SplitArrayInMemberWriteOp, MemberWriteOp, void *, ArrayAttr>::SplitAggregateInMemberRefOp;
 
   static bool legal(MemberWriteOp op) {
     return !containsSplittableArrayType(op.getVal().getType());
@@ -725,7 +653,7 @@ public:
 
   static void *genHeader(MemberWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
-  static void forIndex(
+  static void forId(
       Location loc, void *, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
@@ -737,10 +665,12 @@ public:
 };
 
 class SplitArrayInMemberReadOp
-    : public SplitArrayInMemberRefOp<SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp> {
+    : public SplitAggregateInMemberRefOp<
+          SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp, ArrayAttr> {
 public:
-  using SplitArrayInMemberRefOp<
-      SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp>::SplitArrayInMemberRefOp;
+  using SplitAggregateInMemberRefOp<
+      SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp,
+      ArrayAttr>::SplitAggregateInMemberRefOp;
 
   static bool legal(MemberReadOp op) {
     return !containsSplittableArrayType(op.getResult().getType());
@@ -753,7 +683,7 @@ public:
     return newArray;
   }
 
-  static void forIndex(
+  static void forId(
       Location loc, CreateArrayOp newArray, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
@@ -813,11 +743,11 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &me
   baseTargetSetup(target);
   target.addDynamicallyLegalOp<MemberDefOp>(SplitArrayInMemberDefOp::legal);
 
-  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array members\n";);
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array-type members\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-/// Special handling to split arrays in struct members and function signatures, desugar ranged
+/// Special handling to split arrays in struct member refs and function signatures, desugar ranged
 /// array access ops to scalar access ops, and replace `ArrayLengthOp` with the known size.
 static LogicalResult
 step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
