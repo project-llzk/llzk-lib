@@ -10,9 +10,18 @@
 
 - For project questions and code-change tasks, start by checking the generated project documentation in `doc/doxygen/`.
 - Prefer searching documentation and targeted source paths before broad repo scans to reduce turnaround time.
-- When touching tests that use FileCheck, generate or refresh check lines with `scripts/generate-test-checks.py` instead of hand-editing check blocks.
-- For new checks from tool output, use a pipeline such as: `nix develop --command bash -c "llzk-opt test/your_test.llzk <passes> | scripts/generate-test-checks.py"`.
-- For in-place check refresh in an existing test file, use: `nix develop --command bash -c "llzk-opt test/your_test.llzk <passes> | scripts/generate-test-checks.py --source test/your_test.llzk -i"`.
+- When touching tests that use FileCheck, generate or refresh check lines with `scripts/generate-test-checks.py` instead of hand-editing check blocks. Use a pipeline such as: `nix develop --command bash -c "llzk-opt test/your_test.llzk <passes> | scripts/generate-test-checks.py"`.
+
+## FileCheck update safety
+
+- Never run `scripts/generate-test-checks.py --source <file> -i` as the first attempt on a repo file.
+- First run the script without `-i`, writing output only to stdout or a temporary file, and confirm it succeeds. Never use `-o` or shell redirection to write a dry run back to the repo file.
+- For `-split-input-file` tests or files with many existing CHECK blocks, prefer generating checks from a temporary file containing only the changed source chunks.
+- When using `--source_delim_regex`, choose a regex that matches the actual chunk boundaries in the source file for that run. Anchor it to real source lines so it does not match existing `// CHECK` comments.
+- Do not assume `^module attributes` is correct for a whole `-split-input-file` test; it is mainly useful when working from a temporary file whose chunks each begin with a module line.
+- Do not rely on the script's default delimiter regex for multi-module or split-input LLZK tests.
+- If the correct delimiter is uncertain, extract only the changed source chunks into a temporary file and generate checks there instead of updating the full repo file in place.
+- Only use `-i` after a non-inplace dry run has succeeded with the same arguments.
 
 ## Search boundaries
 
@@ -44,6 +53,7 @@
 ## Code change workflow
 
 - For bug fixes or behavior changes, identify the affected component, update the implementation, and add or update focused tests.
+- When adding or generating new functions, classes, methods, passes, operations, or other non-trivial symbols, include appropriate documentation as part of the same change. Prefer Doxygen-style comments for declarations and keep implementation comments concise and behavior-focused.
 - Keep diffs minimal and aligned with existing style and architecture.
 - Validate changes with relevant build/test commands in the Nix environment.
 
