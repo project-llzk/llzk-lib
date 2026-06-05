@@ -1,2 +1,2 @@
-fixed:
-  - "Update `llzk-flatten` and `llzk-inline-structs` passes to handle the `pod` dialect"
+added:
+  - `llzk-pod-to-scalar` pass to destructure pod type values into scalar SSA values
