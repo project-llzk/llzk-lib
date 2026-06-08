@@ -123,6 +123,8 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Describe one JSON-visible main input binding.  <a href="structllzk_1_1witgen_1_1InputBinding.html#details">More...</a><br /></td></tr>
 <tr class="memitem:Interpreter" id="r_Interpreter"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1witgen_1_1Interpreter.html">Interpreter</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Drive witness generation for the concrete <span class="tt">llzk.main</span> instance.  <a href="classllzk_1_1witgen_1_1Interpreter.html#details">More...</a><br /></td></tr>
+<tr class="memitem:JSONMismatch" id="r_JSONMismatch"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One structured JSON mismatch between expected and actual witgen output.  <a href="structllzk_1_1witgen_1_1JSONMismatch.html#details">More...</a><br /></td></tr>
 <tr class="memitem:OutputBinding" id="r_OutputBinding"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1witgen_1_1OutputBinding.html">OutputBinding</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Describe one selected witness output leaf.  <a href="structllzk_1_1witgen_1_1OutputBinding.html#details">More...</a><br /></td></tr>
 <tr class="memitem:PodValue" id="r_PodValue"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1witgen_1_1PodValue.html">PodValue</a></td></tr>
@@ -179,6 +181,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a16f6a9ef0cfcde99a7eb9586147b25f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize named input values into a JSON object.  <br /></td></tr>
 <tr class="memitem:a4385df077725e0b87d2cf1c6f36d619f" id="r_a4385df077725e0b87d2cf1c6f36d619f"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; <a class="el" href="#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4385df077725e0b87d2cf1c6f36d619f">extractValueAtPath</a> (const <a class="el" href="#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &amp;root, Type rootType, ArrayRef&lt; std::string &gt; path, SymbolTableCollection &amp;tables, Operation *origin)</td></tr>
 <tr class="memdesc:a4385df077725e0b87d2cf1c6f36d619f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract one nested runtime leaf by path.  <br /></td></tr>
+<tr class="memitem:a58835e5cae756c594d73168b6ee92c08" id="r_a58835e5cae756c594d73168b6ee92c08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a58835e5cae756c594d73168b6ee92c08">diffJSON</a> (const llvm::json::Value &amp;expected, const llvm::json::Value &amp;actual, llvm::SmallVectorImpl&lt; <a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a> &gt; &amp;out, llvm::StringRef path=&quot;$&quot;)</td></tr>
+<tr class="memdesc:a58835e5cae756c594d73168b6ee92c08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compare two JSON values structurally and append any mismatches to <span class="tt">out</span>.  <br /></td></tr>
+<tr class="memitem:ad074e5215c751ba016990321b3413724" id="r_ad074e5215c751ba016990321b3413724"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad074e5215c751ba016990321b3413724">printJSONMismatches</a> (llvm::raw_ostream &amp;os, llvm::ArrayRef&lt; <a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a> &gt; mismatches)</td></tr>
+<tr class="memdesc:ad074e5215c751ba016990321b3413724"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render one human-readable mismatch report.  <br /></td></tr>
 <tr class="memitem:a5b20eab8085d9d1d1c32b7228f69d9cd" id="r_a5b20eab8085d9d1d1c32b7228f69d9cd"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; <a class="el" href="#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5b20eab8085d9d1d1c32b7228f69d9cd">parseJSONValue</a> (const llvm::json::Value *json, mlir::Type type, const <a class="el" href="classllzk_1_1Field.html">llzk::Field</a> &amp;field, mlir::Operation *origin)</td></tr>
 <tr class="memdesc:a5b20eab8085d9d1d1c32b7228f69d9cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse one JSON value into the tool's runtime representation.  <br /></td></tr>
 <tr class="memitem:ab2f7ce26617ba7407a527d8f64a3624c" id="r_ab2f7ce26617ba7407a527d8f64a3624c"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; llvm::json::Value &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab2f7ce26617ba7407a527d8f64a3624c">serializeJSONValue</a> (const <a class="el" href="#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &amp;value, mlir::Type type, mlir::SymbolTableCollection &amp;tables, mlir::Operation *origin, <a class="el" href="#a8cd5417f84c7eb752e95255499c25f8c">SerializationMode</a> mode=<a class="el" href="#a8cd5417f84c7eb752e95255499c25f8ca9567ec8d56b5f8bd0aef29382fae4944">SerializationMode::PublicOutputsOnly</a>)</td></tr>
@@ -489,7 +495,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02278">2278</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02338">2338</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
 
 </div>
 </div>
@@ -656,7 +662,7 @@ Functions</h2></td></tr>
 
 <p>Serialize named input values into a JSON object. </p>
 
-<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00315">315</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00401">401</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
 
 </div>
 </div>
@@ -926,7 +932,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02293">2293</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02354">2354</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
 
 </div>
 </div>
@@ -947,7 +953,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Create the pass that lowers supported LLZK compute IR into core MLIR dialects suitable for LLVM lowering. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02289">2289</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02350">2350</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
 
 </div>
 </div>
@@ -1039,6 +1045,41 @@ template&lt;typename T, typename U&gt; </div>
 
 </div>
 </div>
+<a id="a58835e5cae756c594d73168b6ee92c08" name="a58835e5cae756c594d73168b6ee92c08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a58835e5cae756c594d73168b6ee92c08">&#9670;&#160;</a></span>diffJSON()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::witgen::diffJSON </td>
+          <td>(</td>
+          <td class="paramtype">const llvm::json::Value &amp;</td>          <td class="paramname"><span class="paramname"><em>expected</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::json::Value &amp;</td>          <td class="paramname"><span class="paramname"><em>actual</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::SmallVectorImpl&lt; <a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>out</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>path</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Compare two JSON values structurally and append any mismatches to <span class="tt">out</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00473">473</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a2a297899048424f61646743a958e925b" name="a2a297899048424f61646743a958e925b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2a297899048424f61646743a958e925b">&#9670;&#160;</a></span>extractValueAtPath() <span class="overload">[1/2]</span></h2>
 
@@ -1113,7 +1154,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Extract one nested runtime leaf by path. </p>
 
-<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00336">336</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00422">422</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
 
 </div>
 </div>
@@ -1327,7 +1368,32 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Parse a supported LLZK input type from JSON. </p>
 
-<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00177">177</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00263">263</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad074e5215c751ba016990321b3413724" name="ad074e5215c751ba016990321b3413724"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad074e5215c751ba016990321b3413724">&#9670;&#160;</a></span>printJSONMismatches()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::witgen::printJSONMismatches </td>
+          <td>(</td>
+          <td class="paramtype">llvm::raw_ostream &amp;</td>          <td class="paramname"><span class="paramname"><em>os</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; <a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>mismatches</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Render one human-readable mismatch report. </p>
+
+<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00504">504</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
 
 </div>
 </div>
@@ -1608,7 +1674,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Serialize a supported LLZK runtime value into JSON. </p>
 
-<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00214">214</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00300">300</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
 
 </div>
 </div>

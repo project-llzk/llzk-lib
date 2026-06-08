@@ -1,5 +1,7 @@
 var NAVTREEINDEX80 =
 {
+"structExtraMethod.html#ac390da29009ebcc2985321d0df1ed054":[12,0,37,3],
+"structExtraMethod.html#adece370eb95e462adfa9e610bcaf3ec9":[12,0,37,0],
 "structExtractArrayOpBuildFuncHelper.html":[12,0,36],
 "structExtractArrayOpBuildFuncHelper.html#a7219d6760848c76e0f60ba5ce0629d99":[12,0,36,0],
 "structExtractArrayOpBuildFuncHelper.html#aa7360dafbca0f868c41615e8eeb1b183":[12,0,36,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX80 =
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a7a3ee05fb27865239d3f8152846cf731":[12,0,0,13,2],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a8e69ef71d24c583a21d9523371583f85":[10,0,1,13,1],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a8e69ef71d24c583a21d9523371583f85":[12,0,0,13,1],
-"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#ad42e91c56149bfe78ebf89f5fcdb3d0a":[10,0,1,13,0],
-"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#ad42e91c56149bfe78ebf89f5fcdb3d0a":[12,0,0,13,0],
-"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[10,0,1,12]
+"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#ad42e91c56149bfe78ebf89f5fcdb3d0a":[10,0,1,13,0]
 };

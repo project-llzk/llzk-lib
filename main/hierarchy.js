@@ -830,6 +830,7 @@ var hierarchy =
       ] ],
       [ "llzk::smt::IteOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1IteOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::witgen::JSONMismatch", "structllzk_1_1witgen_1_1JSONMismatch.html", null ],
     [ "llzk::polymorphic::detail::LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", [
       [ "llzk::polymorphic::detail::EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", null ]
     ] ],

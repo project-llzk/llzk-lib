@@ -1958,393 +1958,454 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l01904" name="l01904"></a><span class="lineno"> 1904</span>      <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l01905" name="l01905"></a><span class="lineno"> 1905</span>    }</div>
 <div class="line"><a id="l01906" name="l01906"></a><span class="lineno"> 1906</span> </div>
-<div class="line"><a id="l01907" name="l01907"></a><span class="lineno"> 1907</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> forOp = dyn_cast&lt;scf::ForOp&gt;(op)) {</div>
-<div class="line"><a id="l01908" name="l01908"></a><span class="lineno"> 1908</span>      <span class="keyword">auto</span> lb = lookupScalar(forOp.getLowerBound(), valueMap, forOp.getOperation());</div>
-<div class="line"><a id="l01909" name="l01909"></a><span class="lineno"> 1909</span>      <span class="keyword">auto</span> ub = lookupScalar(forOp.getUpperBound(), valueMap, forOp.getOperation());</div>
-<div class="line"><a id="l01910" name="l01910"></a><span class="lineno"> 1910</span>      <span class="keyword">auto</span> step = lookupScalar(forOp.getStep(), valueMap, forOp.getOperation());</div>
-<div class="line"><a id="l01911" name="l01911"></a><span class="lineno"> 1911</span>      <span class="keywordflow">if</span> (failed(lb) || failed(ub) || failed(step)) {</div>
-<div class="line"><a id="l01912" name="l01912"></a><span class="lineno"> 1912</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01913" name="l01913"></a><span class="lineno"> 1913</span>      }</div>
-<div class="line"><a id="l01914" name="l01914"></a><span class="lineno"> 1914</span> </div>
-<div class="line"><a id="l01915" name="l01915"></a><span class="lineno"> 1915</span>      SmallVector&lt;Value&gt; initArgs;</div>
-<div class="line"><a id="l01916" name="l01916"></a><span class="lineno"> 1916</span>      SmallVector&lt;size_t&gt; initLeafCounts;</div>
-<div class="line"><a id="l01917" name="l01917"></a><span class="lineno"> 1917</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [init, resultType] : llvm::zip(forOp.getInitArgs(), forOp.getResultTypes())) {</div>
-<div class="line"><a id="l01918" name="l01918"></a><span class="lineno"> 1918</span>        <span class="keyword">auto</span> lowered = lookup(init, valueMap, forOp.getOperation());</div>
-<div class="line"><a id="l01919" name="l01919"></a><span class="lineno"> 1919</span>        <span class="keyword">auto</span> leafTypes = getABILeafTypes(resultType, tables, forOp.getOperation(), field);</div>
-<div class="line"><a id="l01920" name="l01920"></a><span class="lineno"> 1920</span>        <span class="keywordflow">if</span> (failed(lowered) || failed(leafTypes) ||</div>
-<div class="line"><a id="l01921" name="l01921"></a><span class="lineno"> 1921</span>            failed(appendFlatLeavesToTypes(</div>
-<div class="line"><a id="l01922" name="l01922"></a><span class="lineno"> 1922</span>                builder, loc, *lowered, *leafTypes, initArgs, forOp.getOperation()</div>
-<div class="line"><a id="l01923" name="l01923"></a><span class="lineno"> 1923</span>            ))) {</div>
-<div class="line"><a id="l01924" name="l01924"></a><span class="lineno"> 1924</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01925" name="l01925"></a><span class="lineno"> 1925</span>        }</div>
-<div class="line"><a id="l01926" name="l01926"></a><span class="lineno"> 1926</span>        <span class="keyword">auto</span> count = getLeafCount(resultType, tables, forOp.getOperation(), field);</div>
-<div class="line"><a id="l01927" name="l01927"></a><span class="lineno"> 1927</span>        <span class="keywordflow">if</span> (failed(count)) {</div>
-<div class="line"><a id="l01928" name="l01928"></a><span class="lineno"> 1928</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01929" name="l01929"></a><span class="lineno"> 1929</span>        }</div>
-<div class="line"><a id="l01930" name="l01930"></a><span class="lineno"> 1930</span>        initLeafCounts.push_back(*count);</div>
-<div class="line"><a id="l01931" name="l01931"></a><span class="lineno"> 1931</span>      }</div>
-<div class="line"><a id="l01932" name="l01932"></a><span class="lineno"> 1932</span> </div>
-<div class="line"><a id="l01933" name="l01933"></a><span class="lineno"> 1933</span>      <span class="keyword">auto</span> newFor = builder.create&lt;scf::ForOp&gt;(loc, *lb, *ub, *step, initArgs);</div>
-<div class="line"><a id="l01934" name="l01934"></a><span class="lineno"> 1934</span>      <span class="keywordflow">if</span> (Attribute unsignedCmpAttr = forOp-&gt;getAttr(<span class="stringliteral">&quot;unsignedCmp&quot;</span>)) {</div>
-<div class="line"><a id="l01935" name="l01935"></a><span class="lineno"> 1935</span>        newFor-&gt;setAttr(<span class="stringliteral">&quot;unsignedCmp&quot;</span>, unsignedCmpAttr);</div>
+<div class="line"><a id="l01907" name="l01907"></a><span class="lineno"> 1907</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> ifOp = dyn_cast&lt;scf::IfOp&gt;(op)) {</div>
+<div class="line"><a id="l01908" name="l01908"></a><span class="lineno"> 1908</span>      <span class="keyword">auto</span> condition = lookupScalar(ifOp.getCondition(), valueMap, ifOp.getOperation());</div>
+<div class="line"><a id="l01909" name="l01909"></a><span class="lineno"> 1909</span>      <span class="keywordflow">if</span> (failed(condition)) {</div>
+<div class="line"><a id="l01910" name="l01910"></a><span class="lineno"> 1910</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01911" name="l01911"></a><span class="lineno"> 1911</span>      }</div>
+<div class="line"><a id="l01912" name="l01912"></a><span class="lineno"> 1912</span> </div>
+<div class="line"><a id="l01913" name="l01913"></a><span class="lineno"> 1913</span>      SmallVector&lt;size_t&gt; resultLeafCounts;</div>
+<div class="line"><a id="l01914" name="l01914"></a><span class="lineno"> 1914</span>      SmallVector&lt;Type&gt; loweredResultTypes;</div>
+<div class="line"><a id="l01915" name="l01915"></a><span class="lineno"> 1915</span>      <span class="keywordflow">for</span> (Type resultType : ifOp.getResultTypes()) {</div>
+<div class="line"><a id="l01916" name="l01916"></a><span class="lineno"> 1916</span>        <span class="keyword">auto</span> leafTypes = getABILeafTypes(resultType, tables, ifOp.getOperation(), field);</div>
+<div class="line"><a id="l01917" name="l01917"></a><span class="lineno"> 1917</span>        <span class="keyword">auto</span> count = getLeafCount(resultType, tables, ifOp.getOperation(), field);</div>
+<div class="line"><a id="l01918" name="l01918"></a><span class="lineno"> 1918</span>        <span class="keywordflow">if</span> (failed(leafTypes) || failed(count)) {</div>
+<div class="line"><a id="l01919" name="l01919"></a><span class="lineno"> 1919</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01920" name="l01920"></a><span class="lineno"> 1920</span>        }</div>
+<div class="line"><a id="l01921" name="l01921"></a><span class="lineno"> 1921</span>        loweredResultTypes.append(leafTypes-&gt;begin(), leafTypes-&gt;end());</div>
+<div class="line"><a id="l01922" name="l01922"></a><span class="lineno"> 1922</span>        resultLeafCounts.push_back(*count);</div>
+<div class="line"><a id="l01923" name="l01923"></a><span class="lineno"> 1923</span>      }</div>
+<div class="line"><a id="l01924" name="l01924"></a><span class="lineno"> 1924</span> </div>
+<div class="line"><a id="l01925" name="l01925"></a><span class="lineno"> 1925</span>      <span class="keyword">auto</span> newIf = builder.create&lt;scf::IfOp&gt;(</div>
+<div class="line"><a id="l01926" name="l01926"></a><span class="lineno"> 1926</span>          loc, loweredResultTypes, *condition, <span class="keyword">true</span>, !ifOp.getElseRegion().empty()</div>
+<div class="line"><a id="l01927" name="l01927"></a><span class="lineno"> 1927</span>      );</div>
+<div class="line"><a id="l01928" name="l01928"></a><span class="lineno"> 1928</span> </div>
+<div class="line"><a id="l01929" name="l01929"></a><span class="lineno"> 1929</span>      {</div>
+<div class="line"><a id="l01930" name="l01930"></a><span class="lineno"> 1930</span>        OpBuilder thenBuilder = OpBuilder::atBlockBegin(&amp;newIf.getThenRegion().front());</div>
+<div class="line"><a id="l01931" name="l01931"></a><span class="lineno"> 1931</span>        DenseMap&lt;Value, LoweredValue&gt; thenMap(valueMap.begin(), valueMap.end());</div>
+<div class="line"><a id="l01932" name="l01932"></a><span class="lineno"> 1932</span>        <span class="keywordflow">if</span> (failed(lowerBlock(thenBuilder, ifOp.getThenRegion().front(), thenMap))) {</div>
+<div class="line"><a id="l01933" name="l01933"></a><span class="lineno"> 1933</span>          newIf.erase();</div>
+<div class="line"><a id="l01934" name="l01934"></a><span class="lineno"> 1934</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01935" name="l01935"></a><span class="lineno"> 1935</span>        }</div>
 <div class="line"><a id="l01936" name="l01936"></a><span class="lineno"> 1936</span>      }</div>
-<div class="line"><a id="l01937" name="l01937"></a><span class="lineno"> 1937</span>      DenseMap&lt;Value, LoweredValue&gt; bodyMap(valueMap.begin(), valueMap.end());</div>
-<div class="line"><a id="l01938" name="l01938"></a><span class="lineno"> 1938</span>      bodyMap[forOp.getInductionVar()] =</div>
-<div class="line"><a id="l01939" name="l01939"></a><span class="lineno"> 1939</span>          LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};</div>
-<div class="line"><a id="l01940" name="l01940"></a><span class="lineno"> 1940</span>      {</div>
-<div class="line"><a id="l01941" name="l01941"></a><span class="lineno"> 1941</span>        <span class="keyword">auto</span> newForIterArgs = newFor.getRegionIterArgs();</div>
-<div class="line"><a id="l01942" name="l01942"></a><span class="lineno"> 1942</span>        <span class="keywordtype">size_t</span> totalIterArgs = newForIterArgs.size();</div>
-<div class="line"><a id="l01943" name="l01943"></a><span class="lineno"> 1943</span>        <span class="keywordtype">size_t</span> cursor = 0;</div>
-<div class="line"><a id="l01944" name="l01944"></a><span class="lineno"> 1944</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> [oldIterArg, oldType, leafCount] :</div>
-<div class="line"><a id="l01945" name="l01945"></a><span class="lineno"> 1945</span>             llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {</div>
-<div class="line"><a id="l01946" name="l01946"></a><span class="lineno"> 1946</span>          <span class="keywordtype">bool</span> overflow = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l01947" name="l01947"></a><span class="lineno"> 1947</span>          <span class="keywordtype">size_t</span> nextCursor = llvm::SaturatingAdd(cursor, leafCount, &amp;overflow);</div>
-<div class="line"><a id="l01948" name="l01948"></a><span class="lineno"> 1948</span>          <span class="keywordflow">if</span> (overflow || nextCursor &gt; totalIterArgs) {</div>
-<div class="line"><a id="l01949" name="l01949"></a><span class="lineno"> 1949</span>            forOp.emitError(<span class="stringliteral">&quot;leaf count overflow while lowering for-loop region iter args&quot;</span>);</div>
-<div class="line"><a id="l01950" name="l01950"></a><span class="lineno"> 1950</span>            <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01951" name="l01951"></a><span class="lineno"> 1951</span>          }</div>
-<div class="line"><a id="l01952" name="l01952"></a><span class="lineno"> 1952</span>          LoweredValue lowered {oldType, {}};</div>
-<div class="line"><a id="l01953" name="l01953"></a><span class="lineno"> 1953</span>          lowered.leaves.append(</div>
-<div class="line"><a id="l01954" name="l01954"></a><span class="lineno"> 1954</span>              newForIterArgs.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(cursor),</div>
-<div class="line"><a id="l01955" name="l01955"></a><span class="lineno"> 1955</span>              newForIterArgs.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(nextCursor)</div>
-<div class="line"><a id="l01956" name="l01956"></a><span class="lineno"> 1956</span>          );</div>
-<div class="line"><a id="l01957" name="l01957"></a><span class="lineno"> 1957</span>          bodyMap[oldIterArg] = std::move(lowered);</div>
-<div class="line"><a id="l01958" name="l01958"></a><span class="lineno"> 1958</span>          cursor = nextCursor;</div>
-<div class="line"><a id="l01959" name="l01959"></a><span class="lineno"> 1959</span>        }</div>
-<div class="line"><a id="l01960" name="l01960"></a><span class="lineno"> 1960</span>      }</div>
-<div class="line"><a id="l01961" name="l01961"></a><span class="lineno"> 1961</span> </div>
-<div class="line"><a id="l01962" name="l01962"></a><span class="lineno"> 1962</span>      newFor.getBody()-&gt;clear();</div>
-<div class="line"><a id="l01963" name="l01963"></a><span class="lineno"> 1963</span>      OpBuilder bodyBuilder = OpBuilder::atBlockBegin(newFor.getBody());</div>
-<div class="line"><a id="l01964" name="l01964"></a><span class="lineno"> 1964</span>      <span class="keywordflow">if</span> (failed(lowerBlock(bodyBuilder, *forOp.getBody(), bodyMap))) {</div>
-<div class="line"><a id="l01965" name="l01965"></a><span class="lineno"> 1965</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01966" name="l01966"></a><span class="lineno"> 1966</span>      }</div>
-<div class="line"><a id="l01967" name="l01967"></a><span class="lineno"> 1967</span> </div>
-<div class="line"><a id="l01968" name="l01968"></a><span class="lineno"> 1968</span>      {</div>
-<div class="line"><a id="l01969" name="l01969"></a><span class="lineno"> 1969</span>        <span class="keyword">auto</span> newForResults = newFor.getResults();</div>
-<div class="line"><a id="l01970" name="l01970"></a><span class="lineno"> 1970</span>        <span class="keywordtype">size_t</span> totalForResults = newForResults.size();</div>
-<div class="line"><a id="l01971" name="l01971"></a><span class="lineno"> 1971</span>        <span class="keywordtype">size_t</span> cursor = 0;</div>
-<div class="line"><a id="l01972" name="l01972"></a><span class="lineno"> 1972</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> [oldResult, oldType, leafCount] :</div>
-<div class="line"><a id="l01973" name="l01973"></a><span class="lineno"> 1973</span>             llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {</div>
-<div class="line"><a id="l01974" name="l01974"></a><span class="lineno"> 1974</span>          <span class="keywordtype">bool</span> overflow = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l01975" name="l01975"></a><span class="lineno"> 1975</span>          <span class="keywordtype">size_t</span> nextCursor = llvm::SaturatingAdd(cursor, leafCount, &amp;overflow);</div>
-<div class="line"><a id="l01976" name="l01976"></a><span class="lineno"> 1976</span>          <span class="keywordflow">if</span> (overflow || nextCursor &gt; totalForResults) {</div>
-<div class="line"><a id="l01977" name="l01977"></a><span class="lineno"> 1977</span>            forOp.emitError(<span class="stringliteral">&quot;leaf count overflow while lowering for-loop results&quot;</span>);</div>
-<div class="line"><a id="l01978" name="l01978"></a><span class="lineno"> 1978</span>            <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01979" name="l01979"></a><span class="lineno"> 1979</span>          }</div>
-<div class="line"><a id="l01980" name="l01980"></a><span class="lineno"> 1980</span>          LoweredValue lowered {oldType, {}};</div>
-<div class="line"><a id="l01981" name="l01981"></a><span class="lineno"> 1981</span>          lowered.leaves.append(</div>
-<div class="line"><a id="l01982" name="l01982"></a><span class="lineno"> 1982</span>              newForResults.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(cursor),</div>
-<div class="line"><a id="l01983" name="l01983"></a><span class="lineno"> 1983</span>              newForResults.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(nextCursor)</div>
-<div class="line"><a id="l01984" name="l01984"></a><span class="lineno"> 1984</span>          );</div>
-<div class="line"><a id="l01985" name="l01985"></a><span class="lineno"> 1985</span>          valueMap[oldResult] = std::move(lowered);</div>
-<div class="line"><a id="l01986" name="l01986"></a><span class="lineno"> 1986</span>          cursor = nextCursor;</div>
-<div class="line"><a id="l01987" name="l01987"></a><span class="lineno"> 1987</span>        }</div>
-<div class="line"><a id="l01988" name="l01988"></a><span class="lineno"> 1988</span>      }</div>
-<div class="line"><a id="l01989" name="l01989"></a><span class="lineno"> 1989</span>      <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01990" name="l01990"></a><span class="lineno"> 1990</span>    }</div>
-<div class="line"><a id="l01991" name="l01991"></a><span class="lineno"> 1991</span> </div>
-<div class="line"><a id="l01992" name="l01992"></a><span class="lineno"> 1992</span>    op.emitError(<span class="stringliteral">&quot;unsupported operation in execution-engine lowering: &quot;</span>) &lt;&lt; op.getName();</div>
-<div class="line"><a id="l01993" name="l01993"></a><span class="lineno"> 1993</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01994" name="l01994"></a><span class="lineno"> 1994</span>  }</div>
-<div class="line"><a id="l01995" name="l01995"></a><span class="lineno"> 1995</span>};</div>
-<div class="line"><a id="l01996" name="l01996"></a><span class="lineno"> 1996</span></div>
-<div class="line"><a id="l01998" name="l01998"></a><span class="lineno"> 1998</span><span class="keyword">class </span>LowerComputeToCorePass : <span class="keyword">public</span> PassWrapper&lt;LowerComputeToCorePass, OperationPass&lt;ModuleOp&gt;&gt; {</div>
-<div class="line"><a id="l01999" name="l01999"></a><span class="lineno"> 1999</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l02000" name="l02000"></a><span class="lineno"> 2000</span>  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerComputeToCorePass)</div>
-<div class="line"><a id="l02001" name="l02001"></a><span class="lineno"> 2001</span> </div>
-<div class="line"><a id="l02002" name="l02002"></a><span class="lineno"> 2002</span>  <span class="keyword">explicit</span> LowerComputeToCorePass(<span class="keyword">const</span> WitgenOptions &amp;opts) : options(opts) {}</div>
-<div class="line"><a id="l02003" name="l02003"></a><span class="lineno"> 2003</span></div>
-<div class="line"><a id="l02005" name="l02005"></a><span class="lineno"> 2005</span>  StringRef getArgument() const final { <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-lower-compute-to-core&quot;</span>; }</div>
-<div class="line"><a id="l02006" name="l02006"></a><span class="lineno"> 2006</span></div>
-<div class="line"><a id="l02008" name="l02008"></a><span class="lineno"> 2008</span>  StringRef getDescription() const final {</div>
-<div class="line"><a id="l02009" name="l02009"></a><span class="lineno"> 2009</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Lower LLZK compute IR to func/arith/cf/scf/memref&quot;</span>;</div>
-<div class="line"><a id="l02010" name="l02010"></a><span class="lineno"> 2010</span>  }</div>
-<div class="line"><a id="l02011" name="l02011"></a><span class="lineno"> 2011</span></div>
-<div class="line"><a id="l02013" name="l02013"></a><span class="lineno"> 2013</span>  StringRef getName()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;LowerComputeToCorePass&quot;</span>; }</div>
-<div class="line"><a id="l02014" name="l02014"></a><span class="lineno"> 2014</span></div>
-<div class="line"><a id="l02016" name="l02016"></a><span class="lineno"> 2016</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l02017" name="l02017"></a><span class="lineno"> 2017</span>    ModuleOp moduleOp = getOperation();</div>
-<div class="line"><a id="l02018" name="l02018"></a><span class="lineno"> 2018</span>    <span class="keyword">auto</span> field = getModuleField(moduleOp);</div>
-<div class="line"><a id="l02019" name="l02019"></a><span class="lineno"> 2019</span>    <span class="keywordflow">if</span> (failed(field)) {</div>
-<div class="line"><a id="l02020" name="l02020"></a><span class="lineno"> 2020</span>      signalPassFailure();</div>
-<div class="line"><a id="l02021" name="l02021"></a><span class="lineno"> 2021</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02022" name="l02022"></a><span class="lineno"> 2022</span>    }</div>
-<div class="line"><a id="l02023" name="l02023"></a><span class="lineno"> 2023</span> </div>
-<div class="line"><a id="l02024" name="l02024"></a><span class="lineno"> 2024</span>    SymbolTableCollection tables;</div>
-<div class="line"><a id="l02025" name="l02025"></a><span class="lineno"> 2025</span>    SmallVector&lt;function::FuncDefOp&gt; funcs;</div>
-<div class="line"><a id="l02026" name="l02026"></a><span class="lineno"> 2026</span>    moduleOp.walk([&amp;](function::FuncDefOp funcOp) {</div>
-<div class="line"><a id="l02027" name="l02027"></a><span class="lineno"> 2027</span>      <span class="keywordflow">if</span> (funcOp.nameIsConstrain()) {</div>
-<div class="line"><a id="l02028" name="l02028"></a><span class="lineno"> 2028</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02029" name="l02029"></a><span class="lineno"> 2029</span>      }</div>
-<div class="line"><a id="l02030" name="l02030"></a><span class="lineno"> 2030</span>      funcs.push_back(funcOp);</div>
-<div class="line"><a id="l02031" name="l02031"></a><span class="lineno"> 2031</span>    });</div>
-<div class="line"><a id="l02032" name="l02032"></a><span class="lineno"> 2032</span> </div>
-<div class="line"><a id="l02033" name="l02033"></a><span class="lineno"> 2033</span>    BodyLowerer lowerer(moduleOp, tables, field-&gt;get(), options);</div>
-<div class="line"><a id="l02034" name="l02034"></a><span class="lineno"> 2034</span>    <span class="keywordflow">for</span> (function::FuncDefOp funcOp : funcs) {</div>
-<div class="line"><a id="l02035" name="l02035"></a><span class="lineno"> 2035</span>      <span class="keywordflow">if</span> (failed(lowerer.lowerFunction(funcOp))) {</div>
-<div class="line"><a id="l02036" name="l02036"></a><span class="lineno"> 2036</span>        signalPassFailure();</div>
-<div class="line"><a id="l02037" name="l02037"></a><span class="lineno"> 2037</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02038" name="l02038"></a><span class="lineno"> 2038</span>      }</div>
-<div class="line"><a id="l02039" name="l02039"></a><span class="lineno"> 2039</span>    }</div>
-<div class="line"><a id="l02040" name="l02040"></a><span class="lineno"> 2040</span>  }</div>
-<div class="line"><a id="l02041" name="l02041"></a><span class="lineno"> 2041</span> </div>
-<div class="line"><a id="l02042" name="l02042"></a><span class="lineno"> 2042</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l02043" name="l02043"></a><span class="lineno"> 2043</span>  WitgenOptions options;</div>
-<div class="line"><a id="l02044" name="l02044"></a><span class="lineno"> 2044</span>};</div>
-<div class="line"><a id="l02045" name="l02045"></a><span class="lineno"> 2045</span></div>
-<div class="line"><a id="l02047" name="l02047"></a><span class="lineno"> 2047</span><span class="keyword">class </span>CreateWitgenEntryPass : <span class="keyword">public</span> PassWrapper&lt;CreateWitgenEntryPass, OperationPass&lt;ModuleOp&gt;&gt; {</div>
-<div class="line"><a id="l02048" name="l02048"></a><span class="lineno"> 2048</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l02049" name="l02049"></a><span class="lineno"> 2049</span>  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)</div>
-<div class="line"><a id="l02050" name="l02050"></a><span class="lineno"> 2050</span> </div>
-<div class="line"><a id="l02051" name="l02051"></a><span class="lineno"> 2051</span>  </div>
-<div class="line"><a id="l02052" name="l02052"></a><span class="lineno"> 2052</span>  <span class="keyword">explicit</span> CreateWitgenEntryPass(<span class="keywordtype">bool</span> fullWitness = <span class="keyword">false</span>) : emitFullWitness(fullWitness) {}</div>
-<div class="line"><a id="l02053" name="l02053"></a><span class="lineno"> 2053</span></div>
-<div class="line"><a id="l02055" name="l02055"></a><span class="lineno"> 2055</span>  StringRef getArgument() const final { <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-create-witgen-entry&quot;</span>; }</div>
+<div class="line"><a id="l01937" name="l01937"></a><span class="lineno"> 1937</span>      <span class="keywordflow">if</span> (!ifOp.getElseRegion().empty()) {</div>
+<div class="line"><a id="l01938" name="l01938"></a><span class="lineno"> 1938</span>        OpBuilder elseBuilder = OpBuilder::atBlockBegin(&amp;newIf.getElseRegion().front());</div>
+<div class="line"><a id="l01939" name="l01939"></a><span class="lineno"> 1939</span>        DenseMap&lt;Value, LoweredValue&gt; elseMap(valueMap.begin(), valueMap.end());</div>
+<div class="line"><a id="l01940" name="l01940"></a><span class="lineno"> 1940</span>        <span class="keywordflow">if</span> (failed(lowerBlock(elseBuilder, ifOp.getElseRegion().front(), elseMap))) {</div>
+<div class="line"><a id="l01941" name="l01941"></a><span class="lineno"> 1941</span>          newIf.erase();</div>
+<div class="line"><a id="l01942" name="l01942"></a><span class="lineno"> 1942</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01943" name="l01943"></a><span class="lineno"> 1943</span>        }</div>
+<div class="line"><a id="l01944" name="l01944"></a><span class="lineno"> 1944</span>      }</div>
+<div class="line"><a id="l01945" name="l01945"></a><span class="lineno"> 1945</span>      <span class="keyword">auto</span> newIfResults = newIf.getResults();</div>
+<div class="line"><a id="l01946" name="l01946"></a><span class="lineno"> 1946</span>      <span class="keywordtype">size_t</span> totalResults = newIfResults.size();</div>
+<div class="line"><a id="l01947" name="l01947"></a><span class="lineno"> 1947</span>      <span class="keywordtype">size_t</span> cursor = 0;</div>
+<div class="line"><a id="l01948" name="l01948"></a><span class="lineno"> 1948</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [oldResult, oldType, leafCount] :</div>
+<div class="line"><a id="l01949" name="l01949"></a><span class="lineno"> 1949</span>           llvm::zip(ifOp.getResults(), ifOp.getResultTypes(), resultLeafCounts)) {</div>
+<div class="line"><a id="l01950" name="l01950"></a><span class="lineno"> 1950</span>        <span class="keywordtype">bool</span> overflow = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l01951" name="l01951"></a><span class="lineno"> 1951</span>        <span class="keywordtype">size_t</span> nextCursor = llvm::SaturatingAdd(cursor, leafCount, &amp;overflow);</div>
+<div class="line"><a id="l01952" name="l01952"></a><span class="lineno"> 1952</span>        <span class="keywordflow">if</span> (overflow || nextCursor &gt; totalResults) {</div>
+<div class="line"><a id="l01953" name="l01953"></a><span class="lineno"> 1953</span>          ifOp.emitError(<span class="stringliteral">&quot;leaf count overflow while lowering if-op results&quot;</span>);</div>
+<div class="line"><a id="l01954" name="l01954"></a><span class="lineno"> 1954</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01955" name="l01955"></a><span class="lineno"> 1955</span>        }</div>
+<div class="line"><a id="l01956" name="l01956"></a><span class="lineno"> 1956</span>        LoweredValue lowered {oldType, {}};</div>
+<div class="line"><a id="l01957" name="l01957"></a><span class="lineno"> 1957</span>        lowered.leaves.append(</div>
+<div class="line"><a id="l01958" name="l01958"></a><span class="lineno"> 1958</span>            newIfResults.begin() + <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;ptrdiff_t&gt;</a>(cursor),</div>
+<div class="line"><a id="l01959" name="l01959"></a><span class="lineno"> 1959</span>            newIfResults.begin() + <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;ptrdiff_t&gt;</a>(nextCursor)</div>
+<div class="line"><a id="l01960" name="l01960"></a><span class="lineno"> 1960</span>        );</div>
+<div class="line"><a id="l01961" name="l01961"></a><span class="lineno"> 1961</span>        valueMap[oldResult] = std::move(lowered);</div>
+<div class="line"><a id="l01962" name="l01962"></a><span class="lineno"> 1962</span>        cursor = nextCursor;</div>
+<div class="line"><a id="l01963" name="l01963"></a><span class="lineno"> 1963</span>      }</div>
+<div class="line"><a id="l01964" name="l01964"></a><span class="lineno"> 1964</span>      <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01965" name="l01965"></a><span class="lineno"> 1965</span>    }</div>
+<div class="line"><a id="l01966" name="l01966"></a><span class="lineno"> 1966</span> </div>
+<div class="line"><a id="l01967" name="l01967"></a><span class="lineno"> 1967</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> forOp = dyn_cast&lt;scf::ForOp&gt;(op)) {</div>
+<div class="line"><a id="l01968" name="l01968"></a><span class="lineno"> 1968</span>      <span class="keyword">auto</span> lb = lookupScalar(forOp.getLowerBound(), valueMap, forOp.getOperation());</div>
+<div class="line"><a id="l01969" name="l01969"></a><span class="lineno"> 1969</span>      <span class="keyword">auto</span> ub = lookupScalar(forOp.getUpperBound(), valueMap, forOp.getOperation());</div>
+<div class="line"><a id="l01970" name="l01970"></a><span class="lineno"> 1970</span>      <span class="keyword">auto</span> step = lookupScalar(forOp.getStep(), valueMap, forOp.getOperation());</div>
+<div class="line"><a id="l01971" name="l01971"></a><span class="lineno"> 1971</span>      <span class="keywordflow">if</span> (failed(lb) || failed(ub) || failed(step)) {</div>
+<div class="line"><a id="l01972" name="l01972"></a><span class="lineno"> 1972</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01973" name="l01973"></a><span class="lineno"> 1973</span>      }</div>
+<div class="line"><a id="l01974" name="l01974"></a><span class="lineno"> 1974</span> </div>
+<div class="line"><a id="l01975" name="l01975"></a><span class="lineno"> 1975</span>      SmallVector&lt;Value&gt; initArgs;</div>
+<div class="line"><a id="l01976" name="l01976"></a><span class="lineno"> 1976</span>      SmallVector&lt;size_t&gt; initLeafCounts;</div>
+<div class="line"><a id="l01977" name="l01977"></a><span class="lineno"> 1977</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> [init, resultType] : llvm::zip(forOp.getInitArgs(), forOp.getResultTypes())) {</div>
+<div class="line"><a id="l01978" name="l01978"></a><span class="lineno"> 1978</span>        <span class="keyword">auto</span> lowered = lookup(init, valueMap, forOp.getOperation());</div>
+<div class="line"><a id="l01979" name="l01979"></a><span class="lineno"> 1979</span>        <span class="keyword">auto</span> leafTypes = getABILeafTypes(resultType, tables, forOp.getOperation(), field);</div>
+<div class="line"><a id="l01980" name="l01980"></a><span class="lineno"> 1980</span>        <span class="keywordflow">if</span> (failed(lowered) || failed(leafTypes) ||</div>
+<div class="line"><a id="l01981" name="l01981"></a><span class="lineno"> 1981</span>            failed(appendFlatLeavesToTypes(</div>
+<div class="line"><a id="l01982" name="l01982"></a><span class="lineno"> 1982</span>                builder, loc, *lowered, *leafTypes, initArgs, forOp.getOperation()</div>
+<div class="line"><a id="l01983" name="l01983"></a><span class="lineno"> 1983</span>            ))) {</div>
+<div class="line"><a id="l01984" name="l01984"></a><span class="lineno"> 1984</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01985" name="l01985"></a><span class="lineno"> 1985</span>        }</div>
+<div class="line"><a id="l01986" name="l01986"></a><span class="lineno"> 1986</span>        <span class="keyword">auto</span> count = getLeafCount(resultType, tables, forOp.getOperation(), field);</div>
+<div class="line"><a id="l01987" name="l01987"></a><span class="lineno"> 1987</span>        <span class="keywordflow">if</span> (failed(count)) {</div>
+<div class="line"><a id="l01988" name="l01988"></a><span class="lineno"> 1988</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01989" name="l01989"></a><span class="lineno"> 1989</span>        }</div>
+<div class="line"><a id="l01990" name="l01990"></a><span class="lineno"> 1990</span>        initLeafCounts.push_back(*count);</div>
+<div class="line"><a id="l01991" name="l01991"></a><span class="lineno"> 1991</span>      }</div>
+<div class="line"><a id="l01992" name="l01992"></a><span class="lineno"> 1992</span> </div>
+<div class="line"><a id="l01993" name="l01993"></a><span class="lineno"> 1993</span>      <span class="keyword">auto</span> newFor = builder.create&lt;scf::ForOp&gt;(loc, *lb, *ub, *step, initArgs);</div>
+<div class="line"><a id="l01994" name="l01994"></a><span class="lineno"> 1994</span>      <span class="keywordflow">if</span> (Attribute unsignedCmpAttr = forOp-&gt;getAttr(<span class="stringliteral">&quot;unsignedCmp&quot;</span>)) {</div>
+<div class="line"><a id="l01995" name="l01995"></a><span class="lineno"> 1995</span>        newFor-&gt;setAttr(<span class="stringliteral">&quot;unsignedCmp&quot;</span>, unsignedCmpAttr);</div>
+<div class="line"><a id="l01996" name="l01996"></a><span class="lineno"> 1996</span>      }</div>
+<div class="line"><a id="l01997" name="l01997"></a><span class="lineno"> 1997</span>      DenseMap&lt;Value, LoweredValue&gt; bodyMap(valueMap.begin(), valueMap.end());</div>
+<div class="line"><a id="l01998" name="l01998"></a><span class="lineno"> 1998</span>      bodyMap[forOp.getInductionVar()] =</div>
+<div class="line"><a id="l01999" name="l01999"></a><span class="lineno"> 1999</span>          LoweredValue {forOp.getInductionVar().getType(), {newFor.getInductionVar()}};</div>
+<div class="line"><a id="l02000" name="l02000"></a><span class="lineno"> 2000</span>      {</div>
+<div class="line"><a id="l02001" name="l02001"></a><span class="lineno"> 2001</span>        <span class="keyword">auto</span> newForIterArgs = newFor.getRegionIterArgs();</div>
+<div class="line"><a id="l02002" name="l02002"></a><span class="lineno"> 2002</span>        <span class="keywordtype">size_t</span> totalIterArgs = newForIterArgs.size();</div>
+<div class="line"><a id="l02003" name="l02003"></a><span class="lineno"> 2003</span>        <span class="keywordtype">size_t</span> cursor = 0;</div>
+<div class="line"><a id="l02004" name="l02004"></a><span class="lineno"> 2004</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> [oldIterArg, oldType, leafCount] :</div>
+<div class="line"><a id="l02005" name="l02005"></a><span class="lineno"> 2005</span>             llvm::zip(forOp.getRegionIterArgs(), forOp.getResultTypes(), initLeafCounts)) {</div>
+<div class="line"><a id="l02006" name="l02006"></a><span class="lineno"> 2006</span>          <span class="keywordtype">bool</span> overflow = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l02007" name="l02007"></a><span class="lineno"> 2007</span>          <span class="keywordtype">size_t</span> nextCursor = llvm::SaturatingAdd(cursor, leafCount, &amp;overflow);</div>
+<div class="line"><a id="l02008" name="l02008"></a><span class="lineno"> 2008</span>          <span class="keywordflow">if</span> (overflow || nextCursor &gt; totalIterArgs) {</div>
+<div class="line"><a id="l02009" name="l02009"></a><span class="lineno"> 2009</span>            forOp.emitError(<span class="stringliteral">&quot;leaf count overflow while lowering for-loop region iter args&quot;</span>);</div>
+<div class="line"><a id="l02010" name="l02010"></a><span class="lineno"> 2010</span>            <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02011" name="l02011"></a><span class="lineno"> 2011</span>          }</div>
+<div class="line"><a id="l02012" name="l02012"></a><span class="lineno"> 2012</span>          LoweredValue lowered {oldType, {}};</div>
+<div class="line"><a id="l02013" name="l02013"></a><span class="lineno"> 2013</span>          lowered.leaves.append(</div>
+<div class="line"><a id="l02014" name="l02014"></a><span class="lineno"> 2014</span>              newForIterArgs.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(cursor),</div>
+<div class="line"><a id="l02015" name="l02015"></a><span class="lineno"> 2015</span>              newForIterArgs.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(nextCursor)</div>
+<div class="line"><a id="l02016" name="l02016"></a><span class="lineno"> 2016</span>          );</div>
+<div class="line"><a id="l02017" name="l02017"></a><span class="lineno"> 2017</span>          bodyMap[oldIterArg] = std::move(lowered);</div>
+<div class="line"><a id="l02018" name="l02018"></a><span class="lineno"> 2018</span>          cursor = nextCursor;</div>
+<div class="line"><a id="l02019" name="l02019"></a><span class="lineno"> 2019</span>        }</div>
+<div class="line"><a id="l02020" name="l02020"></a><span class="lineno"> 2020</span>      }</div>
+<div class="line"><a id="l02021" name="l02021"></a><span class="lineno"> 2021</span> </div>
+<div class="line"><a id="l02022" name="l02022"></a><span class="lineno"> 2022</span>      newFor.getBody()-&gt;clear();</div>
+<div class="line"><a id="l02023" name="l02023"></a><span class="lineno"> 2023</span>      OpBuilder bodyBuilder = OpBuilder::atBlockBegin(newFor.getBody());</div>
+<div class="line"><a id="l02024" name="l02024"></a><span class="lineno"> 2024</span>      <span class="keywordflow">if</span> (failed(lowerBlock(bodyBuilder, *forOp.getBody(), bodyMap))) {</div>
+<div class="line"><a id="l02025" name="l02025"></a><span class="lineno"> 2025</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02026" name="l02026"></a><span class="lineno"> 2026</span>      }</div>
+<div class="line"><a id="l02027" name="l02027"></a><span class="lineno"> 2027</span> </div>
+<div class="line"><a id="l02028" name="l02028"></a><span class="lineno"> 2028</span>      {</div>
+<div class="line"><a id="l02029" name="l02029"></a><span class="lineno"> 2029</span>        <span class="keyword">auto</span> newForResults = newFor.getResults();</div>
+<div class="line"><a id="l02030" name="l02030"></a><span class="lineno"> 2030</span>        <span class="keywordtype">size_t</span> totalForResults = newForResults.size();</div>
+<div class="line"><a id="l02031" name="l02031"></a><span class="lineno"> 2031</span>        <span class="keywordtype">size_t</span> cursor = 0;</div>
+<div class="line"><a id="l02032" name="l02032"></a><span class="lineno"> 2032</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> [oldResult, oldType, leafCount] :</div>
+<div class="line"><a id="l02033" name="l02033"></a><span class="lineno"> 2033</span>             llvm::zip(forOp.getResults(), forOp.getResultTypes(), initLeafCounts)) {</div>
+<div class="line"><a id="l02034" name="l02034"></a><span class="lineno"> 2034</span>          <span class="keywordtype">bool</span> overflow = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l02035" name="l02035"></a><span class="lineno"> 2035</span>          <span class="keywordtype">size_t</span> nextCursor = llvm::SaturatingAdd(cursor, leafCount, &amp;overflow);</div>
+<div class="line"><a id="l02036" name="l02036"></a><span class="lineno"> 2036</span>          <span class="keywordflow">if</span> (overflow || nextCursor &gt; totalForResults) {</div>
+<div class="line"><a id="l02037" name="l02037"></a><span class="lineno"> 2037</span>            forOp.emitError(<span class="stringliteral">&quot;leaf count overflow while lowering for-loop results&quot;</span>);</div>
+<div class="line"><a id="l02038" name="l02038"></a><span class="lineno"> 2038</span>            <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02039" name="l02039"></a><span class="lineno"> 2039</span>          }</div>
+<div class="line"><a id="l02040" name="l02040"></a><span class="lineno"> 2040</span>          LoweredValue lowered {oldType, {}};</div>
+<div class="line"><a id="l02041" name="l02041"></a><span class="lineno"> 2041</span>          lowered.leaves.append(</div>
+<div class="line"><a id="l02042" name="l02042"></a><span class="lineno"> 2042</span>              newForResults.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(cursor),</div>
+<div class="line"><a id="l02043" name="l02043"></a><span class="lineno"> 2043</span>              newForResults.begin() + <span class="keyword">static_cast&lt;</span>ptrdiff_t<span class="keyword">&gt;</span>(nextCursor)</div>
+<div class="line"><a id="l02044" name="l02044"></a><span class="lineno"> 2044</span>          );</div>
+<div class="line"><a id="l02045" name="l02045"></a><span class="lineno"> 2045</span>          valueMap[oldResult] = std::move(lowered);</div>
+<div class="line"><a id="l02046" name="l02046"></a><span class="lineno"> 2046</span>          cursor = nextCursor;</div>
+<div class="line"><a id="l02047" name="l02047"></a><span class="lineno"> 2047</span>        }</div>
+<div class="line"><a id="l02048" name="l02048"></a><span class="lineno"> 2048</span>      }</div>
+<div class="line"><a id="l02049" name="l02049"></a><span class="lineno"> 2049</span>      <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l02050" name="l02050"></a><span class="lineno"> 2050</span>    }</div>
+<div class="line"><a id="l02051" name="l02051"></a><span class="lineno"> 2051</span> </div>
+<div class="line"><a id="l02052" name="l02052"></a><span class="lineno"> 2052</span>    op.emitError(<span class="stringliteral">&quot;unsupported operation in execution-engine lowering: &quot;</span>) &lt;&lt; op.getName();</div>
+<div class="line"><a id="l02053" name="l02053"></a><span class="lineno"> 2053</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02054" name="l02054"></a><span class="lineno"> 2054</span>  }</div>
+<div class="line"><a id="l02055" name="l02055"></a><span class="lineno"> 2055</span>};</div>
 <div class="line"><a id="l02056" name="l02056"></a><span class="lineno"> 2056</span></div>
-<div class="line"><a id="l02058" name="l02058"></a><span class="lineno"> 2058</span>  StringRef getDescription() const final {</div>
-<div class="line"><a id="l02059" name="l02059"></a><span class="lineno"> 2059</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Create the llzk-witgen execution-engine entry wrapper&quot;</span>;</div>
-<div class="line"><a id="l02060" name="l02060"></a><span class="lineno"> 2060</span>  }</div>
-<div class="line"><a id="l02061" name="l02061"></a><span class="lineno"> 2061</span></div>
-<div class="line"><a id="l02063" name="l02063"></a><span class="lineno"> 2063</span>  StringRef getName()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;CreateWitgenEntryPass&quot;</span>; }</div>
-<div class="line"><a id="l02064" name="l02064"></a><span class="lineno"> 2064</span></div>
-<div class="line"><a id="l02066" name="l02066"></a><span class="lineno"> 2066</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l02067" name="l02067"></a><span class="lineno"> 2067</span>    ModuleOp moduleOp = getOperation();</div>
-<div class="line"><a id="l02068" name="l02068"></a><span class="lineno"> 2068</span>    <span class="keyword">auto</span> field = getModuleField(moduleOp);</div>
-<div class="line"><a id="l02069" name="l02069"></a><span class="lineno"> 2069</span>    <span class="keywordflow">if</span> (failed(field)) {</div>
-<div class="line"><a id="l02070" name="l02070"></a><span class="lineno"> 2070</span>      signalPassFailure();</div>
-<div class="line"><a id="l02071" name="l02071"></a><span class="lineno"> 2071</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02072" name="l02072"></a><span class="lineno"> 2072</span>    }</div>
-<div class="line"><a id="l02073" name="l02073"></a><span class="lineno"> 2073</span> </div>
-<div class="line"><a id="l02074" name="l02074"></a><span class="lineno"> 2074</span>    SymbolTableCollection tables;</div>
-<div class="line"><a id="l02075" name="l02075"></a><span class="lineno"> 2075</span>    <span class="keyword">auto</span> mainDef = <a class="code hl_function" href="namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f">getMainInstanceDef</a>(tables, moduleOp.getOperation());</div>
-<div class="line"><a id="l02076" name="l02076"></a><span class="lineno"> 2076</span>    <span class="keywordflow">if</span> (failed(mainDef) || !mainDef.value()) {</div>
-<div class="line"><a id="l02077" name="l02077"></a><span class="lineno"> 2077</span>      moduleOp.emitError(<span class="stringliteral">&quot;module is missing a concrete llzk.main struct&quot;</span>);</div>
-<div class="line"><a id="l02078" name="l02078"></a><span class="lineno"> 2078</span>      signalPassFailure();</div>
-<div class="line"><a id="l02079" name="l02079"></a><span class="lineno"> 2079</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02080" name="l02080"></a><span class="lineno"> 2080</span>    }</div>
-<div class="line"><a id="l02081" name="l02081"></a><span class="lineno"> 2081</span>    function::FuncDefOp computeFunc = mainDef-&gt;get().getComputeFuncOp();</div>
-<div class="line"><a id="l02082" name="l02082"></a><span class="lineno"> 2082</span>    <span class="keywordflow">if</span> (!computeFunc) {</div>
-<div class="line"><a id="l02083" name="l02083"></a><span class="lineno"> 2083</span>      moduleOp.emitError(<span class="stringliteral">&quot;main struct is missing @compute&quot;</span>);</div>
-<div class="line"><a id="l02084" name="l02084"></a><span class="lineno"> 2084</span>      signalPassFailure();</div>
-<div class="line"><a id="l02085" name="l02085"></a><span class="lineno"> 2085</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02086" name="l02086"></a><span class="lineno"> 2086</span>    }</div>
-<div class="line"><a id="l02087" name="l02087"></a><span class="lineno"> 2087</span> </div>
-<div class="line"><a id="l02088" name="l02088"></a><span class="lineno"> 2088</span>    <span class="keyword">auto</span> outputs = <a class="code hl_function" href="namespacellzk_1_1witgen.html#a2e561645b067a0b8f299c6ab3b4b83a1">collectOutputBindings</a>(</div>
-<div class="line"><a id="l02089" name="l02089"></a><span class="lineno"> 2089</span>        mainDef-&gt;get(), tables, computeFunc.getOperation(),</div>
-<div class="line"><a id="l02090" name="l02090"></a><span class="lineno"> 2090</span>        emitFullWitness ? OutputScope::FullWitness : OutputScope::Public</div>
-<div class="line"><a id="l02091" name="l02091"></a><span class="lineno"> 2091</span>    );</div>
-<div class="line"><a id="l02092" name="l02092"></a><span class="lineno"> 2092</span>    <span class="keywordflow">if</span> (failed(outputs)) {</div>
-<div class="line"><a id="l02093" name="l02093"></a><span class="lineno"> 2093</span>      signalPassFailure();</div>
-<div class="line"><a id="l02094" name="l02094"></a><span class="lineno"> 2094</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02095" name="l02095"></a><span class="lineno"> 2095</span>    }</div>
-<div class="line"><a id="l02096" name="l02096"></a><span class="lineno"> 2096</span> </div>
-<div class="line"><a id="l02097" name="l02097"></a><span class="lineno"> 2097</span>    OpBuilder builder(moduleOp.getContext());</div>
-<div class="line"><a id="l02098" name="l02098"></a><span class="lineno"> 2098</span>    builder.setInsertionPointToEnd(moduleOp.getBody());</div>
-<div class="line"><a id="l02099" name="l02099"></a><span class="lineno"> 2099</span> </div>
-<div class="line"><a id="l02100" name="l02100"></a><span class="lineno"> 2100</span>    SmallVector&lt;Type&gt; wrapperArgs;</div>
-<div class="line"><a id="l02101" name="l02101"></a><span class="lineno"> 2101</span>    <span class="keywordflow">for</span> (Type argType : computeFunc.getArgumentTypes()) {</div>
-<div class="line"><a id="l02102" name="l02102"></a><span class="lineno"> 2102</span>      SmallVector&lt;Type&gt; loweredLeafTypes;</div>
-<div class="line"><a id="l02103" name="l02103"></a><span class="lineno"> 2103</span>      <span class="keywordflow">if</span> (failed(flattenTypeLeaves(</div>
-<div class="line"><a id="l02104" name="l02104"></a><span class="lineno"> 2104</span>              argType, tables, computeFunc.getOperation(), field-&gt;get(), loweredLeafTypes, {}, <span class="keyword">true</span></div>
-<div class="line"><a id="l02105" name="l02105"></a><span class="lineno"> 2105</span>          ))) {</div>
-<div class="line"><a id="l02106" name="l02106"></a><span class="lineno"> 2106</span>        signalPassFailure();</div>
-<div class="line"><a id="l02107" name="l02107"></a><span class="lineno"> 2107</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02108" name="l02108"></a><span class="lineno"> 2108</span>      }</div>
-<div class="line"><a id="l02109" name="l02109"></a><span class="lineno"> 2109</span>      <span class="keywordflow">if</span> (loweredLeafTypes.size() != 1 || !isa&lt;MemRefType&gt;(loweredLeafTypes.front())) {</div>
-<div class="line"><a id="l02110" name="l02110"></a><span class="lineno"> 2110</span>        computeFunc.emitError(</div>
-<div class="line"><a id="l02111" name="l02111"></a><span class="lineno"> 2111</span>            <span class="stringliteral">&quot;execution-engine wrapper only supports felt and array&lt;...xfelt&gt; inputs&quot;</span></div>
-<div class="line"><a id="l02112" name="l02112"></a><span class="lineno"> 2112</span>        );</div>
-<div class="line"><a id="l02113" name="l02113"></a><span class="lineno"> 2113</span>        signalPassFailure();</div>
-<div class="line"><a id="l02114" name="l02114"></a><span class="lineno"> 2114</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02115" name="l02115"></a><span class="lineno"> 2115</span>      }</div>
-<div class="line"><a id="l02116" name="l02116"></a><span class="lineno"> 2116</span>      wrapperArgs.push_back(loweredLeafTypes.front());</div>
-<div class="line"><a id="l02117" name="l02117"></a><span class="lineno"> 2117</span>    }</div>
-<div class="line"><a id="l02118" name="l02118"></a><span class="lineno"> 2118</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> OutputBinding &amp;output : *outputs) {</div>
-<div class="line"><a id="l02119" name="l02119"></a><span class="lineno"> 2119</span>      SmallVector&lt;Type&gt; loweredLeafTypes;</div>
-<div class="line"><a id="l02120" name="l02120"></a><span class="lineno"> 2120</span>      <span class="keywordflow">if</span> (failed(flattenTypeLeaves(</div>
-<div class="line"><a id="l02121" name="l02121"></a><span class="lineno"> 2121</span>              output.type, tables, computeFunc.getOperation(), field-&gt;get(), loweredLeafTypes, {},</div>
-<div class="line"><a id="l02122" name="l02122"></a><span class="lineno"> 2122</span>              <span class="keyword">true</span></div>
-<div class="line"><a id="l02123" name="l02123"></a><span class="lineno"> 2123</span>          ))) {</div>
-<div class="line"><a id="l02124" name="l02124"></a><span class="lineno"> 2124</span>        signalPassFailure();</div>
-<div class="line"><a id="l02125" name="l02125"></a><span class="lineno"> 2125</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02126" name="l02126"></a><span class="lineno"> 2126</span>      }</div>
-<div class="line"><a id="l02127" name="l02127"></a><span class="lineno"> 2127</span>      <span class="keywordflow">if</span> (loweredLeafTypes.size() != 1 || !isa&lt;MemRefType&gt;(loweredLeafTypes.front())) {</div>
-<div class="line"><a id="l02128" name="l02128"></a><span class="lineno"> 2128</span>        computeFunc.emitError(</div>
-<div class="line"><a id="l02129" name="l02129"></a><span class="lineno"> 2129</span>            <span class="stringliteral">&quot;execution-engine wrapper only supports felt and array&lt;...xfelt&gt; outputs&quot;</span></div>
-<div class="line"><a id="l02130" name="l02130"></a><span class="lineno"> 2130</span>        );</div>
-<div class="line"><a id="l02131" name="l02131"></a><span class="lineno"> 2131</span>        signalPassFailure();</div>
-<div class="line"><a id="l02132" name="l02132"></a><span class="lineno"> 2132</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02133" name="l02133"></a><span class="lineno"> 2133</span>      }</div>
-<div class="line"><a id="l02134" name="l02134"></a><span class="lineno"> 2134</span>      wrapperArgs.push_back(loweredLeafTypes.front());</div>
-<div class="line"><a id="l02135" name="l02135"></a><span class="lineno"> 2135</span>    }</div>
-<div class="line"><a id="l02136" name="l02136"></a><span class="lineno"> 2136</span> </div>
-<div class="line"><a id="l02137" name="l02137"></a><span class="lineno"> 2137</span>    <span class="keyword">auto</span> wrapper = builder.create&lt;func::FuncOp&gt;(</div>
-<div class="line"><a id="l02138" name="l02138"></a><span class="lineno"> 2138</span>        computeFunc.getLoc(), <span class="stringliteral">&quot;__llzk_witgen_main&quot;</span>,</div>
-<div class="line"><a id="l02139" name="l02139"></a><span class="lineno"> 2139</span>        builder.getFunctionType(wrapperArgs, TypeRange {})</div>
-<div class="line"><a id="l02140" name="l02140"></a><span class="lineno"> 2140</span>    );</div>
-<div class="line"><a id="l02141" name="l02141"></a><span class="lineno"> 2141</span>    wrapper-&gt;setAttr(LLVM::LLVMDialect::getEmitCWrapperAttrName(), builder.getUnitAttr());</div>
-<div class="line"><a id="l02142" name="l02142"></a><span class="lineno"> 2142</span>    Block *entry = wrapper.addEntryBlock();</div>
-<div class="line"><a id="l02143" name="l02143"></a><span class="lineno"> 2143</span>    builder.setInsertionPointToStart(entry);</div>
-<div class="line"><a id="l02144" name="l02144"></a><span class="lineno"> 2144</span> </div>
-<div class="line"><a id="l02145" name="l02145"></a><span class="lineno"> 2145</span>    SmallVector&lt;Type&gt; loweredMainResultTypes;</div>
-<div class="line"><a id="l02146" name="l02146"></a><span class="lineno"> 2146</span>    <span class="keywordflow">for</span> (Type resultType : computeFunc.getResultTypes()) {</div>
-<div class="line"><a id="l02147" name="l02147"></a><span class="lineno"> 2147</span>      <span class="keywordflow">if</span> (failed(flattenABILeafTypes(</div>
-<div class="line"><a id="l02148" name="l02148"></a><span class="lineno"> 2148</span>              resultType, tables, computeFunc.getOperation(), field-&gt;get(), loweredMainResultTypes</div>
-<div class="line"><a id="l02149" name="l02149"></a><span class="lineno"> 2149</span>          ))) {</div>
-<div class="line"><a id="l02150" name="l02150"></a><span class="lineno"> 2150</span>        signalPassFailure();</div>
-<div class="line"><a id="l02151" name="l02151"></a><span class="lineno"> 2151</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02152" name="l02152"></a><span class="lineno"> 2152</span>      }</div>
-<div class="line"><a id="l02153" name="l02153"></a><span class="lineno"> 2153</span>    }</div>
-<div class="line"><a id="l02154" name="l02154"></a><span class="lineno"> 2154</span> </div>
-<div class="line"><a id="l02155" name="l02155"></a><span class="lineno"> 2155</span>    SmallVector&lt;Value&gt; mainArgs;</div>
-<div class="line"><a id="l02156" name="l02156"></a><span class="lineno"> 2156</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [argType, wrapperArg] : llvm::zip(</div>
-<div class="line"><a id="l02157" name="l02157"></a><span class="lineno"> 2157</span>             computeFunc.getArgumentTypes(),</div>
-<div class="line"><a id="l02158" name="l02158"></a><span class="lineno"> 2158</span>             entry-&gt;getArguments().take_front(computeFunc.getNumArguments())</div>
-<div class="line"><a id="l02159" name="l02159"></a><span class="lineno"> 2159</span>         )) {</div>
-<div class="line"><a id="l02160" name="l02160"></a><span class="lineno"> 2160</span>      <span class="keywordflow">if</span> (isScalarType(argType)) {</div>
-<div class="line"><a id="l02161" name="l02161"></a><span class="lineno"> 2161</span>        mainArgs.push_back(loadStorageScalar(builder, computeFunc.getLoc(), wrapperArg));</div>
-<div class="line"><a id="l02162" name="l02162"></a><span class="lineno"> 2162</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l02163" name="l02163"></a><span class="lineno"> 2163</span>        <span class="keyword">auto</span> abiLeafTypes =</div>
-<div class="line"><a id="l02164" name="l02164"></a><span class="lineno"> 2164</span>            getABILeafTypes(argType, tables, computeFunc.getOperation(), field-&gt;get());</div>
-<div class="line"><a id="l02165" name="l02165"></a><span class="lineno"> 2165</span>        <span class="keywordflow">if</span> (failed(abiLeafTypes) || abiLeafTypes-&gt;size() != 1 ||</div>
-<div class="line"><a id="l02166" name="l02166"></a><span class="lineno"> 2166</span>            !isa&lt;MemRefType&gt;(abiLeafTypes-&gt;front())) {</div>
-<div class="line"><a id="l02167" name="l02167"></a><span class="lineno"> 2167</span>          computeFunc.emitError(<span class="stringliteral">&quot;failed to derive execution-engine ABI type for main input&quot;</span>);</div>
-<div class="line"><a id="l02168" name="l02168"></a><span class="lineno"> 2168</span>          signalPassFailure();</div>
-<div class="line"><a id="l02169" name="l02169"></a><span class="lineno"> 2169</span>          <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02170" name="l02170"></a><span class="lineno"> 2170</span>        }</div>
-<div class="line"><a id="l02171" name="l02171"></a><span class="lineno"> 2171</span>        <span class="keywordflow">if</span> (wrapperArg.getType() == abiLeafTypes-&gt;front()) {</div>
-<div class="line"><a id="l02172" name="l02172"></a><span class="lineno"> 2172</span>          mainArgs.push_back(wrapperArg);</div>
-<div class="line"><a id="l02173" name="l02173"></a><span class="lineno"> 2173</span>        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l02174" name="l02174"></a><span class="lineno"> 2174</span>          mainArgs.push_back(builder.create&lt;memref::CastOp&gt;(</div>
-<div class="line"><a id="l02175" name="l02175"></a><span class="lineno"> 2175</span>              computeFunc.getLoc(), abiLeafTypes-&gt;front(), wrapperArg</div>
-<div class="line"><a id="l02176" name="l02176"></a><span class="lineno"> 2176</span>          ));</div>
-<div class="line"><a id="l02177" name="l02177"></a><span class="lineno"> 2177</span>        }</div>
-<div class="line"><a id="l02178" name="l02178"></a><span class="lineno"> 2178</span>      }</div>
-<div class="line"><a id="l02179" name="l02179"></a><span class="lineno"> 2179</span>    }</div>
-<div class="line"><a id="l02180" name="l02180"></a><span class="lineno"> 2180</span>    <span class="keyword">auto</span> loweredMain = builder.create&lt;func::CallOp&gt;(</div>
-<div class="line"><a id="l02181" name="l02181"></a><span class="lineno"> 2181</span>        computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs</div>
-<div class="line"><a id="l02182" name="l02182"></a><span class="lineno"> 2182</span>    );</div>
-<div class="line"><a id="l02183" name="l02183"></a><span class="lineno"> 2183</span> </div>
-<div class="line"><a id="l02184" name="l02184"></a><span class="lineno"> 2184</span>    LoweredValue mainResultValue {</div>
-<div class="line"><a id="l02185" name="l02185"></a><span class="lineno"> 2185</span>        computeFunc.getResultTypes().front(),</div>
-<div class="line"><a id="l02186" name="l02186"></a><span class="lineno"> 2186</span>        llvm::SmallVector&lt;Value&gt;(loweredMain.getResults().begin(), loweredMain.getResults().end())</div>
-<div class="line"><a id="l02187" name="l02187"></a><span class="lineno"> 2187</span>    };</div>
-<div class="line"><a id="l02188" name="l02188"></a><span class="lineno"> 2188</span> </div>
-<div class="line"><a id="l02189" name="l02189"></a><span class="lineno"> 2189</span>    <span class="keyword">auto</span> extractOutputSlice = [&amp;](ArrayRef&lt;std::string&gt; path, Type currentType,</div>
-<div class="line"><a id="l02190" name="l02190"></a><span class="lineno"> 2190</span>                                  ArrayRef&lt;Value&gt; leaves,</div>
-<div class="line"><a id="l02191" name="l02191"></a><span class="lineno"> 2191</span>                                  <span class="keyword">auto</span> &amp;self) -&gt; FailureOr&lt;SmallVector&lt;Value&gt;&gt; {</div>
-<div class="line"><a id="l02192" name="l02192"></a><span class="lineno"> 2192</span>      <span class="keywordflow">if</span> (path.empty()) {</div>
-<div class="line"><a id="l02193" name="l02193"></a><span class="lineno"> 2193</span>        <span class="keywordflow">return</span> SmallVector&lt;Value&gt;(leaves.begin(), leaves.end());</div>
-<div class="line"><a id="l02194" name="l02194"></a><span class="lineno"> 2194</span>      }</div>
-<div class="line"><a id="l02195" name="l02195"></a><span class="lineno"> 2195</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> structType = dyn_cast&lt;component::StructType&gt;(currentType)) {</div>
-<div class="line"><a id="l02196" name="l02196"></a><span class="lineno"> 2196</span>        <span class="keyword">auto</span> defLookup = structType.getDefinition(tables, computeFunc.getOperation());</div>
-<div class="line"><a id="l02197" name="l02197"></a><span class="lineno"> 2197</span>        <span class="keywordflow">if</span> (failed(defLookup)) {</div>
-<div class="line"><a id="l02198" name="l02198"></a><span class="lineno"> 2198</span>          <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02199" name="l02199"></a><span class="lineno"> 2199</span>        }</div>
-<div class="line"><a id="l02200" name="l02200"></a><span class="lineno"> 2200</span>        <span class="keywordtype">unsigned</span> localCursor = 0;</div>
-<div class="line"><a id="l02201" name="l02201"></a><span class="lineno"> 2201</span>        <span class="keywordflow">for</span> (component::MemberDefOp member : defLookup-&gt;get().getMemberDefs()) {</div>
-<div class="line"><a id="l02202" name="l02202"></a><span class="lineno"> 2202</span>          <span class="keyword">auto</span> leafCount =</div>
-<div class="line"><a id="l02203" name="l02203"></a><span class="lineno"> 2203</span>              getLeafCount(member.getType(), tables, member.getOperation(), field-&gt;get());</div>
-<div class="line"><a id="l02204" name="l02204"></a><span class="lineno"> 2204</span>          <span class="keywordflow">if</span> (failed(leafCount)) {</div>
-<div class="line"><a id="l02205" name="l02205"></a><span class="lineno"> 2205</span>            <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02206" name="l02206"></a><span class="lineno"> 2206</span>          }</div>
-<div class="line"><a id="l02207" name="l02207"></a><span class="lineno"> 2207</span>          ArrayRef&lt;Value&gt; slice = ArrayRef&lt;Value&gt;(leaves).slice(localCursor, *leafCount);</div>
-<div class="line"><a id="l02208" name="l02208"></a><span class="lineno"> 2208</span>          localCursor += *leafCount;</div>
-<div class="line"><a id="l02209" name="l02209"></a><span class="lineno"> 2209</span>          <span class="keywordflow">if</span> (member.getSymName() == path.front()) {</div>
-<div class="line"><a id="l02210" name="l02210"></a><span class="lineno"> 2210</span>            <span class="keywordflow">return</span> self(path.drop_front(), member.getType(), slice, self);</div>
-<div class="line"><a id="l02211" name="l02211"></a><span class="lineno"> 2211</span>          }</div>
-<div class="line"><a id="l02212" name="l02212"></a><span class="lineno"> 2212</span>        }</div>
-<div class="line"><a id="l02213" name="l02213"></a><span class="lineno"> 2213</span>        computeFunc.emitError(<span class="stringliteral">&quot;failed to find struct member while wiring witgen outputs&quot;</span>);</div>
-<div class="line"><a id="l02214" name="l02214"></a><span class="lineno"> 2214</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02215" name="l02215"></a><span class="lineno"> 2215</span>      }</div>
-<div class="line"><a id="l02216" name="l02216"></a><span class="lineno"> 2216</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> podType = dyn_cast&lt;pod::PodType&gt;(currentType)) {</div>
-<div class="line"><a id="l02217" name="l02217"></a><span class="lineno"> 2217</span>        <span class="keywordtype">unsigned</span> localCursor = 0;</div>
-<div class="line"><a id="l02218" name="l02218"></a><span class="lineno"> 2218</span>        <span class="keywordflow">for</span> (pod::RecordAttr record : podType.getRecords()) {</div>
-<div class="line"><a id="l02219" name="l02219"></a><span class="lineno"> 2219</span>          <span class="keyword">auto</span> leafCount =</div>
-<div class="line"><a id="l02220" name="l02220"></a><span class="lineno"> 2220</span>              getLeafCount(record.getType(), tables, computeFunc.getOperation(), field-&gt;get());</div>
-<div class="line"><a id="l02221" name="l02221"></a><span class="lineno"> 2221</span>          <span class="keywordflow">if</span> (failed(leafCount)) {</div>
-<div class="line"><a id="l02222" name="l02222"></a><span class="lineno"> 2222</span>            <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02223" name="l02223"></a><span class="lineno"> 2223</span>          }</div>
-<div class="line"><a id="l02224" name="l02224"></a><span class="lineno"> 2224</span>          ArrayRef&lt;Value&gt; slice = ArrayRef&lt;Value&gt;(leaves).slice(localCursor, *leafCount);</div>
-<div class="line"><a id="l02225" name="l02225"></a><span class="lineno"> 2225</span>          localCursor += *leafCount;</div>
-<div class="line"><a id="l02226" name="l02226"></a><span class="lineno"> 2226</span>          <span class="keywordflow">if</span> (record.getName().getValue() == path.front()) {</div>
-<div class="line"><a id="l02227" name="l02227"></a><span class="lineno"> 2227</span>            <span class="keywordflow">return</span> self(path.drop_front(), record.getType(), slice, self);</div>
-<div class="line"><a id="l02228" name="l02228"></a><span class="lineno"> 2228</span>          }</div>
-<div class="line"><a id="l02229" name="l02229"></a><span class="lineno"> 2229</span>        }</div>
-<div class="line"><a id="l02230" name="l02230"></a><span class="lineno"> 2230</span>        computeFunc.emitError(<span class="stringliteral">&quot;failed to find POD record while wiring witgen outputs&quot;</span>);</div>
-<div class="line"><a id="l02231" name="l02231"></a><span class="lineno"> 2231</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02232" name="l02232"></a><span class="lineno"> 2232</span>      }</div>
-<div class="line"><a id="l02233" name="l02233"></a><span class="lineno"> 2233</span>      computeFunc.emitError(<span class="stringliteral">&quot;extra witness path components for non-aggregate output&quot;</span>);</div>
-<div class="line"><a id="l02234" name="l02234"></a><span class="lineno"> 2234</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02235" name="l02235"></a><span class="lineno"> 2235</span>    };</div>
-<div class="line"><a id="l02236" name="l02236"></a><span class="lineno"> 2236</span> </div>
-<div class="line"><a id="l02237" name="l02237"></a><span class="lineno"> 2237</span>    <span class="keyword">auto</span> outputArgs = entry-&gt;getArguments().drop_front(computeFunc.getNumArguments());</div>
-<div class="line"><a id="l02238" name="l02238"></a><span class="lineno"> 2238</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [output, outputMemRef] : llvm::zip(*outputs, outputArgs)) {</div>
-<div class="line"><a id="l02239" name="l02239"></a><span class="lineno"> 2239</span>      <span class="keyword">auto</span> slice = extractOutputSlice(</div>
-<div class="line"><a id="l02240" name="l02240"></a><span class="lineno"> 2240</span>          output.path, mainResultValue.sourceType, mainResultValue.leaves, extractOutputSlice</div>
-<div class="line"><a id="l02241" name="l02241"></a><span class="lineno"> 2241</span>      );</div>
-<div class="line"><a id="l02242" name="l02242"></a><span class="lineno"> 2242</span>      <span class="keywordflow">if</span> (failed(slice) || slice-&gt;empty()) {</div>
-<div class="line"><a id="l02243" name="l02243"></a><span class="lineno"> 2243</span>        wrapper.emitError(<span class="stringliteral">&quot;missing selected witness output slice while building witgen entry&quot;</span>);</div>
-<div class="line"><a id="l02244" name="l02244"></a><span class="lineno"> 2244</span>        signalPassFailure();</div>
-<div class="line"><a id="l02245" name="l02245"></a><span class="lineno"> 2245</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02246" name="l02246"></a><span class="lineno"> 2246</span>      }</div>
-<div class="line"><a id="l02247" name="l02247"></a><span class="lineno"> 2247</span>      <span class="keywordflow">if</span> (isScalarType(output.type)) {</div>
-<div class="line"><a id="l02248" name="l02248"></a><span class="lineno"> 2248</span>        storeStorageScalar(</div>
-<div class="line"><a id="l02249" name="l02249"></a><span class="lineno"> 2249</span>            builder, computeFunc.getLoc(),</div>
-<div class="line"><a id="l02250" name="l02250"></a><span class="lineno"> 2250</span>            loadStorageScalar(builder, computeFunc.getLoc(), slice-&gt;front()), outputMemRef</div>
-<div class="line"><a id="l02251" name="l02251"></a><span class="lineno"> 2251</span>        );</div>
-<div class="line"><a id="l02252" name="l02252"></a><span class="lineno"> 2252</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l02253" name="l02253"></a><span class="lineno"> 2253</span>        builder.create&lt;memref::CopyOp&gt;(computeFunc.getLoc(), slice-&gt;front(), outputMemRef);</div>
+<div class="line"><a id="l02058" name="l02058"></a><span class="lineno"> 2058</span><span class="keyword">class </span>LowerComputeToCorePass : <span class="keyword">public</span> PassWrapper&lt;LowerComputeToCorePass, OperationPass&lt;ModuleOp&gt;&gt; {</div>
+<div class="line"><a id="l02059" name="l02059"></a><span class="lineno"> 2059</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l02060" name="l02060"></a><span class="lineno"> 2060</span>  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerComputeToCorePass)</div>
+<div class="line"><a id="l02061" name="l02061"></a><span class="lineno"> 2061</span> </div>
+<div class="line"><a id="l02062" name="l02062"></a><span class="lineno"> 2062</span>  <span class="keyword">explicit</span> LowerComputeToCorePass(<span class="keyword">const</span> WitgenOptions &amp;opts) : options(opts) {}</div>
+<div class="line"><a id="l02063" name="l02063"></a><span class="lineno"> 2063</span></div>
+<div class="line"><a id="l02065" name="l02065"></a><span class="lineno"> 2065</span>  StringRef getArgument() const final { <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-lower-compute-to-core&quot;</span>; }</div>
+<div class="line"><a id="l02066" name="l02066"></a><span class="lineno"> 2066</span></div>
+<div class="line"><a id="l02068" name="l02068"></a><span class="lineno"> 2068</span>  StringRef getDescription() const final {</div>
+<div class="line"><a id="l02069" name="l02069"></a><span class="lineno"> 2069</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Lower LLZK compute IR to func/arith/cf/scf/memref&quot;</span>;</div>
+<div class="line"><a id="l02070" name="l02070"></a><span class="lineno"> 2070</span>  }</div>
+<div class="line"><a id="l02071" name="l02071"></a><span class="lineno"> 2071</span></div>
+<div class="line"><a id="l02073" name="l02073"></a><span class="lineno"> 2073</span>  StringRef getName()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;LowerComputeToCorePass&quot;</span>; }</div>
+<div class="line"><a id="l02074" name="l02074"></a><span class="lineno"> 2074</span></div>
+<div class="line"><a id="l02076" name="l02076"></a><span class="lineno"> 2076</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l02077" name="l02077"></a><span class="lineno"> 2077</span>    ModuleOp moduleOp = getOperation();</div>
+<div class="line"><a id="l02078" name="l02078"></a><span class="lineno"> 2078</span>    <span class="keyword">auto</span> field = getModuleField(moduleOp);</div>
+<div class="line"><a id="l02079" name="l02079"></a><span class="lineno"> 2079</span>    <span class="keywordflow">if</span> (failed(field)) {</div>
+<div class="line"><a id="l02080" name="l02080"></a><span class="lineno"> 2080</span>      signalPassFailure();</div>
+<div class="line"><a id="l02081" name="l02081"></a><span class="lineno"> 2081</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02082" name="l02082"></a><span class="lineno"> 2082</span>    }</div>
+<div class="line"><a id="l02083" name="l02083"></a><span class="lineno"> 2083</span> </div>
+<div class="line"><a id="l02084" name="l02084"></a><span class="lineno"> 2084</span>    SymbolTableCollection tables;</div>
+<div class="line"><a id="l02085" name="l02085"></a><span class="lineno"> 2085</span>    SmallVector&lt;function::FuncDefOp&gt; funcs;</div>
+<div class="line"><a id="l02086" name="l02086"></a><span class="lineno"> 2086</span>    moduleOp.walk([&amp;](function::FuncDefOp funcOp) {</div>
+<div class="line"><a id="l02087" name="l02087"></a><span class="lineno"> 2087</span>      <span class="keywordflow">if</span> (funcOp.nameIsConstrain()) {</div>
+<div class="line"><a id="l02088" name="l02088"></a><span class="lineno"> 2088</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02089" name="l02089"></a><span class="lineno"> 2089</span>      }</div>
+<div class="line"><a id="l02090" name="l02090"></a><span class="lineno"> 2090</span>      funcs.push_back(funcOp);</div>
+<div class="line"><a id="l02091" name="l02091"></a><span class="lineno"> 2091</span>    });</div>
+<div class="line"><a id="l02092" name="l02092"></a><span class="lineno"> 2092</span> </div>
+<div class="line"><a id="l02093" name="l02093"></a><span class="lineno"> 2093</span>    BodyLowerer lowerer(moduleOp, tables, field-&gt;get(), options);</div>
+<div class="line"><a id="l02094" name="l02094"></a><span class="lineno"> 2094</span>    <span class="keywordflow">for</span> (function::FuncDefOp funcOp : funcs) {</div>
+<div class="line"><a id="l02095" name="l02095"></a><span class="lineno"> 2095</span>      <span class="keywordflow">if</span> (failed(lowerer.lowerFunction(funcOp))) {</div>
+<div class="line"><a id="l02096" name="l02096"></a><span class="lineno"> 2096</span>        signalPassFailure();</div>
+<div class="line"><a id="l02097" name="l02097"></a><span class="lineno"> 2097</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02098" name="l02098"></a><span class="lineno"> 2098</span>      }</div>
+<div class="line"><a id="l02099" name="l02099"></a><span class="lineno"> 2099</span>    }</div>
+<div class="line"><a id="l02100" name="l02100"></a><span class="lineno"> 2100</span>  }</div>
+<div class="line"><a id="l02101" name="l02101"></a><span class="lineno"> 2101</span> </div>
+<div class="line"><a id="l02102" name="l02102"></a><span class="lineno"> 2102</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l02103" name="l02103"></a><span class="lineno"> 2103</span>  WitgenOptions options;</div>
+<div class="line"><a id="l02104" name="l02104"></a><span class="lineno"> 2104</span>};</div>
+<div class="line"><a id="l02105" name="l02105"></a><span class="lineno"> 2105</span></div>
+<div class="line"><a id="l02107" name="l02107"></a><span class="lineno"> 2107</span><span class="keyword">class </span>CreateWitgenEntryPass : <span class="keyword">public</span> PassWrapper&lt;CreateWitgenEntryPass, OperationPass&lt;ModuleOp&gt;&gt; {</div>
+<div class="line"><a id="l02108" name="l02108"></a><span class="lineno"> 2108</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l02109" name="l02109"></a><span class="lineno"> 2109</span>  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)</div>
+<div class="line"><a id="l02110" name="l02110"></a><span class="lineno"> 2110</span> </div>
+<div class="line"><a id="l02111" name="l02111"></a><span class="lineno"> 2111</span>  </div>
+<div class="line"><a id="l02112" name="l02112"></a><span class="lineno"> 2112</span>  <span class="keyword">explicit</span> CreateWitgenEntryPass(<span class="keywordtype">bool</span> fullWitness = <span class="keyword">false</span>) : emitFullWitness(fullWitness) {}</div>
+<div class="line"><a id="l02113" name="l02113"></a><span class="lineno"> 2113</span></div>
+<div class="line"><a id="l02115" name="l02115"></a><span class="lineno"> 2115</span>  StringRef getArgument() const final { <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-create-witgen-entry&quot;</span>; }</div>
+<div class="line"><a id="l02116" name="l02116"></a><span class="lineno"> 2116</span></div>
+<div class="line"><a id="l02118" name="l02118"></a><span class="lineno"> 2118</span>  StringRef getDescription() const final {</div>
+<div class="line"><a id="l02119" name="l02119"></a><span class="lineno"> 2119</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Create the llzk-witgen execution-engine entry wrapper&quot;</span>;</div>
+<div class="line"><a id="l02120" name="l02120"></a><span class="lineno"> 2120</span>  }</div>
+<div class="line"><a id="l02121" name="l02121"></a><span class="lineno"> 2121</span></div>
+<div class="line"><a id="l02123" name="l02123"></a><span class="lineno"> 2123</span>  StringRef getName()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;CreateWitgenEntryPass&quot;</span>; }</div>
+<div class="line"><a id="l02124" name="l02124"></a><span class="lineno"> 2124</span></div>
+<div class="line"><a id="l02126" name="l02126"></a><span class="lineno"> 2126</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l02127" name="l02127"></a><span class="lineno"> 2127</span>    ModuleOp moduleOp = getOperation();</div>
+<div class="line"><a id="l02128" name="l02128"></a><span class="lineno"> 2128</span>    <span class="keyword">auto</span> field = getModuleField(moduleOp);</div>
+<div class="line"><a id="l02129" name="l02129"></a><span class="lineno"> 2129</span>    <span class="keywordflow">if</span> (failed(field)) {</div>
+<div class="line"><a id="l02130" name="l02130"></a><span class="lineno"> 2130</span>      signalPassFailure();</div>
+<div class="line"><a id="l02131" name="l02131"></a><span class="lineno"> 2131</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02132" name="l02132"></a><span class="lineno"> 2132</span>    }</div>
+<div class="line"><a id="l02133" name="l02133"></a><span class="lineno"> 2133</span> </div>
+<div class="line"><a id="l02134" name="l02134"></a><span class="lineno"> 2134</span>    SymbolTableCollection tables;</div>
+<div class="line"><a id="l02135" name="l02135"></a><span class="lineno"> 2135</span>    <span class="keyword">auto</span> mainDef = <a class="code hl_function" href="namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f">getMainInstanceDef</a>(tables, moduleOp.getOperation());</div>
+<div class="line"><a id="l02136" name="l02136"></a><span class="lineno"> 2136</span>    <span class="keywordflow">if</span> (failed(mainDef) || !mainDef.value()) {</div>
+<div class="line"><a id="l02137" name="l02137"></a><span class="lineno"> 2137</span>      moduleOp.emitError(<span class="stringliteral">&quot;module is missing a concrete llzk.main struct&quot;</span>);</div>
+<div class="line"><a id="l02138" name="l02138"></a><span class="lineno"> 2138</span>      signalPassFailure();</div>
+<div class="line"><a id="l02139" name="l02139"></a><span class="lineno"> 2139</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02140" name="l02140"></a><span class="lineno"> 2140</span>    }</div>
+<div class="line"><a id="l02141" name="l02141"></a><span class="lineno"> 2141</span>    function::FuncDefOp computeFunc = mainDef-&gt;get().getComputeFuncOp();</div>
+<div class="line"><a id="l02142" name="l02142"></a><span class="lineno"> 2142</span>    <span class="keywordflow">if</span> (!computeFunc) {</div>
+<div class="line"><a id="l02143" name="l02143"></a><span class="lineno"> 2143</span>      moduleOp.emitError(<span class="stringliteral">&quot;main struct is missing @compute&quot;</span>);</div>
+<div class="line"><a id="l02144" name="l02144"></a><span class="lineno"> 2144</span>      signalPassFailure();</div>
+<div class="line"><a id="l02145" name="l02145"></a><span class="lineno"> 2145</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02146" name="l02146"></a><span class="lineno"> 2146</span>    }</div>
+<div class="line"><a id="l02147" name="l02147"></a><span class="lineno"> 2147</span> </div>
+<div class="line"><a id="l02148" name="l02148"></a><span class="lineno"> 2148</span>    <span class="keyword">auto</span> outputs = <a class="code hl_function" href="namespacellzk_1_1witgen.html#a2e561645b067a0b8f299c6ab3b4b83a1">collectOutputBindings</a>(</div>
+<div class="line"><a id="l02149" name="l02149"></a><span class="lineno"> 2149</span>        mainDef-&gt;get(), tables, computeFunc.getOperation(),</div>
+<div class="line"><a id="l02150" name="l02150"></a><span class="lineno"> 2150</span>        emitFullWitness ? OutputScope::FullWitness : OutputScope::Public</div>
+<div class="line"><a id="l02151" name="l02151"></a><span class="lineno"> 2151</span>    );</div>
+<div class="line"><a id="l02152" name="l02152"></a><span class="lineno"> 2152</span>    <span class="keywordflow">if</span> (failed(outputs)) {</div>
+<div class="line"><a id="l02153" name="l02153"></a><span class="lineno"> 2153</span>      signalPassFailure();</div>
+<div class="line"><a id="l02154" name="l02154"></a><span class="lineno"> 2154</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02155" name="l02155"></a><span class="lineno"> 2155</span>    }</div>
+<div class="line"><a id="l02156" name="l02156"></a><span class="lineno"> 2156</span> </div>
+<div class="line"><a id="l02157" name="l02157"></a><span class="lineno"> 2157</span>    OpBuilder builder(moduleOp.getContext());</div>
+<div class="line"><a id="l02158" name="l02158"></a><span class="lineno"> 2158</span>    builder.setInsertionPointToEnd(moduleOp.getBody());</div>
+<div class="line"><a id="l02159" name="l02159"></a><span class="lineno"> 2159</span> </div>
+<div class="line"><a id="l02160" name="l02160"></a><span class="lineno"> 2160</span>    SmallVector&lt;Type&gt; wrapperArgs;</div>
+<div class="line"><a id="l02161" name="l02161"></a><span class="lineno"> 2161</span>    <span class="keywordflow">for</span> (Type argType : computeFunc.getArgumentTypes()) {</div>
+<div class="line"><a id="l02162" name="l02162"></a><span class="lineno"> 2162</span>      SmallVector&lt;Type&gt; loweredLeafTypes;</div>
+<div class="line"><a id="l02163" name="l02163"></a><span class="lineno"> 2163</span>      <span class="keywordflow">if</span> (failed(flattenTypeLeaves(</div>
+<div class="line"><a id="l02164" name="l02164"></a><span class="lineno"> 2164</span>              argType, tables, computeFunc.getOperation(), field-&gt;get(), loweredLeafTypes, {}, <span class="keyword">true</span></div>
+<div class="line"><a id="l02165" name="l02165"></a><span class="lineno"> 2165</span>          ))) {</div>
+<div class="line"><a id="l02166" name="l02166"></a><span class="lineno"> 2166</span>        signalPassFailure();</div>
+<div class="line"><a id="l02167" name="l02167"></a><span class="lineno"> 2167</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02168" name="l02168"></a><span class="lineno"> 2168</span>      }</div>
+<div class="line"><a id="l02169" name="l02169"></a><span class="lineno"> 2169</span>      <span class="keywordflow">if</span> (loweredLeafTypes.size() != 1 || !isa&lt;MemRefType&gt;(loweredLeafTypes.front())) {</div>
+<div class="line"><a id="l02170" name="l02170"></a><span class="lineno"> 2170</span>        computeFunc.emitError(</div>
+<div class="line"><a id="l02171" name="l02171"></a><span class="lineno"> 2171</span>            <span class="stringliteral">&quot;execution-engine wrapper only supports felt and array&lt;...xfelt&gt; inputs&quot;</span></div>
+<div class="line"><a id="l02172" name="l02172"></a><span class="lineno"> 2172</span>        );</div>
+<div class="line"><a id="l02173" name="l02173"></a><span class="lineno"> 2173</span>        signalPassFailure();</div>
+<div class="line"><a id="l02174" name="l02174"></a><span class="lineno"> 2174</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02175" name="l02175"></a><span class="lineno"> 2175</span>      }</div>
+<div class="line"><a id="l02176" name="l02176"></a><span class="lineno"> 2176</span>      wrapperArgs.push_back(loweredLeafTypes.front());</div>
+<div class="line"><a id="l02177" name="l02177"></a><span class="lineno"> 2177</span>    }</div>
+<div class="line"><a id="l02178" name="l02178"></a><span class="lineno"> 2178</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> OutputBinding &amp;output : *outputs) {</div>
+<div class="line"><a id="l02179" name="l02179"></a><span class="lineno"> 2179</span>      SmallVector&lt;Type&gt; loweredLeafTypes;</div>
+<div class="line"><a id="l02180" name="l02180"></a><span class="lineno"> 2180</span>      <span class="keywordflow">if</span> (failed(flattenTypeLeaves(</div>
+<div class="line"><a id="l02181" name="l02181"></a><span class="lineno"> 2181</span>              output.type, tables, computeFunc.getOperation(), field-&gt;get(), loweredLeafTypes, {},</div>
+<div class="line"><a id="l02182" name="l02182"></a><span class="lineno"> 2182</span>              <span class="keyword">true</span></div>
+<div class="line"><a id="l02183" name="l02183"></a><span class="lineno"> 2183</span>          ))) {</div>
+<div class="line"><a id="l02184" name="l02184"></a><span class="lineno"> 2184</span>        signalPassFailure();</div>
+<div class="line"><a id="l02185" name="l02185"></a><span class="lineno"> 2185</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02186" name="l02186"></a><span class="lineno"> 2186</span>      }</div>
+<div class="line"><a id="l02187" name="l02187"></a><span class="lineno"> 2187</span>      <span class="keywordflow">if</span> (loweredLeafTypes.size() != 1 || !isa&lt;MemRefType&gt;(loweredLeafTypes.front())) {</div>
+<div class="line"><a id="l02188" name="l02188"></a><span class="lineno"> 2188</span>        computeFunc.emitError(</div>
+<div class="line"><a id="l02189" name="l02189"></a><span class="lineno"> 2189</span>            <span class="stringliteral">&quot;execution-engine wrapper only supports felt and array&lt;...xfelt&gt; outputs&quot;</span></div>
+<div class="line"><a id="l02190" name="l02190"></a><span class="lineno"> 2190</span>        );</div>
+<div class="line"><a id="l02191" name="l02191"></a><span class="lineno"> 2191</span>        signalPassFailure();</div>
+<div class="line"><a id="l02192" name="l02192"></a><span class="lineno"> 2192</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02193" name="l02193"></a><span class="lineno"> 2193</span>      }</div>
+<div class="line"><a id="l02194" name="l02194"></a><span class="lineno"> 2194</span>      wrapperArgs.push_back(loweredLeafTypes.front());</div>
+<div class="line"><a id="l02195" name="l02195"></a><span class="lineno"> 2195</span>    }</div>
+<div class="line"><a id="l02196" name="l02196"></a><span class="lineno"> 2196</span> </div>
+<div class="line"><a id="l02197" name="l02197"></a><span class="lineno"> 2197</span>    <span class="keyword">auto</span> wrapper = builder.create&lt;func::FuncOp&gt;(</div>
+<div class="line"><a id="l02198" name="l02198"></a><span class="lineno"> 2198</span>        computeFunc.getLoc(), <span class="stringliteral">&quot;__llzk_witgen_main&quot;</span>,</div>
+<div class="line"><a id="l02199" name="l02199"></a><span class="lineno"> 2199</span>        builder.getFunctionType(wrapperArgs, TypeRange {})</div>
+<div class="line"><a id="l02200" name="l02200"></a><span class="lineno"> 2200</span>    );</div>
+<div class="line"><a id="l02201" name="l02201"></a><span class="lineno"> 2201</span>    wrapper-&gt;setAttr(LLVM::LLVMDialect::getEmitCWrapperAttrName(), builder.getUnitAttr());</div>
+<div class="line"><a id="l02202" name="l02202"></a><span class="lineno"> 2202</span>    Block *entry = wrapper.addEntryBlock();</div>
+<div class="line"><a id="l02203" name="l02203"></a><span class="lineno"> 2203</span>    builder.setInsertionPointToStart(entry);</div>
+<div class="line"><a id="l02204" name="l02204"></a><span class="lineno"> 2204</span> </div>
+<div class="line"><a id="l02205" name="l02205"></a><span class="lineno"> 2205</span>    SmallVector&lt;Type&gt; loweredMainResultTypes;</div>
+<div class="line"><a id="l02206" name="l02206"></a><span class="lineno"> 2206</span>    <span class="keywordflow">for</span> (Type resultType : computeFunc.getResultTypes()) {</div>
+<div class="line"><a id="l02207" name="l02207"></a><span class="lineno"> 2207</span>      <span class="keywordflow">if</span> (failed(flattenABILeafTypes(</div>
+<div class="line"><a id="l02208" name="l02208"></a><span class="lineno"> 2208</span>              resultType, tables, computeFunc.getOperation(), field-&gt;get(), loweredMainResultTypes</div>
+<div class="line"><a id="l02209" name="l02209"></a><span class="lineno"> 2209</span>          ))) {</div>
+<div class="line"><a id="l02210" name="l02210"></a><span class="lineno"> 2210</span>        signalPassFailure();</div>
+<div class="line"><a id="l02211" name="l02211"></a><span class="lineno"> 2211</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02212" name="l02212"></a><span class="lineno"> 2212</span>      }</div>
+<div class="line"><a id="l02213" name="l02213"></a><span class="lineno"> 2213</span>    }</div>
+<div class="line"><a id="l02214" name="l02214"></a><span class="lineno"> 2214</span> </div>
+<div class="line"><a id="l02215" name="l02215"></a><span class="lineno"> 2215</span>    SmallVector&lt;Value&gt; mainArgs;</div>
+<div class="line"><a id="l02216" name="l02216"></a><span class="lineno"> 2216</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [argType, wrapperArg] : llvm::zip(</div>
+<div class="line"><a id="l02217" name="l02217"></a><span class="lineno"> 2217</span>             computeFunc.getArgumentTypes(),</div>
+<div class="line"><a id="l02218" name="l02218"></a><span class="lineno"> 2218</span>             entry-&gt;getArguments().take_front(computeFunc.getNumArguments())</div>
+<div class="line"><a id="l02219" name="l02219"></a><span class="lineno"> 2219</span>         )) {</div>
+<div class="line"><a id="l02220" name="l02220"></a><span class="lineno"> 2220</span>      <span class="keywordflow">if</span> (isScalarType(argType)) {</div>
+<div class="line"><a id="l02221" name="l02221"></a><span class="lineno"> 2221</span>        mainArgs.push_back(loadStorageScalar(builder, computeFunc.getLoc(), wrapperArg));</div>
+<div class="line"><a id="l02222" name="l02222"></a><span class="lineno"> 2222</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l02223" name="l02223"></a><span class="lineno"> 2223</span>        <span class="keyword">auto</span> abiLeafTypes =</div>
+<div class="line"><a id="l02224" name="l02224"></a><span class="lineno"> 2224</span>            getABILeafTypes(argType, tables, computeFunc.getOperation(), field-&gt;get());</div>
+<div class="line"><a id="l02225" name="l02225"></a><span class="lineno"> 2225</span>        <span class="keywordflow">if</span> (failed(abiLeafTypes) || abiLeafTypes-&gt;size() != 1 ||</div>
+<div class="line"><a id="l02226" name="l02226"></a><span class="lineno"> 2226</span>            !isa&lt;MemRefType&gt;(abiLeafTypes-&gt;front())) {</div>
+<div class="line"><a id="l02227" name="l02227"></a><span class="lineno"> 2227</span>          computeFunc.emitError(<span class="stringliteral">&quot;failed to derive execution-engine ABI type for main input&quot;</span>);</div>
+<div class="line"><a id="l02228" name="l02228"></a><span class="lineno"> 2228</span>          signalPassFailure();</div>
+<div class="line"><a id="l02229" name="l02229"></a><span class="lineno"> 2229</span>          <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02230" name="l02230"></a><span class="lineno"> 2230</span>        }</div>
+<div class="line"><a id="l02231" name="l02231"></a><span class="lineno"> 2231</span>        <span class="keywordflow">if</span> (wrapperArg.getType() == abiLeafTypes-&gt;front()) {</div>
+<div class="line"><a id="l02232" name="l02232"></a><span class="lineno"> 2232</span>          mainArgs.push_back(wrapperArg);</div>
+<div class="line"><a id="l02233" name="l02233"></a><span class="lineno"> 2233</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l02234" name="l02234"></a><span class="lineno"> 2234</span>          mainArgs.push_back(builder.create&lt;memref::CastOp&gt;(</div>
+<div class="line"><a id="l02235" name="l02235"></a><span class="lineno"> 2235</span>              computeFunc.getLoc(), abiLeafTypes-&gt;front(), wrapperArg</div>
+<div class="line"><a id="l02236" name="l02236"></a><span class="lineno"> 2236</span>          ));</div>
+<div class="line"><a id="l02237" name="l02237"></a><span class="lineno"> 2237</span>        }</div>
+<div class="line"><a id="l02238" name="l02238"></a><span class="lineno"> 2238</span>      }</div>
+<div class="line"><a id="l02239" name="l02239"></a><span class="lineno"> 2239</span>    }</div>
+<div class="line"><a id="l02240" name="l02240"></a><span class="lineno"> 2240</span>    <span class="keyword">auto</span> loweredMain = builder.create&lt;func::CallOp&gt;(</div>
+<div class="line"><a id="l02241" name="l02241"></a><span class="lineno"> 2241</span>        computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs</div>
+<div class="line"><a id="l02242" name="l02242"></a><span class="lineno"> 2242</span>    );</div>
+<div class="line"><a id="l02243" name="l02243"></a><span class="lineno"> 2243</span> </div>
+<div class="line"><a id="l02244" name="l02244"></a><span class="lineno"> 2244</span>    LoweredValue mainResultValue {</div>
+<div class="line"><a id="l02245" name="l02245"></a><span class="lineno"> 2245</span>        computeFunc.getResultTypes().front(),</div>
+<div class="line"><a id="l02246" name="l02246"></a><span class="lineno"> 2246</span>        llvm::SmallVector&lt;Value&gt;(loweredMain.getResults().begin(), loweredMain.getResults().end())</div>
+<div class="line"><a id="l02247" name="l02247"></a><span class="lineno"> 2247</span>    };</div>
+<div class="line"><a id="l02248" name="l02248"></a><span class="lineno"> 2248</span> </div>
+<div class="line"><a id="l02249" name="l02249"></a><span class="lineno"> 2249</span>    <span class="keyword">auto</span> extractOutputSlice = [&amp;](ArrayRef&lt;std::string&gt; path, Type currentType,</div>
+<div class="line"><a id="l02250" name="l02250"></a><span class="lineno"> 2250</span>                                  ArrayRef&lt;Value&gt; leaves,</div>
+<div class="line"><a id="l02251" name="l02251"></a><span class="lineno"> 2251</span>                                  <span class="keyword">auto</span> &amp;self) -&gt; FailureOr&lt;SmallVector&lt;Value&gt;&gt; {</div>
+<div class="line"><a id="l02252" name="l02252"></a><span class="lineno"> 2252</span>      <span class="keywordflow">if</span> (path.empty()) {</div>
+<div class="line"><a id="l02253" name="l02253"></a><span class="lineno"> 2253</span>        <span class="keywordflow">return</span> SmallVector&lt;Value&gt;(leaves.begin(), leaves.end());</div>
 <div class="line"><a id="l02254" name="l02254"></a><span class="lineno"> 2254</span>      }</div>
-<div class="line"><a id="l02255" name="l02255"></a><span class="lineno"> 2255</span>    }</div>
-<div class="line"><a id="l02256" name="l02256"></a><span class="lineno"> 2256</span>    builder.create&lt;func::ReturnOp&gt;(computeFunc.getLoc());</div>
-<div class="line"><a id="l02257" name="l02257"></a><span class="lineno"> 2257</span> </div>
-<div class="line"><a id="l02258" name="l02258"></a><span class="lineno"> 2258</span>    <span class="comment">// Remove `llzk.main` attribute because the main struct is deleted below.</span></div>
-<div class="line"><a id="l02259" name="l02259"></a><span class="lineno"> 2259</span>    moduleOp-&gt;removeAttr(MAIN_ATTR_NAME);</div>
-<div class="line"><a id="l02260" name="l02260"></a><span class="lineno"> 2260</span> </div>
-<div class="line"><a id="l02261" name="l02261"></a><span class="lineno"> 2261</span>    SmallVector&lt;Operation *&gt; toErase;</div>
-<div class="line"><a id="l02262" name="l02262"></a><span class="lineno"> 2262</span>    <span class="keywordflow">for</span> (Operation &amp;op : moduleOp.getBody()-&gt;getOperations()) {</div>
-<div class="line"><a id="l02263" name="l02263"></a><span class="lineno"> 2263</span>      <span class="keywordflow">if</span> (!isa&lt;func::FuncOp&gt;(op)) {</div>
-<div class="line"><a id="l02264" name="l02264"></a><span class="lineno"> 2264</span>        toErase.push_back(&amp;op);</div>
-<div class="line"><a id="l02265" name="l02265"></a><span class="lineno"> 2265</span>      }</div>
-<div class="line"><a id="l02266" name="l02266"></a><span class="lineno"> 2266</span>    }</div>
-<div class="line"><a id="l02267" name="l02267"></a><span class="lineno"> 2267</span>    <span class="keywordflow">for</span> (Operation *op : toErase) {</div>
-<div class="line"><a id="l02268" name="l02268"></a><span class="lineno"> 2268</span>      op-&gt;erase();</div>
-<div class="line"><a id="l02269" name="l02269"></a><span class="lineno"> 2269</span>    }</div>
-<div class="line"><a id="l02270" name="l02270"></a><span class="lineno"> 2270</span>  }</div>
-<div class="line"><a id="l02271" name="l02271"></a><span class="lineno"> 2271</span> </div>
-<div class="line"><a id="l02272" name="l02272"></a><span class="lineno"> 2272</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l02273" name="l02273"></a><span class="lineno"> 2273</span>  <span class="keywordtype">bool</span> emitFullWitness;</div>
-<div class="line"><a id="l02274" name="l02274"></a><span class="lineno"> 2274</span>};</div>
-<div class="line"><a id="l02275" name="l02275"></a><span class="lineno"> 2275</span> </div>
-<div class="line"><a id="l02276" name="l02276"></a><span class="lineno"> 2276</span>} <span class="comment">// namespace</span></div>
-<div class="line"><a id="l02277" name="l02277"></a><span class="lineno"> 2277</span> </div>
-<div class="foldopen" id="foldopen02278" data-start="{" data-end="}">
-<div class="line"><a id="l02278" name="l02278"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b"> 2278</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b">addWitgenPreparePipeline</a>(OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;) {</div>
-<div class="line"><a id="l02279" name="l02279"></a><span class="lineno"> 2279</span>  <span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a>;</div>
-<div class="line"><a id="l02280" name="l02280"></a><span class="lineno"> 2280</span>  pm.addPass(</div>
-<div class="line"><a id="l02281" name="l02281"></a><span class="lineno"> 2281</span>      <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a588852ffba37b2c570615b494d488163">createFlatteningPass</a>(<a class="code hl_struct" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a> {.cleanupMode = <a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55ea525f1b5b0ec48149c716c2f42521e71e">StructCleanupMode::ConcreteAsRoot</a>})</div>
-<div class="line"><a id="l02282" name="l02282"></a><span class="lineno"> 2282</span>  );</div>
-<div class="line"><a id="l02283" name="l02283"></a><span class="lineno"> 2283</span>  pm.addPass(mlir::createLowerAffinePass());</div>
-<div class="line"><a id="l02284" name="l02284"></a><span class="lineno"> 2284</span>  pm.addPass(<a class="code hl_function" href="namespacellzk.html#ad538530b34a37a9784f0d3ce8780e6d4">llzk::createInlineStructsPass</a>());</div>
-<div class="line"><a id="l02285" name="l02285"></a><span class="lineno"> 2285</span>  pm.addPass(mlir::createCanonicalizerPass());</div>
-<div class="line"><a id="l02286" name="l02286"></a><span class="lineno"> 2286</span>  pm.addPass(mlir::createCSEPass());</div>
-<div class="line"><a id="l02287" name="l02287"></a><span class="lineno"> 2287</span>}</div>
-</div>
-<div class="line"><a id="l02288" name="l02288"></a><span class="lineno"> 2288</span> </div>
-<div class="foldopen" id="foldopen02289" data-start="{" data-end="}">
-<div class="line"><a id="l02289" name="l02289"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7"> 2289</a></span>std::unique_ptr&lt;Pass&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7">createLowerComputeToCorePass</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options) {</div>
-<div class="line"><a id="l02290" name="l02290"></a><span class="lineno"> 2290</span>  <span class="keywordflow">return</span> std::make_unique&lt;LowerComputeToCorePass&gt;(options);</div>
-<div class="line"><a id="l02291" name="l02291"></a><span class="lineno"> 2291</span>}</div>
-</div>
-<div class="line"><a id="l02292" name="l02292"></a><span class="lineno"> 2292</span> </div>
-<div class="foldopen" id="foldopen02293" data-start="{" data-end="}">
-<div class="line"><a id="l02293" name="l02293"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7"> 2293</a></span>std::unique_ptr&lt;Pass&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7">createCreateWitgenEntryPass</a>(<span class="keywordtype">bool</span> emitFullWitness) {</div>
-<div class="line"><a id="l02294" name="l02294"></a><span class="lineno"> 2294</span>  <span class="keywordflow">return</span> std::make_unique&lt;CreateWitgenEntryPass&gt;(emitFullWitness);</div>
-<div class="line"><a id="l02295" name="l02295"></a><span class="lineno"> 2295</span>}</div>
-</div>
+<div class="line"><a id="l02255" name="l02255"></a><span class="lineno"> 2255</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> structType = dyn_cast&lt;component::StructType&gt;(currentType)) {</div>
+<div class="line"><a id="l02256" name="l02256"></a><span class="lineno"> 2256</span>        <span class="keyword">auto</span> defLookup = structType.getDefinition(tables, computeFunc.getOperation());</div>
+<div class="line"><a id="l02257" name="l02257"></a><span class="lineno"> 2257</span>        <span class="keywordflow">if</span> (failed(defLookup)) {</div>
+<div class="line"><a id="l02258" name="l02258"></a><span class="lineno"> 2258</span>          <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02259" name="l02259"></a><span class="lineno"> 2259</span>        }</div>
+<div class="line"><a id="l02260" name="l02260"></a><span class="lineno"> 2260</span>        <span class="keywordtype">unsigned</span> localCursor = 0;</div>
+<div class="line"><a id="l02261" name="l02261"></a><span class="lineno"> 2261</span>        <span class="keywordflow">for</span> (component::MemberDefOp member : defLookup-&gt;get().getMemberDefs()) {</div>
+<div class="line"><a id="l02262" name="l02262"></a><span class="lineno"> 2262</span>          <span class="keyword">auto</span> leafCount =</div>
+<div class="line"><a id="l02263" name="l02263"></a><span class="lineno"> 2263</span>              getLeafCount(member.getType(), tables, member.getOperation(), field-&gt;get());</div>
+<div class="line"><a id="l02264" name="l02264"></a><span class="lineno"> 2264</span>          <span class="keywordflow">if</span> (failed(leafCount)) {</div>
+<div class="line"><a id="l02265" name="l02265"></a><span class="lineno"> 2265</span>            <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02266" name="l02266"></a><span class="lineno"> 2266</span>          }</div>
+<div class="line"><a id="l02267" name="l02267"></a><span class="lineno"> 2267</span>          ArrayRef&lt;Value&gt; slice = ArrayRef&lt;Value&gt;(leaves).slice(localCursor, *leafCount);</div>
+<div class="line"><a id="l02268" name="l02268"></a><span class="lineno"> 2268</span>          localCursor += *leafCount;</div>
+<div class="line"><a id="l02269" name="l02269"></a><span class="lineno"> 2269</span>          <span class="keywordflow">if</span> (member.getSymName() == path.front()) {</div>
+<div class="line"><a id="l02270" name="l02270"></a><span class="lineno"> 2270</span>            <span class="keywordflow">return</span> self(path.drop_front(), member.getType(), slice, self);</div>
+<div class="line"><a id="l02271" name="l02271"></a><span class="lineno"> 2271</span>          }</div>
+<div class="line"><a id="l02272" name="l02272"></a><span class="lineno"> 2272</span>        }</div>
+<div class="line"><a id="l02273" name="l02273"></a><span class="lineno"> 2273</span>        computeFunc.emitError(<span class="stringliteral">&quot;failed to find struct member while wiring witgen outputs&quot;</span>);</div>
+<div class="line"><a id="l02274" name="l02274"></a><span class="lineno"> 2274</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02275" name="l02275"></a><span class="lineno"> 2275</span>      }</div>
+<div class="line"><a id="l02276" name="l02276"></a><span class="lineno"> 2276</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> podType = dyn_cast&lt;pod::PodType&gt;(currentType)) {</div>
+<div class="line"><a id="l02277" name="l02277"></a><span class="lineno"> 2277</span>        <span class="keywordtype">unsigned</span> localCursor = 0;</div>
+<div class="line"><a id="l02278" name="l02278"></a><span class="lineno"> 2278</span>        <span class="keywordflow">for</span> (pod::RecordAttr record : podType.getRecords()) {</div>
+<div class="line"><a id="l02279" name="l02279"></a><span class="lineno"> 2279</span>          <span class="keyword">auto</span> leafCount =</div>
+<div class="line"><a id="l02280" name="l02280"></a><span class="lineno"> 2280</span>              getLeafCount(record.getType(), tables, computeFunc.getOperation(), field-&gt;get());</div>
+<div class="line"><a id="l02281" name="l02281"></a><span class="lineno"> 2281</span>          <span class="keywordflow">if</span> (failed(leafCount)) {</div>
+<div class="line"><a id="l02282" name="l02282"></a><span class="lineno"> 2282</span>            <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02283" name="l02283"></a><span class="lineno"> 2283</span>          }</div>
+<div class="line"><a id="l02284" name="l02284"></a><span class="lineno"> 2284</span>          ArrayRef&lt;Value&gt; slice = ArrayRef&lt;Value&gt;(leaves).slice(localCursor, *leafCount);</div>
+<div class="line"><a id="l02285" name="l02285"></a><span class="lineno"> 2285</span>          localCursor += *leafCount;</div>
+<div class="line"><a id="l02286" name="l02286"></a><span class="lineno"> 2286</span>          <span class="keywordflow">if</span> (record.getName().getValue() == path.front()) {</div>
+<div class="line"><a id="l02287" name="l02287"></a><span class="lineno"> 2287</span>            <span class="keywordflow">return</span> self(path.drop_front(), record.getType(), slice, self);</div>
+<div class="line"><a id="l02288" name="l02288"></a><span class="lineno"> 2288</span>          }</div>
+<div class="line"><a id="l02289" name="l02289"></a><span class="lineno"> 2289</span>        }</div>
+<div class="line"><a id="l02290" name="l02290"></a><span class="lineno"> 2290</span>        computeFunc.emitError(<span class="stringliteral">&quot;failed to find POD record while wiring witgen outputs&quot;</span>);</div>
+<div class="line"><a id="l02291" name="l02291"></a><span class="lineno"> 2291</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02292" name="l02292"></a><span class="lineno"> 2292</span>      }</div>
+<div class="line"><a id="l02293" name="l02293"></a><span class="lineno"> 2293</span>      computeFunc.emitError(<span class="stringliteral">&quot;extra witness path components for non-aggregate output&quot;</span>);</div>
+<div class="line"><a id="l02294" name="l02294"></a><span class="lineno"> 2294</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02295" name="l02295"></a><span class="lineno"> 2295</span>    };</div>
 <div class="line"><a id="l02296" name="l02296"></a><span class="lineno"> 2296</span> </div>
-<div class="line"><a id="l02297" name="l02297"></a><span class="lineno"> 2297</span>} <span class="comment">// namespace llzk::witgen</span></div>
+<div class="line"><a id="l02297" name="l02297"></a><span class="lineno"> 2297</span>    <span class="keyword">auto</span> outputArgs = entry-&gt;getArguments().drop_front(computeFunc.getNumArguments());</div>
+<div class="line"><a id="l02298" name="l02298"></a><span class="lineno"> 2298</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> [output, outputMemRef] : llvm::zip(*outputs, outputArgs)) {</div>
+<div class="line"><a id="l02299" name="l02299"></a><span class="lineno"> 2299</span>      <span class="keyword">auto</span> slice = extractOutputSlice(</div>
+<div class="line"><a id="l02300" name="l02300"></a><span class="lineno"> 2300</span>          output.path, mainResultValue.sourceType, mainResultValue.leaves, extractOutputSlice</div>
+<div class="line"><a id="l02301" name="l02301"></a><span class="lineno"> 2301</span>      );</div>
+<div class="line"><a id="l02302" name="l02302"></a><span class="lineno"> 2302</span>      <span class="keywordflow">if</span> (failed(slice) || slice-&gt;empty()) {</div>
+<div class="line"><a id="l02303" name="l02303"></a><span class="lineno"> 2303</span>        wrapper.emitError(<span class="stringliteral">&quot;missing selected witness output slice while building witgen entry&quot;</span>);</div>
+<div class="line"><a id="l02304" name="l02304"></a><span class="lineno"> 2304</span>        signalPassFailure();</div>
+<div class="line"><a id="l02305" name="l02305"></a><span class="lineno"> 2305</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02306" name="l02306"></a><span class="lineno"> 2306</span>      }</div>
+<div class="line"><a id="l02307" name="l02307"></a><span class="lineno"> 2307</span>      <span class="keywordflow">if</span> (isScalarType(output.type)) {</div>
+<div class="line"><a id="l02308" name="l02308"></a><span class="lineno"> 2308</span>        storeStorageScalar(</div>
+<div class="line"><a id="l02309" name="l02309"></a><span class="lineno"> 2309</span>            builder, computeFunc.getLoc(),</div>
+<div class="line"><a id="l02310" name="l02310"></a><span class="lineno"> 2310</span>            loadStorageScalar(builder, computeFunc.getLoc(), slice-&gt;front()), outputMemRef</div>
+<div class="line"><a id="l02311" name="l02311"></a><span class="lineno"> 2311</span>        );</div>
+<div class="line"><a id="l02312" name="l02312"></a><span class="lineno"> 2312</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l02313" name="l02313"></a><span class="lineno"> 2313</span>        builder.create&lt;memref::CopyOp&gt;(computeFunc.getLoc(), slice-&gt;front(), outputMemRef);</div>
+<div class="line"><a id="l02314" name="l02314"></a><span class="lineno"> 2314</span>      }</div>
+<div class="line"><a id="l02315" name="l02315"></a><span class="lineno"> 2315</span>    }</div>
+<div class="line"><a id="l02316" name="l02316"></a><span class="lineno"> 2316</span>    builder.create&lt;func::ReturnOp&gt;(computeFunc.getLoc());</div>
+<div class="line"><a id="l02317" name="l02317"></a><span class="lineno"> 2317</span> </div>
+<div class="line"><a id="l02318" name="l02318"></a><span class="lineno"> 2318</span>    <span class="comment">// Remove `llzk.main` attribute because the main struct is deleted below.</span></div>
+<div class="line"><a id="l02319" name="l02319"></a><span class="lineno"> 2319</span>    moduleOp-&gt;removeAttr(MAIN_ATTR_NAME);</div>
+<div class="line"><a id="l02320" name="l02320"></a><span class="lineno"> 2320</span> </div>
+<div class="line"><a id="l02321" name="l02321"></a><span class="lineno"> 2321</span>    SmallVector&lt;Operation *&gt; toErase;</div>
+<div class="line"><a id="l02322" name="l02322"></a><span class="lineno"> 2322</span>    <span class="keywordflow">for</span> (Operation &amp;op : moduleOp.getBody()-&gt;getOperations()) {</div>
+<div class="line"><a id="l02323" name="l02323"></a><span class="lineno"> 2323</span>      <span class="keywordflow">if</span> (!isa&lt;func::FuncOp&gt;(op)) {</div>
+<div class="line"><a id="l02324" name="l02324"></a><span class="lineno"> 2324</span>        toErase.push_back(&amp;op);</div>
+<div class="line"><a id="l02325" name="l02325"></a><span class="lineno"> 2325</span>      }</div>
+<div class="line"><a id="l02326" name="l02326"></a><span class="lineno"> 2326</span>    }</div>
+<div class="line"><a id="l02327" name="l02327"></a><span class="lineno"> 2327</span>    <span class="keywordflow">for</span> (Operation *op : toErase) {</div>
+<div class="line"><a id="l02328" name="l02328"></a><span class="lineno"> 2328</span>      op-&gt;erase();</div>
+<div class="line"><a id="l02329" name="l02329"></a><span class="lineno"> 2329</span>    }</div>
+<div class="line"><a id="l02330" name="l02330"></a><span class="lineno"> 2330</span>  }</div>
+<div class="line"><a id="l02331" name="l02331"></a><span class="lineno"> 2331</span> </div>
+<div class="line"><a id="l02332" name="l02332"></a><span class="lineno"> 2332</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l02333" name="l02333"></a><span class="lineno"> 2333</span>  <span class="keywordtype">bool</span> emitFullWitness;</div>
+<div class="line"><a id="l02334" name="l02334"></a><span class="lineno"> 2334</span>};</div>
+<div class="line"><a id="l02335" name="l02335"></a><span class="lineno"> 2335</span> </div>
+<div class="line"><a id="l02336" name="l02336"></a><span class="lineno"> 2336</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l02337" name="l02337"></a><span class="lineno"> 2337</span> </div>
+<div class="foldopen" id="foldopen02338" data-start="{" data-end="}">
+<div class="line"><a id="l02338" name="l02338"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b"> 2338</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b">addWitgenPreparePipeline</a>(OpPassManager &amp;pm, <span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;) {</div>
+<div class="line"><a id="l02339" name="l02339"></a><span class="lineno"> 2339</span>  <span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a>;</div>
+<div class="line"><a id="l02340" name="l02340"></a><span class="lineno"> 2340</span>  pm.addPass(</div>
+<div class="line"><a id="l02341" name="l02341"></a><span class="lineno"> 2341</span>      <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a588852ffba37b2c570615b494d488163">createFlatteningPass</a>(<a class="code hl_struct" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a> {.cleanupMode = <a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55ea525f1b5b0ec48149c716c2f42521e71e">StructCleanupMode::ConcreteAsRoot</a>})</div>
+<div class="line"><a id="l02342" name="l02342"></a><span class="lineno"> 2342</span>  );</div>
+<div class="line"><a id="l02343" name="l02343"></a><span class="lineno"> 2343</span>  pm.addPass(mlir::createLowerAffinePass());</div>
+<div class="line"><a id="l02344" name="l02344"></a><span class="lineno"> 2344</span>  <span class="comment">// TODO: simplify lowering with `llzk-inline-structs` and `llzk-pod-to-scalar` when both are</span></div>
+<div class="line"><a id="l02345" name="l02345"></a><span class="lineno"> 2345</span>  <span class="comment">// available and support PODs.</span></div>
+<div class="line"><a id="l02346" name="l02346"></a><span class="lineno"> 2346</span>  pm.addPass(mlir::createCanonicalizerPass());</div>
+<div class="line"><a id="l02347" name="l02347"></a><span class="lineno"> 2347</span>  pm.addPass(mlir::createCSEPass());</div>
+<div class="line"><a id="l02348" name="l02348"></a><span class="lineno"> 2348</span>}</div>
+</div>
+<div class="line"><a id="l02349" name="l02349"></a><span class="lineno"> 2349</span> </div>
+<div class="foldopen" id="foldopen02350" data-start="{" data-end="}">
+<div class="line"><a id="l02350" name="l02350"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7"> 2350</a></span>std::unique_ptr&lt;Pass&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7">createLowerComputeToCorePass</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options) {</div>
+<div class="line"><a id="l02351" name="l02351"></a><span class="lineno"> 2351</span>  <span class="keywordflow">return</span> std::make_unique&lt;LowerComputeToCorePass&gt;(options);</div>
+<div class="line"><a id="l02352" name="l02352"></a><span class="lineno"> 2352</span>}</div>
+</div>
+<div class="line"><a id="l02353" name="l02353"></a><span class="lineno"> 2353</span> </div>
+<div class="foldopen" id="foldopen02354" data-start="{" data-end="}">
+<div class="line"><a id="l02354" name="l02354"></a><span class="lineno"><a class="line" href="namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7"> 2354</a></span>std::unique_ptr&lt;Pass&gt; <a class="code hl_function" href="namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7">createCreateWitgenEntryPass</a>(<span class="keywordtype">bool</span> emitFullWitness) {</div>
+<div class="line"><a id="l02355" name="l02355"></a><span class="lineno"> 2355</span>  <span class="keywordflow">return</span> std::make_unique&lt;CreateWitgenEntryPass&gt;(emitFullWitness);</div>
+<div class="line"><a id="l02356" name="l02356"></a><span class="lineno"> 2356</span>}</div>
+</div>
+<div class="line"><a id="l02357" name="l02357"></a><span class="lineno"> 2357</span> </div>
+<div class="line"><a id="l02358" name="l02358"></a><span class="lineno"> 2358</span>} <span class="comment">// namespace llzk::witgen</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aBool_2IR_2Ops_8h_html"><div class="ttname"><a href="Bool_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Ops_8h_html"><div class="ttname"><a href="Cast_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -2380,12 +2441,12 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a04a272ab521ee001924704792f29f0c1"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a04a272ab521ee001924704792f29f0c1">llzk::witgen::checkedCast</a></div><div class="ttdeci">llvm::Expected&lt; T &gt; checkedCast(U u)</div><div class="ttdef"><b>Definition</b> <a href="WitgenUtils_8h_source.html#l00028">WitgenUtils.h:28</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a23d7c44c1e254150720c92e81e68ebc2"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a23d7c44c1e254150720c92e81e68ebc2">llzk::witgen::makeDefaultValueRng</a></div><div class="ttdeci">std::mt19937_64 makeDefaultValueRng(const WitgenOptions &amp;options)</div><div class="ttdoc">Seed an RNG for random/default witness value materialization.</div><div class="ttdef"><b>Definition</b> <a href="WitgenUtils_8cpp_source.html#l00082">WitgenUtils.cpp:82</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a2e561645b067a0b8f299c6ab3b4b83a1"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a2e561645b067a0b8f299c6ab3b4b83a1">llzk::witgen::collectOutputBindings</a></div><div class="ttdeci">FailureOr&lt; llvm::SmallVector&lt; OutputBinding &gt; &gt; collectOutputBindings(component::StructDefOp mainDef, SymbolTableCollection &amp;tables, Operation *origin, OutputScope scope)</div><div class="ttdoc">Collect the selected output bindings for the requested scope.</div><div class="ttdef"><b>Definition</b> <a href="WitnessSelection_8cpp_source.html#l00168">WitnessSelection.cpp:168</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a3013ddc88e96d029adc582aa7768f9e7"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7">llzk::witgen::createCreateWitgenEntryPass</a></div><div class="ttdeci">std::unique_ptr&lt; Pass &gt; createCreateWitgenEntryPass(bool emitFullWitness)</div><div class="ttdoc">Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.</div><div class="ttdef"><b>Definition</b> <a href="#l02293">WitgenLowering.cpp:2293</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a5ed33053e410e63d1fd689fa9b4cf23b"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b">llzk::witgen::addWitgenPreparePipeline</a></div><div class="ttdeci">void addWitgenPreparePipeline(OpPassManager &amp;pm, const WitgenOptions &amp;)</div><div class="ttdef"><b>Definition</b> <a href="#l02278">WitgenLowering.cpp:2278</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a3013ddc88e96d029adc582aa7768f9e7"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7">llzk::witgen::createCreateWitgenEntryPass</a></div><div class="ttdeci">std::unique_ptr&lt; Pass &gt; createCreateWitgenEntryPass(bool emitFullWitness)</div><div class="ttdoc">Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.</div><div class="ttdef"><b>Definition</b> <a href="#l02354">WitgenLowering.cpp:2354</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a5ed33053e410e63d1fd689fa9b4cf23b"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a5ed33053e410e63d1fd689fa9b4cf23b">llzk::witgen::addWitgenPreparePipeline</a></div><div class="ttdeci">void addWitgenPreparePipeline(OpPassManager &amp;pm, const WitgenOptions &amp;)</div><div class="ttdef"><b>Definition</b> <a href="#l02338">WitgenLowering.cpp:2338</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a73471e65772377271d4b75b8eebdc762"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762">llzk::witgen::UninitializedBehavior</a></div><div class="ttdeci">UninitializedBehavior</div><div class="ttdoc">Control how witgen materializes uninitialized/default values.</div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00055">ValueModel.h:55</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23">llzk::witgen::UninitializedBehavior::Random</a></div><div class="ttdeci">@ Random</div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00057">ValueModel.h:57</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1">llzk::witgen::UninitializedBehavior::Fail</a></div><div class="ttdeci">@ Fail</div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00058">ValueModel.h:58</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1witgen_html_a747dfbc22c0d99c8ed996ca89174a4b7"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7">llzk::witgen::createLowerComputeToCorePass</a></div><div class="ttdeci">std::unique_ptr&lt; Pass &gt; createLowerComputeToCorePass(const WitgenOptions &amp;options)</div><div class="ttdoc">Create the pass that lowers supported LLZK compute IR into core MLIR dialects suitable for LLVM lower...</div><div class="ttdef"><b>Definition</b> <a href="#l02289">WitgenLowering.cpp:2289</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a747dfbc22c0d99c8ed996ca89174a4b7"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7">llzk::witgen::createLowerComputeToCorePass</a></div><div class="ttdeci">std::unique_ptr&lt; Pass &gt; createLowerComputeToCorePass(const WitgenOptions &amp;options)</div><div class="ttdoc">Create the pass that lowers supported LLZK compute IR into core MLIR dialects suitable for LLVM lower...</div><div class="ttdef"><b>Definition</b> <a href="#l02350">WitgenLowering.cpp:2350</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a8d2926c72c7a53aec9e109f94845619b"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a8d2926c72c7a53aec9e109f94845619b">llzk::witgen::randomFieldElement</a></div><div class="ttdeci">llvm::DynamicAPInt randomFieldElement(std::mt19937_64 &amp;rng, const Field &amp;field)</div><div class="ttdoc">Draw a uniformly distributed field element in [0, prime).</div><div class="ttdef"><b>Definition</b> <a href="WitgenUtils_8cpp_source.html#l00091">WitgenUtils.cpp:91</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a9133fd240db34d3237708cd2a796838a"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">llzk::witgen::randomBoolValue</a></div><div class="ttdeci">bool randomBoolValue(std::mt19937_64 &amp;rng)</div><div class="ttdoc">Draw a uniformly distributed boolean value.</div><div class="ttdef"><b>Definition</b> <a href="WitgenUtils_8cpp_source.html#l00123">WitgenUtils.cpp:123</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_ab255ee70c5f377a9b4b1dceff9afb9d4"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ab255ee70c5f377a9b4b1dceff9afb9d4">llzk::witgen::getStaticElementCount</a></div><div class="ttdeci">llvm::Expected&lt; size_t &gt; getStaticElementCount(ShapedType type, llvm::StringRef context)</div><div class="ttdef"><b>Definition</b> <a href="WitgenUtils_8cpp_source.html#l00071">WitgenUtils.cpp:71</a></div></div>
@@ -2397,7 +2458,6 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_html_a7ad816687c36ab31df4f80aa25208f27"><div class="ttname"><a href="namespacellzk.html#a7ad816687c36ab31df4f80aa25208f27">llzk::toExactWidthAPInt</a></div><div class="ttdeci">APInt toExactWidthAPInt(const DynamicAPInt &amp;val, unsigned bitWidth)</div><div class="ttdef"><b>Definition</b> <a href="DynamicAPIntHelper_8cpp_source.html#l00149">DynamicAPIntHelper.cpp:149</a></div></div>
 <div class="ttc" id="anamespacellzk_html_abea185ddb9923e1423c6f3562c60e38f"><div class="ttname"><a href="namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f">llzk::getMainInstanceDef</a></div><div class="ttdeci">FailureOr&lt; SymbolLookupResult&lt; StructDefOp &gt; &gt; getMainInstanceDef(SymbolTableCollection &amp;symbolTable, Operation *lookupFrom)</div><div class="ttdef"><b>Definition</b> <a href="SymbolHelper_8cpp_source.html#l00339">SymbolHelper.cpp:339</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ace41b88b3084e2fb14bd6573034e41f2"><div class="ttname"><a href="namespacellzk.html#ace41b88b3084e2fb14bd6573034e41f2">llzk::FieldSet</a></div><div class="ttdeci">llvm::SmallSet&lt; FieldRef, 2 &gt; FieldSet</div><div class="ttdoc">Typealias for a set of Fields.</div><div class="ttdef"><b>Definition</b> <a href="Field_8h_source.html#l00159">Field.h:159</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ad538530b34a37a9784f0d3ce8780e6d4"><div class="ttname"><a href="namespacellzk.html#ad538530b34a37a9784f0d3ce8780e6d4">llzk::createInlineStructsPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createInlineStructsPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKInlineStructsPass_8cpp_source.html#l01241">LLZKInlineStructsPass.cpp:1241</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aebb77a8bf5d05c1fa010e41374f8de17"><div class="ttname"><a href="namespacellzk.html#aebb77a8bf5d05c1fa010e41374f8de17">llzk::notOp</a></div><div class="ttdeci">ExpressionValue notOp(const llvm::SMTSolverRef &amp;solver, const ExpressionValue &amp;val)</div><div class="ttdef"><b>Definition</b> <a href="IntervalAnalysis_8cpp_source.html#l00581">IntervalAnalysis.cpp:581</a></div></div>
 <div class="ttc" id="anamespacellzk_html_afcfdee46edb27b06b8bd67475a16ec37"><div class="ttname"><a href="namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37">llzk::collectFields</a></div><div class="ttdeci">mlir::LogicalResult collectFields(mlir::Operation *root, FieldSet &amp;fields, bool silent=true)</div><div class="ttdoc">Collects all the fields used in a circuit.</div><div class="ttdef"><b>Definition</b> <a href="Field_8cpp_source.html#l00264">Field.cpp:264</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>

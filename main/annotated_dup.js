@@ -698,6 +698,7 @@ var annotated_dup =
         [ "FunctionInterpreter", "classllzk_1_1witgen_1_1FunctionInterpreter.html", "classllzk_1_1witgen_1_1FunctionInterpreter" ],
         [ "InputBinding", "structllzk_1_1witgen_1_1InputBinding.html", "structllzk_1_1witgen_1_1InputBinding" ],
         [ "Interpreter", "classllzk_1_1witgen_1_1Interpreter.html", "classllzk_1_1witgen_1_1Interpreter" ],
+        [ "JSONMismatch", "structllzk_1_1witgen_1_1JSONMismatch.html", "structllzk_1_1witgen_1_1JSONMismatch" ],
         [ "OutputBinding", "structllzk_1_1witgen_1_1OutputBinding.html", "structllzk_1_1witgen_1_1OutputBinding" ],
         [ "PodValue", "structllzk_1_1witgen_1_1PodValue.html", "structllzk_1_1witgen_1_1PodValue" ],
         [ "StructValue", "structllzk_1_1witgen_1_1StructValue.html", "structllzk_1_1witgen_1_1StructValue" ],

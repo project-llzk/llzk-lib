@@ -105,6 +105,7 @@ $(function(){initNavTree('JSON_8h.html','',''); });
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
@@ -123,11 +124,16 @@ Include dependency graph for JSON.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="JSON_8h__dep__incl.svg" width="627" height="131"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="JSON_8h__dep__incl.svg" width="807" height="131"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="JSON_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:llzk_3A_3Awitgen_3A_3AJSONMismatch" id="r_llzk_3A_3Awitgen_3A_3AJSONMismatch"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">llzk::witgen::JSONMismatch</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One structured JSON mismatch between expected and actual witgen output.  <a href="structllzk_1_1witgen_1_1JSONMismatch.html#details">More...</a><br /></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
@@ -150,6 +156,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a1aa17170a5630ed6446dce1e4e88a315"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize named input values into a JSON object.  <br /></td></tr>
 <tr class="memitem:a2a297899048424f61646743a958e925b" id="r_a2a297899048424f61646743a958e925b"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; <a class="el" href="namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a2a297899048424f61646743a958e925b">llzk::witgen::extractValueAtPath</a> (const <a class="el" href="namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a">WitnessVal</a> &amp;root, mlir::Type rootType, llvm::ArrayRef&lt; std::string &gt; path, mlir::SymbolTableCollection &amp;tables, mlir::Operation *origin)</td></tr>
 <tr class="memdesc:a2a297899048424f61646743a958e925b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract one nested runtime leaf by path.  <br /></td></tr>
+<tr class="memitem:a58835e5cae756c594d73168b6ee92c08" id="r_a58835e5cae756c594d73168b6ee92c08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#a58835e5cae756c594d73168b6ee92c08">llzk::witgen::diffJSON</a> (const llvm::json::Value &amp;expected, const llvm::json::Value &amp;actual, llvm::SmallVectorImpl&lt; <a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a> &gt; &amp;out, llvm::StringRef path=&quot;$&quot;)</td></tr>
+<tr class="memdesc:a58835e5cae756c594d73168b6ee92c08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compare two JSON values structurally and append any mismatches to <span class="tt">out</span>.  <br /></td></tr>
+<tr class="memitem:ad074e5215c751ba016990321b3413724" id="r_ad074e5215c751ba016990321b3413724"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1witgen.html#ad074e5215c751ba016990321b3413724">llzk::witgen::printJSONMismatches</a> (llvm::raw_ostream &amp;os, llvm::ArrayRef&lt; <a class="el" href="structllzk_1_1witgen_1_1JSONMismatch.html">JSONMismatch</a> &gt; mismatches)</td></tr>
+<tr class="memdesc:ad074e5215c751ba016990321b3413724"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render one human-readable mismatch report.  <br /></td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

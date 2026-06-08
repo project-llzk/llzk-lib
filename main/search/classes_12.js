@@ -1,8 +1,27 @@
 var searchData=
 [
-  ['valueless_0',['ValueLess',['../structllzk_1_1ValueLess.html',1,'llzk']]],
-  ['verifdialect_1',['VerifDialect',['../classllzk_1_1verif_1_1VerifDialect.html',1,'llzk::verif']]],
-  ['verifdialectlinktests_2',['VerifDialectLinkTests',['../classVerifDialectLinkTests.html',1,'']]],
-  ['verifoperationlinktests_3',['VerifOperationLinkTests',['../classVerifOperationLinkTests.html',1,'']]],
-  ['verifysizesformultiaffineops_4',['VerifySizesForMultiAffineOps',['../structllzk_1_1VerifySizesForMultiAffineOps.html',1,'llzk']]]
+  ['unifiablecastop_0',['UnifiableCastOp',['../classllzk_1_1polymorphic_1_1UnifiableCastOp.html',1,'llzk::polymorphic']]],
+  ['unifiablecastopadaptor_1',['UnifiableCastOpAdaptor',['../classllzk_1_1polymorphic_1_1UnifiableCastOpAdaptor.html',1,'llzk::polymorphic']]],
+  ['unifiablecastopbuildfunchelper_2',['UnifiableCastOpBuildFuncHelper',['../structUnifiableCastOpBuildFuncHelper.html',1,'']]],
+  ['unifiablecastopgenericadaptor_3',['UnifiableCastOpGenericAdaptor',['../classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html',1,'llzk::polymorphic']]],
+  ['unifiablecastopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_4',['UnifiableCastOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html',1,'llzk::polymorphic']]],
+  ['unifiablecastopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_5',['UnifiableCastOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html',1,'llzk::polymorphic']]],
+  ['unifiablecastopgenericadaptorbase_6',['UnifiableCastOpGenericAdaptorBase',['../classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html',1,'llzk::polymorphic::detail']]],
+  ['unreducedinterval_7',['UnreducedInterval',['../classllzk_1_1UnreducedInterval.html',1,'llzk']]],
+  ['unsignedintdivfeltop_8',['UnsignedIntDivFeltOp',['../classllzk_1_1felt_1_1UnsignedIntDivFeltOp.html',1,'llzk::felt']]],
+  ['unsignedintdivfeltopadaptor_9',['UnsignedIntDivFeltOpAdaptor',['../classllzk_1_1felt_1_1UnsignedIntDivFeltOpAdaptor.html',1,'llzk::felt']]],
+  ['unsignedintdivfeltopbuildfunchelper_10',['UnsignedIntDivFeltOpBuildFuncHelper',['../structUnsignedIntDivFeltOpBuildFuncHelper.html',1,'']]],
+  ['unsignedintdivfeltopgenericadaptor_11',['UnsignedIntDivFeltOpGenericAdaptor',['../classllzk_1_1felt_1_1UnsignedIntDivFeltOpGenericAdaptor.html',1,'llzk::felt']]],
+  ['unsignedintdivfeltopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_12',['UnsignedIntDivFeltOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1felt_1_1UnsignedIntDivFeltOpGenericAdaptor.html',1,'llzk::felt']]],
+  ['unsignedintdivfeltopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_13',['UnsignedIntDivFeltOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1felt_1_1UnsignedIntDivFeltOpGenericAdaptor.html',1,'llzk::felt']]],
+  ['unsignedintdivfeltopgenericadaptorbase_14',['UnsignedIntDivFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1UnsignedIntDivFeltOpGenericAdaptorBase.html',1,'llzk::felt::detail']]],
+  ['unsignedmodfeltop_15',['UnsignedModFeltOp',['../classllzk_1_1felt_1_1UnsignedModFeltOp.html',1,'llzk::felt']]],
+  ['unsignedmodfeltopadaptor_16',['UnsignedModFeltOpAdaptor',['../classllzk_1_1felt_1_1UnsignedModFeltOpAdaptor.html',1,'llzk::felt']]],
+  ['unsignedmodfeltopbuildfunchelper_17',['UnsignedModFeltOpBuildFuncHelper',['../structUnsignedModFeltOpBuildFuncHelper.html',1,'']]],
+  ['unsignedmodfeltopgenericadaptor_18',['UnsignedModFeltOpGenericAdaptor',['../classllzk_1_1felt_1_1UnsignedModFeltOpGenericAdaptor.html',1,'llzk::felt']]],
+  ['unsignedmodfeltopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_19',['UnsignedModFeltOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1felt_1_1UnsignedModFeltOpGenericAdaptor.html',1,'llzk::felt']]],
+  ['unsignedmodfeltopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_20',['UnsignedModFeltOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1felt_1_1UnsignedModFeltOpGenericAdaptor.html',1,'llzk::felt']]],
+  ['unsignedmodfeltopgenericadaptorbase_21',['UnsignedModFeltOpGenericAdaptorBase',['../classllzk_1_1felt_1_1detail_1_1UnsignedModFeltOpGenericAdaptorBase.html',1,'llzk::felt::detail']]],
+  ['unuseddeclarationeliminationpassbase_22',['UnusedDeclarationEliminationPassBase',['../classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html',1,'llzk::impl']]],
+  ['unuseddeclarationeliminationpassoptions_23',['UnusedDeclarationEliminationPassOptions',['../structllzk_1_1UnusedDeclarationEliminationPassOptions.html',1,'llzk']]]
 ];

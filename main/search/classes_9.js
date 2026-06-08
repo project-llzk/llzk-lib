@@ -1,32 +1,4 @@
 var searchData=
 [
-  ['legalitycheckcallback_0',['LegalityCheckCallback',['../classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html',1,'llzk::polymorphic::detail']]],
-  ['lightweightsignalequivalenceanalysis_1',['LightweightSignalEquivalenceAnalysis',['../classllzk_1_1LightweightSignalEquivalenceAnalysis.html',1,'llzk']]],
-  ['litstringop_2',['LitStringOp',['../classllzk_1_1string_1_1LitStringOp.html',1,'llzk::string']]],
-  ['litstringopadaptor_3',['LitStringOpAdaptor',['../classllzk_1_1string_1_1LitStringOpAdaptor.html',1,'llzk::string']]],
-  ['litstringopbuildfunchelper_4',['LitStringOpBuildFuncHelper',['../structLitStringOpBuildFuncHelper.html',1,'']]],
-  ['litstringopgenericadaptor_5',['LitStringOpGenericAdaptor',['../classllzk_1_1string_1_1LitStringOpGenericAdaptor.html',1,'llzk::string']]],
-  ['litstringopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_6',['LitStringOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1string_1_1LitStringOpGenericAdaptor.html',1,'llzk::string']]],
-  ['litstringopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_7',['LitStringOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1string_1_1LitStringOpGenericAdaptor.html',1,'llzk::string']]],
-  ['litstringopgenericadaptorbase_8',['LitStringOpGenericAdaptorBase',['../classllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase.html',1,'llzk::string::detail']]],
-  ['llzkaffinemapoperandsbuilder_9',['LlzkAffineMapOperandsBuilder',['../structLlzkAffineMapOperandsBuilder.html',1,'']]],
-  ['llzkattributelinktests_10',['LlzkAttributeLinkTests',['../classLlzkAttributeLinkTests.html',1,'']]],
-  ['llzkdialect_11',['LLZKDialect',['../classllzk_1_1LLZKDialect.html',1,'llzk']]],
-  ['llzkdialectbytecodeinterface_12',['LLZKDialectBytecodeInterface',['../structllzk_1_1LLZKDialectBytecodeInterface.html',1,'llzk']]],
-  ['llzkdialectbytecodeinterface_3c_20structdialect_20_3e_13',['LLZKDialectBytecodeInterface&lt; StructDialect &gt;',['../structllzk_1_1LLZKDialectBytecodeInterface.html',1,'llzk']]],
-  ['llzkdialectlinktests_14',['LlzkDialectLinkTests',['../classLlzkDialectLinkTests.html',1,'']]],
-  ['llzkdialectversion_15',['LLZKDialectVersion',['../structllzk_1_1LLZKDialectVersion.html',1,'llzk']]],
-  ['llzkoperationlinktests_16',['LlzkOperationLinkTests',['../classLlzkOperationLinkTests.html',1,'']]],
-  ['llzkrecordvalue_17',['LlzkRecordValue',['../structLlzkRecordValue.html',1,'']]],
-  ['llzksymbollookupresult_18',['LlzkSymbolLookupResult',['../structLlzkSymbolLookupResult.html',1,'']]],
-  ['llzksymboltableimpltrait_19',['LLZKSymbolTableImplTrait',['../classllzk_1_1LLZKSymbolTableImplTrait.html',1,'llzk']]],
-  ['llzktypeswitch_20',['LLZKTypeSwitch',['../structllzk_1_1LLZKTypeSwitch.html',1,'llzk']]],
-  ['loadop_21',['LoadOp',['../classllzk_1_1ram_1_1LoadOp.html',1,'llzk::ram']]],
-  ['loadopadaptor_22',['LoadOpAdaptor',['../classllzk_1_1ram_1_1LoadOpAdaptor.html',1,'llzk::ram']]],
-  ['loadopbuildfunchelper_23',['LoadOpBuildFuncHelper',['../structLoadOpBuildFuncHelper.html',1,'']]],
-  ['loadopgenericadaptor_24',['LoadOpGenericAdaptor',['../classllzk_1_1ram_1_1LoadOpGenericAdaptor.html',1,'llzk::ram']]],
-  ['loadopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_25',['LoadOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1ram_1_1LoadOpGenericAdaptor.html',1,'llzk::ram']]],
-  ['loadopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_26',['LoadOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1ram_1_1LoadOpGenericAdaptor.html',1,'llzk::ram']]],
-  ['loadopgenericadaptorbase_27',['LoadOpGenericAdaptorBase',['../classllzk_1_1ram_1_1detail_1_1LoadOpGenericAdaptorBase.html',1,'llzk::ram::detail']]],
-  ['locationcomparator_28',['LocationComparator',['../structllzk_1_1LocationComparator.html',1,'llzk']]]
+  ['jsonmismatch_0',['JSONMismatch',['../structllzk_1_1witgen_1_1JSONMismatch.html',1,'llzk::witgen']]]
 ];

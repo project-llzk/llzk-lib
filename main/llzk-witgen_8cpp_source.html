@@ -116,172 +116,201 @@ $(function(){initNavTree('llzk-witgen_8cpp_source.html','',''); });
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">//</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="WitgenDriver_8h.html">WitgenDriver.h</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">tools/config.h</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="Array_2IR_2Dialect_8h.html">llzk/Dialect/Array/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Dialect_8h.html">llzk/Dialect/Bool/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Cast_2IR_2Dialect_8h.html">llzk/Dialect/Cast/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Constrain_2IR_2Dialect_8h.html">llzk/Dialect/Constrain/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Dialect_8h.html">llzk/Dialect/Felt/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="Function_2IR_2Dialect_8h.html">llzk/Dialect/Function/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;<a class="code" href="Global_2IR_2Dialect_8h.html">llzk/Dialect/Global/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Include_2IR_2Dialect_8h.html">llzk/Dialect/Include/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="IncludeHelper_8h.html">llzk/Dialect/Include/Util/IncludeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="llzk_2Dialect_2InitDialects_8h.html">llzk/Dialect/InitDialects.h</a>&quot;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_2IR_2Dialect_8h.html">llzk/Dialect/LLZK/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="POD_2IR_2Dialect_8h.html">llzk/Dialect/POD/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Dialect_8h.html">llzk/Dialect/Polymorphic/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &quot;<a class="code" href="RAM_2IR_2Dialect_8h.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &quot;<a class="code" href="SMTDialect_8h.html">llzk/Dialect/SMT/IR/SMTDialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &quot;<a class="code" href="String_2IR_2Dialect_8h.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Dialect_8h.html">llzk/Dialect/Struct/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;mlir/Dialect/ControlFlow/IR/ControlFlowOps.h&gt;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;mlir/Dialect/MemRef/IR/MemRef.h&gt;</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinDialect.h&gt;</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinOps.h&gt;</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;mlir/IR/DialectRegistry.h&gt;</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;mlir/Parser/Parser.h&gt;</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="preprocessor">#include &lt;llvm/ADT/StringExtras.h&gt;</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &lt;llvm/Support/FileSystem.h&gt;</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#include &lt;llvm/Support/FormatVariadic.h&gt;</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#include &lt;llvm/Support/JSON.h&gt;</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &lt;llvm/Support/MemoryBuffer.h&gt;</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &lt;llvm/Support/PrettyStackTrace.h&gt;</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="preprocessor">#include &lt;llvm/Support/Signals.h&gt;</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; InputFilename(llvm::cl::Positional, llvm::cl::Required);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    InputsFilename(<span class="stringliteral">&quot;inputs&quot;</span>, llvm::cl::Required, llvm::cl::desc(<span class="stringliteral">&quot;JSON input file&quot;</span>));</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keyword">static</span> llvm::cl::list&lt;std::string&gt; IncludeDirs(</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="stringliteral">&quot;I&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Directory of include files&quot;</span>), llvm::cl::value_desc(<span class="stringliteral">&quot;directory&quot;</span>),</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    llvm::cl::Prefix</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; BackendName(</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    <span class="stringliteral">&quot;backend&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Execution backend: interpreter or execution-engine&quot;</span>),</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    llvm::cl::init(<span class="stringliteral">&quot;interpreter&quot;</span>)</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>);</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; OutputScopeName(</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="stringliteral">&quot;output-scope&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Output scope: public or full-witness&quot;</span>), llvm::cl::init(<span class="stringliteral">&quot;public&quot;</span>)</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>);</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; UninitializedBehaviorName(</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    <span class="stringliteral">&quot;uninitialized-behavior&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Uninitialized value behavior: zero, random, or fail&quot;</span>),</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    llvm::cl::init(<span class="stringliteral">&quot;zero&quot;</span>)</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>);</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">static</span> llvm::cl::opt&lt;uint64_t&gt;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    UninitializedSeed(<span class="stringliteral">&quot;uninitialized-seed&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Seed for random uninitialized values&quot;</span>));</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span><span class="keyword">static</span> llvm::cl::opt&lt;bool&gt;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    DumpJITCore(<span class="stringliteral">&quot;dump-jit-core&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Print the pre-LLVM JIT module&quot;</span>));</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="keyword">static</span> llvm::cl::opt&lt;bool&gt;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    DumpJITLLVM(<span class="stringliteral">&quot;dump-jit-llvm&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Print the post-LLVM JIT module&quot;</span>));</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span></div>
-<div class="foldopen" id="foldopen00079" data-start="{" data-end="}">
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno"><a class="line" href="llzk-witgen_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">   79</a></span><span class="keywordtype">int</span> <a class="code hl_function" href="llzk-witgen_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> **argv) {</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  llvm::setBugReportMsg(</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>      <span class="stringliteral">&quot;PLEASE submit a bug report to &quot;</span> <a class="code hl_define" href="config_8h.html#adf7c7c6700e3090f8c0024c209c3c519">BUG_REPORT_URL</a></div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      <span class="stringliteral">&quot; and include the crash backtrace, relevant LLZK files, and associated run script(s).\n&quot;</span></div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  );</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  llvm::cl::ParseCommandLineOptions(</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      argc, argv,</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      <span class="stringliteral">&quot;llzk-witgen: execute LLZK compute semantics and emit JSON public outputs.\n&quot;</span></div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>      <span class="stringliteral">&quot;Note: llzk-witgen v1 ignores constrain() and traps on bool.assert.\n&quot;</span></div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  );</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  DialectRegistry registry;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <a class="code hl_function" href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">llzk::registerAllDialects</a>(registry);</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  mlir::func::registerInlinerExtension(registry);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  registry.insert&lt;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      mlir::memref::MemRefDialect, mlir::scf::SCFDialect&gt;();</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  MLIRContext context;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  context.appendDialectRegistry(registry);</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  context.loadAllAvailableDialects();</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  context.loadDialect&lt;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>      mlir::memref::MemRefDialect, mlir::scf::SCFDialect&gt;();</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="classllzk_1_1GlobalSourceMgr.html#a07fce82806573560a43c893b85379095">llzk::GlobalSourceMgr::get</a>().setup(IncludeDirs))) {</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  }</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keyword">auto</span> sourceBuffer = llvm::MemoryBuffer::getFileOrSTDIN(InputFilename);</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordflow">if</span> (!sourceBuffer) {</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    llvm::errs() &lt;&lt; sourceBuffer.getError().message() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  }</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  ParserConfig parserConfig(&amp;context);</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  OwningOpRef&lt;ModuleOp&gt; moduleOp =</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      parseSourceString&lt;ModuleOp&gt;(sourceBuffer.get()-&gt;getBuffer(), parserConfig, InputFilename);</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordflow">if</span> (!moduleOp) {</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  }</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">auto</span> buffer = llvm::MemoryBuffer::getFileOrSTDIN(InputsFilename);</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keywordflow">if</span> (!buffer) {</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    llvm::errs() &lt;&lt; buffer.getError().message() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  }</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span> </div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keyword">auto</span> parsed = llvm::json::parse(buffer.get()-&gt;getBuffer());</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keywordflow">if</span> (!parsed) {</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;failed to parse JSON input: &quot;</span> &lt;&lt; llvm::toString(parsed.takeError()) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  }</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">llzk::witgen::WitgenOptions</a> options;</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keywordflow">if</span> (BackendName == <span class="stringliteral">&quot;execution-engine&quot;</span>) {</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894">backend</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500">llzk::witgen::Backend::ExecutionEngine</a>;</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (BackendName == <span class="stringliteral">&quot;interpreter&quot;</span>) {</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894">backend</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bccadf608edb53fcc79c12759cdbdf58d9db">llzk::witgen::Backend::Interpreter</a>;</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;unknown backend: &quot;</span> &lt;&lt; BackendName &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  }</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <span class="keywordflow">if</span> (OutputScopeName == <span class="stringliteral">&quot;full-witness&quot;</span>) {</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77">outputScope</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e">llzk::witgen::OutputScope::FullWitness</a>;</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (OutputScopeName == <span class="stringliteral">&quot;public&quot;</span>) {</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77">outputScope</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed">llzk::witgen::OutputScope::Public</a>;</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;unknown output scope: &quot;</span> &lt;&lt; OutputScopeName &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  }</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordflow">if</span> (UninitializedBehaviorName == <span class="stringliteral">&quot;zero&quot;</span>) {</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d">uninitializedBehavior</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762ad7ed4ee1df437474d005188535f74875">llzk::witgen::UninitializedBehavior::Zero</a>;</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (UninitializedBehaviorName == <span class="stringliteral">&quot;random&quot;</span>) {</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d">uninitializedBehavior</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23">llzk::witgen::UninitializedBehavior::Random</a>;</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (UninitializedBehaviorName == <span class="stringliteral">&quot;fail&quot;</span>) {</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d">uninitializedBehavior</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1">llzk::witgen::UninitializedBehavior::Fail</a>;</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;unknown uninitialized behavior: &quot;</span> &lt;&lt; UninitializedBehaviorName &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  }</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  <span class="keywordflow">if</span> (UninitializedSeed.getNumOccurrences() &gt; 0) {</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">randomSeed</a> = UninitializedSeed;</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="JSON_8h.html">JSON.h</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="WitgenDriver_8h.html">WitgenDriver.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">tools/config.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="Array_2IR_2Dialect_8h.html">llzk/Dialect/Array/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Dialect_8h.html">llzk/Dialect/Bool/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Cast_2IR_2Dialect_8h.html">llzk/Dialect/Cast/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;<a class="code" href="Constrain_2IR_2Dialect_8h.html">llzk/Dialect/Constrain/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Dialect_8h.html">llzk/Dialect/Felt/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;<a class="code" href="Function_2IR_2Dialect_8h.html">llzk/Dialect/Function/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Global_2IR_2Dialect_8h.html">llzk/Dialect/Global/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="Include_2IR_2Dialect_8h.html">llzk/Dialect/Include/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="IncludeHelper_8h.html">llzk/Dialect/Include/Util/IncludeHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="llzk_2Dialect_2InitDialects_8h.html">llzk/Dialect/InitDialects.h</a>&quot;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="LLZK_2IR_2Dialect_8h.html">llzk/Dialect/LLZK/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;<a class="code" href="POD_2IR_2Dialect_8h.html">llzk/Dialect/POD/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Dialect_8h.html">llzk/Dialect/Polymorphic/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &quot;<a class="code" href="RAM_2IR_2Dialect_8h.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &quot;<a class="code" href="SMTDialect_8h.html">llzk/Dialect/SMT/IR/SMTDialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &quot;<a class="code" href="String_2IR_2Dialect_8h.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Dialect_8h.html">llzk/Dialect/Struct/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;mlir/Dialect/ControlFlow/IR/ControlFlowOps.h&gt;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;mlir/Dialect/MemRef/IR/MemRef.h&gt;</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinDialect.h&gt;</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinOps.h&gt;</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;mlir/IR/DialectRegistry.h&gt;</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;mlir/Parser/Parser.h&gt;</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="preprocessor">#include &lt;llvm/ADT/StringExtras.h&gt;</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#include &lt;llvm/Support/FileSystem.h&gt;</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#include &lt;llvm/Support/FormatVariadic.h&gt;</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &lt;llvm/Support/JSON.h&gt;</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &lt;llvm/Support/MemoryBuffer.h&gt;</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="preprocessor">#include &lt;llvm/Support/PrettyStackTrace.h&gt;</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">#include &lt;llvm/Support/Signals.h&gt;</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; InputFilename(llvm::cl::Positional, llvm::cl::Required);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    InputsFilename(<span class="stringliteral">&quot;inputs&quot;</span>, llvm::cl::Required, llvm::cl::desc(<span class="stringliteral">&quot;JSON input file&quot;</span>));</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">static</span> llvm::cl::list&lt;std::string&gt; IncludeDirs(</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="stringliteral">&quot;I&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Directory of include files&quot;</span>), llvm::cl::value_desc(<span class="stringliteral">&quot;directory&quot;</span>),</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    llvm::cl::Prefix</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; BackendName(</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="stringliteral">&quot;backend&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Execution backend: interpreter or execution-engine&quot;</span>),</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    llvm::cl::init(<span class="stringliteral">&quot;interpreter&quot;</span>)</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>);</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; OutputScopeName(</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="stringliteral">&quot;output-scope&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Output scope: public or full-witness&quot;</span>), llvm::cl::init(<span class="stringliteral">&quot;public&quot;</span>)</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>);</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt; UninitializedBehaviorName(</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <span class="stringliteral">&quot;uninitialized-behavior&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Uninitialized value behavior: zero, random, or fail&quot;</span>),</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    llvm::cl::init(<span class="stringliteral">&quot;zero&quot;</span>)</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>);</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="keyword">static</span> llvm::cl::opt&lt;uint64_t&gt;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    UninitializedSeed(<span class="stringliteral">&quot;uninitialized-seed&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Seed for random uninitialized values&quot;</span>));</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">static</span> llvm::cl::opt&lt;bool&gt;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    DumpJITCore(<span class="stringliteral">&quot;dump-jit-core&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Print the pre-LLVM JIT module&quot;</span>));</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="keyword">static</span> llvm::cl::opt&lt;bool&gt;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    DumpJITLLVM(<span class="stringliteral">&quot;dump-jit-llvm&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;Print the post-LLVM JIT module&quot;</span>));</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span><span class="keyword">static</span> llvm::cl::opt&lt;std::string&gt;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    CheckOutputFilename(<span class="stringliteral">&quot;check-output&quot;</span>, llvm::cl::desc(<span class="stringliteral">&quot;JSON file with expected witgen output&quot;</span>));</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span></div>
+<div class="foldopen" id="foldopen00082" data-start="{" data-end="}">
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno"><a class="line" href="llzk-witgen_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">   82</a></span><span class="keywordtype">int</span> <a class="code hl_function" href="llzk-witgen_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> **argv) {</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  llvm::setBugReportMsg(</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      <span class="stringliteral">&quot;PLEASE submit a bug report to &quot;</span> <a class="code hl_define" href="config_8h.html#adf7c7c6700e3090f8c0024c209c3c519">BUG_REPORT_URL</a></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      <span class="stringliteral">&quot; and include the crash backtrace, relevant LLZK files, and associated run script(s).\n&quot;</span></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  );</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  llvm::cl::ParseCommandLineOptions(</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      argc, argv,</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>      <span class="stringliteral">&quot;llzk-witgen: execute LLZK compute semantics and emit JSON public outputs.\n&quot;</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>      <span class="stringliteral">&quot;Note: llzk-witgen v1 ignores constrain() and traps on bool.assert.\n&quot;</span></div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  );</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  DialectRegistry registry;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <a class="code hl_function" href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">llzk::registerAllDialects</a>(registry);</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  mlir::func::registerInlinerExtension(registry);</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  registry.insert&lt;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>      mlir::memref::MemRefDialect, mlir::scf::SCFDialect&gt;();</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  MLIRContext context;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  context.appendDialectRegistry(registry);</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  context.loadAllAvailableDialects();</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  context.loadDialect&lt;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>      mlir::arith::ArithDialect, mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>      mlir::memref::MemRefDialect, mlir::scf::SCFDialect&gt;();</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="classllzk_1_1GlobalSourceMgr.html#a07fce82806573560a43c893b85379095">llzk::GlobalSourceMgr::get</a>().setup(IncludeDirs))) {</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  }</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keyword">auto</span> sourceBuffer = llvm::MemoryBuffer::getFileOrSTDIN(InputFilename);</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordflow">if</span> (!sourceBuffer) {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    llvm::errs() &lt;&lt; sourceBuffer.getError().message() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  ParserConfig parserConfig(&amp;context);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  OwningOpRef&lt;ModuleOp&gt; moduleOp =</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>      parseSourceString&lt;ModuleOp&gt;(sourceBuffer.get()-&gt;getBuffer(), parserConfig, InputFilename);</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keywordflow">if</span> (!moduleOp) {</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  }</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">auto</span> buffer = llvm::MemoryBuffer::getFileOrSTDIN(InputsFilename);</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keywordflow">if</span> (!buffer) {</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    llvm::errs() &lt;&lt; buffer.getError().message() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  }</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keyword">auto</span> parsed = llvm::json::parse(buffer.get()-&gt;getBuffer());</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  <span class="keywordflow">if</span> (!parsed) {</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;failed to parse JSON input: &quot;</span> &lt;&lt; llvm::toString(parsed.takeError()) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  }</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <a class="code hl_struct" href="structllzk_1_1witgen_1_1WitgenOptions.html">llzk::witgen::WitgenOptions</a> options;</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keywordflow">if</span> (BackendName == <span class="stringliteral">&quot;execution-engine&quot;</span>) {</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894">backend</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500">llzk::witgen::Backend::ExecutionEngine</a>;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (BackendName == <span class="stringliteral">&quot;interpreter&quot;</span>) {</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0db80adc4d179e7370fd46834cf37894">backend</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bccadf608edb53fcc79c12759cdbdf58d9db">llzk::witgen::Backend::Interpreter</a>;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;unknown backend: &quot;</span> &lt;&lt; BackendName &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  }</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keywordflow">if</span> (OutputScopeName == <span class="stringliteral">&quot;full-witness&quot;</span>) {</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77">outputScope</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e">llzk::witgen::OutputScope::FullWitness</a>;</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (OutputScopeName == <span class="stringliteral">&quot;public&quot;</span>) {</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a0b91a52794300ba61242985f902b5b77">outputScope</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed">llzk::witgen::OutputScope::Public</a>;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;unknown output scope: &quot;</span> &lt;&lt; OutputScopeName &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  }</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="keywordflow">if</span> (UninitializedBehaviorName == <span class="stringliteral">&quot;zero&quot;</span>) {</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d">uninitializedBehavior</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762ad7ed4ee1df437474d005188535f74875">llzk::witgen::UninitializedBehavior::Zero</a>;</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (UninitializedBehaviorName == <span class="stringliteral">&quot;random&quot;</span>) {</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d">uninitializedBehavior</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23">llzk::witgen::UninitializedBehavior::Random</a>;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (UninitializedBehaviorName == <span class="stringliteral">&quot;fail&quot;</span>) {</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d">uninitializedBehavior</a> = <a class="code hl_enumvalue" href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1">llzk::witgen::UninitializedBehavior::Fail</a>;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;unknown uninitialized behavior: &quot;</span> &lt;&lt; UninitializedBehaviorName &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
 <div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  }</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#abfa42bfb7258119b3a9f16f832e20d03">inlineIncludes</a> = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#aa9a1ccb452462595fcd2d462c56fb9b2">dumpJITCore</a> = DumpJITCore;</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a742654891f871f65682a4b99c5c0667d">dumpJITLLVM</a> = DumpJITLLVM;</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  <span class="keyword">auto</span> result = <a class="code hl_function" href="namespacellzk_1_1witgen.html#a63fc53dc637ec93db61e7a5089a930e3">llzk::witgen::runWitgen</a>(*moduleOp, *parsed, options);</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keywordflow">if</span> (!result) {</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;llzk-witgen error: &quot;</span> &lt;&lt; llvm::toString(result.takeError()) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  }</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  llvm::outs() &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;{0:2}&quot;</span>, *result) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>}</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  <span class="keywordflow">if</span> (UninitializedSeed.getNumOccurrences() &gt; 0) {</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a9dc6236cf621c59f01b0bd4bb8a33738">randomSeed</a> = UninitializedSeed;</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  }</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#abfa42bfb7258119b3a9f16f832e20d03">inlineIncludes</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#aa9a1ccb452462595fcd2d462c56fb9b2">dumpJITCore</a> = DumpJITCore;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  options.<a class="code hl_variable" href="structllzk_1_1witgen_1_1WitgenOptions.html#a742654891f871f65682a4b99c5c0667d">dumpJITLLVM</a> = DumpJITLLVM;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  <span class="keyword">auto</span> result = <a class="code hl_function" href="namespacellzk_1_1witgen.html#a63fc53dc637ec93db61e7a5089a930e3">llzk::witgen::runWitgen</a>(*moduleOp, *parsed, options);</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordflow">if</span> (!result) {</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    llvm::errs() &lt;&lt; <span class="stringliteral">&quot;llzk-witgen error: &quot;</span> &lt;&lt; llvm::toString(result.takeError()) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  }</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keywordflow">if</span> (CheckOutputFilename.getNumOccurrences() &gt; 0) {</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    <span class="keyword">auto</span> expectedBuffer = llvm::MemoryBuffer::getFileOrSTDIN(CheckOutputFilename);</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    <span class="keywordflow">if</span> (!expectedBuffer) {</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      llvm::errs() &lt;&lt; expectedBuffer.getError().message() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>      <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    }</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    <span class="keyword">auto</span> expected = llvm::json::parse(expectedBuffer.get()-&gt;getBuffer());</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="keywordflow">if</span> (!expected) {</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>      llvm::errs() &lt;&lt; <span class="stringliteral">&quot;failed to parse expected JSON output: &quot;</span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>                   &lt;&lt; llvm::toString(expected.takeError()) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>      <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>    }</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    llvm::SmallVector&lt;llzk::witgen::JSONMismatch&gt; mismatches;</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    <a class="code hl_function" href="namespacellzk_1_1witgen.html#a58835e5cae756c594d73168b6ee92c08">llzk::witgen::diffJSON</a>(*expected, *result, mismatches);</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    <span class="keywordflow">if</span> (!mismatches.empty()) {</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>      llvm::errs() &lt;&lt; <span class="stringliteral">&quot;llzk-witgen output mismatch:\n&quot;</span>;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>      <a class="code hl_function" href="namespacellzk_1_1witgen.html#ad074e5215c751ba016990321b3413724">llzk::witgen::printJSONMismatches</a>(llvm::errs(), mismatches);</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>      <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    }</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>    llvm::outs() &lt;&lt; <span class="stringliteral">&quot;output matched expected JSON\n&quot;</span>;</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  }</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  llvm::outs() &lt;&lt; llvm::formatv(<span class="stringliteral">&quot;{0:2}&quot;</span>, *result) &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>}</div>
 </div>
 <div class="ttc" id="aArray_2IR_2Dialect_8h_html"><div class="ttname"><a href="Array_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aBool_2IR_2Dialect_8h_html"><div class="ttname"><a href="Bool_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
@@ -292,6 +321,7 @@ $(function(){initNavTree('llzk-witgen_8cpp_source.html','',''); });
 <div class="ttc" id="aGlobal_2IR_2Dialect_8h_html"><div class="ttname"><a href="Global_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aIncludeHelper_8h_html"><div class="ttname"><a href="IncludeHelper_8h.html">IncludeHelper.h</a></div></div>
 <div class="ttc" id="aInclude_2IR_2Dialect_8h_html"><div class="ttname"><a href="Include_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
+<div class="ttc" id="aJSON_8h_html"><div class="ttname"><a href="JSON_8h.html">JSON.h</a></div></div>
 <div class="ttc" id="aLLZK_2IR_2Dialect_8h_html"><div class="ttname"><a href="LLZK_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aPOD_2IR_2Dialect_8h_html"><div class="ttname"><a href="POD_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Dialect_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
@@ -303,14 +333,16 @@ $(function(){initNavTree('llzk-witgen_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1GlobalSourceMgr_html_a07fce82806573560a43c893b85379095"><div class="ttname"><a href="classllzk_1_1GlobalSourceMgr.html#a07fce82806573560a43c893b85379095">llzk::GlobalSourceMgr::get</a></div><div class="ttdeci">static GlobalSourceMgr &amp; get()</div><div class="ttdef"><b>Definition</b> <a href="IncludeHelper_8h_source.html#l00027">IncludeHelper.h:27</a></div></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
 <div class="ttc" id="aconfig_8h_html_adf7c7c6700e3090f8c0024c209c3c519"><div class="ttname"><a href="config_8h.html#adf7c7c6700e3090f8c0024c209c3c519">BUG_REPORT_URL</a></div><div class="ttdeci">#define BUG_REPORT_URL</div><div class="ttdef"><b>Definition</b> <a href="config_8h_source.html#l00015">config.h:15</a></div></div>
-<div class="ttc" id="allzk-witgen_8cpp_html_a3c04138a5bfe5d72780bb7e82a18e627"><div class="ttname"><a href="llzk-witgen_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a></div><div class="ttdeci">int main(int argc, char **argv)</div><div class="ttdoc">Execute the llzk-witgen command-line tool.</div><div class="ttdef"><b>Definition</b> <a href="#l00079">llzk-witgen.cpp:79</a></div></div>
+<div class="ttc" id="allzk-witgen_8cpp_html_a3c04138a5bfe5d72780bb7e82a18e627"><div class="ttname"><a href="llzk-witgen_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a></div><div class="ttdeci">int main(int argc, char **argv)</div><div class="ttdoc">Execute the llzk-witgen command-line tool.</div><div class="ttdef"><b>Definition</b> <a href="#l00082">llzk-witgen.cpp:82</a></div></div>
 <div class="ttc" id="allzk_2Dialect_2InitDialects_8h_html"><div class="ttname"><a href="llzk_2Dialect_2InitDialects_8h.html">InitDialects.h</a></div><div class="ttdoc">This file defines llzk::registerAllDialects.</div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed">llzk::witgen::OutputScope::Public</a></div><div class="ttdeci">@ Public</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8h_source.html#l00035">WitgenDriver.h:35</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e">llzk::witgen::OutputScope::FullWitness</a></div><div class="ttdeci">@ FullWitness</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8h_source.html#l00036">WitgenDriver.h:36</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_a58835e5cae756c594d73168b6ee92c08"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a58835e5cae756c594d73168b6ee92c08">llzk::witgen::diffJSON</a></div><div class="ttdeci">void diffJSON(const llvm::json::Value &amp;expected, const llvm::json::Value &amp;actual, llvm::SmallVectorImpl&lt; JSONMismatch &gt; &amp;out, llvm::StringRef path)</div><div class="ttdoc">Compare two JSON values structurally and append any mismatches to out.</div><div class="ttdef"><b>Definition</b> <a href="JSON_8cpp_source.html#l00473">JSON.cpp:473</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a63fc53dc637ec93db61e7a5089a930e3"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a63fc53dc637ec93db61e7a5089a930e3">llzk::witgen::runWitgen</a></div><div class="ttdeci">llvm::Expected&lt; llvm::json::Value &gt; runWitgen(ModuleOp moduleOp, const llvm::json::Value &amp;input, const WitgenOptions &amp;options)</div><div class="ttdoc">Run include preprocessing, field validation, and backend execution.</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8cpp_source.html#l00202">WitgenDriver.cpp:202</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762a64663f4646781c9c0110838b905daa23">llzk::witgen::UninitializedBehavior::Random</a></div><div class="ttdeci">@ Random</div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00057">ValueModel.h:57</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762aceaa0734f0b3c738120c67344d8f3ec1">llzk::witgen::UninitializedBehavior::Fail</a></div><div class="ttdeci">@ Fail</div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00058">ValueModel.h:58</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_a73471e65772377271d4b75b8eebdc762ad7ed4ee1df437474d005188535f74875"><div class="ttname"><a href="namespacellzk_1_1witgen.html#a73471e65772377271d4b75b8eebdc762ad7ed4ee1df437474d005188535f74875">llzk::witgen::UninitializedBehavior::Zero</a></div><div class="ttdeci">@ Zero</div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00056">ValueModel.h:56</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1witgen_html_ad074e5215c751ba016990321b3413724"><div class="ttname"><a href="namespacellzk_1_1witgen.html#ad074e5215c751ba016990321b3413724">llzk::witgen::printJSONMismatches</a></div><div class="ttdeci">void printJSONMismatches(llvm::raw_ostream &amp;os, llvm::ArrayRef&lt; JSONMismatch &gt; mismatches)</div><div class="ttdoc">Render one human-readable mismatch report.</div><div class="ttdef"><b>Definition</b> <a href="JSON_8cpp_source.html#l00504">JSON.cpp:504</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500"><div class="ttname"><a href="namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500">llzk::witgen::Backend::ExecutionEngine</a></div><div class="ttdeci">@ ExecutionEngine</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8h_source.html#l00030">WitgenDriver.h:30</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1witgen_html_aec3ee3b863e273df6fdd3ad67a571bccadf608edb53fcc79c12759cdbdf58d9db"><div class="ttname"><a href="namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bccadf608edb53fcc79c12759cdbdf58d9db">llzk::witgen::Backend::Interpreter</a></div><div class="ttdeci">@ Interpreter</div><div class="ttdef"><b>Definition</b> <a href="WitgenDriver_8h_source.html#l00029">WitgenDriver.h:29</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a9338ef0435a6cb734c7aebea355d4a36"><div class="ttname"><a href="namespacellzk.html#a9338ef0435a6cb734c7aebea355d4a36">llzk::registerAllDialects</a></div><div class="ttdeci">void registerAllDialects(mlir::DialectRegistry &amp;registry)</div><div class="ttdef"><b>Definition</b> <a href="Dialect_2InitDialects_8cpp_source.html#l00035">InitDialects.cpp:35</a></div></div>
