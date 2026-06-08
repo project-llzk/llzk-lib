@@ -28,16 +28,16 @@ var namespacellzk_1_1polymorphic =
     [ "YieldOpAdaptor", "classllzk_1_1polymorphic_1_1YieldOpAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpAdaptor" ],
     [ "YieldOpGenericAdaptor", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor" ],
     [ "TemplateSymbolBindingOp", "conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html", null ],
-    [ "StructCleanupMode", "namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55e", [
-      [ "Disabled", "namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55eab9f5c797ebbf55adccdd8539a65a0241", null ],
-      [ "Preimage", "namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55eae0372cf62f1b5205fdaf2e6b0c1a9197", null ],
-      [ "ConcreteAsRoot", "namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55ea525f1b5b0ec48149c716c2f42521e71e", null ],
-      [ "MainAsRoot", "namespacellzk_1_1polymorphic.html#a043db2e0ba1b3a81542edbbb39d1f55ea09e5eb2355e906d0d4584109df120cbc", null ]
+    [ "FlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9", [
+      [ "Disabled", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241", null ],
+      [ "Preimage", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197", null ],
+      [ "ConcreteAsRoot", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e", null ],
+      [ "MainAsRoot", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc", null ]
     ] ],
     [ "createEmptyTemplateRemoval", "namespacellzk_1_1polymorphic.html#ae5e3a76ebc8b70aae91e2bc805f34a54", null ],
     [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#a588852ffba37b2c570615b494d488163", null ],
     [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#a59959bb9e7bef15b2c50ad659626e0f6", null ],
-    [ "getMaxEnumValForStructCleanupMode", "namespacellzk_1_1polymorphic.html#ad840f03dba722bb4b532aa99d95d6286", null ],
+    [ "getMaxEnumValForFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#afec084874e5df37a9774039696031b8f", null ],
     [ "isInTemplate", "namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed", null ],
     [ "isInTemplate", "namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562", null ],
     [ "registerEmptyTemplateRemovalPass", "namespacellzk_1_1polymorphic.html#a701cdc0a80b6262758b8c7863da288e4", null ],
@@ -45,12 +45,12 @@ var namespacellzk_1_1polymorphic =
     [ "registerFlatteningPass", "namespacellzk_1_1polymorphic.html#a04ac74004f60ea0b82cce0b453d838f8", null ],
     [ "registerFlatteningPassPass", "namespacellzk_1_1polymorphic.html#aa2967e64982a04611c249dd98ce6a986", null ],
     [ "registerTransformationPasses", "namespacellzk_1_1polymorphic.html#ac756baa8d3f96f499ebf79ef4c91d018", null ],
-    [ "stringifyEnum", "namespacellzk_1_1polymorphic.html#a4bb240d0caad3da4c80e2ba50af5d468", null ],
-    [ "stringifyStructCleanupMode", "namespacellzk_1_1polymorphic.html#acd159a161a6bf126218dd0ed56af3d27", null ],
+    [ "stringifyEnum", "namespacellzk_1_1polymorphic.html#adc06017900e91f9dd0292bec523059ae", null ],
+    [ "stringifyFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a", null ],
     [ "symbolizeEnum", "namespacellzk_1_1polymorphic.html#a481b09430b230a5583378148ebd1c335", null ],
-    [ "symbolizeEnum< StructCleanupMode >", "namespacellzk_1_1polymorphic.html#a865e2a531880529c07ddbbf72dda2565", null ],
-    [ "symbolizeStructCleanupMode", "namespacellzk_1_1polymorphic.html#a1ca0643ee0e00368de46a5a6b751da54", null ],
-    [ "symbolizeStructCleanupMode", "namespacellzk_1_1polymorphic.html#aae1bba9a70797c4caf12b44bdd8fde59", null ],
+    [ "symbolizeEnum< FlatteningCleanupMode >", "namespacellzk_1_1polymorphic.html#a23e1888c5a6bea894851e00611369893", null ],
+    [ "symbolizeFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#abad4e40d06d8eaa25861af6730fdcd0d", null ],
+    [ "symbolizeFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#acbd04ca89ed16b1ed06964eccc3ac071", null ],
     [ "verifyInTemplate", "namespacellzk_1_1polymorphic.html#ae1ebee7870d5849df2129690ed3fd0ed", null ],
     [ "verifyInTemplate", "namespacellzk_1_1polymorphic.html#acc78f558f10c87ee61ca2699793ebbb1", null ]
 ];

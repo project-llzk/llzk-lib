@@ -14,7 +14,7 @@ var searchData=
   ['densemapinfo_3c_3a_3allzk_3a_3aboolean_3a_3afeltcmppredicate_20_3e_11',['DenseMapInfo&lt;::llzk::boolean::FeltCmpPredicate &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html',1,'llvm']]],
   ['densemapinfo_3c_3a_3allzk_3a_3acast_3a_3aoverflowsemantics_20_3e_12',['DenseMapInfo&lt;::llzk::cast::OverflowSemantics &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html',1,'llvm']]],
   ['densemapinfo_3c_3a_3allzk_3a_3aoutputstream_20_3e_13',['DenseMapInfo&lt;::llzk::OutputStream &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html',1,'llvm']]],
-  ['densemapinfo_3c_3a_3allzk_3a_3apolymorphic_3a_3astructcleanupmode_20_3e_14',['DenseMapInfo&lt;::llzk::polymorphic::StructCleanupMode &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_4.html',1,'llvm']]],
+  ['densemapinfo_3c_3a_3allzk_3a_3apolymorphic_3a_3aflatteningcleanupmode_20_3e_14',['DenseMapInfo&lt;::llzk::polymorphic::FlatteningCleanupMode &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html',1,'llvm']]],
   ['densemapinfo_3c_3a_3allzk_3a_3asmt_3a_3abvcmppredicate_20_3e_15',['DenseMapInfo&lt;::llzk::smt::BVCmpPredicate &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html',1,'llvm']]],
   ['densemapinfo_3c_3a_3allzk_3a_3asmt_3a_3aintpredicate_20_3e_16',['DenseMapInfo&lt;::llzk::smt::IntPredicate &gt;',['../structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html',1,'llvm']]],
   ['distinctop_17',['DistinctOp',['../classllzk_1_1smt_1_1DistinctOp.html',1,'llzk::smt']]],

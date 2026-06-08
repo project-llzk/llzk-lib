@@ -9,7 +9,7 @@ var namespacellvm =
     [ "DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4" ],
     [ "DenseMapInfo<::llzk::cast::OverflowSemantics >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4" ],
     [ "DenseMapInfo<::llzk::OutputStream >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4" ],
-    [ "DenseMapInfo<::llzk::polymorphic::StructCleanupMode >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1StructCleanupMode_01_4" ],
+    [ "DenseMapInfo<::llzk::polymorphic::FlatteningCleanupMode >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4" ],
     [ "DenseMapInfo<::llzk::smt::BVCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4" ],
     [ "DenseMapInfo<::llzk::smt::IntPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4" ],
     [ "DOTGraphTraits< const llzk::SymbolDefTree * >", "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html", "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4" ],
@@ -27,7 +27,7 @@ var namespacellvm =
     [ "operator<<", "namespacellvm.html#a21116bbe45c869941be8cfe628ef4eca", null ],
     [ "operator<<", "namespacellvm.html#aaecf54ee82ac62485fb87ad594a08b17", null ],
     [ "operator<<", "namespacellvm.html#ae73cb6218f6e9108a360a5ff708337d0", null ],
-    [ "operator<<", "namespacellvm.html#aded8464487dedd8a80d1b53f5d23ef56", null ],
+    [ "operator<<", "namespacellvm.html#aafedcb319b95b6847b7594d0fdc3ccd9", null ],
     [ "operator<<", "namespacellvm.html#a56bc18c8aa3441a4ac9333dd2d58014e", null ],
     [ "operator<<", "namespacellvm.html#a0fc2145917e31225cbcd377de7b88080", null ],
     [ "operator<<", "namespacellvm.html#a5fd8a1866579e360203d0ae936fa7920", null ]

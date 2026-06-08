@@ -1,6 +1,6 @@
 var TransformationPassEnums_8cpp_8inc =
 [
-    [ "llzk::polymorphic::stringifyStructCleanupMode", "namespacellzk_1_1polymorphic.html#acd159a161a6bf126218dd0ed56af3d27", null ],
-    [ "llzk::polymorphic::symbolizeStructCleanupMode", "namespacellzk_1_1polymorphic.html#a1ca0643ee0e00368de46a5a6b751da54", null ],
-    [ "llzk::polymorphic::symbolizeStructCleanupMode", "namespacellzk_1_1polymorphic.html#aae1bba9a70797c4caf12b44bdd8fde59", null ]
+    [ "llzk::polymorphic::stringifyFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a", null ],
+    [ "llzk::polymorphic::symbolizeFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#abad4e40d06d8eaa25861af6730fdcd0d", null ],
+    [ "llzk::polymorphic::symbolizeFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#acbd04ca89ed16b1ed06964eccc3ac071", null ]
 ];
