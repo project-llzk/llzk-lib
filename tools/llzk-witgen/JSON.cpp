@@ -19,13 +19,96 @@
 
 #include <mlir/IR/Operation.h>
 
+#include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/TypeSwitch.h>
+#include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/MathExtras.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
 
 namespace llzk::witgen {
+namespace {
+
+static std::string renderJSON(const llvm::json::Value &value) {
+  return llvm::formatv("{0:2}", value).str();
+}
+
+static llvm::StringRef jsonKind(const llvm::json::Value &value) {
+  if (value.getAsNull()) {
+    return "null";
+  }
+  if (value.getAsBoolean().has_value()) {
+    return "bool";
+  }
+  if (value.getAsNumber().has_value()) {
+    return "number";
+  }
+  if (value.getAsString()) {
+    return "string";
+  }
+  if (value.getAsArray()) {
+    return "array";
+  }
+  if (value.getAsObject()) {
+    return "object";
+  }
+  return "unknown";
+}
+
+static std::string appendObjectPath(llvm::StringRef path, llvm::StringRef key) {
+  llvm::SmallString<64> out(path);
+  out += ".";
+  out += key;
+  return std::string(out);
+}
+
+static std::string appendIndexPath(llvm::StringRef path, size_t index) {
+  return (llvm::Twine(path) + "[" + llvm::Twine(index) + "]").str();
+}
+
+static void pushMismatch(
+    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path, const llvm::Twine &message
+) {
+  out.push_back(JSONMismatch {path.str(), message.str()});
+}
+
+static void diffObjects(
+    const llvm::json::Object &expected, const llvm::json::Object &actual,
+    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path
+) {
+  for (const auto &kv : expected) {
+    if (const llvm::json::Value *actualValue = actual.get(kv.first)) {
+      diffJSON(kv.second, *actualValue, out, appendObjectPath(path, kv.first));
+      continue;
+    }
+    pushMismatch(out, appendObjectPath(path, kv.first), "missing key");
+  }
+  for (const auto &kv : actual) {
+    if (!expected.get(kv.first)) {
+      pushMismatch(out, appendObjectPath(path, kv.first), "unexpected key");
+    }
+  }
+}
+
+static void diffArrays(
+    const llvm::json::Array &expected, const llvm::json::Array &actual,
+    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path
+) {
+  if (expected.size() != actual.size()) {
+    pushMismatch(
+        out, path,
+        llvm::Twine("array length mismatch: expected ") + llvm::Twine(expected.size()) + ", got " +
+            llvm::Twine(actual.size())
+    );
+  }
+  size_t shared = std::min(expected.size(), actual.size());
+  for (size_t i = 0; i < shared; ++i) {
+    diffJSON(expected[i], actual[i], out, appendIndexPath(path, i));
+  }
+}
+
+} // namespace
 
 /// Parse an integer-compatible JSON value.
 static llvm::Expected<int64_t> jsonToInt(const llvm::json::Value *json) {
@@ -382,6 +465,43 @@ llvm::Expected<WitnessVal> extractValueAtPath(
   }
 
   return makeError("extra witness path components for non-aggregate value");
+}
+
+void diffJSON(
+    const llvm::json::Value &expected, const llvm::json::Value &actual,
+    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path
+) {
+  if (expected.kind() != actual.kind()) {
+    pushMismatch(
+        out, path,
+        llvm::Twine("type mismatch: expected ") + jsonKind(expected) + ", got " + jsonKind(actual)
+    );
+    return;
+  }
+
+  if (const auto *expectedObject = expected.getAsObject()) {
+    diffObjects(*expectedObject, *actual.getAsObject(), out, path);
+    return;
+  }
+  if (const auto *expectedArray = expected.getAsArray()) {
+    diffArrays(*expectedArray, *actual.getAsArray(), out, path);
+    return;
+  }
+  if (expected == actual) {
+    return;
+  }
+
+  pushMismatch(
+      out, path,
+      llvm::Twine("value mismatch: expected ") + renderJSON(expected) + ", got " +
+          renderJSON(actual)
+  );
+}
+
+void printJSONMismatches(llvm::raw_ostream &os, llvm::ArrayRef<JSONMismatch> mismatches) {
+  for (const JSONMismatch &mismatch : mismatches) {
+    os << mismatch.path << ": " << mismatch.message << '\n';
+  }
 }
 
 } // namespace llzk::witgen
