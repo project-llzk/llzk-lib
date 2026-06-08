@@ -268,6 +268,94 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaIf for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.if %cond -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    } else {
+      scf.yield %value : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaFor for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %lb = arith.constant 0 : index
+    %ub = arith.constant 1 : index
+    %step = arith.constant 1 : index
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.for %iv = %lb to %ub step %step iter_args(%acc = %value) -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaWhile for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.while (%acc = %value) : (!felt.type) -> !felt.type {
+      scf.condition(%cond) %acc : !felt.type
+    } do {
+    ^bb0(%iter : !felt.type):
+      scf.yield %secret : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @passthrough(%a : !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }

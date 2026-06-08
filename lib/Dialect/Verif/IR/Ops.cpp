@@ -20,6 +20,7 @@
 #include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>
@@ -151,6 +152,10 @@ enum class ForbiddenRequireConditionKind {
   FunctionReturn,
 };
 
+std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenance(
+    Value value, ContractOp contract, llvm::DenseSet<Value> &visited
+);
+
 // Function-target contracts append return values after the target's original
 // inputs, so those trailing block arguments represent forbidden return-value
 // provenance for preconditions.
@@ -167,6 +172,53 @@ bool isContractReturnValueArg(BlockArgument blockArg, ContractOp contract) {
 
   unsigned numFuncInputs = funcTarget->get().getFunctionType().getNumInputs();
   return blockArg.getArgNumber() >= numFuncInputs;
+}
+
+// Region-yielding ops such as `scf.if` can route values through region
+// terminators instead of direct op operands, so trace any matching yielded
+// operand for this result as an additional provenance source.
+SmallVector<Value> getRegionResultProvenanceOperands(Operation *terminator, unsigned resultNumber) {
+  SmallVector<Value> operands;
+  if (isa<scf::ConditionOp>(terminator)) {
+    unsigned valueOperand = resultNumber + 1;
+    if (terminator->getNumOperands() > valueOperand) {
+      operands.push_back(terminator->getOperand(valueOperand));
+    }
+    return operands;
+  }
+
+  if (terminator->getNumOperands() > resultNumber) {
+    operands.push_back(terminator->getOperand(resultNumber));
+  }
+  return operands;
+}
+
+// Map a region terminator's operands back to the parent op result being traced.
+std::optional<ForbiddenRequireConditionKind> classifyForbiddenRegionResultProvenance(
+    OpResult result, ContractOp contract, llvm::DenseSet<Value> &visited
+) {
+  if (result.getOwner()->getNumRegions() == 0) {
+    return std::nullopt;
+  }
+
+  unsigned resultNumber = result.getResultNumber();
+  for (Region &region : result.getOwner()->getRegions()) {
+    if (region.empty()) {
+      continue;
+    }
+    Block &block = region.front();
+    Operation *terminator = block.getTerminator();
+    if (terminator == nullptr) {
+      continue;
+    }
+    for (Value operand : getRegionResultProvenanceOperands(terminator, resultNumber)) {
+      if (auto kind = classifyForbiddenConditionProvenance(operand, contract, visited)) {
+        return kind;
+      }
+    }
+  }
+
+  return std::nullopt;
 }
 
 // Recursively walk the SSA use-def chain for a require condition and report the
@@ -194,6 +246,11 @@ std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenanc
   }
   if (isa<CallOp>(defOp)) {
     return ForbiddenRequireConditionKind::FunctionReturn;
+  }
+  if (auto result = dyn_cast<OpResult>(value)) {
+    if (auto kind = classifyForbiddenRegionResultProvenance(result, contract, visited)) {
+      return kind;
+    }
   }
 
   for (Value operand : defOp->getOperands()) {

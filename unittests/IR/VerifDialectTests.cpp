@@ -105,6 +105,39 @@ module attributes {llzk.lang} {
   EXPECT_FALSE(parsed);
 }
 
+TEST_F(VerifDialectTests, ContractRejectsPreconditionsDerivedFromRegionYieldedStructMembers) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaIf for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.if %cond -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    } else {
+      scf.yield %value : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    verif.require_constrain %isEq
+  }
+}
+)mlir";
+
+  auto parsed = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  EXPECT_FALSE(parsed);
+}
+
 TEST_F(VerifDialectTests, FunctionTargetContractsAreNotStructContracts) {
   constexpr StringLiteral source = R"mlir(
 module attributes {llzk.lang} {
