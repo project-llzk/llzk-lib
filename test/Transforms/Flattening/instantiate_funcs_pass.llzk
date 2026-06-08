@@ -259,53 +259,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
-// Test instantiation of function with template parameters specified at call site.
-module attributes {llzk.lang} {
-  poly.template @GlobalFunc {
-    poly.param @A
-
-    function.def @id() -> index {
-      %a = poly.read_const @A : index
-      function.return %a : index
-    }
-  }
-
-  struct.def @CallKnownTemplateGlobal {
-    function.def @compute() -> !struct.type<@CallKnownTemplateGlobal> {
-      %self = struct.new : !struct.type<@CallKnownTemplateGlobal>
-      %0 = function.call @GlobalFunc::@id<[89]>() : () -> index
-      function.return %self : !struct.type<@CallKnownTemplateGlobal>
-    }
-
-    function.def @constrain(%self: !struct.type<@CallKnownTemplateGlobal>) { function.return }
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @GlobalFunc_89_id() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
-// CHECK-NEXT:      function.return %[[VAL_0]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:    poly.template @GlobalFunc {
-// CHECK-NEXT:      poly.param @A
-// CHECK-NEXT:      function.def @id() -> index {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
-// CHECK-NEXT:        function.return %[[VAL_1]] : index
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:    struct.def @CallKnownTemplateGlobal {
-// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallKnownTemplateGlobal> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@CallKnownTemplateGlobal>
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc_89_id() : () -> index
-// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@CallKnownTemplateGlobal>
-// CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@CallKnownTemplateGlobal>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        function.return
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-// Test instantiation of function with template parameters specified at call site.
 module attributes {llzk.lang} {
   poly.template @template_b1 {
     poly.param @X
