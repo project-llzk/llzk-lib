@@ -545,12 +545,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
-/// Test "Parameterized struct still has uses!" warning
+/// Test "Parameterized definition still has uses!" warning
 module attributes {llzk.lang} {
   poly.template @TComponent07A {
     poly.param @C
 
-    // expected-warning@+1 {{Parameterized struct still has uses!}}
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
     struct.def @Component07A {
       struct.member @f1 : !poly.tvar<@C>
 

@@ -214,37 +214,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:  }
 //
-// CHECK-LABEL: poly.template @"template_k1_8_\1A" {
-// CHECK-NEXT:    poly.param @B : index
-// CHECK-NEXT:    function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,@B x !felt.type>, !felt.type
-// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: poly.template @template_k1 {
-// CHECK-NEXT:    poly.param @A : index
-// CHECK-NEXT:    poly.param @B : index
-// CHECK-NEXT:    function.def @f(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<@A,@B x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]], %[[VAL_7]]] : <@A,@B x !felt.type>, !felt.type
-// CHECK-NEXT:      function.return %[[VAL_8]] : !felt.type
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
 // CHECK-LABEL: function.def @template_k2_5_g(
 // CHECK-SAME:  %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @template_k1_8_5_f(%[[VAL_9]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
 // CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: poly.template @template_k2 {
-// CHECK-NEXT:    poly.param @N : index
-// CHECK-NEXT:    function.def @g(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @"template_k1_8_\1A"::@f(%[[VAL_11]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_12]] : !felt.type
-// CHECK-NEXT:    }
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
