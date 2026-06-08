@@ -1,8 +1,8 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=preimage})' %s | FileCheck --enable-var-scope %s
 
-// TEST: With "cleanup=preimage", the only structs and free functions subject to removal are
-// those with parameters that had at least one "concrete" clone created. If such a definition has
-// no remaining uses, it is removed. For example, `@MakeGuess<[@PEGS]>` has a concrete instantiation `@MakeGuess_4` and
+// TEST: With "cleanup=preimage", the only structs and free functions subject to removal are those with
+// parameters that had at least one "concrete" clone created. If such a definition has no remaining uses,
+// it is removed. For example, `@MakeGuess<[@PEGS]>` has a concrete instantiation `@MakeGuess_4` and
 // there are no remaining uses of `@MakeGuess<[@PEGS]>` so it is removed.
 
 module attributes {llzk.lang} {
