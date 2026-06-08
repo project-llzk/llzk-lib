@@ -103,10 +103,17 @@ public:
     // If the function has a body, ensure the entry block arguments match the function inputs.
     if (mlir::Region *body = op.getCallableRegion()) {
       mlir::Block &entryBlock = body->front();
-      if (!std::cmp_equal(entryBlock.getNumArguments(), newInputs.size())) {
+      bool blockArgsNeedUpdate = !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size());
+      for (unsigned i = 0, e = entryBlock.getNumArguments(); !blockArgsNeedUpdate && i < e; ++i) {
+        blockArgsNeedUpdate = entryBlock.getArgument(i).getType() != newInputs[i];
+      }
+      if (blockArgsNeedUpdate) {
         processBlockArgs(entryBlock, rewriter);
-        // Post-condition: block args must match function inputs
+        // Post-condition: block args must match function inputs in both arity and type.
         assert(std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()));
+        for (unsigned i = 0, e = entryBlock.getNumArguments(); i < e; ++i) {
+          assert(entryBlock.getArgument(i).getType() == newInputs[i]);
+        }
       }
     }
   }

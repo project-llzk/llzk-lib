@@ -146,6 +146,19 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @single_element_arg(%a: !array.type<1 x index>) -> index {
+    %0 = arith.constant 0 : index
+    %z = array.read %a[%0] : !array.type<1 x index>, index
+    function.return %z : index
+  }
+}
+// CHECK-LABEL: function.def @single_element_arg(
+// CHECK-SAME:           %[[V0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.return %[[V0]] : index
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   function.def @f1(%arg: !felt.type) -> !array.type<3,2 x !felt.type> {
     %0 = arith.constant 0 : index
     %a = function.call @f2() : () -> !array.type<3,2 x !felt.type>

@@ -91,6 +91,19 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+module attributes {llzk.lang} {
+  function.def @single_record_arg(%p: !pod.type<[@x: index]>) -> index {
+    %ret = pod.read %p[@x] : !pod.type<[@x: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @single_record_arg(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 !Leaf = !pod.type<[@a: index, @b: index, @c: index]>
 !Branch = !pod.type<[@left: !Leaf, @right: !Leaf, @bias: index]>
 !Root = !pod.type<[@main: !Branch, @fallback: !Branch, @scale: index, @offset: index]>
