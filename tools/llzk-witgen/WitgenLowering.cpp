@@ -2341,7 +2341,8 @@ void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &) {
       createFlatteningPass(FlatteningPassOptions {.cleanupMode = StructCleanupMode::ConcreteAsRoot})
   );
   pm.addPass(mlir::createLowerAffinePass());
-  pm.addPass(llzk::createInlineStructsPass());
+  // TODO: simplify lowering with `llzk-inline-structs` and `llzk-pod-to-scalar` when both are
+  // available and support PODs.
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
 }
