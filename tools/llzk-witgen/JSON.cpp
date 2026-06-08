@@ -58,7 +58,7 @@ static llvm::StringRef jsonKind(const llvm::json::Value &value) {
 
 static std::string appendObjectPath(llvm::StringRef path, llvm::StringRef key) {
   llvm::SmallString<64> out(path);
-  out += ".";
+  out += '.';
   out += key;
   return std::string(out);
 }
