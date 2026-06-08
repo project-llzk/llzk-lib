@@ -365,6 +365,7 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &me
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
+/// Split inline `pod.new` initializers into explicit `pod.write` operations.
 class SplitInitFromNewPodOp : public OpConversionPattern<NewPodOp> {
 public:
   using OpConversionPattern<NewPodOp>::OpConversionPattern;
@@ -537,9 +538,7 @@ public:
   }
 };
 
-/// Replace the given CallOp with a new one where any PodType in the results are split into their
-/// scalar records. Also, after the CallOp, generate a NewPodOp for each PodType result and
-/// generate writes from the corresponding scalar result values to the new pod.
+/// Rebuild a call with split scalar results, then reconstruct POD-typed results locally.
 static CallOp newCallOpWithSplitResults(
     CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
 ) {
@@ -547,9 +546,9 @@ static CallOp newCallOpWithSplitResults(
   rewriter.setInsertionPointAfter(oldCall);
 
   Operation::result_range oldResults = oldCall.getResults();
-  CallOp newCall = rewriter.create<CallOp>(
-      oldCall.getLoc(), splitPodType(oldResults.getTypes()), oldCall.getCallee(),
-      adaptor.getArgOperands()
+  CallOp newCall = createCallPreservingInstantiationOperands(
+      oldCall.getLoc(), splitPodType(oldResults.getTypes()), oldCall, adaptor.getMapOperands(),
+      adaptor.getArgOperands(), rewriter
   );
 
   auto newResults = newCall.getResults().begin();
@@ -566,6 +565,7 @@ static CallOp newCallOpWithSplitResults(
         newResults++;
       }
     } else {
+      rewriter.replaceAllUsesWith(oldVal, *newResults);
       newResults++;
     }
   }
@@ -593,8 +593,6 @@ public:
   LogicalResult match(CallOp op) const override { return failure(legal(op)); }
 
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    assert(isNullOrEmpty(op.getMapOpGroupSizesAttr()) && "structs must be previously flattened");
-
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
     processInputOperands(
@@ -750,6 +748,7 @@ inline static StringAttr getRecordNameAsStringAttr(ReadPodOp readOp) {
   return readOp.getRecordNameAttr().getLeafReference();
 }
 
+/// Normalize the record name representation used by POD access ops to a plain `StringAttr`.
 inline static StringAttr getRecordNameAsStringAttr(WritePodOp writeOp) {
   return writeOp.getRecordNameAttr().getLeafReference();
 }
@@ -759,6 +758,7 @@ inline static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr re
   return readOp.getPodRef() == podRef && getRecordNameAsStringAttr(readOp) == recordName;
 }
 
+/// Return whether the given read/write access targets the same POD record.
 inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
   return writeOp.getPodRef() == podRef && getRecordNameAsStringAttr(writeOp) == recordName;
 }
@@ -1515,6 +1515,7 @@ static size_t podAllocScalarizationWeight(ModuleOp modOp) {
   return weight;
 }
 
+/// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -1590,6 +1591,7 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
 
 } // namespace
 
+/// Create the pass that rewrites eligible POD storage into scalar SSA values.
 std::unique_ptr<Pass> llzk::pod::createPodToScalarPass() {
   return std::make_unique<PodToScalarPass>();
 };

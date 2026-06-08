@@ -52,6 +52,33 @@ reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desir
   }
 }
 
+/// Rebuild a `function.call` while preserving explicit instantiation state from `oldCall`.
+///
+/// This helper forwards both template parameters and affine-map instantiation operands from the
+/// original call while allowing callers to replace the result types and SSA operands that the new
+/// call should use.
+inline function::CallOp createCallPreservingInstantiationOperands(
+    mlir::Location loc, mlir::TypeRange newResultTypes, function::CallOp oldCall,
+    llvm::ArrayRef<mlir::ValueRange> mapOperands, mlir::ValueRange argOperands,
+    mlir::ConversionPatternRewriter &rewriter
+) {
+  llvm::SmallVector<mlir::Attribute> templateParams;
+  if (mlir::ArrayAttr templateParamsAttr = oldCall.getTemplateParamsAttr()) {
+    templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
+  }
+
+  if (oldCall.getMapOperands().empty()) {
+    return rewriter.create<function::CallOp>(
+        loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
+    );
+  }
+
+  return rewriter.create<function::CallOp>(
+      loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands, oldCall.getNumDimsPerMapAttr(),
+      argOperands, templateParams
+  );
+}
+
 /// General helper for converting a `FuncDefOp` by changing its input and/or result types and the
 /// associated attributes for those types.
 class FunctionTypeConverter {

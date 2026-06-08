@@ -159,6 +159,84 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TFree {
+    poly.param @A
+
+    function.def @make() -> !array.type<2 x index> {
+      %0 = arith.constant 0 : index
+      %a = poly.read_const @A : index
+      %arr = array.new %a, %0 : !array.type<2 x index>
+      function.return %arr : !array.type<2 x index>
+    }
+  }
+
+  function.def @main() -> index {
+    %arr = function.call @TFree::@make<[7]>() : () -> !array.type<2 x index>
+    %0 = arith.constant 0 : index
+    %res = array.read %arr[%0] : !array.type<2 x index>, index
+    function.return %res : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFree {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      function.def @make() -> (index, index) {
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[V1]], %[[V0]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]]:2 = function.call @TFree::@make<[7]>() : () -> (index, index)
+// CHECK-NEXT:      function.return %[[V2]]#0 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#sum = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @A
+
+    struct.def @Box {
+      struct.member @out : index {llzk.pub}
+
+      function.def @compute(%arr: !array.type<2 x index>) -> !struct.type<@TBox::@Box<[@A]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@A]>>
+        %0 = arith.constant 0 : index
+        %x = array.read %arr[%0] : !array.type<2 x index>, index
+        struct.writem %self[@out] = %x : !struct.type<@TBox::@Box<[@A]>>, index
+        function.return %self : !struct.type<@TBox::@Box<[@A]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@A]>>, %arr: !array.type<2 x index>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @main(%x: index, %y: index) -> index attributes {function.allow_witness} {
+    %arr = array.new %x, %y : !array.type<2 x index>
+    %c2 = arith.constant 2 : index
+    %c3 = arith.constant 3 : index
+    %box = function.call @TBox::@Box::@compute(%arr){()[%c2, %c3]}
+        : (!array.type<2 x index>) -> !struct.type<@TBox::@Box<[#sum]>>
+    %out = struct.readm %box[@out] : !struct.type<@TBox::@Box<[#sum]>>, index
+    function.return %out : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:          function.def @main(%[[V0:[0-9a-zA-Z_\.]+]]: index, %[[V1:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:       %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:       %[[V4:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[V0]], %[[V1]]) {(){{\[}}%[[V2]], %[[V3]]]} : (index, index) -> !struct.type<@TBox::@Box<[{{.*}}]>>
+// CHECK-NEXT:       %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@out] : <@TBox::@Box<[{{.*}}]>>, index
+// CHECK-NEXT:       function.return %[[V5]] : index
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// -----
+
+module attributes {llzk.lang} {
   function.def @f1(%arg: !felt.type) -> !array.type<3,2 x !felt.type> {
     %0 = arith.constant 0 : index
     %a = function.call @f2() : () -> !array.type<3,2 x !felt.type>

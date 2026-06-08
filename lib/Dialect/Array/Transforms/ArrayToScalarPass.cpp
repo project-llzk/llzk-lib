@@ -187,15 +187,14 @@ SmallVector<Value> genIndexConstants(ArrayAttr index, Location loc, RewriterBase
   return operands;
 }
 
+/// Create an `array.write` for one scalar element of `baseArrayOp`.
 inline WriteArrayOp
 genWrite(Location loc, Value baseArrayOp, ArrayAttr index, Value init, RewriterBase &rewriter) {
   SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
   return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
 }
 
-/// Replace the given CallOp with a new one where any ArrayType in the results are split into their
-/// scalar elements. Also, after the CallOp, generate a CreateArrayOp for each ArrayType result and
-/// generate writes from the corresponding scalar result values to the new array.
+/// Rebuild a call with split scalar results, then reconstruct array-typed results locally.
 CallOp newCallOpWithSplitResults(
     CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
 ) {
@@ -203,9 +202,9 @@ CallOp newCallOpWithSplitResults(
   rewriter.setInsertionPointAfter(oldCall);
 
   Operation::result_range oldResults = oldCall.getResults();
-  CallOp newCall = rewriter.create<CallOp>(
-      oldCall.getLoc(), splitArrayType(oldResults.getTypes()), oldCall.getCallee(),
-      adaptor.getArgOperands()
+  CallOp newCall = createCallPreservingInstantiationOperands(
+      oldCall.getLoc(), splitArrayType(oldResults.getTypes()), oldCall, adaptor.getMapOperands(),
+      adaptor.getArgOperands(), rewriter
   );
 
   auto newResults = newCall.getResults().begin();
@@ -226,6 +225,7 @@ CallOp newCallOpWithSplitResults(
         newResults++;
       }
     } else {
+      rewriter.replaceAllUsesWith(oldVal, *newResults);
       newResults++;
     }
   }
@@ -235,14 +235,15 @@ CallOp newCallOpWithSplitResults(
   return newCall;
 }
 
+/// Create an `array.read` for one scalar element of `baseArrayOp`.
 inline ReadArrayOp
 genRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
   SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
   return rewriter.create<ReadArrayOp>(loc, baseArrayOp, ValueRange(readOperands));
 }
 
-// If the operand has ArrayType, add N reads from the array to the `newOperands` list otherwise add
-// the original operand to the list.
+/// If the operand has ArrayType, add N reads from the array to `newOperands`; otherwise add the
+/// original operand unchanged.
 void processInputOperand(
     Location loc, Value operand, SmallVector<Value> &newOperands,
     ConversionPatternRewriter &rewriter
@@ -258,7 +259,7 @@ void processInputOperand(
   }
 }
 
-// For each operand with ArrayType, add N reads from the array and use those N values instead.
+/// Replace each array operand with its scalar element reads in `outputOpRef`.
 void processInputOperands(
     ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
     ConversionPatternRewriter &rewriter
@@ -318,6 +319,7 @@ inline void rewriteImpl(
 
 } // namespace
 
+/// Rewrite `array.insert` of a splittable subarray into element-wise scalar writes.
 class SplitInsertArrayOp : public OpConversionPattern<InsertArrayOp> {
 public:
   using OpConversionPattern<InsertArrayOp>::OpConversionPattern;
@@ -339,6 +341,7 @@ public:
   }
 };
 
+/// Rewrite `array.extract` of a splittable subarray into element-wise scalar reads.
 class SplitExtractArrayOp : public OpConversionPattern<ExtractArrayOp> {
 public:
   using OpConversionPattern<ExtractArrayOp>::OpConversionPattern;
@@ -362,6 +365,7 @@ public:
   }
 };
 
+/// Split inline `array.new` element initializers into explicit `array.write` operations.
 class SplitInitFromCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
 public:
   using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
@@ -391,6 +395,7 @@ public:
   }
 };
 
+/// Rewrite array-typed function signatures to pass one scalar per array element instead.
 class SplitArrayInFuncDefOp : public OpConversionPattern<FuncDefOp> {
 public:
   using OpConversionPattern<FuncDefOp>::OpConversionPattern;
@@ -514,6 +519,7 @@ public:
   }
 };
 
+/// Rewrite `function.return` to flatten any array operands into scalar element values.
 class SplitArrayInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
   using OpConversionPattern<ReturnOp>::OpConversionPattern;
@@ -529,6 +535,7 @@ public:
   }
 };
 
+/// Rewrite calls whose arguments or results contain arrays to use flattened scalar signatures.
 class SplitArrayInCallOp : public OpConversionPattern<CallOp> {
 public:
   using OpConversionPattern<CallOp>::OpConversionPattern;
@@ -541,8 +548,6 @@ public:
   LogicalResult match(CallOp op) const override { return failure(legal(op)); }
 
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    assert(isNullOrEmpty(op.getMapOpGroupSizesAttr()) && "structs must be previously flattened");
-
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
     processInputOperands(
@@ -551,6 +556,7 @@ public:
   }
 };
 
+/// Replace `array.length` with a constant when the selected dimension size is statically known.
 class ReplaceKnownArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
 public:
   using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
@@ -602,6 +608,7 @@ using LocalMemberReplacementMap = DenseMap<ArrayAttr, MemberInfo>;
 /// struct -> original array-type member name -> LocalMemberReplacementMap
 using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
 
+/// Split an array-typed struct member definition into one scalar member per array element.
 class SplitArrayInMemberDefOp : public OpConversionPattern<MemberDefOp> {
   SymbolTableCollection &tables;
   MemberReplacementMap &repMapRef;
@@ -641,6 +648,7 @@ public:
   }
 };
 
+/// Rewrite a write to an array-typed struct member into writes to the corresponding scalar leaves.
 class SplitArrayInMemberWriteOp : public SplitAggregateInMemberRefOp<
                                       SplitArrayInMemberWriteOp, MemberWriteOp, void *, ArrayAttr> {
 public:
@@ -664,6 +672,8 @@ public:
   }
 };
 
+/// Rewrite a read from an array-typed struct member into reads from the corresponding scalar
+/// leaves followed by local array reconstruction.
 class SplitArrayInMemberReadOp
     : public SplitAggregateInMemberRefOp<
           SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp, ArrayAttr> {
@@ -694,6 +704,7 @@ public:
   }
 };
 
+/// Register the dialects and operations that remain legal across the conversion-based stages.
 static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
@@ -704,6 +715,7 @@ static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalOp<ModuleOp>();
 }
 
+/// Rewrite array-typed `llzk.nondet` allocations into explicit `array.new` allocations.
 class NondetToNewArray : public OpConversionPattern<NonDetOp> {
   using OpConversionPattern<NonDetOp>::OpConversionPattern;
   LogicalResult matchAndRewrite(
@@ -899,6 +911,7 @@ static void step3(ModuleOp modOp) {
   }
 }
 
+/// Pass driver for the full array-to-scalar lowering pipeline described above.
 class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -963,6 +976,7 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
 
 } // namespace
 
+/// Create the pass that rewrites eligible arrays into scalar SSA values.
 std::unique_ptr<Pass> llzk::array::createArrayToScalarPass() {
   return std::make_unique<ArrayToScalarPass>();
 };
