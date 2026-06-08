@@ -245,6 +245,102 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecret for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %isEq = bool.cmp eq(%secret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @FuncWithRet for @passthrough (%a : !felt.type, %ret_value : !felt.type) {
+    %isEq = bool.cmp eq(%a, %ret_value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  function.def @check(%a : !felt.type) {
+    function.return
+  }
+
+  verif.contract @CallRet for @check (%a : !felt.type) {
+    %ret = function.call @passthrough(%a) : (!felt.type) -> !felt.type
+    %isEq = bool.cmp eq(%a, %ret) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
+    %ok = arith.constant true
+    // expected-error@+1 {{'verif.require_compute' op cannot appear directly in a contract that targets the main entry-point struct}}
+    verif.require_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
+    %ok = arith.constant true
+    // expected-error@+1 {{'verif.require_constrain' op cannot appear directly in a contract that targets the main entry-point struct}}
+    verif.require_constrain %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @Top {
     function.def @compute() -> !struct.type<@Top> {
       %self = struct.new : !struct.type<@Top>

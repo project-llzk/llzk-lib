@@ -145,6 +145,108 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
   return failure();
 }
 
+enum class ForbiddenRequireConditionKind {
+  MainContract,
+  StructMember,
+  FunctionReturn,
+};
+
+bool isContractReturnValueArg(BlockArgument blockArg, ContractOp contract) {
+  if (blockArg.getOwner() != &contract.getBody().front()) {
+    return false;
+  }
+
+  SymbolTableCollection tables;
+  auto funcTarget = contract.getFuncTarget(tables);
+  if (failed(funcTarget)) {
+    return false;
+  }
+
+  unsigned numFuncInputs = funcTarget->get().getFunctionType().getNumInputs();
+  return blockArg.getArgNumber() >= numFuncInputs;
+}
+
+std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenance(
+    Value value, ContractOp contract, llvm::DenseSet<Value> &visited
+) {
+  if (!visited.insert(value).second) {
+    return std::nullopt;
+  }
+
+  if (auto blockArg = llvm::dyn_cast<BlockArgument>(value)) {
+    if (isContractReturnValueArg(blockArg, contract)) {
+      return ForbiddenRequireConditionKind::FunctionReturn;
+    }
+    return std::nullopt;
+  }
+
+  Operation *defOp = value.getDefiningOp();
+  if (defOp == nullptr) {
+    return std::nullopt;
+  }
+  if (isa<MemberReadOp>(defOp)) {
+    return ForbiddenRequireConditionKind::StructMember;
+  }
+  if (isa<CallOp>(defOp)) {
+    return ForbiddenRequireConditionKind::FunctionReturn;
+  }
+
+  for (Value operand : defOp->getOperands()) {
+    if (auto kind = classifyForbiddenConditionProvenance(operand, contract, visited)) {
+      return kind;
+    }
+  }
+  return std::nullopt;
+}
+
+LogicalResult
+emitForbiddenRequireCondition(Operation *requireOp, ForbiddenRequireConditionKind kind) {
+  switch (kind) {
+  case ForbiddenRequireConditionKind::MainContract:
+    return requireOp->emitOpError(
+        "cannot appear directly in a contract that targets the main entry-point struct"
+    );
+  case ForbiddenRequireConditionKind::StructMember:
+    return requireOp->emitOpError("condition cannot be derived from a struct member value");
+  case ForbiddenRequireConditionKind::FunctionReturn:
+    return requireOp->emitOpError("condition cannot be derived from a function return value");
+  }
+  llvm_unreachable("unknown forbidden require condition kind");
+}
+
+LogicalResult verifyRequireRestrictions(ContractOp contract) {
+  SmallVector<Operation *> requireOps;
+  contract.walk([&](Operation *op) {
+    if (isa<RequireComputeOp, RequireConstrainOp>(op)) {
+      requireOps.push_back(op);
+    }
+  });
+  if (requireOps.empty()) {
+    return success();
+  }
+
+  bool targetsMainStruct = false;
+  {
+    SymbolTableCollection tables;
+    auto structTarget = contract.getStructTarget(tables);
+    targetsMainStruct = succeeded(structTarget) && structTarget->get().isMainComponent();
+  }
+
+  for (Operation *requireOp : requireOps) {
+    if (targetsMainStruct) {
+      return emitForbiddenRequireCondition(requireOp, ForbiddenRequireConditionKind::MainContract);
+    }
+
+    auto condition = requireOp->getOperand(0);
+    llvm::DenseSet<Value> visited;
+    if (auto kind = classifyForbiddenConditionProvenance(condition, contract, visited)) {
+      return emitForbiddenRequireCondition(requireOp, *kind);
+    }
+  }
+
+  return success();
+}
+
 } // namespace
 
 namespace llzk::verif {
@@ -463,7 +565,11 @@ LogicalResult ContractOp::verify() {
     }
     return WalkResult::advance();
   });
-  return failure(res.wasInterrupted());
+  if (res.wasInterrupted()) {
+    return failure();
+  }
+
+  return verifyRequireRestrictions(*this);
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>

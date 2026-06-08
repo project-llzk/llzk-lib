@@ -50,7 +50,16 @@ class ConditionOp<string mnemonic, list<Trait> traits = []>
 //===------------------------------------------------------------------===//
 
 class RequireOpBase<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[PreconditionOpInterface]>;
+    : ConditionOp<mnemonic, traits#[PreconditionOpInterface]> {
+  let description = [{
+    Base of an operation that encodes a precondition.
+
+    Preconditions:
+    - May not depend on values transitively derived from struct member reads
+    or from function return values.
+    - May not be present on the `llzk.main` entry struct.
+  }];
+}
 
 def RequireComputeOp : RequireOpBase<"require_compute"> {
   let summary = "witness computation precondition";
@@ -102,6 +111,8 @@ def ContractOp
     return values are appended to the end of the contract's argument list.
 
     Contracts may not directly target struct functions; they must target the structs themselves.
+    Contracts targeting the module's `llzk.main` struct may not contain direct
+    `verif.require_compute` or `verif.require_constrain` operations in their body.
 
     For templated targets (i.e., functions or structs within a `poly.template`),
     the contract body may reference the target template's parameters and
