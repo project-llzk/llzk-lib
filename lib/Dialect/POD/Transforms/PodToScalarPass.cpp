@@ -116,18 +116,22 @@ inline static PodType splittablePod(Type t) {
   }
 }
 
-/// Return `true` iff the given type is or contains a PodType that can be split into scalars.
-inline static bool containsSplittablePodType(Type t) {
-  return t
-      .walk([](PodType p) {
-    return splittablePod(p) ? WalkResult::interrupt() : WalkResult::skip();
-  }).wasInterrupted();
+/// Return `true` iff the given range contains any top-level PodType that this pass can split into
+/// scalars.
+inline static bool containsSplittablePodType(ArrayRef<Type> types) {
+  for (Type t : types) {
+    if (splittablePod(t)) {
+      return true;
+    }
+  }
+  return false;
 }
 
-/// Return `true` iff the given range contains any PodType that can be split into scalars.
+/// Return `true` iff the given range contains any top-level PodType that this pass can split into
+/// scalars.
 template <typename T> static bool containsSplittablePodType(ValueTypeRange<T> types) {
   for (Type t : types) {
-    if (containsSplittablePodType(t)) {
+    if (splittablePod(t)) {
       return true;
     }
   }
@@ -403,7 +407,8 @@ public:
   using OpConversionPattern<FuncDefOp>::OpConversionPattern;
 
   inline static bool legal(FuncDefOp op) {
-    return !containsSplittablePodType(op.getFunctionType());
+    return !containsSplittablePodType(op.getArgumentTypes()) &&
+           !containsSplittablePodType(op.getResultTypes());
   }
 
   // Create a new ArrayAttr like the one given but with repetitions of the elements according to the
