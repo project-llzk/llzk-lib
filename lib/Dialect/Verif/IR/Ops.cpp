@@ -151,6 +151,9 @@ enum class ForbiddenRequireConditionKind {
   FunctionReturn,
 };
 
+// Function-target contracts append return values after the target's original
+// inputs, so those trailing block arguments represent forbidden return-value
+// provenance for preconditions.
 bool isContractReturnValueArg(BlockArgument blockArg, ContractOp contract) {
   if (blockArg.getOwner() != &contract.getBody().front()) {
     return false;
@@ -166,6 +169,8 @@ bool isContractReturnValueArg(BlockArgument blockArg, ContractOp contract) {
   return blockArg.getArgNumber() >= numFuncInputs;
 }
 
+// Recursively walk the SSA use-def chain for a require condition and report the
+// first forbidden provenance root that reaches it.
 std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenance(
     Value value, ContractOp contract, llvm::DenseSet<Value> &visited
 ) {
@@ -199,6 +204,8 @@ std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenanc
   return std::nullopt;
 }
 
+// Map a classified restriction failure to the verifier diagnostic emitted on
+// the offending require op.
 LogicalResult
 emitForbiddenRequireCondition(Operation *requireOp, ForbiddenRequireConditionKind kind) {
   switch (kind) {
@@ -214,6 +221,8 @@ emitForbiddenRequireCondition(Operation *requireOp, ForbiddenRequireConditionKin
   llvm_unreachable("unknown forbidden require condition kind");
 }
 
+// Enforce the direct main-contract ban and the provenance restrictions on
+// require ops that appear in this contract body.
 LogicalResult verifyRequireRestrictions(ContractOp contract) {
   SmallVector<Operation *> requireOps;
   contract.walk([&](Operation *op) {
