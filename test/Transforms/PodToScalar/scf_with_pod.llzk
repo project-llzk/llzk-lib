@@ -332,6 +332,42 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+!Inner = !pod.type<[@m: index, @n: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @if_write_then_whole_pod_consume(%a: index, %b: index) -> index {
+    %c0 = arith.constant 0 : index
+    %p = pod.new { @m = %c0, @n = %b } : !Inner
+    %outer = pod.new : !Outer
+
+    %cond = arith.cmpi sgt, %a, %c0 : index
+    scf.if %cond {
+      pod.write %p[@m] = %a : !Inner, index
+      pod.write %outer[@inner] = %p : !Outer, !Inner
+    } else {
+      pod.write %p[@m] = %b : !Inner, index
+      pod.write %outer[@inner] = %p : !Outer, !Inner
+    }
+
+    %inner = pod.read %outer[@inner] : !Outer, !Inner
+    %ret = pod.read %inner[@m] : !Inner, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @if_write_then_whole_pod_consume(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_3]] -> (index) {
+// CHECK-NEXT:        scf.yield %[[VAL_0]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 !counter_pod = !pod.type<[@acc: !felt.type]>
 module attributes {llzk.lang} {
   function.def @stateful_pod_accumulator(%init: !felt.type, %step: !felt.type) -> !felt.type {

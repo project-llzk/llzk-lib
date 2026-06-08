@@ -790,6 +790,19 @@ static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName
   }).wasInterrupted();
 }
 
+/// Return whether `op` or any nested operation uses `value` as an operand.
+static bool hasValueUse(Operation &op, Value value) {
+  return op
+      .walk([&value](Operation *nestedOp) {
+    for (Value operand : nestedOp->getOperands()) {
+      if (operand == value) {
+        return WalkResult::interrupt();
+      }
+    }
+    return WalkResult::advance();
+  }).wasInterrupted();
+}
+
 /// Return whether the read is preceded by a write to the same pod record within its block.
 static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
   Value podRef = readOp.getPodRef();
@@ -901,6 +914,73 @@ static bool replaceIfReads(ModuleOp modOp) {
   return !replacements.empty();
 }
 
+/// Fold reads from an `scf.if`-carried POD result when the same record was just written from
+/// another result of that same `scf.if`.
+///
+/// Pattern:
+///   %if:2 = scf.if ... -> (!pod<...>, T) {
+///     scf.yield %pod, %v0
+///   } else {
+///     scf.yield %pod, %v1
+///   }
+///   pod.write %pod[@r] = %if#1
+///   %x = pod.read %if#0[@r]
+///
+/// Rewritten to `%x = %if#1` when all yielded values for `%if#0` are the same `%pod`.
+static bool foldIfCarriedPodReadAfterWrite(ModuleOp modOp) {
+  SmallVector<std::pair<ReadPodOp, Value>> replacements;
+
+  modOp.walk([&](ReadPodOp readOp) {
+    auto podRes = dyn_cast<OpResult>(readOp.getPodRef());
+    if (!podRes) {
+      return;
+    }
+
+    auto ifOp = dyn_cast<scf::IfOp>(podRes.getOwner());
+    if (!ifOp) {
+      return;
+    }
+
+    auto writeOp = dyn_cast_or_null<WritePodOp>(readOp->getPrevNode());
+    if (!writeOp) {
+      return;
+    }
+
+    if (getRecordNameAsStringAttr(writeOp) != getRecordNameAsStringAttr(readOp)) {
+      return;
+    }
+
+    auto valueRes = dyn_cast<OpResult>(writeOp.getValue());
+    if (!valueRes || valueRes.getOwner() != ifOp.getOperation()) {
+      return;
+    }
+
+    Value carriedPod = writeOp.getPodRef();
+    unsigned podResultIndex = podRes.getResultNumber();
+
+    auto thenYield = dyn_cast<scf::YieldOp>(ifOp.thenBlock()->getTerminator());
+    if (!thenYield || thenYield.getOperand(podResultIndex) != carriedPod) {
+      return;
+    }
+
+    Block *elseBlock = ifOp.getElseRegion().empty() ? nullptr : &ifOp.getElseRegion().front();
+    if (elseBlock) {
+      auto elseYield = dyn_cast<scf::YieldOp>(elseBlock->getTerminator());
+      if (!elseYield || elseYield.getOperand(podResultIndex) != carriedPod) {
+        return;
+      }
+    }
+
+    replacements.emplace_back(readOp, valueRes);
+  });
+
+  for (auto [readOp, replacement] : replacements) {
+    readOp.getResult().replaceAllUsesWith(replacement);
+    readOp.erase();
+  }
+  return !replacements.empty();
+}
+
 struct IfWriteSlot {
   Value podRef;
   StringAttr recordName;
@@ -990,7 +1070,7 @@ static bool branchSlotCanBeLifted(Block *block, Value podRef, StringAttr recordN
     if (hasNestedWriteToRecord(op, podRef, recordName)) {
       return false;
     }
-    if (seenDirectWrite && hasReadFromRecord(op, podRef, recordName)) {
+    if (seenDirectWrite && (hasReadFromRecord(op, podRef, recordName) || hasValueUse(op, podRef))) {
       return false;
     }
   }
@@ -1520,6 +1600,8 @@ static void step3(ModuleOp modOp) {
     for (scf::WhileOp whileOp : whileOps) {
       changed |= liftWhilePodAccesses(whileOp);
     }
+
+    changed |= foldIfCarriedPodReadAfterWrite(modOp);
   } while (changed);
 }
 
@@ -1607,11 +1689,25 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
         signalPassFailure();
         return;
       }
+
+      // SROA+mem2reg can expose `scf.if`-carried POD values that become redundant after a
+      // same-record write from another `scf.if` result. Fold those reads and clean up before
+      // checking convergence.
+      bool foldedIfCarriedRead = foldIfCarriedPodReadAfterWrite(module);
+      if (foldedIfCarriedRead) {
+        OpPassManager cleanupPM(ModuleOp::getOperationName());
+        cleanupPM.addPass(createRemoveDeadValuesPass());
+        if (failed(runPipeline(cleanupPM, module))) {
+          signalPassFailure();
+          return;
+        }
+      }
+
       // Nested PODs can become visible only after an outer single-record POD has been promoted,
       // and SROA can transiently increase allocation count while splitting aggregates. Keep
       // iterating until the allocation-weight heuristic reaches a fixed point.
       size_t nextPodAllocWeight = podAllocScalarizationWeight(module);
-      if (nextPodAllocWeight == podAllocWeight) {
+      if (nextPodAllocWeight == podAllocWeight && !foldedIfCarriedRead) {
         break;
       }
       podAllocWeight = nextPodAllocWeight;
