@@ -250,6 +250,47 @@ TEST_F(WitgenTests, CheckedDynamicAPIntToSizeRejectsOverflow) {
   EXPECT_NE(llvm::toString(checked.takeError()).find("overflow"), std::string::npos);
 }
 
+TEST_F(WitgenTests, JSONDiffReportsScalarMismatchAtPath) {
+  auto expected = llvm::json::parse(R"({"sum":"9"})");
+  auto actual = llvm::json::parse(R"({"sum":"8"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  llvm::SmallVector<witgen::JSONMismatch> mismatches;
+  witgen::diffJSON(*expected, *actual, mismatches);
+  ASSERT_EQ(mismatches.size(), 1u);
+  EXPECT_EQ(mismatches[0].path, "$.sum");
+  EXPECT_NE(mismatches[0].message.find("value mismatch"), std::string::npos);
+}
+
+TEST_F(WitgenTests, JSONDiffReportsMissingAndUnexpectedKeys) {
+  auto expected = llvm::json::parse(R"({"sum":"9","secret":"4"})");
+  auto actual = llvm::json::parse(R"({"sum":"9","extra":"1"})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  llvm::SmallVector<witgen::JSONMismatch> mismatches;
+  witgen::diffJSON(*expected, *actual, mismatches);
+  ASSERT_EQ(mismatches.size(), 2u);
+  EXPECT_EQ(mismatches[0].path, "$.secret");
+  EXPECT_EQ(mismatches[0].message, "missing key");
+  EXPECT_EQ(mismatches[1].path, "$.extra");
+  EXPECT_EQ(mismatches[1].message, "unexpected key");
+}
+
+TEST_F(WitgenTests, JSONDiffReportsArrayLengthMismatch) {
+  auto expected = llvm::json::parse(R"({"signals":["1","2"]})");
+  auto actual = llvm::json::parse(R"({"signals":["1"]})");
+  ASSERT_TRUE(static_cast<bool>(expected));
+  ASSERT_TRUE(static_cast<bool>(actual));
+
+  llvm::SmallVector<witgen::JSONMismatch> mismatches;
+  witgen::diffJSON(*expected, *actual, mismatches);
+  ASSERT_EQ(mismatches.size(), 1u);
+  EXPECT_EQ(mismatches[0].path, "$.signals");
+  EXPECT_NE(mismatches[0].message.find("array length mismatch"), std::string::npos);
+}
+
 TEST_P(WitgenFieldTests, NestedAggregateFailModeMaterializesMonostate) {
   auto feltType = felt::FeltType::get(&ctx, StringAttr::get(&ctx, GetParam()));
   auto arrayType = array::ArrayType::get(feltType, {2});

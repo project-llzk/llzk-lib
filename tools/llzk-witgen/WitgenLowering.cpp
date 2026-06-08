@@ -1904,6 +1904,66 @@ private:
       return success();
     }
 
+    if (auto ifOp = dyn_cast<scf::IfOp>(op)) {
+      auto condition = lookupScalar(ifOp.getCondition(), valueMap, ifOp.getOperation());
+      if (failed(condition)) {
+        return failure();
+      }
+
+      SmallVector<size_t> resultLeafCounts;
+      SmallVector<Type> loweredResultTypes;
+      for (Type resultType : ifOp.getResultTypes()) {
+        auto leafTypes = getABILeafTypes(resultType, tables, ifOp.getOperation(), field);
+        auto count = getLeafCount(resultType, tables, ifOp.getOperation(), field);
+        if (failed(leafTypes) || failed(count)) {
+          return failure();
+        }
+        loweredResultTypes.append(leafTypes->begin(), leafTypes->end());
+        resultLeafCounts.push_back(*count);
+      }
+
+      auto newIf = builder.create<scf::IfOp>(
+          loc, loweredResultTypes, *condition, true, !ifOp.getElseRegion().empty()
+      );
+
+      {
+        OpBuilder thenBuilder = OpBuilder::atBlockBegin(&newIf.getThenRegion().front());
+        DenseMap<Value, LoweredValue> thenMap(valueMap.begin(), valueMap.end());
+        if (failed(lowerBlock(thenBuilder, ifOp.getThenRegion().front(), thenMap))) {
+          newIf.erase();
+          return failure();
+        }
+      }
+      if (!ifOp.getElseRegion().empty()) {
+        OpBuilder elseBuilder = OpBuilder::atBlockBegin(&newIf.getElseRegion().front());
+        DenseMap<Value, LoweredValue> elseMap(valueMap.begin(), valueMap.end());
+        if (failed(lowerBlock(elseBuilder, ifOp.getElseRegion().front(), elseMap))) {
+          newIf.erase();
+          return failure();
+        }
+      }
+      auto newIfResults = newIf.getResults();
+      size_t totalResults = newIfResults.size();
+      size_t cursor = 0;
+      for (auto [oldResult, oldType, leafCount] :
+           llvm::zip(ifOp.getResults(), ifOp.getResultTypes(), resultLeafCounts)) {
+        bool overflow = false;
+        size_t nextCursor = llvm::SaturatingAdd(cursor, leafCount, &overflow);
+        if (overflow || nextCursor > totalResults) {
+          ifOp.emitError("leaf count overflow while lowering if-op results");
+          return failure();
+        }
+        LoweredValue lowered {oldType, {}};
+        lowered.leaves.append(
+            newIfResults.begin() + llzk::checkedCast<ptrdiff_t>(cursor),
+            newIfResults.begin() + llzk::checkedCast<ptrdiff_t>(nextCursor)
+        );
+        valueMap[oldResult] = std::move(lowered);
+        cursor = nextCursor;
+      }
+      return success();
+    }
+
     if (auto forOp = dyn_cast<scf::ForOp>(op)) {
       auto lb = lookupScalar(forOp.getLowerBound(), valueMap, forOp.getOperation());
       auto ub = lookupScalar(forOp.getUpperBound(), valueMap, forOp.getOperation());
@@ -2277,11 +2337,12 @@ private:
 
 void addWitgenPreparePipeline(OpPassManager &pm, const WitgenOptions &) {
   using namespace llzk::polymorphic;
-  pm.addPass(
-      createFlatteningPass(FlatteningPassOptions {.cleanupMode = StructCleanupMode::ConcreteAsRoot})
-  );
+  pm.addPass(createFlatteningPass(
+      FlatteningPassOptions {.cleanupMode = FlatteningCleanupMode::ConcreteAsRoot}
+  ));
   pm.addPass(mlir::createLowerAffinePass());
-  pm.addPass(llzk::createInlineStructsPass());
+  // TODO: simplify lowering with `llzk-inline-structs` and `llzk-pod-to-scalar` when both are
+  // available and support PODs.
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createCSEPass());
 }

@@ -23,6 +23,12 @@ enum class SerializationMode : std::uint8_t {
   AllSignals,
 };
 
+/// One structured JSON mismatch between expected and actual witgen output.
+struct JSONMismatch {
+  std::string path;
+  std::string message;
+};
+
 /// Parse one JSON value into the tool's runtime representation.
 llvm::Expected<WitnessVal> parseJSONValue(
     const llvm::json::Value *json, mlir::Type type, const llzk::Field &field,
@@ -46,5 +52,14 @@ llvm::Expected<WitnessVal> extractValueAtPath(
     const WitnessVal &root, mlir::Type rootType, llvm::ArrayRef<std::string> path,
     mlir::SymbolTableCollection &tables, mlir::Operation *origin
 );
+
+/// Compare two JSON values structurally and append any mismatches to `out`.
+void diffJSON(
+    const llvm::json::Value &expected, const llvm::json::Value &actual,
+    llvm::SmallVectorImpl<JSONMismatch> &out, llvm::StringRef path = "$"
+);
+
+/// Render one human-readable mismatch report.
+void printJSONMismatches(llvm::raw_ostream &os, llvm::ArrayRef<JSONMismatch> mismatches);
 
 } // namespace llzk::witgen

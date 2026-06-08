@@ -13,24 +13,26 @@
 include "llzk/Pass/PassBase.td"
 include "mlir/IR/EnumAttr.td"
 
-def StructCleanupModeDescription {
-  string r = "Specifies the extent to which unused parameterized structs (i.e. "
-             "structs within a `poly.template`) are removed during the "
-             "flattening pass.";
+def FlatteningCleanupModeDescription {
+  string r =
+      "Specifies the extent to which unused parameterized definitions (i.e. "
+      "structs or free functions within a `poly.template`) are removed during "
+      "the flattening pass.";
 }
 
-def StructCleanupMode
-    : I32EnumAttr<"StructCleanupMode", StructCleanupModeDescription.r,
+def FlatteningCleanupMode
+    : I32EnumAttr<"FlatteningCleanupMode", FlatteningCleanupModeDescription.r,
                   [
-                      // Disabled: No structs are deleted.
+                      // Disabled: No definitions are deleted.
                       I32EnumAttrCase<"Disabled", 0, "disabled">,
-                      // Preimage: Only structs that were replaced with concrete
-                      // instantiations are deleted.
+                      // Preimage: Only definitions that were replaced with
+                      // concrete instantiations are deleted.
                       I32EnumAttrCase<"Preimage", 1, "preimage">,
-                      // ConcreteAsRoot: All structs that cannot be reached by a
-                      // use-def chain from some concrete struct are deleted.
+                      // ConcreteAsRoot: All definitions that cannot be reached
+                      // by a use-def chain from some concrete definition are
+                      // deleted.
                       I32EnumAttrCase<"ConcreteAsRoot", 2, "concrete-as-root">,
-                      // MainAsRoot: All structs that cannot be reached by a
+                      // MainAsRoot: All definitions that cannot be reached by a
                       // use-def chain from the main struct are deleted.
                       I32EnumAttrCase<"MainAsRoot", 3, "main-as-root">,
 ]> {
@@ -61,31 +63,31 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
   }];
   let constructor = "llzk::polymorphic::createFlatteningPass()";
 
-  let options = [Option<
-                     "iterationLimit", "max-iter", "unsigned",
-                     /* default */ "1000",
-                     "Maximum number of times the pass will run if a fixpoint "
-                     "is not reached earlier. Unrolling loops can provide more "
-                     "opportunities for instantiating structs but the converse "
-                     "is true as well. Thus, the pass will run multiple times "
-                     "until no further changes can be made or the upper limit "
-                     "provided in this option is reached.">,
-                 Option<"cleanupMode", "cleanup",
-                        "::llzk::polymorphic::StructCleanupMode",
-                        /* default */
-                        "::llzk::polymorphic::StructCleanupMode::Preimage",
-                        StructCleanupModeDescription.r, [{::llvm::cl::values(
-                clEnumValN(::llzk::polymorphic::StructCleanupMode::Disabled,
-                           stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::Disabled), "No structs are deleted."),
-                clEnumValN(::llzk::polymorphic::StructCleanupMode::Preimage,
-                           stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::Preimage),
-                           "Only structs that were replaced with concrete instantiations are deleted."),
-                clEnumValN(::llzk::polymorphic::StructCleanupMode::ConcreteAsRoot,
-                           stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::ConcreteAsRoot),
-                           "All structs that cannot be reached by a use-def chain from some concrete struct are deleted."),
-                clEnumValN(::llzk::polymorphic::StructCleanupMode::MainAsRoot,
-                           stringifyStructCleanupMode(::llzk::polymorphic::StructCleanupMode::MainAsRoot),
-                           "All structs that cannot be reached by a use-def chain from the \"Main\" struct are deleted.")
+  let options =
+      [Option<"iterationLimit", "max-iter", "unsigned",
+              /* default */ "1000",
+              "Maximum number of times the pass will run if a fixpoint "
+              "is not reached earlier. Unrolling loops can provide more "
+              "opportunities for instantiating structs but the converse "
+              "is true as well. Thus, the pass will run multiple times "
+              "until no further changes can be made or the upper limit "
+              "provided in this option is reached.">,
+       Option<"cleanupMode", "cleanup",
+              "::llzk::polymorphic::FlatteningCleanupMode",
+              /* default */
+              "::llzk::polymorphic::FlatteningCleanupMode::Preimage",
+              FlatteningCleanupModeDescription.r, [{::llvm::cl::values(
+                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Disabled,
+                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Disabled), "No definitions are deleted."),
+                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Preimage,
+                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Preimage),
+                           "Only definitions that were replaced with concrete instantiations are deleted."),
+                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot,
+                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot),
+                           "All definitions that cannot be reached by a use-def chain from some concrete definition are deleted."),
+                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::MainAsRoot,
+                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::MainAsRoot),
+                           "All definitions that cannot be reached by a use-def chain from the \"Main\" struct are deleted.")
           )}]>,
   ];
 }

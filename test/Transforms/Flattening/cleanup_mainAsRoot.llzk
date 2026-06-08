@@ -1,8 +1,8 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root})' %s | FileCheck --enable-var-scope %s
 
-// TEST: With "cleanup=main-as-root", all structs reachable from the main struct are preserved.
-// If there is no main struct, all structs are removed (except those that have a reference from
-// a global def or from a free function since those are not subject to removal during this pass).
+// TEST: With "cleanup=main-as-root", all structs and free functions reachable from the main
+// struct are preserved. If there is no main struct, all cleanup-candidate definitions are removed
+// except those that have a reference from a global def.
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   global.def @g : !struct.type<@HasUseFromGlobal>
@@ -45,7 +45,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     }
   }
 
-  // preserved
+  // removed
   struct.def @HasUseFromFreeFunc {
     function.def @compute() -> !struct.type<@HasUseFromFreeFunc> {
       %self = struct.new : !struct.type<@HasUseFromFreeFunc>
@@ -77,12 +77,12 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK:     struct.def @HasUseFromGlobal {
 // CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUseFromMain {
-// CHECK-NOT: poly.template @TNoUse {
-// CHECK:     struct.def @HasUseFromFreeFunc {
+// CHECK-NOT: struct.def @HasUseFromFreeFunc {
+// CHECK-NOT: function.def @free
 // CHECK-NOT: poly.template @TNoUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
 module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUse>
 
@@ -121,7 +121,7 @@ module attributes {llzk.lang} {
 // CHECK-NOT: poly.template @TNoUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
 module attributes {llzk.lang} {
   global.def @a : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[i1]>>
 
@@ -165,7 +165,7 @@ module attributes {llzk.lang} {
 // CHECK-NOT:   poly.template @THasUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
 module attributes {llzk.lang} {
   module @GlobalWithinNestedModule {
     global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
@@ -207,9 +207,10 @@ module attributes {llzk.lang} {
 // CHECK-NOT: poly.template @THasUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
 module attributes {llzk.lang} {
   module @FreeFuncInModule {
+    // removed
     function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
       %b = felt.const 42
       function.return %b: !felt.type
@@ -217,7 +218,7 @@ module attributes {llzk.lang} {
   }
 
   module @DefsInDifferentModule {
-    // preserved instantiated version
+    // removed
     poly.template @THasUse {
       poly.param @T
 
@@ -244,17 +245,12 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: module @FreeFuncInModule
-// CHECK:       function.def @struct_param
-// CHECK-LABEL: module @DefsInDifferentModule
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   poly.template @THasUse {
-// CHECK:       struct.def @THasUse_f_HasUse {
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   poly.template @THasUse {
+// CHECK-NOT:   function.def @struct_param
+// CHECK-NOT:   poly.template @THasUse
+// CHECK-NOT:   struct.def @NoUse
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
 module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
     global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
@@ -309,11 +305,12 @@ module attributes {llzk.lang} {
 // CHECK-NOT: poly.template @THasUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all structs!}}
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
 module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {
+        // removed
         function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
@@ -322,6 +319,7 @@ module attributes {llzk.lang} {
     }
     module @Level2B {
       module @Level3 {
+        // removed
         function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
@@ -332,7 +330,7 @@ module attributes {llzk.lang} {
 
   module @StructModule {
     module @MoreNested {
-      // preserved instantiated version
+      // removed
       poly.template @THasUse {
         poly.param @T
 
@@ -360,16 +358,9 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: module @FreeFuncModule
-// CHECK:       function.def @struct_param
-// CHECK:       function.def @struct_param
-// CHECK-LABEL: module @StructModule
-// CHECK-LABEL: module @MoreNested
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   poly.template @THasUse {
-// CHECK:       struct.def @THasUse_f_HasUse {
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   poly.template @THasUse {
+// CHECK-NOT:   function.def @struct_param
+// CHECK-NOT:   poly.template @THasUse
+// CHECK-NOT:   struct.def @NoUse
 // -----
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
