@@ -120,18 +120,21 @@ inline ArrayType splittableArray(Type t) {
   }
 }
 
-/// Return `true` iff the given type is or contains an ArrayType that can be split into scalars.
-inline bool containsSplittableArrayType(Type t) {
-  return t
-      .walk([](ArrayType a) {
-    return splittableArray(a) ? WalkResult::interrupt() : WalkResult::skip();
-  }).wasInterrupted();
+/// Return `true` iff the given range contains any top-level ArrayType that can be split into
+/// scalars.
+inline bool containsSplittableArrayType(ArrayRef<Type> types) {
+  for (Type t : types) {
+    if (splittableArray(t)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /// Return `true` iff the given range contains any ArrayType that can be split into scalars.
 template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) {
   for (Type t : types) {
-    if (containsSplittableArrayType(t)) {
+    if (splittableArray(t)) {
       return true;
     }
   }
@@ -401,7 +404,8 @@ public:
   using OpConversionPattern<FuncDefOp>::OpConversionPattern;
 
   inline static bool legal(FuncDefOp op) {
-    return !containsSplittableArrayType(op.getFunctionType());
+    return !containsSplittableArrayType(op.getArgumentTypes()) &&
+           !containsSplittableArrayType(op.getResultTypes());
   }
 
   // Create a new ArrayAttr like the one given but with repetitions of the elements according to the
