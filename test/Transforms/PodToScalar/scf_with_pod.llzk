@@ -180,6 +180,43 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @if_result_and_external_write(%a: index, %b: index) -> index {
+    %pod = pod.new : !pod.type<[@value: index]>
+    pod.write %pod[@value] = %b : !pod.type<[@value: index]>, index
+    %c0 = arith.constant 0 : index
+    %cond = arith.cmpi sgt, %a, %c0 : index
+    %res = scf.if %cond -> (index) {
+      %next0 = arith.addi %a, %b : index
+      pod.write %pod[@value] = %next0 : !pod.type<[@value: index]>, index
+      scf.yield %next0 : index
+    } else {
+      %next1 = arith.subi %a, %b : index
+      pod.write %pod[@value] = %next1 : !pod.type<[@value: index]>, index
+      scf.yield %next1 : index
+    }
+    %final = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+    %sum = arith.addi %res, %final : index
+    function.return %sum : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @if_result_and_external_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]]:2 = scf.if %[[VAL_3]] -> (index, index) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_5]], %[[VAL_5]] : index, index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_6]], %[[VAL_6]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]]#0, %[[VAL_4]]#1 : index
+// CHECK-NEXT:      function.return %[[VAL_7]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   function.def @nested_if_external_new_and_write(%a: index, %b: index) -> index {
     %pod = pod.new : !pod.type<[@value: index]>
     pod.write %pod[@value] = %a : !pod.type<[@value: index]>, index

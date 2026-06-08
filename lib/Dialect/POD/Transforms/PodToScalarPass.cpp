@@ -1004,6 +1004,14 @@ static bool isLiftedWrite(Operation &op, ArrayRef<IfWriteSlot> slots) {
   });
 }
 
+/// Return the `scf.yield` terminator from `block`.
+static scf::YieldOp getYieldOp(Block *block) {
+  assert(block && "expected block");
+  auto yieldOp = dyn_cast<scf::YieldOp>(block->getTerminator());
+  assert(yieldOp && "expected scf.if branch to terminate with scf.yield");
+  return yieldOp;
+}
+
 /// Remove the default terminator from a freshly created SCF block before cloning contents into it.
 static void dropTerminatorIfPresent(Block *block) {
   if (!block->empty() && block->back().hasTrait<OpTrait::IsTerminator>()) {
@@ -1027,12 +1035,15 @@ moveBranchWithoutLiftedWrites(Block *srcBlock, Block *destBlock, ArrayRef<IfWrit
   }
 }
 
-/// Finish a lifted branch by yielding one SSA value per tracked POD record.
+/// Finish a lifted branch by yielding the original branch results followed by one lifted POD value
+/// per tracked record.
 static void appendYield(
-    Location loc, Block *block, ArrayRef<IfWriteSlot> slots, bool isThenBlock, OpBuilder &builder
+    Location loc, Block *block, ValueRange priorYieldValues, ArrayRef<IfWriteSlot> slots,
+    bool isThenBlock, OpBuilder &builder
 ) {
   SmallVector<Value> yieldValues;
-  yieldValues.reserve(slots.size());
+  yieldValues.reserve(priorYieldValues.size() + slots.size());
+  llvm::append_range(yieldValues, priorYieldValues);
   for (const IfWriteSlot &slot : slots) {
     WritePodOp writeOp = isThenBlock ? slot.thenWrite : slot.elseWrite;
     yieldValues.push_back(writeOp ? writeOp.getValue() : slot.incomingValue);
@@ -1402,12 +1413,9 @@ static bool liftWhilePodAccesses(scf::WhileOp whileOp) {
 }
 
 /// Lift direct branch-local writes out of `scf.if` as yielded values, then write those values in
-/// the parent block. This gives mem2reg parent-block pod writes instead of nested-region writes.
+/// the parent block. Existing `scf.if` results are preserved as a prefix of the new result list,
+/// which gives mem2reg parent-block pod writes instead of nested-region writes.
 static bool liftIfWrites(scf::IfOp ifOp) {
-  if (!ifOp.getResults().empty()) {
-    return false;
-  }
-
   SmallVector<IfWriteSlot> slots;
   Block *thenBlock = ifOp.thenBlock();
   Block *elseBlock = getElseBlockOrNull(ifOp);
@@ -1435,10 +1443,22 @@ static bool liftIfWrites(scf::IfOp ifOp) {
     slot.incomingValue = genRead(ifOp.getLoc(), slot.podRef, slot.recordName, builder);
   }
 
-  SmallVector<Type> resultTypes;
-  resultTypes.reserve(slots.size());
+  SmallVector<Type> resultTypes = llvm::to_vector(ifOp.getResultTypes());
+  resultTypes.reserve(resultTypes.size() + slots.size());
   for (const IfWriteSlot &slot : slots) {
     resultTypes.push_back(slot.type);
+  }
+
+  SmallVector<Value> originalThenYields;
+  if (!ifOp.getResults().empty()) {
+    scf::YieldOp thenYieldOp = getYieldOp(thenBlock);
+    originalThenYields.append(thenYieldOp.getOperands().begin(), thenYieldOp.getOperands().end());
+  }
+
+  SmallVector<Value> originalElseYields;
+  if (elseBlock && !ifOp.getResults().empty()) {
+    scf::YieldOp elseYieldOp = getYieldOp(elseBlock);
+    originalElseYields.append(elseYieldOp.getOperands().begin(), elseYieldOp.getOperands().end());
   }
 
   builder.setInsertionPoint(ifOp);
@@ -1450,12 +1470,21 @@ static bool liftIfWrites(scf::IfOp ifOp) {
 
   moveBranchWithoutLiftedWrites(thenBlock, newThenBlock, slots);
   moveBranchWithoutLiftedWrites(elseBlock, newElseBlock, slots);
-  appendYield(ifOp.getLoc(), newThenBlock, slots, true, builder);
-  appendYield(ifOp.getLoc(), newElseBlock, slots, false, builder);
+  appendYield(ifOp.getLoc(), newThenBlock, originalThenYields, slots, true, builder);
+  appendYield(ifOp.getLoc(), newElseBlock, originalElseYields, slots, false, builder);
 
   builder.setInsertionPointAfter(newIf);
+  unsigned originalResultCount = ifOp.getNumResults();
+  for (auto [oldResult, newResult] :
+       llvm::zip_equal(ifOp.getResults(), newIf.getResults().take_front(originalResultCount))) {
+    oldResult.replaceAllUsesWith(newResult);
+  }
+
   for (auto [idx, slot] : llvm::enumerate(slots)) {
-    genWrite(ifOp.getLoc(), slot.podRef, slot.recordName, newIf.getResult(idx), builder);
+    genWrite(
+        ifOp.getLoc(), slot.podRef, slot.recordName, newIf.getResult(originalResultCount + idx),
+        builder
+    );
   }
 
   ifOp.erase();
