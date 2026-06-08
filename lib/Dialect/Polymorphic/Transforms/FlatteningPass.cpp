@@ -2178,6 +2178,7 @@ struct FromKeepSet : public CleanupBase {
     // Use a SymbolDefTree to find all Symbol defs reachable from one of the root nodes. Then
     // collect all Symbol uses reachable from those def nodes. These are the symbols that should
     // be preserved. All other symbol defs should be removed.
+    DenseSet<Operation *> defsToKeep;
     llvm::df_iterator_default_set<const SymbolUseGraphNode *> symbolsToKeep;
     for (size_t i = 0; i < roots.size(); ++i) { // iterate for safe insertion
       SymbolOpInterface keepRoot = roots[i];
@@ -2189,6 +2190,9 @@ struct FromKeepSet : public CleanupBase {
           llvm::dbgs() << "[EraseUnreachable] can reach: " << reachableDefNode->getOp() << '\n';
         });
         if (SymbolOpInterface reachableDef = reachableDefNode->getOp()) {
+          if (isErasableDefinition(reachableDef.getOperation())) {
+            defsToKeep.insert(reachableDef.getOperation());
+          }
           // Use 'depth_first_ext()' to get all symbol uses reachable from the current Symbol def
           // node. There are no uses if the node is not in the graph. Within the loop that populates
           // 'depth_first_ext()', also check if the symbol is an erasable definition and ensure it
@@ -2234,14 +2238,13 @@ struct FromKeepSet : public CleanupBase {
     }
 
     SmallVector<SymbolOpInterface> toErase;
-    rootMod.walk([this, &symbolsToKeep, &toErase](Operation *op) {
-      if (!isErasableDefinition(op)) {
+    rootMod.walk([this, &defsToKeep, &symbolsToKeep, &toErase](Operation *op) {
+      if (!isErasableDefinition(op) || defsToKeep.contains(op)) {
         return;
       }
       SymbolOpInterface symOp = llvm::cast<SymbolOpInterface>(op);
       const SymbolUseGraphNode *n = this->useGraph.lookupNode(symOp);
-      assert(n);
-      if (!symbolsToKeep.contains(n)) {
+      if (!n || !symbolsToKeep.contains(n)) {
         LLVM_DEBUG(llvm::dbgs() << "[EraseUnreachable] removing: " << symOp.getNameAttr() << '\n');
         toErase.push_back(symOp);
       }
