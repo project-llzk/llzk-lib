@@ -64,7 +64,10 @@ static std::string appendObjectPath(llvm::StringRef path, llvm::StringRef key) {
 }
 
 static std::string appendIndexPath(llvm::StringRef path, size_t index) {
-  return (llvm::Twine(path) + "[" + llvm::Twine(index) + "]").str();
+  llvm::SmallString<64> out(path);
+  llvm::raw_svector_ostream os(out);
+  os << '[' << index << ']';
+  return std::string(out);
 }
 
 static void pushMismatch(
