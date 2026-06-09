@@ -197,6 +197,32 @@ genWrite(Location loc, Value baseArrayOp, ArrayAttr index, Value init, RewriterB
   return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
 }
 
+/// Return the suffix for one split scalar element of an array, using its multidimensional index.
+static std::string formatSplitArrayIndexSuffix(ArrayAttr index) {
+  std::string suffix;
+  llvm::raw_string_ostream os(suffix);
+  for (Attribute attr : index) {
+    os << '[';
+    attr.print(os, true);
+    os << ']';
+  }
+  return suffix;
+}
+
+/// Return the suffixes to append to a function arg/result name when splitting the given type.
+static SmallVector<std::string> getSplitArrayIndexSuffixes(Type type) {
+  SmallVector<std::string> suffixes;
+  if (ArrayType at = splittableArray(type)) {
+    std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
+    assert(indices.has_value() && "static-shape arrays must provide subelement indices");
+    suffixes.reserve(indices->size());
+    for (ArrayAttr index : *indices) {
+      suffixes.push_back(formatSplitArrayIndexSuffix(index));
+    }
+  }
+  return suffixes;
+}
+
 /// Rebuild a call with split scalar results, then reconstruct array-typed results locally.
 CallOp newCallOpWithSplitResults(
     CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
@@ -408,53 +434,14 @@ public:
            !containsSplittableArrayType(op.getResultTypes());
   }
 
-  // Create a new ArrayAttr like the one given but with repetitions of the elements according to the
-  // mapping defined by `originalIdxToSize`. In other words, if `originalIdxToSize[i] = n`, then `n`
-  // copies of `origAttrs[i]` are appended in its place.
-  static ArrayAttr replicateAttributesAsNeeded(
-      ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize,
-      const SmallVector<Type> &newTypes, ArrayRef<std::optional<std::string>> origArgNames = {},
-      ArrayRef<std::string> existingArgNames = {}
-  ) {
-    if (origAttrs) {
-      assert(originalIdxToSize.size() == origAttrs.size());
-      if (originalIdxToSize.size() != newTypes.size()) {
-        SmallVector<Attribute> newArgAttrs;
-        llvm::StringSet<> usedArgNames;
-        if (!origArgNames.empty()) {
-          for (StringRef argName : existingArgNames) {
-            usedArgNames.insert(argName);
-          }
-        }
-        for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
-          Attribute attr = origAttrs[i];
-          if (!origArgNames.empty() && s != 1 && origArgNames[i]) {
-            auto dictAttr = llvm::cast<DictionaryAttr>(attr);
-            StringRef argName = *origArgNames[i];
-            for (size_t j = 0; j < s; ++j) {
-              std::string desiredName = (argName + "[" + llvm::Twine(j) + "]").str();
-              newArgAttrs.push_back(withFunctionArgNameAttr(
-                  dictAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
-              ));
-            }
-            continue;
-          }
-          newArgAttrs.append(s, attr);
-        }
-        return ArrayAttr::get(origAttrs.getContext(), newArgAttrs);
-      }
-    }
-    return nullptr;
-  }
-
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     // Update in/out types of the function to replace arrays with scalars
     class Impl : public FunctionTypeConverter {
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
-      SmallVector<std::optional<std::string>> originalInputArgNames;
-      SmallVector<std::string> existingInputArgNames;
+      SplitFunctionNameInfo inputNameInfo;
+      SplitFunctionNameInfo resultNameInfo;
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
@@ -464,13 +451,18 @@ public:
         return splitArrayType(origTypes, &originalResultIdxToSize);
       }
       ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateAttributesAsNeeded(
-            origAttrs, originalInputIdxToSize, newTypes, originalInputArgNames,
-            existingInputArgNames
+        return replicateFunctionNameAttrsAsNeeded(
+            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
+            inputNameInfo.originalNames, inputNameInfo.existingNames,
+            inputNameInfo.splitNameSuffixes
         );
       }
       ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);
+        return replicateFunctionNameAttrsAsNeeded(
+            origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
+            resultNameInfo.originalNames, resultNameInfo.existingNames,
+            resultNameInfo.splitNameSuffixes
+        );
       }
 
       /// For each argument to the Block that has a splittable ArrayType, replace it with the
@@ -508,15 +500,13 @@ public:
 
     public:
       Impl(FuncDefOp op) {
-        originalInputArgNames.reserve(op.getNumArguments());
-        for (unsigned i = 0, e = op.getNumArguments(); i < e; ++i) {
-          if (std::optional<StringAttr> argName = op.getArgNameAttr(i)) {
-            originalInputArgNames.push_back(argName->getValue().str());
-            existingInputArgNames.push_back(argName->getValue().str());
-          } else {
-            originalInputArgNames.push_back(std::nullopt);
-          }
-        }
+        ArrayAttr resultAttrs = op.getAllResultAttrs();
+        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+          return op.getArgNameAttr(i);
+        }, getSplitArrayIndexSuffixes);
+        resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
+          return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
+        }, getSplitArrayIndexSuffixes);
       }
     };
     Impl(op).convert(op, rewriter);

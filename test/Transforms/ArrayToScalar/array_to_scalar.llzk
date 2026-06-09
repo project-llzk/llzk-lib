@@ -829,9 +829,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.member @arr_3 : !felt.type {llzk.pub}
 // CHECK-NEXT:    struct.member @arr_4 : !felt.type {llzk.pub}
 // CHECK-NEXT:    struct.member @arr_5 : !felt.type {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0]", llzk.pub}, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1]", llzk.pub},
-// CHECK-SAME:    %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[2]", llzk.pub}, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[3]", llzk.pub},
-// CHECK-SAME:    %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[4]", llzk.pub}, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[5]", llzk.pub})
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0][0]", llzk.pub}, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0][1]", llzk.pub},
+// CHECK-SAME:    %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0][2]", llzk.pub}, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1][0]", llzk.pub},
+// CHECK-SAME:    %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1][1]", llzk.pub}, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1][2]", llzk.pub})
 // CHECK-SAME:    -> !struct.type<@ArrayMembersAndParamsWithPubModifier> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@ArrayMembersAndParamsWithPubModifier>
 // CHECK-DAG:       struct.writem %[[V6]][@arr_2] = %[[V2]] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
@@ -842,10 +842,10 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       struct.writem %[[V6]][@arr_5] = %[[V5]] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
 // CHECK-NEXT:      function.return %[[V6]] : !struct.type<@ArrayMembersAndParamsWithPubModifier>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrayMembersAndParamsWithPubModifier>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0]", llzk.pub},
-// CHECK-SAME:    %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1]", llzk.pub}, %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[2]", llzk.pub},
-// CHECK-SAME:    %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[3]", llzk.pub}, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[4]", llzk.pub},
-// CHECK-SAME:    %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[5]", llzk.pub}) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrayMembersAndParamsWithPubModifier>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][0]", llzk.pub},
+// CHECK-SAME:    %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][1]", llzk.pub}, %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][2]", llzk.pub},
+// CHECK-SAME:    %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][0]", llzk.pub}, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][1]", llzk.pub},
+// CHECK-SAME:    %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][2]", llzk.pub}) attributes {function.allow_constraint} {
 // CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_2] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
 // CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_3] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
 // CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_4] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
@@ -855,6 +855,19 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @named_array_signature(
+      !array.type<2,2 x !felt.type> {function.arg_name = "input"})
+      -> (!array.type<2,2 x !felt.type> {function.res_name = "output"})
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @named_array_signature(!felt.type {function.arg_name = "input[0][0]"},
+// CHECK-SAME:    !felt.type {function.arg_name = "input[0][1]"}, !felt.type {function.arg_name = "input[1][0]"},
+// CHECK-SAME:    !felt.type {function.arg_name = "input[1][1]"}) -> (!felt.type {function.res_name = "output[0][0]"},
+// CHECK-SAME:    !felt.type {function.res_name = "output[0][1]"}, !felt.type {function.res_name = "output[1][0]"},
+// CHECK-SAME:    !felt.type {function.res_name = "output[1][1]"})
 // -----
 
 module attributes {llzk.lang} {

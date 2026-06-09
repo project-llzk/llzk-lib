@@ -2,7 +2,7 @@
 
 !Pair = !pod.type<[@lhs: index, @rhs: index]>
 module attributes {llzk.lang} {
-  function.def @swap_and_add(%pair: !Pair) -> !Pair {
+  function.def @swap_and_add(%pair: !Pair {function.arg_name = "pair"}) -> (!Pair {function.res_name = "out"}) {
     %lhs = pod.read %pair[@lhs] : !Pair, index
     %rhs = pod.read %pair[@rhs] : !Pair, index
     %sum = arith.addi %lhs, %rhs : index
@@ -22,7 +22,7 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @swap_and_add(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:    function.def @swap_and_add(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "pair.lhs"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "pair.rhs"}) -> (index {function.res_name = "out.lhs"}, index {function.res_name = "out.rhs"}) {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
 // CHECK-NEXT:      function.return %[[VAL_1]], %[[VAL_2]] : index, index
 // CHECK-NEXT:    }

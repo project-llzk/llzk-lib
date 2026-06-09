@@ -25,19 +25,36 @@
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 
+#include <optional>
+#include <string>
+
 namespace llzk {
 
-/// Return a copy of the given argument attribute dictionary with `function.arg_name` set to `name`.
+/// Return a copy of the given function argument/result attribute dictionary with `attrName` set
+/// to `name`.
 inline mlir::DictionaryAttr
-withFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+withFunctionNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef attrName, llvm::StringRef name) {
   mlir::NamedAttrList newAttrs(attrs);
-  newAttrs.set(function::ARG_NAME_ATTR_NAME, mlir::StringAttr::get(attrs.getContext(), name));
+  newAttrs.set(attrName, mlir::StringAttr::get(attrs.getContext(), name));
   return newAttrs.getDictionary(attrs.getContext());
 }
 
-/// Reserve and return a unique function argument name based on `desiredName`.
+/// Return a copy of the given argument attribute dictionary with `function.arg_name` set to
+/// `name`.
+inline mlir::DictionaryAttr
+withFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+  return withFunctionNameAttr(attrs, function::ARG_NAME_ATTR_NAME, name);
+}
+
+/// Return a copy of the given result attribute dictionary with `function.res_name` set to `name`.
+inline mlir::DictionaryAttr
+withFunctionResNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+  return withFunctionNameAttr(attrs, function::RES_NAME_ATTR_NAME, name);
+}
+
+/// Reserve and return a unique function argument/result name based on `desiredName`.
 inline std::string
-reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desiredName) {
+reserveUniqueAttrName(llvm::StringSet<> &usedNames, llvm::StringRef desiredName) {
   if (!usedNames.contains(desiredName)) {
     usedNames.insert(desiredName);
     return desiredName.str();
@@ -50,6 +67,93 @@ reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desir
       return candidate;
     }
   }
+}
+
+/// Return the function arg/result attribute at `index` for the given name, if present.
+inline std::optional<mlir::StringAttr>
+getAttrAtIndexWithName(mlir::ArrayAttr attrs, unsigned index, llvm::StringRef attrName) {
+  if (!attrs || index >= attrs.size()) {
+    return std::nullopt;
+  }
+  if (auto dictAttr = llvm::dyn_cast<mlir::DictionaryAttr>(attrs[index])) {
+    if (auto nameAttr = llvm::dyn_cast<mlir::StringAttr>(dictAttr.get(attrName))) {
+      return nameAttr;
+    }
+  }
+  return std::nullopt;
+}
+
+/// Cached function arg/result names and split suffixes used while rewriting a function signature.
+struct SplitFunctionNameInfo {
+  llvm::SmallVector<std::optional<std::string>> originalNames;
+  llvm::SmallVector<std::string> existingNames;
+  llvm::SmallVector<llvm::SmallVector<std::string>> splitNameSuffixes;
+};
+
+/// Collect function arg/result names and split suffixes from a list of original types.
+template <typename GetNameAttrFn, typename GetSplitSuffixesFn>
+inline SplitFunctionNameInfo collectSplitFunctionNameInfo(
+    mlir::ArrayRef<mlir::Type> origTypes, GetNameAttrFn &&getNameAttr,
+    GetSplitSuffixesFn &&getSplitSuffixes
+) {
+  SplitFunctionNameInfo info;
+  info.originalNames.reserve(origTypes.size());
+  info.splitNameSuffixes.reserve(origTypes.size());
+  for (auto [i, type] : llvm::enumerate(origTypes)) {
+    if (std::optional<mlir::StringAttr> nameAttr = getNameAttr(i)) {
+      info.originalNames.push_back(nameAttr->getValue().str());
+      info.existingNames.push_back(nameAttr->getValue().str());
+    } else {
+      info.originalNames.push_back(std::nullopt);
+    }
+    info.splitNameSuffixes.push_back(getSplitSuffixes(type));
+  }
+  return info;
+}
+
+/// Expand function arg/result attribute arrays to match a split signature, rewriting name attrs
+/// with the provided suffixes where available.
+inline mlir::ArrayAttr replicateFunctionNameAttrsAsNeeded(
+    mlir::ArrayAttr origAttrs, const llvm::SmallVector<size_t> &originalIdxToSize,
+    const llvm::SmallVector<mlir::Type> &newTypes, llvm::StringRef functionNameAttrName,
+    llvm::ArrayRef<std::optional<std::string>> origNames = {},
+    llvm::ArrayRef<std::string> existingNames = {},
+    llvm::ArrayRef<llvm::SmallVector<std::string>> splitNameSuffixes = {}
+) {
+  if (!origAttrs) {
+    return nullptr;
+  }
+  assert(originalIdxToSize.size() == origAttrs.size());
+  if (originalIdxToSize.size() == newTypes.size()) {
+    return nullptr;
+  }
+
+  llvm::SmallVector<mlir::Attribute> newAttrs;
+  llvm::StringSet<> usedNames;
+  if (!origNames.empty()) {
+    for (llvm::StringRef name : existingNames) {
+      usedNames.insert(name);
+    }
+  }
+
+  for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
+    mlir::Attribute attr = origAttrs[i];
+    if (!origNames.empty() && !splitNameSuffixes.empty() && s != 1 && origNames[i]) {
+      assert(i < splitNameSuffixes.size());
+      assert(splitNameSuffixes[i].size() == s);
+      auto dictAttr = llvm::cast<mlir::DictionaryAttr>(attr);
+      llvm::StringRef name = *origNames[i];
+      for (llvm::StringRef suffix : splitNameSuffixes[i]) {
+        std::string desiredName = (llvm::Twine(name) + suffix).str();
+        newAttrs.push_back(withFunctionNameAttr(
+            dictAttr, functionNameAttrName, reserveUniqueAttrName(usedNames, desiredName)
+        ));
+      }
+      continue;
+    }
+    newAttrs.append(s, attr);
+  }
+  return mlir::ArrayAttr::get(origAttrs.getContext(), newAttrs);
 }
 
 /// Rebuild a `function.call` while preserving explicit instantiation state from `oldCall`.

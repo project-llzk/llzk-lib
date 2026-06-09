@@ -748,9 +748,9 @@ private:
               usedArgNames.insert(argName);
             }
             for (auto [memberName, _] : newMembers) {
-              std::string desiredName = (*originalArgName + "." + memberName).str();
+              std::string desiredName = (*originalArgName + '.' + memberName).str();
               splitAttrs.push_back(withFunctionArgNameAttr(
-                  splitAttr, reserveUniqueFunctionArgName(usedArgNames, desiredName)
+                  splitAttr, reserveUniqueAttrName(usedArgNames, desiredName)
               ));
             }
           } else {
