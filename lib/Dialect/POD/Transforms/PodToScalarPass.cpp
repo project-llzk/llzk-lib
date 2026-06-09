@@ -489,13 +489,14 @@ public:
 
     public:
       Impl(FuncDefOp op) {
-        ArrayAttr resultAttrs = op.getAllResultAttrs();
-        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&op](unsigned i) {
           return op.getArgNameAttr(i);
         }, getSplitRecordNameSuffixes);
-        resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
+        resultNameInfo = collectSplitFunctionNameInfo(
+            op.getResultTypes(), [resultAttrs = op.getAllResultAttrs()](unsigned i) {
           return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
-        }, getSplitRecordNameSuffixes);
+        }, getSplitRecordNameSuffixes
+        );
       }
     };
     Impl(op).convert(op, rewriter);
@@ -1108,27 +1109,28 @@ struct LoopPodSlot {
   Value podRef;
   StringAttr recordName;
   Type type;
+
+  /// Return whether this slot is `findPodRef.findRecordName`.
+  bool matches(Value findPodRef, StringAttr findRecordName) const {
+    return this->podRef == findPodRef && this->recordName == findRecordName;
+  }
 };
 
-/// Find the tracked loop slot for `podRef.recordName`.
+/// Return the tracked loop slot for `podRef.recordName`, or null if not found.
 static LoopPodSlot *
 lookupLoopSlot(SmallVectorImpl<LoopPodSlot> &slots, Value podRef, StringAttr recordName) {
-  for (LoopPodSlot &slot : slots) {
-    if (slot.podRef == podRef && slot.recordName == recordName) {
-      return &slot;
-    }
-  }
-  return nullptr;
+  auto it = llvm::find_if(slots, [&podRef, &recordName](const LoopPodSlot &slot) {
+    return slot.matches(podRef, recordName);
+  });
+  return it == slots.end() ? nullptr : &*it;
 }
 
-static const LoopPodSlot *
-lookupLoopSlot(ArrayRef<LoopPodSlot> slots, Value podRef, StringAttr recordName) {
-  for (const LoopPodSlot &slot : slots) {
-    if (slot.podRef == podRef && slot.recordName == recordName) {
-      return &slot;
-    }
-  }
-  return nullptr;
+/// Return whether a loop slot is tracked for `podRef.recordName`.
+static bool hasLoopSlot(ArrayRef<LoopPodSlot> slots, Value podRef, StringAttr recordName) {
+  auto it = llvm::find_if(slots, [&podRef, &recordName](const LoopPodSlot &slot) {
+    return slot.matches(podRef, recordName);
+  });
+  return it != slots.end();
 }
 
 /// Return the tracked loop slot for `podRef.recordName`, creating it on first use.
@@ -1180,28 +1182,30 @@ collectDirectLoopPodSlots(Block &block, Operation *ancestor, SmallVectorImpl<Loo
 
 /// Return whether `op` directly uses a POD reference tracked for loop lifting.
 static bool opUsesTrackedPodRefDirectly(Operation &op, ArrayRef<LoopPodSlot> slots) {
-  return llvm::any_of(op.getOperands(), [&](Value operand) {
-    return llvm::any_of(slots, [&](const LoopPodSlot &slot) { return slot.podRef == operand; });
+  return llvm::any_of(op.getOperands(), [&slots](Value operand) {
+    return llvm::any_of(slots, [&operand](const LoopPodSlot &slot) {
+      return slot.podRef == operand;
+    });
   });
 }
 
 /// Return whether `op` contains nested POD accesses tracked for loop lifting.
 static bool hasNestedTrackedPodAccess(Operation &op, ArrayRef<LoopPodSlot> slots) {
   return op
-      .walk([&](Operation *nestedOp) {
+      .walk([&op, &slots](Operation *nestedOp) {
     if (nestedOp == &op) {
       return WalkResult::advance();
     }
 
     if (auto readOp = dyn_cast<ReadPodOp>(nestedOp)) {
-      if (lookupLoopSlot(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+      if (hasLoopSlot(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
         return WalkResult::interrupt();
       }
       return WalkResult::advance();
     }
 
     if (auto writeOp = dyn_cast<WritePodOp>(nestedOp)) {
-      if (lookupLoopSlot(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+      if (hasLoopSlot(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
         return WalkResult::interrupt();
       }
     }
@@ -1539,19 +1543,19 @@ static void step3(ModuleOp modOp) {
     changed = replaceIfReads(modOp);
 
     SmallVector<scf::IfOp> ifOps;
-    modOp.walk([&](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
+    modOp.walk([&ifOps](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
     for (scf::IfOp ifOp : ifOps) {
       changed |= liftIfWrites(ifOp);
     }
 
     SmallVector<scf::ForOp> forOps;
-    modOp.walk([&](scf::ForOp forOp) { forOps.push_back(forOp); });
+    modOp.walk([&forOps](scf::ForOp forOp) { forOps.push_back(forOp); });
     for (scf::ForOp forOp : forOps) {
       changed |= liftForPodAccesses(forOp);
     }
 
     SmallVector<scf::WhileOp> whileOps;
-    modOp.walk([&](scf::WhileOp whileOp) { whileOps.push_back(whileOp); });
+    modOp.walk([&whileOps](scf::WhileOp whileOp) { whileOps.push_back(whileOp); });
     for (scf::WhileOp whileOp : whileOps) {
       changed |= liftWhilePodAccesses(whileOp);
     }
