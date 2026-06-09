@@ -14,8 +14,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -25,7 +23,7 @@
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 
-namespace llzk {
+namespace llzk::verif {
 
 enum class ForbiddenPreconditionInfluence : uint8_t {
   None = 0,
@@ -153,4 +151,4 @@ inline ForbiddenPreconditionInfluence analyzeForbiddenPreconditionCallableResult
   );
 }
 
-} // namespace llzk
+} // namespace llzk::verif

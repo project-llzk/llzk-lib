@@ -7,14 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Analysis/ForbiddenPreconditionInfluence.h"
+#include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
+
+#include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 
 using namespace mlir;
 using namespace llzk::component;
 using namespace llzk::function;
 using namespace llzk::verif;
-
-namespace llzk::detail {
+using namespace llzk::verif::detail;
 
 //===------------------------------------------------------------------===//
 // ForbiddenInfluenceAnalyzer::AnalysisFrame
@@ -248,5 +250,3 @@ Influence ForbiddenInfluenceAnalyzer::classifyContractArgument(
   }
   return Influence::None;
 }
-
-} // namespace llzk::detail

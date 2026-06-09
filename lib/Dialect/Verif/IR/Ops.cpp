@@ -11,12 +11,12 @@
 
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
-#include "llzk/Analysis/ForbiddenPreconditionInfluence.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/ErrorHelper.h"
@@ -149,7 +149,7 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
   return failure();
 }
 
-enum class ForbiddenRequireConditionKind {
+enum class ForbiddenRequireConditionKind : uint8_t {
   MainContract,
   StructMember,
   FunctionReturn,
@@ -157,12 +157,12 @@ enum class ForbiddenRequireConditionKind {
 
 std::optional<ForbiddenRequireConditionKind>
 classifyForbiddenConditionProvenance(ModuleOp module, Value value, ContractOp contract) {
-  llzk::ForbiddenPreconditionInfluence influence =
-      llzk::analyzeForbiddenPreconditionInfluence(module, contract, value);
-  if (llzk::hasInfluence(influence, llzk::ForbiddenPreconditionInfluence::StructMember)) {
+  ForbiddenPreconditionInfluence influence =
+      analyzeForbiddenPreconditionInfluence(module, contract, value);
+  if (hasInfluence(influence, ForbiddenPreconditionInfluence::StructMember)) {
     return ForbiddenRequireConditionKind::StructMember;
   }
-  if (llzk::hasInfluence(influence, llzk::ForbiddenPreconditionInfluence::FunctionReturn)) {
+  if (hasInfluence(influence, ForbiddenPreconditionInfluence::FunctionReturn)) {
     return ForbiddenRequireConditionKind::FunctionReturn;
   }
   return std::nullopt;
