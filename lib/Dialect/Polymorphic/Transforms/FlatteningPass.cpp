@@ -25,6 +25,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -48,6 +49,7 @@
 #include <mlir/Support/LogicalResult.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/GreedyPatternRewriteDriver.h>
+#include <mlir/Transforms/Passes.h>
 #include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
 #include <llvm/ADT/APInt.h>
@@ -2525,7 +2527,11 @@ private:
     if (failed(runPipeline(universalCleanup, modOp))) {
       return failure();
     }
-    return success();
+
+    OpPassManager allocationCleanup(ModuleOp::getOperationName());
+    allocationCleanup.addPass(createSpecializedRemoveUnusedAllocationsPass<CreateArrayOp>());
+    allocationCleanup.addPass(createRemoveDeadValuesPass());
+    return runPipeline(allocationCleanup, modOp);
   }
 
   // Perform cleanup according to the 'cleanupMode' option.
