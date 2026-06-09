@@ -85,6 +85,7 @@
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/Passes.h>
 
+#include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Debug.h>
 
@@ -101,6 +102,39 @@ using namespace llzk::function;
 using namespace llzk::component;
 
 #define DEBUG_TYPE "llzk-pod-to-scalar"
+
+namespace {
+
+/// Path of nested POD record names from the original member to a scalar leaf record.
+struct RecordChain {
+  SmallVector<StringAttr> names;
+
+  RecordChain() = default;
+
+  explicit RecordChain(ArrayRef<StringAttr> names) : names(names.begin(), names.end()) {}
+
+  bool operator==(const RecordChain &other) const { return names == other.names; }
+};
+
+} // namespace
+
+namespace llvm {
+template <> struct DenseMapInfo<RecordChain> {
+  static RecordChain getEmptyKey() {
+    return RecordChain {{DenseMapInfo<StringAttr>::getEmptyKey()}};
+  }
+
+  static RecordChain getTombstoneKey() {
+    return RecordChain {{DenseMapInfo<StringAttr>::getTombstoneKey()}};
+  }
+
+  static unsigned getHashValue(const RecordChain &chain) {
+    return llvm::hash_combine_range(chain.names.begin(), chain.names.end());
+  }
+
+  static bool isEqual(const RecordChain &lhs, const RecordChain &rhs) { return lhs == rhs; }
+};
+} // namespace llvm
 
 namespace {
 
@@ -276,21 +310,12 @@ static LogicalResult step0(ModuleOp modOp) {
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-/// Path of nested POD record names from the original member to a scalar leaf record.
-using RecordChain = ArrayAttr;
 /// new member name and type
 using MemberInfo = std::pair<StringAttr, Type>;
 /// original nested pod record name chain -> split scalar member info
 using LocalMemberReplacementMap = DenseMap<RecordChain, MemberInfo>;
 /// struct -> original pod-type member name -> LocalMemberReplacementMap
 using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
-
-/// Convert a nested record-name path to a `RecordChain` key for the replacement map.
-inline static RecordChain getRecordChainAttr(MLIRContext *ctx, ArrayRef<StringAttr> recordChain) {
-  return RecordChain::get(ctx, llvm::map_to_vector(recordChain, [](StringAttr s) {
-    return Attribute(s);
-  }));
-}
 
 /// Build a flattened struct-member name like `member_outer_inner_leaf`.
 static StringAttr
@@ -328,7 +353,7 @@ static void flattenPodMemberIntoLeaves(
         originalMember.getLoc(), name, ty, originalMember.getSignal(), originalMember.getColumn()
     );
     newMember.setPublicAttr(originalMember.hasPublicAttr());
-    localRepMapRef[getRecordChainAttr(originalMember.getContext(), recordChain)] =
+    localRepMapRef[RecordChain(recordChain)] =
         std::make_pair(structSymbolTable.insert(newMember), ty);
     recordChain.pop_back();
   }
@@ -590,8 +615,8 @@ public:
 static Value
 genReadAlongPath(Location loc, Value podRef, RecordChain recordChain, OpBuilder &rewriter) {
   Value value = podRef;
-  for (Attribute attr : recordChain) {
-    value = genRead(loc, value, llvm::cast<StringAttr>(attr), rewriter);
+  for (StringAttr attr : recordChain.names) {
+    value = genRead(loc, value, attr, rewriter);
   }
   return value;
 }
@@ -619,7 +644,7 @@ static Value rebuildFlattenedPodRecord(
     return nestedPod;
   }
 
-  auto it = leafValues.find(getRecordChainAttr(rewriter.getContext(), recordChain));
+  auto it = leafValues.find(RecordChain(recordChain));
   assert(it != leafValues.end() && "missing flattened POD leaf value");
   return it->second;
 }
