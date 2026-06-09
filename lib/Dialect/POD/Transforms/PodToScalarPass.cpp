@@ -107,13 +107,13 @@ namespace {
 
 /// Path of nested POD record names from the original member to a scalar leaf record.
 struct RecordChain {
-  SmallVector<StringAttr> names;
+  SmallVector<StringAttr> nameList;
 
   RecordChain() = default;
 
-  explicit RecordChain(ArrayRef<StringAttr> names) : names(names.begin(), names.end()) {}
+  explicit RecordChain(ArrayRef<StringAttr> names) : nameList(names.begin(), names.end()) {}
 
-  bool operator==(const RecordChain &other) const { return names == other.names; }
+  bool operator==(const RecordChain &other) const { return nameList == other.nameList; }
 };
 
 } // namespace
@@ -129,7 +129,7 @@ template <> struct DenseMapInfo<RecordChain> {
   }
 
   static unsigned getHashValue(const RecordChain &chain) {
-    return llvm::hash_combine_range(chain.names.begin(), chain.names.end());
+    return llvm::hash_combine_range(chain.nameList.begin(), chain.nameList.end());
   }
 
   static bool isEqual(const RecordChain &lhs, const RecordChain &rhs) { return lhs == rhs; }
@@ -615,7 +615,7 @@ public:
 static Value
 genReadAlongPath(Location loc, Value podRef, RecordChain recordChain, OpBuilder &rewriter) {
   Value value = podRef;
-  for (StringAttr attr : recordChain.names) {
+  for (StringAttr attr : recordChain.nameList) {
     value = genRead(loc, value, attr, rewriter);
   }
   return value;
