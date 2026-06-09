@@ -950,6 +950,8 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
     nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
     // Cleanup SSA values made dead by the transformations
     nestedPM.addPass(createRemoveDeadValuesPass());
+    // Cleanup allocation ops that became unused after memory promotion.
+    nestedPM.addPass(createCanonicalizerPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;

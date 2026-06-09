@@ -22,6 +22,7 @@
 #include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/Matchers.h>
 #include <mlir/IR/OwningOpRef.h>
+#include <mlir/IR/PatternMatch.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Support/LogicalResult.h>
@@ -41,6 +42,22 @@
 using namespace mlir;
 
 namespace llzk::array {
+
+namespace {
+
+struct RemoveUnusedCreateArrayPattern : public OpRewritePattern<CreateArrayOp> {
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
+    if (!op.getResult().use_empty()) {
+      return failure();
+    }
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+} // namespace
 
 //===------------------------------------------------------------------===//
 // CreateArrayOp
@@ -75,6 +92,10 @@ LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 void CreateArrayOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
   setNameFn(getResult(), "array");
+}
+
+void CreateArrayOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRContext *context) {
+  results.add<RemoveUnusedCreateArrayPattern>(context);
 }
 
 llvm::SmallVector<Type> CreateArrayOp::resultTypeToElementsTypes(Type resultType) {

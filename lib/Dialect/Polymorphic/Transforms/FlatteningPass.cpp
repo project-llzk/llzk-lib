@@ -48,6 +48,7 @@
 #include <mlir/Support/LogicalResult.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/GreedyPatternRewriteDriver.h>
+#include <mlir/Transforms/Passes.h>
 #include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
 #include <llvm/ADT/APInt.h>
@@ -2525,7 +2526,9 @@ private:
     if (failed(runPipeline(universalCleanup, modOp))) {
       return failure();
     }
-    return success();
+    OpPassManager finalCleanup(ModuleOp::getOperationName());
+    finalCleanup.addPass(createCanonicalizerPass());
+    return runPipeline(finalCleanup, modOp);
   }
 
   // Perform cleanup according to the 'cleanupMode' option.

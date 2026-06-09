@@ -103,7 +103,7 @@ class RangedArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
 def LLZK_CreateArrayOp
     : ArrayDialectOp<
           "new",
-          [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
+          [AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
            DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,
@@ -113,7 +113,11 @@ def LLZK_CreateArrayOp
                "resultTypeToElementsTypes($_self)", "std::equal_to<>()">]> {
   let summary = "create a new array";
   let description = [{
-    This operation creates a new array with the given elements.
+    This operation creates a fresh mutable array with the given elements.
+    Even when two `array.new` operations have identical operands and result
+    types, they are distinct allocations; writes through one result must not
+    affect reads through the other.
+
     The arguments are passed as a flat array but get arranged in
     row-major order according the shape declared in the type.
 
@@ -233,6 +237,7 @@ def LLZK_CreateArrayOp
   }];
 
   let hasVerifier = 1;
+  let hasCanonicalizer = 1;
 }
 
 def LLZK_ReadArrayOp

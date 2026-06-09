@@ -43,6 +43,8 @@ module attributes {llzk.lang = "circom"} {
 
 LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantiated with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](\ref test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.
 
+Each `array.new` operation creates a fresh mutable array allocation. Two identical `array.new` operations are not interchangeable when either result may be read or written.
+
 ## Semantic Rules
 
 - A `function.def` argument may have `function.arg_name = "..."` to preserve the source-level argument name independently from the SSA name printed by MLIR. The value must be a non-empty, untyped string attribute; typed string attributes such as `"x" : i1` are rejected. Attached argument names must be unique within the function. Argument-splitting transforms derive names for generated arguments, such as `input[0]` for array elements or `self.member` for struct members.
