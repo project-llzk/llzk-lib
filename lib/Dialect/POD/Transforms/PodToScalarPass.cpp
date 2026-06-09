@@ -1655,18 +1655,21 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
       module.dump();
     });
 
+    // 1. Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
+    // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
+    // up memory, i.e., it can only convert scalar memory access into SSA values.
+    // 2. The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
+    OpPassManager scalarizePM(ModuleOp::getOperationName());
+    scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
+    scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
+
+    // Cleanup SSA values made dead by the transformations
+    OpPassManager cleanupPM(ModuleOp::getOperationName());
+    cleanupPM.addPass(createRemoveDeadValuesPass());
+
     size_t podAllocWeight = podAllocScalarizationWeight(module);
     while (podAllocWeight != 0) {
-      OpPassManager nestedPM(ModuleOp::getOperationName());
-      // Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
-      // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
-      // up memory, i.e., it can only convert scalar memory access into SSA values.
-      nestedPM.addPass(createSpecializedSROAPass<NewPodOp>());
-      // The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
-      nestedPM.addPass(createSpecializedMem2RegPass<NewPodOp>());
-      // Cleanup SSA values made dead by the transformations
-      nestedPM.addPass(createRemoveDeadValuesPass());
-      if (failed(runPipeline(nestedPM, module))) {
+      if (failed(runPipeline(scalarizePM, module))) {
         signalPassFailure();
         return;
       }
@@ -1675,20 +1678,16 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
       // same-record write from another `scf.if` result. Fold those reads and clean up before
       // checking convergence.
       bool foldedIfCarriedRead = foldIfCarriedPodReadAfterWrite(module);
-      if (foldedIfCarriedRead) {
-        OpPassManager cleanupPM(ModuleOp::getOperationName());
-        cleanupPM.addPass(createRemoveDeadValuesPass());
-        if (failed(runPipeline(cleanupPM, module))) {
-          signalPassFailure();
-          return;
-        }
+      if (failed(runPipeline(cleanupPM, module))) {
+        signalPassFailure();
+        return;
       }
 
       // Nested PODs can become visible only after an outer single-record POD has been promoted,
       // and SROA can transiently increase allocation count while splitting aggregates. Keep
       // iterating until the allocation-weight heuristic reaches a fixed point.
       size_t nextPodAllocWeight = podAllocScalarizationWeight(module);
-      if (nextPodAllocWeight == podAllocWeight && !foldedIfCarriedRead) {
+      if (!foldedIfCarriedRead && nextPodAllocWeight == podAllocWeight) {
         break;
       }
       podAllocWeight = nextPodAllocWeight;
