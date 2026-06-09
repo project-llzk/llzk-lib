@@ -85,8 +85,8 @@ getAttrAtIndexWithName(mlir::ArrayAttr attrs, unsigned index, llvm::StringRef at
 
 /// Cached function arg/result names and split suffixes used while rewriting a function signature.
 struct SplitFunctionNameInfo {
-  llvm::SmallVector<std::optional<std::string>> originalNames;
-  llvm::SmallVector<std::string> existingNames;
+  llvm::SmallVector<std::optional<llvm::StringRef>> originalNames;
+  llvm::SmallVector<llvm::StringRef> existingNames;
   llvm::SmallVector<llvm::SmallVector<std::string>> splitNameSuffixes;
 };
 
@@ -101,8 +101,8 @@ inline SplitFunctionNameInfo collectSplitFunctionNameInfo(
   info.splitNameSuffixes.reserve(origTypes.size());
   for (auto [i, type] : llvm::enumerate(origTypes)) {
     if (std::optional<mlir::StringAttr> nameAttr = getNameAttr(i)) {
-      info.originalNames.push_back(nameAttr->getValue().str());
-      info.existingNames.push_back(nameAttr->getValue().str());
+      info.originalNames.push_back(nameAttr->getValue());
+      info.existingNames.push_back(nameAttr->getValue());
     } else {
       info.originalNames.push_back(std::nullopt);
     }
@@ -116,8 +116,8 @@ inline SplitFunctionNameInfo collectSplitFunctionNameInfo(
 inline mlir::ArrayAttr replicateFunctionNameAttrsAsNeeded(
     mlir::ArrayAttr origAttrs, const llvm::SmallVector<size_t> &originalIdxToSize,
     const llvm::SmallVector<mlir::Type> &newTypes, llvm::StringRef functionNameAttrName,
-    llvm::ArrayRef<std::optional<std::string>> origNames = {},
-    llvm::ArrayRef<std::string> existingNames = {},
+    llvm::ArrayRef<std::optional<llvm::StringRef>> origNames = {},
+    llvm::ArrayRef<llvm::StringRef> existingNames = {},
     llvm::ArrayRef<llvm::SmallVector<std::string>> splitNameSuffixes = {}
 ) {
   if (!origAttrs) {
@@ -234,10 +234,11 @@ public:
     // If the function has a body, ensure the entry block arguments match the function inputs.
     if (mlir::Region *body = op.getCallableRegion()) {
       mlir::Block &entryBlock = body->front();
-      bool blockArgsNeedUpdate = !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size());
-      for (unsigned i = 0, e = entryBlock.getNumArguments(); !blockArgsNeedUpdate && i < e; ++i) {
-        blockArgsNeedUpdate = entryBlock.getArgument(i).getType() != newInputs[i];
-      }
+      bool blockArgsNeedUpdate =
+          !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()) ||
+          llvm::any_of(llvm::zip_equal(entryBlock.getArgumentTypes(), newInputs), [](auto pair) {
+        return std::get<0>(pair) != std::get<1>(pair);
+      });
       if (blockArgsNeedUpdate) {
         processBlockArgs(entryBlock, rewriter);
         // Post-condition: block args must match function inputs in both arity and type.
