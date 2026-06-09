@@ -9,6 +9,10 @@
 
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
+#include "llzk/Analysis/ConstraintDependencyGraph.h"
+#include "llzk/Analysis/ForbiddenPreconditionInfluence.h"
+#include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -25,7 +29,6 @@
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
@@ -152,111 +155,15 @@ enum class ForbiddenRequireConditionKind {
   FunctionReturn,
 };
 
-std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenance(
-    Value value, ContractOp contract, llvm::DenseSet<Value> &visited
-);
-
-// Function-target contracts append return values after the target's original
-// inputs, so those trailing block arguments represent forbidden return-value
-// provenance for preconditions.
-bool isContractReturnValueArg(BlockArgument blockArg, ContractOp contract) {
-  if (blockArg.getOwner() != &contract.getBody().front()) {
-    return false;
-  }
-
-  SymbolTableCollection tables;
-  auto funcTarget = contract.getFuncTarget(tables);
-  if (failed(funcTarget)) {
-    return false;
-  }
-
-  unsigned numFuncInputs = funcTarget->get().getFunctionType().getNumInputs();
-  return blockArg.getArgNumber() >= numFuncInputs;
-}
-
-// Region-yielding ops such as `scf.if` can route values through region
-// terminators instead of direct op operands, so trace any matching yielded
-// operand for this result as an additional provenance source.
-SmallVector<Value> getRegionResultProvenanceOperands(Operation *terminator, unsigned resultNumber) {
-  SmallVector<Value> operands;
-  if (isa<scf::ConditionOp>(terminator)) {
-    unsigned valueOperand = resultNumber + 1;
-    if (terminator->getNumOperands() > valueOperand) {
-      operands.push_back(terminator->getOperand(valueOperand));
-    }
-    return operands;
-  }
-
-  if (terminator->getNumOperands() > resultNumber) {
-    operands.push_back(terminator->getOperand(resultNumber));
-  }
-  return operands;
-}
-
-// Map a region terminator's operands back to the parent op result being traced.
-std::optional<ForbiddenRequireConditionKind> classifyForbiddenRegionResultProvenance(
-    OpResult result, ContractOp contract, llvm::DenseSet<Value> &visited
-) {
-  if (result.getOwner()->getNumRegions() == 0) {
-    return std::nullopt;
-  }
-
-  unsigned resultNumber = result.getResultNumber();
-  for (Region &region : result.getOwner()->getRegions()) {
-    if (region.empty()) {
-      continue;
-    }
-    Block &block = region.front();
-    Operation *terminator = block.getTerminator();
-    if (terminator == nullptr) {
-      continue;
-    }
-    for (Value operand : getRegionResultProvenanceOperands(terminator, resultNumber)) {
-      if (auto kind = classifyForbiddenConditionProvenance(operand, contract, visited)) {
-        return kind;
-      }
-    }
-  }
-
-  return std::nullopt;
-}
-
-// Recursively walk the SSA use-def chain for a require condition and report the
-// first forbidden provenance root that reaches it.
-std::optional<ForbiddenRequireConditionKind> classifyForbiddenConditionProvenance(
-    Value value, ContractOp contract, llvm::DenseSet<Value> &visited
-) {
-  if (!visited.insert(value).second) {
-    return std::nullopt;
-  }
-
-  if (auto blockArg = llvm::dyn_cast<BlockArgument>(value)) {
-    if (isContractReturnValueArg(blockArg, contract)) {
-      return ForbiddenRequireConditionKind::FunctionReturn;
-    }
-    return std::nullopt;
-  }
-
-  Operation *defOp = value.getDefiningOp();
-  if (defOp == nullptr) {
-    return std::nullopt;
-  }
-  if (isa<MemberReadOp>(defOp)) {
+std::optional<ForbiddenRequireConditionKind>
+classifyForbiddenConditionProvenance(ModuleOp module, Value value, ContractOp contract) {
+  llzk::ForbiddenPreconditionInfluence influence =
+      llzk::analyzeForbiddenPreconditionInfluence(module, contract, value);
+  if (llzk::hasInfluence(influence, llzk::ForbiddenPreconditionInfluence::StructMember)) {
     return ForbiddenRequireConditionKind::StructMember;
   }
-  if (isa<CallOp>(defOp)) {
+  if (llzk::hasInfluence(influence, llzk::ForbiddenPreconditionInfluence::FunctionReturn)) {
     return ForbiddenRequireConditionKind::FunctionReturn;
-  }
-  if (auto result = dyn_cast<OpResult>(value)) {
-    if (auto kind = classifyForbiddenRegionResultProvenance(result, contract, visited)) {
-      return kind;
-    }
-  }
-
-  for (Value operand : defOp->getOperands()) {
-    if (auto kind = classifyForbiddenConditionProvenance(operand, contract, visited)) {
-      return kind;
-    }
   }
   return std::nullopt;
 }
@@ -302,10 +209,16 @@ LogicalResult verifyRequireRestrictions(ContractOp contract) {
     if (targetsMainStruct) {
       return emitForbiddenRequireCondition(requireOp, ForbiddenRequireConditionKind::MainContract);
     }
+  }
 
-    auto condition = requireOp->getOperand(0);
-    llvm::DenseSet<Value> visited;
-    if (auto kind = classifyForbiddenConditionProvenance(condition, contract, visited)) {
+  ModuleOp module = contract->getParentOfType<ModuleOp>();
+  if (!module) {
+    return contract.emitOpError("must have a parent module to analyze condition provenance");
+  }
+
+  for (Operation *requireOp : requireOps) {
+    Value condition = requireOp->getOperand(0);
+    if (auto kind = classifyForbiddenConditionProvenance(module, condition, contract)) {
       return emitForbiddenRequireCondition(requireOp, *kind);
     }
   }
@@ -550,6 +463,8 @@ ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
     return parser.emitError(loc, "expected non-empty contract body");
   }
 
+  ContractOp::ensureTerminator(*body, parser.getBuilder(), result.location);
+
   return success();
 }
 
@@ -576,7 +491,7 @@ void ContractOp::print(OpAsmPrinter &p) {
   p << ' ';
   p.printRegion(
       body, /*printEntryBlockArgs=*/false,
-      /*printBlockTerminators=*/true
+      /*printBlockTerminators=*/false
   );
 }
 

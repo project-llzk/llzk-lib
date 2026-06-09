@@ -356,6 +356,92 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateViaIfCondition for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    %false = arith.constant false
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.if %member_gate -> (i1) {
+      scf.yield %true : i1
+    } else {
+      scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckTripCountViaForBounds for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index) {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %true = arith.constant true
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    %selected = scf.for %iv = %lb to %member_trip_count step %step iter_args(%acc = %true) -> (i1) {
+      scf.yield %acc : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateViaWhileCondition for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.while (%acc = %true) : (i1) -> i1 {
+      scf.condition(%member_gate) %acc : i1
+    } do {
+    ^bb0(%iter : i1):
+      scf.yield %iter : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @passthrough(%a : !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }
@@ -370,16 +456,177 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaIfCondition for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    %false = arith.constant false
+    %selected = scf.if %ret_value -> (i1) {
+      scf.yield %true : i1
+    } else {
+      scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @same(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CallMemberRet for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %ret = function.call @same(%secret) : (!felt.type) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @same(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
   function.def @passthrough(%a : !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }
+
+  verif.contract @CallTargetRet for @passthrough (%a : !felt.type, %ret_value : !felt.type) {
+    %ret = function.call @same(%ret_value) : (!felt.type) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %ret_value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @select_secret(%secret: !felt.type, %fallback: !felt.type, %gate: i1) -> !felt.type {
+    %selected = scf.if %gate -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    } else {
+      scf.yield %fallback : !felt.type
+    }
+    function.return %selected : !felt.type
+  }
+
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    struct.member @gate : i1
+    function.def @compute(%secret: !felt.type, %gate: i1) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %secret : !struct.type<@SecretBox>, !felt.type
+      struct.writem %self[@gate] = %gate : !struct.type<@SecretBox>, i1
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CallHelperWithMemberControlledReturn for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type, %gate: i1) {
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %member_gate = struct.readm %self[@gate] : !struct.type<@SecretBox>, i1
+    %ret = function.call @select_secret(%secret, %value, %member_gate) : (!felt.type, !felt.type, i1) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @select_ret(%ret_value: i1, %fallback: i1) -> i1 {
+    %true = arith.constant true
+    %false = arith.constant false
+    %selected = scf.if %ret_value -> (i1) {
+      scf.yield %true : i1
+    } else {
+      scf.yield %false : i1
+    }
+    %result = arith.ori %selected, %fallback : i1
+    function.return %result : i1
+  }
+
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @CallHelperWithReturnControlledValue for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %ret = function.call @select_ret(%ret_value, %flag) : (i1, i1) -> i1
+    %isEq = arith.cmpi eq, %ret, %flag : i1
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @loop_pick(%seed: !felt.type, %trip_count: index) -> !felt.type {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %selected = scf.for %iv = %lb to %trip_count step %step iter_args(%acc = %seed) -> (!felt.type) {
+      scf.yield %acc : !felt.type
+    }
+    function.return %selected : !felt.type
+  }
+
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index, %value: !felt.type) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CallHelperWithLoopControlledReturn for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index, %value: !felt.type) {
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    %ret = function.call @loop_pick(%value, %member_trip_count) : (!felt.type, index) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @extern_passthrough(%a : !felt.type) -> !felt.type
 
   function.def @check(%a : !felt.type) {
     function.return
   }
 
-  verif.contract @CallRet for @check (%a : !felt.type) {
-    %ret = function.call @passthrough(%a) : (!felt.type) -> !felt.type
+  verif.contract @CallExternalRet for @check (%a : !felt.type) {
+    %ret = function.call @extern_passthrough(%a) : (!felt.type) -> !felt.type
     %isEq = bool.cmp eq(%a, %ret) : !felt.type, !felt.type
     // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
     verif.require_compute %isEq

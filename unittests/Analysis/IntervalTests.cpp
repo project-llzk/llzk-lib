@@ -10,6 +10,8 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
+#include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -20,8 +22,10 @@
 #include "llzk/Util/StreamHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <string>
 

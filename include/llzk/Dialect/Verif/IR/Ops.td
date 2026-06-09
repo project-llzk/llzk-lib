@@ -90,11 +90,12 @@ def EnsureConstrainOp : EnsureOpBase<"ensure_constrain"> {
 
 def ContractOp
     : VerifDialectOp<
-          "contract", [ParentOneOf<["::mlir::ModuleOp",
-                                    "::llzk::polymorphic::TemplateOp"]>,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       AffineScope, AutomaticAllocationScope,
-                       FunctionOpInterface, NoTerminator, IsolatedFromAbove]> {
+          "contract",
+          [ParentOneOf<["::mlir::ModuleOp", "::llzk::polymorphic::TemplateOp"]>,
+           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+           AutomaticAllocationScope, FunctionOpInterface,
+           SingleBlockImplicitTerminator<"::llzk::verif::ContractEndOp">,
+           IsolatedFromAbove]> {
   let summary = "defines a specification contract for a given symbol";
   let description = [{
     A specification contract for a given function or struct in the circuit.
@@ -235,6 +236,26 @@ def ContractOp
       return getFuncTarget(tables);
     }
   }];
+}
+
+//===------------------------------------------------------------------===//
+// ContractEndOp
+//===------------------------------------------------------------------===//
+
+def ContractEndOp
+    : VerifDialectOp<"contract_end", [Pure, Terminator,
+                                      HasParent<"::llzk::verif::ContractOp">]> {
+  let summary = "terminates a verif.contract body";
+  let description = [{
+    Implicit terminator for `verif.contract` regions. This operation is inserted
+    automatically by the parser and omitted by the custom printer so contract
+    syntax remains terminator-free.
+
+    A terminator is expected by certain MLIR utilities (e.g., the data-flow analysis
+    framework), which is why this op is added.
+  }];
+
+  let assemblyFormat = "attr-dict";
 }
 
 //===------------------------------------------------------------------===//

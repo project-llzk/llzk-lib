@@ -266,6 +266,45 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @WhileCheck {
+    struct.member @secret : !felt.type
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@WhileCheck> {
+      %self = struct.new : !struct.type<@WhileCheck>
+      struct.writem %self[@secret] = %in : !struct.type<@WhileCheck>, !felt.type
+      function.return %self : !struct.type<@WhileCheck>
+    }
+
+    function.def @constrain(%self: !struct.type<@WhileCheck>, %in: !felt.type) {
+      %true = arith.constant true
+      %false = arith.constant false
+      %start = felt.const 0
+      %secret = struct.readm %self[@secret] : !struct.type<@WhileCheck>, !felt.type
+      %res:2 = scf.while (%cont = %true, %acc = %start) : (i1, !felt.type) -> (i1, !felt.type) {
+        scf.condition(%cont) %cont, %acc : i1, !felt.type
+      } do {
+      ^bb0(%cont_iter: i1, %acc_iter: !felt.type):
+        scf.yield %false, %secret : i1, !felt.type
+      }
+      constrain.eq %res#1, %in : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @WhileCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@secret], %arg1 },
+// CHECK-NEXT:     { %arg0[@secret], <felt.const: 0> }
+// CHECK-NEXT:     { %arg1, <felt.const: 0> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @WhileCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg0[@secret], %arg1 },
+// INTRA-NEXT:     { %arg0[@secret], <felt.const: 0> }
+// INTRA-NEXT:     { %arg1, <felt.const: 0> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ArrayNewRoot {
     function.def @compute() -> !struct.type<@ArrayNewRoot> {
       %self = struct.new : !struct.type<@ArrayNewRoot>

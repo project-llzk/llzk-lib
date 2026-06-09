@@ -324,6 +324,21 @@ std::unique_ptr<EnsureComputeOpBuildFuncHelper> EnsureComputeOpBuildFuncHelper::
   return std::make_unique<Impl>();
 }
 
+std::unique_ptr<ContractEndOpBuildFuncHelper> ContractEndOpBuildFuncHelper::get() {
+  struct Impl : public ContractEndOpBuildFuncHelper {
+    mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      this->parentModule = createModuleWithTargetFunc(testClass, builder, location, "target");
+      auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+      unwrap(builder)->setInsertionPointToEnd(&contract.getBody().front());
+      return llzkVerif_ContractEndOpBuild(builder, location);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
 std::unique_ptr<EnsureConstrainOpBuildFuncHelper> EnsureConstrainOpBuildFuncHelper::get() {
   struct Impl : public EnsureConstrainOpBuildFuncHelper, VerifConditionOpBuildBase {
     MlirOperation

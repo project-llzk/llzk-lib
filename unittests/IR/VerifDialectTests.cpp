@@ -78,66 +78,6 @@ module attributes {llzk.lang} {
   EXPECT_EQ(contracts.front().getStructTarget()->get().getName(), "SecretBox");
 }
 
-TEST_F(VerifDialectTests, ContractRejectsPreconditionsDerivedFromPrivateStructMembers) {
-  constexpr StringLiteral source = R"mlir(
-module attributes {llzk.lang} {
-  struct.def @SecretBox {
-    struct.member @secret : !felt.type
-    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
-      %self = struct.new : !struct.type<@SecretBox>
-      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
-      function.return %self : !struct.type<@SecretBox>
-    }
-    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
-      function.return
-    }
-  }
-
-  verif.contract @CheckSecret for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
-    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
-    %isEq = bool.cmp eq(%secret, %value) : !felt.type, !felt.type
-    verif.require_constrain %isEq
-  }
-}
-)mlir";
-
-  auto parsed = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-  EXPECT_FALSE(parsed);
-}
-
-TEST_F(VerifDialectTests, ContractRejectsPreconditionsDerivedFromRegionYieldedStructMembers) {
-  constexpr StringLiteral source = R"mlir(
-module attributes {llzk.lang} {
-  struct.def @SecretBox {
-    struct.member @secret : !felt.type
-    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
-      %self = struct.new : !struct.type<@SecretBox>
-      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
-      function.return %self : !struct.type<@SecretBox>
-    }
-    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
-      function.return
-    }
-  }
-
-  verif.contract @CheckSecretViaIf for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
-    %cond = arith.constant true
-    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
-    %selected = scf.if %cond -> (!felt.type) {
-      scf.yield %secret : !felt.type
-    } else {
-      scf.yield %value : !felt.type
-    }
-    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
-    verif.require_constrain %isEq
-  }
-}
-)mlir";
-
-  auto parsed = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-  EXPECT_FALSE(parsed);
-}
-
 TEST_F(VerifDialectTests, FunctionTargetContractsAreNotStructContracts) {
   constexpr StringLiteral source = R"mlir(
 module attributes {llzk.lang} {
@@ -158,52 +98,6 @@ module attributes {llzk.lang} {
   ASSERT_EQ(contracts.size(), 1u);
   ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
   EXPECT_FALSE(contracts.front().hasStructTarget());
-}
-
-TEST_F(VerifDialectTests, ContractRejectsPreconditionsDerivedFromTargetReturnArguments) {
-  constexpr StringLiteral source = R"mlir(
-module attributes {llzk.lang} {
-  function.def @passthrough(%a : !felt.type) -> !felt.type {
-    function.return %a : !felt.type
-  }
-
-  verif.contract @FuncWithRet for @passthrough (%a : !felt.type, %ret_value : !felt.type) {
-    %isEq = bool.cmp eq(%a, %ret_value) : !felt.type, !felt.type
-    verif.require_compute %isEq
-  }
-}
-)mlir";
-
-  auto parsed = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-  EXPECT_FALSE(parsed);
-}
-
-TEST_F(VerifDialectTests, MainStructContractsMayStillContainOnlyPostconditions) {
-  constexpr StringLiteral source = R"mlir(
-module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @Main {
-    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
-      %self = struct.new : !struct.type<@Main>
-      function.return %self : !struct.type<@Main>
-    }
-    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
-      function.return
-    }
-  }
-
-  verif.contract @MainSpec for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
-    %ok = arith.constant true
-    verif.ensure_compute %ok
-  }
-}
-)mlir";
-
-  auto parsed = parseModule(source);
-  auto contracts = findOps<ContractOp>(*parsed);
-
-  ASSERT_EQ(contracts.size(), 1u);
-  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
-  ASSERT_TRUE(verify(contracts.front(), true));
 }
 
 TEST_F(VerifDialectTests, IncludeVerifiesKnownCalleeContracts) {
