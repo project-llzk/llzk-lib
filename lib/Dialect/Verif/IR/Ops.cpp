@@ -189,11 +189,7 @@ emitForbiddenRequireCondition(Operation *requireOp, ForbiddenRequireConditionKin
 // require ops that appear in this contract body.
 LogicalResult verifyRequireRestrictions(ContractOp contract) {
   SmallVector<Operation *> requireOps;
-  contract.walk([&](Operation *op) {
-    if (isa<RequireComputeOp, RequireConstrainOp>(op)) {
-      requireOps.push_back(op);
-    }
-  });
+  contract.walk([&](PreconditionOpInterface op) { requireOps.push_back(op); });
   if (requireOps.empty()) {
     return success();
   }
