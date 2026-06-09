@@ -104,8 +104,8 @@ class RangedArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
 def LLZK_CreateArrayOp
     : ArrayDialectOp<
           "new",
-          [MemoryEffects<[MemAlloc<DefaultResource>]>,
-           AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
+          [MemoryEffects<[MemAlloc<DefaultResource>]>, AttrSizedOperandSegments,
+           VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
            DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,

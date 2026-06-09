@@ -209,9 +209,8 @@ private:
     return true;
   }
 
-  static bool isRemovableStore(
-      mlir::PromotableMemOpInterface memOp, llvm::ArrayRef<mlir::MemorySlot> slots
-  ) {
+  static bool
+  isRemovableStore(mlir::PromotableMemOpInterface memOp, llvm::ArrayRef<mlir::MemorySlot> slots) {
     return llvm::any_of(slots, [&](mlir::MemorySlot slot) {
       return memOp.storesTo(slot) && !memOp.loadsFrom(slot);
     });
