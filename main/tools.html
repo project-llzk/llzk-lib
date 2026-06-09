@@ -400,6 +400,7 @@ Options</h5>
 <span class="tt">-llzk-poly-lowering-pass</span></h4>
 <p><em>Lower the degree of all polynomial equations to a specified maximum</em></p>
 <p>Rewrites constraint expressions into an (observationally) equivalent system where the degree of every polynomial is less than or equal to the specified maximum.</p>
+<p>High-degree subexpressions are factored into auxiliary struct members. The pass also recurses through degree-neutral roots such as <span class="tt">felt.add</span>, <span class="tt">felt.sub</span>, and <span class="tt">felt.neg</span>, so composite equality operands and struct constrain call arguments satisfy their degree bounds.</p>
 <p>This pass is best used as part of the <span class="tt">-llzk-full-poly-lowering</span> pipeline, which includes additional cleanup passes to ensure correctness and optimal performance.</p>
 <h5 class="doxsection"><a class="anchor" id="options-7"></a>
 Options</h5>
