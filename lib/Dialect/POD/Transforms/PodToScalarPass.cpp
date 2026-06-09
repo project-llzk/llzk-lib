@@ -79,6 +79,7 @@
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Pass/PassManager.h>
@@ -775,37 +776,23 @@ inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr 
 
 /// Return whether `op` contains a nested write to `podRef.recordName`.
 static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recordName) {
-  return op
-      .walk([&](WritePodOp writeOp) {
-    if (writeOp.getOperation() != &op && isSamePodRecord(writeOp, podRef, recordName)) {
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  }).wasInterrupted();
+  return walkContainsMatch<WritePodOp>(op, [&](WritePodOp writeOp) {
+    return writeOp.getOperation() != &op && isSamePodRecord(writeOp, podRef, recordName);
+  });
 }
 
 /// Return whether `op` contains any read from `podRef.recordName`.
 static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
-  return op
-      .walk([&](ReadPodOp readOp) {
-    if (isSamePodRecord(readOp, podRef, recordName)) {
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  }).wasInterrupted();
+  return walkContainsMatch<ReadPodOp>(op, [&](ReadPodOp readOp) {
+    return isSamePodRecord(readOp, podRef, recordName);
+  });
 }
 
 /// Return whether `op` or any nested operation uses `value` as an operand.
 static bool hasValueUse(Operation &op, Value value) {
-  return op
-      .walk([&value](Operation *nestedOp) {
-    for (Value operand : nestedOp->getOperands()) {
-      if (operand == value) {
-        return WalkResult::interrupt();
-      }
-    }
-    return WalkResult::advance();
-  }).wasInterrupted();
+  return walkContainsMatch<Operation *>(op, [&value](Operation *nestedOp) {
+    return llvm::is_contained(nestedOp->getOperands(), value);
+  });
 }
 
 /// Return whether the read is preceded by a write to the same pod record within its block.
