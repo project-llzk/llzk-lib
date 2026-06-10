@@ -48,17 +48,16 @@ LogicalResult verifyWitnessGenTraitImpl(Operation *op) {
 }
 
 LogicalResult verifyNotFieldNativeTraitImpl(Operation *op) {
-  // Special cases where these ops are allowed
-  if (hasParentThatIsa<llzk::polymorphic::TemplateExprOp, llzk::verif::ContractOp>(op)) {
-    return success();
+  // These are allowed anywhere outside of FuncDefOp but only allowed inside a FuncDefOp
+  // that is marked with the associated attribute.
+  if (FuncDefOp f = op->getParentOfType<FuncDefOp>()) {
+    if (!f.hasAllowNonNativeFieldOpsAttr()) {
+      return op->emitOpError() << "cannot be used within a '" << FuncDefOp::getOperationName()
+                               << "' without the '" << AllowNonNativeFieldOpsAttr::name
+                               << "' attribute";
+    }
   }
-  // Beyond that, they're only allowed within FuncDefOp marked with the associated attribute
-  if (parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowNonNativeFieldOpsAttr)) {
-    return success();
-  }
-  return op->emitOpError() << "cannot be used within a '" << FuncDefOp::getOperationName()
-                           << "' without the '" << AllowNonNativeFieldOpsAttr::name
-                           << "' attribute";
+  return success();
 }
 
 } // namespace llzk::function
