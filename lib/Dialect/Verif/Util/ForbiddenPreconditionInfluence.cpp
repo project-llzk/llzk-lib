@@ -91,20 +91,20 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeBlockArgument(BlockArgument bl
   Operation *parentOp = owner->getParentOp();
   if (auto forOp = llvm::dyn_cast<scf::ForOp>(parentOp)) {
     unsigned argNumber = blockArg.getArgNumber();
-    if (argNumber == 0) {
-      return mergeInfluenceInfo(
-          analyzeValue(forOp.getLowerBound()), analyzeValue(forOp.getUpperBound()),
-          analyzeValue(forOp.getStep())
-      );
-    }
-    unsigned iterIndex = argNumber - 1;
-    return mergeInfluenceInfo(
-        analyzeValue(forOp.getInitArgs()[iterIndex]), analyzeValue(forOp.getLowerBound()),
-
-        analyzeValue(forOp.getUpperBound()),
-
+    InfluenceInfo tripCountInfo = mergeInfluenceInfo(
+        analyzeValue(forOp.getLowerBound()), analyzeValue(forOp.getUpperBound()),
         analyzeValue(forOp.getStep())
     );
+    // arg0 is the induction var, influenced by the lower bound, upper bound, and
+    // the step operands to the loop.
+    // The other for loop region arguments are additionally influenced by the
+    // init args. They are also conservatively influenced by the loop trip count
+    // values (bounds and step).
+    if (argNumber != 0) {
+      unsigned iterIndex = argNumber - 1;
+      return mergeInfluenceInfo(analyzeValue(forOp.getInitArgs()[iterIndex]), tripCountInfo);
+    }
+    return tripCountInfo;
   }
   if (auto whileOp = llvm::dyn_cast<scf::WhileOp>(parentOp)) {
     Region *region = owner->getParent();
