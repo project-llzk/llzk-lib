@@ -26,6 +26,48 @@
 
 namespace llzk {
 
+/// Get the operation name, like "constrain.eq" for the given OpClass.
+/// This function can be used when the compiler would complain about
+/// incomplete types if `OpClass::getOperationName()` were called directly.
+template <typename OpClass> inline llvm::StringLiteral getOperationName() {
+  return OpClass::getOperationName();
+}
+
+/// Return the closest surrounding parent/ancestor operation that is of type 'OpClass',
+/// either the op itself or an ancestor.
+template <typename OpClass> inline OpClass getSelfOrParentOfType(mlir::Operation *op) {
+  if (op) {
+    if (OpClass self = llvm::dyn_cast<OpClass>(op)) {
+      return self;
+    }
+    if (OpClass parent = op->getParentOfType<OpClass>()) {
+      return parent;
+    }
+  }
+  return {};
+}
+
+/// Return the closest surrounding parent/ancestor operation that is of type 'OpClass'.
+template <typename OpClass> inline OpClass getParentOfType(mlir::Operation *op) {
+  if (op) {
+    if (OpClass p = op->getParentOfType<OpClass>()) {
+      return p;
+    }
+  }
+  return {};
+}
+
+/// Return true if the parameter has a parent/ancestor op that is an instance of one
+/// of the template type arguments.
+template <typename... OpTys> bool hasParentThatIsa(mlir::Operation *op) {
+  while ((op = op->getParentOp())) {
+    if (llvm::isa<OpTys...>(op)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// See `LLZKSymbolTable` ODS documentation for details.
 template <typename TypeClass>
 // Suppress false positive from `clang-tidy`
@@ -62,7 +104,7 @@ template <typename... Ancestors> struct HasAncestor {
   // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
   struct Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
     static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
-      if (op->getParentOfType<Ancestors...>()) {
+      if (hasParentThatIsa<Ancestors...>(op)) {
         return mlir::success();
       }
       auto diag = op->emitOpError();
@@ -80,36 +122,6 @@ template <typename... Ancestors> struct HasAncestor {
     }
   };
 };
-
-/// Get the operation name, like "constrain.eq" for the given OpClass.
-/// This function can be used when the compiler would complain about
-/// incomplete types if `OpClass::getOperationName()` were called directly.
-template <typename OpClass> inline llvm::StringLiteral getOperationName() {
-  return OpClass::getOperationName();
-}
-
-/// Return the closest operation that is of type 'OpClass', either the op itself or an ancestor.
-template <typename OpClass> inline OpClass getSelfOrParentOfType(mlir::Operation *op) {
-  if (op) {
-    if (OpClass self = llvm::dyn_cast<OpClass>(op)) {
-      return self;
-    }
-    if (OpClass parent = op->getParentOfType<OpClass>()) {
-      return parent;
-    }
-  }
-  return {};
-}
-
-/// Return the closest surrounding parent operation that is of type 'OpClass'.
-template <typename OpClass> inline OpClass getParentOfType(mlir::Operation *op) {
-  if (op) {
-    if (OpClass p = op->getParentOfType<OpClass>()) {
-      return p;
-    }
-  }
-  return {};
-}
 
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to
 /// support affine map instantiation in the Op marked with this Trait.
