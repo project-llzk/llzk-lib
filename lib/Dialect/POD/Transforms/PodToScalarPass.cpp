@@ -1241,7 +1241,7 @@ static bool hasUnliftableLoopPodUses(Block &block, ArrayRef<LoopPodSlot> slots) 
 
 /// Rewrite loop-local POD reads and writes in an `scf.for` into extra iter args/results carrying
 /// one SSA value per touched POD record.
-static bool liftForPodAccesses(scf::ForOp forOp) {
+static bool liftPodAccessesFromForLoop(scf::ForOp forOp) {
   Block &body = *forOp.getBody();
   SmallVector<LoopPodSlot> slots;
   collectDirectLoopPodSlots(body, forOp.getOperation(), slots);
@@ -1327,7 +1327,7 @@ static bool liftForPodAccesses(scf::ForOp forOp) {
 
 /// Rewrite loop-local POD reads and writes in an `scf.while` into extra block arguments/results
 /// carrying one SSA value per touched POD record.
-static bool liftWhilePodAccesses(scf::WhileOp whileOp) {
+static bool liftPodAccessesFromWhileLoop(scf::WhileOp whileOp) {
   Block &beforeBody = *whileOp.getBeforeBody();
   Block &afterBody = *whileOp.getAfterBody();
 
@@ -1474,7 +1474,7 @@ static bool liftWhilePodAccesses(scf::WhileOp whileOp) {
 /// Lift direct branch-local writes out of `scf.if` as yielded values, then write those values in
 /// the parent block. Existing `scf.if` results are preserved as a prefix of the new result list,
 /// which gives mem2reg parent-block pod writes instead of nested-region writes.
-static bool liftIfWrites(scf::IfOp ifOp) {
+static bool liftPodWritesFromIfBlocks(scf::IfOp ifOp) {
   SmallVector<IfWriteSlot> slots;
   Block &thenBlock = *ifOp.thenBlock();
   Block *elseBlock = getElseBlockOrNull(ifOp);
@@ -1557,19 +1557,19 @@ static void step3(ModuleOp modOp) {
     SmallVector<scf::IfOp> ifOps;
     modOp.walk([&ifOps](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
     for (scf::IfOp ifOp : ifOps) {
-      changed |= liftIfWrites(ifOp);
+      changed |= liftPodWritesFromIfBlocks(ifOp);
     }
 
     SmallVector<scf::ForOp> forOps;
     modOp.walk([&forOps](scf::ForOp forOp) { forOps.push_back(forOp); });
     for (scf::ForOp forOp : forOps) {
-      changed |= liftForPodAccesses(forOp);
+      changed |= liftPodAccessesFromForLoop(forOp);
     }
 
     SmallVector<scf::WhileOp> whileOps;
     modOp.walk([&whileOps](scf::WhileOp whileOp) { whileOps.push_back(whileOp); });
     for (scf::WhileOp whileOp : whileOps) {
-      changed |= liftWhilePodAccesses(whileOp);
+      changed |= liftPodAccessesFromWhileLoop(whileOp);
     }
 
     changed |= foldIfCarriedPodReadAfterWrite(modOp);
