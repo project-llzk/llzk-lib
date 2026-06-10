@@ -521,3 +521,29 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @nonnativeops(%a : !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @FuncWithRet for @nonnativeops (%a : !felt.type, %ret_value : !felt.type {function.res_name = "ret_value"}) {
+    %1 = arith.constant true
+    %2 = arith.constant false
+    %3 = bool.or %1, %2
+    verif.ensure_compute %3
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nonnativeops(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @FuncWithRet for @nonnativeops (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type {function.res_name = "ret_value"}) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = bool.or %[[VAL_3]], %[[VAL_4]] : i1, i1
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
