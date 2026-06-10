@@ -14,6 +14,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#pragma once
+
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -21,6 +23,7 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/SetVector.h>
 #include <llvm/ADT/SmallVector.h>
 
 #include <optional>
@@ -40,7 +43,7 @@ enum class ForbiddenPreconditionInfluence : uint8_t {
 /// locations for each forbidden kind.
 struct ForbiddenPreconditionInfluenceInfo {
   ForbiddenPreconditionInfluence influence = ForbiddenPreconditionInfluence::None;
-  llvm::SmallDenseSet<mlir::Location> structMemberLocs = {};
+  llvm::SmallSetVector<mlir::Location, 2> structMemberLocs = {};
 
   bool operator==(const ForbiddenPreconditionInfluenceInfo &other) const {
     return influence == other.influence && structMemberLocs == other.structMemberLocs;

@@ -157,7 +157,7 @@ enum class ForbiddenRequireConditionKind : uint8_t {
 
 struct ForbiddenRequireCondition {
   ForbiddenRequireConditionKind kind;
-  llvm::SmallDenseSet<Location> sourceLocs;
+  llvm::SmallSetVector<Location, 2> sourceLocs;
 };
 
 std::optional<ForbiddenRequireCondition>
@@ -183,7 +183,7 @@ classifyForbiddenConditionProvenance(ModuleOp module, Value value, ContractOp co
 // the offending require op.
 LogicalResult emitForbiddenRequireCondition(
     Operation *requireOp, ForbiddenRequireConditionKind kind,
-    const llvm::SmallDenseSet<Location> &sourceLocs = {}
+    llvm::ArrayRef<Location> sourceLocs = {}
 ) {
   switch (kind) {
   case ForbiddenRequireConditionKind::MainContract:
@@ -236,7 +236,9 @@ LogicalResult verifyRequireRestrictions(ContractOp contract) {
   for (Operation *requireOp : requireOps) {
     Value condition = requireOp->getOperand(0);
     if (auto forbidden = classifyForbiddenConditionProvenance(module, condition, contract)) {
-      return emitForbiddenRequireCondition(requireOp, forbidden->kind, forbidden->sourceLocs);
+      return emitForbiddenRequireCondition(
+          requireOp, forbidden->kind, forbidden->sourceLocs.getArrayRef()
+      );
     }
   }
 
