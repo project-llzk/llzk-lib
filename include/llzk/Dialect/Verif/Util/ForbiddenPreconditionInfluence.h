@@ -198,16 +198,16 @@ private:
     InfluenceInfo analyzeBlockArgument(mlir::BlockArgument blockArg);
 
     /// Summarize the forbidden influence produced by a call result.
-    InfluenceInfo analyzeCallResult(mlir::CallOpInterface call, unsigned resultNumber);
+    InfluenceInfo analyzeCallResult(mlir::CallOpInterface call, mlir::OpResult callRes);
 
     /// Summarize the forbidden influence produced by an `scf.if` result.
-    InfluenceInfo analyzeIfResult(mlir::scf::IfOp ifOp, unsigned resultNumber);
+    InfluenceInfo analyzeIfResult(mlir::scf::IfOp ifOp, mlir::OpResult ifRes);
 
     /// Summarize the forbidden influence produced by an `scf.for` result.
-    InfluenceInfo analyzeForResult(mlir::scf::ForOp forOp, unsigned resultNumber);
+    InfluenceInfo analyzeForResult(mlir::scf::ForOp forOp, mlir::OpResult forRes);
 
     /// Summarize the forbidden influence produced by an `scf.while` result.
-    InfluenceInfo analyzeWhileResult(mlir::scf::WhileOp whileOp, unsigned resultNumber);
+    InfluenceInfo analyzeWhileResult(mlir::scf::WhileOp whileOp, mlir::OpResult whileRes);
 
     ForbiddenInfluenceAnalyzer &analyzer;
     llvm::DenseMap<mlir::Value, InfluenceInfo> valueCache;
@@ -222,6 +222,7 @@ private:
   mlir::ModuleOp module;
   llvm::DenseMap<CallableSummaryKey, InfluenceInfo, CallableSummaryKeyInfo> callableSummaryCache;
   llvm::DenseSet<CallableSummaryKey, CallableSummaryKeyInfo> activeSummaries;
+  llvm::DenseMap<ContractOp, AnalysisFrame> cachedFrames;
 };
 
 } // namespace detail

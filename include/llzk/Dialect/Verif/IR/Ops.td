@@ -149,6 +149,7 @@ def ContractOp
 
   let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
+  let hasRegionVerifier = 1;
 
   // Builder that infers all information from the target.
   let builders = [OpBuilder<(ins "::llvm::StringRef":$name,

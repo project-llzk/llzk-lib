@@ -205,45 +205,6 @@ LogicalResult emitForbiddenPrecondition(
   llvm_unreachable("unknown forbidden require condition kind");
 }
 
-// Enforce the direct main-contract ban and the provenance restrictions on
-// require ops that appear in this contract body.
-LogicalResult verifyRequireRestrictions(ContractOp contract) {
-  SmallVector<PreconditionOpInterface> preconditionOps;
-  contract.walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
-  if (preconditionOps.empty()) {
-    return success();
-  }
-
-  bool targetsMainStruct = false;
-  {
-    SymbolTableCollection tables;
-    auto structTarget = contract.getStructTarget(tables);
-    targetsMainStruct = succeeded(structTarget) && structTarget->get().isMainComponent();
-  }
-
-  for (PreconditionOpInterface preCond : preconditionOps) {
-    if (targetsMainStruct) {
-      return emitForbiddenPrecondition(preCond, ForbiddenRequireConditionKind::MainContract);
-    }
-  }
-
-  ModuleOp module = contract->getParentOfType<ModuleOp>();
-  if (!module) {
-    return contract.emitOpError("must have a parent module to analyze condition provenance");
-  }
-
-  for (PreconditionOpInterface preCond : preconditionOps) {
-    Value condition = preCond->getOperand(0);
-    if (auto forbidden = classifyForbiddenConditionProvenance(module, condition, contract)) {
-      return emitForbiddenPrecondition(
-          preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
-      );
-    }
-  }
-
-  return success();
-}
-
 } // namespace
 
 namespace llzk::verif {
@@ -564,11 +525,50 @@ LogicalResult ContractOp::verify() {
     }
     return WalkResult::advance();
   });
-  if (res.wasInterrupted()) {
-    return failure();
+  return failure(res.wasInterrupted());
+}
+
+LogicalResult ContractOp::verifyRegions() {
+  // Verify precondition restrictions in the region verifier so that ops contained
+  // within the contract are verified before these checks. This avoids segfaults
+  // when there are malformed inner ops and instead allows appropriate inner diagnostics
+  // to be generated first. In sum, we can rest assured that the ops we traverse and
+  // analyze here have already been verified.
+
+  SmallVector<PreconditionOpInterface> preconditionOps;
+  walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
+  if (preconditionOps.empty()) {
+    return success();
   }
 
-  return verifyRequireRestrictions(*this);
+  bool targetsMainStruct = false;
+  {
+    SymbolTableCollection tables;
+    auto structTarget = getStructTarget(tables);
+    targetsMainStruct = succeeded(structTarget) && structTarget->get().isMainComponent();
+  }
+
+  for (PreconditionOpInterface preCond : preconditionOps) {
+    if (targetsMainStruct) {
+      return emitForbiddenPrecondition(preCond, ForbiddenRequireConditionKind::MainContract);
+    }
+  }
+
+  ModuleOp module = getOperation()->getParentOfType<ModuleOp>();
+  if (!module) {
+    return emitOpError("must have a parent module to analyze condition provenance");
+  }
+
+  for (PreconditionOpInterface preCond : preconditionOps) {
+    Value condition = preCond->getOperand(0);
+    if (auto forbidden = classifyForbiddenConditionProvenance(module, condition, *this)) {
+      return emitForbiddenPrecondition(
+          preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
+      );
+    }
+  }
+
+  return success();
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>

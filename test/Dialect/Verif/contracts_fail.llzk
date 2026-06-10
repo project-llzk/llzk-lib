@@ -450,6 +450,35 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckInnerRequire for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index) {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    %selected = scf.for %iv = %lb to %member_trip_count step %step iter_args(%acc = %true) -> (i1) {
+      // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+      verif.require_constrain %acc
+      scf.yield %acc : i1
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @GateBox {
     struct.member @gate : i1
     function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
@@ -462,7 +491,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  verif.contract @CheckGateViaWhileCondition for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+  verif.contract @CheckGateViaYield for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
     %true = arith.constant true
     // expected-note@+1 {{forbidden struct member value originates here}}
     %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
@@ -474,6 +503,66 @@ module attributes {llzk.lang} {
     }
     // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
     verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckRegionVerification for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    // expected-error@+1 {{'scf.while' op  region control flow edge from Region #1 to Region #0: source has 1 operands, but target successor needs 0}}
+    %selected = scf.while : () -> i1 {
+      scf.condition(%true) %true : i1
+    } do {
+    ^bb0(%iter : i1):
+      scf.yield %member_gate : i1
+    }
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateWithinLoop for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.while (%init = %true) : (i1) -> i1 {
+      scf.condition(%true) %init : i1
+    } do {
+    ^bb0(%iter : i1):
+      // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+      verif.require_constrain %iter
+      %yield_val = bool.and %member_gate, %iter
+      scf.yield %yield_val : i1
+    }
   }
 }
 
