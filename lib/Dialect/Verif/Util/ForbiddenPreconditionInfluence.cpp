@@ -23,12 +23,11 @@ using namespace llzk::verif::detail;
 //===------------------------------------------------------------------===//
 
 ForbiddenInfluenceAnalyzer::AnalysisFrame::AnalysisFrame(
-    ForbiddenInfluenceAnalyzer &analyzer, Operation *callableOp,
+    ForbiddenInfluenceAnalyzer &parentAnalyzer, CallableOpInterface callableOp,
     llvm::ArrayRef<Influence> argInfluences
 )
-    : analyzer(analyzer) {
-  auto callable = llvm::cast<CallableOpInterface>(callableOp);
-  Region *region = callable.getCallableRegion();
+    : analyzer(parentAnalyzer) {
+  Region *region = callableOp.getCallableRegion();
   assert(region && !region->empty() && "callable must have a body");
   Block &entry = region->front();
   for (auto [arg, influence] : llvm::zip(entry.getArguments(), argInfluences)) {
@@ -48,16 +47,18 @@ Influence ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeValue(Value value) {
   if (auto blockArg = llvm::dyn_cast<BlockArgument>(value)) {
     result = analyzeBlockArgument(blockArg);
   } else if (Operation *defOp = value.getDefiningOp()) {
+    auto opRes = llvm::dyn_cast<OpResult>(value);
+    assert(opRes && "value has defining op, so it must be an op result");
     if (llvm::isa<MemberReadOp>(defOp)) {
       result = Influence::StructMember;
     } else if (auto call = llvm::dyn_cast<CallOpInterface>(defOp)) {
-      result = analyzeCallResult(call, llvm::cast<OpResult>(value).getResultNumber());
+      result = analyzeCallResult(call, opRes.getResultNumber());
     } else if (auto ifOp = llvm::dyn_cast<scf::IfOp>(defOp)) {
-      result = analyzeIfResult(ifOp, llvm::cast<OpResult>(value).getResultNumber());
+      result = analyzeIfResult(ifOp, opRes.getResultNumber());
     } else if (auto forOp = llvm::dyn_cast<scf::ForOp>(defOp)) {
-      result = analyzeForResult(forOp, llvm::cast<OpResult>(value).getResultNumber());
+      result = analyzeForResult(forOp, opRes.getResultNumber());
     } else if (auto whileOp = llvm::dyn_cast<scf::WhileOp>(defOp)) {
-      result = analyzeWhileResult(whileOp, llvm::cast<OpResult>(value).getResultNumber());
+      result = analyzeWhileResult(whileOp, opRes.getResultNumber());
     } else {
       for (Value operand : defOp->getOperands()) {
         result |= analyzeValue(operand);
@@ -118,18 +119,15 @@ Influence ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeCallResult(
   for (Value operand : call.getArgOperands()) {
     argInfluences.push_back(analyzeValue(operand));
   }
-  return analyzer.analyzeCallableResult(
-      resolvedCallable.getOperation(), argInfluences, resultNumber
-  );
+  return analyzer.analyzeCallableResult(resolvedCallable, argInfluences, resultNumber);
 }
 
 Influence
 ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIfResult(scf::IfOp ifOp, unsigned resultNumber) {
   Influence result = analyzeValue(ifOp.getCondition());
-  for (Region &region : ifOp->getRegions()) {
-    Operation *terminator = region.front().getTerminator();
-    if (terminator && terminator->getNumOperands() > resultNumber) {
-      result |= analyzeValue(terminator->getOperand(resultNumber));
+  for (scf::YieldOp yieldOp : {ifOp.elseYield(), ifOp.thenYield()}) {
+    if (yieldOp && yieldOp->getNumOperands() > resultNumber) {
+      result |= analyzeValue(yieldOp->getOperand(resultNumber));
     }
   }
   return result;
@@ -141,9 +139,9 @@ Influence ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeForResult(
   Influence result = analyzeValue(forOp.getLowerBound()) | analyzeValue(forOp.getUpperBound()) |
                      analyzeValue(forOp.getStep()) |
                      analyzeValue(forOp.getInitArgs()[resultNumber]);
-  Operation *terminator = forOp.getRegion().front().getTerminator();
-  if (terminator && terminator->getNumOperands() > resultNumber) {
-    result |= analyzeValue(terminator->getOperand(resultNumber));
+  ValueRange yieldedValues = forOp.getYieldedValues();
+  if (yieldedValues.size() > resultNumber) {
+    result |= analyzeValue(yieldedValues[resultNumber]);
   }
   return result;
 }
@@ -152,18 +150,14 @@ Influence ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeWhileResult(
     scf::WhileOp whileOp, unsigned resultNumber
 ) {
   Influence result = analyzeValue(whileOp.getInits()[resultNumber]);
-  Block &beforeBlock = whileOp.getBefore().front();
-  if (Operation *terminator = beforeBlock.getTerminator()) {
-    auto condOp = llvm::cast<scf::ConditionOp>(terminator);
-    result |= analyzeValue(condOp.getCondition());
-    if (condOp.getArgs().size() > resultNumber) {
-      result |= analyzeValue(condOp.getArgs()[resultNumber]);
-    }
+  scf::ConditionOp condOp = whileOp.getConditionOp();
+  result |= analyzeValue(condOp.getCondition());
+  if (condOp.getArgs().size() > resultNumber) {
+    result |= analyzeValue(condOp.getArgs()[resultNumber]);
   }
-  if (Operation *terminator = whileOp.getAfter().front().getTerminator()) {
-    if (terminator->getNumOperands() > resultNumber) {
-      result |= analyzeValue(terminator->getOperand(resultNumber));
-    }
+  scf::YieldOp yieldOp = whileOp.getYieldOp();
+  if (yieldOp.getNumOperands() > resultNumber) {
+    result |= analyzeValue(yieldOp.getOperand(resultNumber));
   }
   return result;
 }
@@ -174,24 +168,18 @@ Influence ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeWhileResult(
 
 Influence ForbiddenInfluenceAnalyzer::analyzeContractValue(ContractOp contract, Value value) {
   llvm::SmallVector<Influence> argInfluences;
-  Block *entryBlock = &contract.getBody().front();
-  argInfluences.reserve(entryBlock->getNumArguments());
-  for (BlockArgument arg : entryBlock->getArguments()) {
-    argInfluences.push_back(classifyContractArgument(contract, entryBlock, arg));
+  for (BlockArgument arg : contract.getArguments()) {
+    argInfluences.push_back(classifyContractArgument(contract, arg));
   }
-  auto callable = llvm::dyn_cast<CallableOpInterface>(contract.getOperation());
-  if (!callable || !callable.getCallableRegion()) {
-    return Influence::None;
-  }
-  ForbiddenInfluenceAnalyzer::AnalysisFrame frame(*this, contract.getOperation(), argInfluences);
+  ForbiddenInfluenceAnalyzer::AnalysisFrame frame(*this, contract, argInfluences);
   return frame.analyzeValue(value);
 }
 
 Influence ForbiddenInfluenceAnalyzer::analyzeCallableResult(
-    Operation *callable, llvm::ArrayRef<Influence> argInfluences, unsigned resultNumber
+    CallableOpInterface callableOp, llvm::ArrayRef<Influence> argInfluences, unsigned resultNumber
 ) {
   CallableSummaryKey key {
-      .callable = callable,
+      .callable = callableOp,
       .argInfluences = llvm::SmallVector<uint8_t>(argInfluences.size()),
       .resultNumber = resultNumber,
   };
@@ -207,21 +195,15 @@ Influence ForbiddenInfluenceAnalyzer::analyzeCallableResult(
   }
 
   Influence summary = Influence::FunctionReturn;
-  if (auto callableOp = llvm::dyn_cast<CallableOpInterface>(callable)) {
-    Region *region = callableOp.getCallableRegion();
-    if (region && !region->empty()) {
-      AnalysisFrame frame(*this, callable, argInfluences);
-      summary = Influence::None;
-      llvm::SmallVector<Operation *> returnOps;
-      region->walk([&](Operation *op) {
-        if (llvm::isa<ReturnOp>(op)) {
-          returnOps.push_back(op);
-        }
-      });
-      for (Operation *retOp : returnOps) {
-        if (retOp->getNumOperands() > resultNumber) {
-          summary |= frame.analyzeValue(retOp->getOperand(resultNumber));
-        }
+  Region *region = callableOp.getCallableRegion();
+  if (region && !region->empty()) {
+    AnalysisFrame frame(*this, callableOp, argInfluences);
+    summary = Influence::None;
+    llvm::SmallVector<ReturnOp> returnOps;
+    region->walk([&](ReturnOp op) { returnOps.push_back(op); });
+    for (ReturnOp retOp : returnOps) {
+      if (retOp.getNumOperands() > resultNumber) {
+        summary |= frame.analyzeValue(retOp.getOperand(resultNumber));
       }
     }
   }
@@ -231,13 +213,8 @@ Influence ForbiddenInfluenceAnalyzer::analyzeCallableResult(
   return summary;
 }
 
-Influence ForbiddenInfluenceAnalyzer::classifyContractArgument(
-    ContractOp contract, Block *entryBlock, BlockArgument arg
-) {
-  if (arg.getOwner() != entryBlock) {
-    return Influence::None;
-  }
-
+Influence
+ForbiddenInfluenceAnalyzer::classifyContractArgument(ContractOp contract, BlockArgument arg) {
   SymbolTableCollection tables;
   auto funcTarget = contract.getFuncTarget(tables);
   if (failed(funcTarget)) {
