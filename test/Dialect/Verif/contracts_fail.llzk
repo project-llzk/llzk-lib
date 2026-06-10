@@ -360,6 +360,37 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaWhile for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.while (%acc = %secret) : (!felt.type) -> !felt.type {
+      scf.condition(%cond) %acc : !felt.type
+    } do {
+    ^bb0(%iter : !felt.type):
+      scf.yield %iter : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @GateBox {
     struct.member @gate : i1
     function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
