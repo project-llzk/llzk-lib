@@ -131,7 +131,7 @@ Include dependency graph for OpHelpers.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpHelpers_8h__dep__incl.svg" width="7215" height="722"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpHelpers_8h__dep__incl.svg" width="7171" height="722"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="OpHelpers_8h_source.html">Go to the source code of this file.</a></p>
@@ -158,10 +158,13 @@ Functions</h2></td></tr>
 <tr class="memdesc:ace40014709812c1c57cb0aa39b87558b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the operation name, like "constrain.eq" for the given OpClass.  <br /></td></tr>
 <tr class="memitem:ad55d77a77dc0f2d6c27bc7b6bedbc952" id="r_ad55d77a77dc0f2d6c27bc7b6bedbc952"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
 <tr class="memitem:ad55d77a77dc0f2d6c27bc7b6bedbc952 template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ad55d77a77dc0f2d6c27bc7b6bedbc952">llzk::getSelfOrParentOfType</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:ad55d77a77dc0f2d6c27bc7b6bedbc952"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest operation that is of type 'OpClass', either the op itself or an ancestor.  <br /></td></tr>
+<tr class="memdesc:ad55d77a77dc0f2d6c27bc7b6bedbc952"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent/ancestor operation that is of type 'OpClass', either the op itself or an ancestor.  <br /></td></tr>
 <tr class="memitem:a5b768daf3c60f0a261a34d171f706304" id="r_a5b768daf3c60f0a261a34d171f706304"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
 <tr class="memitem:a5b768daf3c60f0a261a34d171f706304 template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a5b768daf3c60f0a261a34d171f706304">llzk::getParentOfType</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:a5b768daf3c60f0a261a34d171f706304"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent operation that is of type 'OpClass'.  <br /></td></tr>
+<tr class="memdesc:a5b768daf3c60f0a261a34d171f706304"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent/ancestor operation that is of type 'OpClass'.  <br /></td></tr>
+<tr class="memitem:ad080efcf3526896dde0a65efe82cb65f" id="r_ad080efcf3526896dde0a65efe82cb65f"><td class="memTemplParams" colspan="2">template&lt;typename... OpTys&gt; </td></tr>
+<tr class="memitem:ad080efcf3526896dde0a65efe82cb65f template"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ad080efcf3526896dde0a65efe82cb65f">llzk::hasParentThatIsa</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:ad080efcf3526896dde0a65efe82cb65f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true if the parameter has a parent/ancestor op that is an instance of one of the template type arguments.  <br /></td></tr>
 <tr class="memitem:ad5a2121be9e3d0627cae5e297852772b" id="r_ad5a2121be9e3d0627cae5e297852772b"><td class="memTemplParams" colspan="2">template&lt;unsigned N&gt; </td></tr>
 <tr class="memitem:ad5a2121be9e3d0627cae5e297852772b template"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ad5a2121be9e3d0627cae5e297852772b">llzk::parseDimAndSymbolList</a> (mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand, N &gt; &amp;mapOperands, mlir::IntegerAttr &amp;numDims)</td></tr>
 <tr class="memitem:a467753751f4011cd7f8e3e628748b92c" id="r_a467753751f4011cd7f8e3e628748b92c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a467753751f4011cd7f8e3e628748b92c">llzk::printDimAndSymbolList</a> (mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands, mlir::IntegerAttr numDims)</td></tr>

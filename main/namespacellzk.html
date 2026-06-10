@@ -548,10 +548,13 @@ Functions</h2></td></tr>
 <tr class="memdesc:ace40014709812c1c57cb0aa39b87558b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the operation name, like "constrain.eq" for the given OpClass.  <br /></td></tr>
 <tr class="memitem:ad55d77a77dc0f2d6c27bc7b6bedbc952" id="r_ad55d77a77dc0f2d6c27bc7b6bedbc952"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
 <tr class="memitem:ad55d77a77dc0f2d6c27bc7b6bedbc952 template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad55d77a77dc0f2d6c27bc7b6bedbc952">getSelfOrParentOfType</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:ad55d77a77dc0f2d6c27bc7b6bedbc952"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest operation that is of type 'OpClass', either the op itself or an ancestor.  <br /></td></tr>
+<tr class="memdesc:ad55d77a77dc0f2d6c27bc7b6bedbc952"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent/ancestor operation that is of type 'OpClass', either the op itself or an ancestor.  <br /></td></tr>
 <tr class="memitem:a5b768daf3c60f0a261a34d171f706304" id="r_a5b768daf3c60f0a261a34d171f706304"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
 <tr class="memitem:a5b768daf3c60f0a261a34d171f706304 template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5b768daf3c60f0a261a34d171f706304">getParentOfType</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:a5b768daf3c60f0a261a34d171f706304"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent operation that is of type 'OpClass'.  <br /></td></tr>
+<tr class="memdesc:a5b768daf3c60f0a261a34d171f706304"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the closest surrounding parent/ancestor operation that is of type 'OpClass'.  <br /></td></tr>
+<tr class="memitem:ad080efcf3526896dde0a65efe82cb65f" id="r_ad080efcf3526896dde0a65efe82cb65f"><td class="memTemplParams" colspan="2">template&lt;typename... OpTys&gt; </td></tr>
+<tr class="memitem:ad080efcf3526896dde0a65efe82cb65f template"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad080efcf3526896dde0a65efe82cb65f">hasParentThatIsa</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:ad080efcf3526896dde0a65efe82cb65f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true if the parameter has a parent/ancestor op that is an instance of one of the template type arguments.  <br /></td></tr>
 <tr class="memitem:ad5a2121be9e3d0627cae5e297852772b" id="r_ad5a2121be9e3d0627cae5e297852772b"><td class="memTemplParams" colspan="2">template&lt;unsigned N&gt; </td></tr>
 <tr class="memitem:ad5a2121be9e3d0627cae5e297852772b template"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad5a2121be9e3d0627cae5e297852772b">parseDimAndSymbolList</a> (mlir::OpAsmParser &amp;parser, mlir::SmallVector&lt; mlir::OpAsmParser::UnresolvedOperand, N &gt; &amp;mapOperands, mlir::IntegerAttr &amp;numDims)</td></tr>
 <tr class="memitem:a467753751f4011cd7f8e3e628748b92c" id="r_a467753751f4011cd7f8e3e628748b92c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a467753751f4011cd7f8e3e628748b92c">printDimAndSymbolList</a> (mlir::OpAsmPrinter &amp;printer, mlir::Operation *op, mlir::OperandRange mapOperands, mlir::IntegerAttr numDims)</td></tr>
@@ -3887,7 +3890,7 @@ template&lt;typename OpClass&gt; </div>
 <p>Get the operation name, like "constrain.eq" for the given OpClass. </p>
 <p>This function can be used when the compiler would complain about incomplete types if <span class="tt">OpClass::getOperationName()</span> were called directly. </p>
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00087">87</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00032">32</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -3916,9 +3919,9 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Return the closest surrounding parent operation that is of type 'OpClass'. </p>
+<p>Return the closest surrounding parent/ancestor operation that is of type 'OpClass'. </p>
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00105">105</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00051">51</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -4448,9 +4451,9 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Return the closest operation that is of type 'OpClass', either the op itself or an ancestor. </p>
+<p>Return the closest surrounding parent/ancestor operation that is of type 'OpClass', either the op itself or an ancestor. </p>
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00092">92</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00038">38</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -4950,6 +4953,29 @@ template&lt;typename GraphT&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="GraphUtil_8h_source.html#l00017">17</a> of file <a class="el" href="GraphUtil_8h_source.html">GraphUtil.h</a>.</p>
+
+</div>
+</div>
+<a id="ad080efcf3526896dde0a65efe82cb65f" name="ad080efcf3526896dde0a65efe82cb65f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad080efcf3526896dde0a65efe82cb65f">&#9670;&#160;</a></span>hasParentThatIsa()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename... OpTys&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::hasParentThatIsa </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return true if the parameter has a parent/ancestor op that is an instance of one of the template type arguments. </p>
+
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00062">62</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6897,7 +6923,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00183">183</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00195">195</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6935,7 +6961,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00153">153</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00165">165</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -6971,7 +6997,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00168">168</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00180">180</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7002,7 +7028,7 @@ template&lt;unsigned N&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00197">197</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00209">209</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7111,7 +7137,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00190">190</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00202">202</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7206,7 +7232,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00161">161</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00173">173</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7247,7 +7273,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00176">176</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00188">188</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7308,7 +7334,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00230">230</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00242">242</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>
@@ -7344,7 +7370,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00237">237</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00249">249</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
 
 </div>
 </div>

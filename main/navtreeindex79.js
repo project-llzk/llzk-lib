@@ -1,5 +1,6 @@
 var NAVTREEINDEX79 =
 {
+"namespacellzk_1_1polymorphic.html#af3e6bd4fd9d374d353819b1906c21a91":[10,0,2,16,36],
 "namespacellzk_1_1polymorphic.html#afec084874e5df37a9774039696031b8f":[10,0,2,16,32],
 "namespacellzk_1_1polymorphic_1_1detail.html":[10,0,2,16,0],
 "namespacellzk_1_1polymorphic_1_1detail.html#a07f9f8f9a4106a59ae12e59ab7241dc6":[10,0,2,16,0,14],
@@ -248,6 +249,5 @@ var NAVTREEINDEX79 =
 "structExtraMethod.html":[12,0,37],
 "structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de":[12,0,37,2],
 "structExtraMethod.html#a235cdf484b6844a580be4bec84ae7fe5":[12,0,37,1],
-"structExtraMethod.html#a628197cce6e5ab2dddada3704494664f":[12,0,37,4],
-"structExtraMethod.html#a660b29e76565e399bc01763065221ff6":[12,0,37,5]
+"structExtraMethod.html#a628197cce6e5ab2dddada3704494664f":[12,0,37,4]
 };
