@@ -181,26 +181,25 @@ classifyForbiddenConditionProvenance(ModuleOp module, Value value, ContractOp co
 
 // Map a classified restriction failure to the verifier diagnostic emitted on
 // the offending require op.
-LogicalResult emitForbiddenRequireCondition(
-    Operation *requireOp, ForbiddenRequireConditionKind kind,
+LogicalResult emitForbiddenPrecondition(
+    PreconditionOpInterface preCondOp, ForbiddenRequireConditionKind kind,
     llvm::ArrayRef<Location> sourceLocs = {}
 ) {
   switch (kind) {
   case ForbiddenRequireConditionKind::MainContract:
-    return requireOp->emitOpError(
+    return preCondOp->emitOpError(
         "cannot appear directly in a contract that targets the main entry-point struct"
     );
   case ForbiddenRequireConditionKind::StructMember: {
     InFlightDiagnostic diag =
-        requireOp->emitOpError("condition cannot be derived from a struct member value");
+        preCondOp->emitOpError("condition cannot be derived from a struct member value");
     for (auto sourceLoc : sourceLocs) {
       diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
     }
-    return failure();
+    return diag;
   }
   case ForbiddenRequireConditionKind::FunctionReturn: {
-    (void)requireOp->emitOpError("condition cannot be derived from a function return value");
-    return failure();
+    return preCondOp->emitOpError("condition cannot be derived from a function return value");
   }
   }
   llvm_unreachable("unknown forbidden require condition kind");
@@ -209,9 +208,9 @@ LogicalResult emitForbiddenRequireCondition(
 // Enforce the direct main-contract ban and the provenance restrictions on
 // require ops that appear in this contract body.
 LogicalResult verifyRequireRestrictions(ContractOp contract) {
-  SmallVector<Operation *> requireOps;
-  contract.walk([&](PreconditionOpInterface op) { requireOps.push_back(op); });
-  if (requireOps.empty()) {
+  SmallVector<PreconditionOpInterface> preconditionOps;
+  contract.walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
+  if (preconditionOps.empty()) {
     return success();
   }
 
@@ -222,9 +221,9 @@ LogicalResult verifyRequireRestrictions(ContractOp contract) {
     targetsMainStruct = succeeded(structTarget) && structTarget->get().isMainComponent();
   }
 
-  for (Operation *requireOp : requireOps) {
+  for (PreconditionOpInterface preCond : preconditionOps) {
     if (targetsMainStruct) {
-      return emitForbiddenRequireCondition(requireOp, ForbiddenRequireConditionKind::MainContract);
+      return emitForbiddenPrecondition(preCond, ForbiddenRequireConditionKind::MainContract);
     }
   }
 
@@ -233,11 +232,11 @@ LogicalResult verifyRequireRestrictions(ContractOp contract) {
     return contract.emitOpError("must have a parent module to analyze condition provenance");
   }
 
-  for (Operation *requireOp : requireOps) {
-    Value condition = requireOp->getOperand(0);
+  for (PreconditionOpInterface preCond : preconditionOps) {
+    Value condition = preCond->getOperand(0);
     if (auto forbidden = classifyForbiddenConditionProvenance(module, condition, contract)) {
-      return emitForbiddenRequireCondition(
-          requireOp, forbidden->kind, forbidden->sourceLocs.getArrayRef()
+      return emitForbiddenPrecondition(
+          preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
       );
     }
   }
