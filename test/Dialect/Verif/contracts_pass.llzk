@@ -331,6 +331,44 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @touch_input_if(%a : !felt.type, %gate: i1) -> !felt.type {
+    scf.if %gate {
+      %isEq = bool.cmp eq(%a, %a) : !felt.type, !felt.type
+    }
+    function.return %a : !felt.type
+  }
+
+  function.def @check(%a : !felt.type, %gate: i1) {
+    function.return
+  }
+
+  verif.contract @HelperImbalancedIfPre for @check (%a : !felt.type, %gate: i1) {
+    %ret = function.call @touch_input_if(%a, %gate) : (!felt.type, i1) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %a) : !felt.type, !felt.type
+    verif.require_compute %isEq
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @touch_input_if(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      scf.if %[[VAL_1]] {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_0]], %[[VAL_0]]) : !felt.type, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @check(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @HelperImbalancedIfPre for @check (%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @touch_input_if(%[[VAL_5]], %[[VAL_6]]) : (!felt.type, i1) -> !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_7]], %[[VAL_5]]) : !felt.type, !felt.type
+// CHECK-NEXT:      verif.require_compute %[[VAL_8]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @same(%a : !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }
