@@ -11,6 +11,8 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 
 #include <mlir/IR/Operation.h>
 
@@ -46,15 +48,17 @@ LogicalResult verifyWitnessGenTraitImpl(Operation *op) {
 }
 
 LogicalResult verifyNotFieldNativeTraitImpl(Operation *op) {
-  if (op->getParentOfType<llzk::polymorphic::TemplateExprOp>()) {
+  // Special cases where these ops are allowed
+  if (hasParentThatIsa<llzk::polymorphic::TemplateExprOp, llzk::verif::ContractOp>(op)) {
     return success();
   }
+  // Beyond that, they're only allowed within FuncDefOp marked with the associated attribute
   if (parentFuncDefOpHasAttr(op, &FuncDefOp::hasAllowNonNativeFieldOpsAttr)) {
     return success();
   }
-  return op->emitOpError() << "only valid within a '" << FuncDefOp::getOperationName() << "' with '"
-                           << AllowNonNativeFieldOpsAttr::name << "' attribute or a '"
-                           << llzk::polymorphic::TemplateExprOp::getOperationName() << '\'';
+  return op->emitOpError() << "cannot be used within a '" << FuncDefOp::getOperationName()
+                           << "' without the '" << AllowNonNativeFieldOpsAttr::name
+                           << "' attribute";
 }
 
 } // namespace llzk::function
