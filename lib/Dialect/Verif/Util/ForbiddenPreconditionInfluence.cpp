@@ -109,18 +109,21 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeBlockArgument(BlockArgument bl
   if (auto whileOp = llvm::dyn_cast<scf::WhileOp>(parentOp)) {
     Region *region = owner->getParent();
     if (region == &whileOp.getBefore()) {
-      InfluenceInfo result = analyzeValue(whileOp.getInits()[blockArg.getArgNumber()]);
-      Block &afterBlock = whileOp.getAfter().front();
-      if (blockArg.getArgNumber() < afterBlock.getNumArguments()) {
-        result = mergeInfluenceInfo(
-            result, analyzeValue(afterBlock.getArgument(blockArg.getArgNumber()))
-        );
-      }
-      return result;
+      // Initial state of the while loop entry block is influenced by the init args.
+      // Yield value influence is handled in `analyzeWhileResult`.
+      return analyzeValue(whileOp.getInits()[blockArg.getArgNumber()]);
     }
     if (region == &whileOp.getAfter()) {
-      Block &beforeBlock = whileOp.getBefore().front();
-      return analyzeValue(beforeBlock.getArgument(blockArg.getArgNumber()));
+      // The after block is given arguments from the condition op. These arguments
+      // also don't have to align with the before region args, which is confusing at
+      // first glance. https://mlir.llvm.org/docs/Dialects/SCFDialect/#scfwhile-scfwhileop
+      scf::ConditionOp condOp = whileOp.getConditionOp();
+      auto condArgs = condOp.getArgs();
+      assert(
+          condArgs.size() == region->getNumArguments() &&
+          "condition args must equal after region args"
+      );
+      return analyzeValue(condArgs[blockArg.getArgNumber()]);
     }
   }
   return makeInfluenceInfo(Influence::None);
