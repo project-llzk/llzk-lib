@@ -65,10 +65,10 @@ module attributes {llzk.lang} {
   });
   ASSERT_TRUE(helper);
 
-  SmallVector<ForbiddenPreconditionInfluence> argInfluences {
-      ForbiddenPreconditionInfluence::StructMember,
-      ForbiddenPreconditionInfluence::None,
-      ForbiddenPreconditionInfluence::StructMember,
+  SmallVector<ForbiddenPreconditionInfluenceInfo> argInfluences {
+      ForbiddenPreconditionInfluenceInfo::StructMember(),
+      ForbiddenPreconditionInfluenceInfo::None(),
+      ForbiddenPreconditionInfluenceInfo::StructMember(),
   };
   auto influence =
       analyzeForbiddenPreconditionCallableResult(parsed.get(), helper, argInfluences, 0);
@@ -114,9 +114,9 @@ module attributes {llzk.lang} {
   });
   ASSERT_TRUE(outer);
 
-  SmallVector<ForbiddenPreconditionInfluence> argInfluences {
-      ForbiddenPreconditionInfluence::FunctionReturn,
-      ForbiddenPreconditionInfluence::None,
+  SmallVector<ForbiddenPreconditionInfluenceInfo> argInfluences {
+      ForbiddenPreconditionInfluenceInfo::FunctionReturn(),
+      ForbiddenPreconditionInfluenceInfo::None(),
   };
   auto influence =
       analyzeForbiddenPreconditionCallableResult(parsed.get(), outer, argInfluences, 0);

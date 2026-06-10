@@ -23,6 +23,8 @@
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 
+#include <optional>
+
 namespace llzk::verif {
 
 /// Sources of information that are not allowed in contract preconditions. These
@@ -33,6 +35,34 @@ enum class ForbiddenPreconditionInfluence : uint8_t {
   StructMember = 1 << 0,
   FunctionReturn = 1 << 1,
 };
+
+/// Summary of forbidden precondition influence along with representative source
+/// locations for each forbidden kind.
+struct ForbiddenPreconditionInfluenceInfo {
+  ForbiddenPreconditionInfluence influence = ForbiddenPreconditionInfluence::None;
+  llvm::SmallDenseSet<mlir::Location> structMemberLocs = {};
+
+  bool operator==(const ForbiddenPreconditionInfluenceInfo &other) const {
+    return influence == other.influence && structMemberLocs == other.structMemberLocs;
+  }
+
+  static ForbiddenPreconditionInfluenceInfo None() { return {}; }
+
+  static ForbiddenPreconditionInfluenceInfo StructMember() {
+    return {.influence = ForbiddenPreconditionInfluence::StructMember};
+  }
+
+  static ForbiddenPreconditionInfluenceInfo FunctionReturn() {
+    return {.influence = ForbiddenPreconditionInfluence::FunctionReturn};
+  }
+};
+
+inline llvm::hash_code hash_value(const ForbiddenPreconditionInfluenceInfo &info) {
+  return llvm::hash_combine(
+      info.influence,
+      llvm::hash_combine_range(info.structMemberLocs.begin(), info.structMemberLocs.end())
+  );
+}
 
 inline ForbiddenPreconditionInfluence
 operator|(ForbiddenPreconditionInfluence lhs, ForbiddenPreconditionInfluence rhs) {
@@ -58,9 +88,27 @@ hasInfluence(ForbiddenPreconditionInfluence influence, ForbiddenPreconditionInfl
   return (static_cast<uint8_t>(influence) & static_cast<uint8_t>(flag)) != 0;
 }
 
+/// Merge two forbidden-influence summaries, preserving the first known source
+/// location for each forbidden kind.
+inline ForbiddenPreconditionInfluenceInfo mergeInfluenceInfo(
+    ForbiddenPreconditionInfluenceInfo lhs, const ForbiddenPreconditionInfluenceInfo &rhs
+) {
+  lhs.influence |= rhs.influence;
+  lhs.structMemberLocs.insert(rhs.structMemberLocs.begin(), rhs.structMemberLocs.end());
+  return lhs;
+}
+
+template <typename T, typename... Args>
+inline ForbiddenPreconditionInfluenceInfo
+mergeInfluenceInfo(const T &first, const T &next, Args... args) {
+  T merged = mergeInfluenceInfo(first, next);
+  return mergeInfluenceInfo(merged, args...);
+}
+
 namespace detail {
 
 using Influence = ForbiddenPreconditionInfluence;
+using InfluenceInfo = ForbiddenPreconditionInfluenceInfo;
 
 /// Cache key for one interprocedural callable-result summary query.
 ///
@@ -70,7 +118,7 @@ using Influence = ForbiddenPreconditionInfluence;
 /// function under identical argument influence assumptions.
 struct CallableSummaryKey {
   mlir::Operation *callable {};
-  llvm::SmallVector<uint8_t> argInfluences;
+  llvm::SmallVector<InfluenceInfo> argInfluences;
   unsigned resultNumber {};
 
   bool operator==(const CallableSummaryKey &other) const {
@@ -113,12 +161,12 @@ public:
   explicit ForbiddenInfluenceAnalyzer(mlir::ModuleOp owningModule) : module(owningModule) {}
 
   /// Classify the forbidden influence reaching a value inside a contract body.
-  Influence analyzeContractValue(verif::ContractOp contract, mlir::Value value);
+  InfluenceInfo analyzeContractValue(verif::ContractOp contract, mlir::Value value);
 
   /// Summarize the forbidden influence of one callable result under the given
   /// argument influences.
-  Influence analyzeCallableResult(
-      mlir::CallableOpInterface callableOp, llvm::ArrayRef<Influence> argInfluences,
+  InfluenceInfo analyzeCallableResult(
+      mlir::CallableOpInterface callableOp, llvm::ArrayRef<InfluenceInfo> argInfluences,
       unsigned resultNumber
   );
 
@@ -136,60 +184,81 @@ private:
     /// Seed a callable-local analysis frame with the current argument influences.
     AnalysisFrame(
         ForbiddenInfluenceAnalyzer &parentAnalyzer, mlir::CallableOpInterface callableOp,
-        llvm::ArrayRef<Influence> argInfluences
+        llvm::ArrayRef<InfluenceInfo> argInfluenceInfos
     );
 
     /// Recursively classify the forbidden influence reaching a single SSA value.
-    Influence analyzeValue(mlir::Value value);
+    InfluenceInfo analyzeValue(mlir::Value value);
 
   private:
     /// Recover the forbidden influence reaching a region block argument.
-    Influence analyzeBlockArgument(mlir::BlockArgument blockArg);
+    InfluenceInfo analyzeBlockArgument(mlir::BlockArgument blockArg);
 
     /// Summarize the forbidden influence produced by a call result.
-    Influence analyzeCallResult(mlir::CallOpInterface call, unsigned resultNumber);
+    InfluenceInfo analyzeCallResult(mlir::CallOpInterface call, unsigned resultNumber);
 
     /// Summarize the forbidden influence produced by an `scf.if` result.
-    Influence analyzeIfResult(mlir::scf::IfOp ifOp, unsigned resultNumber);
+    InfluenceInfo analyzeIfResult(mlir::scf::IfOp ifOp, unsigned resultNumber);
 
     /// Summarize the forbidden influence produced by an `scf.for` result.
-    Influence analyzeForResult(mlir::scf::ForOp forOp, unsigned resultNumber);
+    InfluenceInfo analyzeForResult(mlir::scf::ForOp forOp, unsigned resultNumber);
 
     /// Summarize the forbidden influence produced by an `scf.while` result.
-    Influence analyzeWhileResult(mlir::scf::WhileOp whileOp, unsigned resultNumber);
+    InfluenceInfo analyzeWhileResult(mlir::scf::WhileOp whileOp, unsigned resultNumber);
 
     ForbiddenInfluenceAnalyzer &analyzer;
-    llvm::DenseMap<mlir::Value, Influence> valueCache;
+    llvm::DenseMap<mlir::Value, InfluenceInfo> valueCache;
     llvm::DenseSet<mlir::Value> activeValues;
   };
 
   /// Classify whether a contract entry argument is an allowed input or a
   /// forbidden target-function return value.
-  static Influence classifyContractArgument(verif::ContractOp contract, mlir::BlockArgument arg);
+  static InfluenceInfo
+  classifyContractArgument(verif::ContractOp contract, mlir::BlockArgument arg);
 
   mlir::ModuleOp module;
-  llvm::DenseMap<CallableSummaryKey, Influence, CallableSummaryKeyInfo> callableSummaryCache;
+  llvm::DenseMap<CallableSummaryKey, InfluenceInfo, CallableSummaryKeyInfo> callableSummaryCache;
   llvm::DenseSet<CallableSummaryKey, CallableSummaryKeyInfo> activeSummaries;
 };
 
 } // namespace detail
 
+/// Analyze whether a contract value depends on forbidden precondition sources
+/// and recover representative source locations for any forbidden influence.
+inline ForbiddenPreconditionInfluenceInfo analyzeForbiddenPreconditionInfluenceInfo(
+    mlir::ModuleOp module, verif::ContractOp contract, mlir::Value value
+) {
+  return detail::ForbiddenInfluenceAnalyzer(module).analyzeContractValue(contract, value);
+}
+
 /// Analyze whether a contract value depends on forbidden precondition sources.
 inline ForbiddenPreconditionInfluence analyzeForbiddenPreconditionInfluence(
     mlir::ModuleOp module, verif::ContractOp contract, mlir::Value value
 ) {
-  return detail::ForbiddenInfluenceAnalyzer(module).analyzeContractValue(contract, value);
+  return analyzeForbiddenPreconditionInfluenceInfo(module, contract, value).influence;
+}
+
+/// Analyze whether a callable result depends on forbidden precondition sources
+/// under a caller-provided argument influence summary.
+inline ForbiddenPreconditionInfluenceInfo analyzeForbiddenPreconditionCallableResultInfo(
+    mlir::ModuleOp module, mlir::CallableOpInterface callableOp,
+    llvm::ArrayRef<ForbiddenPreconditionInfluenceInfo> argInfluences, unsigned resultNumber
+) {
+  return detail::ForbiddenInfluenceAnalyzer(module).analyzeCallableResult(
+      callableOp, argInfluences, resultNumber
+  );
 }
 
 /// Analyze whether a callable result depends on forbidden precondition sources
 /// under a caller-provided argument influence summary.
 inline ForbiddenPreconditionInfluence analyzeForbiddenPreconditionCallableResult(
     mlir::ModuleOp module, mlir::CallableOpInterface callableOp,
-    llvm::ArrayRef<ForbiddenPreconditionInfluence> argInfluences, unsigned resultNumber
+    llvm::ArrayRef<ForbiddenPreconditionInfluenceInfo> argInfluences, unsigned resultNumber
 ) {
-  return detail::ForbiddenInfluenceAnalyzer(module).analyzeCallableResult(
-      callableOp, argInfluences, resultNumber
-  );
+  return analyzeForbiddenPreconditionCallableResultInfo(
+             module, callableOp, argInfluences, resultNumber
+  )
+      .influence;
 }
 
 } // namespace llzk::verif

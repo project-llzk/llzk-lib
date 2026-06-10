@@ -155,32 +155,53 @@ enum class ForbiddenRequireConditionKind : uint8_t {
   FunctionReturn,
 };
 
-std::optional<ForbiddenRequireConditionKind>
+struct ForbiddenRequireCondition {
+  ForbiddenRequireConditionKind kind;
+  llvm::SmallDenseSet<Location> sourceLocs;
+};
+
+std::optional<ForbiddenRequireCondition>
 classifyForbiddenConditionProvenance(ModuleOp module, Value value, ContractOp contract) {
-  ForbiddenPreconditionInfluence influence =
-      analyzeForbiddenPreconditionInfluence(module, contract, value);
-  if (hasInfluence(influence, ForbiddenPreconditionInfluence::StructMember)) {
-    return ForbiddenRequireConditionKind::StructMember;
+  ForbiddenPreconditionInfluenceInfo influence =
+      analyzeForbiddenPreconditionInfluenceInfo(module, contract, value);
+  if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::StructMember)) {
+    return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::StructMember,
+        .sourceLocs = influence.structMemberLocs,
+    };
   }
-  if (hasInfluence(influence, ForbiddenPreconditionInfluence::FunctionReturn)) {
-    return ForbiddenRequireConditionKind::FunctionReturn;
+  if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::FunctionReturn)) {
+    return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::FunctionReturn,
+        .sourceLocs = {},
+    };
   }
   return std::nullopt;
 }
 
 // Map a classified restriction failure to the verifier diagnostic emitted on
 // the offending require op.
-LogicalResult
-emitForbiddenRequireCondition(Operation *requireOp, ForbiddenRequireConditionKind kind) {
+LogicalResult emitForbiddenRequireCondition(
+    Operation *requireOp, ForbiddenRequireConditionKind kind,
+    const llvm::SmallDenseSet<Location> &sourceLocs = {}
+) {
   switch (kind) {
   case ForbiddenRequireConditionKind::MainContract:
     return requireOp->emitOpError(
         "cannot appear directly in a contract that targets the main entry-point struct"
     );
-  case ForbiddenRequireConditionKind::StructMember:
-    return requireOp->emitOpError("condition cannot be derived from a struct member value");
-  case ForbiddenRequireConditionKind::FunctionReturn:
-    return requireOp->emitOpError("condition cannot be derived from a function return value");
+  case ForbiddenRequireConditionKind::StructMember: {
+    InFlightDiagnostic diag =
+        requireOp->emitOpError("condition cannot be derived from a struct member value");
+    for (auto sourceLoc : sourceLocs) {
+      diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
+    }
+    return failure();
+  }
+  case ForbiddenRequireConditionKind::FunctionReturn: {
+    (void)requireOp->emitOpError("condition cannot be derived from a function return value");
+    return failure();
+  }
   }
   llvm_unreachable("unknown forbidden require condition kind");
 }
@@ -214,8 +235,8 @@ LogicalResult verifyRequireRestrictions(ContractOp contract) {
 
   for (Operation *requireOp : requireOps) {
     Value condition = requireOp->getOperand(0);
-    if (auto kind = classifyForbiddenConditionProvenance(module, condition, contract)) {
-      return emitForbiddenRequireCondition(requireOp, *kind);
+    if (auto forbidden = classifyForbiddenConditionProvenance(module, condition, contract)) {
+      return emitForbiddenRequireCondition(requireOp, forbidden->kind, forbidden->sourceLocs);
     }
   }
 

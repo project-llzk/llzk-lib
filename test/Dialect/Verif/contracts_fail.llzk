@@ -258,6 +258,7 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @CheckSecret for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
     %isEq = bool.cmp eq(%secret, %value) : !felt.type, !felt.type
     // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
@@ -282,6 +283,7 @@ module attributes {llzk.lang} {
 
   verif.contract @CheckSecretViaIf for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
     %cond = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
     %selected = scf.if %cond -> (!felt.type) {
       scf.yield %secret : !felt.type
@@ -313,6 +315,7 @@ module attributes {llzk.lang} {
     %lb = arith.constant 0 : index
     %ub = arith.constant 1 : index
     %step = arith.constant 1 : index
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
     %selected = scf.for %iv = %lb to %ub step %step iter_args(%acc = %value) -> (!felt.type) {
       scf.yield %secret : !felt.type
@@ -340,6 +343,7 @@ module attributes {llzk.lang} {
 
   verif.contract @CheckSecretViaWhile for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
     %cond = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
     %selected = scf.while (%acc = %value) : (!felt.type) -> !felt.type {
       scf.condition(%cond) %acc : !felt.type
@@ -371,6 +375,7 @@ module attributes {llzk.lang} {
   verif.contract @CheckGateViaIfCondition for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
     %true = arith.constant true
     %false = arith.constant false
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
     %selected = scf.if %member_gate -> (i1) {
       scf.yield %true : i1
@@ -401,6 +406,7 @@ module attributes {llzk.lang} {
     %lb = arith.constant 0 : index
     %step = arith.constant 1 : index
     %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
     %selected = scf.for %iv = %lb to %member_trip_count step %step iter_args(%acc = %true) -> (i1) {
       scf.yield %acc : i1
@@ -427,6 +433,7 @@ module attributes {llzk.lang} {
 
   verif.contract @CheckGateViaWhileCondition for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
     %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
     %selected = scf.while (%acc = %true) : (i1) -> i1 {
       scf.condition(%member_gate) %acc : i1
@@ -493,6 +500,7 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @CallMemberRet for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
     %ret = function.call @same(%secret) : (!felt.type) -> !felt.type
     %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
@@ -547,7 +555,9 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @CallHelperWithMemberControlledReturn for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type, %gate: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %member_gate = struct.readm %self[@gate] : !struct.type<@SecretBox>, i1
     %ret = function.call @select_secret(%secret, %value, %member_gate) : (!felt.type, !felt.type, i1) -> !felt.type
     %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
@@ -608,6 +618,7 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @CallHelperWithLoopControlledReturn for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index, %value: !felt.type) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
     %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
     %ret = function.call @loop_pick(%value, %member_trip_count) : (!felt.type, index) -> !felt.type
     %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
