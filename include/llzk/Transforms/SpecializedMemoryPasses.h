@@ -1,4 +1,4 @@
-//===-- SpecializedMemoryPasses.h - Targeted memory passes -------*- C++ -*-===//
+//===-- SpecializedMemoryPasses.h - Targeted memory passes ------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -130,9 +130,11 @@ std::unique_ptr<SpecializedMem2Reg<AllocOpTy>> createSpecializedMem2RegPass() {
   return std::make_unique<SpecializedMem2Reg<AllocOpTy>>();
 }
 
-/// A pass that erases allocator ops of type \p AllocOpTy when their remaining uses are removable
-/// stores. Use this only for allocator ops whose allocation has no externally observable effect
-/// unless its stored values are read or escaped.
+/// Erases allocators of type \p AllocOpTy whose remaining direct users are write-only memory ops.
+///
+/// Any read, terminator use, non-promotable user, or memory op that cannot remove its use keeps the
+/// allocator and all users intact. Use this only for allocators that can be discarded when no
+/// stored value is read.
 template <typename AllocOpTy>
 struct SpecializedRemoveUnusedAllocations
     : mlir::PassWrapper<SpecializedRemoveUnusedAllocations<AllocOpTy>, mlir::OperationPass<>> {
@@ -189,6 +191,8 @@ struct SpecializedRemoveUnusedAllocations
   }
 
 private:
+  /// Collects direct write-only users, returning false if any user can read or retain the
+  /// allocation.
   static bool collectRemovableUsers(
       AllocOpTy allocator, mlir::SmallVectorImpl<mlir::Operation *> &usersToErase,
       const mlir::DataLayout &dataLayout
@@ -218,6 +222,7 @@ private:
     return true;
   }
 
+  /// Returns true when \p use is the only blocking use of a removable store for a candidate slot.
   static bool canRemoveUse(
       mlir::PromotableMemOpInterface memOp, mlir::OpOperand &use,
       llvm::ArrayRef<mlir::MemorySlot> slots, const mlir::DataLayout &dataLayout
@@ -233,6 +238,7 @@ private:
     });
   }
 
+  /// Collects operand definitions that may become dead after \p opsToErase are removed.
   static void collectOperandDefiningOps(
       llvm::ArrayRef<mlir::Operation *> opsToErase,
       const llvm::SmallPtrSetImpl<mlir::Operation *> &opsBeingErased,
@@ -250,6 +256,7 @@ private:
     }
   }
 
+  /// Erases trivially dead defining ops, including newly dead operands discovered while erasing.
   static bool eraseTriviallyDeadDefs(mlir::SmallVectorImpl<mlir::Operation *> &maybeDeadDefs) {
     bool changed = false;
     bool changedThisIteration = false;
