@@ -292,6 +292,11 @@ private:
     /// Summarize the forbidden influence produced by an `scf.for` result.
     InfluenceInfo analyzeForResult(mlir::scf::ForOp forOp, mlir::OpResult forRes);
 
+    /// Summarize the forbidden influence produced by an
+    /// `scf.execute_region` result.
+    InfluenceInfo
+    analyzeExecuteRegionResult(mlir::scf::ExecuteRegionOp execOp, mlir::OpResult execRes);
+
     /// Summarize the forbidden influence produced by an `scf.while` result.
     InfluenceInfo analyzeWhileResult(mlir::scf::WhileOp whileOp, mlir::OpResult whileRes);
 

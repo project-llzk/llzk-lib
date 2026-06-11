@@ -421,6 +421,32 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateViaExecuteRegion for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.execute_region -> i1 {
+      scf.yield %member_gate : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @CountBox {
     struct.member @trip_count : index
     function.def @compute(%trip_count: index) -> !struct.type<@CountBox> {
@@ -594,6 +620,22 @@ module attributes {llzk.lang} {
       scf.yield %true : i1
     } else {
       scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaExecuteRegion for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %selected = scf.execute_region -> i1 {
+      scf.yield %ret_value : i1
     }
     // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
     verif.require_compute %selected

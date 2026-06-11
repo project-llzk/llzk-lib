@@ -67,6 +67,8 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeValue(Value valu
       result = analyzeIfResult(ifOp, opRes);
     } else if (auto forOp = llvm::dyn_cast<scf::ForOp>(defOp)) {
       result = analyzeForResult(forOp, opRes);
+    } else if (auto execOp = llvm::dyn_cast<scf::ExecuteRegionOp>(defOp)) {
+      result = analyzeExecuteRegionResult(execOp, opRes);
     } else if (auto whileOp = llvm::dyn_cast<scf::WhileOp>(defOp)) {
       result = analyzeWhileResult(whileOp, opRes);
     } else {
@@ -243,6 +245,19 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeForResult(scf::ForOp forOp, Op
       analyzeValue(forOp.getStep()), analyzeValue(forOp.getInitArgs()[resultNumber]),
       analyzeValue(forOp.getYieldedValues()[resultNumber])
   );
+}
+
+InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeExecuteRegionResult(
+    scf::ExecuteRegionOp execOp, OpResult execRes
+) {
+  unsigned resultNumber = execRes.getResultNumber();
+  InfluenceInfo result = makeInfluenceInfo(Influence::None);
+  execOp.getRegion().walk([&](scf::YieldOp yieldOp) {
+    if (yieldOp.getNumOperands() > resultNumber) {
+      result = mergeInfluenceInfo(result, analyzeValue(yieldOp.getOperand(resultNumber)));
+    }
+  });
+  return result;
 }
 
 InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeWhileResult(
