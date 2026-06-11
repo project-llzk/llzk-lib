@@ -84,6 +84,7 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
+#include <mlir/Transforms/GreedyPatternRewriteDriver.h>
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/DenseMapInfo.h>
@@ -871,40 +872,34 @@ static WritePodOp findPrecedingWriteForIfRead(ReadPodOp readOp) {
   return replacement;
 }
 
-/// Replace branch-local reads with a value available in the parent block.
-static bool replaceIfReads(ModuleOp modOp) {
-  SmallVector<std::pair<ReadPodOp, Value>> replacements;
-  OpBuilder builder(modOp.getContext());
-  modOp.walk([&](ReadPodOp readOp) {
+/// Replace a branch-local read with a value available in the parent block.
+class ReplaceIfReadPattern final : public OpRewritePattern<ReadPodOp> {
+public:
+  using OpRewritePattern<ReadPodOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
     auto ifOp = readOp->getParentOfType<scf::IfOp>();
     if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
-      return;
+      return failure();
     }
-    if (isValueDefinedInside(ifOp, readOp.getPodRef())) {
-      return;
-    }
-    if (hasEarlierWriteInBlock(readOp)) {
-      return;
+    if (isValueDefinedInside(ifOp, readOp.getPodRef()) || hasEarlierWriteInBlock(readOp)) {
+      return failure();
     }
 
     if (WritePodOp writeOp = findPrecedingWriteForIfRead(readOp)) {
-      replacements.emplace_back(readOp, writeOp.getValue());
-      return;
+      rewriter.replaceOp(readOp, writeOp.getValue());
+      return success();
     }
 
-    builder.setInsertionPoint(ifOp);
-    replacements.emplace_back(
+    rewriter.setInsertionPoint(ifOp);
+    rewriter.replaceOp(
         readOp,
-        genRead(readOp.getLoc(), readOp.getPodRef(), getRecordNameAsStringAttr(readOp), builder)
+        genRead(readOp.getLoc(), readOp.getPodRef(), getRecordNameAsStringAttr(readOp), rewriter)
+            .getResult()
     );
-  });
-
-  for (auto [readOp, value] : replacements) {
-    readOp.getResult().replaceAllUsesWith(value);
-    readOp.erase();
+    return success();
   }
-  return !replacements.empty();
-}
+};
 
 /// Fold reads from an `scf.if`-carried POD result when the same record was just written from
 /// another result of that same `scf.if`.
@@ -919,28 +914,29 @@ static bool replaceIfReads(ModuleOp modOp) {
 ///   %x = pod.read %if#0[@r]
 ///
 /// Rewritten to `%x = %if#1` when all yielded values for `%if#0` are the same `%pod`.
-static bool foldIfCarriedPodReadAfterWrite(ModuleOp modOp) {
-  SmallVector<std::pair<ReadPodOp, Value>> replacements;
+class FoldIfCarriedPodReadAfterWritePattern final : public OpRewritePattern<ReadPodOp> {
+public:
+  using OpRewritePattern<ReadPodOp>::OpRewritePattern;
 
-  modOp.walk([&](ReadPodOp readOp) {
+  LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
     auto podRes = dyn_cast<OpResult>(readOp.getPodRef());
     if (!podRes) {
-      return;
+      return failure();
     }
 
     auto ifOp = dyn_cast<scf::IfOp>(podRes.getOwner());
     if (!ifOp) {
-      return;
+      return failure();
     }
 
     auto writeOp = dyn_cast_or_null<WritePodOp>(readOp->getPrevNode());
     if (!writeOp || getRecordNameAsStringAttr(writeOp) != getRecordNameAsStringAttr(readOp)) {
-      return;
+      return failure();
     }
 
     auto valueRes = dyn_cast<OpResult>(writeOp.getValue());
     if (!valueRes || valueRes.getOwner() != ifOp.getOperation()) {
-      return;
+      return failure();
     }
 
     Value carriedPod = writeOp.getPodRef();
@@ -948,27 +944,26 @@ static bool foldIfCarriedPodReadAfterWrite(ModuleOp modOp) {
 
     auto thenYield = dyn_cast<scf::YieldOp>(ifOp.thenBlock()->getTerminator());
     if (!thenYield || thenYield.getOperand(podResultIndex) != carriedPod) {
-      return;
+      return failure();
     }
 
     Region &elseRegion = ifOp.getElseRegion();
     if (Block *elseBlock = elseRegion.empty() ? nullptr : &elseRegion.front()) {
       auto elseYield = dyn_cast<scf::YieldOp>(elseBlock->getTerminator());
       if (!elseYield || elseYield.getOperand(podResultIndex) != carriedPod) {
-        return;
+        return failure();
       }
     }
 
-    replacements.emplace_back(readOp, valueRes);
-  });
-
-  for (auto [readOp, replacement] : replacements) {
-    readOp.getResult().replaceAllUsesWith(replacement);
-    readOp.erase();
+    rewriter.replaceOp(readOp, valueRes);
+    return success();
   }
-  return !replacements.empty();
-}
+};
 
+/// State for a POD record written directly in one or both branches of an `scf.if`.
+///
+/// When the write can be lifted, the branch-local `pod.write` ops are replaced by yielded scalar
+/// values and a single parent-block write reconstructed from this tracked information.
 struct IfWriteSlot {
   Value podRef;
   StringAttr recordName;
@@ -1117,6 +1112,11 @@ static void appendYield(
   builder.create<scf::YieldOp>(loc, yieldValues);
 }
 
+/// One POD record whose value is carried across an SCF loop boundary as an SSA scalar.
+///
+/// These slots are populated for direct `pod.read` and `pod.write` accesses that refer to POD
+/// values defined outside the loop and therefore need explicit iter args/block arguments/results
+/// after lifting.
 struct LoopPodSlot {
   Value podRef;
   StringAttr recordName;
@@ -1239,341 +1239,345 @@ static bool hasUnliftableLoopPodUses(Block &block, ArrayRef<LoopPodSlot> slots) 
   return false;
 }
 
-/// Rewrite loop-local POD reads and writes in an `scf.for` into extra iter args/results carrying
-/// one SSA value per touched POD record.
-static bool liftPodAccessesFromForLoop(scf::ForOp forOp) {
-  Block &body = *forOp.getBody();
-  SmallVector<LoopPodSlot> slots;
-  collectDirectLoopPodSlots(body, forOp.getOperation(), slots);
-  if (slots.empty() || hasUnliftableLoopPodUses(body, slots)) {
-    return false;
-  }
-
-  OpBuilder builder(forOp);
-  Location loc = forOp.getLoc();
-
-  SmallVector<Value> newInitArgs = llvm::to_vector(forOp.getInitArgs());
-  builder.setInsertionPoint(forOp);
-  for (const LoopPodSlot &slot : slots) {
-    newInitArgs.push_back(genRead(loc, slot.podRef, slot.recordName, builder).getResult());
-  }
-
-  auto newFor = builder.create<scf::ForOp>(
-      loc, forOp.getLowerBound(), forOp.getUpperBound(), forOp.getStep(), newInitArgs
-  );
-  newFor->setAttrs(forOp->getAttrs());
-
-  Block &newBody = *newFor.getBody();
-  dropTerminatorIfPresent(newBody);
-
-  IRMapping mapping;
-  mapping.map(forOp.getInductionVar(), newFor.getInductionVar());
-  for (auto [idx, oldArg] : llvm::enumerate(forOp.getRegionIterArgs())) {
-    mapping.map(oldArg, newFor.getRegionIterArg(idx));
-  }
-
-  SmallVector<Value> slotValues = llvm::map_to_vector(
-      llvm::seq<size_t>(0, slots.size()),
-      [base = static_cast<size_t>(forOp.getNumRegionIterArgs()), &newFor](size_t idx) -> Value {
-    return newFor.getRegionIterArg(llzk::checkedCast<unsigned>(base + idx));
-  }
-  );
-
-  builder.setInsertionPointToEnd(&newBody);
-  for (Operation &op : body) {
-    if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
-      auto yieldValues = llvm::map_to_vector(yieldOp.getOperands(), [&mapping](Value operand) {
-        return mapping.lookupOrDefault(operand);
-      });
-      llvm::append_range(yieldValues, slotValues);
-      builder.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
-      continue;
-    }
-
-    if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
-      if (std::optional<size_t> slotIdx =
-              findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
-        mapping.map(readOp.getResult(), slotValues[*slotIdx]);
-        continue;
-      }
-    }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-      if (std::optional<size_t> slotIdx =
-              findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
-        slotValues[*slotIdx] = mapping.lookupOrDefault(writeOp.getValue());
-        continue;
-      }
-    }
-
-    builder.clone(op, mapping);
-  }
-
-  builder.setInsertionPointAfter(newFor);
-  for (auto [idx, slot] : llvm::enumerate(slots)) {
-    genWrite(
-        loc, slot.podRef, slot.recordName, newFor.getResult(forOp.getNumResults() + idx), builder
-    );
-  }
-
-  for (auto [oldResult, newResult] :
-       llvm::zip_equal(forOp.getResults(), newFor.getResults().take_front(forOp.getNumResults()))) {
-    oldResult.replaceAllUsesWith(newResult);
-  }
-
-  forOp.erase();
-  return true;
-}
-
-/// Rewrite loop-local POD reads and writes in an `scf.while` into extra block arguments/results
-/// carrying one SSA value per touched POD record.
-static bool liftPodAccessesFromWhileLoop(scf::WhileOp whileOp) {
-  Block &beforeBody = *whileOp.getBeforeBody();
-  Block &afterBody = *whileOp.getAfterBody();
-
-  SmallVector<LoopPodSlot> slots;
-  collectDirectLoopPodSlots(beforeBody, whileOp.getOperation(), slots);
-  collectDirectLoopPodSlots(afterBody, whileOp.getOperation(), slots);
-  if (slots.empty() || hasUnliftableLoopPodUses(beforeBody, slots) ||
-      hasUnliftableLoopPodUses(afterBody, slots)) {
-    return false;
-  }
-
-  OpBuilder builder(whileOp);
-  Location loc = whileOp.getLoc();
-
-  SmallVector<Value> newInits = llvm::to_vector(whileOp.getInits());
-  SmallVector<Type> newResultTypes = llvm::to_vector(whileOp.getResultTypes());
-  builder.setInsertionPoint(whileOp);
-  for (const LoopPodSlot &slot : slots) {
-    newInits.push_back(genRead(loc, slot.podRef, slot.recordName, builder).getResult());
-    newResultTypes.push_back(slot.type);
-  }
-
-  auto newWhile = builder.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
-  newWhile->setAttrs(whileOp->getAttrs());
-
-  Block &newBeforeBody = *newWhile.getBeforeBody();
-  Block &newAfterBody = *newWhile.getAfterBody();
-  dropTerminatorIfPresent(newBeforeBody);
-  dropTerminatorIfPresent(newAfterBody);
-
-  IRMapping beforeMapping;
-  for (auto [oldArg, newArg] : llvm::zip_equal(
-           whileOp.getBeforeArguments(),
-           newWhile.getBeforeArguments().take_front(whileOp.getBeforeArguments().size())
-       )) {
-    beforeMapping.map(oldArg, newArg);
-  }
-
-  SmallVector<Value> beforeSlotValues = llvm::map_to_vector(
-      llvm::seq<size_t>(0, slots.size()),
-      [base = whileOp.getBeforeArguments().size(), &newWhile](size_t idx) -> Value {
-    return newWhile.getBeforeArguments()[llzk::checkedCast<unsigned>(base + idx)];
-  }
-  );
-
-  builder.setInsertionPointToEnd(&newBeforeBody);
-  for (Operation &op : beforeBody) {
-    if (auto conditionOp = dyn_cast<scf::ConditionOp>(&op)) {
-      SmallVector<Value> conditionArgs =
-          llvm::map_to_vector(conditionOp.getArgs(), [&beforeMapping](Value a) {
-        return beforeMapping.lookupOrDefault(a);
-      });
-      llvm::append_range(conditionArgs, beforeSlotValues);
-      builder.create<scf::ConditionOp>(
-          conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()),
-          conditionArgs
-      );
-      continue;
-    }
-
-    if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
-      if (std::optional<size_t> slotIdx =
-              findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
-        beforeMapping.map(readOp.getResult(), beforeSlotValues[*slotIdx]);
-        continue;
-      }
-    }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-      if (std::optional<size_t> slotIdx =
-              findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
-        beforeSlotValues[*slotIdx] = beforeMapping.lookupOrDefault(writeOp.getValue());
-        continue;
-      }
-    }
-
-    builder.clone(op, beforeMapping);
-  }
-
-  IRMapping afterMapping;
-  for (auto [oldArg, newArg] : llvm::zip_equal(
-           whileOp.getAfterArguments(),
-           newWhile.getAfterArguments().take_front(whileOp.getAfterArguments().size())
-       )) {
-    afterMapping.map(oldArg, newArg);
-  }
-
-  SmallVector<Value> afterSlotValues = llvm::map_to_vector(
-      llvm::seq<size_t>(0, slots.size()),
-      [base = whileOp.getAfterArguments().size(), &newWhile](size_t idx) -> Value {
-    return newWhile.getAfterArguments()[llzk::checkedCast<unsigned>(base + idx)];
-  }
-  );
-
-  builder.setInsertionPointToEnd(&newAfterBody);
-  for (Operation &op : afterBody) {
-    if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
-      SmallVector<Value> yieldValues =
-          llvm::map_to_vector(yieldOp.getOperands(), [&afterMapping](Value v) {
-        return afterMapping.lookupOrDefault(v);
-      });
-      llvm::append_range(yieldValues, afterSlotValues);
-      builder.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
-      continue;
-    }
-
-    if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
-      if (std::optional<size_t> slotIdx =
-              findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
-        afterMapping.map(readOp.getResult(), afterSlotValues[*slotIdx]);
-        continue;
-      }
-    }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-      if (std::optional<size_t> slotIdx =
-              findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
-        afterSlotValues[*slotIdx] = afterMapping.lookupOrDefault(writeOp.getValue());
-        continue;
-      }
-    }
-
-    builder.clone(op, afterMapping);
-  }
-
-  builder.setInsertionPointAfter(newWhile);
-  for (auto [idx, slot] : llvm::enumerate(slots)) {
-    genWrite(
-        loc, slot.podRef, slot.recordName, newWhile.getResult(whileOp.getNumResults() + idx),
-        builder
-    );
-  }
-
-  for (auto [oldResult, newResult] : llvm::zip_equal(
-           whileOp.getResults(), newWhile.getResults().take_front(whileOp.getNumResults())
-       )) {
-    oldResult.replaceAllUsesWith(newResult);
-  }
-
-  whileOp.erase();
-  return true;
-}
-
 /// Lift direct branch-local writes out of `scf.if` as yielded values, then write those values in
 /// the parent block. Existing `scf.if` results are preserved as a prefix of the new result list,
 /// which gives mem2reg parent-block pod writes instead of nested-region writes.
-static bool liftPodWritesFromIfBlocks(scf::IfOp ifOp) {
-  SmallVector<IfWriteSlot> slots;
-  Block &thenBlock = *ifOp.thenBlock();
-  Block *elseBlock = getElseBlockOrNull(ifOp);
-  collectDirectWrites(&thenBlock, true, slots);
-  collectDirectWrites(elseBlock, false, slots);
-  if (slots.empty()) {
-    return false;
-  }
+class LiftPodWritesFromIfBlocksPattern final : public OpRewritePattern<scf::IfOp> {
+public:
+  using OpRewritePattern<scf::IfOp>::OpRewritePattern;
 
-  llvm::erase_if(slots, [&](const IfWriteSlot &slot) {
-    return isValueDefinedInside(ifOp, slot.podRef) ||
-           !branchSlotCanBeLifted(&thenBlock, slot.podRef, slot.recordName) ||
-           !branchSlotCanBeLifted(elseBlock, slot.podRef, slot.recordName);
-  });
-  if (slots.empty()) {
-    return false;
-  }
-
-  OpBuilder builder(ifOp);
-  for (IfWriteSlot &slot : slots) {
-    if (slot.thenWrite && slot.elseWrite) {
-      continue;
+  LogicalResult matchAndRewrite(scf::IfOp ifOp, PatternRewriter &rewriter) const override {
+    SmallVector<IfWriteSlot> slots;
+    Block &thenBlock = *ifOp.thenBlock();
+    Block *elseBlock = getElseBlockOrNull(ifOp);
+    collectDirectWrites(&thenBlock, true, slots);
+    collectDirectWrites(elseBlock, false, slots);
+    if (slots.empty()) {
+      return failure();
     }
-    builder.setInsertionPoint(ifOp);
-    slot.incomingValue = genRead(ifOp.getLoc(), slot.podRef, slot.recordName, builder);
+
+    llvm::erase_if(slots, [&](const IfWriteSlot &slot) {
+      return isValueDefinedInside(ifOp, slot.podRef) ||
+             !branchSlotCanBeLifted(&thenBlock, slot.podRef, slot.recordName) ||
+             !branchSlotCanBeLifted(elseBlock, slot.podRef, slot.recordName);
+    });
+    if (slots.empty()) {
+      return failure();
+    }
+
+    for (IfWriteSlot &slot : slots) {
+      if (slot.thenWrite && slot.elseWrite) {
+        continue;
+      }
+      rewriter.setInsertionPoint(ifOp);
+      slot.incomingValue =
+          genRead(ifOp.getLoc(), slot.podRef, slot.recordName, rewriter).getResult();
+    }
+
+    SmallVector<Type> resultTypes = llvm::to_vector(ifOp.getResultTypes());
+    llvm::append_range(resultTypes, llvm::map_range(slots, [](auto slot) { return slot.type; }));
+
+    SmallVector<Value> originalThenYields;
+    if (!ifOp.getResults().empty()) {
+      scf::YieldOp thenYieldOp = getYieldOp(thenBlock);
+      originalThenYields.append(thenYieldOp.getOperands().begin(), thenYieldOp.getOperands().end());
+    }
+
+    SmallVector<Value> originalElseYields;
+    if (elseBlock && !ifOp.getResults().empty()) {
+      scf::YieldOp elseYieldOp = getYieldOp(*elseBlock);
+      originalElseYields.append(elseYieldOp.getOperands().begin(), elseYieldOp.getOperands().end());
+    }
+
+    rewriter.setInsertionPoint(ifOp);
+    auto newIf = rewriter.create<scf::IfOp>(ifOp.getLoc(), resultTypes, ifOp.getCondition(), true);
+    Block &newThenBlock = *newIf.thenBlock();
+    Block &newElseBlock = *newIf.elseBlock();
+    dropTerminatorIfPresent(newThenBlock);
+    dropTerminatorIfPresent(newElseBlock);
+
+    moveBranchWithoutLiftedWrites(&thenBlock, newThenBlock, slots);
+    moveBranchWithoutLiftedWrites(elseBlock, newElseBlock, slots);
+    appendYield(ifOp.getLoc(), newThenBlock, originalThenYields, slots, true, rewriter);
+    appendYield(ifOp.getLoc(), newElseBlock, originalElseYields, slots, false, rewriter);
+
+    rewriter.setInsertionPointAfter(newIf);
+    unsigned originalResultCount = ifOp.getNumResults();
+    for (auto [idx, slot] : llvm::enumerate(slots)) {
+      genWrite(
+          ifOp.getLoc(), slot.podRef, slot.recordName, newIf.getResult(originalResultCount + idx),
+          rewriter
+      );
+    }
+
+    rewriter.replaceOp(ifOp, newIf.getResults().take_front(originalResultCount));
+    return success();
   }
+};
 
-  SmallVector<Type> resultTypes = llvm::to_vector(ifOp.getResultTypes());
-  llvm::append_range(resultTypes, llvm::map_range(slots, [](auto slot) { return slot.type; }));
+/// Rewrite loop-local POD reads and writes in an `scf.for` into extra iter args/results carrying
+/// one SSA value per touched POD record.
+class LiftPodAccessesFromForLoopPattern final : public OpRewritePattern<scf::ForOp> {
+public:
+  using OpRewritePattern<scf::ForOp>::OpRewritePattern;
 
-  SmallVector<Value> originalThenYields;
-  if (!ifOp.getResults().empty()) {
-    scf::YieldOp thenYieldOp = getYieldOp(thenBlock);
-    originalThenYields.append(thenYieldOp.getOperands().begin(), thenYieldOp.getOperands().end());
-  }
+  LogicalResult matchAndRewrite(scf::ForOp forOp, PatternRewriter &rewriter) const override {
+    Block &body = *forOp.getBody();
+    SmallVector<LoopPodSlot> slots;
+    collectDirectLoopPodSlots(body, forOp.getOperation(), slots);
+    if (slots.empty() || hasUnliftableLoopPodUses(body, slots)) {
+      return failure();
+    }
 
-  SmallVector<Value> originalElseYields;
-  if (elseBlock && !ifOp.getResults().empty()) {
-    scf::YieldOp elseYieldOp = getYieldOp(*elseBlock);
-    originalElseYields.append(elseYieldOp.getOperands().begin(), elseYieldOp.getOperands().end());
-  }
+    Location loc = forOp.getLoc();
 
-  builder.setInsertionPoint(ifOp);
-  auto newIf = builder.create<scf::IfOp>(ifOp.getLoc(), resultTypes, ifOp.getCondition(), true);
-  Block &newThenBlock = *newIf.thenBlock();
-  Block &newElseBlock = *newIf.elseBlock();
-  dropTerminatorIfPresent(newThenBlock);
-  dropTerminatorIfPresent(newElseBlock);
+    SmallVector<Value> newInitArgs = llvm::to_vector(forOp.getInitArgs());
+    rewriter.setInsertionPoint(forOp);
+    for (const LoopPodSlot &slot : slots) {
+      newInitArgs.push_back(genRead(loc, slot.podRef, slot.recordName, rewriter).getResult());
+    }
 
-  moveBranchWithoutLiftedWrites(&thenBlock, newThenBlock, slots);
-  moveBranchWithoutLiftedWrites(elseBlock, newElseBlock, slots);
-  appendYield(ifOp.getLoc(), newThenBlock, originalThenYields, slots, true, builder);
-  appendYield(ifOp.getLoc(), newElseBlock, originalElseYields, slots, false, builder);
-
-  builder.setInsertionPointAfter(newIf);
-  unsigned originalResultCount = ifOp.getNumResults();
-  for (auto [oldResult, newResult] :
-       llvm::zip_equal(ifOp.getResults(), newIf.getResults().take_front(originalResultCount))) {
-    oldResult.replaceAllUsesWith(newResult);
-  }
-
-  for (auto [idx, slot] : llvm::enumerate(slots)) {
-    genWrite(
-        ifOp.getLoc(), slot.podRef, slot.recordName, newIf.getResult(originalResultCount + idx),
-        builder
+    auto newFor = rewriter.create<scf::ForOp>(
+        loc, forOp.getLowerBound(), forOp.getUpperBound(), forOp.getStep(), newInitArgs
     );
-  }
+    newFor->setAttrs(forOp->getAttrs());
 
-  ifOp.erase();
-  return true;
+    Block &newBody = *newFor.getBody();
+    dropTerminatorIfPresent(newBody);
+
+    IRMapping mapping;
+    mapping.map(forOp.getInductionVar(), newFor.getInductionVar());
+    for (auto [idx, oldArg] : llvm::enumerate(forOp.getRegionIterArgs())) {
+      mapping.map(oldArg, newFor.getRegionIterArg(idx));
+    }
+
+    SmallVector<Value> slotValues = llvm::map_to_vector(
+        llvm::seq<size_t>(0, slots.size()),
+        [base = static_cast<size_t>(forOp.getNumRegionIterArgs()), &newFor](size_t idx) -> Value {
+      return newFor.getRegionIterArg(llzk::checkedCast<unsigned>(base + idx));
+    }
+    );
+
+    rewriter.setInsertionPointToEnd(&newBody);
+    for (Operation &op : body) {
+      if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
+        auto yieldValues = llvm::map_to_vector(yieldOp.getOperands(), [&mapping](Value operand) {
+          return mapping.lookupOrDefault(operand);
+        });
+        llvm::append_range(yieldValues, slotValues);
+        rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
+        continue;
+      }
+
+      if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
+        if (std::optional<size_t> slotIdx =
+                findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+          mapping.map(readOp.getResult(), slotValues[*slotIdx]);
+          continue;
+        }
+      }
+
+      if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+        if (std::optional<size_t> slotIdx =
+                findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+          slotValues[*slotIdx] = mapping.lookupOrDefault(writeOp.getValue());
+          continue;
+        }
+      }
+
+      rewriter.clone(op, mapping);
+    }
+
+    rewriter.setInsertionPointAfter(newFor);
+    for (auto [idx, slot] : llvm::enumerate(slots)) {
+      genWrite(
+          loc, slot.podRef, slot.recordName, newFor.getResult(forOp.getNumResults() + idx), rewriter
+      );
+    }
+
+    rewriter.replaceOp(forOp, newFor.getResults().take_front(forOp.getNumResults()));
+    return success();
+  }
+};
+
+/// Rewrite loop-local POD reads and writes in an `scf.while` into extra block arguments/results
+/// carrying one SSA value per touched POD record.
+class LiftPodAccessesFromWhileLoopPattern final : public OpRewritePattern<scf::WhileOp> {
+public:
+  using OpRewritePattern<scf::WhileOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(scf::WhileOp whileOp, PatternRewriter &rewriter) const override {
+    Block &beforeBody = *whileOp.getBeforeBody();
+    Block &afterBody = *whileOp.getAfterBody();
+
+    SmallVector<LoopPodSlot> slots;
+    collectDirectLoopPodSlots(beforeBody, whileOp.getOperation(), slots);
+    collectDirectLoopPodSlots(afterBody, whileOp.getOperation(), slots);
+    if (slots.empty() || hasUnliftableLoopPodUses(beforeBody, slots) ||
+        hasUnliftableLoopPodUses(afterBody, slots)) {
+      return failure();
+    }
+
+    Location loc = whileOp.getLoc();
+
+    SmallVector<Value> newInits = llvm::to_vector(whileOp.getInits());
+    SmallVector<Type> newResultTypes = llvm::to_vector(whileOp.getResultTypes());
+    rewriter.setInsertionPoint(whileOp);
+    for (const LoopPodSlot &slot : slots) {
+      newInits.push_back(genRead(loc, slot.podRef, slot.recordName, rewriter).getResult());
+      newResultTypes.push_back(slot.type);
+    }
+
+    auto newWhile = rewriter.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
+    newWhile->setAttrs(whileOp->getAttrs());
+
+    Block &newBeforeBody = *newWhile.getBeforeBody();
+    Block &newAfterBody = *newWhile.getAfterBody();
+    dropTerminatorIfPresent(newBeforeBody);
+    dropTerminatorIfPresent(newAfterBody);
+
+    IRMapping beforeMapping;
+    for (auto [oldArg, newArg] : llvm::zip_equal(
+             whileOp.getBeforeArguments(),
+             newWhile.getBeforeArguments().take_front(whileOp.getBeforeArguments().size())
+         )) {
+      beforeMapping.map(oldArg, newArg);
+    }
+
+    SmallVector<Value> beforeSlotValues = llvm::map_to_vector(
+        llvm::seq<size_t>(0, slots.size()),
+        [base = whileOp.getBeforeArguments().size(), &newWhile](size_t idx) -> Value {
+      return newWhile.getBeforeArguments()[llzk::checkedCast<unsigned>(base + idx)];
+    }
+    );
+
+    rewriter.setInsertionPointToEnd(&newBeforeBody);
+    for (Operation &op : beforeBody) {
+      if (auto conditionOp = dyn_cast<scf::ConditionOp>(&op)) {
+        SmallVector<Value> conditionArgs =
+            llvm::map_to_vector(conditionOp.getArgs(), [&beforeMapping](Value a) {
+          return beforeMapping.lookupOrDefault(a);
+        });
+        llvm::append_range(conditionArgs, beforeSlotValues);
+        rewriter.create<scf::ConditionOp>(
+            conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()),
+            conditionArgs
+        );
+        continue;
+      }
+
+      if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
+        if (std::optional<size_t> slotIdx =
+                findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+          beforeMapping.map(readOp.getResult(), beforeSlotValues[*slotIdx]);
+          continue;
+        }
+      }
+
+      if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+        if (std::optional<size_t> slotIdx =
+                findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+          beforeSlotValues[*slotIdx] = beforeMapping.lookupOrDefault(writeOp.getValue());
+          continue;
+        }
+      }
+
+      rewriter.clone(op, beforeMapping);
+    }
+
+    IRMapping afterMapping;
+    for (auto [oldArg, newArg] : llvm::zip_equal(
+             whileOp.getAfterArguments(),
+             newWhile.getAfterArguments().take_front(whileOp.getAfterArguments().size())
+         )) {
+      afterMapping.map(oldArg, newArg);
+    }
+
+    SmallVector<Value> afterSlotValues = llvm::map_to_vector(
+        llvm::seq<size_t>(0, slots.size()),
+        [base = whileOp.getAfterArguments().size(), &newWhile](size_t idx) -> Value {
+      return newWhile.getAfterArguments()[llzk::checkedCast<unsigned>(base + idx)];
+    }
+    );
+
+    rewriter.setInsertionPointToEnd(&newAfterBody);
+    for (Operation &op : afterBody) {
+      if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
+        SmallVector<Value> yieldValues =
+            llvm::map_to_vector(yieldOp.getOperands(), [&afterMapping](Value v) {
+          return afterMapping.lookupOrDefault(v);
+        });
+        llvm::append_range(yieldValues, afterSlotValues);
+        rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
+        continue;
+      }
+
+      if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
+        if (std::optional<size_t> slotIdx =
+                findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+          afterMapping.map(readOp.getResult(), afterSlotValues[*slotIdx]);
+          continue;
+        }
+      }
+
+      if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+        if (std::optional<size_t> slotIdx =
+                findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+          afterSlotValues[*slotIdx] = afterMapping.lookupOrDefault(writeOp.getValue());
+          continue;
+        }
+      }
+
+      rewriter.clone(op, afterMapping);
+    }
+
+    rewriter.setInsertionPointAfter(newWhile);
+    for (auto [idx, slot] : llvm::enumerate(slots)) {
+      genWrite(
+          loc, slot.podRef, slot.recordName, newWhile.getResult(whileOp.getNumResults() + idx),
+          rewriter
+      );
+    }
+
+    rewriter.replaceOp(whileOp, newWhile.getResults().take_front(whileOp.getNumResults()));
+    return success();
+  }
+};
+
+/// Apply a greedy rewrite/fold pass over the module body using the provided patterns.
+static LogicalResult
+applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = nullptr) {
+  return applyPatternsGreedily(
+      modOp->getRegion(0), std::move(patterns),
+      GreedyRewriteConfig {.fold = false, .cseConstants = false}, changed
+  );
 }
 
 /// Repeatedly lift pod accesses out of supported SCF regions so SROA + mem2reg can eliminate the
 /// remaining POD storage.
-static void step3(ModuleOp modOp) {
-  bool changed;
-  do {
-    changed = replaceIfReads(modOp);
+static LogicalResult step3(ModuleOp modOp) {
+  RewritePatternSet patterns(modOp.getContext());
+  patterns.add<
+      ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern, LiftPodAccessesFromForLoopPattern,
+      LiftPodAccessesFromWhileLoopPattern, FoldIfCarriedPodReadAfterWritePattern>(
+      patterns.getContext()
+  );
 
-    SmallVector<scf::IfOp> ifOps;
-    modOp.walk([&ifOps](scf::IfOp ifOp) { ifOps.push_back(ifOp); });
-    for (scf::IfOp ifOp : ifOps) {
-      changed |= liftPodWritesFromIfBlocks(ifOp);
-    }
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 3: refactor pod ops within SCF regions\n";);
+  return applyGreedily(modOp, std::move(patterns));
+}
 
-    SmallVector<scf::ForOp> forOps;
-    modOp.walk([&forOps](scf::ForOp forOp) { forOps.push_back(forOp); });
-    for (scf::ForOp forOp : forOps) {
-      changed |= liftPodAccessesFromForLoop(forOp);
-    }
+/// Run only the read-after-write fold for `scf.if`-carried POD results and report whether it
+/// changed the IR.
+static bool applyIfCarriedPodReadAfterWritePatterns(ModuleOp modOp) {
+  RewritePatternSet patterns(modOp.getContext());
+  patterns.add<FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
 
-    SmallVector<scf::WhileOp> whileOps;
-    modOp.walk([&whileOps](scf::WhileOp whileOp) { whileOps.push_back(whileOp); });
-    for (scf::WhileOp whileOp : whileOps) {
-      changed |= liftPodAccessesFromWhileLoop(whileOp);
-    }
-
-    changed |= foldIfCarriedPodReadAfterWrite(modOp);
-  } while (changed);
+  bool changed = false;
+  if (failed(applyGreedily(modOp, std::move(patterns), &changed))) {
+    return false;
+  }
+  return changed;
 }
 
 /// Return a simple measure of how many POD allocation layers are represented by this type.
@@ -1639,7 +1643,9 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
       });
     }
 
-    step3(module);
+    if (failed(step3(module))) {
+      return signalPassFailure();
+    }
     LLVM_DEBUG({
       llvm::dbgs() << "After step 3:\n";
       module.dump();
@@ -1667,7 +1673,7 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
       // SROA+mem2reg can expose `scf.if`-carried POD values that become redundant after a
       // same-record write from another `scf.if` result. Fold those reads and clean up before
       // checking convergence.
-      bool foldedIfCarriedRead = foldIfCarriedPodReadAfterWrite(module);
+      bool foldedIfCarriedRead = applyIfCarriedPodReadAfterWritePatterns(module);
       if (failed(runPipeline(cleanupPM, module))) {
         signalPassFailure();
         return;
