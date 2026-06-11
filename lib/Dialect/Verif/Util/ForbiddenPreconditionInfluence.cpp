@@ -115,8 +115,7 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIncludeOp(IncludeOp includeOp)
   ContractOp calleeContract = calleeTarget->get();
 
   llvm::SmallVector<InfluenceInfo> argInfluences = llvm::map_to_vector(
-      includeOp.getArgOperands(),
-      [this, &calleeControlInfluence](Value operand) {
+      includeOp.getArgOperands(), [this, &calleeControlInfluence](Value operand) {
     return mergeInfluenceInfo(analyzeValue(operand), calleeControlInfluence);
   }
   );
