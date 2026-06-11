@@ -1,0 +1,106 @@
+// RUN: llzk-opt --llzk-verif-to-smt %s -split-input-file | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @value : !felt.type
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      struct.writem %self[@value] = %x : !struct.type<@Box>, !felt.type
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %x: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckBox for @Box (%self: !struct.type<@Box>, %x: !felt.type) {
+    %ok = arith.constant true
+    verif.require_compute %ok
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_Box_compute(%[[X:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK:   return %[[X]] : !smt.int
+// CHECK: }
+// CHECK: func.func @smt_Box_constrain(%[[SELF_VALUE:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK:   return %[[SELF_VALUE]] : !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckBox_pre(%[[PRE_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[TRUE0:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[TRUE0]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckBox_post(%[[POST_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[TRUE1:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[TRUE1]] : !smt.bool
+// CHECK: }
+// CHECK-NOT: verif.contract
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @same(%a: !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @CheckSame for @same (%a: !felt.type, %ret_value: !felt.type) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_same(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK:   return %[[A]] : !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckSame_pre(%[[IN:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[TRUE2:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[TRUE2]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckSame_post(%[[IN2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET2:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[TRUE3:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[TRUE3]] : !smt.bool
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @leaf_target(%gate: i1) {
+    function.return
+  }
+
+  function.def @wrapper_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf_target (%gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @Wrapper for @wrapper_target (%gate: i1) {
+    verif.include @Leaf(%gate) : (i1) -> ()
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_leaf_target(%[[GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_verif_Leaf_pre(%[[LEAF_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   return %[[LEAF_GATE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_Leaf_post(%[[LEAF_POST_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   %[[TRUE4:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[TRUE4]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_Wrapper_includes(%[[WRAP_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_leaf_target(%[[WRAP_GATE]]) : (!smt.bool) -> ()
+// CHECK:   %[[PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_pre(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_post(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[PRE]], %[[POST]]
+// CHECK:   smt.assert %[[IMPL]]
+// CHECK:   return
+// CHECK: }

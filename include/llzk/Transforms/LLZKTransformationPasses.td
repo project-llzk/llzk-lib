@@ -146,4 +146,16 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let options = [];
 }
 
+def VerifToSmtPass : LLZKPass<"llzk-verif-to-smt"> {
+  let summary = "Lower verif contracts and simple LLZK targets to SMT helpers";
+  let description = [{
+    Lowers verif contracts into SMT helper functions for target computation,
+    preconditions, postconditions, and include implications. This pass currently
+    supports a focused subset of LLZK constructs intended to lock down the
+    target IR shape for verif-to-SMT lowering.
+  }];
+  let constructor = "llzk::createVerifToSmtPass()";
+  let options = [];
+}
+
 #endif // LLZK_TRANSFORMATION_PASSES_TD
