@@ -52,6 +52,17 @@ def UnusedDeclarationEliminationPass
   ];
 }
 
+def RemoveUnusedDiscardableAllocationsPass
+    : LLZKPass<"llzk-remove-unused-discardable-allocations"> {
+  let summary = "Remove unread discardable array allocations and their dead stores";
+  let description = [{
+    Remove `array.new` ops marked with `MemAlloc<DiscardableAllocationResource>` when the
+    allocation has no reads and every direct user is a discardable allocation accessor that can be
+    erased as a dead store.
+  }];
+  let constructor = "llzk::createRemoveUnusedDiscardableAllocationsPass()";
+}
+
 def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
   let summary =
       "Lower the degree of all polynomial equations to a specified maximum";

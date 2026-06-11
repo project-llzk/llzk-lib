@@ -32,6 +32,8 @@ std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
 
 std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
 
+std::unique_ptr<mlir::Pass> createRemoveUnusedDiscardableAllocationsPass();
+
 std::unique_ptr<mlir::Pass> createArrayToScalarPass();
 
 std::unique_ptr<mlir::Pass> createPolyLoweringPass();

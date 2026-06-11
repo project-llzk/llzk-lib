@@ -86,8 +86,10 @@ def ArrayAccessOpInterface
 def DiscardableAllocationAccessorOpInterface
     : OpInterface<"DiscardableAllocationAccessorOpInterface"> {
   let description = [{
-    Interface for operations that can classify and erase their use of a
-    discardable allocation without requiring that allocation to be promotable.
+    Provides the necessary information to the `RemoveUnusedDiscardableAllocations` pass about
+    operations that load or store values from the result of an allocator op marked with the
+    `MemAlloc<DiscardableAllocationResource>` memory effect so unused allocators and stores can be
+    removed.
   }];
   let cppNamespace = "::llzk::array";
 

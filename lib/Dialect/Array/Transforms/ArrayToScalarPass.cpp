@@ -81,6 +81,7 @@
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
@@ -952,11 +953,7 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
     // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
     nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
     // Cleanup allocations made dead by memory promotion.
-    nestedPM.addPass(
-        createSpecializedRemoveUnusedAllocationsPass<
-            CreateArrayOp, DiscardableAllocationResource,
-            DiscardableAllocationAccessorOpInterface>()
-    );
+    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass());
     // Cleanup SSA values made dead by removing allocations and writes.
     nestedPM.addPass(createRemoveDeadValuesPass());
     if (failed(runPipeline(nestedPM, module))) {

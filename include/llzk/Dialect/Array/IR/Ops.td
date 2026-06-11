@@ -96,7 +96,7 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
 
     /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
     bool $cppClass::storesToDiscardableAllocation(::mlir::Value ptr) {
-      return }]#!if(isRead, "false", "getArrRef() == ptr")#[{;
+      return }]#!if(isRead, "false", "getArrRef() == ptr && getRvalue() != ptr")#[{;
     }
 
     /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.

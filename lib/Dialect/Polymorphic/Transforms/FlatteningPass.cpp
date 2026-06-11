@@ -25,6 +25,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
@@ -2528,11 +2529,7 @@ private:
     }
 
     OpPassManager allocationCleanup(ModuleOp::getOperationName());
-    allocationCleanup.addPass(
-        createSpecializedRemoveUnusedAllocationsPass<
-            CreateArrayOp, DiscardableAllocationResource,
-            DiscardableAllocationAccessorOpInterface>()
-    );
+    allocationCleanup.addPass(createRemoveUnusedDiscardableAllocationsPass());
     return runPipeline(allocationCleanup, modOp);
   }
 
