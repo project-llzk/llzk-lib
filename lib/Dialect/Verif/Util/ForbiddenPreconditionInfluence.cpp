@@ -113,11 +113,12 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIncludeOp(IncludeOp includeOp)
 
   ContractOp calleeContract = calleeTarget->get();
 
-  llvm::SmallVector<InfluenceInfo> argInfluences;
-  argInfluences.reserve(includeOp.getArgOperands().size());
-  for (Value operand : includeOp.getArgOperands()) {
-    argInfluences.push_back(mergeInfluenceInfo(analyzeValue(operand), calleeControlInfluence));
+  llvm::SmallVector<InfluenceInfo> argInfluences = llvm::map_to_vector(
+      includeOp.getArgOperands(),
+      [this, &calleeControlInfluence](Value operand) {
+    return mergeInfluenceInfo(analyzeValue(operand), calleeControlInfluence);
   }
+  );
   return analyzer.analyzeIncludedContract(calleeContract, argInfluences, calleeControlInfluence);
 }
 
@@ -226,11 +227,10 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeCallResult(
     return makeInfluenceInfo(Influence::FunctionReturn);
   }
 
-  llvm::SmallVector<InfluenceInfo> argInfluences;
-  argInfluences.reserve(call.getArgOperands().size());
-  for (Value operand : call.getArgOperands()) {
-    argInfluences.push_back(analyzeValue(operand));
-  }
+  llvm::SmallVector<InfluenceInfo> argInfluences =
+      llvm::map_to_vector(call.getArgOperands(), [this](Value operand) {
+    return analyzeValue(operand);
+  });
   return analyzer.analyzeCallableResult(resolvedCallable, argInfluences, callRes.getResultNumber());
 }
 
@@ -308,10 +308,10 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::analyzeContractValue(ContractOp contra
   if (auto it = cachedFrames.find(contract); it != cachedFrames.end()) {
     return it->second.analyzeValue(value);
   }
-  llvm::SmallVector<InfluenceInfo> argInfluenceInfos;
-  for (BlockArgument arg : contract.getArguments()) {
-    argInfluenceInfos.push_back(classifyContractArgument(contract, arg));
-  }
+  llvm::SmallVector<InfluenceInfo> argInfluenceInfos =
+      llvm::map_to_vector(contract.getArguments(), [contract](BlockArgument arg) {
+    return classifyContractArgument(contract, arg);
+  });
   auto [it, inserted] = cachedFrames.try_emplace(contract, *this, contract, argInfluenceInfos);
   assert(inserted && "lookup failure");
   return it->second.analyzeValue(value);
@@ -324,10 +324,10 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::analyzePreconditionOp(
     return it->second.analyzePreconditionOp(preCondOp);
   }
 
-  llvm::SmallVector<InfluenceInfo> argInfluenceInfos;
-  for (BlockArgument arg : contract.getArguments()) {
-    argInfluenceInfos.push_back(classifyContractArgument(contract, arg));
-  }
+  llvm::SmallVector<InfluenceInfo> argInfluenceInfos =
+      llvm::map_to_vector(contract.getArguments(), [contract](BlockArgument arg) {
+    return classifyContractArgument(contract, arg);
+  });
   auto [it, inserted] = cachedFrames.try_emplace(contract, *this, contract, argInfluenceInfos);
   assert(inserted && "lookup failure");
   return it->second.analyzePreconditionOp(preCondOp);
@@ -422,10 +422,10 @@ ForbiddenInfluenceAnalyzer::analyzeIncludedOp(ContractOp contract, IncludeOp inc
     return it->second.analyzeIncludeOp(includeOp);
   }
 
-  llvm::SmallVector<InfluenceInfo> argInfluenceInfos;
-  for (BlockArgument arg : contract.getArguments()) {
-    argInfluenceInfos.push_back(classifyContractArgument(contract, arg));
-  }
+  llvm::SmallVector<InfluenceInfo> argInfluenceInfos =
+      llvm::map_to_vector(contract.getArguments(), [contract](BlockArgument arg) {
+    return classifyContractArgument(contract, arg);
+  });
   auto [it, inserted] = cachedFrames.try_emplace(contract, *this, contract, argInfluenceInfos);
   assert(inserted && "lookup failure");
   return it->second.analyzeIncludeOp(includeOp);

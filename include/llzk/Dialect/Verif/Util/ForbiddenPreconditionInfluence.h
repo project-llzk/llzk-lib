@@ -103,9 +103,9 @@ inline ForbiddenPreconditionInfluenceInfo mergeInfluenceInfo(
 
 template <typename T, typename... Args>
 inline ForbiddenPreconditionInfluenceInfo
-mergeInfluenceInfo(const T &first, const T &next, Args... args) {
+mergeInfluenceInfo(const T &first, const T &next, Args... others) {
   T merged = mergeInfluenceInfo(first, next);
-  return mergeInfluenceInfo(merged, args...);
+  return mergeInfluenceInfo(merged, others...);
 }
 
 namespace detail {
