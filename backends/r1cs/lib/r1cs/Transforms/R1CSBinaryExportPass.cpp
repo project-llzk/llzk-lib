@@ -200,8 +200,8 @@ struct ExportedCircuit {
 ///    reserved mapping.
 class CircuitExportModelBuilder {
 public:
-  CircuitExportModelBuilder(r1cs::CircuitDefOp circuit, const llvm::APInt &prime)
-      : circuit(circuit), primeModulus(llzk::toDynamicAPInt(prime)) {}
+  CircuitExportModelBuilder(r1cs::CircuitDefOp circuitOp, const llvm::APInt &prime)
+      : circuit(circuitOp), primeModulus(llzk::toDynamicAPInt(prime)) {}
 
   FailureOr<ExportedCircuit> build() {
     Block &entryBlock = circuit.getBody().front();
