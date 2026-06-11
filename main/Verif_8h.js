@@ -1,5 +1,6 @@
 var Verif_8h =
 [
+    [ "LLZK_DECLARE_OP_BUILD_METHOD", "Verif_8h.html#a50f3bad84bd555e4434a4d3828a269b0", null ],
     [ "LLZK_DECLARE_OP_BUILD_METHOD", "Verif_8h.html#a47819df4167f55322fcd189411b364d4", null ],
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Verif_8h.html#a331fac4a8172e8f4265ae18bb6141a3f", null ],
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Verif_8h.html#a9ce36e62626df85e525b89a4b91a3f5f", null ],

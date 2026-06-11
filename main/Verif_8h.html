@@ -130,6 +130,8 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:aab84552d992c4180424839262be53a12" id="r_aab84552d992c4180424839262be53a12"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aab84552d992c4180424839262be53a12">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION</a> (Verif, llzk__verif)</td></tr>
 <tr class="memdesc:aab84552d992c4180424839262be53a12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get reference to the LLZK <span class="tt">verif</span> dialect.  <br /></td></tr>
+<tr class="memitem:a50f3bad84bd555e4434a4d3828a269b0" id="r_a50f3bad84bd555e4434a4d3828a269b0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a50f3bad84bd555e4434a4d3828a269b0">LLZK_DECLARE_OP_BUILD_METHOD</a> (Verif, ContractOp, MlirIdentifier sym_name, MlirAttribute target, MlirAttribute function_type, MlirAttribute arg_attrs)</td></tr>
+<tr class="memdesc:a50f3bad84bd555e4434a4d3828a269b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <span class="tt">verif.contract</span> from explicit attributes and signature metadata.  <br /></td></tr>
 <tr class="memitem:a9ce36e62626df85e525b89a4b91a3f5f" id="r_a9ce36e62626df85e525b89a4b91a3f5f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9ce36e62626df85e525b89a4b91a3f5f">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Verif, ContractOp, FromTargetIdentifier, MlirIdentifier sym_name, MlirIdentifier target)</td></tr>
 <tr class="memdesc:a9ce36e62626df85e525b89a4b91a3f5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <span class="tt">verif.contract</span> with arguments and attributes derived from the target.  <br /></td></tr>
 <tr class="memitem:a331fac4a8172e8f4265ae18bb6141a3f" id="r_a331fac4a8172e8f4265ae18bb6141a3f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a331fac4a8172e8f4265ae18bb6141a3f">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Verif, ContractOp, FromTargetAttr, MlirIdentifier sym_name, MlirAttribute target)</td></tr>
@@ -138,8 +140,51 @@ Functions</h2></td></tr>
 <tr class="memdesc:a47819df4167f55322fcd189411b364d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <span class="tt">verif.include</span> with a flat list of call operands and no affine-map instantiations.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a50f3bad84bd555e4434a4d3828a269b0" name="a50f3bad84bd555e4434a4d3828a269b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a50f3bad84bd555e4434a4d3828a269b0">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Verif</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ContractOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>sym_name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>target</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>function_type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>arg_attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <span class="tt">verif.contract</span> from explicit attributes and signature metadata. </p>
+
+</div>
+</div>
 <a id="a47819df4167f55322fcd189411b364d4" name="a47819df4167f55322fcd189411b364d4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a47819df4167f55322fcd189411b364d4">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a47819df4167f55322fcd189411b364d4">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">

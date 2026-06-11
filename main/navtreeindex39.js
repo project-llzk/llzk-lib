@@ -1,5 +1,14 @@
 var NAVTREEINDEX39 =
 {
+"classllzk_1_1function_1_1ReturnOp.html#a60548c07d3a2e951fbc62364de1e5bb6":[12,0,1,8,10,7],
+"classllzk_1_1function_1_1ReturnOp.html#a67e84969867f4fae7cadcfc5cd17ac85":[10,0,2,11,10,5],
+"classllzk_1_1function_1_1ReturnOp.html#a67e84969867f4fae7cadcfc5cd17ac85":[12,0,1,8,10,5],
+"classllzk_1_1function_1_1ReturnOp.html#a7c2efb36c717ade8e2b30d705d05e073":[10,0,2,11,10,8],
+"classllzk_1_1function_1_1ReturnOp.html#a7c2efb36c717ade8e2b30d705d05e073":[12,0,1,8,10,8],
+"classllzk_1_1function_1_1ReturnOp.html#a80866d033021e56cfe7d17372c09e359":[10,0,2,11,10,3],
+"classllzk_1_1function_1_1ReturnOp.html#a80866d033021e56cfe7d17372c09e359":[12,0,1,8,10,3],
+"classllzk_1_1function_1_1ReturnOp.html#a829b8b7891405a3c339b1769d8fe9846":[10,0,2,11,10,4],
+"classllzk_1_1function_1_1ReturnOp.html#a829b8b7891405a3c339b1769d8fe9846":[12,0,1,8,10,4],
 "classllzk_1_1function_1_1ReturnOp.html#a85696b5c27cd8e7f431e90dde4b49d4c":[10,0,2,11,10,13],
 "classllzk_1_1function_1_1ReturnOp.html#a85696b5c27cd8e7f431e90dde4b49d4c":[12,0,1,8,10,13],
 "classllzk_1_1function_1_1ReturnOp.html#aa05965ff2ef0a5dab813237003be6c08":[10,0,2,11,10,0],
@@ -240,14 +249,5 @@ var NAVTREEINDEX39 =
 "classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#a89b207587e2f42e7801271de2ae74816":[12,0,1,9,3,6],
 "classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ab0f5e75deb131a5f35d656b9aed7f319":[10,0,2,12,3,4],
 "classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ab0f5e75deb131a5f35d656b9aed7f319":[12,0,1,9,3,4],
-"classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ab818ba5c8312c120b35021c07bd674e6":[10,0,2,12,3,2],
-"classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ab818ba5c8312c120b35021c07bd674e6":[12,0,1,9,3,2],
-"classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ae3ab123b9e65ff6f2116bce2372c80ff":[10,0,2,12,3,0],
-"classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ae3ab123b9e65ff6f2116bce2372c80ff":[12,0,1,9,3,0],
-"classllzk_1_1global_1_1GlobalDialect.html":[10,0,2,12,4],
-"classllzk_1_1global_1_1GlobalDialect.html":[12,0,1,9,4],
-"classllzk_1_1global_1_1GlobalDialect.html#a16ba9f9fd76da17f6786169cf6c6079e":[10,0,2,12,4,1],
-"classllzk_1_1global_1_1GlobalDialect.html#a16ba9f9fd76da17f6786169cf6c6079e":[12,0,1,9,4,1],
-"classllzk_1_1global_1_1GlobalDialect.html#adace67347c50a9894efa3d146772cfe7":[10,0,2,12,4,0],
-"classllzk_1_1global_1_1GlobalDialect.html#adace67347c50a9894efa3d146772cfe7":[12,0,1,9,4,0]
+"classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html#ab818ba5c8312c120b35021c07bd674e6":[10,0,2,12,3,2]
 };

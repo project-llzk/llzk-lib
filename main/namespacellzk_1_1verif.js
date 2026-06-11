@@ -2,6 +2,9 @@ var namespacellzk_1_1verif =
 [
     [ "detail", "namespacellzk_1_1verif_1_1detail.html", "namespacellzk_1_1verif_1_1detail" ],
     [ "ConditionOpInterface", "classllzk_1_1verif_1_1ConditionOpInterface.html", "classllzk_1_1verif_1_1ConditionOpInterface" ],
+    [ "ContractEndOp", "classllzk_1_1verif_1_1ContractEndOp.html", "classllzk_1_1verif_1_1ContractEndOp" ],
+    [ "ContractEndOpAdaptor", "classllzk_1_1verif_1_1ContractEndOpAdaptor.html", "classllzk_1_1verif_1_1ContractEndOpAdaptor" ],
+    [ "ContractEndOpGenericAdaptor", "classllzk_1_1verif_1_1ContractEndOpGenericAdaptor.html", "classllzk_1_1verif_1_1ContractEndOpGenericAdaptor" ],
     [ "ContractOp", "classllzk_1_1verif_1_1ContractOp.html", "classllzk_1_1verif_1_1ContractOp" ],
     [ "ContractOpAdaptor", "classllzk_1_1verif_1_1ContractOpAdaptor.html", "classllzk_1_1verif_1_1ContractOpAdaptor" ],
     [ "ContractOpGenericAdaptor", "classllzk_1_1verif_1_1ContractOpGenericAdaptor.html", "classllzk_1_1verif_1_1ContractOpGenericAdaptor" ],
@@ -11,6 +14,7 @@ var namespacellzk_1_1verif =
     [ "EnsureConstrainOp", "classllzk_1_1verif_1_1EnsureConstrainOp.html", "classllzk_1_1verif_1_1EnsureConstrainOp" ],
     [ "EnsureConstrainOpAdaptor", "classllzk_1_1verif_1_1EnsureConstrainOpAdaptor.html", "classllzk_1_1verif_1_1EnsureConstrainOpAdaptor" ],
     [ "EnsureConstrainOpGenericAdaptor", "classllzk_1_1verif_1_1EnsureConstrainOpGenericAdaptor.html", "classllzk_1_1verif_1_1EnsureConstrainOpGenericAdaptor" ],
+    [ "ForbiddenPreconditionInfluenceInfo", "structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html", "structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo" ],
     [ "IncludeOp", "classllzk_1_1verif_1_1IncludeOp.html", "classllzk_1_1verif_1_1IncludeOp" ],
     [ "IncludeOpAdaptor", "classllzk_1_1verif_1_1IncludeOpAdaptor.html", "classllzk_1_1verif_1_1IncludeOpAdaptor" ],
     [ "IncludeOpGenericAdaptor", "classllzk_1_1verif_1_1IncludeOpGenericAdaptor.html", "classllzk_1_1verif_1_1IncludeOpGenericAdaptor" ],
@@ -22,5 +26,24 @@ var namespacellzk_1_1verif =
     [ "RequireConstrainOp", "classllzk_1_1verif_1_1RequireConstrainOp.html", "classllzk_1_1verif_1_1RequireConstrainOp" ],
     [ "RequireConstrainOpAdaptor", "classllzk_1_1verif_1_1RequireConstrainOpAdaptor.html", "classllzk_1_1verif_1_1RequireConstrainOpAdaptor" ],
     [ "RequireConstrainOpGenericAdaptor", "classllzk_1_1verif_1_1RequireConstrainOpGenericAdaptor.html", "classllzk_1_1verif_1_1RequireConstrainOpGenericAdaptor" ],
-    [ "VerifDialect", "classllzk_1_1verif_1_1VerifDialect.html", "classllzk_1_1verif_1_1VerifDialect" ]
+    [ "VerifDialect", "classllzk_1_1verif_1_1VerifDialect.html", "classllzk_1_1verif_1_1VerifDialect" ],
+    [ "ForbiddenPreconditionInfluence", "namespacellzk_1_1verif.html#abcfb14792bee22016117f070ff17390e", [
+      [ "None", "namespacellzk_1_1verif.html#abcfb14792bee22016117f070ff17390ea6adf97f83acf6453d4a6a4b1070f3754", null ],
+      [ "StructMember", "namespacellzk_1_1verif.html#abcfb14792bee22016117f070ff17390ea55f1089677f215da22afece2b5a624e5", null ],
+      [ "FunctionReturn", "namespacellzk_1_1verif.html#abcfb14792bee22016117f070ff17390eadbb57aa1f35ab815f08eb9904c1bc2a0", null ]
+    ] ],
+    [ "analyzeForbiddenIncludedContractSummary", "namespacellzk_1_1verif.html#a5779cd4460ca024c3161ff72a10eb3ce", null ],
+    [ "analyzeForbiddenIncludedOpSummary", "namespacellzk_1_1verif.html#a6f399ab88c68b5d90aeb54490666d7e1", null ],
+    [ "analyzeForbiddenPreconditionCallableResult", "namespacellzk_1_1verif.html#a4eee2e847b41c04baf5d2b33d10284bc", null ],
+    [ "analyzeForbiddenPreconditionCallableResultInfo", "namespacellzk_1_1verif.html#a53b28ec4a1d345083518a4b91d14da44", null ],
+    [ "analyzeForbiddenPreconditionInfluence", "namespacellzk_1_1verif.html#ac6ea30165a5718ee62b8dd54c5d39fe9", null ],
+    [ "analyzeForbiddenPreconditionInfluenceInfo", "namespacellzk_1_1verif.html#a7dbe51b1fe29c482165d73cfe5082010", null ],
+    [ "analyzeForbiddenPreconditionOpInfluenceInfo", "namespacellzk_1_1verif.html#ac213426be349d112b6b6f5e482137978", null ],
+    [ "any", "namespacellzk_1_1verif.html#aff4f6a16ace7a556028ad5256056c7d0", null ],
+    [ "hash_value", "namespacellzk_1_1verif.html#ad8c0ea7f18ca7b6e00cdf7414a41bbeb", null ],
+    [ "hasInfluence", "namespacellzk_1_1verif.html#abf2ec90ab9c2b529e489f6f530c60d07", null ],
+    [ "mergeInfluenceInfo", "namespacellzk_1_1verif.html#ab957ef5fb9d6370770955b48d35a62a7", null ],
+    [ "mergeInfluenceInfo", "namespacellzk_1_1verif.html#a6c6e9c2237d93cab449bd123c18f10b2", null ],
+    [ "operator|", "namespacellzk_1_1verif.html#ab5b1ba23977eeade15c06246fe2f0f01", null ],
+    [ "operator|=", "namespacellzk_1_1verif.html#af93a1d19c6b65f6bf0df799d1f0205b0", null ]
 ];

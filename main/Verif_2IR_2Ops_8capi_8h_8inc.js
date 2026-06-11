@@ -1,12 +1,13 @@
 var Verif_2IR_2Ops_8capi_8h_8inc =
 [
+    [ "llzkOperationIsA_Verif_ContractEndOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#a04e11d47471a69fe0562716a14b5c78e", null ],
     [ "llzkOperationIsA_Verif_ContractOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#acd933816f37874cbbc55ff07c02b3b6a", null ],
     [ "llzkOperationIsA_Verif_EnsureComputeOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#a75714bfbc5b871861b19949050b63488", null ],
     [ "llzkOperationIsA_Verif_EnsureConstrainOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#af1b736d43c793086acc4878641b12b71", null ],
     [ "llzkOperationIsA_Verif_IncludeOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#a95c59c100db5e921068660189dd5a54f", null ],
     [ "llzkOperationIsA_Verif_RequireComputeOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#a5e321e8bf13a2b96597cb5895e9fedbf", null ],
     [ "llzkOperationIsA_Verif_RequireConstrainOp", "Verif_2IR_2Ops_8capi_8h_8inc.html#a00796f3964e3a14fbc82b3b02bee68f3", null ],
-    [ "llzkVerif_ContractOpBuild", "Verif_2IR_2Ops_8capi_8h_8inc.html#aeb475ec443781345ad863ba2c9739eba", null ],
+    [ "llzkVerif_ContractEndOpBuild", "Verif_2IR_2Ops_8capi_8h_8inc.html#ade31b977690d04989c7fee39e9d09181", null ],
     [ "llzkVerif_ContractOpGetArgAttrs", "Verif_2IR_2Ops_8capi_8h_8inc.html#a6bbc6967bbbee143f7d7a420c1563ce3", null ],
     [ "llzkVerif_ContractOpGetBody", "Verif_2IR_2Ops_8capi_8h_8inc.html#ab98ad6d697248734ef6f0b773a1e8dac", null ],
     [ "llzkVerif_ContractOpGetCallableRegion", "Verif_2IR_2Ops_8capi_8h_8inc.html#ab706ba75aa916e2fdacb5928f6df771a", null ],

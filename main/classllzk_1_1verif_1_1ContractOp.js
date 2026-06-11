@@ -53,6 +53,7 @@ var classllzk_1_1verif_1_1ContractOp =
     [ "verify", "classllzk_1_1verif_1_1ContractOp.html#a5c5e910fb59a415da7c52af67734440b", null ],
     [ "verifyInvariants", "classllzk_1_1verif_1_1ContractOp.html#a58f385733873e6cca1ff286c3ce53c52", null ],
     [ "verifyInvariantsImpl", "classllzk_1_1verif_1_1ContractOp.html#ab9404f5747d5c8ae11329ca8894f0bbd", null ],
+    [ "verifyRegions", "classllzk_1_1verif_1_1ContractOp.html#a0b72308ac3b9c9d92b2c57ccad5e0300", null ],
     [ "verifySymbolUses", "classllzk_1_1verif_1_1ContractOp.html#a54f569511435f1876b75a0dafe3d3154", null ],
     [ "writeProperties", "classllzk_1_1verif_1_1ContractOp.html#abb8cdc86644e6cae96000f58f64e6721", null ]
 ];

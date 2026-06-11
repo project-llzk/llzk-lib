@@ -256,6 +256,7 @@ var hierarchy =
       ] ],
       [ "llzk::LLZKDialectBytecodeInterface< DialectTy >", "structllzk_1_1LLZKDialectBytecodeInterface.html", null ]
     ] ],
+    [ "llzk::verif::detail::CallableSummaryKey", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKey.html", null ],
     [ "llzk::CallGraph", "classllzk_1_1CallGraph.html", null ],
     [ "llzk::CallGraphAnalysis", "classllzk_1_1CallGraphAnalysis.html", null ],
     [ "llzk::CallGraphNode", "classllzk_1_1CallGraphNode.html", null ],
@@ -434,6 +435,13 @@ var hierarchy =
       ] ],
       [ "llzk::polymorphic::ConstReadOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::ContractEndOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1ContractEndOpGenericAdaptorBase.html", [
+      [ "llzk::verif::ContractEndOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1ContractEndOpGenericAdaptor.html", null ],
+      [ "llzk::verif::ContractEndOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1ContractEndOpGenericAdaptor.html", [
+        [ "llzk::verif::ContractEndOpAdaptor", "classllzk_1_1verif_1_1ContractEndOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::ContractEndOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1ContractEndOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::verif::detail::ContractOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html", [
       [ "llzk::verif::ContractOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1ContractOpGenericAdaptor.html", null ],
       [ "llzk::verif::ContractOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1ContractOpGenericAdaptor.html", [
@@ -485,6 +493,10 @@ var hierarchy =
     [ "mlir::dataflow::DenseForwardDataFlowAnalysis", null, [
       [ "llzk::MemberOverwriteAnalysis", "classllzk_1_1MemberOverwriteAnalysis.html", null ],
       [ "llzk::PredecessorAnalysis", "classllzk_1_1PredecessorAnalysis.html", null ]
+    ] ],
+    [ "llvm::DenseMapInfo", null, [
+      [ "llzk::verif::detail::CallableSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKeyInfo.html", null ],
+      [ "llzk::verif::detail::IncludedContractSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKeyInfo.html", null ]
     ] ],
     [ "llvm::DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
     [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", null ],
@@ -631,6 +643,8 @@ var hierarchy =
       ] ],
       [ "llzk::smt::ForallOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::ForbiddenInfluenceAnalyzer", "classllzk_1_1verif_1_1detail_1_1ForbiddenInfluenceAnalyzer.html", null ],
+    [ "llzk::verif::ForbiddenPreconditionInfluenceInfo", "structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html", null ],
     [ "llzk::ForOpInfo", "structllzk_1_1ForOpInfo.html", null ],
     [ "llzk::function::detail::FuncDefOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase.html", [
       [ "llzk::function::FuncDefOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ],
@@ -707,6 +721,9 @@ var hierarchy =
       ] ],
       [ "llzk::smt::ImpliesOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1ImpliesOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::IncludedContractFailure", "structllzk_1_1verif_1_1detail_1_1IncludedContractFailure.html", null ],
+    [ "llzk::verif::detail::IncludedContractSummary", "structllzk_1_1verif_1_1detail_1_1IncludedContractSummary.html", null ],
+    [ "llzk::verif::detail::IncludedContractSummaryKey", "structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKey.html", null ],
     [ "llzk::include::detail::IncludeOpGenericAdaptorBase", "classllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase.html", [
       [ "llzk::include::IncludeOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1include_1_1IncludeOpGenericAdaptor.html", null ],
       [ "llzk::include::IncludeOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1include_1_1IncludeOpGenericAdaptor.html", [
@@ -1055,6 +1072,7 @@ var hierarchy =
       [ "llzk::smt::XOrOp", "classllzk_1_1smt_1_1XOrOp.html", null ],
       [ "llzk::smt::YieldOp", "classllzk_1_1smt_1_1YieldOp.html", null ],
       [ "llzk::string::LitStringOp", "classllzk_1_1string_1_1LitStringOp.html", null ],
+      [ "llzk::verif::ContractEndOp", "classllzk_1_1verif_1_1ContractEndOp.html", null ],
       [ "llzk::verif::ContractOp", "classllzk_1_1verif_1_1ContractOp.html", null ],
       [ "llzk::verif::EnsureComputeOp", "classllzk_1_1verif_1_1EnsureComputeOp.html", null ],
       [ "llzk::verif::EnsureConstrainOp", "classllzk_1_1verif_1_1EnsureConstrainOp.html", null ],
@@ -1411,7 +1429,7 @@ var hierarchy =
       [ "AssertOpBuildFuncHelper", "structAssertOpBuildFuncHelper.html", null ],
       [ "CmpOpBuildFuncHelper", "structCmpOpBuildFuncHelper.html", null ],
       [ "ConstReadOpBuildFuncHelper", "structConstReadOpBuildFuncHelper.html", null ],
-      [ "ContractOpBuildFuncHelper", "structContractOpBuildFuncHelper.html", null ],
+      [ "ContractEndOpBuildFuncHelper", "structContractEndOpBuildFuncHelper.html", null ],
       [ "CreateStructOpBuildFuncHelper", "structCreateStructOpBuildFuncHelper.html", null ],
       [ "DivFeltOpBuildFuncHelper", "structDivFeltOpBuildFuncHelper.html", null ],
       [ "EmitContainmentOpBuildFuncHelper", "structEmitContainmentOpBuildFuncHelper.html", null ],

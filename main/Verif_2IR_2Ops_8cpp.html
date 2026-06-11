@@ -111,21 +111,26 @@ $(function(){initNavTree('Verif_2IR_2Ops_8cpp.html','',''); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Verif_2IR_2Ops_8h_source.html">llzk/Dialect/Verif/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="AnalysisUtil_8h_source.html">llzk/Analysis/AnalysisUtil.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="ConstraintDependencyGraph_8h_source.html">llzk/Analysis/ConstraintDependencyGraph.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="SourceRef_8h_source.html">llzk/Analysis/SourceRef.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Attrs_8h_source.html">llzk/Dialect/Felt/IR/Attrs.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Types_8h_source.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZK_2IR_2Ops_8h_source.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="ForbiddenPreconditionInfluence_8h_source.html">llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="BuilderHelper_8h_source.html">llzk/Util/BuilderHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="ErrorHelper_8h_source.html">llzk/Util/ErrorHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolHelper_8h_source.html">llzk/Util/SymbolHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolTableLLZK_8h_source.html">llzk/Util/SymbolTableLLZK.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Walk_8h_source.html">llzk/Util/Walk.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
+<code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/Utils/IndexingUtils.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Attributes.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Diagnostics.h&gt;</code><br />
-<code>#include &lt;mlir/IR/OwningOpRef.h&gt;</code><br />
 <code>#include &lt;mlir/IR/SymbolTable.h&gt;</code><br />
 <code>#include &lt;mlir/IR/ValueRange.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/FunctionImplementation.h&gt;</code><br />
@@ -137,7 +142,7 @@ $(function(){initNavTree('Verif_2IR_2Ops_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Ops.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Verif_2IR_2Ops_8cpp__incl.svg" width="4422" height="671"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Verif_2IR_2Ops_8cpp__incl.svg" width="5131" height="872"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Verif_2IR_2Ops_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -164,7 +169,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00040">40</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8cpp_source.html#l00045">45</a> of file <a class="el" href="Verif_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
