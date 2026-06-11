@@ -32,8 +32,6 @@ std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
 
 std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
 
-std::unique_ptr<mlir::Pass> createArrayToScalarPass();
-
 std::unique_ptr<mlir::Pass> createPolyLoweringPass();
 
 std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);

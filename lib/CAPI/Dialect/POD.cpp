@@ -15,11 +15,14 @@
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/IR.h>
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/IR.h>
+#include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
@@ -36,10 +39,13 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::pod;
 
+static void registerLLZKPodTransformationPasses() { registerTransformationPasses(); }
+
 // Include the generated CAPI
 #include "llzk/Dialect/POD/IR/Attrs.capi.cpp.inc"
 #include "llzk/Dialect/POD/IR/Ops.capi.cpp.inc"
 #include "llzk/Dialect/POD/IR/Types.capi.cpp.inc"
+#include "llzk/Dialect/POD/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(POD, llzk__pod, PODDialect)
 
