@@ -22,6 +22,7 @@
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -643,10 +644,9 @@ LogicalResult ContractOp::verifyRegions() {
   // to be generated first. In sum, we can rest assured that the ops we traverse and
   // analyze here have already been verified.
 
-  SmallVector<PreconditionOpInterface> preconditionOps;
-  walk([&preconditionOps](PreconditionOpInterface op) { preconditionOps.push_back(op); });
-  SmallVector<IncludeOp> includeOps;
-  walk([&includeOps](IncludeOp includeOp) { includeOps.push_back(includeOp); });
+  SmallVector<PreconditionOpInterface> preconditionOps =
+      walkCollect<PreconditionOpInterface>(*this);
+  SmallVector<IncludeOp> includeOps = walkCollect<IncludeOp>(*this);
   if (preconditionOps.empty() && includeOps.empty()) {
     return success();
   }

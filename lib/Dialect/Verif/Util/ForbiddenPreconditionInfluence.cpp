@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/Walk.h"
 
 using namespace mlir;
 using namespace llzk::component;
@@ -391,10 +392,8 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   AnalysisFrame frame(*this, calleeContract, argInfluences, inheritedControlInfluence);
   IncludedContractSummary summary;
 
-  SmallVector<PreconditionOpInterface> preconditionOps;
-  calleeContract.walk([&preconditionOps](PreconditionOpInterface op) {
-    preconditionOps.push_back(op);
-  });
+  SmallVector<PreconditionOpInterface> preconditionOps =
+      walkCollect<PreconditionOpInterface>(calleeContract);
   for (PreconditionOpInterface preCondOp : preconditionOps) {
     InfluenceInfo influenceInfo = frame.analyzePreconditionOp(preCondOp);
     if (any(influenceInfo.influence)) {
@@ -404,8 +403,7 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
     }
   }
 
-  SmallVector<IncludeOp> includeOps;
-  calleeContract.walk([&](IncludeOp includeOp) { includeOps.push_back(includeOp); });
+  SmallVector<IncludeOp> includeOps = walkCollect<IncludeOp>(calleeContract);
   for (IncludeOp includeOp : includeOps) {
     IncludedContractSummary nestedSummary = frame.analyzeIncludeOp(includeOp);
     summary.failures.append(nestedSummary.failures.begin(), nestedSummary.failures.end());
