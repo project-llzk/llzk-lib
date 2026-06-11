@@ -966,6 +966,18 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step1B_InstantiateFunctions {
 
+/// Flatten nested array instantiations by appending any dimensions contributed by the converted
+/// element type onto the outer array. This allows wildcard element types to resolve to
+/// higher-rank arrays even though LLZK array element types cannot themselves be arrays.
+static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedElemTy) {
+  SmallVector<Attribute> mergedDims(inputTy.getDimensionSizes());
+  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(convertedElemTy)) {
+    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
+    convertedElemTy = nestedArrTy.getElementType();
+  }
+  return ArrayType::get(convertedElemTy, mergedDims);
+}
+
 /// TypeConverter for function instantiation that replaces TypeVarType and symbolic
 /// ArrayType/StructType parameters with their concrete values determined by unification.
 class FuncInstTypeConverter : public TypeConverter {
@@ -1005,7 +1017,9 @@ public:
       if (!changed && newElemTy == inputTy.getElementType()) {
         return inputTy;
       }
-      return ArrayType::get(newElemTy, updated);
+      return flattenInstantiatedArrayType(
+          inputTy.cloneWith(inputTy.getElementType(), updated), newElemTy
+      );
     });
 
     addConversion([this](StructType inputTy) -> StructType {
@@ -1215,6 +1229,45 @@ static InstantiationLayout buildInstantiationLayout(
   };
 }
 
+/// Rewrite cloned scalar array reads to ranged extract ops when a wildcard element type
+/// resolves to a higher-rank array.
+class ClonedBodyArrayReadOpPattern final : public OpConversionPattern<ReadArrayOp> {
+public:
+  using OpConversionPattern<ReadArrayOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    Type newResultTy = getTypeConverter()->convertType(op.getResult().getType());
+    if (!llvm::isa<ArrayType>(newResultTy)) {
+      return failure();
+    }
+    replaceOpWithNewOp<ExtractArrayOp>(
+        rewriter, op, newResultTy, adaptor.getArrRef(), adaptor.getIndices()
+    );
+    return success();
+  }
+};
+
+/// Rewrite cloned scalar array writes to ranged inserts when a wildcard element type
+/// resolves to a higher-rank array.
+class ClonedBodyArrayWriteOpPattern final : public OpConversionPattern<WriteArrayOp> {
+public:
+  using OpConversionPattern<WriteArrayOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (!llvm::isa<ArrayType>(adaptor.getRvalue().getType())) {
+      return failure();
+    }
+    replaceOpWithNewOp<InsertArrayOp>(
+        rewriter, op, adaptor.getArrRef(), adaptor.getIndices(), adaptor.getRvalue()
+    );
+    return success();
+  }
+};
+
 /// Use `FuncInstTypeConverter` to apply the given substitutions from instantiation and verify
 /// that `CallOp` in the converted function are valid for their respective targets (we can emit a
 /// more helpful error at this point rather than discovering it later when verifying the module).
@@ -1233,6 +1286,7 @@ static LogicalResult applyBodyConversions(
   bodyPatterns.add<ClonedBodyConstReadOpPattern>(
       tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
   );
+  bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
   if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
     return failure();
   }
