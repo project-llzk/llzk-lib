@@ -306,7 +306,7 @@ namespace llzk::verif {
 //===------------------------------------------------------------------===//
 
 void ContractOp::initializeEmptyBody(
-    ::mlir::OpBuilder &builder, ::mlir::OperationState &state, ::mlir::FunctionType functionType
+    OpBuilder &builder, OperationState &state, FunctionType functionType
 ) {
   Region *body = state.addRegion();
   auto *entryBlock = new Block();
@@ -319,7 +319,7 @@ void ContractOp::initializeEmptyBody(
 }
 
 void ContractOp::build(
-    ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef name,
     llvm::StringRef target
 ) {
   build(odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target));
@@ -641,9 +641,9 @@ LogicalResult ContractOp::verifyRegions() {
   // analyze here have already been verified.
 
   SmallVector<PreconditionOpInterface> preconditionOps;
-  walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
+  walk([&preconditionOps](PreconditionOpInterface op) { preconditionOps.push_back(op); });
   SmallVector<IncludeOp> includeOps;
-  walk([&](IncludeOp includeOp) { includeOps.push_back(includeOp); });
+  walk([&includeOps](IncludeOp includeOp) { includeOps.push_back(includeOp); });
   if (preconditionOps.empty() && includeOps.empty()) {
     return success();
   }

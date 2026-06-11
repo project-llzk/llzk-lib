@@ -392,7 +392,7 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   IncludedContractSummary summary;
 
   SmallVector<PreconditionOpInterface> preconditionOps;
-  calleeContract.walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
+  calleeContract.walk([&preconditionOps](PreconditionOpInterface op) { preconditionOps.push_back(op); });
   for (PreconditionOpInterface preCondOp : preconditionOps) {
     InfluenceInfo influenceInfo = frame.analyzePreconditionOp(preCondOp);
     if (any(influenceInfo.influence)) {

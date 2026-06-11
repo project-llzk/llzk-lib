@@ -58,7 +58,7 @@ module attributes {llzk.lang} {
   ASSERT_TRUE(parsed);
 
   function::FuncDefOp helper;
-  parsed->walk([&](function::FuncDefOp op) {
+  parsed->walk([&helper](function::FuncDefOp op) {
     if (op.getName() == "helper") {
       helper = op;
     }
