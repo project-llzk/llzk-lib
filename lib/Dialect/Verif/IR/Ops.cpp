@@ -155,17 +155,21 @@ enum class ForbiddenRequireConditionKind : uint8_t {
   FunctionReturn,
 };
 
+/// Classified failure for a single direct verif.require_* condition.
 struct ForbiddenRequireCondition {
   ForbiddenRequireConditionKind kind;
   llvm::SmallSetVector<Location, 2> sourceLocs;
 };
 
+/// One failing precondition reached through a verif.include, together with the
+/// classified forbidden source kind and any representative source locations.
 struct ForbiddenIncludedPrecondition {
   std::optional<Location> calleePreconditionLoc = std::nullopt;
   ForbiddenRequireConditionKind kind;
   llvm::SmallSetVector<Location, 2> sourceLocs;
 };
 
+/// Aggregate of all nested precondition failures caused by one include site.
 struct ForbiddenIncludedPreconditions {
   IncludeOp includeOp;
   llvm::SmallVector<ForbiddenIncludedPrecondition> failures;
