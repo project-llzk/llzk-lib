@@ -845,6 +845,44 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @helper_gates(%gate_a: i1, %gate_b: i1) {
+    function.return
+  }
+
+  struct.def @GateBox {
+    struct.member @gate_a : i1
+    struct.member @gate_b : i1
+    function.def @compute(%gate_a: i1, %gate_b: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate_a] = %gate_a : !struct.type<@GateBox>, i1
+      struct.writem %self[@gate_b] = %gate_b : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate_a: i1, %gate_b: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @Leaf for @helper_gates (%gate_a: i1, %gate_b: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate_a
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate_b
+  }
+
+  verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate_a: i1, %gate_b: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate_a = struct.readm %self[@gate_a] : !struct.type<@GateBox>, i1
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate_b = struct.readm %self[@gate_b] : !struct.type<@GateBox>, i1
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
+    verif.include @Leaf(%member_gate_a, %member_gate_b) : (i1, i1) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @helper_gate(%gate: i1) {
     function.return
   }
@@ -869,7 +907,7 @@ module attributes {llzk.lang} {
   verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
     // expected-note@+1 {{forbidden struct member value originates here}}
     %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
-    // expected-error@+1 {{'verif.include' op includes a precondition whose condition cannot be derived from a struct member value}}
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
     verif.include @Leaf(%member_gate) : (i1) -> ()
   }
 }
@@ -891,7 +929,7 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Wrapper for @passthrough_bool (%flag : i1, %ret_value : i1) {
-    // expected-error@+1 {{'verif.include' op includes a precondition whose condition cannot be derived from a function return value}}
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a function return value}}
     verif.include @Leaf(%ret_value) : (i1) -> ()
   }
 }
@@ -927,7 +965,7 @@ module attributes {llzk.lang} {
   verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
     // expected-note@+1 {{forbidden struct member value originates here}}
     %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
-    // expected-error@+1 {{'verif.include' op includes a precondition whose condition cannot be derived from a struct member value}}
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
     verif.include @Middle(%member_gate) : (i1) -> ()
   }
 }

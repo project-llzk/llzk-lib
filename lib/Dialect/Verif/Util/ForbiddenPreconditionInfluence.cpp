@@ -95,7 +95,9 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIncludeOp(IncludeOp includeOp)
   auto calleeTarget = includeOp.getCalleeTarget(tables);
   if (failed(calleeTarget)) {
     IncludedContractSummary summary;
-    summary.influenceInfo = makeInfluenceInfo(Influence::FunctionReturn);
+    summary.failures.push_back(
+        {.precondition = {}, .influenceInfo = makeInfluenceInfo(Influence::FunctionReturn)}
+    );
     return summary;
   }
 
@@ -349,7 +351,9 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   }
   if (!activeIncludedSummaries.insert(key).second) {
     IncludedContractSummary summary;
-    summary.influenceInfo = makeInfluenceInfo(Influence::FunctionReturn);
+    summary.failures.push_back(
+        {.precondition = {}, .influenceInfo = makeInfluenceInfo(Influence::FunctionReturn)}
+    );
     return summary;
   }
 
@@ -361,21 +365,15 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   for (PreconditionOpInterface preCondOp : preconditionOps) {
     InfluenceInfo influenceInfo = frame.analyzePreconditionOp(preCondOp);
     if (any(influenceInfo.influence)) {
-      summary.failingPrecondition = preCondOp;
-      summary.influenceInfo = influenceInfo;
-      break;
+      summary.failures.push_back({.precondition = preCondOp, .influenceInfo = influenceInfo});
     }
   }
 
-  if (!summary) {
-    SmallVector<IncludeOp> includeOps;
-    calleeContract.walk([&](IncludeOp includeOp) { includeOps.push_back(includeOp); });
-    for (IncludeOp includeOp : includeOps) {
-      summary = frame.analyzeIncludeOp(includeOp);
-      if (summary) {
-        break;
-      }
-    }
+  SmallVector<IncludeOp> includeOps;
+  calleeContract.walk([&](IncludeOp includeOp) { includeOps.push_back(includeOp); });
+  for (IncludeOp includeOp : includeOps) {
+    IncludedContractSummary nestedSummary = frame.analyzeIncludeOp(includeOp);
+    summary.failures.append(nestedSummary.failures.begin(), nestedSummary.failures.end());
   }
 
   activeIncludedSummaries.erase(key);

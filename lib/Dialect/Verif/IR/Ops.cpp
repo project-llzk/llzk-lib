@@ -161,10 +161,14 @@ struct ForbiddenRequireCondition {
 };
 
 struct ForbiddenIncludedPrecondition {
-  IncludeOp includeOp;
   PreconditionOpInterface calleePrecondition;
   ForbiddenRequireConditionKind kind;
   llvm::SmallSetVector<Location, 2> sourceLocs;
+};
+
+struct ForbiddenIncludedPreconditions {
+  IncludeOp includeOp;
+  llvm::SmallVector<ForbiddenIncludedPrecondition> failures;
 };
 
 std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
@@ -187,7 +191,7 @@ std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
   return std::nullopt;
 }
 
-std::optional<ForbiddenIncludedPrecondition>
+std::optional<ForbiddenIncludedPreconditions>
 classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
   SymbolTableCollection tables;
   auto calleeTarget = includeOp.getCalleeTarget(tables);
@@ -210,25 +214,34 @@ classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
     return std::nullopt;
   }
 
-  if (hasInfluence(summary.influenceInfo.influence, ForbiddenPreconditionInfluence::StructMember)) {
-    return ForbiddenIncludedPrecondition {
-        .includeOp = includeOp,
-        .calleePrecondition = summary.failingPrecondition,
-        .kind = ForbiddenRequireConditionKind::StructMember,
-        .sourceLocs = summary.influenceInfo.structMemberLocs,
-    };
+  ForbiddenIncludedPreconditions result {.includeOp = includeOp, .failures = {}};
+  for (const auto &failure : summary.failures) {
+    if (hasInfluence(
+            failure.influenceInfo.influence, ForbiddenPreconditionInfluence::StructMember
+        )) {
+      result.failures.push_back(
+          ForbiddenIncludedPrecondition {
+              .calleePrecondition = failure.precondition,
+              .kind = ForbiddenRequireConditionKind::StructMember,
+              .sourceLocs = failure.influenceInfo.structMemberLocs,
+          }
+      );
+      continue;
+    }
+    if (hasInfluence(
+            failure.influenceInfo.influence, ForbiddenPreconditionInfluence::FunctionReturn
+        )) {
+      result.failures.push_back(
+          ForbiddenIncludedPrecondition {
+              .calleePrecondition = failure.precondition,
+              .kind = ForbiddenRequireConditionKind::FunctionReturn,
+              .sourceLocs = {},
+          }
+      );
+    }
   }
-  if (hasInfluence(
-          summary.influenceInfo.influence, ForbiddenPreconditionInfluence::FunctionReturn
-      )) {
-    return ForbiddenIncludedPrecondition {
-        .includeOp = includeOp,
-        .calleePrecondition = summary.failingPrecondition,
-        .kind = ForbiddenRequireConditionKind::FunctionReturn,
-        .sourceLocs = {},
-    };
-  }
-  return std::nullopt;
+  return result.failures.empty() ? std::nullopt
+                                 : std::optional<ForbiddenIncludedPreconditions>(result);
 }
 
 // Map a classified restriction failure to the verifier diagnostic emitted on
@@ -257,32 +270,42 @@ LogicalResult emitForbiddenPrecondition(
   llvm_unreachable("unknown forbidden require condition kind");
 }
 
-LogicalResult emitForbiddenIncludedPrecondition(
-    IncludeOp includeOp, PreconditionOpInterface calleePrecondition,
-    ForbiddenRequireConditionKind kind, llvm::ArrayRef<Location> sourceLocs = {}
+LogicalResult emitForbiddenIncludedPreconditions(
+    IncludeOp includeOp, llvm::ArrayRef<ForbiddenIncludedPrecondition> failures
 ) {
-  switch (kind) {
-  case ForbiddenRequireConditionKind::MainContract:
-    llvm_unreachable("main-contract restriction is not emitted for includes");
-  case ForbiddenRequireConditionKind::StructMember: {
-    InFlightDiagnostic diag = includeOp.emitOpError(
-        "includes a precondition whose condition cannot be derived from a struct member value"
+  bool sawStructMember = false;
+  bool sawFunctionReturn = false;
+  for (const ForbiddenIncludedPrecondition &failure : failures) {
+    sawStructMember |= failure.kind == ForbiddenRequireConditionKind::StructMember;
+    sawFunctionReturn |= failure.kind == ForbiddenRequireConditionKind::FunctionReturn;
+  }
+
+  InFlightDiagnostic diag = [&]() -> InFlightDiagnostic {
+    if (sawStructMember && sawFunctionReturn) {
+      return includeOp.emitOpError(
+          "includes preconditions whose conditions cannot be derived from forbidden sources"
+      );
+    }
+    if (sawStructMember) {
+      return includeOp.emitOpError(
+          "includes preconditions whose conditions cannot be derived from a struct member value"
+      );
+    }
+    return includeOp.emitOpError(
+        "includes preconditions whose conditions cannot be derived from a function return value"
     );
-    diag.attachNote(calleePrecondition->getLoc()) << "included precondition triggered here";
-    for (auto sourceLoc : sourceLocs) {
+  }();
+
+  for (const ForbiddenIncludedPrecondition &failure : failures) {
+    if (failure.calleePrecondition) {
+      diag.attachNote(failure.calleePrecondition->getLoc())
+          << "included precondition triggered here";
+    }
+    for (Location sourceLoc : failure.sourceLocs) {
       diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
     }
-    return diag;
   }
-  case ForbiddenRequireConditionKind::FunctionReturn: {
-    InFlightDiagnostic diag = includeOp.emitOpError(
-        "includes a precondition whose condition cannot be derived from a function return value"
-    );
-    diag.attachNote(calleePrecondition->getLoc()) << "included precondition triggered here";
-    return diag;
-  }
-  }
-  llvm_unreachable("unknown forbidden require condition kind");
+  return diag;
 }
 
 } // namespace
@@ -651,10 +674,7 @@ LogicalResult ContractOp::verifyRegions() {
 
   for (IncludeOp includeOp : includeOps) {
     if (auto forbidden = classifyForbiddenIncludedPrecondition(module, includeOp)) {
-      return emitForbiddenIncludedPrecondition(
-          forbidden->includeOp, forbidden->calleePrecondition, forbidden->kind,
-          forbidden->sourceLocs.getArrayRef()
-      );
+      return emitForbiddenIncludedPreconditions(forbidden->includeOp, forbidden->failures);
     }
   }
 

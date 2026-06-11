@@ -151,19 +151,29 @@ struct CallableSummaryKeyInfo : llvm::DenseMapInfo<CallableSummaryKey> {
   }
 };
 
-/// Summary of an included-contract precondition failure under a specific caller
+/// One included precondition that becomes illegal under a specific caller
 /// binding.
 ///
-/// The include verifier memoizes whether a contract remains valid when its
-/// entry arguments are seeded with the forbidden-influence classification of the
-/// corresponding `verif.include` operands. If a failure occurs, this structure
-/// records the first offending callee precondition together with the merged
-/// influence information that caused it to become illegal.
-struct IncludedContractSummary {
-  verif::PreconditionOpInterface failingPrecondition {};
+/// The include verifier tracks each failing nested precondition separately so a
+/// single `verif.include` diagnostic can report every included `require_*`
+/// that becomes illegal under the caller's operand binding.
+struct IncludedContractFailure {
+  verif::PreconditionOpInterface precondition {};
   InfluenceInfo influenceInfo = InfluenceInfo::None();
+};
 
-  explicit operator bool() const { return static_cast<bool>(failingPrecondition); }
+/// Summary of all included-contract precondition failures under a specific
+/// caller binding.
+///
+/// The include verifier memoizes whether a contract remains valid when its
+/// entry arguments are seeded with the forbidden-influence classification of
+/// the corresponding `verif.include` operands. If failures occur, this
+/// structure records each offending callee precondition together with the
+/// merged influence information that caused it to become illegal.
+struct IncludedContractSummary {
+  llvm::SmallVector<IncludedContractFailure> failures;
+
+  explicit operator bool() const { return !failures.empty(); }
 };
 
 /// Cache key for one interprocedural included-contract summary query.
@@ -230,7 +240,7 @@ public:
   );
 
   /// Check whether an included contract becomes invalid under caller-provided
-  /// operand influences, returning the first failing callee precondition if so.
+  /// operand influences, returning every failing callee precondition if so.
   IncludedContractSummary analyzeIncludedContract(
       verif::ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences
   );
