@@ -81,6 +81,60 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeValue(Value valu
   return result;
 }
 
+InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzePreconditionOp(
+    PreconditionOpInterface preCondOp
+) {
+  return mergeInfluenceInfo(
+      analyzeValue(preCondOp.getCondition()), analyzeControlAncestors(preCondOp.getOperation())
+  );
+}
+
+InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeControlAncestors(Operation *op) {
+  if (auto it = controlAncestorCache.find(op); it != controlAncestorCache.end()) {
+    return it->second;
+  }
+
+  InfluenceInfo result = makeInfluenceInfo(Influence::None);
+  Operation *current = op;
+  while (Operation *parentOp = current->getParentOp()) {
+    if (isa<ContractOp>(parentOp)) {
+      break;
+    }
+    result = mergeInfluenceInfo(result, analyzeAncestorControl(parentOp, current));
+    current = parentOp;
+  }
+
+  controlAncestorCache[op] = result;
+  return result;
+}
+
+InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeAncestorControl(
+    Operation *ancestor, Operation *nestedOp
+) {
+  if (auto ifOp = dyn_cast<scf::IfOp>(ancestor)) {
+    return analyzeValue(ifOp.getCondition());
+  }
+  if (auto forOp = dyn_cast<scf::ForOp>(ancestor)) {
+    return mergeInfluenceInfo(
+        analyzeValue(forOp.getLowerBound()), analyzeValue(forOp.getUpperBound()),
+        analyzeValue(forOp.getStep())
+    );
+  }
+  if (auto whileOp = dyn_cast<scf::WhileOp>(ancestor)) {
+    InfluenceInfo result = analyzeValue(whileOp.getConditionOp().getCondition());
+    Region *nestedRegion = nestedOp->getParentRegion();
+    if (nestedRegion == &whileOp.getAfter()) {
+      unsigned beforeArgCount = whileOp.getBefore().front().getNumArguments();
+      for (unsigned i = 0; i < beforeArgCount; ++i) {
+        result =
+            mergeInfluenceInfo(result, analyzeValue(whileOp.getBefore().front().getArgument(i)));
+      }
+    }
+    return result;
+  }
+  return makeInfluenceInfo(Influence::None);
+}
+
 InfluenceInfo
 ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeBlockArgument(BlockArgument blockArg) {
   Block *owner = blockArg.getOwner();
@@ -210,6 +264,22 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::analyzeContractValue(ContractOp contra
   auto [it, inserted] = cachedFrames.try_emplace(contract, *this, contract, argInfluenceInfos);
   assert(inserted && "lookup failure");
   return it->second.analyzeValue(value);
+}
+
+InfluenceInfo ForbiddenInfluenceAnalyzer::analyzePreconditionOp(
+    ContractOp contract, PreconditionOpInterface preCondOp
+) {
+  if (auto it = cachedFrames.find(contract); it != cachedFrames.end()) {
+    return it->second.analyzePreconditionOp(preCondOp);
+  }
+
+  llvm::SmallVector<InfluenceInfo> argInfluenceInfos;
+  for (BlockArgument arg : contract.getArguments()) {
+    argInfluenceInfos.push_back(classifyContractArgument(contract, arg));
+  }
+  auto [it, inserted] = cachedFrames.try_emplace(contract, *this, contract, argInfluenceInfos);
+  assert(inserted && "lookup failure");
+  return it->second.analyzePreconditionOp(preCondOp);
 }
 
 InfluenceInfo ForbiddenInfluenceAnalyzer::analyzeCallableResult(

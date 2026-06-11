@@ -603,6 +603,44 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaIfCondition for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    %false = arith.constant false
+    %selected = scf.if %flag -> (i1) {
+      scf.yield %ret_value : i1
+    } else {
+      scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaIfCondition for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    scf.if %ret_value {
+      // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+      verif.require_compute %true
+    }
+  }
+}
+
+
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @same(%a : !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }

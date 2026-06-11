@@ -166,6 +166,11 @@ public:
   /// Classify the forbidden influence reaching a value inside a contract body.
   InfluenceInfo analyzeContractValue(verif::ContractOp contract, mlir::Value value);
 
+  /// Classify the forbidden influence reaching a precondition op, including
+  /// both the condition operand and any enclosing SCF control ancestors.
+  InfluenceInfo
+  analyzePreconditionOp(verif::ContractOp contract, verif::PreconditionOpInterface preCondOp);
+
   /// Summarize the forbidden influence of one callable result under the given
   /// argument influences.
   InfluenceInfo analyzeCallableResult(
@@ -193,7 +198,18 @@ private:
     /// Recursively classify the forbidden influence reaching a single SSA value.
     InfluenceInfo analyzeValue(mlir::Value value);
 
+    /// Classify the forbidden influence reaching a precondition op, including
+    /// its enclosing SCF control-flow ancestors.
+    InfluenceInfo analyzePreconditionOp(verif::PreconditionOpInterface preCondOp);
+
   private:
+    /// Collect forbidden influence from SCF control ancestors that guard the
+    /// execution of `op`.
+    InfluenceInfo analyzeControlAncestors(mlir::Operation *op);
+
+    /// Classify the control dependence introduced by one enclosing SCF op.
+    InfluenceInfo analyzeAncestorControl(mlir::Operation *ancestor, mlir::Operation *nestedOp);
+
     /// Recover the forbidden influence reaching a region block argument.
     InfluenceInfo analyzeBlockArgument(mlir::BlockArgument blockArg);
 
@@ -211,6 +227,7 @@ private:
 
     ForbiddenInfluenceAnalyzer &analyzer;
     llvm::DenseMap<mlir::Value, InfluenceInfo> valueCache;
+    llvm::DenseMap<mlir::Operation *, InfluenceInfo> controlAncestorCache;
     llvm::DenseSet<mlir::Value> activeValues;
   };
 
@@ -233,6 +250,14 @@ inline ForbiddenPreconditionInfluenceInfo analyzeForbiddenPreconditionInfluenceI
     mlir::ModuleOp module, verif::ContractOp contract, mlir::Value value
 ) {
   return detail::ForbiddenInfluenceAnalyzer(module).analyzeContractValue(contract, value);
+}
+
+/// Analyze whether a precondition op depends on forbidden sources, including
+/// both its condition operand and enclosing SCF control ancestors.
+inline ForbiddenPreconditionInfluenceInfo analyzeForbiddenPreconditionOpInfluenceInfo(
+    mlir::ModuleOp module, verif::ContractOp contract, verif::PreconditionOpInterface preCondOp
+) {
+  return detail::ForbiddenInfluenceAnalyzer(module).analyzePreconditionOp(contract, preCondOp);
 }
 
 /// Analyze whether a contract value depends on forbidden precondition sources.

@@ -160,10 +160,11 @@ struct ForbiddenRequireCondition {
   llvm::SmallSetVector<Location, 2> sourceLocs;
 };
 
-std::optional<ForbiddenRequireCondition>
-classifyForbiddenConditionProvenance(ModuleOp module, Value value, ContractOp contract) {
+std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
+    ModuleOp module, PreconditionOpInterface preCondOp, ContractOp contract
+) {
   ForbiddenPreconditionInfluenceInfo influence =
-      analyzeForbiddenPreconditionInfluenceInfo(module, contract, value);
+      analyzeForbiddenPreconditionOpInfluenceInfo(module, contract, preCondOp);
   if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::StructMember)) {
     return ForbiddenRequireCondition {
         .kind = ForbiddenRequireConditionKind::StructMember,
@@ -560,8 +561,7 @@ LogicalResult ContractOp::verifyRegions() {
   }
 
   for (PreconditionOpInterface preCond : preconditionOps) {
-    Value condition = preCond->getOperand(0);
-    if (auto forbidden = classifyForbiddenConditionProvenance(module, condition, *this)) {
+    if (auto forbidden = classifyForbiddenConditionProvenance(module, preCond, *this)) {
       return emitForbiddenPrecondition(
           preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
       );

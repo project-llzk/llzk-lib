@@ -443,6 +443,33 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @check(%ok: i1) {
+    function.return
+  }
+
+  verif.contract @RequireInsideIf for @check (%ok: i1) {
+    %true = arith.constant true
+    scf.if %ok {
+      verif.require_compute %true
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @check(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @RequireInsideIf for @check (%[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      scf.if %[[VAL_1]] {
+// CHECK-NEXT:        verif.require_compute %[[VAL_2]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @same(%a : !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }
