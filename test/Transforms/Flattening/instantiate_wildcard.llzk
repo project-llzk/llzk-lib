@@ -1,0 +1,55 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @FRT {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @free_ret() -> !poly.tvar<@T_return> {
+      %0 = felt.const  0 : <"bn128">
+      %1 = poly.unifiable_cast %0 : (!felt.type<"bn128">) -> !poly.tvar<@T_return>
+      function.return %1 : !poly.tvar<@T_return>
+    }
+  }
+
+  poly.template @synth {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @synth() {
+      %0 = function.call @FRT::@free_ret() : () -> !poly.tvar<@T_return>
+      function.return
+    }
+  }
+
+  poly.template @ComponentC {
+    struct.def @ComponentC {
+      function.def @compute() -> !struct.type<@ComponentC::@ComponentC<[]>> {
+        %self = struct.new : !struct.type<@ComponentC::@ComponentC<[]>>
+        function.call @synth::@synth<[?]>() : () -> ()
+        function.return %self : !struct.type<@ComponentC::@ComponentC<[]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@ComponentC::@ComponentC<[]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @FRT_f_free_ret() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @synth_f_synth() {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @FRT_f_free_ret() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @ComponentC {
+// CHECK-NEXT:      struct.def @ComponentC {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@ComponentC::@ComponentC> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC::@ComponentC>
+// CHECK-NEXT:          function.call @synth_f_synth() : () -> ()
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@ComponentC::@ComponentC>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentC::@ComponentC>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
