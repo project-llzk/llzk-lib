@@ -1,0 +1,19 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @write_only_multi_element_array(%value: index) -> index {
+    %i = arith.constant 0 : index
+    %j = arith.constant 1 : index
+    %ret = arith.constant 42 : index
+    %array = array.new : !array.type<2 x index>
+    array.write %array[%i] = %value : !array.type<2 x index>, index
+    array.write %array[%j] = %value : !array.type<2 x index>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @write_only_multi_element_array(
+// CHECK-NOT:     array.new
+// CHECK-NOT:     array.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index

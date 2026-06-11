@@ -42,9 +42,47 @@ module attributes {llzk.lang} {
     );
   }
 
+  OwningOpRef<ModuleOp> parseModuleWithUnreadMultiElementArrayWrites() {
+    return parseSourceString<ModuleOp>(
+        R"mlir(
+module attributes {llzk.lang} {
+  function.def @unused_multi_write(%value: !felt.type<"babybear">) {
+    %i = arith.constant 0 : index
+    %j = arith.constant 1 : index
+    %array = array.new : !array.type<2 x !felt.type<"babybear">>
+    array.write %array[%i] = %value : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    array.write %array[%j] = %value : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    function.return
+  }
+}
+)mlir",
+        ParserConfig(&ctx)
+    );
+  }
+
+  OwningOpRef<ModuleOp> parseModuleWithReadAfterArrayWrite() {
+    return parseSourceString<ModuleOp>(
+        R"mlir(
+module attributes {llzk.lang} {
+  function.def @read_after_write(%value: !felt.type<"babybear">) -> !felt.type<"babybear"> {
+    %i = arith.constant 0 : index
+    %array = array.new : !array.type<1 x !felt.type<"babybear">>
+    array.write %array[%i] = %value : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+    %loaded = array.read %array[%i] : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+    function.return %loaded : !felt.type<"babybear">
+  }
+}
+)mlir",
+        ParserConfig(&ctx)
+    );
+  }
+
   template <typename ResourceTy> void runCleanup(ModuleOp module) {
     PassManager pm(&ctx);
-    pm.addPass(createSpecializedRemoveUnusedAllocationsPass<CreateArrayOp, ResourceTy>());
+    pm.addPass(
+        createSpecializedRemoveUnusedAllocationsPass<
+            CreateArrayOp, ResourceTy, DiscardableAllocationAccessorOpInterface>()
+    );
     ASSERT_TRUE(succeeded(pm.run(module)));
   }
 
@@ -83,6 +121,27 @@ TEST_F(SpecializedRemoveUnusedAllocationsTest, ErasesUnreadDiscardableAllocation
 
   EXPECT_EQ(countOps<CreateArrayOp>(*module), 0u);
   EXPECT_EQ(countOps<WriteArrayOp>(*module), 0u);
+}
+
+TEST_F(SpecializedRemoveUnusedAllocationsTest, ErasesUnreadMultiElementDiscardableAllocations) {
+  OwningOpRef<ModuleOp> module = parseModuleWithUnreadMultiElementArrayWrites();
+  ASSERT_TRUE(module);
+
+  runCleanup<DiscardableAllocationResource>(*module);
+
+  EXPECT_EQ(countOps<CreateArrayOp>(*module), 0u);
+  EXPECT_EQ(countOps<WriteArrayOp>(*module), 0u);
+}
+
+TEST_F(SpecializedRemoveUnusedAllocationsTest, KeepsAllocationWhenAnyUserReads) {
+  OwningOpRef<ModuleOp> module = parseModuleWithReadAfterArrayWrite();
+  ASSERT_TRUE(module);
+
+  runCleanup<DiscardableAllocationResource>(*module);
+
+  EXPECT_EQ(countOps<CreateArrayOp>(*module), 1u);
+  EXPECT_EQ(countOps<WriteArrayOp>(*module), 1u);
+  EXPECT_EQ(countOps<ReadArrayOp>(*module), 1u);
 }
 
 } // namespace

@@ -151,13 +151,15 @@ std::unique_ptr<SpecializedMem2Reg<AllocOpTy>> createSpecializedMem2RegPass() {
 
 /// Erases allocators of type \p AllocOpTy that are only stored to and never loaded from.
 ///
-/// The allocator must have a `MemAlloc<ResourceTy>` effect. Any read, terminator use,
-/// non-promotable user, or memory op that cannot remove its use keeps the allocator and all users
-/// intact.
-template <typename AllocOpTy, typename ResourceTy>
+/// The allocator must have a `MemAlloc<ResourceTy>` effect and exactly one result. Any read,
+/// terminator use, non-discardable-accessor user, or accessor that cannot be erased as a dead
+/// store keeps the allocator and all users intact.
+template <typename AllocOpTy, typename ResourceTy, typename DiscardableAccessorOpInterfaceTy>
 struct SpecializedRemoveUnusedAllocations
     : mlir::PassWrapper<
-          SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy>, mlir::OperationPass<>> {
+          SpecializedRemoveUnusedAllocations<
+              AllocOpTy, ResourceTy, DiscardableAccessorOpInterfaceTy>,
+          mlir::OperationPass<>> {
 
   mlir::StringRef getArgument() const override {
     return "llzk-specialized-remove-unused-allocations";
@@ -223,45 +225,31 @@ private:
       AllocOpTy allocator, mlir::SmallVectorImpl<mlir::Operation *> &usersToErase,
       const mlir::DataLayout &dataLayout
   ) {
-    if (allocator->use_empty()) {
-      return true;
-    }
-
-    mlir::SmallVector<mlir::MemorySlot> slots = allocator.getPromotableSlots();
-    if (slots.empty()) {
+    if (allocator->getNumResults() != 1) {
       return false;
     }
 
-    for (mlir::OpOperand &use : allocator->getUses()) {
+    mlir::Value allocation = allocator->getResult(0);
+    if (allocation.use_empty()) {
+      return true;
+    }
+
+    for (mlir::OpOperand &use : allocation.getUses()) {
       mlir::Operation *user = use.getOwner();
       if (user->mightHaveTrait<mlir::OpTrait::IsTerminator>()) {
         return false;
       }
 
-      auto memOp = llvm::dyn_cast<mlir::PromotableMemOpInterface>(user);
-      if (!memOp || !canRemoveUse(memOp, use, slots, dataLayout)) {
+      auto accessor = llvm::dyn_cast<DiscardableAccessorOpInterfaceTy>(user);
+      if (!accessor || accessor.loadsFromDiscardableAllocation(allocation) ||
+          !accessor.storesToDiscardableAllocation(allocation) ||
+          !accessor.canEraseAsDeadStoreTo(allocation, dataLayout)) {
         return false;
       }
       usersToErase.push_back(user);
     }
 
     return true;
-  }
-
-  /// Returns true when \p use is the only blocking use of a removable store for a candidate slot.
-  static bool canRemoveUse(
-      mlir::PromotableMemOpInterface memOp, mlir::OpOperand &use,
-      llvm::ArrayRef<mlir::MemorySlot> slots, const mlir::DataLayout &dataLayout
-  ) {
-    llvm::SmallPtrSet<mlir::OpOperand *, 1> blockingUses;
-    blockingUses.insert(&use);
-
-    return llvm::any_of(slots, [&](mlir::MemorySlot slot) {
-      mlir::SmallVector<mlir::OpOperand *> newBlockingUses;
-      return memOp.storesTo(slot) && !memOp.loadsFrom(slot) &&
-             memOp.canUsesBeRemoved(slot, blockingUses, newBlockingUses, dataLayout) &&
-             newBlockingUses.empty();
-    });
   }
 
   /// Collects operand definitions that may become dead after \p opsToErase are removed.
@@ -315,10 +303,12 @@ private:
 };
 
 /// Pass factory for `SpecializedRemoveUnusedAllocations`.
-template <typename AllocOpTy, typename ResourceTy>
-std::unique_ptr<SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy>>
+template <typename AllocOpTy, typename ResourceTy, typename DiscardableAccessorOpInterfaceTy>
+std::unique_ptr<
+    SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy, DiscardableAccessorOpInterfaceTy>>
 createSpecializedRemoveUnusedAllocationsPass() {
-  return std::make_unique<SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy>>();
+  return std::make_unique<SpecializedRemoveUnusedAllocations<
+      AllocOpTy, ResourceTy, DiscardableAccessorOpInterfaceTy>>();
 }
 
 } // namespace llzk

@@ -44,7 +44,9 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     : ArrayAccessOpBase<
           mnemonic,
           traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
-                  DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>,
+                  DeclareOpInterfaceMethods<
+                      DiscardableAllocationAccessorOpInterface>]> {
   let extraClassDefinition = [{
     /// Required by DestructurableAllocationOpInterface / SROA pass
     bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
@@ -85,6 +87,23 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     /// Return `true` if the op is a read, `false` if it's a write.
     bool $cppClass::isRead() {
       return }]#!if(isRead, "true", "false")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::loadsFromDiscardableAllocation(::mlir::Value ptr) {
+      return }]#!if(isRead, "getArrRef() == ptr", "false")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::storesToDiscardableAllocation(::mlir::Value ptr) {
+      return }]#!if(isRead, "false", "getArrRef() == ptr")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::canEraseAsDeadStoreTo(::mlir::Value ptr,
+                                          const ::mlir::DataLayout & /*dataLayout*/) {
+      }]#!if(isRead, "return false",
+             "return getArrRef() == ptr && getRvalue() != ptr")#[{;
     }
   }];
 }

@@ -83,4 +83,28 @@ def ArrayAccessOpInterface
   }];
 }
 
+def DiscardableAllocationAccessorOpInterface
+    : OpInterface<"DiscardableAllocationAccessorOpInterface"> {
+  let description = [{
+    Interface for operations that can classify and erase their use of a
+    discardable allocation without requiring that allocation to be promotable.
+  }];
+  let cppNamespace = "::llzk::array";
+
+  let methods =
+      [InterfaceMethod<
+           [{Returns true if this op reads from the allocation represented by `ptr`.}],
+           "bool", "loadsFromDiscardableAllocation",
+           (ins "::mlir::Value":$ptr)>,
+       InterfaceMethod<
+           [{Returns true if this op writes to the allocation represented by `ptr`.}],
+           "bool", "storesToDiscardableAllocation", (ins "::mlir::Value":$ptr)>,
+       InterfaceMethod<
+           [{Returns true if this op can be erased as a dead store to `ptr`.}],
+           "bool", "canEraseAsDeadStoreTo",
+           (ins "::mlir::Value":$ptr,
+               "const ::mlir::DataLayout &":$dataLayout)>,
+  ];
+}
+
 #endif // LLZK_ARRAY_OP_INTERFACES
