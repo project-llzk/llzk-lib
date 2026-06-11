@@ -2528,7 +2528,9 @@ private:
     }
 
     OpPassManager allocationCleanup(ModuleOp::getOperationName());
-    allocationCleanup.addPass(createSpecializedRemoveUnusedAllocationsPass<CreateArrayOp>());
+    allocationCleanup.addPass(
+        createSpecializedRemoveUnusedAllocationsPass<CreateArrayOp, DiscardableAllocationResource>()
+    );
     return runPipeline(allocationCleanup, modOp);
   }
 

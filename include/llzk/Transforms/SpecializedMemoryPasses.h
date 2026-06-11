@@ -130,14 +130,15 @@ std::unique_ptr<SpecializedMem2Reg<AllocOpTy>> createSpecializedMem2RegPass() {
   return std::make_unique<SpecializedMem2Reg<AllocOpTy>>();
 }
 
-/// Erases allocators of type \p AllocOpTy whose remaining direct users are write-only memory ops.
+/// Erases allocators of type \p AllocOpTy that are only stored to and never loaded from.
 ///
-/// Any read, terminator use, non-promotable user, or memory op that cannot remove its use keeps the
-/// allocator and all users intact. Use this only for allocators that can be discarded when no
-/// stored value is read.
-template <typename AllocOpTy>
+/// The allocator must have a `MemAlloc<ResourceTy>` effect. Any read, terminator use,
+/// non-promotable user, or memory op that cannot remove its use keeps the allocator and all users
+/// intact.
+template <typename AllocOpTy, typename ResourceTy>
 struct SpecializedRemoveUnusedAllocations
-    : mlir::PassWrapper<SpecializedRemoveUnusedAllocations<AllocOpTy>, mlir::OperationPass<>> {
+    : mlir::PassWrapper<
+          SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy>, mlir::OperationPass<>> {
 
   mlir::StringRef getArgument() const override {
     return "llzk-specialized-remove-unused-allocations";
@@ -162,7 +163,8 @@ struct SpecializedRemoveUnusedAllocations
 
       scopeOp->walk([&](AllocOpTy allocator) {
         mlir::SmallVector<mlir::Operation *> usersToErase;
-        if (!collectRemovableUsers(allocator, usersToErase, dataLayout)) {
+        if (!hasRequiredAllocationEffect(allocator) ||
+            !collectRemovableUsers(allocator, usersToErase, dataLayout)) {
           return;
         }
         for (mlir::Operation *user : usersToErase) {
@@ -191,6 +193,21 @@ struct SpecializedRemoveUnusedAllocations
   }
 
 private:
+  /// Returns true when the allocator is explicitly marked as safe for this cleanup pass.
+  static bool hasRequiredAllocationEffect(AllocOpTy allocator) {
+    auto effectInterface = llvm::dyn_cast<mlir::MemoryEffectOpInterface>(allocator.getOperation());
+    if (!effectInterface) {
+      return false;
+    }
+
+    llvm::SmallVector<mlir::SideEffects::EffectInstance<mlir::MemoryEffects::Effect>, 4> effects;
+    effectInterface.getEffects(effects);
+    return llvm::any_of(effects, [](const auto &effect) {
+      return llvm::isa<mlir::MemoryEffects::Allocate>(effect.getEffect()) &&
+             llvm::isa<ResourceTy>(effect.getResource());
+    });
+  }
+
   /// Collects direct write-only users, returning false if any user can read or retain the
   /// allocation.
   static bool collectRemovableUsers(
@@ -289,10 +306,10 @@ private:
 };
 
 /// Pass factory for `SpecializedRemoveUnusedAllocations`.
-template <typename AllocOpTy>
-std::unique_ptr<SpecializedRemoveUnusedAllocations<AllocOpTy>>
+template <typename AllocOpTy, typename ResourceTy>
+std::unique_ptr<SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy>>
 createSpecializedRemoveUnusedAllocationsPass() {
-  return std::make_unique<SpecializedRemoveUnusedAllocations<AllocOpTy>>();
+  return std::make_unique<SpecializedRemoveUnusedAllocations<AllocOpTy, ResourceTy>>();
 }
 
 } // namespace llzk
