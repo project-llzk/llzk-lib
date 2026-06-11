@@ -319,8 +319,7 @@ void ContractOp::initializeEmptyBody(
 }
 
 void ContractOp::build(
-    OpBuilder &odsBuilder, OperationState &odsState, StringRef name,
-    llvm::StringRef target
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef name, llvm::StringRef target
 ) {
   build(odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target));
 }
