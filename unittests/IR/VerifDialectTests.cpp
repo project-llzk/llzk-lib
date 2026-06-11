@@ -100,6 +100,34 @@ module attributes {llzk.lang} {
   EXPECT_FALSE(contracts.front().hasStructTarget());
 }
 
+TEST_F(VerifDialectTests, BuilderCreatesContractBodyWithImplicitTerminator) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @check() {
+    function.return
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  ASSERT_TRUE(parsed);
+
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(parsed->getBody());
+  auto contract = builder.create<ContractOp>(
+      builder.getUnknownLoc(), "Built", SymbolRefAttr::get(&ctx, "check"),
+      FunctionType::get(&ctx, TypeRange {}, TypeRange {}), ArrayAttr()
+  );
+
+  auto &body = contract.getBody();
+  ASSERT_FALSE(body.empty());
+  ASSERT_EQ(body.getBlocks().size(), 1u);
+  ASSERT_NE(body.front().getTerminator(), nullptr);
+  EXPECT_TRUE(isa<ContractEndOp>(body.front().getTerminator()));
+  EXPECT_TRUE(verify(contract, true));
+  EXPECT_TRUE(succeeded(mlir::verify(parsed.get())));
+}
+
 TEST_F(VerifDialectTests, IncludeVerifiesKnownCalleeContracts) {
   constexpr StringLiteral source = R"mlir(
 module attributes {llzk.lang} {
@@ -305,7 +333,9 @@ TEST_F(VerifDialectTests, CustomBuilderInfersFunctionTargetContractInvariants) {
   EXPECT_EQ(contract.getTarget().getRootReference().getValue(), "TargetFn");
   EXPECT_EQ(contract.getFunctionType(), target->getFunctionType());
   EXPECT_EQ(contract.getArgAttrsAttr(), target->getArgAttrsAttr());
-  EXPECT_TRUE(contract.getBody().empty());
+  ASSERT_FALSE(contract.getBody().empty());
+  ASSERT_EQ(contract.getBody().getBlocks().size(), 1u);
+  EXPECT_TRUE(isa<ContractEndOp>(contract.getBody().front().getTerminator()));
 
   SymbolTable table(*mod);
   table.insert(contract);
@@ -333,7 +363,9 @@ TEST_F(VerifDialectTests, CustomBuilderInfersStructTargetSignatureAndArgAttrs) {
   EXPECT_EQ(contract.getTarget().getRootReference().getValue(), structNameA);
   EXPECT_EQ(contract.getFunctionType(), targetConstrain->getFunctionType());
   EXPECT_EQ(contract.getArgAttrsAttr(), targetConstrain->getArgAttrsAttr());
-  EXPECT_TRUE(contract.getBody().empty());
+  ASSERT_FALSE(contract.getBody().empty());
+  ASSERT_EQ(contract.getBody().getBlocks().size(), 1u);
+  EXPECT_TRUE(isa<ContractEndOp>(contract.getBody().front().getTerminator()));
 
   EXPECT_TRUE(verify(contract, true));
   EXPECT_TRUE(contract.hasStructTarget());
@@ -371,7 +403,9 @@ module attributes {llzk.lang} {
   EXPECT_EQ(contract.getTarget(), targetAttr);
   EXPECT_EQ(contract.getFunctionType(), target.getFunctionType());
   EXPECT_EQ(contract.getArgAttrsAttr(), target.getArgAttrsAttr());
-  EXPECT_TRUE(contract.getBody().empty());
+  ASSERT_FALSE(contract.getBody().empty());
+  ASSERT_EQ(contract.getBody().getBlocks().size(), 1u);
+  EXPECT_TRUE(isa<ContractEndOp>(contract.getBody().front().getTerminator()));
 
   ASSERT_TRUE(verify(contract, true));
   EXPECT_TRUE(contract.hasFuncTarget());

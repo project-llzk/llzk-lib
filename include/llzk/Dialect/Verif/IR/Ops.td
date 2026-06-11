@@ -151,8 +151,58 @@ def ContractOp
   let hasVerifier = 1;
   let hasRegionVerifier = 1;
 
-  // Builder that infers all information from the target.
-  let builders = [OpBuilder<(ins "::llvm::StringRef":$name,
+  // Define builders manually so builder-created contracts always contain a
+  // complete single-block body with the implicit `verif.contract_end`.
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::TypeAttr":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+      }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::mlir::StringAttr":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::TypeAttr":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        $_state.getOrAddProperties<Properties>().sym_name = sym_name;
+        $_state.getOrAddProperties<Properties>().target = target;
+        $_state.getOrAddProperties<Properties>().function_type = function_type;
+        if (arg_attrs) {
+          $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        initializeEmptyBody(
+            $_builder, $_state, ::mlir::cast<::mlir::FunctionType>(function_type.getValue())
+        );
+        assert(resultTypes.size() == 0u && "mismatched number of results");
+        $_state.addTypes(resultTypes);
+      }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::FunctionType":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+      }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::llvm::StringRef":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::FunctionType":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        $_state.getOrAddProperties<Properties>().sym_name = $_builder.getStringAttr(sym_name);
+        $_state.getOrAddProperties<Properties>().target = target;
+        $_state.getOrAddProperties<Properties>().function_type = ::mlir::TypeAttr::get(function_type);
+        if (arg_attrs) {
+          $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        initializeEmptyBody($_builder, $_state, function_type);
+        assert(resultTypes.size() == 0u && "mismatched number of results");
+        $_state.addTypes(resultTypes);
+      }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$name,
                       "llvm::StringRef":$target)>,
                   OpBuilder<(ins "::llvm::StringRef":$name,
                       "::mlir::SymbolRefAttr":$target)>];
@@ -236,6 +286,14 @@ def ContractOp
       ::mlir::SymbolTableCollection tables;
       return getFuncTarget(tables);
     }
+
+  private:
+    /// Populate a builder-created contract body with one entry block matching
+    /// the function signature and insert the implicit `verif.contract_end`.
+    static void initializeEmptyBody(
+        ::mlir::OpBuilder &builder, ::mlir::OperationState &state,
+        ::mlir::FunctionType functionType
+    );
   }];
 }
 

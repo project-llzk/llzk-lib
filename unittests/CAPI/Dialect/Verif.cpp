@@ -73,12 +73,19 @@ static mlir::OwningOpRef<mlir::ModuleOp> createModuleWithTargetFunc(
 static llzk::verif::ContractOp createCppContract(
     MlirOpBuilder builder, MlirLocation location, llvm::StringRef name, llvm::StringRef target
 ) {
-  auto contract = unwrap(builder)->create<llzk::verif::ContractOp>(
+  return unwrap(builder)->create<llzk::verif::ContractOp>(
       unwrap(location), name, mlir::SymbolRefAttr::get(unwrap(builder)->getContext(), target),
       mlir::FunctionType::get(unwrap(builder)->getContext(), {}, {}), mlir::ArrayAttr()
   );
-  contract.getBody().emplaceBlock();
-  return contract;
+}
+
+static void expectContractHasImplicitTerminator(MlirOperation op) {
+  auto contract = llvm::cast<llzk::verif::ContractOp>(unwrap(op));
+  auto &body = contract.getBody();
+  ASSERT_FALSE(body.empty());
+  ASSERT_EQ(body.getBlocks().size(), 1u);
+  ASSERT_NE(body.front().getTerminator(), nullptr);
+  EXPECT_TRUE(llvm::isa<llzk::verif::ContractEndOp>(body.front().getTerminator()));
 }
 
 } // namespace
@@ -96,13 +103,12 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildSmoke) {
       unwrap(location), "Base", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
       mlir::ArrayAttr()
   );
-  base.getBody().emplaceBlock();
+  expectContractHasImplicitTerminator(wrap(base));
 
   auto wrapper = unwrap(builder)->create<llzk::verif::ContractOp>(
       unwrap(location), "Wrapper", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
       mlir::ArrayAttr()
   );
-  wrapper.getBody().emplaceBlock();
   unwrap(builder)->setInsertionPointToStart(&wrapper.getBody().front());
 
   MlirOperation includeOp = llzkVerif_IncludeOpBuild(
@@ -144,6 +150,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildAndVerifyInModule) {
   ));
   EXPECT_TRUE(!llzkVerif_ContractOpHasStructTarget(op));
   EXPECT_TRUE(llzkVerif_ContractOpHasFuncTarget(op));
+  expectContractHasImplicitTerminator(op);
 
   mlirOpBuilderDestroy(builder);
 }
@@ -172,6 +179,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildFromTarget) {
   ));
   EXPECT_TRUE(!llzkVerif_ContractOpHasStructTarget(op));
   EXPECT_TRUE(llzkVerif_ContractOpHasFuncTarget(op));
+  expectContractHasImplicitTerminator(op);
 
   mlirOpBuilderDestroy(builder);
 }
@@ -198,6 +206,7 @@ TEST_F(CAPITest, llzkVerifContractOpBuildFromTargetAttr) {
   EXPECT_TRUE(mlirAttributeEqual(
       llzkVerif_ContractOpGetTarget(op), createFlatSymbolRefAttr(context, "target")
   ));
+  expectContractHasImplicitTerminator(op);
 
   mlirOpBuilderDestroy(builder);
 }
@@ -231,6 +240,7 @@ module attributes {llzk.lang} {
   EXPECT_TRUE(llzkOperationIsA_Verif_ContractOp(op));
   EXPECT_TRUE(mlirOperationVerify(op));
   EXPECT_TRUE(mlirAttributeEqual(llzkVerif_ContractOpGetTarget(op), target));
+  expectContractHasImplicitTerminator(op);
 
   mlirOpBuilderDestroy(builder);
 }
@@ -248,13 +258,12 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
       unwrap(location), "Base", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
       mlir::ArrayAttr()
   );
-  base.getBody().emplaceBlock();
+  expectContractHasImplicitTerminator(wrap(base));
 
   auto wrapper = unwrap(builder)->create<llzk::verif::ContractOp>(
       unwrap(location), "Wrapper", mlir::SymbolRefAttr::get(unwrap(context), "target"), funcType,
       mlir::ArrayAttr()
   );
-  wrapper.getBody().emplaceBlock();
   unwrap(builder)->setInsertionPointToStart(&wrapper.getBody().front());
 
   MlirOperation includeOp = llzkVerif_IncludeOpBuild(
@@ -279,6 +288,17 @@ TEST_F(CAPITest, llzkVerifIncludeOpBuildAndResolveCallable) {
 
   mlirOpBuilderDestroy(builder);
 }
+
+struct ContractOpBuildFuncHelper : public TestAnyBuildFuncHelper<CAPITest> {
+  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Verif_ContractOp(op); }
+  void doOtherChecks(MlirOperation op) override { expectContractHasImplicitTerminator(op); }
+  static std::unique_ptr<ContractOpBuildFuncHelper> get();
+
+protected:
+  ContractOpBuildFuncHelper() = default;
+};
+
+TEST_F(CAPITest, ContractOp_build_pass) { ContractOpBuildFuncHelper::get()->run(*this); }
 
 // Implementation for `ContractOp_build_pass` test.
 std::unique_ptr<ContractOpBuildFuncHelper> ContractOpBuildFuncHelper::get() {
@@ -332,6 +352,7 @@ std::unique_ptr<ContractEndOpBuildFuncHelper> ContractEndOpBuildFuncHelper::get(
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       this->parentModule = createModuleWithTargetFunc(testClass, builder, location, "target");
       auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+      contract.getBody().front().getTerminator()->erase();
       unwrap(builder)->setInsertionPointToEnd(&contract.getBody().front());
       return llzkVerif_ContractEndOpBuild(builder, location);
     }

@@ -316,6 +316,19 @@ namespace llzk::verif {
 // ContractOp
 //===------------------------------------------------------------------===//
 
+void ContractOp::initializeEmptyBody(
+    ::mlir::OpBuilder &builder, ::mlir::OperationState &state, ::mlir::FunctionType functionType
+) {
+  Region *body = state.addRegion();
+  auto *entryBlock = new Block();
+
+  SmallVector<Location> argLocs(functionType.getNumInputs(), state.location);
+  entryBlock->addArguments(functionType.getInputs(), argLocs);
+  body->push_back(entryBlock);
+
+  ContractOp::ensureTerminator(*body, builder, state.location);
+}
+
 void ContractOp::build(
     ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
     llvm::StringRef target
