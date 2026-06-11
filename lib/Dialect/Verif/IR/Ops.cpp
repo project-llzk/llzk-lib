@@ -161,7 +161,7 @@ struct ForbiddenRequireCondition {
 };
 
 struct ForbiddenIncludedPrecondition {
-  PreconditionOpInterface calleePrecondition;
+  std::optional<Location> calleePreconditionLoc = std::nullopt;
   ForbiddenRequireConditionKind kind;
   llvm::SmallSetVector<Location, 2> sourceLocs;
 };
@@ -198,18 +198,8 @@ classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
   if (failed(calleeTarget)) {
     return std::nullopt;
   }
-  ContractOp calleeContract = calleeTarget->get();
-
-  llvm::SmallVector<ForbiddenPreconditionInfluenceInfo> argInfluences;
-  argInfluences.reserve(includeOp.getArgOperands().size());
   ContractOp parentContract = includeOp->getParentOfType<ContractOp>();
-  for (Value operand : includeOp.getArgOperands()) {
-    argInfluences.push_back(
-        analyzeForbiddenPreconditionInfluenceInfo(module, parentContract, operand)
-    );
-  }
-
-  auto summary = analyzeForbiddenIncludedContractSummary(module, calleeContract, argInfluences);
+  auto summary = analyzeForbiddenIncludedOpSummary(module, parentContract, includeOp);
   if (!summary) {
     return std::nullopt;
   }
@@ -221,7 +211,7 @@ classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
         )) {
       result.failures.push_back(
           ForbiddenIncludedPrecondition {
-              .calleePrecondition = failure.precondition,
+              .calleePreconditionLoc = failure.preconditionLoc,
               .kind = ForbiddenRequireConditionKind::StructMember,
               .sourceLocs = failure.influenceInfo.structMemberLocs,
           }
@@ -233,7 +223,7 @@ classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
         )) {
       result.failures.push_back(
           ForbiddenIncludedPrecondition {
-              .calleePrecondition = failure.precondition,
+              .calleePreconditionLoc = failure.preconditionLoc,
               .kind = ForbiddenRequireConditionKind::FunctionReturn,
               .sourceLocs = {},
           }
@@ -297,9 +287,8 @@ LogicalResult emitForbiddenIncludedPreconditions(
   }();
 
   for (const ForbiddenIncludedPrecondition &failure : failures) {
-    if (failure.calleePrecondition) {
-      diag.attachNote(failure.calleePrecondition->getLoc())
-          << "included precondition triggered here";
+    if (failure.calleePreconditionLoc) {
+      diag.attachNote(*failure.calleePreconditionLoc) << "included precondition triggered here";
     }
     for (Location sourceLoc : failure.sourceLocs) {
       diag.attachNote(sourceLoc) << "forbidden struct member value originates here";

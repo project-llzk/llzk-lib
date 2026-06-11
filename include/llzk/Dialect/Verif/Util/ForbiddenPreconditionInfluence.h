@@ -158,7 +158,7 @@ struct CallableSummaryKeyInfo : llvm::DenseMapInfo<CallableSummaryKey> {
 /// single `verif.include` diagnostic can report every included `require_*`
 /// that becomes illegal under the caller's operand binding.
 struct IncludedContractFailure {
-  verif::PreconditionOpInterface precondition {};
+  std::optional<mlir::Location> preconditionLoc = std::nullopt;
   InfluenceInfo influenceInfo = InfluenceInfo::None();
 };
 
@@ -185,9 +185,11 @@ struct IncludedContractSummary {
 struct IncludedContractSummaryKey {
   mlir::Operation *contract {};
   llvm::SmallVector<InfluenceInfo> argInfluences;
+  InfluenceInfo inheritedControlInfluence = InfluenceInfo::None();
 
   bool operator==(const IncludedContractSummaryKey &other) const {
-    return contract == other.contract && argInfluences == other.argInfluences;
+    return contract == other.contract && argInfluences == other.argInfluences &&
+           inheritedControlInfluence == other.inheritedControlInfluence;
   }
 };
 
@@ -202,7 +204,8 @@ struct IncludedContractSummaryKeyInfo : llvm::DenseMapInfo<IncludedContractSumma
 
   static unsigned getHashValue(const IncludedContractSummaryKey &key) {
     return llvm::hash_combine(
-        key.contract, llvm::hash_combine_range(key.argInfluences.begin(), key.argInfluences.end())
+        key.contract, key.inheritedControlInfluence,
+        llvm::hash_combine_range(key.argInfluences.begin(), key.argInfluences.end())
     );
   }
 
@@ -242,8 +245,13 @@ public:
   /// Check whether an included contract becomes invalid under caller-provided
   /// operand influences, returning every failing callee precondition if so.
   IncludedContractSummary analyzeIncludedContract(
-      verif::ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences
+      verif::ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences,
+      InfluenceInfo inheritedControlInfluence = InfluenceInfo::None()
   );
+
+  /// Check whether an include op becomes invalid under its caller's operand
+  /// bindings and enclosing SCF control ancestors.
+  IncludedContractSummary analyzeIncludedOp(verif::ContractOp contract, verif::IncludeOp includeOp);
 
 private:
   /// Callable-local recursive walker used while analyzing one contract or
@@ -259,7 +267,8 @@ private:
     /// Seed a callable-local analysis frame with the current argument influences.
     AnalysisFrame(
         ForbiddenInfluenceAnalyzer &parentAnalyzer, mlir::CallableOpInterface callableOp,
-        llvm::ArrayRef<InfluenceInfo> argInfluenceInfos
+        llvm::ArrayRef<InfluenceInfo> argInfluenceInfos,
+        InfluenceInfo inheritedControlInfluence = InfluenceInfo::None()
     );
 
     /// Recursively classify the forbidden influence reaching a single SSA value.
@@ -304,6 +313,7 @@ private:
     llvm::DenseMap<mlir::Value, InfluenceInfo> valueCache;
     llvm::DenseMap<mlir::Operation *, InfluenceInfo> controlAncestorCache;
     llvm::DenseSet<mlir::Value> activeValues;
+    InfluenceInfo inheritedControlInfluence = InfluenceInfo::None();
   };
 
   /// Classify whether a contract entry argument is an allowed input or a
@@ -379,6 +389,15 @@ inline detail::IncludedContractSummary analyzeForbiddenIncludedContractSummary(
   return detail::ForbiddenInfluenceAnalyzer(module).analyzeIncludedContract(
       calleeContract, argInfluences
   );
+}
+
+/// Analyze whether a specific include op triggers forbidden preconditions in
+/// the callee, including both caller operand bindings and caller-side SCF
+/// control ancestors.
+inline detail::IncludedContractSummary analyzeForbiddenIncludedOpSummary(
+    mlir::ModuleOp module, verif::ContractOp contract, verif::IncludeOp includeOp
+) {
+  return detail::ForbiddenInfluenceAnalyzer(module).analyzeIncludedOp(contract, includeOp);
 }
 
 } // namespace llzk::verif

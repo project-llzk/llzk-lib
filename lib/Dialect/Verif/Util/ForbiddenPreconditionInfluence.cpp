@@ -34,9 +34,9 @@ makeInfluenceInfo(Influence influence, std::optional<Location> loc = std::nullop
 
 ForbiddenInfluenceAnalyzer::AnalysisFrame::AnalysisFrame(
     ForbiddenInfluenceAnalyzer &parentAnalyzer, CallableOpInterface callableOp,
-    llvm::ArrayRef<InfluenceInfo> argInfluenceInfos
+    llvm::ArrayRef<InfluenceInfo> argInfluenceInfos, InfluenceInfo inheritedControl
 )
-    : analyzer(parentAnalyzer) {
+    : analyzer(parentAnalyzer), inheritedControlInfluence(inheritedControl) {
   Region *region = callableOp.getCallableRegion();
   assert(region && !region->empty() && "callable must have a body");
   Block &entry = region->front();
@@ -87,18 +87,26 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzePreconditionOp(
     PreconditionOpInterface preCondOp
 ) {
   return mergeInfluenceInfo(
-      analyzeValue(preCondOp.getCondition()), analyzeControlAncestors(preCondOp.getOperation())
+      inheritedControlInfluence, analyzeValue(preCondOp.getCondition()),
+      analyzeControlAncestors(preCondOp.getOperation())
   );
 }
 
 IncludedContractSummary
 ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIncludeOp(IncludeOp includeOp) {
+  InfluenceInfo callerControlInfluence = analyzeControlAncestors(includeOp.getOperation());
+  InfluenceInfo calleeControlInfluence =
+      mergeInfluenceInfo(inheritedControlInfluence, callerControlInfluence);
+
   SymbolTableCollection tables;
   auto calleeTarget = includeOp.getCalleeTarget(tables);
   if (failed(calleeTarget)) {
     IncludedContractSummary summary;
     summary.failures.push_back(
-        {.precondition = {}, .influenceInfo = makeInfluenceInfo(Influence::FunctionReturn)}
+        {.preconditionLoc = {},
+         .influenceInfo = mergeInfluenceInfo(
+             makeInfluenceInfo(Influence::FunctionReturn), calleeControlInfluence
+         )}
     );
     return summary;
   }
@@ -108,9 +116,9 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIncludeOp(IncludeOp includeOp)
   llvm::SmallVector<InfluenceInfo> argInfluences;
   argInfluences.reserve(includeOp.getArgOperands().size());
   for (Value operand : includeOp.getArgOperands()) {
-    argInfluences.push_back(analyzeValue(operand));
+    argInfluences.push_back(mergeInfluenceInfo(analyzeValue(operand), calleeControlInfluence));
   }
-  return analyzer.analyzeIncludedContract(calleeContract, argInfluences);
+  return analyzer.analyzeIncludedContract(calleeContract, argInfluences, calleeControlInfluence);
 }
 
 InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeControlAncestors(Operation *op) {
@@ -187,10 +195,11 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeBlockArgument(BlockArgument bl
   if (auto whileOp = llvm::dyn_cast<scf::WhileOp>(parentOp)) {
     Region *region = owner->getParent();
     if (region == &whileOp.getBefore()) {
-      // Depends both on the init args and yield values
+      // The before-region block arguments are loop-carried, so they depend on
+      // both the initial inputs and the values yielded from the after region.
       return mergeInfluenceInfo(
           analyzeValue(whileOp.getInits()[blockArg.getArgNumber()]),
-          analyzeValue(whileOp.getYieldOp().getResults()[blockArg.getArgNumber()])
+          analyzeValue(whileOp.getYieldOp().getOperand(blockArg.getArgNumber()))
       );
     }
     if (region == &whileOp.getAfter()) {
@@ -252,11 +261,16 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeExecuteRegionRes
 ) {
   unsigned resultNumber = execRes.getResultNumber();
   InfluenceInfo result = makeInfluenceInfo(Influence::None);
-  execOp.getRegion().walk([&](scf::YieldOp yieldOp) {
-    if (yieldOp.getNumOperands() > resultNumber) {
+  for (Block &block : execOp.getRegion()) {
+    // Only the terminators of the execute_region's own blocks contribute to
+    // the op result. Nested SCF regions can contain their own scf.yield ops,
+    // but those yields only feed the nested region results and must not be
+    // treated as execute_region return values.
+    if (auto yieldOp = dyn_cast<scf::YieldOp>(block.getTerminator());
+        yieldOp && yieldOp.getNumOperands() > resultNumber) {
       result = mergeInfluenceInfo(result, analyzeValue(yieldOp.getOperand(resultNumber)));
     }
-  });
+  }
   return result;
 }
 
@@ -354,11 +368,13 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::analyzeCallableResult(
 }
 
 IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
-    ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences
+    ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences,
+    InfluenceInfo inheritedControlInfluence
 ) {
   IncludedContractSummaryKey key {
       .contract = calleeContract,
       .argInfluences = llvm::SmallVector<InfluenceInfo>(argInfluences.begin(), argInfluences.end()),
+      .inheritedControlInfluence = inheritedControlInfluence,
   };
 
   if (auto it = includedContractSummaryCache.find(key); it != includedContractSummaryCache.end()) {
@@ -367,12 +383,12 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   if (!activeIncludedSummaries.insert(key).second) {
     IncludedContractSummary summary;
     summary.failures.push_back(
-        {.precondition = {}, .influenceInfo = makeInfluenceInfo(Influence::FunctionReturn)}
+        {.preconditionLoc = {}, .influenceInfo = makeInfluenceInfo(Influence::FunctionReturn)}
     );
     return summary;
   }
 
-  AnalysisFrame frame(*this, calleeContract, argInfluences);
+  AnalysisFrame frame(*this, calleeContract, argInfluences, inheritedControlInfluence);
   IncludedContractSummary summary;
 
   SmallVector<PreconditionOpInterface> preconditionOps;
@@ -380,7 +396,9 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   for (PreconditionOpInterface preCondOp : preconditionOps) {
     InfluenceInfo influenceInfo = frame.analyzePreconditionOp(preCondOp);
     if (any(influenceInfo.influence)) {
-      summary.failures.push_back({.precondition = preCondOp, .influenceInfo = influenceInfo});
+      summary.failures.push_back(
+          {.preconditionLoc = preCondOp->getLoc(), .influenceInfo = influenceInfo}
+      );
     }
   }
 
@@ -394,6 +412,21 @@ IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
   activeIncludedSummaries.erase(key);
   includedContractSummaryCache[key] = summary;
   return summary;
+}
+
+IncludedContractSummary
+ForbiddenInfluenceAnalyzer::analyzeIncludedOp(ContractOp contract, IncludeOp includeOp) {
+  if (auto it = cachedFrames.find(contract); it != cachedFrames.end()) {
+    return it->second.analyzeIncludeOp(includeOp);
+  }
+
+  llvm::SmallVector<InfluenceInfo> argInfluenceInfos;
+  for (BlockArgument arg : contract.getArguments()) {
+    argInfluenceInfos.push_back(classifyContractArgument(contract, arg));
+  }
+  auto [it, inserted] = cachedFrames.try_emplace(contract, *this, contract, argInfluenceInfos);
+  assert(inserted && "lookup failure");
+  return it->second.analyzeIncludeOp(includeOp);
 }
 
 InfluenceInfo
