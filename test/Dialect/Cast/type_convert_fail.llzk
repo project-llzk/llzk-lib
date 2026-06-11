@@ -102,7 +102,7 @@ module attributes {llzk.lang} {
     }
     function.def @constrain(%self: !struct.type<@C3>) {
       %f = struct.readm %self[@f1] : !struct.type<@C3>, !felt.type
-      // expected-error@+1 {{'cast.toindex' op only valid within a 'function.def' with 'function.allow_non_native_field_ops' attribute}}
+      // expected-error@+1 {{'cast.toindex' op cannot be used within a 'function.def' without the 'function.allow_non_native_field_ops' attribute}}
       %i = cast.toindex %f
       function.return
     }
