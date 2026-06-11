@@ -151,6 +151,57 @@ struct CallableSummaryKeyInfo : llvm::DenseMapInfo<CallableSummaryKey> {
   }
 };
 
+/// Summary of an included-contract precondition failure under a specific caller
+/// binding.
+///
+/// The include verifier memoizes whether a contract remains valid when its
+/// entry arguments are seeded with the forbidden-influence classification of the
+/// corresponding `verif.include` operands. If a failure occurs, this structure
+/// records the first offending callee precondition together with the merged
+/// influence information that caused it to become illegal.
+struct IncludedContractSummary {
+  verif::PreconditionOpInterface failingPrecondition {};
+  InfluenceInfo influenceInfo = InfluenceInfo::None();
+
+  explicit operator bool() const { return static_cast<bool>(failingPrecondition); }
+};
+
+/// Cache key for one interprocedural included-contract summary query.
+///
+/// The analyzer memoizes included-contract failures by callee contract and the
+/// caller-provided forbidden-influence classification of each include operand.
+/// Reusing this key avoids re-analyzing the same included contract under
+/// identical argument influence assumptions.
+struct IncludedContractSummaryKey {
+  mlir::Operation *contract {};
+  llvm::SmallVector<InfluenceInfo> argInfluences;
+
+  bool operator==(const IncludedContractSummaryKey &other) const {
+    return contract == other.contract && argInfluences == other.argInfluences;
+  }
+};
+
+struct IncludedContractSummaryKeyInfo : llvm::DenseMapInfo<IncludedContractSummaryKey> {
+  static IncludedContractSummaryKey getEmptyKey() {
+    return {llvm::DenseMapInfo<mlir::Operation *>::getEmptyKey(), {}};
+  }
+
+  static IncludedContractSummaryKey getTombstoneKey() {
+    return {llvm::DenseMapInfo<mlir::Operation *>::getTombstoneKey(), {}};
+  }
+
+  static unsigned getHashValue(const IncludedContractSummaryKey &key) {
+    return llvm::hash_combine(
+        key.contract, llvm::hash_combine_range(key.argInfluences.begin(), key.argInfluences.end())
+    );
+  }
+
+  static bool
+  isEqual(const IncludedContractSummaryKey &lhs, const IncludedContractSummaryKey &rhs) {
+    return lhs == rhs;
+  }
+};
+
 /// Interprocedural verifier-local analysis for forbidden precondition influence.
 ///
 /// This analysis answers a narrow policy question for `verif.require_*`: whether
@@ -178,6 +229,12 @@ public:
       unsigned resultNumber
   );
 
+  /// Check whether an included contract becomes invalid under caller-provided
+  /// operand influences, returning the first failing callee precondition if so.
+  IncludedContractSummary analyzeIncludedContract(
+      verif::ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences
+  );
+
 private:
   /// Callable-local recursive walker used while analyzing one contract or
   /// callable summary.
@@ -201,6 +258,9 @@ private:
     /// Classify the forbidden influence reaching a precondition op, including
     /// its enclosing SCF control-flow ancestors.
     InfluenceInfo analyzePreconditionOp(verif::PreconditionOpInterface preCondOp);
+
+    /// Analyze an included contract under the current frame's operand bindings.
+    IncludedContractSummary analyzeIncludeOp(verif::IncludeOp includeOp);
 
   private:
     /// Collect forbidden influence from SCF control ancestors that guard the
@@ -239,6 +299,11 @@ private:
   mlir::ModuleOp module;
   llvm::DenseMap<CallableSummaryKey, InfluenceInfo, CallableSummaryKeyInfo> callableSummaryCache;
   llvm::DenseSet<CallableSummaryKey, CallableSummaryKeyInfo> activeSummaries;
+  llvm::DenseMap<
+      IncludedContractSummaryKey, IncludedContractSummary, IncludedContractSummaryKeyInfo>
+      includedContractSummaryCache;
+  llvm::DenseSet<IncludedContractSummaryKey, IncludedContractSummaryKeyInfo>
+      activeIncludedSummaries;
   llvm::DenseMap<ContractOp, AnalysisFrame> cachedFrames;
 };
 
@@ -288,6 +353,17 @@ inline ForbiddenPreconditionInfluence analyzeForbiddenPreconditionCallableResult
              module, callableOp, argInfluences, resultNumber
   )
       .influence;
+}
+
+/// Analyze whether including a contract with caller-provided operand influence
+/// summaries would trigger a forbidden precondition failure in the callee.
+inline detail::IncludedContractSummary analyzeForbiddenIncludedContractSummary(
+    mlir::ModuleOp module, verif::ContractOp calleeContract,
+    llvm::ArrayRef<ForbiddenPreconditionInfluenceInfo> argInfluences
+) {
+  return detail::ForbiddenInfluenceAnalyzer(module).analyzeIncludedContract(
+      calleeContract, argInfluences
+  );
 }
 
 } // namespace llzk::verif

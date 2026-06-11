@@ -769,3 +769,40 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @helper_gate(%gate: i1) {
+    function.return
+  }
+
+  function.def @wrapper_target(%gate: i1, %ok: i1) {
+    function.return
+  }
+
+  verif.contract @Leaf for @helper_gate (%gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @Wrapper for @wrapper_target (%gate: i1, %ok: i1) {
+    verif.include @Leaf(%ok) : (i1) -> ()
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @helper_gate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @wrapper_target(%[[VAL_1:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Leaf for @helper_gate (%[[VAL_3:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      verif.require_compute %[[VAL_3]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Wrapper for @wrapper_target (%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_5:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      verif.include @Leaf(%[[VAL_5]]) : (i1) -> ()
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

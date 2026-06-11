@@ -89,6 +89,26 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzePreconditionOp(
   );
 }
 
+IncludedContractSummary
+ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeIncludeOp(IncludeOp includeOp) {
+  SymbolTableCollection tables;
+  auto calleeTarget = includeOp.getCalleeTarget(tables);
+  if (failed(calleeTarget)) {
+    IncludedContractSummary summary;
+    summary.influenceInfo = makeInfluenceInfo(Influence::FunctionReturn);
+    return summary;
+  }
+
+  ContractOp calleeContract = calleeTarget->get();
+
+  llvm::SmallVector<InfluenceInfo> argInfluences;
+  argInfluences.reserve(includeOp.getArgOperands().size());
+  for (Value operand : includeOp.getArgOperands()) {
+    argInfluences.push_back(analyzeValue(operand));
+  }
+  return analyzer.analyzeIncludedContract(calleeContract, argInfluences);
+}
+
 InfluenceInfo ForbiddenInfluenceAnalyzer::AnalysisFrame::analyzeControlAncestors(Operation *op) {
   if (auto it = controlAncestorCache.find(op); it != controlAncestorCache.end()) {
     return it->second;
@@ -313,6 +333,53 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::analyzeCallableResult(
 
   activeSummaries.erase(key);
   callableSummaryCache[key] = summary;
+  return summary;
+}
+
+IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
+    ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences
+) {
+  IncludedContractSummaryKey key {
+      .contract = calleeContract,
+      .argInfluences = llvm::SmallVector<InfluenceInfo>(argInfluences.begin(), argInfluences.end()),
+  };
+
+  if (auto it = includedContractSummaryCache.find(key); it != includedContractSummaryCache.end()) {
+    return it->second;
+  }
+  if (!activeIncludedSummaries.insert(key).second) {
+    IncludedContractSummary summary;
+    summary.influenceInfo = makeInfluenceInfo(Influence::FunctionReturn);
+    return summary;
+  }
+
+  AnalysisFrame frame(*this, calleeContract, argInfluences);
+  IncludedContractSummary summary;
+
+  SmallVector<PreconditionOpInterface> preconditionOps;
+  calleeContract.walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
+  for (PreconditionOpInterface preCondOp : preconditionOps) {
+    InfluenceInfo influenceInfo = frame.analyzePreconditionOp(preCondOp);
+    if (any(influenceInfo.influence)) {
+      summary.failingPrecondition = preCondOp;
+      summary.influenceInfo = influenceInfo;
+      break;
+    }
+  }
+
+  if (!summary) {
+    SmallVector<IncludeOp> includeOps;
+    calleeContract.walk([&](IncludeOp includeOp) { includeOps.push_back(includeOp); });
+    for (IncludeOp includeOp : includeOps) {
+      summary = frame.analyzeIncludeOp(includeOp);
+      if (summary) {
+        break;
+      }
+    }
+  }
+
+  activeIncludedSummaries.erase(key);
+  includedContractSummaryCache[key] = summary;
   return summary;
 }
 

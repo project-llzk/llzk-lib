@@ -160,6 +160,13 @@ struct ForbiddenRequireCondition {
   llvm::SmallSetVector<Location, 2> sourceLocs;
 };
 
+struct ForbiddenIncludedPrecondition {
+  IncludeOp includeOp;
+  PreconditionOpInterface calleePrecondition;
+  ForbiddenRequireConditionKind kind;
+  llvm::SmallSetVector<Location, 2> sourceLocs;
+};
+
 std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
     ModuleOp module, PreconditionOpInterface preCondOp, ContractOp contract
 ) {
@@ -173,6 +180,50 @@ std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
   }
   if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::FunctionReturn)) {
     return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::FunctionReturn,
+        .sourceLocs = {},
+    };
+  }
+  return std::nullopt;
+}
+
+std::optional<ForbiddenIncludedPrecondition>
+classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
+  SymbolTableCollection tables;
+  auto calleeTarget = includeOp.getCalleeTarget(tables);
+  if (failed(calleeTarget)) {
+    return std::nullopt;
+  }
+  ContractOp calleeContract = calleeTarget->get();
+
+  llvm::SmallVector<ForbiddenPreconditionInfluenceInfo> argInfluences;
+  argInfluences.reserve(includeOp.getArgOperands().size());
+  ContractOp parentContract = includeOp->getParentOfType<ContractOp>();
+  for (Value operand : includeOp.getArgOperands()) {
+    argInfluences.push_back(
+        analyzeForbiddenPreconditionInfluenceInfo(module, parentContract, operand)
+    );
+  }
+
+  auto summary = analyzeForbiddenIncludedContractSummary(module, calleeContract, argInfluences);
+  if (!summary) {
+    return std::nullopt;
+  }
+
+  if (hasInfluence(summary.influenceInfo.influence, ForbiddenPreconditionInfluence::StructMember)) {
+    return ForbiddenIncludedPrecondition {
+        .includeOp = includeOp,
+        .calleePrecondition = summary.failingPrecondition,
+        .kind = ForbiddenRequireConditionKind::StructMember,
+        .sourceLocs = summary.influenceInfo.structMemberLocs,
+    };
+  }
+  if (hasInfluence(
+          summary.influenceInfo.influence, ForbiddenPreconditionInfluence::FunctionReturn
+      )) {
+    return ForbiddenIncludedPrecondition {
+        .includeOp = includeOp,
+        .calleePrecondition = summary.failingPrecondition,
         .kind = ForbiddenRequireConditionKind::FunctionReturn,
         .sourceLocs = {},
     };
@@ -201,6 +252,34 @@ LogicalResult emitForbiddenPrecondition(
   }
   case ForbiddenRequireConditionKind::FunctionReturn: {
     return preCondOp->emitOpError("condition cannot be derived from a function return value");
+  }
+  }
+  llvm_unreachable("unknown forbidden require condition kind");
+}
+
+LogicalResult emitForbiddenIncludedPrecondition(
+    IncludeOp includeOp, PreconditionOpInterface calleePrecondition,
+    ForbiddenRequireConditionKind kind, llvm::ArrayRef<Location> sourceLocs = {}
+) {
+  switch (kind) {
+  case ForbiddenRequireConditionKind::MainContract:
+    llvm_unreachable("main-contract restriction is not emitted for includes");
+  case ForbiddenRequireConditionKind::StructMember: {
+    InFlightDiagnostic diag = includeOp.emitOpError(
+        "includes a precondition whose condition cannot be derived from a struct member value"
+    );
+    diag.attachNote(calleePrecondition->getLoc()) << "included precondition triggered here";
+    for (auto sourceLoc : sourceLocs) {
+      diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
+    }
+    return diag;
+  }
+  case ForbiddenRequireConditionKind::FunctionReturn: {
+    InFlightDiagnostic diag = includeOp.emitOpError(
+        "includes a precondition whose condition cannot be derived from a function return value"
+    );
+    diag.attachNote(calleePrecondition->getLoc()) << "included precondition triggered here";
+    return diag;
   }
   }
   llvm_unreachable("unknown forbidden require condition kind");
@@ -538,7 +617,9 @@ LogicalResult ContractOp::verifyRegions() {
 
   SmallVector<PreconditionOpInterface> preconditionOps;
   walk([&](PreconditionOpInterface op) { preconditionOps.push_back(op); });
-  if (preconditionOps.empty()) {
+  SmallVector<IncludeOp> includeOps;
+  walk([&](IncludeOp includeOp) { includeOps.push_back(includeOp); });
+  if (preconditionOps.empty() && includeOps.empty()) {
     return success();
   }
 
@@ -564,6 +645,15 @@ LogicalResult ContractOp::verifyRegions() {
     if (auto forbidden = classifyForbiddenConditionProvenance(module, preCond, *this)) {
       return emitForbiddenPrecondition(
           preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
+      );
+    }
+  }
+
+  for (IncludeOp includeOp : includeOps) {
+    if (auto forbidden = classifyForbiddenIncludedPrecondition(module, includeOp)) {
+      return emitForbiddenIncludedPrecondition(
+          forbidden->includeOp, forbidden->calleePrecondition, forbidden->kind,
+          forbidden->sourceLocs.getArrayRef()
       );
     }
   }
