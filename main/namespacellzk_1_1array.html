@@ -159,6 +159,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ae1b904309bd4eeb87f1d866e709a221e" id="r_ae1b904309bd4eeb87f1d866e709a221e"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae1b904309bd4eeb87f1d866e709a221e">parseAttrVec</a> (mlir::AsmParser &amp;parser, llvm::SmallVector&lt; mlir::Attribute &gt; &amp;value)</td></tr>
 <tr class="memitem:a3222a09989a2ca2508c962d139488744" id="r_a3222a09989a2ca2508c962d139488744"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3222a09989a2ca2508c962d139488744">printAttrVec</a> (mlir::AsmPrinter &amp;printer, llvm::ArrayRef&lt; mlir::Attribute &gt; value)</td></tr>
 <tr class="memitem:a83b2a667d1a2ddd16eb1bb1c0bcffb37" id="r_a83b2a667d1a2ddd16eb1bb1c0bcffb37"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a83b2a667d1a2ddd16eb1bb1c0bcffb37">createArrayToScalarPass</a> ()</td></tr>
+<tr class="memdesc:a83b2a667d1a2ddd16eb1bb1c0bcffb37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that rewrites eligible arrays into scalar SSA values.  <br /></td></tr>
 <tr class="memitem:a014b61095a29e4b1e00eca1a4614ff1f" id="r_a014b61095a29e4b1e00eca1a4614ff1f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a014b61095a29e4b1e00eca1a4614ff1f">registerArrayToScalarPass</a> ()</td></tr>
 <tr class="memitem:ac61940447eff7532c4b507d670772d7b" id="r_ac61940447eff7532c4b507d670772d7b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac61940447eff7532c4b507d670772d7b">registerArrayToScalarPassPass</a> ()</td></tr>
 <tr class="memitem:aee303a81a7d8f2895e40166e5754fced" id="r_aee303a81a7d8f2895e40166e5754fced"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aee303a81a7d8f2895e40166e5754fced">registerTransformationPasses</a> ()</td></tr>
@@ -287,7 +288,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00966">966</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p>Create the pass that rewrites eligible arrays into scalar SSA values. </p>
+
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00974">974</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>

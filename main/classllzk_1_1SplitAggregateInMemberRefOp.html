@@ -156,9 +156,9 @@ Protected Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pro-static-methods" class="groupheader"><a id="pro-static-methods" name="pro-static-methods"></a>
 Static Protected Member Functions</h2></td></tr>
 <tr class="memitem:ad8c20dffa00a86980651405bfbfaf082" id="r_ad8c20dffa00a86980651405bfbfaf082"><td class="memItemLeft" align="right" valign="top">static GenHeaderType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad8c20dffa00a86980651405bfbfaf082">genHeader</a> (MemberRefOpClass, mlir::ConversionPatternRewriter &amp;)</td></tr>
-<tr class="memdesc:ad8c20dffa00a86980651405bfbfaf082"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed at the start of <span class="tt"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite()</a></span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ae06d58b5162e6e348675f0fcb7f85715" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>.  <br /></td></tr>
-<tr class="memitem:ae06d58b5162e6e348675f0fcb7f85715" id="r_ae06d58b5162e6e348675f0fcb7f85715"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae06d58b5162e6e348675f0fcb7f85715">forId</a> (mlir::Location, GenHeaderType, IdType, <a class="el" href="#a957f1df1fd2239f3486304c0368f9195">MemberInfo</a>, <a class="el" href="#ab8210adeaa1ad56b7350a525ac80cc72">OpAdaptor</a>, mlir::ConversionPatternRewriter &amp;)</td></tr>
-<tr class="memdesc:ae06d58b5162e6e348675f0fcb7f85715"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed for each scalar id in the aggregate type of the original member to generate the per-scalar operations on the new scalar members.  <br /></td></tr>
+<tr class="memdesc:ad8c20dffa00a86980651405bfbfaf082"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed at the start of <span class="tt"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite()</a></span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>.  <br /></td></tr>
+<tr class="memitem:ada7a89364bb65fb788caadda3b9e91c8" id="r_ada7a89364bb65fb788caadda3b9e91c8"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8">forId</a> (mlir::Location, GenHeaderType &amp;, IdType, <a class="el" href="#a957f1df1fd2239f3486304c0368f9195">MemberInfo</a>, <a class="el" href="#ab8210adeaa1ad56b7350a525ac80cc72">OpAdaptor</a>, mlir::ConversionPatternRewriter &amp;)</td></tr>
+<tr class="memdesc:ada7a89364bb65fb788caadda3b9e91c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed for each scalar id in the aggregate type of the original member to generate the per-scalar operations on the new scalar members.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">HasInterface</a>&lt; <a class="el" href="classllzk_1_1component_1_1MemberRefOpInterface.html">component::MemberRefOpInterface</a> &gt; MemberRefOpClass, typename GenHeaderType, typename IdType&gt;<br />
@@ -167,13 +167,13 @@ class llzk::SplitAggregateInMemberRefOp&lt; ImplClass, MemberRefOpClass, GenHead
   <table class="tparams">
     <tr><td class="paramname">ImplClass</td><td>the concrete subclass (CRTP) </td></tr>
     <tr><td class="paramname">MemberRefOpClass</td><td>the concrete op class (must implement <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberRefOpInterface.html">MemberRefOpInterface</a></span>) </td></tr>
-    <tr><td class="paramname">GenHeaderType</td><td>return type of <span class="tt"><a class="el" href="#ad8c20dffa00a86980651405bfbfaf082" title="Executed at the start of rewrite() to (optionally) generate anything that should appear before the pe...">genHeader()</a></span>, used to pass data to <span class="tt"><a class="el" href="#ae06d58b5162e6e348675f0fcb7f85715" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span> </td></tr>
+    <tr><td class="paramname">GenHeaderType</td><td>return type of <span class="tt"><a class="el" href="#ad8c20dffa00a86980651405bfbfaf082" title="Executed at the start of rewrite() to (optionally) generate anything that should appear before the pe...">genHeader()</a></span>, used to pass data to <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span> </td></tr>
     <tr><td class="paramname">IdType</td><td>the type used to identify a scalar element within the aggregate </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00125">125</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00264">264</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ae4eedd61623ef572784cb2fa0f379425" name="ae4eedd61623ef572784cb2fa0f379425"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae4eedd61623ef572784cb2fa0f379425">&#9670;&#160;</a></span>LocalMemberReplacementMap</h2>
@@ -191,7 +191,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 
 <p>Maps a scalar element identifier within the aggregate to its new scalar member info. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00130">130</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00269">269</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -211,7 +211,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 
 <p>Scalar member name and type. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00128">128</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00267">267</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -234,7 +234,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </div><!-- fragment -->
 <p>Maps struct -&gt; original aggregate-type member name -&gt; <a class="el" href="#ae4eedd61623ef572784cb2fa0f379425" title="Maps a scalar element identifier within the aggregate to its new scalar member info.">LocalMemberReplacementMap</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00132">132</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00271">271</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -260,7 +260,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00148">148</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00287">287</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -299,13 +299,13 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00170">170</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00309">309</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="ae06d58b5162e6e348675f0fcb7f85715" name="ae06d58b5162e6e348675f0fcb7f85715"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae06d58b5162e6e348675f0fcb7f85715">&#9670;&#160;</a></span>forId()</h2>
+<a id="ada7a89364bb65fb788caadda3b9e91c8" name="ada7a89364bb65fb788caadda3b9e91c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada7a89364bb65fb788caadda3b9e91c8">&#9670;&#160;</a></span>forId()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -323,7 +323,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">GenHeaderType</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+          <td class="paramtype">GenHeaderType &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -355,7 +355,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 
 <p>Executed for each scalar id in the aggregate type of the original member to generate the per-scalar operations on the new scalar members. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00159">159</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00298">298</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -388,9 +388,9 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p>Executed at the start of <span class="tt"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite()</a></span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ae06d58b5162e6e348675f0fcb7f85715" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>. </p>
+<p>Executed at the start of <span class="tt"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite()</a></span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00152">152</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00291">291</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -419,7 +419,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00177">177</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00316">316</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -448,7 +448,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00183">183</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00322">322</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -486,7 +486,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00187">187</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00326">326</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>

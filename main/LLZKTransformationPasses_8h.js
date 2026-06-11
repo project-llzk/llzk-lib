@@ -2,7 +2,6 @@ var LLZKTransformationPasses_8h =
 [
     [ "GEN_PASS_REGISTRATION", "LLZKTransformationPasses_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede", null ],
     [ "llzk::addRemoveUnnecessaryOpsAndDefsPipeline", "namespacellzk.html#a2ddf3edf6f2b52c9021b51108f0eaff3", null ],
-    [ "llzk::createArrayToScalarPass", "namespacellzk.html#aab494edb15dac73bb877f74a9378eab8", null ],
     [ "llzk::createComputeConstrainToProductPass", "namespacellzk.html#a555997eb19dca2a02f01f99a56d4ffcd", null ],
     [ "llzk::createFlatteningPass", "namespacellzk.html#a4b23872eceb03786a0fc287ba896044b", null ],
     [ "llzk::createFuseProductLoopsPass", "namespacellzk.html#aeacb3f2a34e7a324560359010d7a888d", null ],

@@ -8,6 +8,7 @@ var annotated_dup =
       [ "DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
       [ "DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],
       [ "DenseMapInfo< OperationComparator >", "structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html", null ],
+      [ "DenseMapInfo< RecordChain >", "structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html", null ],
       [ "DenseMapInfo< ReferenceID >", "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html", null ],
       [ "DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4" ],
       [ "DenseMapInfo<::llzk::cast::OverflowSemantics >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4" ],
@@ -332,6 +333,9 @@ var annotated_dup =
           [ "PodTypeStorage", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage" ],
           [ "ReadPodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase" ],
           [ "WritePodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase" ]
+        ] ],
+        [ "impl", "namespacellzk_1_1pod_1_1impl.html", [
+          [ "PodToScalarPassBase", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase" ]
         ] ],
         [ "NewPodOp", "classllzk_1_1pod_1_1NewPodOp.html", "classllzk_1_1pod_1_1NewPodOp" ],
         [ "NewPodOpAdaptor", "classllzk_1_1pod_1_1NewPodOpAdaptor.html", "classllzk_1_1pod_1_1NewPodOpAdaptor" ],
@@ -780,6 +784,7 @@ var annotated_dup =
       [ "SpecializedMem2Reg", "structllzk_1_1SpecializedMem2Reg.html", "structllzk_1_1SpecializedMem2Reg" ],
       [ "SpecializedSROA", "structllzk_1_1SpecializedSROA.html", "structllzk_1_1SpecializedSROA" ],
       [ "SplitAggregateInMemberRefOp", "classllzk_1_1SplitAggregateInMemberRefOp.html", "classllzk_1_1SplitAggregateInMemberRefOp" ],
+      [ "SplitFunctionNameInfo", "structllzk_1_1SplitFunctionNameInfo.html", "structllzk_1_1SplitFunctionNameInfo" ],
       [ "StructAnalysis", "classllzk_1_1StructAnalysis.html", "classllzk_1_1StructAnalysis" ],
       [ "StructIntervalAnalysis", "classllzk_1_1StructIntervalAnalysis.html", "classllzk_1_1StructIntervalAnalysis" ],
       [ "StructIntervals", "classllzk_1_1StructIntervals.html", "classllzk_1_1StructIntervals" ],

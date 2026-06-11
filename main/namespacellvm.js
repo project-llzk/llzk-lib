@@ -5,6 +5,7 @@ var namespacellvm =
     [ "DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
     [ "DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],
     [ "DenseMapInfo< OperationComparator >", "structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html", null ],
+    [ "DenseMapInfo< RecordChain >", "structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html", null ],
     [ "DenseMapInfo< ReferenceID >", "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html", null ],
     [ "DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4" ],
     [ "DenseMapInfo<::llzk::cast::OverflowSemantics >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4" ],

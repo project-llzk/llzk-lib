@@ -1,6 +1,7 @@
 var namespacellzk_1_1pod =
 [
     [ "detail", "namespacellzk_1_1pod_1_1detail.html", "namespacellzk_1_1pod_1_1detail" ],
+    [ "impl", "namespacellzk_1_1pod_1_1impl.html", "namespacellzk_1_1pod_1_1impl" ],
     [ "NewPodOp", "classllzk_1_1pod_1_1NewPodOp.html", "classllzk_1_1pod_1_1NewPodOp" ],
     [ "NewPodOpAdaptor", "classllzk_1_1pod_1_1NewPodOpAdaptor.html", "classllzk_1_1pod_1_1NewPodOpAdaptor" ],
     [ "NewPodOpGenericAdaptor", "classllzk_1_1pod_1_1NewPodOpGenericAdaptor.html", "classllzk_1_1pod_1_1NewPodOpGenericAdaptor" ],
@@ -17,6 +18,7 @@ var namespacellzk_1_1pod =
     [ "WritePodOpGenericAdaptor", "classllzk_1_1pod_1_1WritePodOpGenericAdaptor.html", "classllzk_1_1pod_1_1WritePodOpGenericAdaptor" ],
     [ "InitializedRecords", "namespacellzk_1_1pod.html#a0b8d7f36d461c489f492469d7a1a28d2", null ],
     [ "UnresolvedOp", "namespacellzk_1_1pod.html#a4f636b3d6a0fe7f7072906e4e240a7a8", null ],
+    [ "createPodToScalarPass", "namespacellzk_1_1pod.html#aec201ffba82e9efab92d81e56a2d95c6", null ],
     [ "getInitializedRecordValues", "namespacellzk_1_1pod.html#abc209fec951650414f00490a1686dee3", null ],
     [ "getInitializedRecordValues", "namespacellzk_1_1pod.html#ab92aa32aadfe5364bc75ddb90128801b", null ],
     [ "parsePodType", "namespacellzk_1_1pod.html#a641d7202b479d052f4e44eef6d0208e1", null ],
@@ -31,5 +33,8 @@ var namespacellzk_1_1pod =
     [ "printRecord", "namespacellzk_1_1pod.html#a4ded04c8ac23c71cf0da5baaf8d5ac95", null ],
     [ "printRecord", "namespacellzk_1_1pod.html#ad6bf3016a97b8288e83cbfe2070a4858", null ],
     [ "printRecordName", "namespacellzk_1_1pod.html#ad4c7ef9fed601bc13ef71fbe9faa6e5c", null ],
-    [ "printRecordName", "namespacellzk_1_1pod.html#ad9cff8dd79c5764ae5f94f7ab3fa5511", null ]
+    [ "printRecordName", "namespacellzk_1_1pod.html#ad9cff8dd79c5764ae5f94f7ab3fa5511", null ],
+    [ "registerPodToScalarPass", "namespacellzk_1_1pod.html#a25f356eb31fa5349f0fd65df9d0474cc", null ],
+    [ "registerPodToScalarPassPass", "namespacellzk_1_1pod.html#a2eab0ac33ecf46e7f87c2921fdc485c4", null ],
+    [ "registerTransformationPasses", "namespacellzk_1_1pod.html#a6627a4c34331c99a8e47d2c1e0c40c89", null ]
 ];

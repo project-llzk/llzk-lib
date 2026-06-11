@@ -490,6 +490,7 @@ var hierarchy =
     [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", null ],
     [ "llvm::DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],
     [ "llvm::DenseMapInfo< OperationComparator >", "structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html", null ],
+    [ "llvm::DenseMapInfo< RecordChain >", "structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html", null ],
     [ "llvm::DenseMapInfo< ReferenceID >", "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html", null ],
     [ "llvm::DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
     [ "llvm::DenseMapInfo<::llzk::cast::OverflowSemantics >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
@@ -1118,6 +1119,7 @@ var hierarchy =
       [ "llzk::impl::UnusedDeclarationEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", null ],
       [ "llzk::impl::WhileToForPassBase< DerivedT >", "classllzk_1_1impl_1_1WhileToForPassBase.html", null ],
       [ "llzk::include::impl::InlineIncludesPassBase< DerivedT >", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html", null ],
+      [ "llzk::pod::impl::PodToScalarPassBase< DerivedT >", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html", null ],
       [ "llzk::polymorphic::impl::EmptyTemplateRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", null ],
       [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ]
     ] ],
@@ -1340,6 +1342,7 @@ var hierarchy =
     ] ],
     [ "llzk::SourceRef", "classllzk_1_1SourceRef.html", null ],
     [ "llzk::SourceRefIndex", "classllzk_1_1SourceRefIndex.html", null ],
+    [ "llzk::SplitFunctionNameInfo", "structllzk_1_1SplitFunctionNameInfo.html", null ],
     [ "llzk::ram::detail::StoreOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1StoreOpGenericAdaptorBase.html", [
       [ "llzk::ram::StoreOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", null ],
       [ "llzk::ram::StoreOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", [

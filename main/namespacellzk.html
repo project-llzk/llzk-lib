@@ -257,6 +257,8 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A variant of the MLIR <span class="tt">sroa</span> pass that only destructures memory slots belonging to allocators of type <code class="param">AllocOpTy</code> (which must implement <span class="tt">mlir::DestructurableAllocationOpInterface</span>).  <a href="structllzk_1_1SpecializedSROA.html#details">More...</a><br /></td></tr>
 <tr class="memitem:SplitAggregateInMemberRefOp" id="r_SplitAggregateInMemberRefOp"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SplitAggregateInMemberRefOp.html">SplitAggregateInMemberRefOp</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Common implementation for handling <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a></span> and <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> while destructuring an aggregate type (e.g., <a class="el" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> or <a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a>) stored in a struct member.  <a href="classllzk_1_1SplitAggregateInMemberRefOp.html#details">More...</a><br /></td></tr>
+<tr class="memitem:SplitFunctionNameInfo" id="r_SplitFunctionNameInfo"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1SplitFunctionNameInfo.html">SplitFunctionNameInfo</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cached function arg/result names and split suffixes used while rewriting a function signature.  <a href="structllzk_1_1SplitFunctionNameInfo.html#details">More...</a><br /></td></tr>
 <tr class="memitem:StructAnalysis" id="r_StructAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1StructAnalysis.html">StructAnalysis</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the base class for a dataflow analysis designed to run on a single struct (i.e., a single component).  <a href="classllzk_1_1StructAnalysis.html#details">More...</a><br /></td></tr>
 <tr class="memitem:StructIntervalAnalysis" id="r_StructIntervalAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1StructIntervalAnalysis.html">StructIntervalAnalysis</a></td></tr>
@@ -575,10 +577,23 @@ Functions</h2></td></tr>
 <tr class="memitem:aaa4a11b9841dc711843a40d178fea482 template"><td class="memItemLeft" align="right" valign="top">mlir::RewritePatternSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa4a11b9841dc711843a40d178fea482">newGeneralRewritePatternSet</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</td></tr>
 <tr class="memdesc:aaa4a11b9841dc711843a40d178fea482"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">RewritePatternSet</span> covering all LLZK op types that may contain a <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a>.  <br /></td></tr>
 <tr class="memitem:a4f2a7298c40bf845f96f54b518a68dfe" id="r_a4f2a7298c40bf845f96f54b518a68dfe"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4f2a7298c40bf845f96f54b518a68dfe">alignStartingAt</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> root, mlir::SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1LightweightSignalEquivalenceAnalysis.html">LightweightSignalEquivalenceAnalysis</a> &amp;equivalence)</td></tr>
+<tr class="memitem:a3495eb0673fa8d29230b10bcb55c53e1" id="r_a3495eb0673fa8d29230b10bcb55c53e1"><td class="memItemLeft" align="right" valign="top">mlir::DictionaryAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3495eb0673fa8d29230b10bcb55c53e1">withFunctionNameAttr</a> (mlir::DictionaryAttr attrs, llvm::StringRef attrName, llvm::StringRef name)</td></tr>
+<tr class="memdesc:a3495eb0673fa8d29230b10bcb55c53e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a copy of the given function argument/result attribute dictionary with <span class="tt">attrName</span> set to <span class="tt">name</span>.  <br /></td></tr>
 <tr class="memitem:a5a7bc348eb78ffc98dd0bf358764e58f" id="r_a5a7bc348eb78ffc98dd0bf358764e58f"><td class="memItemLeft" align="right" valign="top">mlir::DictionaryAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a7bc348eb78ffc98dd0bf358764e58f">withFunctionArgNameAttr</a> (mlir::DictionaryAttr attrs, llvm::StringRef name)</td></tr>
 <tr class="memdesc:a5a7bc348eb78ffc98dd0bf358764e58f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a copy of the given argument attribute dictionary with <span class="tt">function.arg_name</span> set to <span class="tt">name</span>.  <br /></td></tr>
-<tr class="memitem:a8ca8c0cae84ceef2801e4aea559bde37" id="r_a8ca8c0cae84ceef2801e4aea559bde37"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8ca8c0cae84ceef2801e4aea559bde37">reserveUniqueFunctionArgName</a> (llvm::StringSet&lt;&gt; &amp;usedNames, llvm::StringRef desiredName)</td></tr>
-<tr class="memdesc:a8ca8c0cae84ceef2801e4aea559bde37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve and return a unique function argument name based on <span class="tt">desiredName</span>.  <br /></td></tr>
+<tr class="memitem:a092a48c211ad2355dcebc7bd883d74c3" id="r_a092a48c211ad2355dcebc7bd883d74c3"><td class="memItemLeft" align="right" valign="top">mlir::DictionaryAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a092a48c211ad2355dcebc7bd883d74c3">withFunctionResNameAttr</a> (mlir::DictionaryAttr attrs, llvm::StringRef name)</td></tr>
+<tr class="memdesc:a092a48c211ad2355dcebc7bd883d74c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a copy of the given result attribute dictionary with <span class="tt">function.res_name</span> set to <span class="tt">name</span>.  <br /></td></tr>
+<tr class="memitem:af7eed5b1e715f311d355bb26f9214581" id="r_af7eed5b1e715f311d355bb26f9214581"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af7eed5b1e715f311d355bb26f9214581">reserveUniqueAttrName</a> (llvm::StringSet&lt;&gt; &amp;usedNames, llvm::StringRef desiredName)</td></tr>
+<tr class="memdesc:af7eed5b1e715f311d355bb26f9214581"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve and return a unique function argument/result name based on <span class="tt">desiredName</span>.  <br /></td></tr>
+<tr class="memitem:ad741d5f69ad1cb6fa19f8d6c5d1fc672" id="r_ad741d5f69ad1cb6fa19f8d6c5d1fc672"><td class="memItemLeft" align="right" valign="top">std::optional&lt; mlir::StringAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad741d5f69ad1cb6fa19f8d6c5d1fc672">getAttrAtIndexWithName</a> (mlir::ArrayAttr attrs, unsigned index, llvm::StringRef attrName)</td></tr>
+<tr class="memdesc:ad741d5f69ad1cb6fa19f8d6c5d1fc672"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the function arg/result attribute at <span class="tt">index</span> for the given name, if present.  <br /></td></tr>
+<tr class="memitem:acf9d9148e9ad315cad36f0a144450de5" id="r_acf9d9148e9ad315cad36f0a144450de5"><td class="memTemplParams" colspan="2">template&lt;typename GetNameAttrFn, typename GetSplitSuffixesFn&gt; </td></tr>
+<tr class="memitem:acf9d9148e9ad315cad36f0a144450de5 template"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1SplitFunctionNameInfo.html">SplitFunctionNameInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acf9d9148e9ad315cad36f0a144450de5">collectSplitFunctionNameInfo</a> (mlir::ArrayRef&lt; mlir::Type &gt; origTypes, GetNameAttrFn &amp;&amp;getNameAttr, GetSplitSuffixesFn &amp;&amp;getSplitSuffixes)</td></tr>
+<tr class="memdesc:acf9d9148e9ad315cad36f0a144450de5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collect function arg/result names and split suffixes from a list of original types.  <br /></td></tr>
+<tr class="memitem:a5a47caace028b8ad4a195863b7be0b17" id="r_a5a47caace028b8ad4a195863b7be0b17"><td class="memItemLeft" align="right" valign="top">mlir::ArrayAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a47caace028b8ad4a195863b7be0b17">replicateFunctionNameAttrsAsNeeded</a> (mlir::ArrayAttr origAttrs, const llvm::SmallVector&lt; size_t &gt; &amp;originalIdxToSize, const llvm::SmallVector&lt; mlir::Type &gt; &amp;newTypes, llvm::StringRef functionNameAttrName, llvm::ArrayRef&lt; std::optional&lt; llvm::StringRef &gt; &gt; origNames={}, llvm::ArrayRef&lt; llvm::StringRef &gt; existingNames={}, llvm::ArrayRef&lt; llvm::SmallVector&lt; std::string &gt; &gt; splitNameSuffixes={})</td></tr>
+<tr class="memdesc:a5a47caace028b8ad4a195863b7be0b17"><td class="mdescLeft">&#160;</td><td class="mdescRight">Expand function arg/result attribute arrays to match a split signature, rewriting name attrs with the provided suffixes where available.  <br /></td></tr>
+<tr class="memitem:ace269cecbfb44bc5826cd9136d88ae7f" id="r_ace269cecbfb44bc5826cd9136d88ae7f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ace269cecbfb44bc5826cd9136d88ae7f">createCallPreservingInstantiationOperands</a> (mlir::Location loc, mlir::TypeRange newResultTypes, <a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a> oldCall, llvm::ArrayRef&lt; mlir::ValueRange &gt; mapOperands, mlir::ValueRange argOperands, mlir::ConversionPatternRewriter &amp;rewriter)</td></tr>
+<tr class="memdesc:ace269cecbfb44bc5826cd9136d88ae7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuild a <span class="tt">function.call</span> while preserving explicit instantiation state from <span class="tt">oldCall</span>.  <br /></td></tr>
 <tr class="memitem:ad809d2a8931e263f7879703211032d0d" id="r_ad809d2a8931e263f7879703211032d0d"><td class="memItemLeft" align="right" valign="top">mlir::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad809d2a8931e263f7879703211032d0d">rebuildExprInCompute</a> (mlir::Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> computeFunc, mlir::OpBuilder &amp;builder, llvm::DenseMap&lt; mlir::Value, mlir::Value &gt; &amp;memo)</td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
 <tr class="memitem:a520c8c09dbbe575a7e8708ed8f6f7c44" id="r_a520c8c09dbbe575a7e8708ed8f6f7c44"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a520c8c09dbbe575a7e8708ed8f6f7c44">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name)</td></tr>
@@ -590,7 +605,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a764713f7354a0b4b2cf1b861a443136e" id="r_a764713f7354a0b4b2cf1b861a443136e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a764713f7354a0b4b2cf1b861a443136e">createRedundantReadAndWriteEliminationPass</a> ()</td></tr>
 <tr class="memitem:a02ed7b620ceb2def986e01d65617d3d4" id="r_a02ed7b620ceb2def986e01d65617d3d4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a02ed7b620ceb2def986e01d65617d3d4">createRedundantOperationEliminationPass</a> ()</td></tr>
 <tr class="memitem:aa81a4cdbc9130d5a1f71367fdc225ef2" id="r_aa81a4cdbc9130d5a1f71367fdc225ef2"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa81a4cdbc9130d5a1f71367fdc225ef2">createUnusedDeclarationEliminationPass</a> ()</td></tr>
-<tr class="memitem:aab494edb15dac73bb877f74a9378eab8" id="r_aab494edb15dac73bb877f74a9378eab8"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aab494edb15dac73bb877f74a9378eab8">createArrayToScalarPass</a> ()</td></tr>
 <tr class="memitem:ab2e3f96bf4acbb53490221c9d79f8fb0" id="r_ab2e3f96bf4acbb53490221c9d79f8fb0"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab2e3f96bf4acbb53490221c9d79f8fb0">createPolyLoweringPass</a> ()</td></tr>
 <tr class="memitem:a12880da13a89153781456c8c5852bac4" id="r_a12880da13a89153781456c8c5852bac4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12880da13a89153781456c8c5852bac4">createPolyLoweringPass</a> (unsigned maxDegree)</td></tr>
 <tr class="memitem:ad538530b34a37a9784f0d3ce8780e6d4" id="r_ad538530b34a37a9784f0d3ce8780e6d4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad538530b34a37a9784f0d3ce8780e6d4">createInlineStructsPass</a> ()</td></tr>
@@ -2347,6 +2361,46 @@ template&lt;typename T, typename U&gt; </div>
 
 </div>
 </div>
+<a id="acf9d9148e9ad315cad36f0a144450de5" name="acf9d9148e9ad315cad36f0a144450de5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf9d9148e9ad315cad36f0a144450de5">&#9670;&#160;</a></span>collectSplitFunctionNameInfo()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename GetNameAttrFn, typename GetSplitSuffixesFn&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structllzk_1_1SplitFunctionNameInfo.html">SplitFunctionNameInfo</a> llzk::collectSplitFunctionNameInfo </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ArrayRef&lt; mlir::Type &gt;</td>          <td class="paramname"><span class="paramname"><em>origTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GetNameAttrFn &amp;&amp;</td>          <td class="paramname"><span class="paramname"><em>getNameAttr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GetSplitSuffixesFn &amp;&amp;</td>          <td class="paramname"><span class="paramname"><em>getSplitSuffixes</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Collect function arg/result names and split suffixes from a list of original types. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00095">95</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+
+</div>
+</div>
 <a id="a01267bf6363cdd14607bb650e8c2f435" name="a01267bf6363cdd14607bb650e8c2f435"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a01267bf6363cdd14607bb650e8c2f435">&#9670;&#160;</a></span>computeEmitEqCardinality() <span class="overload">[1/2]</span></h2>
 
@@ -2418,23 +2472,6 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 
 </div>
 </div>
-<a id="aab494edb15dac73bb877f74a9378eab8" name="aab494edb15dac73bb877f74a9378eab8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aab494edb15dac73bb877f74a9378eab8">&#9670;&#160;</a></span>createArrayToScalarPass()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unique_ptr&lt; mlir::Pass &gt; llzk::createArrayToScalarPass </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a81bdf67dd777af0f515ba3c876468bcd" name="a81bdf67dd777af0f515ba3c876468bcd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a81bdf67dd777af0f515ba3c876468bcd">&#9670;&#160;</a></span>createCallGraphPrinterPass()</h2>
 
@@ -2470,6 +2507,60 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00095">95</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ace269cecbfb44bc5826cd9136d88ae7f" name="ace269cecbfb44bc5826cd9136d88ae7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace269cecbfb44bc5826cd9136d88ae7f">&#9670;&#160;</a></span>createCallPreservingInstantiationOperands()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a> llzk::createCallPreservingInstantiationOperands </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Location</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>newResultTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a></td>          <td class="paramname"><span class="paramname"><em>oldCall</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; mlir::ValueRange &gt;</td>          <td class="paramname"><span class="paramname"><em>mapOperands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>argOperands</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ConversionPatternRewriter &amp;</td>          <td class="paramname"><span class="paramname"><em>rewriter</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Rebuild a <span class="tt">function.call</span> while preserving explicit instantiation state from <span class="tt">oldCall</span>. </p>
+<p>This helper forwards both template parameters and affine-map instantiation operands from the original call while allowing callers to replace the result types and SSA operands that the new call should use. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00164">164</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -3480,6 +3571,44 @@ template&lt;typename TypeClass&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00274">274</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="ad741d5f69ad1cb6fa19f8d6c5d1fc672" name="ad741d5f69ad1cb6fa19f8d6c5d1fc672"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad741d5f69ad1cb6fa19f8d6c5d1fc672">&#9670;&#160;</a></span>getAttrAtIndexWithName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; mlir::StringAttr &gt; llzk::getAttrAtIndexWithName </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>attrName</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the function arg/result attribute at <span class="tt">index</span> for the given name, if present. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00074">74</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -8750,8 +8879,8 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
 
 </div>
 </div>
-<a id="a8ca8c0cae84ceef2801e4aea559bde37" name="a8ca8c0cae84ceef2801e4aea559bde37"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8ca8c0cae84ceef2801e4aea559bde37">&#9670;&#160;</a></span>reserveUniqueFunctionArgName()</h2>
+<a id="a5a47caace028b8ad4a195863b7be0b17" name="a5a47caace028b8ad4a195863b7be0b17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a47caace028b8ad4a195863b7be0b17">&#9670;&#160;</a></span>replicateFunctionNameAttrsAsNeeded()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -8760,7 +8889,65 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::string llzk::reserveUniqueFunctionArgName </td>
+          <td class="memname">mlir::ArrayAttr llzk::replicateFunctionNameAttrsAsNeeded </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>origAttrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::SmallVector&lt; size_t &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>originalIdxToSize</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::SmallVector&lt; mlir::Type &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>newTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>functionNameAttrName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; std::optional&lt; llvm::StringRef &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>origNames</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; llvm::StringRef &gt;</td>          <td class="paramname"><span class="paramname"><em>existingNames</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::ArrayRef&lt; llvm::SmallVector&lt; std::string &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>splitNameSuffixes</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Expand function arg/result attribute arrays to match a split signature, rewriting name attrs with the provided suffixes where available. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00116">116</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+
+</div>
+</div>
+<a id="af7eed5b1e715f311d355bb26f9214581" name="af7eed5b1e715f311d355bb26f9214581"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af7eed5b1e715f311d355bb26f9214581">&#9670;&#160;</a></span>reserveUniqueAttrName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llzk::reserveUniqueAttrName </td>
           <td>(</td>
           <td class="paramtype">llvm::StringSet&lt;&gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>usedNames</em></span>, </td>
         </tr>
@@ -8777,9 +8964,9 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Reserve and return a unique function argument name based on <span class="tt">desiredName</span>. </p>
+<p>Reserve and return a unique function argument/result name based on <span class="tt">desiredName</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00040">40</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00057">57</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
@@ -10786,7 +10973,78 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 <p>Return a copy of the given argument attribute dictionary with <span class="tt">function.arg_name</span> set to <span class="tt">name</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00032">32</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00045">45</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+
+</div>
+</div>
+<a id="a3495eb0673fa8d29230b10bcb55c53e1" name="a3495eb0673fa8d29230b10bcb55c53e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3495eb0673fa8d29230b10bcb55c53e1">&#9670;&#160;</a></span>withFunctionNameAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::DictionaryAttr llzk::withFunctionNameAttr </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>attrName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return a copy of the given function argument/result attribute dictionary with <span class="tt">attrName</span> set to <span class="tt">name</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00036">36</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+
+</div>
+</div>
+<a id="a092a48c211ad2355dcebc7bd883d74c3" name="a092a48c211ad2355dcebc7bd883d74c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a092a48c211ad2355dcebc7bd883d74c3">&#9670;&#160;</a></span>withFunctionResNameAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::DictionaryAttr llzk::withFunctionResNameAttr </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DictionaryAttr</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return a copy of the given result attribute dictionary with <span class="tt">function.res_name</span> set to <span class="tt">name</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00051">51</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
