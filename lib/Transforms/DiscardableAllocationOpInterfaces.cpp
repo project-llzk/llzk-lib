@@ -12,5 +12,9 @@
 // Include the generated interface definitions.
 #include "llzk/Transforms/DiscardableAllocationOpInterfaces.cpp.inc"
 
+namespace llzk {
+
 // Note: definition is placed here to avoid "vtable will be emitted in every translation unit"
-mlir::StringRef llzk::DiscardableAllocationResource::getName() { return "DiscardableAllocation"; }
+mlir::StringRef DiscardableAllocationResource::getName() { return "DiscardableAllocation"; }
+
+} // namespace llzk
