@@ -16,6 +16,7 @@
 namespace r1cs {
 
 std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
+std::unique_ptr<mlir::Pass> createR1CSBinaryExportPass();
 
 void registerTransformationPassPipelines();
 
