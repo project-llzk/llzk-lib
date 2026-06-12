@@ -1,0 +1,169 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@lhs: index, @rhs: index]>
+module attributes {llzk.lang} {
+  function.def @swap_and_add(%pair: !Pair {function.arg_name = "pair"}) -> (!Pair {function.res_name = "out"}) {
+    %lhs = pod.read %pair[@lhs] : !Pair, index
+    %rhs = pod.read %pair[@rhs] : !Pair, index
+    %sum = arith.addi %lhs, %rhs : index
+    %out = pod.new : !Pair
+    pod.write %out[@lhs] = %rhs : !Pair, index
+    pod.write %out[@rhs] = %sum : !Pair, index
+    function.return %out : !Pair
+  }
+
+  function.def @main(%x: index, %y: index) -> index {
+    %pair = pod.new : !Pair
+    pod.write %pair[@lhs] = %x : !Pair, index
+    pod.write %pair[@rhs] = %y : !Pair, index
+    %swapped = function.call @swap_and_add(%pair) : (!Pair) -> !Pair
+    %res = pod.read %swapped[@rhs] : !Pair, index
+    function.return %res : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @swap_and_add(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "pair.lhs"}, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index {function.arg_name = "pair.rhs"}) -> (index {function.res_name = "out.lhs"}, index {function.res_name = "out.rhs"}) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:      function.return %[[VAL_1]], %[[VAL_2]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]]:2 = function.call @swap_and_add(%[[VAL_3]], %[[VAL_4]]) : (index, index) -> (index, index)
+// CHECK-NEXT:      function.return %[[VAL_5]]#1 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@lhs: index, @rhs: index]>
+module attributes {llzk.lang} {
+  function.def @mix(%prefix: index, %pair: !Pair, %suffix: index) -> !Pair {
+    %lhs = pod.read %pair[@lhs] : !Pair, index
+    %rhs = pod.read %pair[@rhs] : !Pair, index
+    %lhs2 = arith.addi %prefix, %lhs : index
+    %rhs2 = arith.addi %rhs, %suffix : index
+    %out = pod.new : !Pair
+    pod.write %out[@lhs] = %lhs2 : !Pair, index
+    pod.write %out[@rhs] = %rhs2 : !Pair, index
+    function.return %out : !Pair
+  }
+
+  function.def @main(%a: index, %b: index, %c: index, %d: index) -> index {
+    %pair = pod.new : !Pair
+    pod.write %pair[@lhs] = %b : !Pair, index
+    pod.write %pair[@rhs] = %c : !Pair, index
+    %out = function.call @mix(%a, %pair, %d) : (index, !Pair, index) -> !Pair
+    %res = pod.read %out[@lhs] : !Pair, index
+    function.return %res : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @mix(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index, %[[VAL_8:[0-9a-zA-Z_\.]+]]: index, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]]:2 = function.call @mix(%[[VAL_6]], %[[VAL_7]], %[[VAL_8]], %[[VAL_9]]) : (index, index, index, index) -> (index, index)
+// CHECK-NEXT:      function.return %[[VAL_10]]#0 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  poly.template @TFree {
+    poly.param @A
+
+    function.def @make() -> !Single {
+      %out = pod.new : !Single
+      %a = poly.read_const @A : index
+      pod.write %out[@x] = %a : !Single, index
+      function.return %out : !Single
+    }
+  }
+
+  function.def @main() -> index {
+    %res = function.call @TFree::@make<[7]>() : () -> !Single
+    %x = pod.read %res[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFree {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      function.def @make() -> index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @TFree::@make<[7]>() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#sum = affine_map<()[s0, s1] -> (s0 + s1)>
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @A
+
+    struct.def @Box {
+      struct.member @out : index {llzk.pub}
+
+      function.def @compute(%p: !Single) -> !struct.type<@TBox::@Box<[@A]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@A]>>
+        %x = pod.read %p[@x] : !Single, index
+        struct.writem %self[@out] = %x : !struct.type<@TBox::@Box<[@A]>>, index
+        function.return %self : !struct.type<@TBox::@Box<[@A]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@A]>>, %p: !Single) {
+        function.return
+      }
+    }
+  }
+
+  function.def @main(%x: index) -> index attributes {function.allow_witness} {
+    %p = pod.new : !Single
+    pod.write %p[@x] = %x : !Single, index
+    %c2 = arith.constant 2 : index
+    %c3 = arith.constant 3 : index
+    %box = function.call @TBox::@Box::@compute(%p){()[%c2, %c3]}
+        : (!Single) -> !struct.type<@TBox::@Box<[#sum]>>
+    %out = struct.readm %box[@out] : !struct.type<@TBox::@Box<[#sum]>>, index
+    function.return %out : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:          function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:       %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:       %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[VAL_0]]) {(){{\[}}%[[VAL_1]], %[[VAL_2]]]} : (index) -> !struct.type<@TBox::@Box<[{{.*}}]>>
+// CHECK-NEXT:       %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@out] : <@TBox::@Box<[{{.*}}]>>, index
+// CHECK-NEXT:       function.return %[[VAL_4]] : index
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// -----
+
+!Single = !pod.type<[@x: index]>
+!PodArray = !array.type<2 x !Single>
+module attributes {llzk.lang} {
+  function.def @id_array_of_pod(%arg: !PodArray) -> !PodArray {
+    function.return %arg : !PodArray
+  }
+
+  function.def @main(%arg: !PodArray) -> !PodArray {
+    %res = function.call @id_array_of_pod(%arg) : (!PodArray) -> !PodArray
+    function.return %res : !PodArray
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @id_array_of_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !pod.type<[@x: index]>>) -> !array.type<2 x !pod.type<[@x: index]>> {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<2 x !pod.type<[@x: index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !pod.type<[@x: index]>>) -> !array.type<2 x !pod.type<[@x: index]>> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @id_array_of_pod(%[[VAL_1]]) : (!array.type<2 x !pod.type<[@x: index]>>) -> !array.type<2 x !pod.type<[@x: index]>>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<2 x !pod.type<[@x: index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

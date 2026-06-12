@@ -25,19 +25,36 @@
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 
+#include <optional>
+#include <string>
+
 namespace llzk {
 
-/// Return a copy of the given argument attribute dictionary with `function.arg_name` set to `name`.
+/// Return a copy of the given function argument/result attribute dictionary with `attrName` set
+/// to `name`.
 inline mlir::DictionaryAttr
-withFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+withFunctionNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef attrName, llvm::StringRef name) {
   mlir::NamedAttrList newAttrs(attrs);
-  newAttrs.set(function::ARG_NAME_ATTR_NAME, mlir::StringAttr::get(attrs.getContext(), name));
+  newAttrs.set(attrName, mlir::StringAttr::get(attrs.getContext(), name));
   return newAttrs.getDictionary(attrs.getContext());
 }
 
-/// Reserve and return a unique function argument name based on `desiredName`.
+/// Return a copy of the given argument attribute dictionary with `function.arg_name` set to
+/// `name`.
+inline mlir::DictionaryAttr
+withFunctionArgNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+  return withFunctionNameAttr(attrs, function::ARG_NAME_ATTR_NAME, name);
+}
+
+/// Return a copy of the given result attribute dictionary with `function.res_name` set to `name`.
+inline mlir::DictionaryAttr
+withFunctionResNameAttr(mlir::DictionaryAttr attrs, llvm::StringRef name) {
+  return withFunctionNameAttr(attrs, function::RES_NAME_ATTR_NAME, name);
+}
+
+/// Reserve and return a unique function argument/result name based on `desiredName`.
 inline std::string
-reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desiredName) {
+reserveUniqueAttrName(llvm::StringSet<> &usedNames, llvm::StringRef desiredName) {
   if (!usedNames.contains(desiredName)) {
     usedNames.insert(desiredName);
     return desiredName.str();
@@ -50,6 +67,120 @@ reserveUniqueFunctionArgName(llvm::StringSet<> &usedNames, llvm::StringRef desir
       return candidate;
     }
   }
+}
+
+/// Return the function arg/result attribute at `index` for the given name, if present.
+inline std::optional<mlir::StringAttr>
+getAttrAtIndexWithName(mlir::ArrayAttr attrs, unsigned index, llvm::StringRef attrName) {
+  if (!attrs || index >= attrs.size()) {
+    return std::nullopt;
+  }
+  if (auto dictAttr = llvm::dyn_cast<mlir::DictionaryAttr>(attrs[index])) {
+    if (auto nameAttr = llvm::dyn_cast<mlir::StringAttr>(dictAttr.get(attrName))) {
+      return nameAttr;
+    }
+  }
+  return std::nullopt;
+}
+
+/// Cached function arg/result names and split suffixes used while rewriting a function signature.
+struct SplitFunctionNameInfo {
+  llvm::SmallVector<std::optional<llvm::StringRef>> originalNames;
+  llvm::SmallVector<llvm::StringRef> existingNames;
+  llvm::SmallVector<llvm::SmallVector<std::string>> splitNameSuffixes;
+};
+
+/// Collect function arg/result names and split suffixes from a list of original types.
+template <typename GetNameAttrFn, typename GetSplitSuffixesFn>
+inline SplitFunctionNameInfo collectSplitFunctionNameInfo(
+    mlir::ArrayRef<mlir::Type> origTypes, GetNameAttrFn &&getNameAttr,
+    GetSplitSuffixesFn &&getSplitSuffixes
+) {
+  SplitFunctionNameInfo info;
+  info.originalNames.reserve(origTypes.size());
+  info.splitNameSuffixes.reserve(origTypes.size());
+  for (auto [i, type] : llvm::enumerate(origTypes)) {
+    if (std::optional<mlir::StringAttr> nameAttr = getNameAttr(i)) {
+      info.originalNames.push_back(nameAttr->getValue());
+      info.existingNames.push_back(nameAttr->getValue());
+    } else {
+      info.originalNames.push_back(std::nullopt);
+    }
+    info.splitNameSuffixes.push_back(getSplitSuffixes(type));
+  }
+  return info;
+}
+
+/// Expand function arg/result attribute arrays to match a split signature, rewriting name attrs
+/// with the provided suffixes where available.
+inline mlir::ArrayAttr replicateFunctionNameAttrsAsNeeded(
+    mlir::ArrayAttr origAttrs, const llvm::SmallVector<size_t> &originalIdxToSize,
+    const llvm::SmallVector<mlir::Type> &newTypes, llvm::StringRef functionNameAttrName,
+    llvm::ArrayRef<std::optional<llvm::StringRef>> origNames = {},
+    llvm::ArrayRef<llvm::StringRef> existingNames = {},
+    llvm::ArrayRef<llvm::SmallVector<std::string>> splitNameSuffixes = {}
+) {
+  if (!origAttrs) {
+    return nullptr;
+  }
+  assert(originalIdxToSize.size() == origAttrs.size());
+  if (originalIdxToSize.size() == newTypes.size()) {
+    return nullptr;
+  }
+
+  llvm::SmallVector<mlir::Attribute> newAttrs;
+  llvm::StringSet<> usedNames;
+  if (!origNames.empty()) {
+    for (llvm::StringRef name : existingNames) {
+      usedNames.insert(name);
+    }
+  }
+
+  for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
+    mlir::Attribute attr = origAttrs[i];
+    if (!origNames.empty() && !splitNameSuffixes.empty() && s != 1 && origNames[i]) {
+      assert(i < splitNameSuffixes.size());
+      assert(splitNameSuffixes[i].size() == s);
+      auto dictAttr = llvm::cast<mlir::DictionaryAttr>(attr);
+      llvm::StringRef name = *origNames[i];
+      for (llvm::StringRef suffix : splitNameSuffixes[i]) {
+        std::string desiredName = (llvm::Twine(name) + suffix).str();
+        newAttrs.push_back(withFunctionNameAttr(
+            dictAttr, functionNameAttrName, reserveUniqueAttrName(usedNames, desiredName)
+        ));
+      }
+      continue;
+    }
+    newAttrs.append(s, attr);
+  }
+  return mlir::ArrayAttr::get(origAttrs.getContext(), newAttrs);
+}
+
+/// Rebuild a `function.call` while preserving explicit instantiation state from `oldCall`.
+///
+/// This helper forwards both template parameters and affine-map instantiation operands from the
+/// original call while allowing callers to replace the result types and SSA operands that the new
+/// call should use.
+inline function::CallOp createCallPreservingInstantiationOperands(
+    mlir::Location loc, mlir::TypeRange newResultTypes, function::CallOp oldCall,
+    llvm::ArrayRef<mlir::ValueRange> mapOperands, mlir::ValueRange argOperands,
+    mlir::ConversionPatternRewriter &rewriter
+) {
+  llvm::SmallVector<mlir::Attribute> templateParams;
+  if (mlir::ArrayAttr templateParamsAttr = oldCall.getTemplateParamsAttr()) {
+    templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
+  }
+
+  if (oldCall.getMapOperands().empty()) {
+    return rewriter.create<function::CallOp>(
+        loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
+    );
+  }
+
+  return rewriter.create<function::CallOp>(
+      loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands, oldCall.getNumDimsPerMapAttr(),
+      argOperands, templateParams
+  );
 }
 
 /// General helper for converting a `FuncDefOp` by changing its input and/or result types and the
@@ -103,10 +234,18 @@ public:
     // If the function has a body, ensure the entry block arguments match the function inputs.
     if (mlir::Region *body = op.getCallableRegion()) {
       mlir::Block &entryBlock = body->front();
-      if (!std::cmp_equal(entryBlock.getNumArguments(), newInputs.size())) {
+      bool blockArgsNeedUpdate =
+          !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()) ||
+          llvm::any_of(llvm::zip_equal(entryBlock.getArgumentTypes(), newInputs), [](auto pair) {
+        return std::get<0>(pair) != std::get<1>(pair);
+      });
+      if (blockArgsNeedUpdate) {
         processBlockArgs(entryBlock, rewriter);
-        // Post-condition: block args must match function inputs
+        // Post-condition: block args must match function inputs in both arity and type.
         assert(std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()));
+        for (unsigned i = 0, e = entryBlock.getNumArguments(); i < e; ++i) {
+          assert(entryBlock.getArgument(i).getType() == newInputs[i]);
+        }
       }
     }
   }
@@ -157,7 +296,7 @@ protected:
   /// Executed for each scalar id in the aggregate type of the original member to generate the
   /// per-scalar operations on the new scalar members.
   static void forId(
-      mlir::Location, GenHeaderType, IdType, MemberInfo, OpAdaptor,
+      mlir::Location, GenHeaderType &, IdType, MemberInfo, OpAdaptor,
       mlir::ConversionPatternRewriter &
   ) {
     ensureImplementedAtCompile();
@@ -200,6 +339,9 @@ public:
     // Split the aggregate member into a series of scalar member ops.
     for (auto [id, newMember] : idToName) {
       ImplClass::forId(op.getLoc(), prefixResult, id, newMember, adaptor, rewriter);
+    }
+    if constexpr (requires { ImplClass::finalize(op, prefixResult, adaptor, rewriter); }) {
+      ImplClass::finalize(op, prefixResult, adaptor, rewriter);
     }
     rewriter.eraseOp(op);
   }
