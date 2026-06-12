@@ -6,6 +6,7 @@ file(GLOB LLZKTransforms_SOURCES "*.cpp")
 target_sources(
   LLZKTransforms PRIVATE
     ${LLZKTransforms_SOURCES}
+    DiscardableAllocationOpInterfaces.cpp
     LLZKWhileToForPass.cpp
 )
 
