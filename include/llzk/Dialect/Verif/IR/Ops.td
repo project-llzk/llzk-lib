@@ -16,6 +16,7 @@ include "mlir/Interfaces/CallInterfaces.td"
 include "mlir/Interfaces/FunctionInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
+include "llzk/Dialect/Felt/IR/Types.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
@@ -430,6 +431,94 @@ def InvariantOp
     /// Returns the contract operation that contains this invariant.
     ::llzk::verif::ContractOp getParentContract();
   }];
+}
+
+//===------------------------------------------------------------------===//
+// Invariant inner ops
+//===------------------------------------------------------------------===//
+
+class InvariantInnerOp<string mnemonic, list<Trait> traits = []>
+    : VerifDialectOp<
+          mnemonic,
+          traits#[HasAncestor<"::llzk::verif::InvariantOp">,
+                  DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
+
+  let summary = mnemonic#" value operation";
+  let description = [{
+    Indicates that a value }]#mnemonic#[{ on each iteration of the loop.
+
+    This declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)
+    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.
+  }];
+
+  let arguments = (ins LLZK_FeltType:$value);
+  let results = (outs);
+
+  let extraClassDefinition = [{
+    // This side effect models "program termination". Based on
+    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
+    void $cppClass::getEffects(
+        ::mlir::SmallVectorImpl<::mlir::SideEffects::EffectInstance<::mlir::MemoryEffects::Effect>> &effects
+    ) {
+      effects.emplace_back(::mlir::MemoryEffects::Write::get());
+    }
+  }];
+}
+
+def IncreasesOp : InvariantInnerOp<"increases"> {}
+
+def DecreasesOp : InvariantInnerOp<"decreases"> {}
+
+def StepOp : VerifDialectOp<
+                 "step", [HasAncestor<"::llzk::verif::InvariantOp">,
+                          DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
+                          NoRegionArguments, SingleBlock]> {
+  let summary = "step predicate operation";
+  let description = [{
+    Defines a predicate that must be satisfied between iterations of the loop.
+    
+    The predicate can access the value in the previous iteration by using the `verif.old` operation.
+
+    Declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)
+    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.
+  }];
+
+  let arguments = (ins);
+  let results = (outs);
+
+  let regions = (region SizedRegion<1>:$region);
+
+  let extraClassDefinition = [{
+    // This side effect models "program termination". Based on
+    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
+    void $cppClass::getEffects(
+        ::mlir::SmallVectorImpl<::mlir::SideEffects::EffectInstance<::mlir::MemoryEffects::Effect>> &effects
+    ) {
+      effects.emplace_back(::mlir::MemoryEffects::Write::get());
+    }
+  }];
+}
+
+def StepYieldOp : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]> {
+  let summary = "step yield operation";
+  let description = [{
+    Terminator operation for `verif.step` blocks. Takes the boolean value carrying the predicate's result.
+  }];
+
+  let arguments = (ins I1:$value);
+  let results = (outs);
+}
+
+def OldOp : VerifDialectOp<"old", [Pure, HasAncestor<"::llzk::verif::StepOp">, AllTypesMatch<["value", "result"]>]> {
+  let summary = "old operation";
+  let description = [{
+    This operation allows accessing the value of an expression in the previous iteration of the loop.
+
+    In can only be used within the body of a `verif.step` operation.
+  }];
+
+  let arguments = (ins AnyLLZKType:$value);
+  let results = (outs AnyLLZKType:$result);
 }
 
 #endif // LLZK_VERIF_OPS

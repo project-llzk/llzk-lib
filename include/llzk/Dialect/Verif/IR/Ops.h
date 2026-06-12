@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Dialect/Verif/IR/OpInterfaces.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
