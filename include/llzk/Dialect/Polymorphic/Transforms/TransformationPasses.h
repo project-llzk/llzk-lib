@@ -15,6 +15,7 @@
 namespace llzk::polymorphic {
 
 #define GEN_PASS_DECL_FLATTENINGPASS
+#define GEN_PASS_DECL_WILDCARDARRAYSPECIALIZATIONPASS
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 
 std::unique_ptr<mlir::Pass> createEmptyTemplateRemoval();

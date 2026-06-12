@@ -92,4 +92,20 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
   ];
 }
 
+def WildcardArraySpecializationPass : LLZKPass<"llzk-specialize-wildcard-arrays"> {
+  let summary = "Refine wildcard array casts and specialize concrete call targets";
+  let description = [{
+    Refines `poly.unifiable_cast` results when wildcard `array.type` dimensions can be replaced
+    with concrete integer sizes from the input type. Then specializes free functions, extern
+    declarations, and whole structs for calls whose wildcard array dimensions have become concrete.
+
+    This pass is intended to run after `llzk-flatten`. It iterates to a fixpoint so newly-refined
+    cast result types can enable further callable specialization in later iterations.
+  }];
+  let options = [Option<"iterationLimit", "max-iter", "unsigned",
+                        /* default */ "1000",
+                        "Maximum number of iterations before the pass gives up "
+                        "reaching a fixpoint.">];
+}
+
 #endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD
