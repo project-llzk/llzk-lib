@@ -216,8 +216,10 @@ struct R1CSConstraint {
   }
 };
 
-class R1CSLoweringPass : public r1cs::impl::R1CSLoweringPassBase<R1CSLoweringPass> {
-private:
+class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
+  using Base = R1CSLoweringPassBase<PassImpl>;
+  using Base::Base;
+
   unsigned auxCounter = 0;
 
   // Normalize a felt-valued expression into R1CS-compatible form.
@@ -699,8 +701,5 @@ private:
     });
   }
 };
-} // namespace
 
-std::unique_ptr<mlir::Pass> r1cs::createR1CSLoweringPass() {
-  return std::make_unique<R1CSLoweringPass>();
-}
+} // namespace

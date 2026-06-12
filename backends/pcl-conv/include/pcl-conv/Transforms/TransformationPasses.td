@@ -19,7 +19,6 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
       Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
       This pass currently expects the flattening and inlining passes to be run prior to its use.
     }];
-  let constructor = "pcl::conversion::createPCLLoweringPass()";
 }
 
 #endif // PCL_CONV_TRANSFORMATION_PASSES_TD

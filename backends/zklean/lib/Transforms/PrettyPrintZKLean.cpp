@@ -6,6 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+///
+/// \file
+/// emitZKLeanModule collects structs via collectZKLeanStructDefs, prints them
+/// with emitLeanStructsFromZKLean, and formats bodies with formatLeanStatement.
+///
+//===----------------------------------------------------------------------===//
 
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
@@ -36,15 +42,12 @@
 
 #include <optional>
 
-// Pretty-printing overview:
-// - emitZKLeanModule collects structs via collectZKLeanStructDefs, prints them
-//   with emitLeanStructsFromZKLean, and formats bodies with formatLeanStatement.
-using namespace mlir;
-
 namespace zklean {
-#define GEN_PASS_DECL_PRETTYPRINTZKLEANPASS
 #define GEN_PASS_DEF_PRETTYPRINTZKLEANPASS
 #include "zklean/Transforms/ZKLeanPasses.h.inc"
+} // namespace zklean
+
+using namespace mlir;
 
 namespace {
 
@@ -548,7 +551,10 @@ static bool emitZKLeanModule(ModuleOp module, raw_ostream &os) {
 
 // Pass that pretty-prints ZK dialect IR into Lean-like syntax.
 // Manages output file handling for pretty-printed Lean code.
-struct PrettyPrintZKLeanPass : public impl::PrettyPrintZKLeanPassBase<PrettyPrintZKLeanPass> {
+class PassImpl : public zklean::impl::PrettyPrintZKLeanPassBase<PassImpl> {
+  using Base = PrettyPrintZKLeanPassBase<PassImpl>;
+  using Base::Base;
+
   // Run the pass and emit Lean output to the selected stream.
   // Uses ZKLean formatting when ZK ops are present.
   void runOnOperation() override {
@@ -580,11 +586,3 @@ struct PrettyPrintZKLeanPass : public impl::PrettyPrintZKLeanPassBase<PrettyPrin
 };
 
 } // namespace
-
-// Pass factory for `PrettyPrintZKLeanPass`.
-// Used by pass registration and external callers.
-std::unique_ptr<Pass> createPrettyPrintZKLeanPass() {
-  return std::make_unique<PrettyPrintZKLeanPass>();
-}
-
-} // namespace zklean

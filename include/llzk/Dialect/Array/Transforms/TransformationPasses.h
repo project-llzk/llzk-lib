@@ -13,8 +13,7 @@
 
 namespace llzk::array {
 
-std::unique_ptr<mlir::Pass> createArrayToScalarPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h.inc"
 

@@ -1,0 +1,4 @@
+fixed:
+  - Prevent `--cse` from merging distinct `array.new` allocations.
+added:
+  - Add `--llzk-remove-unused-discardable-allocations` for removing unread discardable allocations and their dead stores.

@@ -1607,7 +1607,10 @@ static size_t podAllocScalarizationWeight(ModuleOp modOp) {
 }
 
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
-class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarPass> {
+class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
+  using Base = PodToScalarPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     ModuleOp module = getOperation();
 
@@ -1696,8 +1699,3 @@ class PodToScalarPass : public llzk::pod::impl::PodToScalarPassBase<PodToScalarP
 };
 
 } // namespace
-
-/// Create the pass that rewrites eligible POD storage into scalar SSA values.
-std::unique_ptr<Pass> llzk::pod::createPodToScalarPass() {
-  return std::make_unique<PodToScalarPass>();
-};

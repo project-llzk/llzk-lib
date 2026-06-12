@@ -13,8 +13,7 @@
 
 namespace llzk::pod {
 
-std::unique_ptr<mlir::Pass> createPodToScalarPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h.inc"
 

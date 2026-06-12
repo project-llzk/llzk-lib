@@ -28,7 +28,6 @@ def PrettyPrintZKLeanPass : Pass<"zklean-pretty-print", "::mlir::ModuleOp"> {
               "File to write the pretty-printed zkLean dialect operations to. "
               "Use '-' to write to stdout.">,
   ];
-  let constructor = "zklean::createPrettyPrintZKLeanPass()";
 }
 
 #endif // ZKLEAN_PASSES_TD

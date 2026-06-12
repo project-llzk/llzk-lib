@@ -47,7 +47,6 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
     - Convert templates with no constant parameters or expressions into modules.
     - Remove templates with no struct or function definitions.
   }];
-  let constructor = "llzk::polymorphic::createEmptyTemplateRemoval()";
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
@@ -61,8 +60,6 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
       to `compute()` functions and unroll loops
     - Unroll loops
   }];
-  let constructor = "llzk::polymorphic::createFlatteningPass()";
-
   let options =
       [Option<"iterationLimit", "max-iter", "unsigned",
               /* default */ "1000",

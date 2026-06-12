@@ -16,18 +16,18 @@
 #include "llzk/Analysis/SymbolDefTree.h"
 
 namespace llzk {
-
-#define GEN_PASS_DECL_SYMBOLDEFTREEPRINTERPASS
 #define GEN_PASS_DEF_SYMBOLDEFTREEPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
+} // namespace llzk
 
-using namespace component;
+namespace {
 
-class SymbolDefTreePass : public impl::SymbolDefTreePrinterPassBase<SymbolDefTreePass> {
-public:
-  SymbolDefTreePass() : impl::SymbolDefTreePrinterPassBase<SymbolDefTreePass>() {}
+using namespace llzk;
 
-protected:
+class PassImpl : public llzk::impl::SymbolDefTreePrinterPassBase<PassImpl> {
+  using Base = SymbolDefTreePrinterPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
@@ -39,8 +39,4 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass> createSymbolDefTreePrinterPass() {
-  return std::make_unique<SymbolDefTreePass>();
-}
-
-} // namespace llzk
+} // namespace

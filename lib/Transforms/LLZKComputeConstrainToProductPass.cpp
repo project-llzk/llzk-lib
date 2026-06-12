@@ -32,79 +32,16 @@
 #include <ranges>
 
 namespace llzk {
-#define GEN_PASS_DECL_COMPUTECONSTRAINTOPRODUCTPASS
 #define GEN_PASS_DEF_COMPUTECONSTRAINTOPRODUCTPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
 #define DEBUG_TYPE "llzk-compute-constrain-to-product-pass"
 
+using namespace mlir;
+using namespace llzk;
 using namespace llzk::component;
 using namespace llzk::function;
-using namespace mlir;
-
-using std::make_unique;
-
-namespace llzk {
-
-bool isValidRoot(StructDefOp root) {
-  FuncDefOp computeFunc = root.getComputeFuncOp();
-  FuncDefOp constrainFunc = root.getConstrainFuncOp();
-
-  if (!computeFunc || !constrainFunc) {
-    root->emitError()
-        .append("no ", FUNC_NAME_COMPUTE, "/", FUNC_NAME_CONSTRAIN, " to align")
-        .report();
-    return false;
-  }
-
-  /// TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid
-  /// root to start aligning from (issue #241)
-
-  return true;
-}
-
-LogicalResult alignStartingAt(
-    component::StructDefOp root, SymbolTableCollection &tables,
-    LightweightSignalEquivalenceAnalysis &equivalence
-) {
-  if (!isValidRoot(root)) {
-    return failure();
-  }
-
-  ProductAligner aligner {tables, equivalence};
-  if (!aligner.alignFuncs(root, root.getComputeFuncOp(), root.getConstrainFuncOp())) {
-    return failure();
-  }
-
-  return success();
-}
-
-class ComputeConstrainToProductPass
-    : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
-
-public:
-  void runOnOperation() override {
-    ModuleOp mod = getOperation();
-    StructDefOp root;
-
-    SymbolTableCollection tables;
-    LightweightSignalEquivalenceAnalysis equivalence {
-        getAnalysis<LightweightSignalEquivalenceAnalysis>()
-    };
-
-    // Find the indicated root struct and make sure its a valid place to start aligning
-    mod.walk([&root, this](StructDefOp structDef) {
-      if (structDef.getSymName() == rootStruct) {
-        root = structDef;
-      }
-    });
-
-    if (failed(alignStartingAt(root, tables, equivalence))) {
-      signalPassFailure();
-    }
-  }
-};
 
 FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDefOp constrain) {
 
@@ -253,8 +190,65 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
   return success();
 }
 
-std::unique_ptr<Pass> createComputeConstrainToProductPass() {
-  return make_unique<ComputeConstrainToProductPass>();
+namespace {
+
+bool isValidRoot(StructDefOp root) {
+  FuncDefOp computeFunc = root.getComputeFuncOp();
+  FuncDefOp constrainFunc = root.getConstrainFuncOp();
+
+  if (!computeFunc || !constrainFunc) {
+    root->emitError()
+        .append("no ", FUNC_NAME_COMPUTE, "/", FUNC_NAME_CONSTRAIN, " to align")
+        .report();
+    return false;
+  }
+
+  /// TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid
+  /// root to start aligning from (issue #241)
+
+  return true;
 }
 
-} // namespace llzk
+LogicalResult alignStartingAt(
+    component::StructDefOp root, SymbolTableCollection &tables,
+    LightweightSignalEquivalenceAnalysis &equivalence
+) {
+  if (!isValidRoot(root)) {
+    return failure();
+  }
+
+  ProductAligner aligner {tables, equivalence};
+  if (!aligner.alignFuncs(root, root.getComputeFuncOp(), root.getConstrainFuncOp())) {
+    return failure();
+  }
+
+  return success();
+}
+
+class PassImpl : public llzk::impl::ComputeConstrainToProductPassBase<PassImpl> {
+  using Base = ComputeConstrainToProductPassBase<PassImpl>;
+  using Base::Base;
+
+  void runOnOperation() override {
+    ModuleOp mod = getOperation();
+    StructDefOp root;
+
+    SymbolTableCollection tables;
+    LightweightSignalEquivalenceAnalysis equivalence {
+        getAnalysis<LightweightSignalEquivalenceAnalysis>()
+    };
+
+    // Find the indicated root struct and make sure its a valid place to start aligning
+    mod.walk([&root, this](StructDefOp structDef) {
+      if (structDef.getSymName() == rootStruct) {
+        root = structDef;
+      }
+    });
+
+    if (failed(alignStartingAt(root, tables, equivalence))) {
+      signalPassFailure();
+    }
+  }
+};
+
+} // namespace

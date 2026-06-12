@@ -6,6 +6,21 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+///
+/// \file
+/// ZKLean -> LLZK conversion overview:
+/// - `createConvertZKLeanToLLZKPass` constructs `ConvertZKLeanToLLZKPass`.
+/// - `ConvertZKLeanToLLZKPass::runOnOperation` creates the LLZK module and calls
+///   `convertLeanModule` for the actual conversion.
+/// - `convertLeanModule` emits structs with `emitStructDefsFromZKLean`, converts
+///    each function via `convertFunction`, and then fills missing pieces with
+///   `ensureComputeStub`/`ensureConstrainStub`.
+/// - `convertFunction` gathers ops with `collectOpsAndWitnesses`, resolves the
+///   target struct via `resolveStructState`, creates the LLZK function with
+///   `createTargetFunction`, and delegates per-op lowering to
+///   `FunctionConverter::convertOperation` before finalize emits the return.
+///
+//===----------------------------------------------------------------------===//
 
 #include "zklean/Conversions/Passes.h"
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
@@ -34,24 +49,13 @@
 
 #include <optional>
 
-// ZKLean -> LLZK conversion overview:
-// - `createConvertZKLeanToLLZKPass` constructs `ConvertZKLeanToLLZKPass`.
-// - `ConvertZKLeanToLLZKPass::runOnOperation` creates the LLZK module and calls
-//   `convertLeanModule` for the actual conversion.
-// - `convertLeanModule` emits structs with `emitStructDefsFromZKLean`, converts each
-//   function via `convertFunction`, and then fills missing pieces with
-//   `ensureComputeStub`/`ensureConstrainStub`.
-// - `convertFunction` gathers ops with `collectOpsAndWitnesses`, resolves the target
-//   struct via `resolveStructState`, creates the LLZK function with
-//   `createTargetFunction`, and delegates per-op lowering to
-//   `FunctionConverter::convertOperation` before finalize emits the return.
-using namespace mlir;
-
 namespace zklean {
-#define GEN_PASS_DECL_CONVERTZKLEANTOLLZKPASS
+
 #define GEN_PASS_DEF_CONVERTZKLEANTOLLZKPASS
 #include "zklean/Conversions/ConversionPasses.h.inc"
 } // namespace zklean
+
+using namespace mlir;
 
 namespace {
 
@@ -646,9 +650,10 @@ static LogicalResult convertLeanModule(ModuleOp source, ModuleOp dest) {
 
 // Pass wrapper that appends a converted LLZK module to the source.
 // Delegates conversion details to `convertLeanModule`.
-class ConvertZKLeanToLLZKPass
-    : public zklean::impl::ConvertZKLeanToLLZKPassBase<ConvertZKLeanToLLZKPass> {
-public:
+class PassImpl : public zklean::impl::ConvertZKLeanToLLZKPassBase<PassImpl> {
+  using Base = ConvertZKLeanToLLZKPassBase<PassImpl>;
+  using Base::Base;
+
   // Create the LLZK module, run conversion, and replace the source module.
   // Emits a diagnostic and signals failure when conversion fails.
   void runOnOperation() override {
@@ -678,13 +683,3 @@ public:
 };
 
 } // namespace
-
-namespace zklean {
-
-// Pass factory for `ConvertZKLeanToLLZKPass`.
-// Used by pass registration and external callers.
-std::unique_ptr<Pass> createConvertZKLeanToLLZKPass() {
-  return std::make_unique<ConvertZKLeanToLLZKPass>();
-}
-
-} // namespace zklean
