@@ -12,6 +12,8 @@
 #include "llzk/Config/Config.h"
 #include "llzk/Pass/PassBase.h"
 
+#include <llvm/ADT/StringRef.h>
+
 namespace llzk {
 
 void addRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm);
@@ -31,6 +33,11 @@ std::unique_ptr<mlir::Pass> createRedundantReadAndWriteEliminationPass();
 std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
 
 std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
+
+std::unique_ptr<mlir::Pass> createRemoveUnusedDiscardableAllocationsPass();
+
+std::unique_ptr<mlir::Pass>
+createRemoveUnusedDiscardableAllocationsPass(llvm::StringRef allocatorOpName);
 
 std::unique_ptr<mlir::Pass> createPolyLoweringPass();
 

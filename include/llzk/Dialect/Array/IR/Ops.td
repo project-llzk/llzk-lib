@@ -14,10 +14,12 @@ include "llzk/Dialect/Array/IR/Dialect.td"
 include "llzk/Dialect/Array/IR/OpInterfaces.td"
 include "llzk/Dialect/Array/IR/Types.td"
 include "llzk/Dialect/Shared/OpTraits.td"
+include "llzk/Transforms/DiscardableAllocationOpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
 
 class ArrayDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<ArrayDialect, mnemonic, traits>;
@@ -40,7 +42,9 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     : ArrayAccessOpBase<
           mnemonic,
           traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
-                  DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>,
+                  DeclareOpInterfaceMethods<
+                      DiscardableAllocationAccessorOpInterface>]> {
   let extraClassDefinition = [{
     /// Required by DestructurableAllocationOpInterface / SROA pass
     bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
@@ -82,6 +86,24 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     bool $cppClass::isRead() {
       return }]#!if(isRead, "true", "false")#[{;
     }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::loadsFromDiscardableAllocation(::mlir::Value ptr) {
+      return }]#!if(isRead, "getArrRef() == ptr", "false")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::storesToDiscardableAllocation(::mlir::Value ptr) {
+      return }]#!if(isRead, "false",
+                    "getArrRef() == ptr && getRvalue() != ptr")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::canEraseAsDeadStoreTo(::mlir::Value ptr,
+                                          const ::mlir::DataLayout & /*dataLayout*/) {
+      }]#!if(isRead, "return false",
+             "return getArrRef() == ptr && getRvalue() != ptr")#[{;
+    }
   }];
 }
 
@@ -103,7 +125,8 @@ class RangedArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
 def LLZK_CreateArrayOp
     : ArrayDialectOp<
           "new",
-          [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
+          [MemoryEffects<[MemAlloc<DiscardableAllocationResource>]>,
+           AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
            DeclareOpInterfaceMethods<SymbolUserOpInterface>,
            DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
            DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,
@@ -113,7 +136,11 @@ def LLZK_CreateArrayOp
                "resultTypeToElementsTypes($_self)", "std::equal_to<>()">]> {
   let summary = "create a new array";
   let description = [{
-    This operation creates a new array with the given elements.
+    This operation creates a fresh mutable array with the given elements.
+    Even when two `array.new` operations have identical operands and result
+    types, they are distinct allocations; writes through one result must not
+    affect reads through the other.
+
     The arguments are passed as a flat array but get arranged in
     row-major order according the shape declared in the type.
 
