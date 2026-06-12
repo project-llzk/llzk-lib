@@ -57,7 +57,6 @@ def RemoveUnusedDiscardableAllocationsPass
     `MemAlloc<DiscardableAllocationResource>`, the allocation has no reads, and every direct user is
     a discardable allocation accessor that can be erased as a dead store.
   }];
-  let constructor = "llzk::createRemoveUnusedDiscardableAllocationsPass()";
   let options = [Option<
       "allocatorOpName", "allocator-op", "std::string",
       /* default */ "\"\"",

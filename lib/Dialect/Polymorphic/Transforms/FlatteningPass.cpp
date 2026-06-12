@@ -2525,9 +2525,11 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     }
 
     OpPassManager allocationCleanup(ModuleOp::getOperationName());
-    allocationCleanup.addPass(
-        createRemoveUnusedDiscardableAllocationsPass(CreateArrayOp::getOperationName())
-    );
+    allocationCleanup.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
     return runPipeline(allocationCleanup, modOp);
   }
 

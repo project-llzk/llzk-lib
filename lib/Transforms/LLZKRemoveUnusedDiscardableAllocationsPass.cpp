@@ -28,7 +28,6 @@
 
 // Include the generated base pass class definitions.
 namespace llzk {
-#define GEN_PASS_DECL_REMOVEUNUSEDDISCARDABLEALLOCATIONSPASS
 #define GEN_PASS_DEF_REMOVEUNUSEDDISCARDABLEALLOCATIONSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -195,15 +194,9 @@ static FailureOr<bool> removeUnusedDiscardableAllocations(
   return changed;
 }
 
-class RemoveUnusedDiscardableAllocationsPass
-    : public llzk::impl::RemoveUnusedDiscardableAllocationsPassBase<
-          RemoveUnusedDiscardableAllocationsPass> {
-public:
-  RemoveUnusedDiscardableAllocationsPass() = default;
-
-  explicit RemoveUnusedDiscardableAllocationsPass(StringRef allocatorOperationName) {
-    this->allocatorOpName = allocatorOperationName.str();
-  }
+class PassImpl : public llzk::impl::RemoveUnusedDiscardableAllocationsPassBase<PassImpl> {
+  using Base = RemoveUnusedDiscardableAllocationsPassBase<PassImpl>;
+  using Base::Base;
 
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -230,12 +223,3 @@ public:
 };
 
 } // namespace
-
-std::unique_ptr<Pass> llzk::createRemoveUnusedDiscardableAllocationsPass() {
-  return std::make_unique<RemoveUnusedDiscardableAllocationsPass>();
-}
-
-std::unique_ptr<Pass>
-llzk::createRemoveUnusedDiscardableAllocationsPass(StringRef allocatorOpName) {
-  return std::make_unique<RemoveUnusedDiscardableAllocationsPass>(allocatorOpName);
-}
