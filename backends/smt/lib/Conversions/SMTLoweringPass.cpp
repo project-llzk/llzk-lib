@@ -65,7 +65,6 @@
 
 namespace llzk {
 namespace smt {
-#define GEN_PASS_DECL_SMTLOWERINGPASS
 #define GEN_PASS_DEF_SMTLOWERINGPASS
 #include "smt/Conversions/ConversionPasses.h.inc"
 } // namespace smt
@@ -1042,8 +1041,15 @@ void OptimizedNonNativeStrategy::populatePatterns(
   patterns.add<MemberReadConverter>(converter, context, signalSymbols);
 }
 
-class SMTOptimizedNonNativeLoweringPass
-    : public smt::impl::SMTLoweringPassBase<SMTOptimizedNonNativeLoweringPass> {
+} // namespace llzk
+
+namespace {
+
+using namespace llzk;
+
+class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
+  using Base = SMTLoweringPassBase<PassImpl>;
+  using Base::Base;
 
   void getDependentDialects(::mlir::DialectRegistry &registry) const override {
     registry.insert<smt::SMTDialect, mlir::func::FuncDialect>();
@@ -1187,10 +1193,4 @@ class SMTOptimizedNonNativeLoweringPass
   }
 };
 
-namespace smt {
-std::unique_ptr<mlir::Pass> createSMTLoweringPass() {
-  return std::make_unique<SMTOptimizedNonNativeLoweringPass>();
-}
-} // namespace smt
-
-} // namespace llzk
+} // namespace
