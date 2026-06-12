@@ -2407,13 +2407,10 @@ private:
 
 } // namespace Step5_Cleanup
 
-class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
-public:
-  using Base = llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass>;
-  // Allows us to use the default construction and explicit options constructor
+class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
+  using Base = FlatteningPassBase<PassImpl>;
   using Base::Base;
 
-private:
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -2443,7 +2440,7 @@ private:
     // - Remove templates that contain no struct or function definitions
     // - Convert templates with no constant parameters or expressions into modules
     OpPassManager universalCleanup(ModuleOp::getOperationName());
-    universalCleanup.addPass(createEmptyTemplateRemoval());
+    universalCleanup.addPass(createEmptyTemplateRemovalPass());
 
     // Run universal cleanup as a preliminary step to satisfy the
     // `assert(!isNullOrEmpty(paramNames))` precondition in `genClone()`.
@@ -2628,12 +2625,3 @@ private:
 };
 
 } // namespace
-
-std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass() {
-  return std::make_unique<FlatteningPass>();
-};
-
-std::unique_ptr<Pass>
-llzk::polymorphic::createFlatteningPass(llzk::polymorphic::FlatteningPassOptions &&options) {
-  return std::make_unique<FlatteningPass>(options);
-};
