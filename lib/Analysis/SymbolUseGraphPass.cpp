@@ -16,18 +16,18 @@
 #include "llzk/Analysis/SymbolUseGraph.h"
 
 namespace llzk {
-
-#define GEN_PASS_DECL_SYMBOLUSEGRAPHPRINTERPASS
 #define GEN_PASS_DEF_SYMBOLUSEGRAPHPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
+} // namespace llzk
 
-using namespace component;
+using namespace llzk;
 
-class SymbolUseGraphPass : public impl::SymbolUseGraphPrinterPassBase<SymbolUseGraphPass> {
-public:
-  SymbolUseGraphPass() : impl::SymbolUseGraphPrinterPassBase<SymbolUseGraphPass>() {}
+namespace {
 
-protected:
+class PassImpl : public llzk::impl::SymbolUseGraphPrinterPassBase<PassImpl> {
+  using Base = SymbolUseGraphPrinterPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
@@ -39,8 +39,4 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass> createSymbolUseGraphPrinterPass() {
-  return std::make_unique<SymbolUseGraphPass>();
-}
-
-} // namespace llzk
+} // namespace
