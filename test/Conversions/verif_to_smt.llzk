@@ -37,6 +37,11 @@ module attributes {llzk.lang} {
 // CHECK:   %[[TRUE1:[0-9a-zA-Z_\.]+]] = smt.constant true
 // CHECK:   return %[[TRUE1]] : !smt.bool
 // CHECK: }
+// CHECK: func.func @smt_verif_CheckBox_target(%[[TARGET_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[BOX_COMPUTED:[0-9a-zA-Z_\.]+]] = call @smt_Box_compute(%[[TARGET_ARG]]) : (!smt.int) -> !smt.int
+// CHECK:   %[[BOX_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[BOX_COMPUTED]], %[[TARGET_SELF]] : !smt.int
+// CHECK:   return %[[BOX_EQ]] : !smt.bool
+// CHECK: }
 // CHECK-NOT: verif.contract
 
 // -----
@@ -63,6 +68,11 @@ module attributes {llzk.lang} {
 // CHECK: func.func @smt_verif_CheckSame_post(%[[IN2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET2:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK:   %[[TRUE3:[0-9a-zA-Z_\.]+]] = smt.constant true
 // CHECK:   return %[[TRUE3]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckSame_target(%[[TARGET_IN:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_RET:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[SAME_RET:[0-9a-zA-Z_\.]+]] = call @smt_same(%[[TARGET_IN]]) : (!smt.int) -> !smt.int
+// CHECK:   %[[SAME_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[SAME_RET]], %[[TARGET_RET]] : !smt.int
+// CHECK:   return %[[SAME_EQ]] : !smt.bool
 // CHECK: }
 
 // -----
@@ -96,11 +106,211 @@ module attributes {llzk.lang} {
 // CHECK:   %[[TRUE4:[0-9a-zA-Z_\.]+]] = smt.constant true
 // CHECK:   return %[[TRUE4]] : !smt.bool
 // CHECK: }
+// CHECK: func.func @smt_verif_Leaf_target(%[[LEAF_TARGET_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   call @smt_leaf_target(%[[LEAF_TARGET_GATE]]) : (!smt.bool) -> ()
+// CHECK:   %[[LEAF_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[LEAF_TARGET_TRUE]] : !smt.bool
+// CHECK: }
 // CHECK: func.func @smt_verif_Wrapper_includes(%[[WRAP_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// CHECK:   call @smt_leaf_target(%[[WRAP_GATE]]) : (!smt.bool) -> ()
 // CHECK:   %[[PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_pre(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_target(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
 // CHECK:   %[[POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_post(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[PRE]], %[[POST]]
+// CHECK:   %[[ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[PRE]], %[[TARGET]]
+// CHECK:   %[[IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[ANT]], %[[POST]]
 // CHECK:   smt.assert %[[IMPL]]
+// CHECK:   return
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Pair {
+    struct.member @left : !felt.type
+    struct.member @right : !felt.type
+
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Pair> {
+      %self = struct.new : !struct.type<@Pair>
+      struct.writem %self[@left] = %x : !struct.type<@Pair>, !felt.type
+      struct.writem %self[@right] = %y : !struct.type<@Pair>, !felt.type
+      function.return %self : !struct.type<@Pair>
+    }
+
+    function.def @constrain(%self: !struct.type<@Pair>, %x: !felt.type, %y: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckPair for @Pair (%self: !struct.type<@Pair>, %x: !felt.type, %y: !felt.type) {
+    %left = struct.readm %self[@left] : !struct.type<@Pair>, !felt.type
+    %right = struct.readm %self[@right] : !struct.type<@Pair>, !felt.type
+    %left_ok = bool.cmp eq(%left, %x) : !felt.type, !felt.type
+    %right_ok = bool.cmp eq(%right, %y) : !felt.type, !felt.type
+    verif.ensure_compute %left_ok
+    verif.ensure_constrain %right_ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_Pair_compute(%[[PAIR_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK:   return %[[PAIR_X]], %[[PAIR_Y]] : !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_Pair_constrain(%[[SELF_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[SELF_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_ARG_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_ARG_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK:   return %[[SELF_LEFT]], %[[SELF_RIGHT]] : !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckPair_pre(%[[PRE_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[PRE_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[PRE_TRUE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckPair_post(%[[POST_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[POST_LEFT_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[POST_LEFT]], %[[POST_X]] : !smt.int
+// CHECK:   %[[POST_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[POST_RIGHT]], %[[POST_Y]] : !smt.int
+// CHECK:   %[[POST_AND:[0-9a-zA-Z_\.]+]] = smt.and %[[POST_LEFT_EQ]], %[[POST_EQ]]
+// CHECK:   return %[[POST_AND]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckPair_target(%[[TARGET_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[PAIR_COMP:[0-9a-zA-Z_\.]+]]:2 = call @smt_Pair_compute(%[[TARGET_X]], %[[TARGET_Y]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[PAIR_COMP_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_COMP]]#0, %[[TARGET_LEFT]] : !smt.int
+// CHECK:   %[[PAIR_COMP_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_COMP]]#1, %[[TARGET_RIGHT]] : !smt.int
+// CHECK:   %[[PAIR_CONSTR:[0-9a-zA-Z_\.]+]]:2 = call @smt_Pair_constrain(%[[TARGET_LEFT]], %[[TARGET_RIGHT]], %[[TARGET_X]], %[[TARGET_Y]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[PAIR_CONSTR_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_CONSTR]]#0, %[[TARGET_LEFT]] : !smt.int
+// CHECK:   %[[PAIR_CONSTR_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_CONSTR]]#1, %[[TARGET_RIGHT]] : !smt.int
+// CHECK:   %[[PAIR_AND0:[0-9a-zA-Z_\.]+]] = smt.and %[[PAIR_COMP_EQ0]], %[[PAIR_COMP_EQ1]]
+// CHECK:   %[[PAIR_AND1:[0-9a-zA-Z_\.]+]] = smt.and %[[PAIR_AND0]], %[[PAIR_CONSTR_EQ0]]
+// CHECK:   %[[PAIR_AND2:[0-9a-zA-Z_\.]+]] = smt.and %[[PAIR_AND1]], %[[PAIR_CONSTR_EQ1]]
+// CHECK:   return %[[PAIR_AND2]] : !smt.bool
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Inner {
+    struct.member @value : !felt.type
+
+    function.def @compute() -> !struct.type<@Inner> {
+      %self = struct.new : !struct.type<@Inner>
+      function.return %self : !struct.type<@Inner>
+    }
+
+    function.def @constrain(%self: !struct.type<@Inner>) {
+      function.return
+    }
+  }
+
+  struct.def @Outer {
+    struct.member @inner : !struct.type<@Inner>
+    struct.member @flag : !felt.type {llzk.pub}
+
+    function.def @compute() -> !struct.type<@Outer> {
+      %self = struct.new : !struct.type<@Outer>
+      function.return %self : !struct.type<@Outer>
+    }
+
+    function.def @constrain(%self: !struct.type<@Outer>) {
+      function.return
+    }
+  }
+
+  function.def @observe_outer(%self: !struct.type<@Outer>, %expected: !felt.type) {
+    function.return
+  }
+
+  verif.contract @CheckOuter for @observe_outer (%self: !struct.type<@Outer>, %expected: !felt.type) {
+    %flag = struct.readm %self[@flag] : !struct.type<@Outer>, !felt.type
+    %flag_ok = bool.cmp eq(%flag, %expected) : !felt.type, !felt.type
+    verif.ensure_compute %flag_ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_observe_outer(%[[OUTER_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckOuter_pre(%[[OUTER_PRE_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_PRE_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_PRE_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[OUTER_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[OUTER_TRUE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckOuter_post(%[[OUTER_POST_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_POST_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_POST_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[OUTER_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[OUTER_POST_FLAG]], %[[OUTER_POST_EXPECTED]] : !smt.int
+// CHECK:   return %[[OUTER_EQ]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckOuter_target(%[[OUTER_TARGET_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_TARGET_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_TARGET_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   call @smt_observe_outer(%[[OUTER_TARGET_INNER]], %[[OUTER_TARGET_FLAG]], %[[OUTER_TARGET_EXPECTED]]) : (!struct.type<@Inner>, !smt.int, !smt.int) -> ()
+// CHECK:   %[[OUTER_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[OUTER_TARGET_TRUE]] : !smt.bool
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @leaf_gate(%gate: i1) {
+    function.return
+  }
+
+  function.def @middle_gate(%gate: i1) {
+    function.return
+  }
+
+  function.def @top_gate(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @LeafGate for @leaf_gate (%gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @MiddleGate for @middle_gate (%gate: i1) {
+    verif.include @LeafGate(%gate) : (i1) -> ()
+    verif.ensure_compute %gate
+  }
+
+  verif.contract @TopGate for @top_gate (%gate: i1) {
+    verif.include @MiddleGate(%gate) : (i1) -> ()
+    verif.require_compute %gate
+    verif.ensure_compute %gate
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_leaf_gate(%[[LEAF_GATE_ARG:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_middle_gate(%[[MID_GATE_ARG:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_verif_MiddleGate_target(%[[MID_TARGET_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   call @smt_middle_gate(%[[MID_TARGET_GATE]]) : (!smt.bool) -> ()
+// CHECK:   %[[MID_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[MID_TARGET_TRUE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_MiddleGate_includes(%[[MID_INCLUDE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   %[[MID_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafGate_pre(%[[MID_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[MID_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafGate_target(%[[MID_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[MID_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafGate_post(%[[MID_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[MID_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[MID_PRE]], %[[MID_TARGET]]
+// CHECK:   %[[MID_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[MID_ANT]], %[[MID_POST]]
+// CHECK:   smt.assert %[[MID_IMPL]]
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_top_gate(%[[TOP_GATE_ARG:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_verif_TopGate_pre(%[[TOP_PRE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   return %[[TOP_PRE_GATE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_TopGate_post(%[[TOP_POST_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   return %[[TOP_POST_GATE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_TopGate_target(%[[TOP_TARGET_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK:   call @smt_top_gate(%[[TOP_TARGET_GATE]]) : (!smt.bool) -> ()
+// CHECK:   %[[TOP_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
+// CHECK:   return %[[TOP_TARGET_TRUE]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_TopGate_includes(%[[TOP_INCLUDE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   %[[TOP_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_MiddleGate_pre(%[[TOP_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[TOP_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_MiddleGate_target(%[[TOP_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[TOP_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_MiddleGate_post(%[[TOP_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[TOP_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[TOP_PRE]], %[[TOP_TARGET]]
+// CHECK:   %[[TOP_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[TOP_ANT]], %[[TOP_POST]]
+// CHECK:   smt.assert %[[TOP_IMPL]]
 // CHECK:   return
 // CHECK: }

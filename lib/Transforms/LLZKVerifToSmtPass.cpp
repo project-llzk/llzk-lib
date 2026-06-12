@@ -61,6 +61,7 @@ struct TargetHelperNames {
 
 struct ContractHelperNames {
   std::string pre;
+  std::string target;
   std::string post;
   std::optional<std::string> includes;
 };
@@ -139,6 +140,15 @@ static Value buildConjunction(OpBuilder &builder, Location loc, ArrayRef<Value> 
     current = builder.create<llzk::smt::AndOp>(loc, current, condition).getResult();
   }
   return current;
+}
+
+static SmallVector<Value>
+buildEqualityConditions(OpBuilder &builder, Location loc, ValueRange lhs, ValueRange rhs) {
+  SmallVector<Value> conditions;
+  for (auto [lhsValue, rhsValue] : llvm::zip(lhs, rhs)) {
+    conditions.push_back(builder.create<llzk::smt::EqOp>(loc, lhsValue, rhsValue).getResult());
+  }
+  return conditions;
 }
 
 class ExprLowerer {
@@ -429,6 +439,26 @@ lowerContractSignature(LoweringContext &state, ContractOp contract) {
   return lowerCallableSignature(state, contract.getFunctionType(), contract);
 }
 
+static bool contractUsesComputeTarget(ContractOp contract) {
+  bool usesCompute = false;
+  contract.walk([&](Operation *op) {
+    if (isa<RequireComputeOp, EnsureComputeOp>(op)) {
+      usesCompute = true;
+    }
+  });
+  return usesCompute;
+}
+
+static bool contractUsesConstrainTarget(ContractOp contract) {
+  bool usesConstrain = false;
+  contract.walk([&](Operation *op) {
+    if (isa<RequireConstrainOp, EnsureConstrainOp>(op)) {
+      usesConstrain = true;
+    }
+  });
+  return usesConstrain;
+}
+
 static void seedContractArgumentMaps(
     LoweringContext &state, ContractOp contract, Block *entry, DenseMap<Value, Value> &valueMap,
     DenseMap<StringRef, Value> &selfMemberMap
@@ -489,6 +519,127 @@ static FailureOr<func::FuncOp> createContractConditionHelper(
   return helper;
 }
 
+static FailureOr<func::FuncOp>
+createFreeFunctionTargetHelper(LoweringContext &state, ModuleOp module, ContractOp contract) {
+  auto loweredSig = lowerContractSignature(state, contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  auto targetFunc = llzk::lookupSymbolIn<FuncDefOp>(
+      state.tables, contract.getTarget(), llzk::Within(module.getOperation()), contract,
+      /*reportMissing=*/true
+  );
+  if (failed(targetFunc)) {
+    return failure();
+  }
+
+  auto rawTargetHelper = getOrCreateFunctionHelper(state, module, targetFunc->get());
+  if (failed(rawTargetHelper)) {
+    return failure();
+  }
+
+  auto targetLoweredSig =
+      lowerCallableSignature(state, targetFunc->get().getFunctionType(), targetFunc->get());
+  if (failed(targetLoweredSig)) {
+    return failure();
+  }
+
+  std::string helperName = ("smt_verif_" + contract.getSymName() + "_target").str();
+  OpBuilder moduleBuilder(module.getBodyRegion());
+  moduleBuilder.setInsertionPoint(&module.getBody()->back());
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      contract.getLoc(), helperName,
+      FunctionType::get(
+          state.context, loweredSig->argTypes, TypeRange {llzk::smt::BoolType::get(state.context)}
+      )
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder bodyBuilder = OpBuilder::atBlockBegin(entry);
+
+  ValueRange args = entry->getArguments();
+  ValueRange targetInputs = args.take_front(targetLoweredSig->argTypes.size());
+  auto targetCall = bodyBuilder.create<func::CallOp>(
+      contract.getLoc(), rawTargetHelper->getSymName(),
+      rawTargetHelper->getFunctionType().getResults(), targetInputs
+  );
+
+  ValueRange expectedResults = args.drop_front(targetLoweredSig->argTypes.size())
+                                   .take_front(targetLoweredSig->resultTypes.size());
+  SmallVector<Value> conditions = buildEqualityConditions(
+      bodyBuilder, contract.getLoc(), targetCall.getResults(), expectedResults
+  );
+  Value combined = buildConjunction(bodyBuilder, contract.getLoc(), conditions);
+  bodyBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
+  return helper;
+}
+
+static FailureOr<func::FuncOp>
+createStructTargetHelper(LoweringContext &state, ModuleOp module, ContractOp contract) {
+  auto loweredSig = lowerContractSignature(state, contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  auto structTarget = contract.getStructTarget(state.tables);
+  if (failed(structTarget)) {
+    return failure();
+  }
+  auto targetHelpers = getOrCreateStructHelpers(state, module, structTarget->get());
+  if (failed(targetHelpers)) {
+    return failure();
+  }
+
+  auto members = getStructMembers(state, structTarget->get().getType(), contract);
+  if (failed(members)) {
+    return failure();
+  }
+  unsigned numFlattenedSelfMembers = members->size();
+
+  bool useCompute = contractUsesComputeTarget(contract);
+  bool useConstrain = contractUsesConstrainTarget(contract);
+
+  std::string helperName = ("smt_verif_" + contract.getSymName() + "_target").str();
+  OpBuilder moduleBuilder(module.getBodyRegion());
+  moduleBuilder.setInsertionPoint(&module.getBody()->back());
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      contract.getLoc(), helperName,
+      FunctionType::get(
+          state.context, loweredSig->argTypes, TypeRange {llzk::smt::BoolType::get(state.context)}
+      )
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder bodyBuilder = OpBuilder::atBlockBegin(entry);
+  ValueRange args = entry->getArguments();
+  ValueRange selfArgs = args.take_front(numFlattenedSelfMembers);
+  ValueRange nonSelfArgs = args.drop_front(numFlattenedSelfMembers);
+
+  SmallVector<Value> conditions;
+  if (useCompute) {
+    auto computeCall = bodyBuilder.create<func::CallOp>(
+        contract.getLoc(), targetHelpers->compute, TypeRange(selfArgs.getTypes()), nonSelfArgs
+    );
+    SmallVector<Value> computeConditions =
+        buildEqualityConditions(bodyBuilder, contract.getLoc(), computeCall.getResults(), selfArgs);
+    llvm::append_range(conditions, computeConditions);
+  }
+  if (useConstrain) {
+    auto constrainCall = bodyBuilder.create<func::CallOp>(
+        contract.getLoc(), targetHelpers->constrain, TypeRange(selfArgs.getTypes()), args
+    );
+    SmallVector<Value> constrainConditions = buildEqualityConditions(
+        bodyBuilder, contract.getLoc(), constrainCall.getResults(), selfArgs
+    );
+    llvm::append_range(conditions, constrainConditions);
+  }
+
+  Value combined = buildConjunction(bodyBuilder, contract.getLoc(), conditions);
+  bodyBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
+  return helper;
+}
+
 static FailureOr<ContractHelperNames>
 getOrCreateContractHelpers(LoweringContext &state, ModuleOp module, ContractOp contract) {
   if (auto it = state.contractHelpers.find(contract.getOperation());
@@ -513,7 +664,14 @@ getOrCreateContractHelpers(LoweringContext &state, ModuleOp module, ContractOp c
     return failure();
   }
 
-  ContractHelperNames names {prefix + "_pre", prefix + "_post", std::nullopt};
+  FailureOr<func::FuncOp> targetHelper =
+      contract.hasStructTarget() ? createStructTargetHelper(state, module, contract)
+                                 : createFreeFunctionTargetHelper(state, module, contract);
+  if (failed(targetHelper)) {
+    return failure();
+  }
+
+  ContractHelperNames names {prefix + "_pre", prefix + "_target", prefix + "_post", std::nullopt};
   state.contractHelpers[contract.getOperation()] = names;
   return names;
 }
@@ -581,37 +739,23 @@ maybeCreateIncludeHelper(LoweringContext &state, ModuleOp module, ContractOp con
       return failure();
     }
 
-    SmallVector<Value> helperArgs = *loweredOperands;
-    if (!callee.hasStructTarget()) {
-      FailureOr<llzk::SymbolLookupResult<FuncDefOp>> calleeTargetFunc =
-          llzk::lookupSymbolIn<FuncDefOp>(
-              state.tables, callee.getTarget(), llzk::Within(module.getOperation()), includeOp,
-              /*reportMissing=*/true
-          );
-      if (failed(calleeTargetFunc)) {
-        return failure();
-      }
-      auto targetHelper = getOrCreateFunctionHelper(state, module, calleeTargetFunc->get());
-      if (failed(targetHelper)) {
-        return failure();
-      }
-      auto targetCall = bodyBuilder.create<func::CallOp>(
-          includeOp.getLoc(), targetHelper->getSymName(),
-          targetHelper->getFunctionType().getResults(), *loweredOperands
-      );
-      llvm::append_range(helperArgs, targetCall.getResults());
-    }
-
     auto preCall = bodyBuilder.create<func::CallOp>(
         includeOp.getLoc(), calleeHelpers->pre, TypeRange {llzk::smt::BoolType::get(state.context)},
-        helperArgs
+        *loweredOperands
+    );
+    auto targetCall = bodyBuilder.create<func::CallOp>(
+        includeOp.getLoc(), calleeHelpers->target,
+        TypeRange {llzk::smt::BoolType::get(state.context)}, *loweredOperands
     );
     auto postCall = bodyBuilder.create<func::CallOp>(
         includeOp.getLoc(), calleeHelpers->post,
-        TypeRange {llzk::smt::BoolType::get(state.context)}, helperArgs
+        TypeRange {llzk::smt::BoolType::get(state.context)}, *loweredOperands
+    );
+    Value antecedent = bodyBuilder.create<llzk::smt::AndOp>(
+        includeOp.getLoc(), preCall.getResult(0), targetCall.getResult(0)
     );
     Value implication = bodyBuilder.create<llzk::smt::ImpliesOp>(
-        includeOp.getLoc(), preCall.getResult(0), postCall.getResult(0)
+        includeOp.getLoc(), antecedent, postCall.getResult(0)
     );
     bodyBuilder.create<llzk::smt::AssertOp>(includeOp.getLoc(), implication);
   }
