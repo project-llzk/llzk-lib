@@ -109,6 +109,7 @@ $(function(){initNavTree('classllzk_1_1impl_1_1PredecessorPrinterPassBase.html',
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#friends">Friends</a> &#124;
 <a href="classllzk_1_1impl_1_1PredecessorPrinterPassBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::impl::PredecessorPrinterPassBase&lt; DerivedT &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -159,11 +160,16 @@ Static Public Member Functions</h2></td></tr>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:a95e385212b45e8f92223fdad0dc6c9dc" id="r_a95e385212b45e8f92223fdad0dc6c9dc"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2">::llzk::OutputStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a95e385212b45e8f92223fdad0dc6c9dc">outputStream</a></td></tr>
 <tr class="memitem:afee49df6d906ca042435eabc9e42673f" id="r_afee49df6d906ca042435eabc9e42673f"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afee49df6d906ca042435eabc9e42673f">preRunRequiredAnalyses</a> {*this, &quot;prerun&quot;, ::llvm::cl::desc(&quot;Whether to pre-run the required dataflow analyses (e.g., liveness analysis).&quot;), ::llvm::cl::init(false)}</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:aceaf3d9d364d3c2e4da1aa1d0c37cba9" id="r_aceaf3d9d364d3c2e4da1aa1d0c37cba9"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aceaf3d9d364d3c2e4da1aa1d0c37cba9">createPredecessorPrinterPass</a> ()</td></tr>
+<tr class="memitem:a4fa0e67a44da29619277f43fdfafb989" id="r_a4fa0e67a44da29619277f43fdfafb989"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4fa0e67a44da29619277f43fdfafb989">createPredecessorPrinterPass</a> (<a class="el" href="structllzk_1_1PredecessorPrinterPassOptions.html">PredecessorPrinterPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::impl::PredecessorPrinterPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00355">355</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00517">517</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="af719534edb66d8c1fb96dc4111fb3516" name="af719534edb66d8c1fb96dc4111fb3516"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af719534edb66d8c1fb96dc4111fb3516">&#9670;&#160;</a></span>Base</h2>
@@ -179,7 +185,7 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00357">357</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00519">519</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -209,7 +215,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00359">359</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00521">521</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -238,7 +244,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00360">360</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00522">522</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -324,7 +330,7 @@ template&lt;typename DerivedT&gt; </div>
 <p>Explicitly declare the TypeID for this class. </p>
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00412">412</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00574">574</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -356,7 +362,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00381">381</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00543">543</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -387,7 +393,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00386">386</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00548">548</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -416,7 +422,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00370">370</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00532">532</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -447,7 +453,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00367">367</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00529">529</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -478,7 +484,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00391">391</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00553">553</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -507,7 +513,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00372">372</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00534">534</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -536,7 +542,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00378">378</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00540">540</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -567,7 +573,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00375">375</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00537">537</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -625,6 +631,65 @@ template&lt;typename DerivedT&gt; </div>
 
 </div>
 </div>
+<a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
+<a id="aceaf3d9d364d3c2e4da1aa1d0c37cba9" name="aceaf3d9d364d3c2e4da1aa1d0c37cba9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aceaf3d9d364d3c2e4da1aa1d0c37cba9">&#9670;&#160;</a></span>createPredecessorPrinterPass <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createPredecessorPrinterPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00590">590</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4fa0e67a44da29619277f43fdfafb989" name="a4fa0e67a44da29619277f43fdfafb989"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4fa0e67a44da29619277f43fdfafb989">&#9670;&#160;</a></span>createPredecessorPrinterPass <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createPredecessorPrinterPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1PredecessorPrinterPassOptions.html">PredecessorPrinterPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00594">594</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+
+</div>
+</div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a95e385212b45e8f92223fdad0dc6c9dc" name="a95e385212b45e8f92223fdad0dc6c9dc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a95e385212b45e8f92223fdad0dc6c9dc">&#9670;&#160;</a></span>outputStream</h2>
@@ -660,7 +725,7 @@ template&lt;typename DerivedT&gt; </div>
 <div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">llzk::OutputStream::Dbgs</a></div><div class="ttdeci">@ Dbgs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00015">AnalysisPassEnums.h.inc:15</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">llzk::OutputStream::Errs</a></div><div class="ttdeci">@ Errs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00014">AnalysisPassEnums.h.inc:14</a></div></div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00417">417</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00579">579</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -686,7 +751,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00425">425</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PredecessorAnalysisPass_8cpp_source.html#l00587">587</a> of file <a class="el" href="PredecessorAnalysisPass_8cpp_source.html">PredecessorAnalysisPass.cpp</a>.</p>
 
 </div>
 </div>

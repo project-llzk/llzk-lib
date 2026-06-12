@@ -11,5 +11,6 @@ var classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase =
     [ "getDescription", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html#ad28eae454ff46f3bd2cbf70658eb6108", null ],
     [ "getName", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html#a79dc0910df4015833167a1d32d24f3b5", null ],
     [ "operator=", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html#a828a510e002b099c9291a29c09911373", null ],
-    [ "operator=", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html#ae26e829a92c59b45e583416eb6a72059", null ]
+    [ "operator=", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html#ae26e829a92c59b45e583416eb6a72059", null ],
+    [ "createPodToScalarPass", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html#a24498f5f3ad0bb43b3afa97f3f0eef3e", null ]
 ];

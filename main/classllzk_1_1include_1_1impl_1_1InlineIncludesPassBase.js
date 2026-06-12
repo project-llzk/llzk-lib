@@ -11,5 +11,6 @@ var classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase =
     [ "getDescription", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#abe51135d726554035cf21e8f266e474d", null ],
     [ "getName", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#ac3f6b3520f6e2c6f40e4f290dfe56606", null ],
     [ "operator=", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#ac4174c66509039049dad328857bf4937", null ],
-    [ "operator=", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#a7cd4953d3efd62ca8954d1e88a6ee9ff", null ]
+    [ "operator=", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#a7cd4953d3efd62ca8954d1e88a6ee9ff", null ],
+    [ "createInlineIncludesPass", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#a4deb7647830c21c71796b9cc301dd2f6", null ]
 ];

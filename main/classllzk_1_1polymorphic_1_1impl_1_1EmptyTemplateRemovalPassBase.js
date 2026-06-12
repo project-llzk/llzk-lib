@@ -11,5 +11,6 @@ var classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase =
     [ "getDescription", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a0ca04ea66371c875afb4990b5fa75816", null ],
     [ "getName", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aea7ecc56695f68f1d5595d52c90b823c", null ],
     [ "operator=", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3cd921726a260d12c29f01ec63cbd5e2", null ],
-    [ "operator=", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aaf5cea5d405d57aa945e89bfccaa34de", null ]
+    [ "operator=", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aaf5cea5d405d57aa945e89bfccaa34de", null ],
+    [ "createEmptyTemplateRemovalPass", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aeb632ce6778e79ce1e4214872982288f", null ]
 ];

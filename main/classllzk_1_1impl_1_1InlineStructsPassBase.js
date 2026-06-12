@@ -13,5 +13,7 @@ var classllzk_1_1impl_1_1InlineStructsPassBase =
     [ "getName", "classllzk_1_1impl_1_1InlineStructsPassBase.html#a35bb063b5e0219c33610bf67353ba769", null ],
     [ "operator=", "classllzk_1_1impl_1_1InlineStructsPassBase.html#afb61b8d5725c639b39f6e85959e8be54", null ],
     [ "operator=", "classllzk_1_1impl_1_1InlineStructsPassBase.html#a4c2edcb8be95f0d8814b55690330a962", null ],
+    [ "createInlineStructsPass", "classllzk_1_1impl_1_1InlineStructsPassBase.html#a8db1f8fa6191c702ee44876f2f5078b4", null ],
+    [ "createInlineStructsPass", "classllzk_1_1impl_1_1InlineStructsPassBase.html#ad026e884f9421deaab5d56a8ab6e6fd5", null ],
     [ "maxComplexity", "classllzk_1_1impl_1_1InlineStructsPassBase.html#a5d68e0c07fb63ab5766e02f8659410ae", null ]
 ];

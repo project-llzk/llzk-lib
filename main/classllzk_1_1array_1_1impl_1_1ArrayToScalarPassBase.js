@@ -11,5 +11,6 @@ var classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase =
     [ "getDescription", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#afac794d5433ec459408042f70eb2348c", null ],
     [ "getName", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#adbcb9a621c525a66a5d115242d091b05", null ],
     [ "operator=", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#ae5bd97dfe2c2caffb3b0047825a850d9", null ],
-    [ "operator=", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#adb03615dc4ac501f59ddcb9f759bba7e", null ]
+    [ "operator=", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#adb03615dc4ac501f59ddcb9f759bba7e", null ],
+    [ "createArrayToScalarPass", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html#af39921c9dccbdd6fbd256a8b3e0329e8", null ]
 ];

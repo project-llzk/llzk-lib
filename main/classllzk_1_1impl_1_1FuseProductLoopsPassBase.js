@@ -11,5 +11,6 @@ var classllzk_1_1impl_1_1FuseProductLoopsPassBase =
     [ "getDescription", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#a6f888c2b49fa6ac8cee2701a7880f72c", null ],
     [ "getName", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#ad0f5a565d1cf139981d621786f9e6bea", null ],
     [ "operator=", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#aa3657832494510e9a74bd5461b54b69e", null ],
-    [ "operator=", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#ab2949773940d85c508eb215ed48aace8", null ]
+    [ "operator=", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#ab2949773940d85c508eb215ed48aace8", null ],
+    [ "createFuseProductLoopsPass", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#adda0a88f2e14a87aaf99ad89f43aac8e", null ]
 ];

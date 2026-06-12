@@ -11,5 +11,6 @@ var classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase =
     [ "getDescription", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html#a218e7a90db0926bee5789e7603b5038a", null ],
     [ "getName", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html#a47d50d9e505b915b5f2f39433b3404ac", null ],
     [ "operator=", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html#ae6e12b5f12904e16f89f9d51ce7f6fb2", null ],
-    [ "operator=", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html#a60497f13e2d057415a827bd956c38ce3", null ]
+    [ "operator=", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html#a60497f13e2d057415a827bd956c38ce3", null ],
+    [ "createEnforceNoMemberOverwritePass", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html#addf190ec75c0602ea8569accc3cddca2", null ]
 ];

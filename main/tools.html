@@ -131,12 +131,6 @@ $(function(){initNavTree('tools.html','',''); });
             <ul>
               <li class="level4">
                 <a href="#autotoc_md-llzk-print-call-graph"><span class="tt">-llzk-print-call-graph</span> </a>
-              </li>
-              <li class="level4">
-                <a href="#autotoc_md-llzk-print-call-graph-sccs"><span class="tt">-llzk-print-call-graph-sccs</span> </a>
-              </li>
-              <li class="level4">
-                <a href="#autotoc_md-llzk-print-constraint-dependency-graphs"><span class="tt">-llzk-print-constraint-dependency-graphs</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options">Options </a>
@@ -144,7 +138,7 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-print-interval-analysis"><span class="tt">-llzk-print-interval-analysis</span> </a>
+                <a href="#autotoc_md-llzk-print-call-graph-sccs"><span class="tt">-llzk-print-call-graph-sccs</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-1">Options </a>
@@ -152,7 +146,7 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-print-predecessors"><span class="tt">-llzk-print-predecessors</span> </a>
+                <a href="#autotoc_md-llzk-print-constraint-dependency-graphs"><span class="tt">-llzk-print-constraint-dependency-graphs</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-2">Options </a>
@@ -160,7 +154,7 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-print-symbol-def-tree"><span class="tt">-llzk-print-symbol-def-tree</span> </a>
+                <a href="#autotoc_md-llzk-print-interval-analysis"><span class="tt">-llzk-print-interval-analysis</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-3">Options </a>
@@ -168,10 +162,26 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-print-symbol-use-graph"><span class="tt">-llzk-print-symbol-use-graph</span> </a>
+                <a href="#autotoc_md-llzk-print-predecessors"><span class="tt">-llzk-print-predecessors</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-4">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-print-symbol-def-tree"><span class="tt">-llzk-print-symbol-def-tree</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-5">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-print-symbol-use-graph"><span class="tt">-llzk-print-symbol-use-graph</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-6">Options </a>
                   </li>
                 </ul>
               </li>
@@ -184,7 +194,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-compute-constrain-to-product"><span class="tt">-llzk-compute-constrain-to-product</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-5">Options </a>
+                    <a href="#options-7">Options </a>
                   </li>
                 </ul>
               </li>
@@ -204,7 +214,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-6">Options </a>
+                    <a href="#options-8">Options </a>
                   </li>
                 </ul>
               </li>
@@ -212,7 +222,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-poly-lowering-pass"><span class="tt">-llzk-poly-lowering-pass</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-7">Options </a>
+                    <a href="#options-9">Options </a>
                   </li>
                 </ul>
               </li>
@@ -220,7 +230,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-remove-unused-discardable-allocations"><span class="tt">-llzk-remove-unused-discardable-allocations</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-8">Options </a>
+                    <a href="#options-10">Options </a>
                   </li>
                 </ul>
               </li>
@@ -228,7 +238,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-unused-declaration-elim"><span class="tt">-llzk-unused-declaration-elim</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-9">Options </a>
+                    <a href="#options-11">Options </a>
                   </li>
                 </ul>
               </li>
@@ -255,7 +265,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-flatten"><span class="tt">-llzk-flatten</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-10">Options </a>
+                    <a href="#options-12">Options </a>
                   </li>
                 </ul>
               </li>
@@ -327,21 +337,29 @@ Analysis Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-call-graph"></a>
 <span class="tt">-llzk-print-call-graph</span></h4>
 <p><em>Print the LLZK module's call graph.</em></p>
-<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-call-graph-sccs"></a>
-<span class="tt">-llzk-print-call-graph-sccs</span></h4>
-<p><em>Print the SCCs from the LLZK module's call graph.</em></p>
-<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-constraint-dependency-graphs"></a>
-<span class="tt">-llzk-print-constraint-dependency-graphs</span></h4>
-<p><em>Print constraint dependency graph for all LLZK structs.</em></p>
 <h5 class="doxsection"><a class="anchor" id="options"></a>
 Options</h5>
-<div class="fragment"><div class="line">-intraprocedural : Whether to run the analysis intra-procedurally only (default is false).</div>
+<div class="fragment"><div class="line">-stream : Specifies the stream to which the pass prints.</div>
+</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-call-graph-sccs"></a>
+<span class="tt">-llzk-print-call-graph-sccs</span></h4>
+<p><em>Print the SCCs from the LLZK module's call graph.</em></p>
+<h5 class="doxsection"><a class="anchor" id="options-1"></a>
+Options</h5>
+<div class="fragment"><div class="line">-stream : Specifies the stream to which the pass prints.</div>
+</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-constraint-dependency-graphs"></a>
+<span class="tt">-llzk-print-constraint-dependency-graphs</span></h4>
+<p><em>Print constraint dependency graph for all LLZK structs.</em></p>
+<h5 class="doxsection"><a class="anchor" id="options-2"></a>
+Options</h5>
+<div class="fragment"><div class="line">-stream          : Specifies the stream to which the pass prints.</div>
+<div class="line">-intraprocedural : Whether to run the analysis intra-procedurally only (default is false).</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-interval-analysis"></a>
 <span class="tt">-llzk-print-interval-analysis</span></h4>
 <p><em>Print interval analysis results for all LLZK structs.</em></p>
-<h5 class="doxsection"><a class="anchor" id="options-1"></a>
+<h5 class="doxsection"><a class="anchor" id="options-3"></a>
 Options</h5>
-<div class="fragment"><div class="line">-field                       : The field to use for interval analysis. If supplied, this always overrides the module&#39;s detected field. If omitted, the pass first tries to detect a single field from the enclosing module&#39;s felt usage and otherwise falls back to bn128. Supported fields: bn128/bn254, babybear, goldilocks, grumpkin, koalabear, mersenne31</div>
+<div class="fragment"><div class="line">-stream                      : Specifies the stream to which the pass prints.</div>
+<div class="line">-field                       : The field to use for interval analysis. If supplied, this always overrides the module&#39;s detected field. If omitted, the pass first tries to detect a single field from the enclosing module&#39;s felt usage and otherwise falls back to bn128. Supported fields: bn128/bn254, babybear, goldilocks, grumpkin, koalabear, mersenne31</div>
 <div class="line">-propagate-input-constraints : Whether to propagate constraints on inputs from @constrain to @compute functions. This allows for tighter intervals to possibly be found for computed values, assuming that the witness generator would include constraints as assertions during the computation.</div>
 <div class="line">-print-solver-constraints    : Whether to output SMT solver constraints along with intervals.</div>
 <div class="line">-print-compute-intervals     : Whether to print compute function intervals (default only prints constrain function intervals).</div>
@@ -350,21 +368,21 @@ Options</h5>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-predecessors"></a>
 <span class="tt">-llzk-print-predecessors</span></h4>
 <p><em>Print the predecessors of all operations.</em></p>
-<h5 class="doxsection"><a class="anchor" id="options-2"></a>
+<h5 class="doxsection"><a class="anchor" id="options-4"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream : Specifies the stream to which the pass prints.</div>
 <div class="line">-prerun : Whether to pre-run the required dataflow analyses (e.g., liveness analysis).</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-symbol-def-tree"></a>
 <span class="tt">-llzk-print-symbol-def-tree</span></h4>
 <p><em>Print symbol definition tree.</em></p>
-<h5 class="doxsection"><a class="anchor" id="options-3"></a>
+<h5 class="doxsection"><a class="anchor" id="options-5"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream  : Specifies the stream to which the pass prints.</div>
 <div class="line">-saveDot : Whether to dump the graph to DOT format.</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-symbol-use-graph"></a>
 <span class="tt">-llzk-print-symbol-use-graph</span></h4>
 <p><em>Print symbol use graph.</em></p>
-<h5 class="doxsection"><a class="anchor" id="options-4"></a>
+<h5 class="doxsection"><a class="anchor" id="options-6"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream  : Specifies the stream to which the pass prints.</div>
 <div class="line">-saveDot : Whether to dump the graph to DOT format.</div>
@@ -374,7 +392,7 @@ General Transformation Passes</h3>
 <span class="tt">-llzk-compute-constrain-to-product</span></h4>
 <p>_Replace separate @compute and @constrain functions in a struct with a single @product function_</p>
 <p>Replace separate @compute and @constrain functions in a struct with a single @product function</p>
-<h5 class="doxsection"><a class="anchor" id="options-5"></a>
+<h5 class="doxsection"><a class="anchor" id="options-7"></a>
 Options</h5>
 <div class="fragment"><div class="line">-root-struct : Root struct at which to start alignment (default to `@Main`)</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-duplicate-op-elim"></a>
@@ -401,7 +419,7 @@ Options</h5>
 <p>The <span class="tt">max-merge-complexity</span> parameter can be used to limit the complexity of the resulting structs such that a potential inlining will not take place if doing so would push the sum of constraint and multiplications in the combined struct over the limit. The default value <span class="tt">0</span> indicates no limits which means all structs will be inlined into the Main struct.</p>
 <p>This pass should be run after <span class="tt">llzk-flatten</span> to ensure structs do not have template parameters because structs with template parameters cannot (currently) be inlined. Inlining is also not (currently) supported for subcomponent structs stored in an array-type member.</p>
 <p>This pass also assumes that all subcomponents that are created by calling a struct "@compute" function are ultimately written to exactly one member within the current struct.</p>
-<h5 class="doxsection"><a class="anchor" id="options-6"></a>
+<h5 class="doxsection"><a class="anchor" id="options-8"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-merge-complexity : Maximum allowed constraint+multiplications in merged @constrain functions</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-poly-lowering-pass"></a>
@@ -410,14 +428,14 @@ Options</h5>
 <p>Rewrites constraint expressions into an (observationally) equivalent system where the degree of every polynomial is less than or equal to the specified maximum.</p>
 <p>High-degree subexpressions are factored into auxiliary struct members. The pass also recurses through degree-neutral roots such as <span class="tt">felt.add</span>, <span class="tt">felt.sub</span>, and <span class="tt">felt.neg</span>, so composite equality operands and struct constrain call arguments satisfy their degree bounds.</p>
 <p>This pass is best used as part of the <span class="tt">-llzk-full-poly-lowering</span> pipeline, which includes additional cleanup passes to ensure correctness and optimal performance.</p>
-<h5 class="doxsection"><a class="anchor" id="options-7"></a>
+<h5 class="doxsection"><a class="anchor" id="options-9"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-degree : Maximum degree of constraint polynomials (default 2, minimum 2)</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unused-discardable-allocations"></a>
 <span class="tt">-llzk-remove-unused-discardable-allocations</span></h4>
 <p><em>Remove unread discardable allocations and their dead stores</em></p>
 <p>Remove ops with the selected allocator operation name when they are marked with <span class="tt">MemAlloc&lt;DiscardableAllocationResource&gt;</span>, the allocation has no reads, and every direct user is a discardable allocation accessor that can be erased as a dead store.</p>
-<h5 class="doxsection"><a class="anchor" id="options-8"></a>
+<h5 class="doxsection"><a class="anchor" id="options-10"></a>
 Options</h5>
 <div class="fragment"><div class="line">-allocator-op : Operation name of the discardable allocator to remove</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-unused-declaration-elim"></a>
@@ -425,7 +443,7 @@ Options</h5>
 <p><em>Remove unused member and struct declarations</em></p>
 <p>Remove member and struct declarations that are unused within the current compilation unit. Note that this pass may cause linking issues with external modules that depend on any unused member and struct declarations from this compilation unit.</p>
 <p>Pass should be run after <span class="tt">llzk-duplicate-read-write-elim</span> and <span class="tt">llzk-duplicate-op-elim</span> for maximum effect.</p>
-<h5 class="doxsection"><a class="anchor" id="options-9"></a>
+<h5 class="doxsection"><a class="anchor" id="options-11"></a>
 Options</h5>
 <div class="fragment"><div class="line">-remove-structs : Whether to remove unused struct definitions as well. Requires module to declare a Main component, otherwise all components will appear unused.</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-while-to-for"></a>
@@ -455,7 +473,7 @@ Options</h5>
 <li>Replace parameterized structs with flattened (i.e., no parameter) versions of those structs based on requested return type at calls to <span class="tt">compute()</span> functions and unroll loops</li>
 <li>Unroll loops</li>
 </ul>
-<h5 class="doxsection"><a class="anchor" id="options-10"></a>
+<h5 class="doxsection"><a class="anchor" id="options-12"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>

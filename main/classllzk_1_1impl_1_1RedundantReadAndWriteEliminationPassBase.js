@@ -11,5 +11,6 @@ var classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase =
     [ "getDescription", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0065cbd894233a9ea9587be816352f83", null ],
     [ "getName", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48", null ],
     [ "operator=", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017", null ],
-    [ "operator=", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c", null ]
+    [ "operator=", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c", null ],
+    [ "createRedundantReadAndWriteEliminationPass", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b", null ]
 ];

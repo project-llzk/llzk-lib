@@ -13,5 +13,7 @@ var classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase =
     [ "getName", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a9c5b238213b56cda89850a6e8c0888e3", null ],
     [ "operator=", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a30f1da6b638c501bc5af0ef7541b9297", null ],
     [ "operator=", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a099cd2e0bbfb016d838fd177bdad6a4b", null ],
+    [ "createUnusedDeclarationEliminationPass", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#ae7930c9e3bfb0e511d3f809b08987180", null ],
+    [ "createUnusedDeclarationEliminationPass", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a5bbb5f5efc448f50ff2dc9fac5de77bf", null ],
     [ "removeStructs", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html#a2307791c6fc2286fcb3e0461fe18ab3c", null ]
 ];

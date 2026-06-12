@@ -150,6 +150,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ad4c7ef9fed601bc13ef71fbe9faa6e5c" id="r_ad4c7ef9fed601bc13ef71fbe9faa6e5c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4c7ef9fed601bc13ef71fbe9faa6e5c">printRecordName</a> (AsmPrinter &amp;printer, Operation *, FlatSymbolRefAttr name)</td></tr>
 <tr class="memitem:a641d7202b479d052f4e44eef6d0208e1" id="r_a641d7202b479d052f4e44eef6d0208e1"><td class="memItemLeft" align="right" valign="top">ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a641d7202b479d052f4e44eef6d0208e1">parsePodType</a> (AsmParser &amp;parser, SmallVector&lt; RecordAttr &gt; &amp;records)</td></tr>
 <tr class="memitem:ae129068c112a52fd593fb701f105cb03" id="r_ae129068c112a52fd593fb701f105cb03"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae129068c112a52fd593fb701f105cb03">printPodType</a> (AsmPrinter &amp;printer, ArrayRef&lt; RecordAttr &gt; records)</td></tr>
+<tr class="memitem:ab25c802e1f0d853138922fd9b3e746ba" id="r_ab25c802e1f0d853138922fd9b3e746ba"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab25c802e1f0d853138922fd9b3e746ba">createPodToScalarPass</a> ()</td></tr>
 <tr class="memitem:acf560a49ec623df5912e30035fd18116" id="r_acf560a49ec623df5912e30035fd18116"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acf560a49ec623df5912e30035fd18116">parseRecord</a> (mlir::AsmParser &amp;parser, mlir::StringAttr &amp;name, mlir::Type &amp;type)</td></tr>
 <tr class="memitem:ad6bf3016a97b8288e83cbfe2070a4858" id="r_ad6bf3016a97b8288e83cbfe2070a4858"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad6bf3016a97b8288e83cbfe2070a4858">printRecord</a> (mlir::AsmPrinter &amp;printer, mlir::StringAttr name, mlir::Type type)</td></tr>
 <tr class="memitem:abc209fec951650414f00490a1686dee3" id="r_abc209fec951650414f00490a1686dee3"><td class="memItemLeft" align="right" valign="top">mlir::SmallVector&lt; <a class="el" href="structllzk_1_1pod_1_1RecordValue.html">RecordValue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abc209fec951650414f00490a1686dee3">getInitializedRecordValues</a> (mlir::ValueRange initialValues, mlir::ArrayAttr initializedRecords)</td></tr>
@@ -157,8 +158,6 @@ Functions</h2></td></tr>
 <tr class="memitem:ad9cff8dd79c5764ae5f94f7ab3fa5511" id="r_ad9cff8dd79c5764ae5f94f7ab3fa5511"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad9cff8dd79c5764ae5f94f7ab3fa5511">printRecordName</a> (mlir::AsmPrinter &amp;printer, mlir::Operation *, mlir::FlatSymbolRefAttr name)</td></tr>
 <tr class="memitem:a0745bd01602f938e292b4e8090425e54" id="r_a0745bd01602f938e292b4e8090425e54"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0745bd01602f938e292b4e8090425e54">parsePodType</a> (mlir::AsmParser &amp;parser, mlir::SmallVector&lt; RecordAttr &gt; &amp;)</td></tr>
 <tr class="memitem:a9678c1dad3ae46e70e68a69ccbe896fc" id="r_a9678c1dad3ae46e70e68a69ccbe896fc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9678c1dad3ae46e70e68a69ccbe896fc">printPodType</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayRef&lt; RecordAttr &gt;)</td></tr>
-<tr class="memitem:aec201ffba82e9efab92d81e56a2d95c6" id="r_aec201ffba82e9efab92d81e56a2d95c6"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aec201ffba82e9efab92d81e56a2d95c6">createPodToScalarPass</a> ()</td></tr>
-<tr class="memdesc:aec201ffba82e9efab92d81e56a2d95c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that rewrites eligible POD storage into scalar SSA values.  <br /></td></tr>
 <tr class="memitem:a25f356eb31fa5349f0fd65df9d0474cc" id="r_a25f356eb31fa5349f0fd65df9d0474cc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a25f356eb31fa5349f0fd65df9d0474cc">registerPodToScalarPass</a> ()</td></tr>
 <tr class="memitem:a2eab0ac33ecf46e7f87c2921fdc485c4" id="r_a2eab0ac33ecf46e7f87c2921fdc485c4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2eab0ac33ecf46e7f87c2921fdc485c4">registerPodToScalarPassPass</a> ()</td></tr>
 <tr class="memitem:a6627a4c34331c99a8e47d2c1e0c40c89" id="r_a6627a4c34331c99a8e47d2c1e0c40c89"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6627a4c34331c99a8e47d2c1e0c40c89">registerTransformationPasses</a> ()</td></tr>
@@ -197,24 +196,23 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="aec201ffba82e9efab92d81e56a2d95c6" name="aec201ffba82e9efab92d81e56a2d95c6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aec201ffba82e9efab92d81e56a2d95c6">&#9670;&#160;</a></span>createPodToScalarPass()</h2>
+<a id="ab25c802e1f0d853138922fd9b3e746ba" name="ab25c802e1f0d853138922fd9b3e746ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab25c802e1f0d853138922fd9b3e746ba">&#9670;&#160;</a></span>createPodToScalarPass()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::unique_ptr&lt; Pass &gt; llzk::pod::createPodToScalarPass </td>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::pod::createPodToScalarPass </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p>Create the pass that rewrites eligible POD storage into scalar SSA values. </p>
-
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l01701">1701</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00091">91</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -607,7 +605,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00089">89</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00102">102</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -634,7 +632,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00096">96</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00109">109</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -661,7 +659,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00106">106</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00119">119</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>

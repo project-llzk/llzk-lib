@@ -161,86 +161,82 @@ $(function(){initNavTree('AnalysisPasses_8td_source.html','',''); });
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>def CallGraphPrinterPass : LLZKPass&lt;&quot;llzk-print-call-graph&quot;&gt; {</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  let summary = &quot;Print the LLZK module&#39;s call graph.&quot;;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  let constructor = &quot;llzk::createCallGraphPrinterPass(llvm::errs())&quot;;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  let options = [OutputStreamOption];</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>def CallGraphSCCsPrinterPass : LLZKPass&lt;&quot;llzk-print-call-graph-sccs&quot;&gt; {</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  let summary = &quot;Print the SCCs from the LLZK module&#39;s call graph.&quot;;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  let constructor = &quot;llzk::createCallGraphSCCsPrinterPass(llvm::errs())&quot;;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  let options = [OutputStreamOption];</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>}</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>def ConstraintDependencyGraphPrinterPass</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    : LLZKPass&lt;&quot;llzk-print-constraint-dependency-graphs&quot;&gt; {</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  let summary = &quot;Print constraint dependency graph for all LLZK structs.&quot;;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  let constructor =</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      &quot;llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())&quot;;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  let options = [Option&lt;&quot;runIntraprocedural&quot;, &quot;intraprocedural&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                        /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>                        &quot;Whether to run the analysis intra-procedurally only &quot;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>                        &quot;(default is false).&quot;&gt;];</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>}</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>def IntervalAnalysisPrinterPass : LLZKPass&lt;&quot;llzk-print-interval-analysis&quot;&gt; {</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  let summary = &quot;Print interval analysis results for all LLZK structs.&quot;;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  let constructor = &quot;llzk::createIntervalAnalysisPrinterPass(llvm::errs())&quot;;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  let options =</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>      [Option&lt;&quot;fieldName&quot;, &quot;field&quot;, &quot;std::string&quot;, /* default */ &quot;\&quot;\&quot;&quot;,</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>              &quot;The field to use for interval analysis. If supplied, this &quot;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>              &quot;always overrides the module&#39;s detected field. If omitted, the &quot;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>              &quot;pass first tries to detect a single field from the enclosing &quot;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>              &quot;module&#39;s felt usage &quot;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>              &quot;and otherwise falls back to bn128. Supported fields: &quot;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>              &quot;bn128/bn254, babybear, goldilocks, grumpkin, koalabear, &quot;</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>              &quot;mersenne31&quot;&gt;,</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>       Option&lt;&quot;propagateInputConstraints&quot;, &quot;propagate-input-constraints&quot;,</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>              &quot;bool&quot;, /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>              &quot;Whether to propagate constraints on inputs from @constrain to &quot;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>              &quot;@compute functions. &quot;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>              &quot;This allows for tighter intervals to possibly be found for &quot;</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>              &quot;computed values, &quot;</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>              &quot;assuming that the witness generator would include constraints &quot;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>              &quot;as assertions during the computation.&quot;&gt;,</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>       Option&lt;&quot;printSolverConstraints&quot;, &quot;print-solver-constraints&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>              /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>              &quot;Whether to output SMT solver constraints along with intervals.&quot;&gt;,</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>       Option&lt;&quot;printComputeIntervals&quot;, &quot;print-compute-intervals&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>              /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>              &quot;Whether to print compute function intervals (default only &quot;</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>              &quot;prints constrain function intervals).&quot;&gt;,</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>       Option&lt;&quot;printUnreducedIntervals&quot;, &quot;print-unreduced-intervals&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>              /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>              &quot;Whether to print tracked unreduced intervals alongside reduced &quot;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>              &quot;interval summaries.&quot;&gt;,</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>       Option&lt;&quot;printSSAIntervals&quot;, &quot;print-ssa-intervals&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>              /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>              &quot;Whether to print per-SSA intervals for function arguments and &quot;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>              &quot;scalar op results.&quot;&gt;,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  ];</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>}</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>def SymbolDefTreePrinterPass : LLZKPass&lt;&quot;llzk-print-symbol-def-tree&quot;&gt; {</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  let summary = &quot;Print symbol definition tree.&quot;;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  let constructor = &quot;llzk::createSymbolDefTreePrinterPass()&quot;;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  let options = [OutputStreamOption, SaveDotGraphOption];</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>}</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>def SymbolUseGraphPrinterPass : LLZKPass&lt;&quot;llzk-print-symbol-use-graph&quot;&gt; {</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  let summary = &quot;Print symbol use graph.&quot;;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  let constructor = &quot;llzk::createSymbolUseGraphPrinterPass()&quot;;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  let options = [OutputStreamOption, SaveDotGraphOption];</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>}</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>def PredecessorPrinterPass : LLZKPass&lt;&quot;llzk-print-predecessors&quot;&gt; {</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  let summary = &quot;Print the predecessors of all operations.&quot;;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  let constructor = &quot;llzk::createPredecessorPrinterPass()&quot;;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  let options = [OutputStreamOption,</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>                 Option&lt;&quot;preRunRequiredAnalyses&quot;, &quot;prerun&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>                        /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                        &quot;Whether to pre-run the required dataflow analyses &quot;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>                        &quot;(e.g., liveness analysis).&quot;&gt;];</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>}</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>#endif // LLZK_ANALYSIS_TD</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  let options = [OutputStreamOption,</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                 Option&lt;&quot;runIntraprocedural&quot;, &quot;intraprocedural&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                        /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                        &quot;Whether to run the analysis intra-procedurally only &quot;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>                        &quot;(default is false).&quot;&gt;];</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>def IntervalAnalysisPrinterPass : LLZKPass&lt;&quot;llzk-print-interval-analysis&quot;&gt; {</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  let summary = &quot;Print interval analysis results for all LLZK structs.&quot;;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  let options =</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      [OutputStreamOption,</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>       Option&lt;&quot;fieldName&quot;, &quot;field&quot;, &quot;std::string&quot;, /* default */ &quot;\&quot;\&quot;&quot;,</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>              &quot;The field to use for interval analysis. If supplied, this &quot;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>              &quot;always overrides the module&#39;s detected field. If omitted, the &quot;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>              &quot;pass first tries to detect a single field from the enclosing &quot;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>              &quot;module&#39;s felt usage &quot;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>              &quot;and otherwise falls back to bn128. Supported fields: &quot;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>              &quot;bn128/bn254, babybear, goldilocks, grumpkin, koalabear, &quot;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>              &quot;mersenne31&quot;&gt;,</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>       Option&lt;&quot;propagateInputConstraints&quot;, &quot;propagate-input-constraints&quot;,</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>              &quot;bool&quot;, /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>              &quot;Whether to propagate constraints on inputs from @constrain to &quot;</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>              &quot;@compute functions. &quot;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>              &quot;This allows for tighter intervals to possibly be found for &quot;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>              &quot;computed values, &quot;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>              &quot;assuming that the witness generator would include constraints &quot;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>              &quot;as assertions during the computation.&quot;&gt;,</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>       Option&lt;&quot;printSolverConstraints&quot;, &quot;print-solver-constraints&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>              /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>              &quot;Whether to output SMT solver constraints along with intervals.&quot;&gt;,</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>       Option&lt;&quot;printComputeIntervals&quot;, &quot;print-compute-intervals&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>              /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>              &quot;Whether to print compute function intervals (default only &quot;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>              &quot;prints constrain function intervals).&quot;&gt;,</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>       Option&lt;&quot;printUnreducedIntervals&quot;, &quot;print-unreduced-intervals&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>              /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>              &quot;Whether to print tracked unreduced intervals alongside reduced &quot;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>              &quot;interval summaries.&quot;&gt;,</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>       Option&lt;&quot;printSSAIntervals&quot;, &quot;print-ssa-intervals&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>              /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>              &quot;Whether to print per-SSA intervals for function arguments and &quot;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>              &quot;scalar op results.&quot;&gt;,</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  ];</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>}</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>def SymbolDefTreePrinterPass : LLZKPass&lt;&quot;llzk-print-symbol-def-tree&quot;&gt; {</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  let summary = &quot;Print symbol definition tree.&quot;;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  let options = [OutputStreamOption, SaveDotGraphOption];</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>}</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>def SymbolUseGraphPrinterPass : LLZKPass&lt;&quot;llzk-print-symbol-use-graph&quot;&gt; {</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  let summary = &quot;Print symbol use graph.&quot;;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  let options = [OutputStreamOption, SaveDotGraphOption];</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>def PredecessorPrinterPass : LLZKPass&lt;&quot;llzk-print-predecessors&quot;&gt; {</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  let summary = &quot;Print the predecessors of all operations.&quot;;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  let options = [OutputStreamOption,</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>                 Option&lt;&quot;preRunRequiredAnalyses&quot;, &quot;prerun&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>                        /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>                        &quot;Whether to pre-run the required dataflow analyses &quot;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>                        &quot;(e.g., liveness analysis).&quot;&gt;];</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>}</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>#endif // LLZK_ANALYSIS_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

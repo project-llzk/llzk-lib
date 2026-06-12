@@ -11,5 +11,6 @@ var classllzk_1_1impl_1_1WhileToForPassBase =
     [ "getDescription", "classllzk_1_1impl_1_1WhileToForPassBase.html#a31570b897d325ae56260c45f8b96d05f", null ],
     [ "getName", "classllzk_1_1impl_1_1WhileToForPassBase.html#aa492b536af4eb1a3fd2d0b432723cfdb", null ],
     [ "operator=", "classllzk_1_1impl_1_1WhileToForPassBase.html#ae7a26ecfb459cee79e5fd656ddc3013e", null ],
-    [ "operator=", "classllzk_1_1impl_1_1WhileToForPassBase.html#afee018c7a4c27bed10fd5d76d4afa38f", null ]
+    [ "operator=", "classllzk_1_1impl_1_1WhileToForPassBase.html#afee018c7a4c27bed10fd5d76d4afa38f", null ],
+    [ "createWhileToForPass", "classllzk_1_1impl_1_1WhileToForPassBase.html#ad8d9f041d4b5afe16083e942c227282a", null ]
 ];

@@ -34,9 +34,9 @@ var namespacellzk_1_1polymorphic =
       [ "ConcreteAsRoot", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e", null ],
       [ "MainAsRoot", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc", null ]
     ] ],
-    [ "createEmptyTemplateRemoval", "namespacellzk_1_1polymorphic.html#ae5e3a76ebc8b70aae91e2bc805f34a54", null ],
-    [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#a588852ffba37b2c570615b494d488163", null ],
-    [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#a59959bb9e7bef15b2c50ad659626e0f6", null ],
+    [ "createEmptyTemplateRemovalPass", "namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544", null ],
+    [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b", null ],
+    [ "createFlatteningPass", "namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd", null ],
     [ "getMaxEnumValForFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#afec084874e5df37a9774039696031b8f", null ],
     [ "isInTemplate", "namespacellzk_1_1polymorphic.html#abfc0e81b570f916984553856b44142ed", null ],
     [ "isInTemplate", "namespacellzk_1_1polymorphic.html#ab5469bc7217002d28ae18f0742d7f562", null ],

@@ -13,5 +13,7 @@ var classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase =
     [ "getName", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#a125b845862a5f87dc358e641c55b3ee5", null ],
     [ "operator=", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#afb41b497237af59cd869b66eec2d96e9", null ],
     [ "operator=", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#abf5c2ab3673ecd36e01af6306743f5fb", null ],
+    [ "createRemoveUnusedDiscardableAllocationsPass", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#afd94007fd4975f283955b49de2dae64a", null ],
+    [ "createRemoveUnusedDiscardableAllocationsPass", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#a5ff1977029c35a41c59876619db1d069", null ],
     [ "allocatorOpName", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#abf765e154e7492026eb36e7843e0b57a", null ]
 ];

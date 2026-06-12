@@ -135,7 +135,6 @@ Include dependency graph for LLZKEnforceNoOverwritePass.cpp:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:llzk_3A_3Aimpl_3A_3AEnforceNoMemberOverwritePassBase_3C_20DerivedT_20_3E" id="r_llzk_3A_3Aimpl_3A_3AEnforceNoMemberOverwritePassBase_3C_20DerivedT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html">llzk::impl::EnforceNoMemberOverwritePassBase&lt; DerivedT &gt;</a></td></tr>
-<tr class="memitem:llzk_3A_3AEnforceNoMemberOverwritePass" id="r_llzk_3A_3AEnforceNoMemberOverwritePass"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1EnforceNoMemberOverwritePass.html">llzk::EnforceNoMemberOverwritePass</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -144,13 +143,13 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a22e72549240d92b5e854a4c150453ede" id="r_a22e72549240d92b5e854a4c150453ede"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a22e72549240d92b5e854a4c150453ede">GEN_PASS_DECL_ENFORCENOMEMBEROVERWRITEPASS</a></td></tr>
 <tr class="memitem:a9adf4a6933231ce3cf9f460d42555251" id="r_a9adf4a6933231ce3cf9f460d42555251"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9adf4a6933231ce3cf9f460d42555251">GEN_PASS_DEF_ENFORCENOMEMBEROVERWRITEPASS</a></td></tr>
 <tr class="memitem:ad78e062f62e0d6e453941fb4ca843e4d" id="r_ad78e062f62e0d6e453941fb4ca843e4d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a>&#160;&#160;&#160;&quot;llzk-enforce-no-overwrites-pass&quot;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ae6a040d314a3f744bd4e75d142b8f34c" id="r_ae6a040d314a3f744bd4e75d142b8f34c"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ae6a040d314a3f744bd4e75d142b8f34c">llzk::createNoOverwritesPass</a> ()</td></tr>
+<tr class="memitem:ad96f99fa62205ecce990a827d44d7887" id="r_ad96f99fa62205ecce990a827d44d7887"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#ad96f99fa62205ecce990a827d44d7887">llzk::impl::createEnforceNoMemberOverwritePass</a> ()</td></tr>
+<tr class="memitem:a78d1137f9044c06529a0c3f43d7649a5" id="r_a78d1137f9044c06529a0c3f43d7649a5"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a78d1137f9044c06529a0c3f43d7649a5">llzk::createEnforceNoMemberOverwritePass</a> ()</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file implements the <span class="tt">-llzk-enforce-no-overwrite</span> pass. </p>
@@ -169,23 +168,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html#l00033">33</a> of file <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html">LLZKEnforceNoOverwritePass.cpp</a>.</p>
-
-</div>
-</div>
-<a id="a22e72549240d92b5e854a4c150453ede" name="a22e72549240d92b5e854a4c150453ede"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a22e72549240d92b5e854a4c150453ede">&#9670;&#160;</a></span>GEN_PASS_DECL_ENFORCENOMEMBEROVERWRITEPASS</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GEN_PASS_DECL_ENFORCENOMEMBEROVERWRITEPASS</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html#l00028">28</a> of file <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html">LLZKEnforceNoOverwritePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html#l00032">32</a> of file <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html">LLZKEnforceNoOverwritePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -201,7 +184,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html#l00029">29</a> of file <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html">LLZKEnforceNoOverwritePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html#l00028">28</a> of file <a class="el" href="LLZKEnforceNoOverwritePass_8cpp_source.html">LLZKEnforceNoOverwritePass.cpp</a>.</p>
 
 </div>
 </div>

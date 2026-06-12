@@ -11,5 +11,6 @@ var classllzk_1_1impl_1_1RedundantOperationEliminationPassBase =
     [ "getDescription", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html#abce4ec04e82fefe5ca33d69119c8d532", null ],
     [ "getName", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html#a63ffd0e41b8a434ea7e61cbfd85272e1", null ],
     [ "operator=", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html#a56a561d9fde695bfaa9917009cef0257", null ],
-    [ "operator=", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html#aa3d597223332d8b07c7f697bc9a010be", null ]
+    [ "operator=", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html#aa3d597223332d8b07c7f697bc9a010be", null ],
+    [ "createRedundantOperationEliminationPass", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html#aced93fcf1466647661f78f7659eaacfd", null ]
 ];

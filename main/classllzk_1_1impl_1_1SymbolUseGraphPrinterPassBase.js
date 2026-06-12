@@ -13,6 +13,8 @@ var classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase =
     [ "getName", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#ac4a98a2ee67ca949487dc44b604dc9d1", null ],
     [ "operator=", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#a20307de498e8b3fa055f41dc32eabfbe", null ],
     [ "operator=", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#a590f871b46195f09b62988e16b479052", null ],
+    [ "createSymbolUseGraphPrinterPass", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#ae30c3a7827c5f6dba787354da1965055", null ],
+    [ "createSymbolUseGraphPrinterPass", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#a47b5eccdf1e691e1e0255c3187e7b2cf", null ],
     [ "outputStream", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#aabea8ea948db8f9cc6e47dbcfa9e97da", null ],
     [ "saveDotGraph", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html#a984478edaeceb29f7d2afc832ccdb9dd", null ]
 ];

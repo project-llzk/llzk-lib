@@ -109,6 +109,7 @@ $(function(){initNavTree('classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#friends">Friends</a> &#124;
 <a href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::polymorphic::impl::FlatteningPassBase&lt; DerivedT &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -159,11 +160,16 @@ Static Public Member Functions</h2></td></tr>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:aa5262637ccc7799080ea562783dc6de3" id="r_aa5262637ccc7799080ea562783dc6de3"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; unsigned &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa5262637ccc7799080ea562783dc6de3">iterationLimit</a> {*this, &quot;max-iter&quot;, ::llvm::cl::desc(&quot;Maximum number <a class="el" href="LICENSE_8txt.html#a7ee731f5d60b203ffeb5c274118c106a">of</a> times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be <a class="el" href="LICENSE_8txt.html#aea5442bd28876da5f94f1bd03e7cf620">made</a> <a class="el" href="LICENSE_8txt.html#a4e22223cce6cd87a8eb1b271ab21c639">or</a> the upper limit provided in this option is reached.&quot;), ::llvm::cl::init(1000)}</td></tr>
 <tr class="memitem:a40f5b5fa1ac902e6cd91cdd3dccb604f" id="r_a40f5b5fa1ac902e6cd91cdd3dccb604f"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">::llzk::polymorphic::FlatteningCleanupMode</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a40f5b5fa1ac902e6cd91cdd3dccb604f">cleanupMode</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a132cdf6ecc54ca6f881ea3a0a3ca4112" id="r_a132cdf6ecc54ca6f881ea3a0a3ca4112"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a132cdf6ecc54ca6f881ea3a0a3ca4112">createFlatteningPass</a> ()</td></tr>
+<tr class="memitem:a75b9d31d1ee603d2fc920c1b0129a84c" id="r_a75b9d31d1ee603d2fc920c1b0129a84c"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a75b9d31d1ee603d2fc920c1b0129a84c">createFlatteningPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::polymorphic::impl::FlatteningPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00099">99</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00122">122</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a913598b11a2bf5ce21b262cf2a1a0de5" name="a913598b11a2bf5ce21b262cf2a1a0de5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a913598b11a2bf5ce21b262cf2a1a0de5">&#9670;&#160;</a></span>Base</h2>
@@ -179,7 +185,7 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00101">101</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00124">124</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -209,7 +215,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00103">103</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00126">126</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -238,7 +244,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00104">104</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00127">127</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -324,7 +330,7 @@ template&lt;typename DerivedT&gt; </div>
 <p>Explicitly declare the TypeID for this class. </p>
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00156">156</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00179">179</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -356,7 +362,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00125">125</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00148">148</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -387,7 +393,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00130">130</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00153">153</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -416,7 +422,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00114">114</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00137">137</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -447,7 +453,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00111">111</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00134">134</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -478,7 +484,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00135">135</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00158">158</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -507,7 +513,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00116">116</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00139">139</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -536,7 +542,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00122">122</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00145">145</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -567,7 +573,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00119">119</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00142">142</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -625,6 +631,65 @@ template&lt;typename DerivedT&gt; </div>
 
 </div>
 </div>
+<a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
+<a id="a132cdf6ecc54ca6f881ea3a0a3ca4112" name="a132cdf6ecc54ca6f881ea3a0a3ca4112"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a132cdf6ecc54ca6f881ea3a0a3ca4112">&#9670;&#160;</a></span>createFlatteningPass <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createFlatteningPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00200">200</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a75b9d31d1ee603d2fc920c1b0129a84c" name="a75b9d31d1ee603d2fc920c1b0129a84c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a75b9d31d1ee603d2fc920c1b0129a84c">&#9670;&#160;</a></span>createFlatteningPass <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createFlatteningPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00204">204</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+
+</div>
+</div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a40f5b5fa1ac902e6cd91cdd3dccb604f" name="a40f5b5fa1ac902e6cd91cdd3dccb604f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a40f5b5fa1ac902e6cd91cdd3dccb604f">&#9670;&#160;</a></span>cleanupMode</h2>
@@ -666,7 +731,7 @@ template&lt;typename DerivedT&gt; </div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">llzk::polymorphic::FlatteningCleanupMode::Disabled</a></div><div class="ttdeci">@ Disabled</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00014">TransformationPassEnums.h.inc:14</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">llzk::polymorphic::FlatteningCleanupMode::Preimage</a></div><div class="ttdeci">@ Preimage</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00015">TransformationPassEnums.h.inc:15</a></div></div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00162">162</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00185">185</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -692,7 +757,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00161">161</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00184">184</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>

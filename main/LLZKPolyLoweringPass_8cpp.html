@@ -107,7 +107,8 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp.html','',''); });
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a>  </div>
+<a href="#define-members">Macros</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">LLZKPolyLoweringPass.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -131,14 +132,13 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKPolyLoweringPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKPolyLoweringPass_8cpp__incl.svg" width="3760" height="671"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKPolyLoweringPass_8cpp__incl.svg" width="3820" height="671"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="LLZKPolyLoweringPass_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:llzk_3A_3APolyLoweringPassOptions" id="r_llzk_3A_3APolyLoweringPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1PolyLoweringPassOptions.html">llzk::PolyLoweringPassOptions</a></td></tr>
 <tr class="memitem:llzk_3A_3Aimpl_3A_3APolyLoweringPassBase_3C_20DerivedT_20_3E" id="r_llzk_3A_3Aimpl_3A_3APolyLoweringPassBase_3C_20DerivedT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1impl_1_1PolyLoweringPassBase.html">llzk::impl::PolyLoweringPassBase&lt; DerivedT &gt;</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
@@ -148,10 +148,16 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ae4dcf346dca8d30b09d5b846f595fdc9" id="r_ae4dcf346dca8d30b09d5b846f595fdc9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae4dcf346dca8d30b09d5b846f595fdc9">GEN_PASS_DECL_POLYLOWERINGPASS</a></td></tr>
 <tr class="memitem:a61aff89a6ddbd04b4c8ff8640304c007" id="r_a61aff89a6ddbd04b4c8ff8640304c007"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61aff89a6ddbd04b4c8ff8640304c007">GEN_PASS_DEF_POLYLOWERINGPASS</a></td></tr>
 <tr class="memitem:ad78e062f62e0d6e453941fb4ca843e4d" id="r_ad78e062f62e0d6e453941fb4ca843e4d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a>&#160;&#160;&#160;&quot;llzk-poly-lowering-pass&quot;</td></tr>
 <tr class="memitem:a11748dd8dce65989d47ac3534665c399" id="r_a11748dd8dce65989d47ac3534665c399"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a11748dd8dce65989d47ac3534665c399">AUXILIARY_MEMBER_PREFIX</a>&#160;&#160;&#160;&quot;__llzk_poly_lowering_pass_aux_member_&quot;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a48db73aa2458cebc2a24e7875780d5e7" id="r_a48db73aa2458cebc2a24e7875780d5e7"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#a48db73aa2458cebc2a24e7875780d5e7">llzk::impl::createPolyLoweringPass</a> ()</td></tr>
+<tr class="memitem:ad077ca328d22a5c4e8fd4f18370c3127" id="r_ad077ca328d22a5c4e8fd4f18370c3127"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#ad077ca328d22a5c4e8fd4f18370c3127">llzk::impl::createPolyLoweringPass</a> (<a class="el" href="structllzk_1_1PolyLoweringPassOptions.html">PolyLoweringPassOptions</a> options)</td></tr>
+<tr class="memitem:a43127389e7b4fa6c9df9cb41983736ba" id="r_a43127389e7b4fa6c9df9cb41983736ba"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a43127389e7b4fa6c9df9cb41983736ba">llzk::createPolyLoweringPass</a> ()</td></tr>
+<tr class="memitem:a3460f70cd78487eb92a7eb734118102f" id="r_a3460f70cd78487eb92a7eb734118102f"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a3460f70cd78487eb92a7eb734118102f">llzk::createPolyLoweringPass</a> (<a class="el" href="structllzk_1_1PolyLoweringPassOptions.html">PolyLoweringPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file implements the <span class="tt">-llzk-poly-lowering</span> pass. </p>
@@ -170,7 +176,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00048">48</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00047">47</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -186,23 +192,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00047">47</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
-
-</div>
-</div>
-<a id="ae4dcf346dca8d30b09d5b846f595fdc9" name="ae4dcf346dca8d30b09d5b846f595fdc9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae4dcf346dca8d30b09d5b846f595fdc9">&#9670;&#160;</a></span>GEN_PASS_DECL_POLYLOWERINGPASS</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GEN_PASS_DECL_POLYLOWERINGPASS</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00035">35</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00046">46</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -218,7 +208,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00036">36</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html#l00035">35</a> of file <a class="el" href="LLZKPolyLoweringPass_8cpp_source.html">LLZKPolyLoweringPass.cpp</a>.</p>
 
 </div>
 </div>

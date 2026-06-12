@@ -109,6 +109,7 @@ $(function(){initNavTree('classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterP
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#friends">Friends</a> &#124;
 <a href="classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::impl::ConstraintDependencyGraphPrinterPassBase&lt; DerivedT &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -157,12 +158,18 @@ Static Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
+<tr class="memitem:a510fb0096125748379b685397f1e8c42" id="r_a510fb0096125748379b685397f1e8c42"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2">::llzk::OutputStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a510fb0096125748379b685397f1e8c42">outputStream</a></td></tr>
 <tr class="memitem:ad9af0dffcae54226e7c51a0fd4bdadc2" id="r_ad9af0dffcae54226e7c51a0fd4bdadc2"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad9af0dffcae54226e7c51a0fd4bdadc2">runIntraprocedural</a> {*this, &quot;intraprocedural&quot;, ::llvm::cl::desc(&quot;Whether to run the analysis intra-procedurally only (default is false).&quot;), ::llvm::cl::init(false)}</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:aabdafc97cc01f8435e539ca996772445" id="r_aabdafc97cc01f8435e539ca996772445"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aabdafc97cc01f8435e539ca996772445">createConstraintDependencyGraphPrinterPass</a> ()</td></tr>
+<tr class="memitem:a2523b3694b21c348b35fe03d79d25745" id="r_a2523b3694b21c348b35fe03d79d25745"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2523b3694b21c348b35fe03d79d25745">createConstraintDependencyGraphPrinterPass</a> (<a class="el" href="structllzk_1_1ConstraintDependencyGraphPrinterPassOptions.html">ConstraintDependencyGraphPrinterPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::impl::ConstraintDependencyGraphPrinterPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00177">177</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00268">268</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a575abf8638f9144217bd5a71bebe5952" name="a575abf8638f9144217bd5a71bebe5952"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a575abf8638f9144217bd5a71bebe5952">&#9670;&#160;</a></span>Base</h2>
@@ -178,7 +185,7 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00179">179</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00270">270</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -208,7 +215,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00181">181</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00272">272</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -237,7 +244,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00182">182</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00273">273</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -323,7 +330,7 @@ template&lt;typename DerivedT&gt; </div>
 <p>Explicitly declare the TypeID for this class. </p>
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00234">234</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00325">325</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -355,7 +362,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00203">203</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00294">294</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -386,7 +393,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00208">208</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00299">299</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -415,7 +422,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00192">192</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00283">283</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -446,7 +453,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00189">189</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00280">280</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -477,7 +484,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00213">213</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00304">304</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -506,7 +513,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00194">194</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00285">285</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -535,7 +542,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00200">200</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00291">291</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -566,7 +573,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00197">197</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00288">288</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -624,7 +631,104 @@ template&lt;typename DerivedT&gt; </div>
 
 </div>
 </div>
+<a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
+<a id="aabdafc97cc01f8435e539ca996772445" name="aabdafc97cc01f8435e539ca996772445"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabdafc97cc01f8435e539ca996772445">&#9670;&#160;</a></span>createConstraintDependencyGraphPrinterPass <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createConstraintDependencyGraphPrinterPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00341">341</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a2523b3694b21c348b35fe03d79d25745" name="a2523b3694b21c348b35fe03d79d25745"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2523b3694b21c348b35fe03d79d25745">&#9670;&#160;</a></span>createConstraintDependencyGraphPrinterPass <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createConstraintDependencyGraphPrinterPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1ConstraintDependencyGraphPrinterPassOptions.html">ConstraintDependencyGraphPrinterPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00345">345</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+
+</div>
+</div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a510fb0096125748379b685397f1e8c42" name="a510fb0096125748379b685397f1e8c42"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a510fb0096125748379b685397f1e8c42">&#9670;&#160;</a></span>outputStream</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2">::llzk::OutputStream</a>&gt; <a class="el" href="classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html">llzk::impl::ConstraintDependencyGraphPrinterPassBase</a>&lt; DerivedT &gt;::outputStream</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{*<span class="keyword">this</span>, <span class="stringliteral">&quot;stream&quot;</span>, ::llvm::cl::desc(<span class="stringliteral">&quot;Specifies the stream to which the pass prints.&quot;</span>), ::llvm::cl::init(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">::llzk::OutputStream::Errs</a>), ::llvm::cl::values(</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55">::llzk::OutputStream::Outs</a>, <a class="code hl_function" href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a>(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55">::llzk::OutputStream::Outs</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Print pass output to &#39;llvm::outs()&#39;&quot;</span>),</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">::llzk::OutputStream::Errs</a>, <a class="code hl_function" href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a>(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">::llzk::OutputStream::Errs</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Print pass output to &#39;llvm::errs()&#39;&quot;</span>),</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">::llzk::OutputStream::Dbgs</a>, <a class="code hl_function" href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a>(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">::llzk::OutputStream::Dbgs</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Print pass output to &#39;llvm::dbgs()&#39;&quot;</span>)</div>
+<div class="line">          )}</div>
+<div class="ttc" id="anamespacellzk_html_a9e37c6f9f1b5779c100b03e6b3871826"><div class="ttname"><a href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">llzk::stringifyOutputStream</a></div><div class="ttdeci">::llvm::StringRef stringifyOutputStream(OutputStream val)</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_8inc_source.html#l00011">AnalysisPassEnums.cpp.inc:11</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55">llzk::OutputStream::Outs</a></div><div class="ttdeci">@ Outs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00013">AnalysisPassEnums.h.inc:13</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">llzk::OutputStream::Dbgs</a></div><div class="ttdeci">@ Dbgs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00015">AnalysisPassEnums.h.inc:15</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">llzk::OutputStream::Errs</a></div><div class="ttdeci">@ Errs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00014">AnalysisPassEnums.h.inc:14</a></div></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00330">330</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ad9af0dffcae54226e7c51a0fd4bdadc2" name="ad9af0dffcae54226e7c51a0fd4bdadc2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad9af0dffcae54226e7c51a0fd4bdadc2">&#9670;&#160;</a></span>runIntraprocedural</h2>
 
@@ -647,7 +751,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00238">238</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html#l00338">338</a> of file <a class="el" href="ConstraintDependencyGraphPass_8cpp_source.html">ConstraintDependencyGraphPass.cpp</a>.</p>
 
 </div>
 </div>

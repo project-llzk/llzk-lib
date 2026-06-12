@@ -128,9 +128,7 @@ Include dependency graph for SymbolUseGraphPass.cpp:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:llzk_3A_3ASymbolUseGraphPrinterPassOptions" id="r_llzk_3A_3ASymbolUseGraphPrinterPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1SymbolUseGraphPrinterPassOptions.html">llzk::SymbolUseGraphPrinterPassOptions</a></td></tr>
 <tr class="memitem:llzk_3A_3Aimpl_3A_3ASymbolUseGraphPrinterPassBase_3C_20DerivedT_20_3E" id="r_llzk_3A_3Aimpl_3A_3ASymbolUseGraphPrinterPassBase_3C_20DerivedT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html">llzk::impl::SymbolUseGraphPrinterPassBase&lt; DerivedT &gt;</a></td></tr>
-<tr class="memitem:llzk_3A_3ASymbolUseGraphPass" id="r_llzk_3A_3ASymbolUseGraphPass"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SymbolUseGraphPass.html">llzk::SymbolUseGraphPass</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -139,34 +137,20 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a4dfda574c21e59a17a8628456835d663" id="r_a4dfda574c21e59a17a8628456835d663"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4dfda574c21e59a17a8628456835d663">GEN_PASS_DECL_SYMBOLUSEGRAPHPRINTERPASS</a></td></tr>
 <tr class="memitem:aa1e9ebc015bc2fd35bb991629169690d" id="r_aa1e9ebc015bc2fd35bb991629169690d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa1e9ebc015bc2fd35bb991629169690d">GEN_PASS_DEF_SYMBOLUSEGRAPHPRINTERPASS</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a4dad20cd356b00c9fad2ef7450535a95" id="r_a4dad20cd356b00c9fad2ef7450535a95"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a4dad20cd356b00c9fad2ef7450535a95">llzk::createSymbolUseGraphPrinterPass</a> ()</td></tr>
+<tr class="memitem:a2daea8e8704bea1528bebd7a22d5286a" id="r_a2daea8e8704bea1528bebd7a22d5286a"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#a2daea8e8704bea1528bebd7a22d5286a">llzk::impl::createSymbolUseGraphPrinterPass</a> ()</td></tr>
+<tr class="memitem:a31678dd411d32ae1b202ef26daa3dfbd" id="r_a31678dd411d32ae1b202ef26daa3dfbd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#a31678dd411d32ae1b202ef26daa3dfbd">llzk::impl::createSymbolUseGraphPrinterPass</a> (<a class="el" href="structllzk_1_1SymbolUseGraphPrinterPassOptions.html">SymbolUseGraphPrinterPassOptions</a> options)</td></tr>
+<tr class="memitem:a0f6ff8ad552f9df00e6145108f920542" id="r_a0f6ff8ad552f9df00e6145108f920542"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a0f6ff8ad552f9df00e6145108f920542">llzk::createSymbolUseGraphPrinterPass</a> ()</td></tr>
+<tr class="memitem:aa5b0aaa24fa188b6bb82954ce4843236" id="r_aa5b0aaa24fa188b6bb82954ce4843236"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#aa5b0aaa24fa188b6bb82954ce4843236">llzk::createSymbolUseGraphPrinterPass</a> (<a class="el" href="structllzk_1_1SymbolUseGraphPrinterPassOptions.html">SymbolUseGraphPrinterPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file implements the <span class="tt">-llzk-print-symbol-use-graph</span> pass. </p>
 
 <p class="definition">Definition in file <a class="el" href="SymbolUseGraphPass_8cpp_source.html">SymbolUseGraphPass.cpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
-<a id="a4dfda574c21e59a17a8628456835d663" name="a4dfda574c21e59a17a8628456835d663"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4dfda574c21e59a17a8628456835d663">&#9670;&#160;</a></span>GEN_PASS_DECL_SYMBOLUSEGRAPHPRINTERPASS</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GEN_PASS_DECL_SYMBOLUSEGRAPHPRINTERPASS</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="SymbolUseGraphPass_8cpp_source.html#l00020">20</a> of file <a class="el" href="SymbolUseGraphPass_8cpp_source.html">SymbolUseGraphPass.cpp</a>.</p>
-
-</div>
-</div>
 <a id="aa1e9ebc015bc2fd35bb991629169690d" name="aa1e9ebc015bc2fd35bb991629169690d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa1e9ebc015bc2fd35bb991629169690d">&#9670;&#160;</a></span>GEN_PASS_DEF_SYMBOLUSEGRAPHPRINTERPASS</h2>
 
@@ -179,7 +163,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolUseGraphPass_8cpp_source.html#l00021">21</a> of file <a class="el" href="SymbolUseGraphPass_8cpp_source.html">SymbolUseGraphPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolUseGraphPass_8cpp_source.html#l00019">19</a> of file <a class="el" href="SymbolUseGraphPass_8cpp_source.html">SymbolUseGraphPass.cpp</a>.</p>
 
 </div>
 </div>

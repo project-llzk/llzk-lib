@@ -13,6 +13,8 @@ var classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase =
     [ "getName", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#aae9033fb5d9b41c42e11d47f6affddfd", null ],
     [ "operator=", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#a241d2e1413b3c12863f9cd4e5740f202", null ],
     [ "operator=", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#acf4d1faf87a8f37dede6c3d36cba0286", null ],
+    [ "createSymbolDefTreePrinterPass", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#a55bfc6193eb517e5e61970e6bd6d9c76", null ],
+    [ "createSymbolDefTreePrinterPass", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#a22b51a7be090fae662855142bf4406a3", null ],
     [ "outputStream", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#a7997aeed6415414e801ce08bf6c202ba", null ],
     [ "saveDotGraph", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#ababa2133cf1176bd9e74b3e3e0cca7ae", null ]
 ];

@@ -108,6 +108,8 @@ $(function(){initNavTree('classllzk_1_1impl_1_1CallGraphPrinterPassBase.html',''
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#friends">Friends</a> &#124;
 <a href="classllzk_1_1impl_1_1CallGraphPrinterPassBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::impl::CallGraphPrinterPassBase&lt; DerivedT &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -142,6 +144,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ad827302e9c44498b37b080f4e852293c"><td class="mdescLeft">&#160;</td><td class="mdescRight">A clone method to create a copy of this pass.  <br /></td></tr>
 <tr class="memitem:a5d3482050ca7a0cd90be4905c9aee633" id="r_a5d3482050ca7a0cd90be4905c9aee633"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5d3482050ca7a0cd90be4905c9aee633">getDependentDialects</a> (::mlir::DialectRegistry &amp;registry) const override</td></tr>
 <tr class="memdesc:a5d3482050ca7a0cd90be4905c9aee633"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the dialect that must be loaded in the context before this pass.  <br /></td></tr>
+<tr class="memitem:a7cb4f1ea5b94044a62c4eeee9cf8ff2d" id="r_a7cb4f1ea5b94044a62c4eeee9cf8ff2d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7cb4f1ea5b94044a62c4eeee9cf8ff2d">CallGraphPrinterPassBase</a> (<a class="el" href="structllzk_1_1CallGraphPrinterPassOptions.html">CallGraphPrinterPassOptions</a> options)</td></tr>
+<tr class="memdesc:a7cb4f1ea5b94044a62c4eeee9cf8ff2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Explicitly declare the TypeID for this class.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -151,11 +155,20 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memdesc:a2d27e33123dd1877a9349eb426db1cc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the derived pass name.  <br /></td></tr>
 <tr class="memitem:af43c2dbec21f72a6308c312f6f63576f" id="r_af43c2dbec21f72a6308c312f6f63576f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af43c2dbec21f72a6308c312f6f63576f">classof</a> (const ::mlir::Pass *pass)</td></tr>
 <tr class="memdesc:af43c2dbec21f72a6308c312f6f63576f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Support isa/dyn_cast functionality for the derived pass class.  <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a1d85d44faf7d6bb8cc15b2af2c4e57d4" id="r_a1d85d44faf7d6bb8cc15b2af2c4e57d4"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2">::llzk::OutputStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d85d44faf7d6bb8cc15b2af2c4e57d4">outputStream</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a87816ab87482cb6be85fcd59d4028174" id="r_a87816ab87482cb6be85fcd59d4028174"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a87816ab87482cb6be85fcd59d4028174">createCallGraphPrinterPass</a> ()</td></tr>
+<tr class="memitem:a0744b9daf1d001fe802fd0fb1445570d" id="r_a0744b9daf1d001fe802fd0fb1445570d"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0744b9daf1d001fe802fd0fb1445570d">createCallGraphPrinterPass</a> (<a class="el" href="structllzk_1_1CallGraphPrinterPassOptions.html">CallGraphPrinterPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::impl::CallGraphPrinterPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00026">26</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00039">39</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a55544e455ba45b5517c7326bf34d2e1c" name="a55544e455ba45b5517c7326bf34d2e1c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a55544e455ba45b5517c7326bf34d2e1c">&#9670;&#160;</a></span>Base</h2>
@@ -171,13 +184,13 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00028">28</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00041">41</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
 <a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3c0bf64e9855ffb097e32c11e596496a" name="a3c0bf64e9855ffb097e32c11e596496a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c0bf64e9855ffb097e32c11e596496a">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c0bf64e9855ffb097e32c11e596496a">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -201,12 +214,12 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00030">30</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00043">43</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a96c27a16c455a370d3bb1f363103f367" name="a96c27a16c455a370d3bb1f363103f367"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96c27a16c455a370d3bb1f363103f367">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a96c27a16c455a370d3bb1f363103f367">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -230,12 +243,12 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00031">31</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00044">44</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a4d4748c5d8a553fa16aa8fd2d331b7e5" name="a4d4748c5d8a553fa16aa8fd2d331b7e5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4d4748c5d8a553fa16aa8fd2d331b7e5">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4d4748c5d8a553fa16aa8fd2d331b7e5">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -288,6 +301,38 @@ template&lt;typename DerivedT&gt; </div>
 
 </div>
 </div>
+<a id="a7cb4f1ea5b94044a62c4eeee9cf8ff2d" name="a7cb4f1ea5b94044a62c4eeee9cf8ff2d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7cb4f1ea5b94044a62c4eeee9cf8ff2d">&#9670;&#160;</a></span>CallGraphPrinterPassBase() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">llzk::impl::CallGraphPrinterPassBase</a>&lt; DerivedT &gt;::CallGraphPrinterPassBase </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1CallGraphPrinterPassOptions.html">CallGraphPrinterPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Explicitly declare the TypeID for this class. </p>
+<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
+
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00096">96</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+
+</div>
+</div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="af43c2dbec21f72a6308c312f6f63576f" name="af43c2dbec21f72a6308c312f6f63576f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af43c2dbec21f72a6308c312f6f63576f">&#9670;&#160;</a></span>classof()</h2>
@@ -316,7 +361,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00052">52</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00065">65</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -347,7 +392,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00057">57</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00070">70</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -376,7 +421,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00041">41</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00054">54</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -407,7 +452,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00038">38</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00051">51</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -438,7 +483,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00062">62</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00075">75</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -467,7 +512,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00043">43</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00056">56</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -496,7 +541,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00049">49</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00062">62</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -527,7 +572,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00046">46</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00059">59</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>
@@ -582,6 +627,104 @@ template&lt;typename DerivedT&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
+<a id="a87816ab87482cb6be85fcd59d4028174" name="a87816ab87482cb6be85fcd59d4028174"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87816ab87482cb6be85fcd59d4028174">&#9670;&#160;</a></span>createCallGraphPrinterPass <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createCallGraphPrinterPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00110">110</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a0744b9daf1d001fe802fd0fb1445570d" name="a0744b9daf1d001fe802fd0fb1445570d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0744b9daf1d001fe802fd0fb1445570d">&#9670;&#160;</a></span>createCallGraphPrinterPass <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createCallGraphPrinterPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1CallGraphPrinterPassOptions.html">CallGraphPrinterPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00114">114</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a1d85d44faf7d6bb8cc15b2af2c4e57d4" name="a1d85d44faf7d6bb8cc15b2af2c4e57d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d85d44faf7d6bb8cc15b2af2c4e57d4">&#9670;&#160;</a></span>outputStream</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2">::llzk::OutputStream</a>&gt; <a class="el" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">llzk::impl::CallGraphPrinterPassBase</a>&lt; DerivedT &gt;::outputStream</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{*<span class="keyword">this</span>, <span class="stringliteral">&quot;stream&quot;</span>, ::llvm::cl::desc(<span class="stringliteral">&quot;Specifies the stream to which the pass prints.&quot;</span>), ::llvm::cl::init(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">::llzk::OutputStream::Errs</a>), ::llvm::cl::values(</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55">::llzk::OutputStream::Outs</a>, <a class="code hl_function" href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a>(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55">::llzk::OutputStream::Outs</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Print pass output to &#39;llvm::outs()&#39;&quot;</span>),</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">::llzk::OutputStream::Errs</a>, <a class="code hl_function" href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a>(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">::llzk::OutputStream::Errs</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Print pass output to &#39;llvm::errs()&#39;&quot;</span>),</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">::llzk::OutputStream::Dbgs</a>, <a class="code hl_function" href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">stringifyOutputStream</a>(<a class="code hl_enumvalue" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">::llzk::OutputStream::Dbgs</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Print pass output to &#39;llvm::dbgs()&#39;&quot;</span>)</div>
+<div class="line">          )}</div>
+<div class="ttc" id="anamespacellzk_html_a9e37c6f9f1b5779c100b03e6b3871826"><div class="ttname"><a href="namespacellzk.html#a9e37c6f9f1b5779c100b03e6b3871826">llzk::stringifyOutputStream</a></div><div class="ttdeci">::llvm::StringRef stringifyOutputStream(OutputStream val)</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_8inc_source.html#l00011">AnalysisPassEnums.cpp.inc:11</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55">llzk::OutputStream::Outs</a></div><div class="ttdeci">@ Outs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00013">AnalysisPassEnums.h.inc:13</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">llzk::OutputStream::Dbgs</a></div><div class="ttdeci">@ Dbgs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00015">AnalysisPassEnums.h.inc:15</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">llzk::OutputStream::Errs</a></div><div class="ttdeci">@ Errs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00014">AnalysisPassEnums.h.inc:14</a></div></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="CallGraphPasses_8cpp_source.html#l00100">100</a> of file <a class="el" href="CallGraphPasses_8cpp_source.html">CallGraphPasses.cpp</a>.</p>
 
 </div>
 </div>

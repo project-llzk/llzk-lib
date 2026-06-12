@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.14.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: lib/Transforms/DiscardableAllocationOpInterfaces.cpp Source File</title>
+<title>LLZK: lib/Dialect/Shared/DiscardableAllocationOpInterfaces.cpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -116,12 +116,22 @@ $(function(){initNavTree('DiscardableAllocationOpInterfaces_8cpp_source.html',''
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">//</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="DiscardableAllocationOpInterfaces_8h.html">llzk/Transforms/DiscardableAllocationOpInterfaces.h</a>&quot;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="DiscardableAllocationOpInterfaces_8h.html">llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.h</a>&quot;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">// Include the generated interface definitions.</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="DiscardableAllocationOpInterfaces_8cpp_8inc.html">llzk/Transforms/DiscardableAllocationOpInterfaces.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="DiscardableAllocationOpInterfaces_8cpp_8inc.html">llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.cpp.inc</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="comment">// Note: definition is placed here rather than the header to avoid the error:</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="comment">//       &quot;vtable will be emitted in every translation unit&quot;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="structllzk_1_1DiscardableAllocationResource.html#a0719ced0438746a865e3da7a2601b47e">   19</a></span>mlir::StringRef <a class="code hl_function" href="structllzk_1_1DiscardableAllocationResource.html#a0719ced0438746a865e3da7a2601b47e">DiscardableAllocationResource::getName</a>() { <span class="keywordflow">return</span> <span class="stringliteral">&quot;DiscardableAllocation&quot;</span>; }</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aDiscardableAllocationOpInterfaces_8cpp_8inc_html"><div class="ttname"><a href="DiscardableAllocationOpInterfaces_8cpp_8inc.html">DiscardableAllocationOpInterfaces.cpp.inc</a></div></div>
 <div class="ttc" id="aDiscardableAllocationOpInterfaces_8h_html"><div class="ttname"><a href="DiscardableAllocationOpInterfaces_8h.html">DiscardableAllocationOpInterfaces.h</a></div></div>
+<div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
+<div class="ttc" id="astructllzk_1_1DiscardableAllocationResource_html_a0719ced0438746a865e3da7a2601b47e"><div class="ttname"><a href="structllzk_1_1DiscardableAllocationResource.html#a0719ced0438746a865e3da7a2601b47e">llzk::DiscardableAllocationResource::getName</a></div><div class="ttdeci">mlir::StringRef getName() final</div><div class="ttdef"><b>Definition</b> <a href="#l00019">DiscardableAllocationOpInterfaces.cpp:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
@@ -129,7 +139,7 @@ $(function(){initNavTree('DiscardableAllocationOpInterfaces_8cpp_source.html',''
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_a72932e0778af28115095468f6286ff8.html">Transforms</a></li><li class="navelem"><a href="DiscardableAllocationOpInterfaces_8cpp.html">DiscardableAllocationOpInterfaces.cpp</a></li>
+    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_1a25ec519b6c1121408b67cc33ce3f15.html">Dialect</a></li><li class="navelem"><a href="dir_f16d4d7e899fbab47b4b7b1d6d737e7f.html">Shared</a></li><li class="navelem"><a href="DiscardableAllocationOpInterfaces_8cpp.html">DiscardableAllocationOpInterfaces.cpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

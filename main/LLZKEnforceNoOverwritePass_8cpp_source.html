@@ -130,68 +130,53 @@ $(function(){initNavTree('LLZKEnforceNoOverwritePass_8cpp_source.html','',''); }
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="LLZKEnforceNoOverwritePass_8cpp.html#a22e72549240d92b5e854a4c150453ede">   28</a></span><span class="preprocessor">#define GEN_PASS_DECL_ENFORCENOMEMBEROVERWRITEPASS</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="LLZKEnforceNoOverwritePass_8cpp.html#a9adf4a6933231ce3cf9f460d42555251">   29</a></span><span class="preprocessor">#define GEN_PASS_DEF_ENFORCENOMEMBEROVERWRITEPASS</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="LLZKEnforceNoOverwritePass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">   33</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-enforce-no-overwrites-pass&quot;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">using </span>std::make_unique;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">using namespace </span>function;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">using namespace </span>component;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="foldopen" id="foldopen00044" data-start="{" data-end="};">
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="classllzk_1_1EnforceNoMemberOverwritePass.html">   44</a></span><span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1EnforceNoMemberOverwritePass.html">EnforceNoMemberOverwritePass</a></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html">llzk::impl::EnforceNoMemberOverwritePassBase</a>&lt;EnforceNoMemberOverwritePass&gt; {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    getOperation()-&gt;walk([<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> structDef) {</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      <span class="keyword">auto</span> result = <a class="code hl_function" href="namespacellzk.html#aa36cf38143b2f7c509c154458bdb2e49">analyzeStruct</a>(structDef);</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      <span class="keywordflow">if</span> (failed(result)) {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        signalPassFailure();</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      }</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      <span class="keyword">const</span> <span class="keyword">auto</span> &amp;[overwrites, written] = *result;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> member : structDef.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a8e1b7b34c6885536a80d104aa58c67e5">getMemberDefs</a>()) {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        <span class="keywordflow">if</span> (!written.contains(member.getSymName())) {</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>          signalPassFailure();</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        }</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      }</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      <span class="keywordflow">if</span> (!overwrites.empty()) {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        signalPassFailure();</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      }</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    });</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  }</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>};</div>
-</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="foldopen" id="foldopen00068" data-start="{" data-end="}">
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae6a040d314a3f744bd4e75d142b8f34c">   68</a></span>std::unique_ptr&lt;mlir::Pass&gt; <a class="code hl_function" href="namespacellzk.html#ae6a040d314a3f744bd4e75d142b8f34c">createNoOverwritesPass</a>() {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordflow">return</span> make_unique&lt;EnforceNoMemberOverwritePass&gt;();</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>}</div>
-</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="LLZKEnforceNoOverwritePass_8cpp.html#a9adf4a6933231ce3cf9f460d42555251">   28</a></span><span class="preprocessor">#define GEN_PASS_DEF_ENFORCENOMEMBEROVERWRITEPASS</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="LLZKEnforceNoOverwritePass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">   32</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-enforce-no-overwrites-pass&quot;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html">llzk::impl::EnforceNoMemberOverwritePassBase</a>&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">using </span>Base = EnforceNoMemberOverwritePassBase&lt;PassImpl&gt;;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    getOperation()-&gt;walk([<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef) {</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>      <span class="keyword">auto</span> result = <a class="code hl_function" href="namespacellzk.html#aa36cf38143b2f7c509c154458bdb2e49">analyzeStruct</a>(structDef);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>      <span class="keywordflow">if</span> (failed(result)) {</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>        signalPassFailure();</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      }</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <span class="keyword">const</span> <span class="keyword">auto</span> &amp;[overwrites, written] = *result;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> member : structDef.<a class="code hl_function" href="classllzk_1_1component_1_1StructDefOp.html#a8e1b7b34c6885536a80d104aa58c67e5">getMemberDefs</a>()) {</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        <span class="keywordflow">if</span> (!written.contains(member.getSymName())) {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>          signalPassFailure();</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>        }</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      }</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>      <span class="keywordflow">if</span> (!overwrites.empty()) {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>        signalPassFailure();</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      }</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    });</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  }</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>};</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aAnalysisUtil_8h_html"><div class="ttname"><a href="AnalysisUtil_8h.html">AnalysisUtil.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aLLZKTransformationPasses_8h_8inc_html"><div class="ttname"><a href="LLZKTransformationPasses_8h_8inc.html">LLZKTransformationPasses.h.inc</a></div></div>
 <div class="ttc" id="aLLZKTransformationPasses_8h_html"><div class="ttname"><a href="LLZKTransformationPasses_8h.html">LLZKTransformationPasses.h</a></div></div>
 <div class="ttc" id="aMemberOverwriteAnalysis_8h_html"><div class="ttname"><a href="MemberOverwriteAnalysis_8h.html">MemberOverwriteAnalysis.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Ops_8h_html"><div class="ttname"><a href="Struct_2IR_2Ops_8h.html">Ops.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1EnforceNoMemberOverwritePass_html"><div class="ttname"><a href="classllzk_1_1EnforceNoMemberOverwritePass.html">llzk::EnforceNoMemberOverwritePass</a></div><div class="ttdef"><b>Definition</b> <a href="#l00044">LLZKEnforceNoOverwritePass.cpp:45</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html">llzk::component::StructDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8h_8inc_source.html#l01143">Ops.h.inc:1143</a></div></div>
 <div class="ttc" id="aclassllzk_1_1component_1_1StructDefOp_html_a8e1b7b34c6885536a80d104aa58c67e5"><div class="ttname"><a href="classllzk_1_1component_1_1StructDefOp.html#a8e1b7b34c6885536a80d104aa58c67e5">llzk::component::StructDefOp::getMemberDefs</a></div><div class="ttdeci">::std::vector&lt; MemberDefOp &gt; getMemberDefs()</div><div class="ttdoc">Get all MemberDefOp in this structure.</div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Ops_8cpp_source.html#l00458">Ops.cpp:458</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html">llzk::impl::EnforceNoMemberOverwritePassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00110">LLZKEnforceNoOverwritePass.cpp:110</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html">llzk::impl::EnforceNoMemberOverwritePassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00141">LLZKEnforceNoOverwritePass.cpp:141</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aa36cf38143b2f7c509c154458bdb2e49"><div class="ttname"><a href="namespacellzk.html#aa36cf38143b2f7c509c154458bdb2e49">llzk::analyzeStruct</a></div><div class="ttdeci">llvm::FailureOr&lt; std::pair&lt; llvm::SetVector&lt; Overwrite &gt;, FuzzySet &gt; &gt; analyzeStruct(component::StructDefOp structDef)</div><div class="ttdef"><b>Definition</b> <a href="MemberOverwriteAnalysis_8cpp_source.html#l00101">MemberOverwriteAnalysis.cpp:101</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ae6a040d314a3f744bd4e75d142b8f34c"><div class="ttname"><a href="namespacellzk.html#ae6a040d314a3f744bd4e75d142b8f34c">llzk::createNoOverwritesPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createNoOverwritesPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00068">LLZKEnforceNoOverwritePass.cpp:68</a></div></div>
-<div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

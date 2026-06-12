@@ -152,14 +152,13 @@ Functions</h2></td></tr>
 <tr class="memitem:a66f067a19a237554e92547a023df42e3" id="r_a66f067a19a237554e92547a023df42e3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66f067a19a237554e92547a023df42e3">printDerivedShape</a> (AsmPrinter &amp;, ArrayRef&lt; int64_t &gt;, ArrayRef&lt; Attribute &gt;)</td></tr>
 <tr class="memitem:a608683adb2db2b27afd796d5539d407c" id="r_a608683adb2db2b27afd796d5539d407c"><td class="memItemLeft" align="right" valign="top">ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a608683adb2db2b27afd796d5539d407c">parseAttrVec</a> (AsmParser &amp;parser, SmallVector&lt; Attribute &gt; &amp;value)</td></tr>
 <tr class="memitem:aa4d4fb83bc35b52f7f65c590aed79b19" id="r_aa4d4fb83bc35b52f7f65c590aed79b19"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4d4fb83bc35b52f7f65c590aed79b19">printAttrVec</a> (AsmPrinter &amp;printer, ArrayRef&lt; Attribute &gt; value)</td></tr>
+<tr class="memitem:a525e7ad6c9e222da9a66726555b1175e" id="r_a525e7ad6c9e222da9a66726555b1175e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a525e7ad6c9e222da9a66726555b1175e">createArrayToScalarPass</a> ()</td></tr>
 <tr class="memitem:a227d8c4c267ff4b81cbe6d169f29102b" id="r_a227d8c4c267ff4b81cbe6d169f29102b"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a227d8c4c267ff4b81cbe6d169f29102b">computeDimsFromShape</a> (mlir::MLIRContext *ctx, llvm::ArrayRef&lt; int64_t &gt; shape, llvm::SmallVector&lt; mlir::Attribute &gt; &amp;dimensionSizes)</td></tr>
 <tr class="memitem:a95e10b42c040ac7fd20dd9f43baaf067" id="r_a95e10b42c040ac7fd20dd9f43baaf067"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a95e10b42c040ac7fd20dd9f43baaf067">computeShapeFromDims</a> (<a class="el" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, llvm::ArrayRef&lt; mlir::Attribute &gt; dimensionSizes, llvm::SmallVector&lt; int64_t &gt; &amp;shape)</td></tr>
 <tr class="memitem:a673f4ef0e370a86c1b65087d7254c8c4" id="r_a673f4ef0e370a86c1b65087d7254c8c4"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a673f4ef0e370a86c1b65087d7254c8c4">parseDerivedShape</a> (mlir::AsmParser &amp;parser, llvm::SmallVector&lt; int64_t &gt; &amp;shape, llvm::SmallVector&lt; mlir::Attribute &gt; dimensionSizes)</td></tr>
 <tr class="memitem:aed4b94c25c0c9d648cf503bd90decfa1" id="r_aed4b94c25c0c9d648cf503bd90decfa1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aed4b94c25c0c9d648cf503bd90decfa1">printDerivedShape</a> (mlir::AsmPrinter &amp;printer, llvm::ArrayRef&lt; int64_t &gt; shape, llvm::ArrayRef&lt; mlir::Attribute &gt; dimensionSizes)</td></tr>
 <tr class="memitem:ae1b904309bd4eeb87f1d866e709a221e" id="r_ae1b904309bd4eeb87f1d866e709a221e"><td class="memItemLeft" align="right" valign="top">mlir::ParseResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae1b904309bd4eeb87f1d866e709a221e">parseAttrVec</a> (mlir::AsmParser &amp;parser, llvm::SmallVector&lt; mlir::Attribute &gt; &amp;value)</td></tr>
 <tr class="memitem:a3222a09989a2ca2508c962d139488744" id="r_a3222a09989a2ca2508c962d139488744"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3222a09989a2ca2508c962d139488744">printAttrVec</a> (mlir::AsmPrinter &amp;printer, llvm::ArrayRef&lt; mlir::Attribute &gt; value)</td></tr>
-<tr class="memitem:a83b2a667d1a2ddd16eb1bb1c0bcffb37" id="r_a83b2a667d1a2ddd16eb1bb1c0bcffb37"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a83b2a667d1a2ddd16eb1bb1c0bcffb37">createArrayToScalarPass</a> ()</td></tr>
-<tr class="memdesc:a83b2a667d1a2ddd16eb1bb1c0bcffb37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that rewrites eligible arrays into scalar SSA values.  <br /></td></tr>
 <tr class="memitem:a014b61095a29e4b1e00eca1a4614ff1f" id="r_a014b61095a29e4b1e00eca1a4614ff1f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a014b61095a29e4b1e00eca1a4614ff1f">registerArrayToScalarPass</a> ()</td></tr>
 <tr class="memitem:ac61940447eff7532c4b507d670772d7b" id="r_ac61940447eff7532c4b507d670772d7b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac61940447eff7532c4b507d670772d7b">registerArrayToScalarPassPass</a> ()</td></tr>
 <tr class="memitem:aee303a81a7d8f2895e40166e5754fced" id="r_aee303a81a7d8f2895e40166e5754fced"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aee303a81a7d8f2895e40166e5754fced">registerTransformationPasses</a> ()</td></tr>
@@ -273,24 +272,23 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a83b2a667d1a2ddd16eb1bb1c0bcffb37" name="a83b2a667d1a2ddd16eb1bb1c0bcffb37"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83b2a667d1a2ddd16eb1bb1c0bcffb37">&#9670;&#160;</a></span>createArrayToScalarPass()</h2>
+<a id="a525e7ad6c9e222da9a66726555b1175e" name="a525e7ad6c9e222da9a66726555b1175e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a525e7ad6c9e222da9a66726555b1175e">&#9670;&#160;</a></span>createArrayToScalarPass()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::unique_ptr&lt; Pass &gt; llzk::array::createArrayToScalarPass </td>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::array::createArrayToScalarPass </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p>Create the pass that rewrites eligible arrays into scalar SSA values. </p>
-
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00982">982</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00091">91</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -513,7 +511,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00089">89</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00102">102</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -540,7 +538,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00096">96</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00109">109</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -567,7 +565,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00106">106</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html#l00119">119</a> of file <a class="el" href="Array_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>

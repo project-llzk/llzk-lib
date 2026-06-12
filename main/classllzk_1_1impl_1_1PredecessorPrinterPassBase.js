@@ -13,6 +13,8 @@ var classllzk_1_1impl_1_1PredecessorPrinterPassBase =
     [ "getName", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#a65ddcccc79b32da28e66f22f58897190", null ],
     [ "operator=", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#a18f0875cb82f877b50893e0d0881dd69", null ],
     [ "operator=", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#a60a6080c98fdefc2169cf13b3d1d6af3", null ],
+    [ "createPredecessorPrinterPass", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#aceaf3d9d364d3c2e4da1aa1d0c37cba9", null ],
+    [ "createPredecessorPrinterPass", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#a4fa0e67a44da29619277f43fdfafb989", null ],
     [ "outputStream", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#a95e385212b45e8f92223fdad0dc6c9dc", null ],
     [ "preRunRequiredAnalyses", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html#afee49df6d906ca042435eabc9e42673f", null ]
 ];

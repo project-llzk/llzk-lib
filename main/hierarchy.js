@@ -263,7 +263,9 @@ var hierarchy =
     [ "llzk::CallGraph", "classllzk_1_1CallGraph.html", null ],
     [ "llzk::CallGraphAnalysis", "classllzk_1_1CallGraphAnalysis.html", null ],
     [ "llzk::CallGraphNode", "classllzk_1_1CallGraphNode.html", null ],
+    [ "llzk::CallGraphPrinterPassOptions", "structllzk_1_1CallGraphPrinterPassOptions.html", null ],
     [ "llzk::CallGraphReachabilityAnalysis", "classllzk_1_1CallGraphReachabilityAnalysis.html", null ],
+    [ "llzk::CallGraphSCCsPrinterPassOptions", "structllzk_1_1CallGraphSCCsPrinterPassOptions.html", null ],
     [ "llzk::function::detail::CallOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase.html", [
       [ "llzk::function::CallOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1CallOpGenericAdaptor.html", null ],
       [ "llzk::function::CallOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1function_1_1CallOpGenericAdaptor.html", [
@@ -656,7 +658,6 @@ var hierarchy =
     ] ],
     [ "llzk::verif::detail::ForbiddenInfluenceAnalyzer", "classllzk_1_1verif_1_1detail_1_1ForbiddenInfluenceAnalyzer.html", null ],
     [ "llzk::verif::ForbiddenPreconditionInfluenceInfo", "structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html", null ],
-    [ "llzk::ForOpInfo", "structllzk_1_1ForOpInfo.html", null ],
     [ "llzk::function::detail::FuncDefOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase.html", [
       [ "llzk::function::FuncDefOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ],
       [ "llzk::function::FuncDefOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", [
@@ -1095,40 +1096,6 @@ var hierarchy =
       [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", null ]
     ] ],
     [ "mlir::OperationPass", null, [
-      [ "llzk::impl::CallGraphPrinterPassBase< CallGraphPrinterPass >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", [
-        [ "llzk::CallGraphPrinterPass", "classllzk_1_1CallGraphPrinterPass.html", null ]
-      ] ],
-      [ "llzk::impl::CallGraphSCCsPrinterPassBase< CallGraphSCCsPrinterPass >", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", [
-        [ "llzk::CallGraphSCCsPrinterPass", "classllzk_1_1CallGraphSCCsPrinterPass.html", null ]
-      ] ],
-      [ "llzk::impl::ComputeConstrainToProductPassBase< ComputeConstrainToProductPass >", "classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html", [
-        [ "llzk::ComputeConstrainToProductPass", "classllzk_1_1ComputeConstrainToProductPass.html", null ]
-      ] ],
-      [ "llzk::impl::ConstraintDependencyGraphPrinterPassBase< ConstraintDependencyGraphPrinterPass >", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", [
-        [ "llzk::ConstraintDependencyGraphPrinterPass", "classllzk_1_1ConstraintDependencyGraphPrinterPass.html", null ]
-      ] ],
-      [ "llzk::impl::EnforceNoMemberOverwritePassBase< EnforceNoMemberOverwritePass >", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", [
-        [ "llzk::EnforceNoMemberOverwritePass", "classllzk_1_1EnforceNoMemberOverwritePass.html", null ]
-      ] ],
-      [ "llzk::impl::FuseProductLoopsPassBase< FuseProductLoopsPass >", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", [
-        [ "llzk::FuseProductLoopsPass", "classllzk_1_1FuseProductLoopsPass.html", null ]
-      ] ],
-      [ "llzk::impl::IntervalAnalysisPrinterPassBase< IntervalAnalysisPrinterPass >", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", [
-        [ "llzk::IntervalAnalysisPrinterPass", "classllzk_1_1IntervalAnalysisPrinterPass.html", null ]
-      ] ],
-      [ "llzk::impl::PredecessorPrinterPassBase< PredecessorPrinterPass >", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html", [
-        [ "llzk::PredecessorPrinterPass", "classllzk_1_1PredecessorPrinterPass.html", null ]
-      ] ],
-      [ "llzk::impl::SymbolDefTreePrinterPassBase< SymbolDefTreePass >", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", [
-        [ "llzk::SymbolDefTreePass", "classllzk_1_1SymbolDefTreePass.html", null ]
-      ] ],
-      [ "llzk::impl::SymbolUseGraphPrinterPassBase< SymbolUseGraphPass >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", [
-        [ "llzk::SymbolUseGraphPass", "classllzk_1_1SymbolUseGraphPass.html", null ]
-      ] ],
-      [ "llzk::impl::WhileToForPassBase< WhileToForPass >", "classllzk_1_1impl_1_1WhileToForPassBase.html", [
-        [ "llzk::WhileToForPass", "classllzk_1_1WhileToForPass.html", null ]
-      ] ],
-      [ "llzk::polymorphic::impl::FlatteningPassBase< FlatteningPass >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ],
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
       [ "llzk::impl::CallGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", null ],
       [ "llzk::impl::CallGraphSCCsPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", null ],

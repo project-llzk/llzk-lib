@@ -13,5 +13,7 @@ var classllzk_1_1impl_1_1PolyLoweringPassBase =
     [ "getName", "classllzk_1_1impl_1_1PolyLoweringPassBase.html#a19b500bae7f6334d5fa6b8a83761622f", null ],
     [ "operator=", "classllzk_1_1impl_1_1PolyLoweringPassBase.html#a96ffbf25e6c26e0c7b1189e766927ba4", null ],
     [ "operator=", "classllzk_1_1impl_1_1PolyLoweringPassBase.html#abf7d5cff8b675fffc3bd1d8a01cf7454", null ],
+    [ "createPolyLoweringPass", "classllzk_1_1impl_1_1PolyLoweringPassBase.html#a045c9a77ba597d425583138ab449ff5c", null ],
+    [ "createPolyLoweringPass", "classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2ca5397ab058e744603efd7ca4f97273", null ],
     [ "maxDegree", "classllzk_1_1impl_1_1PolyLoweringPassBase.html#a2c75d7d87b6d63d647615f83f7c759dc", null ]
 ];

@@ -109,6 +109,7 @@ $(function(){initNavTree('classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#friends">Friends</a> &#124;
 <a href="classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">llzk::impl::SymbolDefTreePrinterPassBase&lt; DerivedT &gt; Class Template Reference</div></div>
 </div><!--header-->
@@ -159,11 +160,16 @@ Static Public Member Functions</h2></td></tr>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:a7997aeed6415414e801ce08bf6c202ba" id="r_a7997aeed6415414e801ce08bf6c202ba"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt;<a class="el" href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2">::llzk::OutputStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7997aeed6415414e801ce08bf6c202ba">outputStream</a></td></tr>
 <tr class="memitem:ababa2133cf1176bd9e74b3e3e0cca7ae" id="r_ababa2133cf1176bd9e74b3e3e0cca7ae"><td class="memItemLeft" align="right" valign="top">::mlir::Pass::Option&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ababa2133cf1176bd9e74b3e3e0cca7ae">saveDotGraph</a> {*this, &quot;saveDot&quot;, ::llvm::cl::desc(&quot;Whether to dump the graph to DOT format.&quot;), ::llvm::cl::init(false)}</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a55bfc6193eb517e5e61970e6bd6d9c76" id="r_a55bfc6193eb517e5e61970e6bd6d9c76"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a55bfc6193eb517e5e61970e6bd6d9c76">createSymbolDefTreePrinterPass</a> ()</td></tr>
+<tr class="memitem:a22b51a7be090fae662855142bf4406a3" id="r_a22b51a7be090fae662855142bf4406a3"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a22b51a7be090fae662855142bf4406a3">createSymbolDefTreePrinterPass</a> (<a class="el" href="structllzk_1_1SymbolDefTreePrinterPassOptions.html">SymbolDefTreePrinterPassOptions</a> options)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename DerivedT&gt;<br />
 class llzk::impl::SymbolDefTreePrinterPassBase&lt; DerivedT &gt;</div>
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00446">446</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00634">634</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ad7f0712c14f3141d28b55ac4a3d38248" name="ad7f0712c14f3141d28b55ac4a3d38248"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad7f0712c14f3141d28b55ac4a3d38248">&#9670;&#160;</a></span>Base</h2>
@@ -179,7 +185,7 @@ template&lt;typename DerivedT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00448">448</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00636">636</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -209,7 +215,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00450">450</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00638">638</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -238,7 +244,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00451">451</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00639">639</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -324,7 +330,7 @@ template&lt;typename DerivedT&gt; </div>
 <p>Explicitly declare the TypeID for this class. </p>
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00503">503</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00691">691</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -356,7 +362,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Support isa/dyn_cast functionality for the derived pass class. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00472">472</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00660">660</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -387,7 +393,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>A clone method to create a copy of this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00477">477</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00665">665</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -416,7 +422,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00461">461</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00649">649</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -447,7 +453,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the command-line argument attached to this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00458">458</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00646">646</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -478,7 +484,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Return the dialect that must be loaded in the context before this pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00482">482</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00670">670</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -507,7 +513,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00463">463</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00651">651</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -536,7 +542,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00469">469</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00657">657</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -567,7 +573,7 @@ template&lt;typename DerivedT&gt; </div>
 
 <p>Returns the derived pass name. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00466">466</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00654">654</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -625,6 +631,65 @@ template&lt;typename DerivedT&gt; </div>
 
 </div>
 </div>
+<a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
+<a id="a55bfc6193eb517e5e61970e6bd6d9c76" name="a55bfc6193eb517e5e61970e6bd6d9c76"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a55bfc6193eb517e5e61970e6bd6d9c76">&#9670;&#160;</a></span>createSymbolDefTreePrinterPass <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createSymbolDefTreePrinterPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00707">707</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a22b51a7be090fae662855142bf4406a3" name="a22b51a7be090fae662855142bf4406a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a22b51a7be090fae662855142bf4406a3">&#9670;&#160;</a></span>createSymbolDefTreePrinterPass <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DerivedT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; createSymbolDefTreePrinterPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1SymbolDefTreePrinterPassOptions.html">SymbolDefTreePrinterPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00711">711</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+
+</div>
+</div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a7997aeed6415414e801ce08bf6c202ba" name="a7997aeed6415414e801ce08bf6c202ba"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7997aeed6415414e801ce08bf6c202ba">&#9670;&#160;</a></span>outputStream</h2>
@@ -660,7 +725,7 @@ template&lt;typename DerivedT&gt; </div>
 <div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ad546f09aaf7aeef1f946a31089d7387d">llzk::OutputStream::Dbgs</a></div><div class="ttdeci">@ Dbgs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00015">AnalysisPassEnums.h.inc:15</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1"><div class="ttname"><a href="namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1">llzk::OutputStream::Errs</a></div><div class="ttdeci">@ Errs</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8h_8inc_source.html#l00014">AnalysisPassEnums.h.inc:14</a></div></div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00508">508</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00696">696</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
@@ -686,7 +751,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00516">516</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolDefTreePass_8cpp_source.html#l00704">704</a> of file <a class="el" href="SymbolDefTreePass_8cpp_source.html">SymbolDefTreePass.cpp</a>.</p>
 
 </div>
 </div>
