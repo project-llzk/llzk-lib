@@ -92,8 +92,10 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
   ];
 }
 
-def WildcardArraySpecializationPass : LLZKPass<"llzk-specialize-wildcard-arrays"> {
-  let summary = "Refine wildcard array casts and specialize concrete call targets";
+def WildcardArraySpecializationPass
+    : LLZKPass<"llzk-specialize-wildcard-arrays"> {
+  let summary =
+      "Refine wildcard array casts and specialize concrete call targets";
   let description = [{
     Refines `poly.unifiable_cast` results when wildcard `array.type` dimensions can be replaced
     with concrete integer sizes from the input type. Then specializes free functions, extern
