@@ -17,7 +17,6 @@ def PodToScalarPass : LLZKPass<"llzk-pod-to-scalar"> {
   let description = [{
     Replace `pod.type` values with the proper number of scalar values
   }];
-  let constructor = "llzk::pod::createPodToScalarPass()";
 }
 
 #endif // LLZK_POD_TRANSFORMATION_PASSES_TD

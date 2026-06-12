@@ -14,8 +14,7 @@
 
 namespace llzk::include {
 
-std::unique_ptr<mlir::Pass> createInlineIncludesPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h.inc"
 

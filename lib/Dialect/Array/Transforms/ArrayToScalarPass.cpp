@@ -906,7 +906,10 @@ static void step3(ModuleOp modOp) {
 }
 
 /// Pass driver for the full array-to-scalar lowering pipeline described above.
-class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
+class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
+  using Base = ArrayToScalarPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     ModuleOp module = getOperation();
 
@@ -969,8 +972,3 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
 };
 
 } // namespace
-
-/// Create the pass that rewrites eligible arrays into scalar SSA values.
-std::unique_ptr<Pass> llzk::array::createArrayToScalarPass() {
-  return std::make_unique<ArrayToScalarPass>();
-};
