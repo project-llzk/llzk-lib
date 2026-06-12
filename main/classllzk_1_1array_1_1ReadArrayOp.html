@@ -115,12 +115,12 @@ $(function(){initNavTree('classllzk_1_1array_1_1ReadArrayOp.html','','classllzk_
 <div class="dynheader">
 Inheritance diagram for llzk::array::ReadArrayOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1array_1_1ReadArrayOp__inherit__graph.svg" width="547" height="276"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1array_1_1ReadArrayOp__inherit__graph.svg" width="772" height="276"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for llzk::array::ReadArrayOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1array_1_1ReadArrayOp__coll__graph.svg" width="547" height="276"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1array_1_1ReadArrayOp__coll__graph.svg" width="772" height="276"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -159,6 +159,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ac841de0f9648a2d1e29ef2127204342f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
 <tr class="memitem:a1ce5724c0d16184ed4b5870c32f0b3b1" id="r_a1ce5724c0d16184ed4b5870c32f0b3b1"><td class="memItemLeft" align="right" valign="top">::mlir::DeletionKind&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1ce5724c0d16184ed4b5870c32f0b3b1">removeBlockingUses</a> (const ::mlir::MemorySlot &amp;slot, const ::llvm::SmallPtrSetImpl&lt; mlir::OpOperand * &gt; &amp;blockingUses, ::mlir::OpBuilder &amp;builder, ::mlir::Value reachingDefinition, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
 <tr class="memdesc:a1ce5724c0d16184ed4b5870c32f0b3b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by PromotableMemOpInterface / mem2reg pass.  <br /></td></tr>
+<tr class="memitem:a6d27ccee266ac438ce52490f1c0aa1d3" id="r_a6d27ccee266ac438ce52490f1c0aa1d3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6d27ccee266ac438ce52490f1c0aa1d3">loadsFromDiscardableAllocation</a> (::mlir::Value ptr)</td></tr>
+<tr class="memdesc:a6d27ccee266ac438ce52490f1c0aa1d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup.  <br /></td></tr>
+<tr class="memitem:a0f0b8c6950e24aa07a0206c8c2635a25" id="r_a0f0b8c6950e24aa07a0206c8c2635a25"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0f0b8c6950e24aa07a0206c8c2635a25">storesToDiscardableAllocation</a> (::mlir::Value ptr)</td></tr>
+<tr class="memdesc:a0f0b8c6950e24aa07a0206c8c2635a25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup.  <br /></td></tr>
+<tr class="memitem:a6691898171ad5133de6a34e04ebb674b" id="r_a6691898171ad5133de6a34e04ebb674b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6691898171ad5133de6a34e04ebb674b">canEraseAsDeadStoreTo</a> (::mlir::Value ptr, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
+<tr class="memdesc:a6691898171ad5133de6a34e04ebb674b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup.  <br /></td></tr>
 <tr class="memitem:a7875edd018de07fcb251af8758639785" id="r_a7875edd018de07fcb251af8758639785"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7875edd018de07fcb251af8758639785">verifySymbolUses</a> (::mlir::SymbolTableCollection &amp;symbolTable)</td></tr>
 <tr class="memitem:a6b9ad30e60e7a2d133793660c29ba3b9" id="r_a6b9ad30e60e7a2d133793660c29ba3b9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6b9ad30e60e7a2d133793660c29ba3b9">isRead</a> ()</td></tr>
 <tr class="memdesc:a6b9ad30e60e7a2d133793660c29ba3b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write.  <br /></td></tr>
@@ -276,7 +282,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01271">1271</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01272">1272</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -322,7 +328,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01242">1242</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01243">1243</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -368,7 +374,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01264">1264</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01265">1265</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -409,7 +415,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01248">1248</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01249">1249</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -450,7 +456,32 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01279">1279</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01280">1280</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a6691898171ad5133de6a34e04ebb674b" name="a6691898171ad5133de6a34e04ebb674b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6691898171ad5133de6a34e04ebb674b">&#9670;&#160;</a></span>canEraseAsDeadStoreTo()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::array::ReadArrayOp::canEraseAsDeadStoreTo </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>ptr</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::DataLayout &amp;</td>          <td class="paramname"><span class="paramname"><em>dataLayout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
+
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01478">1478</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -485,7 +516,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01429">1429</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01430">1430</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -603,7 +634,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Gets the type of the referenced base array. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00958">958</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html#l00961">961</a> of file <a class="el" href="Array_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -676,7 +707,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01236">1236</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01237">1237</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -695,7 +726,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01218">1218</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01219">1219</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -865,7 +896,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableAllocationOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01456">1456</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01457">1457</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1010,7 +1041,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01462">1462</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01463">1463</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1031,7 +1062,28 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01446">1446</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01447">1447</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a6d27ccee266ac438ce52490f1c0aa1d3" name="a6d27ccee266ac438ce52490f1c0aa1d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d27ccee266ac438ce52490f1c0aa1d3">&#9670;&#160;</a></span>loadsFromDiscardableAllocation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::array::ReadArrayOp::loadsFromDiscardableAllocation </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>ptr</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
+
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01468">1468</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1062,7 +1114,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01333">1333</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01334">1334</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1081,7 +1133,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01388">1388</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01389">1389</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1156,7 +1208,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01438">1438</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01439">1439</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1177,7 +1229,28 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01451">1451</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01452">1452</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a0f0b8c6950e24aa07a0206c8c2635a25" name="a0f0b8c6950e24aa07a0206c8c2635a25"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f0b8c6950e24aa07a0206c8c2635a25">&#9670;&#160;</a></span>storesToDiscardableAllocation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::array::ReadArrayOp::storesToDiscardableAllocation </td>
+          <td>(</td>
+          <td class="paramtype">::mlir::Value</td>          <td class="paramname"><span class="paramname"><em>ptr</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
+
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01473">1473</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1215,7 +1288,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01327">1327</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01328">1328</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1234,7 +1307,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01297">1297</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html#l01298">1298</a> of file <a class="el" href="Array_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

@@ -134,6 +134,7 @@ $(function(){initNavTree('ArrayToScalarPass_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="String_2IR_2Dialect_8h_source.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKConversionUtils_8h_source.html">llzk/Transforms/LLZKConversionUtils.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SpecializedMemoryPasses_8h_source.html">llzk/Transforms/SpecializedMemoryPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Concepts_8h_source.html">llzk/Util/Concepts.h</a>&quot;</code><br />
@@ -148,7 +149,7 @@ $(function(){initNavTree('ArrayToScalarPass_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for ArrayToScalarPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="ArrayToScalarPass_8cpp__incl.svg" width="5151" height="628"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="ArrayToScalarPass_8cpp__incl.svg" width="4631" height="628"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="ArrayToScalarPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -185,6 +186,7 @@ Macros</h2></td></tr>
 <li>Replace branch-local reads (in <span class="tt">scf.if</span>) with the value written by a same-index write op that dominates the parent <span class="tt">scf.if</span> (because the passes below cannot handle that case).</li>
 <li>Run MLIR "sroa" pass to split each array with linear size <span class="tt">N</span> into <span class="tt">N</span> arrays of size 1 (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).</li>
 <li>Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA values. This pass also runs several standard optimizations so the final result is condensed.</li>
+<li>Remove array allocations that become unread after memory promotion, then remove SSA values made dead by that cleanup.</li>
 </ol>
 <p>Note: This transformation imposes a "last write wins" semantics on array elements. If different/configurable semantics are added in the future, some additional transformation would be necessary before/during this pass so that multiple writes to the same index can be handled properly while they still exist.</p>
 <p>Note: This transformation will introduce a <span class="tt">nondet</span> op when there exists a read from an array index that was not earlier written to. </p>
@@ -203,7 +205,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00107">107</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00111">111</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -219,7 +221,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00097">97</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ArrayToScalarPass_8cpp_source.html#l00101">101</a> of file <a class="el" href="ArrayToScalarPass_8cpp_source.html">ArrayToScalarPass.cpp</a>.</p>
 
 </div>
 </div>

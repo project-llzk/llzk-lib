@@ -13,6 +13,7 @@ var namespacellzk_1_1impl =
     [ "PredecessorPrinterPassBase", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html", "classllzk_1_1impl_1_1PredecessorPrinterPassBase" ],
     [ "RedundantOperationEliminationPassBase", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase" ],
     [ "RedundantReadAndWriteEliminationPassBase", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase" ],
+    [ "RemoveUnusedDiscardableAllocationsPassBase", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase" ],
     [ "SymbolDefTreePrinterPassBase", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase" ],
     [ "SymbolUseGraphPrinterPassBase", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
     [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ],

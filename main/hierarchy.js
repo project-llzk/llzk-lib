@@ -104,6 +104,9 @@ var hierarchy =
       [ "llzk::smt::AssertOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1AssertOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::AuxAssignment", "structllzk_1_1AuxAssignment.html", null ],
+    [ "mlir::SideEffects::Resource::Base", null, [
+      [ "llzk::DiscardableAllocationResource", "structllzk_1_1DiscardableAllocationResource.html", null ]
+    ] ],
     [ "llzk::BaseBuilder", "classllzk_1_1BaseBuilder.html", [
       [ "llzk::ModuleLikeBuilder< ModuleBuilder >", "classllzk_1_1ModuleLikeBuilder.html", [
         [ "llzk::ModuleBuilder", "classllzk_1_1ModuleBuilder.html", null ]
@@ -367,6 +370,13 @@ var hierarchy =
       [ "llzk::constrain::detail::ConstraintOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
       [ "llzk::constrain::detail::ConstraintOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceInterfaceTraits_1_1Model.html", null ]
     ] ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::Concept", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
     [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits::Concept", "structllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1Concept.html", [
       [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
         [ "llzk::felt::detail::FeltBinaryOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
@@ -531,6 +541,7 @@ var hierarchy =
     [ "mlir::DialectVersion", null, [
       [ "llzk::LLZKDialectVersion", "structllzk_1_1LLZKDialectVersion.html", null ]
     ] ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::smt::detail::DistinctOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1DistinctOpGenericAdaptorBase.html", [
       [ "llzk::smt::DistinctOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1DistinctOpGenericAdaptor.html", null ],
       [ "llzk::smt::DistinctOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1DistinctOpGenericAdaptor.html", [
@@ -1132,6 +1143,7 @@ var hierarchy =
       [ "llzk::impl::PredecessorPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html", null ],
       [ "llzk::impl::RedundantOperationEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html", null ],
       [ "llzk::impl::RedundantReadAndWriteEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html", null ],
+      [ "llzk::impl::RemoveUnusedDiscardableAllocationsPassBase< DerivedT >", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html", null ],
       [ "llzk::impl::SymbolDefTreePrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", null ],
       [ "llzk::impl::SymbolUseGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", null ],
       [ "llzk::impl::UnusedDeclarationEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", null ],
@@ -1147,6 +1159,7 @@ var hierarchy =
     ] ],
     [ "llzk::OpHash< Op >", "structllzk_1_1OpHash.html", null ],
     [ "mlir::OpInterface", null, [
+      [ "llzk::DiscardableAllocationAccessorOpInterface", "classllzk_1_1DiscardableAllocationAccessorOpInterface.html", null ],
       [ "llzk::array::ArrayAccessOpInterface", "classllzk_1_1array_1_1ArrayAccessOpInterface.html", null ],
       [ "llzk::array::ArrayRefOpInterface", "classllzk_1_1array_1_1ArrayRefOpInterface.html", null ],
       [ "llzk::component::MemberRefOpInterface", "classllzk_1_1component_1_1MemberRefOpInterface.html", null ],
@@ -1279,6 +1292,7 @@ var hierarchy =
     ] ],
     [ "llzk::pod::RecordValue", "structllzk_1_1pod_1_1RecordValue.html", null ],
     [ "llzk::RefValueCapture", "structllzk_1_1RefValueCapture.html", null ],
+    [ "llzk::RemoveUnusedDiscardableAllocationsPassOptions", "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html", null ],
     [ "llzk::smt::detail::RepeatOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1RepeatOpGenericAdaptorBase.html", [
       [ "llzk::smt::RepeatOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1RepeatOpGenericAdaptor.html", null ],
       [ "llzk::smt::RepeatOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1RepeatOpGenericAdaptor.html", [
@@ -1494,6 +1508,9 @@ var hierarchy =
       ] ],
       [ "llzk::constrain::detail::ConstraintOpInterfaceTrait< ConcreteOp >", "structllzk_1_1constrain_1_1detail_1_1ConstraintOpInterfaceTrait.html", [
         [ "llzk::constrain::ConstraintOpInterface::Trait< ConcreteOp >", "structllzk_1_1constrain_1_1ConstraintOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceTrait< ConcreteOp >", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", [
+        [ "llzk::DiscardableAllocationAccessorOpInterface::Trait< ConcreteOp >", "structllzk_1_1DiscardableAllocationAccessorOpInterface_1_1Trait.html", null ]
       ] ],
       [ "llzk::felt::detail::FeltBinaryOpInterfaceTrait< ConcreteOp >", "structllzk_1_1felt_1_1detail_1_1FeltBinaryOpInterfaceTrait.html", [
         [ "llzk::felt::FeltBinaryOpInterface::Trait< ConcreteOp >", "structllzk_1_1felt_1_1FeltBinaryOpInterface_1_1Trait.html", null ]

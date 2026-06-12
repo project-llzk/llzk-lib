@@ -168,6 +168,8 @@ var annotated_dup =
         [ "SparseForwardDataFlowAnalysis", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis" ]
       ] ],
       [ "detail", "namespacellzk_1_1detail.html", [
+        [ "DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits" ],
+        [ "DiscardableAllocationAccessorOpInterfaceTrait", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", null ],
         [ "NonDetOpGenericAdaptorBase", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" ]
       ] ],
       [ "felt", "namespacellzk_1_1felt.html", [
@@ -306,6 +308,7 @@ var annotated_dup =
         [ "PredecessorPrinterPassBase", "classllzk_1_1impl_1_1PredecessorPrinterPassBase.html", "classllzk_1_1impl_1_1PredecessorPrinterPassBase" ],
         [ "RedundantOperationEliminationPassBase", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantOperationEliminationPassBase" ],
         [ "RedundantReadAndWriteEliminationPassBase", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html", "classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase" ],
+        [ "RemoveUnusedDiscardableAllocationsPassBase", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html", "classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase" ],
         [ "SymbolDefTreePrinterPassBase", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html", "classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase" ],
         [ "SymbolUseGraphPrinterPassBase", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
         [ "UnusedDeclarationEliminationPassBase", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ],
@@ -739,6 +742,8 @@ var annotated_dup =
       [ "ConstraintDependencyGraphPrinterPass", "classllzk_1_1ConstraintDependencyGraphPrinterPass.html", "classllzk_1_1ConstraintDependencyGraphPrinterPass" ],
       [ "ConstraintDependencyGraphPrinterPassOptions", "structllzk_1_1ConstraintDependencyGraphPrinterPassOptions.html", "structllzk_1_1ConstraintDependencyGraphPrinterPassOptions" ],
       [ "ConstraintDependencyGraphStructAnalysis", "classllzk_1_1ConstraintDependencyGraphStructAnalysis.html", "classllzk_1_1ConstraintDependencyGraphStructAnalysis" ],
+      [ "DiscardableAllocationAccessorOpInterface", "classllzk_1_1DiscardableAllocationAccessorOpInterface.html", "classllzk_1_1DiscardableAllocationAccessorOpInterface" ],
+      [ "DiscardableAllocationResource", "structllzk_1_1DiscardableAllocationResource.html", "structllzk_1_1DiscardableAllocationResource" ],
       [ "EnforceNoMemberOverwritePass", "classllzk_1_1EnforceNoMemberOverwritePass.html", null ],
       [ "ExpressionValue", "classllzk_1_1ExpressionValue.html", "classllzk_1_1ExpressionValue" ],
       [ "Field", "classllzk_1_1Field.html", "classllzk_1_1Field" ],
@@ -787,6 +792,7 @@ var annotated_dup =
       [ "PredecessorPrinterPassOptions", "structllzk_1_1PredecessorPrinterPassOptions.html", "structllzk_1_1PredecessorPrinterPassOptions" ],
       [ "ProductAligner", "classllzk_1_1ProductAligner.html", "classllzk_1_1ProductAligner" ],
       [ "RefValueCapture", "structllzk_1_1RefValueCapture.html", "structllzk_1_1RefValueCapture" ],
+      [ "RemoveUnusedDiscardableAllocationsPassOptions", "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html", "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions" ],
       [ "SourceRef", "classllzk_1_1SourceRef.html", "classllzk_1_1SourceRef" ],
       [ "SourceRefAnalysis", "classllzk_1_1SourceRefAnalysis.html", "classllzk_1_1SourceRefAnalysis" ],
       [ "SourceRefIndex", "classllzk_1_1SourceRefIndex.html", "classllzk_1_1SourceRefIndex" ],

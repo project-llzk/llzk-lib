@@ -217,10 +217,18 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-unused-declaration-elim"><span class="tt">-llzk-unused-declaration-elim</span> </a>
+                <a href="#autotoc_md-llzk-remove-unused-discardable-allocations"><span class="tt">-llzk-remove-unused-discardable-allocations</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-8">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-unused-declaration-elim"><span class="tt">-llzk-unused-declaration-elim</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-9">Options </a>
                   </li>
                 </ul>
               </li>
@@ -247,7 +255,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-flatten"><span class="tt">-llzk-flatten</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-9">Options </a>
+                    <a href="#options-10">Options </a>
                   </li>
                 </ul>
               </li>
@@ -405,12 +413,19 @@ Options</h5>
 <h5 class="doxsection"><a class="anchor" id="options-7"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-degree : Maximum degree of constraint polynomials (default 2, minimum 2)</div>
+</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unused-discardable-allocations"></a>
+<span class="tt">-llzk-remove-unused-discardable-allocations</span></h4>
+<p><em>Remove unread discardable allocations and their dead stores</em></p>
+<p>Remove ops with the selected allocator operation name when they are marked with <span class="tt">MemAlloc&lt;DiscardableAllocationResource&gt;</span>, the allocation has no reads, and every direct user is a discardable allocation accessor that can be erased as a dead store.</p>
+<h5 class="doxsection"><a class="anchor" id="options-8"></a>
+Options</h5>
+<div class="fragment"><div class="line">-allocator-op : Operation name of the discardable allocator to remove</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-unused-declaration-elim"></a>
 <span class="tt">-llzk-unused-declaration-elim</span></h4>
 <p><em>Remove unused member and struct declarations</em></p>
 <p>Remove member and struct declarations that are unused within the current compilation unit. Note that this pass may cause linking issues with external modules that depend on any unused member and struct declarations from this compilation unit.</p>
 <p>Pass should be run after <span class="tt">llzk-duplicate-read-write-elim</span> and <span class="tt">llzk-duplicate-op-elim</span> for maximum effect.</p>
-<h5 class="doxsection"><a class="anchor" id="options-8"></a>
+<h5 class="doxsection"><a class="anchor" id="options-9"></a>
 Options</h5>
 <div class="fragment"><div class="line">-remove-structs : Whether to remove unused struct definitions as well. Requires module to declare a Main component, otherwise all components will appear unused.</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-while-to-for"></a>
@@ -440,7 +455,7 @@ Options</h5>
 <li>Replace parameterized structs with flattened (i.e., no parameter) versions of those structs based on requested return type at calls to <span class="tt">compute()</span> functions and unroll loops</li>
 <li>Unroll loops</li>
 </ul>
-<h5 class="doxsection"><a class="anchor" id="options-9"></a>
+<h5 class="doxsection"><a class="anchor" id="options-10"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>

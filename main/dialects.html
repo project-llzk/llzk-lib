@@ -1146,7 +1146,8 @@ Results:</h4>
 <div class="line">              `:` type($result)</div>
 <div class="line">              `` custom&lt;InferredArrayType&gt;(type($elements), ref($elements), ref(type($result)))</div>
 <div class="line">              custom&lt;AttrDictWithWarnings&gt;(attr-dict, prop-dict)</div>
-</div><!-- fragment --><p>This operation creates a new array with the given elements. The arguments are passed as a flat array but get arranged in row-major order according the shape declared in the type.</p>
+</div><!-- fragment --><p>This operation creates a fresh mutable array with the given elements. Even when two <span class="tt">array.new</span> operations have identical operands and result types, they are distinct allocations; writes through one result must not affect reads through the other.</p>
+<p>The arguments are passed as a flat array but get arranged in row-major order according the shape declared in the type.</p>
 <p>Examples: </p><div class="fragment"><div class="line">%0 = array.new %a, %b, %c : !array.type&lt;3 x !felt.type&gt;</div>
 <div class="line"> </div>
 <div class="line">// Create an array of the specified shape, initialized with the given</div>
@@ -1169,9 +1170,9 @@ Results:</h4>
 <div class="line">#M1 = affine_map&lt;(i)[c] -&gt; (c+i)&gt;</div>
 <div class="line">#M3 = affine_map&lt;(m,n) -&gt; (5*m+n)&gt;</div>
 <div class="line">%4 = array.new{(%i)[%c], (%m,%n)} : !array.type&lt;#M1,2,#M3 x i1&gt;</div>
-</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
-<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">DestructurableAllocationOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">OpAsmOpInterface</span>, <span class="tt">PromotableAllocationOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+</div><!-- fragment --><p>Traits: <span class="tt">AttrSizedOperandSegments</span>, <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
+<p>Interfaces: <span class="tt">DestructurableAllocationOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">OpAsmOpInterface</span>, <span class="tt">PromotableAllocationOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Allocate on <a class="el" href="structllzk_1_1DiscardableAllocationResource.html" title="Memory resource for allocations that may be erased when no stored value is ever read.">llzk::DiscardableAllocationResource</a>}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes"></a>
 Attributes:</h4>
 <table class="doxtable">
@@ -1217,7 +1218,7 @@ Results:</h4>
 <div class="line">// %1 is now equal to %a</div>
 <div class="line">%1 = array.read %0[%i, %j, %k] : !array.type&lt;3,10,15 x !felt.type&gt;, !felt.type</div>
 </div><!-- fragment --><p>Traits: <span class="tt">InferTypeOpAdaptor</span></p>
-<p>Interfaces: <span class="tt">ArrayAccessOpInterface</span>, <span class="tt">ArrayRefOpInterface</span>, <span class="tt">DestructurableAccessorOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">PromotableMemOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Interfaces: <span class="tt">ArrayAccessOpInterface</span>, <span class="tt">ArrayRefOpInterface</span>, <span class="tt">DestructurableAccessorOpInterface</span>, <span class="tt">DiscardableAllocationAccessorOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">PromotableMemOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="operands-4"></a>
 Operands:</h4>
 <table class="markdownTable">
@@ -1253,7 +1254,7 @@ Results:</h4>
 <div class="line">%1 = array.new %a, %b, %c, %d : !array.type&lt;2,2 x !felt.type&gt;</div>
 <div class="line">// The array now is [[%0, %b], [%c, %d]]</div>
 <div class="line">array.write %1[%i, %j] = %0 : !array.type&lt;2,2 x !felt.type&gt;, !felt.type</div>
-</div><!-- fragment --><p>Interfaces: <span class="tt">ArrayAccessOpInterface</span>, <span class="tt">ArrayRefOpInterface</span>, <span class="tt">DestructurableAccessorOpInterface</span>, <span class="tt">PromotableMemOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+</div><!-- fragment --><p>Interfaces: <span class="tt">ArrayAccessOpInterface</span>, <span class="tt">ArrayRefOpInterface</span>, <span class="tt">DestructurableAccessorOpInterface</span>, <span class="tt">DiscardableAllocationAccessorOpInterface</span>, <span class="tt">PromotableMemOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="operands-5"></a>
 Operands:</h4>
 <table class="markdownTable">

@@ -1,0 +1,11 @@
+var DiscardableAllocationOpInterfaces_8h_8inc =
+[
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits" ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::Concept", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept" ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Model.html", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Model" ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1FallbackModel.html", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1FallbackModel" ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1ExternalModel.html", "classllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1ExternalModel" ],
+    [ "llzk::DiscardableAllocationAccessorOpInterface", "classllzk_1_1DiscardableAllocationAccessorOpInterface.html", "classllzk_1_1DiscardableAllocationAccessorOpInterface" ],
+    [ "llzk::DiscardableAllocationAccessorOpInterface::Trait< ConcreteOp >", "structllzk_1_1DiscardableAllocationAccessorOpInterface_1_1Trait.html", null ],
+    [ "llzk::detail::DiscardableAllocationAccessorOpInterfaceTrait< ConcreteOp >", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", null ]
+];

@@ -113,6 +113,7 @@ $(function(){initNavTree('LLZKTransformationPasses_8h.html','',''); });
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Config_8h_source.html">llzk/Config/Config.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="PassBase_8h_source.html">llzk/Pass/PassBase.h</a>&quot;</code><br />
+<code>#include &lt;llvm/ADT/StringRef.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_8inc_source.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKTransformationPasses.h:</div>
@@ -122,7 +123,7 @@ Include dependency graph for LLZKTransformationPasses.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKTransformationPasses_8h__dep__incl.svg" width="3403" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKTransformationPasses_8h__dep__incl.svg" width="4176" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="LLZKTransformationPasses_8h_source.html">Go to the source code of this file.</a></p>
@@ -146,6 +147,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a764713f7354a0b4b2cf1b861a443136e" id="r_a764713f7354a0b4b2cf1b861a443136e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a764713f7354a0b4b2cf1b861a443136e">llzk::createRedundantReadAndWriteEliminationPass</a> ()</td></tr>
 <tr class="memitem:a02ed7b620ceb2def986e01d65617d3d4" id="r_a02ed7b620ceb2def986e01d65617d3d4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a02ed7b620ceb2def986e01d65617d3d4">llzk::createRedundantOperationEliminationPass</a> ()</td></tr>
 <tr class="memitem:aa81a4cdbc9130d5a1f71367fdc225ef2" id="r_aa81a4cdbc9130d5a1f71367fdc225ef2"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#aa81a4cdbc9130d5a1f71367fdc225ef2">llzk::createUnusedDeclarationEliminationPass</a> ()</td></tr>
+<tr class="memitem:a1e8511f3de7ef6cfa66176e8bddd0304" id="r_a1e8511f3de7ef6cfa66176e8bddd0304"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a1e8511f3de7ef6cfa66176e8bddd0304">llzk::createRemoveUnusedDiscardableAllocationsPass</a> ()</td></tr>
+<tr class="memitem:a7660071751ee67b08be84259d0dcee11" id="r_a7660071751ee67b08be84259d0dcee11"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a7660071751ee67b08be84259d0dcee11">llzk::createRemoveUnusedDiscardableAllocationsPass</a> (llvm::StringRef allocatorOpName)</td></tr>
 <tr class="memitem:ab2e3f96bf4acbb53490221c9d79f8fb0" id="r_ab2e3f96bf4acbb53490221c9d79f8fb0"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ab2e3f96bf4acbb53490221c9d79f8fb0">llzk::createPolyLoweringPass</a> ()</td></tr>
 <tr class="memitem:a12880da13a89153781456c8c5852bac4" id="r_a12880da13a89153781456c8c5852bac4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a12880da13a89153781456c8c5852bac4">llzk::createPolyLoweringPass</a> (unsigned maxDegree)</td></tr>
 <tr class="memitem:ad538530b34a37a9784f0d3ce8780e6d4" id="r_ad538530b34a37a9784f0d3ce8780e6d4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ad538530b34a37a9784f0d3ce8780e6d4">llzk::createInlineStructsPass</a> ()</td></tr>
@@ -165,6 +168,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a742cb6ba67d34d1866a3befa40e7262d" id="r_a742cb6ba67d34d1866a3befa40e7262d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a742cb6ba67d34d1866a3befa40e7262d">llzk::registerRedundantOperationEliminationPassPass</a> ()</td></tr>
 <tr class="memitem:ab402712606c35b8b57e3eb077a45e3d0" id="r_ab402712606c35b8b57e3eb077a45e3d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ab402712606c35b8b57e3eb077a45e3d0">llzk::registerRedundantReadAndWriteEliminationPass</a> ()</td></tr>
 <tr class="memitem:ac8d4d99847c9d1dfc61349e39b132673" id="r_ac8d4d99847c9d1dfc61349e39b132673"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ac8d4d99847c9d1dfc61349e39b132673">llzk::registerRedundantReadAndWriteEliminationPassPass</a> ()</td></tr>
+<tr class="memitem:a97510a08e958c6dc5919f6b3f13d7cb1" id="r_a97510a08e958c6dc5919f6b3f13d7cb1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a97510a08e958c6dc5919f6b3f13d7cb1">llzk::registerRemoveUnusedDiscardableAllocationsPass</a> ()</td></tr>
+<tr class="memitem:ae25f83930559cf0ea3e386db68f54598" id="r_ae25f83930559cf0ea3e386db68f54598"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ae25f83930559cf0ea3e386db68f54598">llzk::registerRemoveUnusedDiscardableAllocationsPassPass</a> ()</td></tr>
 <tr class="memitem:a5bfb781c85fcdfda09d0472c2ede1e29" id="r_a5bfb781c85fcdfda09d0472c2ede1e29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a5bfb781c85fcdfda09d0472c2ede1e29">llzk::registerUnusedDeclarationEliminationPass</a> ()</td></tr>
 <tr class="memitem:a00a1db9f2cbc20b8b1ef3010ea7c97a5" id="r_a00a1db9f2cbc20b8b1ef3010ea7c97a5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a00a1db9f2cbc20b8b1ef3010ea7c97a5">llzk::registerUnusedDeclarationEliminationPassPass</a> ()</td></tr>
 <tr class="memitem:a0aa9659a4887acefdc571169a46b9ef5" id="r_a0aa9659a4887acefdc571169a46b9ef5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a0aa9659a4887acefdc571169a46b9ef5">llzk::registerWhileToForPass</a> ()</td></tr>
@@ -184,7 +189,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00045">45</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00052">52</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>

@@ -174,6 +174,9 @@ Classes</h2></td></tr>
 <tr class="memitem:ConstraintDependencyGraphPrinterPassOptions" id="r_ConstraintDependencyGraphPrinterPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1ConstraintDependencyGraphPrinterPassOptions.html">ConstraintDependencyGraphPrinterPassOptions</a></td></tr>
 <tr class="memitem:ConstraintDependencyGraphStructAnalysis" id="r_ConstraintDependencyGraphStructAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ConstraintDependencyGraphStructAnalysis.html">ConstraintDependencyGraphStructAnalysis</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An analysis wrapper around the <a class="el" href="classllzk_1_1ConstraintDependencyGraph.html" title="A dependency graph of constraints enforced by an LLZK struct.">ConstraintDependencyGraph</a> for a given struct.  <a href="classllzk_1_1ConstraintDependencyGraphStructAnalysis.html#details">More...</a><br /></td></tr>
+<tr class="memitem:DiscardableAllocationAccessorOpInterface" id="r_DiscardableAllocationAccessorOpInterface"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a></td></tr>
+<tr class="memitem:DiscardableAllocationResource" id="r_DiscardableAllocationResource"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1DiscardableAllocationResource.html">DiscardableAllocationResource</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Memory resource for allocations that may be erased when no stored value is ever read.  <a href="structllzk_1_1DiscardableAllocationResource.html#details">More...</a><br /></td></tr>
 <tr class="memitem:EnforceNoMemberOverwritePass" id="r_EnforceNoMemberOverwritePass"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1EnforceNoMemberOverwritePass.html">EnforceNoMemberOverwritePass</a></td></tr>
 <tr class="memitem:ExpressionValue" id="r_ExpressionValue"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tracks a solver expression and an interval range for that expression.  <a href="classllzk_1_1ExpressionValue.html#details">More...</a><br /></td></tr>
@@ -240,6 +243,7 @@ Classes</h2></td></tr>
 <tr class="memitem:ProductAligner" id="r_ProductAligner"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ProductAligner.html">ProductAligner</a></td></tr>
 <tr class="memitem:RefValueCapture" id="r_RefValueCapture"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1RefValueCapture.html">RefValueCapture</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Matches and optionally captures a <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> base value, which is either a member read or a block argument (i.e., an input to a @constrain or @compute function).  <a href="structllzk_1_1RefValueCapture.html#details">More...</a><br /></td></tr>
+<tr class="memitem:RemoveUnusedDiscardableAllocationsPassOptions" id="r_RemoveUnusedDiscardableAllocationsPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html">RemoveUnusedDiscardableAllocationsPassOptions</a></td></tr>
 <tr class="memitem:SourceRef" id="r_SourceRef"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A reference to a "source", which is the base value from which other SSA values are derived.  <a href="classllzk_1_1SourceRef.html#details">More...</a><br /></td></tr>
 <tr class="memitem:SourceRefAnalysis" id="r_SourceRefAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1SourceRefAnalysis.html">SourceRefAnalysis</a></td></tr>
@@ -605,6 +609,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a764713f7354a0b4b2cf1b861a443136e" id="r_a764713f7354a0b4b2cf1b861a443136e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a764713f7354a0b4b2cf1b861a443136e">createRedundantReadAndWriteEliminationPass</a> ()</td></tr>
 <tr class="memitem:a02ed7b620ceb2def986e01d65617d3d4" id="r_a02ed7b620ceb2def986e01d65617d3d4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a02ed7b620ceb2def986e01d65617d3d4">createRedundantOperationEliminationPass</a> ()</td></tr>
 <tr class="memitem:aa81a4cdbc9130d5a1f71367fdc225ef2" id="r_aa81a4cdbc9130d5a1f71367fdc225ef2"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa81a4cdbc9130d5a1f71367fdc225ef2">createUnusedDeclarationEliminationPass</a> ()</td></tr>
+<tr class="memitem:a1e8511f3de7ef6cfa66176e8bddd0304" id="r_a1e8511f3de7ef6cfa66176e8bddd0304"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1e8511f3de7ef6cfa66176e8bddd0304">createRemoveUnusedDiscardableAllocationsPass</a> ()</td></tr>
+<tr class="memitem:a7660071751ee67b08be84259d0dcee11" id="r_a7660071751ee67b08be84259d0dcee11"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7660071751ee67b08be84259d0dcee11">createRemoveUnusedDiscardableAllocationsPass</a> (llvm::StringRef allocatorOpName)</td></tr>
 <tr class="memitem:ab2e3f96bf4acbb53490221c9d79f8fb0" id="r_ab2e3f96bf4acbb53490221c9d79f8fb0"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab2e3f96bf4acbb53490221c9d79f8fb0">createPolyLoweringPass</a> ()</td></tr>
 <tr class="memitem:a12880da13a89153781456c8c5852bac4" id="r_a12880da13a89153781456c8c5852bac4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12880da13a89153781456c8c5852bac4">createPolyLoweringPass</a> (unsigned maxDegree)</td></tr>
 <tr class="memitem:ad538530b34a37a9784f0d3ce8780e6d4" id="r_ad538530b34a37a9784f0d3ce8780e6d4"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad538530b34a37a9784f0d3ce8780e6d4">createInlineStructsPass</a> ()</td></tr>
@@ -623,6 +629,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a742cb6ba67d34d1866a3befa40e7262d" id="r_a742cb6ba67d34d1866a3befa40e7262d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a742cb6ba67d34d1866a3befa40e7262d">registerRedundantOperationEliminationPassPass</a> ()</td></tr>
 <tr class="memitem:ab402712606c35b8b57e3eb077a45e3d0" id="r_ab402712606c35b8b57e3eb077a45e3d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab402712606c35b8b57e3eb077a45e3d0">registerRedundantReadAndWriteEliminationPass</a> ()</td></tr>
 <tr class="memitem:ac8d4d99847c9d1dfc61349e39b132673" id="r_ac8d4d99847c9d1dfc61349e39b132673"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac8d4d99847c9d1dfc61349e39b132673">registerRedundantReadAndWriteEliminationPassPass</a> ()</td></tr>
+<tr class="memitem:a97510a08e958c6dc5919f6b3f13d7cb1" id="r_a97510a08e958c6dc5919f6b3f13d7cb1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a97510a08e958c6dc5919f6b3f13d7cb1">registerRemoveUnusedDiscardableAllocationsPass</a> ()</td></tr>
+<tr class="memitem:ae25f83930559cf0ea3e386db68f54598" id="r_ae25f83930559cf0ea3e386db68f54598"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae25f83930559cf0ea3e386db68f54598">registerRemoveUnusedDiscardableAllocationsPassPass</a> ()</td></tr>
 <tr class="memitem:a5bfb781c85fcdfda09d0472c2ede1e29" id="r_a5bfb781c85fcdfda09d0472c2ede1e29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5bfb781c85fcdfda09d0472c2ede1e29">registerUnusedDeclarationEliminationPass</a> ()</td></tr>
 <tr class="memitem:a00a1db9f2cbc20b8b1ef3010ea7c97a5" id="r_a00a1db9f2cbc20b8b1ef3010ea7c97a5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a00a1db9f2cbc20b8b1ef3010ea7c97a5">registerUnusedDeclarationEliminationPassPass</a> ()</td></tr>
 <tr class="memitem:a0aa9659a4887acefdc571169a46b9ef5" id="r_a0aa9659a4887acefdc571169a46b9ef5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0aa9659a4887acefdc571169a46b9ef5">registerWhileToForPass</a> ()</td></tr>
@@ -2910,6 +2918,42 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="LLZKRedundantReadAndWriteEliminationPass_8cpp_source.html#l00680">680</a> of file <a class="el" href="LLZKRedundantReadAndWriteEliminationPass_8cpp_source.html">LLZKRedundantReadAndWriteEliminationPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a1e8511f3de7ef6cfa66176e8bddd0304" name="a1e8511f3de7ef6cfa66176e8bddd0304"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e8511f3de7ef6cfa66176e8bddd0304">&#9670;&#160;</a></span>createRemoveUnusedDiscardableAllocationsPass() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt; Pass &gt; llzk::createRemoveUnusedDiscardableAllocationsPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZKRemoveUnusedDiscardableAllocationsPass_8cpp_source.html#l00234">234</a> of file <a class="el" href="LLZKRemoveUnusedDiscardableAllocationsPass_8cpp_source.html">LLZKRemoveUnusedDiscardableAllocationsPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a7660071751ee67b08be84259d0dcee11" name="a7660071751ee67b08be84259d0dcee11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7660071751ee67b08be84259d0dcee11">&#9670;&#160;</a></span>createRemoveUnusedDiscardableAllocationsPass() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt; mlir::Pass &gt; llzk::createRemoveUnusedDiscardableAllocationsPass </td>
+          <td>(</td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>allocatorOpName</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -7744,7 +7788,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00717">717</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00799">799</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7771,7 +7815,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00724">724</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00806">806</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7852,7 +7896,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00734">734</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00816">816</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7879,7 +7923,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00741">741</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00823">823</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7906,7 +7950,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00751">751</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00833">833</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7933,7 +7977,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00758">758</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00840">840</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7960,7 +8004,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00768">768</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00850">850</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -7987,7 +8031,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00775">775</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00857">857</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8158,7 +8202,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00785">785</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00867">867</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8185,7 +8229,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00792">792</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00874">874</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8266,7 +8310,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00802">802</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00884">884</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8293,7 +8337,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00809">809</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00891">891</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8320,7 +8364,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00819">819</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00901">901</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8347,7 +8391,61 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00826">826</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00908">908</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a97510a08e958c6dc5919f6b3f13d7cb1" name="a97510a08e958c6dc5919f6b3f13d7cb1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97510a08e958c6dc5919f6b3f13d7cb1">&#9670;&#160;</a></span>registerRemoveUnusedDiscardableAllocationsPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerRemoveUnusedDiscardableAllocationsPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00918">918</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="ae25f83930559cf0ea3e386db68f54598" name="ae25f83930559cf0ea3e386db68f54598"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae25f83930559cf0ea3e386db68f54598">&#9670;&#160;</a></span>registerRemoveUnusedDiscardableAllocationsPassPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::registerRemoveUnusedDiscardableAllocationsPassPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00925">925</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8482,7 +8580,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00870">870</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00969">969</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8528,7 +8626,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00836">836</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00935">935</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8555,7 +8653,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00843">843</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00942">942</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8609,7 +8707,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00853">853</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00952">952</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -8636,7 +8734,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00860">860</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKTransformationPasses_8h_source.html#l00959">959</a> of file <a class="el" href="LLZKTransformationPasses_8h_source.html">LLZKTransformationPasses.h</a>.</p>
 
 </div>
 </div>

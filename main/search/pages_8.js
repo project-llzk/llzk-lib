@@ -11,9 +11,10 @@ var searchData=
   ['dialect_8',['Dialect',['../dialects.html#array-dialect',1,''array' Dialect'],['../dialects.html#bool-dialect',1,''bool' Dialect'],['../dialects.html#cast-dialect',1,''cast' Dialect'],['../dialects.html#constrain-dialect',1,''constrain' Dialect'],['../dialects.html#felt-dialect',1,''felt' Dialect'],['../dialects.html#function-dialect',1,''function' Dialect'],['../dialects.html#global-dialect',1,''global' Dialect'],['../dialects.html#include-dialect',1,''include' Dialect'],['../dialects.html#llzk-dialect',1,''llzk' Dialect'],['../dialects.html#pod-dialect',1,''pod' Dialect'],['../dialects.html#poly-dialect',1,''poly' Dialect'],['../backend-dialects.html#r1cs-dialect',1,''r1cs' Dialect'],['../dialects.html#string-dialect',1,''string' Dialect'],['../dialects.html#struct-dialect',1,''struct' Dialect']]],
   ['dialect_20transformation_20passes_9',['Dialect Transformation Passes',['../tools.html#array-dialect-transformation-passes',1,''array' Dialect Transformation Passes'],['../tools.html#polymorphic-dialect-transformation-passes',1,''polymorphic' Dialect Transformation Passes']]],
   ['dialects_10',['Dialects',['../backend-dialects.html',1,'Backend Dialects'],['../dialects.html',1,'LLZK IR Dialects'],['../overview.html#llzk-ir-dialects',1,'LLZK IR Dialects']]],
-  ['div_20_3a_3allzk_3a_3afelt_3a_3adivfeltop_11',['&lt;span class=&quot;tt&quot;&gt;felt.div&lt;/span&gt; (llzk::felt::DivFeltOp)',['../dialects.html#feltdiv-llzkfeltdivfeltop',1,'']]],
-  ['documentation_12',['LLZK Pass Documentation',['../tools.html#passes',1,'']]],
-  ['drop_20empty_20templates_13',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
-  ['duplicate_20op_20elim_14',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-op-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'']]],
-  ['duplicate_20read_20write_20elim_15',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'']]]
+  ['discardable_20allocations_11',['&lt;span class=&quot;tt&quot;&gt;-llzk-remove-unused-discardable-allocations&lt;/span&gt;',['../tools.html#autotoc_md-llzk-remove-unused-discardable-allocations',1,'']]],
+  ['div_20_3a_3allzk_3a_3afelt_3a_3adivfeltop_12',['&lt;span class=&quot;tt&quot;&gt;felt.div&lt;/span&gt; (llzk::felt::DivFeltOp)',['../dialects.html#feltdiv-llzkfeltdivfeltop',1,'']]],
+  ['documentation_13',['LLZK Pass Documentation',['../tools.html#passes',1,'']]],
+  ['drop_20empty_20templates_14',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
+  ['duplicate_20op_20elim_15',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-op-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'']]],
+  ['duplicate_20read_20write_20elim_16',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'']]]
 ];
