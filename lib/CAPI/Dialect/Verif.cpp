@@ -28,6 +28,10 @@ using namespace llzk::verif;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif, VerifDialect)
 
+void llzkVerif_attachInterfaces(MlirContext context) {
+  ::llzk::verif::attachInterfaces(*unwrap(context));
+}
+
 //===----------------------------------------------------------------------===//
 // ContractOp
 //===----------------------------------------------------------------------===//
@@ -74,4 +78,24 @@ LLZK_DEFINE_OP_BUILD_METHOD(
                    )
                )
   );
+}
+
+//===----------------------------------------------------------------------===//
+// InvariantOp
+//===----------------------------------------------------------------------===//
+
+LLZK_DEFINE_OP_BUILD_METHOD(
+    Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types, MlirLocation const *locs
+) {
+  SmallVector<Type> typesSto;
+  SmallVector<Location> locsSto;
+  auto typesRef = unwrapList(numArgs, types, typesSto);
+  auto locsRef = unwrapList(numArgs, locs, locsSto);
+
+  return mlirOpBuilderInsert(builder, wrap(llzk::create<InvariantOp>(builder, location, unwrap(loopName), typesRef, locsRef)));
+}
+
+
+MlirBlock llzkVerif_InvariantOpGetBody(MlirOperation op) {
+  return wrap(unwrap_cast<InvariantOp>(op).getBody());
 }

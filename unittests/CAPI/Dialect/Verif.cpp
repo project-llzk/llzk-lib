@@ -20,9 +20,15 @@
 #include <mlir-c/IR.h>
 
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/TypeRange.h>
+#include <mlir/IR/ValueRange.h>
 #include <mlir/Parser/Parser.h>
+#include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/SmallVector.h>
+
+#include <cstdint>
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Verif/IR/Dialect.capi.test.cpp.inc"
@@ -58,13 +64,14 @@ static MlirAttribute createEmptyFunctionTypeAttr(MlirContext ctx) {
 }
 
 static mlir::OwningOpRef<mlir::ModuleOp> createModuleWithTargetFunc(
-    const CAPITest &test, MlirOpBuilder builder, MlirLocation location, llvm::StringRef name
+    const CAPITest &test, MlirOpBuilder builder, MlirLocation location, llvm::StringRef name,
+    llvm::function_ref<void(mlir::OpBuilder &)> fnBody = nullptr
 ) {
   auto newModule = test.cppNewModuleAndSetInsertionPoint(builder, location);
   llzk::ModuleBuilder modBuilder(newModule.get());
   modBuilder.insertFreeFunc(
       name, mlir::FunctionType::get(unwrap(test.context), mlir::TypeRange {}, mlir::TypeRange {}),
-      unwrap(location)
+      unwrap(location), fnBody
   );
   unwrap(builder)->setInsertionPointToStart(newModule->getBody());
   return newModule;
@@ -355,4 +362,74 @@ std::unique_ptr<RequireConstrainOpBuildFuncHelper> RequireConstrainOpBuildFuncHe
     }
   };
   return std::make_unique<Impl>();
+}
+
+TEST_F(CAPITest, llzkVerifInvariantOpBuild) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+module attributes {llzk.lang} {
+ function.def @target() attributes {function.allow_witness} {
+    scf.while : () -> () {
+      %true = arith.constant  true 
+      scf.condition(%true)
+    } do {
+      scf.yield
+    } attributes {loop_label = "loopA"}
+    function.return
+  }
+}
+)mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+  unwrap(builder)->setInsertionPointToEnd(module->getBody());
+
+  auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+  unwrap(builder)->setInsertionPointToStart(&contract.getBody().front());
+
+  auto invariant = llzkVerif_InvariantOpBuild(
+      builder, location, mlirStringRefCreateFromCString("loopA"), 0, nullptr, nullptr
+  );
+  EXPECT_TRUE(mlirOperationVerify(invariant));
+
+  mlirOpBuilderDestroy(builder);
+}
+
+TEST_F(CAPITest, llzkVerifInvariantOpBuildWithArgs) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+module attributes {llzk.lang} {
+ function.def @target() attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index 
+      %c10 = arith.constant 10 : index 
+      %c1 = arith.constant 1  : index 
+      scf.for %iv = %c0 to %c10 step %c1 {
+        scf.yield
+      } {loop_label = "loopA"}
+    function.return
+  }
+}
+)mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+  unwrap(builder)->setInsertionPointToEnd(module->getBody());
+  size_t argCount = 4;
+  llvm::SmallVector<MlirType> argTypes(argCount, mlirIndexTypeGet(context));
+  llvm::SmallVector<MlirLocation> argLocs(argCount, location);
+
+  auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+  unwrap(builder)->setInsertionPointToStart(&contract.getBody().front());
+
+  auto invariant = llzkVerif_InvariantOpBuild(
+      builder, location, mlirStringRefCreateFromCString("loopA"), static_cast<intptr_t>(argCount),
+      argTypes.data(), argLocs.data()
+  );
+  EXPECT_TRUE(mlirOperationVerify(invariant));
+
+  mlirOpBuilderDestroy(builder);
 }

@@ -28,10 +28,14 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
+#include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/Twine.h>
+#include <memory>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Verif/IR/OpInterfaces.cpp.inc"
@@ -479,6 +483,13 @@ FailureOr<SymbolLookupResult<FuncDefOp>> ContractOp::getFuncTarget(SymbolTableCo
   );
 }
 
+FailureOr<SymbolLookupResult<ContractTargetOpInterface>>
+ContractOp::getTargetOp(SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<ContractTargetOpInterface>(
+      tables, getTarget(), getParentOfType<ModuleOp>(getOperation()), /*reportMissing*/ false
+  );
+}
+
 FailureOr<Value> ContractOp::getSelfValue() {
   if (failed(getStructTarget()) || getNumArguments() == 0) {
     return failure();
@@ -859,6 +870,164 @@ Operation *IncludeOp::resolveCallableInTable(SymbolTableCollection *symbolTable)
 Operation *IncludeOp::resolveCallable() {
   SymbolTableCollection tables;
   return resolveCallableInTable(&tables);
+}
+
+//===------------------------------------------------------------------===//
+// InvariantOp
+//===------------------------------------------------------------------===//
+
+
+void InvariantOp::build(OpBuilder &odsBuilder, OperationState &odsState, StringRef loop_name, ArrayRef<Type> loop_arg_types, ArrayRef<Location> loop_arg_locs) {
+  odsState.getOrAddProperties<InvariantOp::Properties>().loop_name = odsBuilder.getStringAttr(loop_name);
+  odsState.getOrAddProperties<InvariantOp::Properties>().loop_arg_types = odsBuilder.getTypeArrayAttr(loop_arg_types);
+  auto region = std::make_unique<Region>();
+  auto &block = region->emplaceBlock();
+  block.addArguments(loop_arg_types, loop_arg_locs);
+  odsState.regions.push_back(std::move(region));
+}
+
+namespace {
+static FailureOr<InvariantTargetOpInterface> verifyLabel(
+    ContractTargetOpInterface target, StringRef label,
+    llvm::function_ref<InFlightDiagnostic()> emitError
+) {
+  SmallVector<InvariantTargetOpInterface> matches;
+  for (auto invariantTarget : target.getLoops()) {
+    auto targetLabel = invariantTarget.getLabel();
+    if (succeeded(targetLabel) && *targetLabel == label) {
+      matches.push_back(invariantTarget);
+    }
+  }
+
+  if (matches.size() == 0) {
+    return emitError() << "no invariant target with label \"" << label
+                       << "\" found in contract target " << target.getNameAttr();
+  }
+  if (matches.size() > 1) {
+    return emitError() << "ambiguous label \"" << label << "\" matched " << matches.size()
+                       << " invariant targets in contract target " << target.getNameAttr();
+  }
+  return matches[0];
+}
+
+static LogicalResult verifyArgTypes(InvariantTargetOpInterface target, InvariantOp *op) {
+  auto targetArgTypes = target.getArgumentTypes();
+  auto declaredTypes = op->getLoopArgTypes().getValue();
+  auto bodyArgTypes = op->getBody()->getArgumentTypes();
+
+  if (targetArgTypes.size() != declaredTypes.size()) {
+    return op->emitOpError() << "target has " << targetArgTypes.size()
+                             << " arguments but invariant declared " << declaredTypes.size();
+  }
+  if (bodyArgTypes.size() != declaredTypes.size()) {
+    return op->emitOpError() << "invariant body has " << targetArgTypes.size()
+                             << " arguments but declared " << declaredTypes.size();
+  }
+
+  bool failed = false;
+  for (auto [n, types] :
+       llvm::enumerate(llvm::zip_equal(targetArgTypes, bodyArgTypes, declaredTypes))) {
+    auto [targetType, bodyArgType, declaredType] = types;
+
+    if (targetType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+      failed = true;
+      op->emitOpError() << "target argument #" << n << " expected type " << targetType
+                        << " but invariant declared type " << declaredType;
+    }
+    if (bodyArgType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+      failed = true;
+      op->emitOpError() << "invariant argument #" << n << " expected type " << targetType
+                        << " but invariant declared type " << declaredType;
+    }
+  }
+
+  return failure(failed);
+}
+} // namespace
+
+LogicalResult InvariantOp::verify() {
+  FailureOr<SymbolLookupResult<ContractTargetOpInterface>> target =
+      getParentContract().getTargetOp();
+  if (failed(target)) {
+    return failure();
+  }
+  auto invariantTarget =
+      verifyLabel(target->get(), getLoopName(), [this]() { return emitOpError(); });
+  if (failed(invariantTarget)) {
+    return failure();
+  }
+
+  return verifyArgTypes(*invariantTarget, this);
+}
+
+ParseResult InvariantOp::parse(OpAsmParser &parser, OperationState &result) {
+  if (failed(parser.parseKeyword("for"))) {
+    return failure();
+  }
+
+  // Parse the loop label as a symbol.
+  StringAttr loopNameAttr;
+  if (parser.parseSymbolName(loopNameAttr)) {
+    return failure();
+  }
+  result.getOrAddProperties<InvariantOp::Properties>().loop_name = loopNameAttr;
+
+
+  // Parse the function signature.
+  bool isVariadic = false;
+  SmallVector<OpAsmParser::Argument> entryArgs;
+  SmallVector<DictionaryAttr> resultAttrs;
+  SmallVector<Type> resultTypes;
+
+  if (function_interface_impl::parseFunctionSignature(
+          parser, /*allowVariadic*/ false, entryArgs, isVariadic, resultTypes, resultAttrs
+      )) {
+    return failure();
+  }
+  assert(isVariadic == false);
+  // There should be no return types or attributes.
+  if (!resultTypes.empty() || !resultAttrs.empty()) {
+    return failure();
+  }
+
+  SmallVector<Type> argTypes = llvm::map_to_vector(entryArgs, [](auto arg) {return arg.type; });
+  result.getOrAddProperties<InvariantOp::Properties>().loop_arg_types = parser.getBuilder().getTypeArrayAttr(argTypes);
+
+  auto *body = result.addRegion();
+  SMLoc loc = parser.getCurrentLocation();
+  if (parser.parseRegion(
+          *body, entryArgs,
+          /*enableNameShadowing=*/false
+      )) {
+    return failure();
+  }
+
+  if (body->empty()) {
+    return parser.emitError(loc, "expected non-empty invariant body");
+  }
+
+  return success();
+}
+
+void InvariantOp::print(OpAsmPrinter &p) {
+  // Print the name of the invariants's target.
+  p << " for ";
+  p.printSymbolName(getLoopName());
+  p << "(";
+  llvm::interleave(getBody()->getArguments(), [&p](auto arg) {
+    p.printRegionArgument(arg);
+  }, [&p]() { p << ", "; });
+  p << ") ";
+  // Print the body.
+  Region &body = getRegion();
+  p.printRegion(
+      body, /*printEntryBlockArgs=*/false,
+      /*printBlockTerminators=*/true
+  );
+}
+
+ContractOp InvariantOp::getParentContract() {
+  return this->getOperation()->getParentOfType<ContractOp>();
 }
 
 } // namespace llzk::verif

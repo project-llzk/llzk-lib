@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Dialect/Verif/IR/OpInterfaces.h"
 
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/Interfaces/CallInterfaces.h>

@@ -223,6 +223,16 @@ def ContractOp
       ::mlir::SymbolTableCollection tables;
       return getFuncTarget(tables);
     }
+
+    /// Return the operation that this contract targets, or failure if it does not 
+    /// target an operation that implements the `ContractTarget` op interface or is not found.
+    ::mlir::FailureOr<SymbolLookupResult<::llzk::verif::ContractTargetOpInterface>> getTargetOp(::mlir::SymbolTableCollection &tables);
+
+    ::mlir::FailureOr<SymbolLookupResult<::llzk::verif::ContractTargetOpInterface>> getTargetOp() {
+      ::mlir::SymbolTableCollection tables;
+      return getTargetOp(tables);
+    }
+
   }];
 }
 
@@ -387,6 +397,38 @@ def IncludeOp
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
         const UnificationMap &unifications
     );
+  }];
+}
+
+//===------------------------------------------------------------------===//
+// InvariantOp
+//===------------------------------------------------------------------===//
+
+def InvariantOp
+    : VerifDialectOp<"invariant", [HasAncestor<"::llzk::verif::ContractOp">,
+                                   NoTerminator, SingleBlock]> {
+
+  let summary = "loop invariant definition operation";
+  let description = [{
+    Defines an invariant for a loop inside the target of a contract.
+  }];
+
+  let arguments = (ins StrAttr:$loop_name, TypeArrayAttr:$loop_arg_types);
+  let results = (outs);
+
+  let regions = (region SizedRegion<1>:$region);
+
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringRef":$loop_name,
+      CArg<"::llvm::ArrayRef<::mlir::Type>", "{}">:$loop_arg_types,
+      CArg<"::llvm::ArrayRef<::mlir::Location>", "{}">:$loop_arg_locs)>];
+
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+
+  let extraClassDeclaration = [{
+    /// Returns the contract operation that contains this invariant.
+    ::llzk::verif::ContractOp getParentContract();
   }];
 }
 

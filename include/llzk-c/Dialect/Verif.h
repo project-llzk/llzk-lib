@@ -33,6 +33,11 @@ extern "C" {
 /// Get reference to the LLZK `verif` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif);
 
+/// Attaches the interfaces defined by the `verif` dialect to upstream IR elements
+///
+/// Attempting to use those interfaces without calling this function first will result in an error.
+MLIR_CAPI_EXPORTED void llzkVerif_attachInterfaces(MlirContext context);
+
 /// Build a `verif.contract` with arguments and attributes derived from the target.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     Verif, ContractOp, FromTargetIdentifier, MlirIdentifier sym_name, MlirIdentifier target
@@ -48,6 +53,16 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
 LLZK_DECLARE_OP_BUILD_METHOD(
     Verif, IncludeOp, MlirAttribute callee, MlirValueRange argOperands, MlirAttribute templateParams
 );
+
+/// Build a `verif.invariant` with a list of argument types and locations. 
+///
+/// The pointers to the types and locations must point to the same amount of elements.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types, MlirLocation const *locs
+);
+
+/// Returns the body of the invariant operation.
+MLIR_CAPI_EXPORTED MlirBlock llzkVerif_InvariantOpGetBody(MlirOperation op);
 
 #ifdef __cplusplus
 }
