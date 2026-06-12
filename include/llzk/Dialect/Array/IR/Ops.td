@@ -99,10 +99,9 @@ class ScalarArrayAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     }
 
     /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
-    bool $cppClass::canEraseAsDeadStoreTo(::mlir::Value ptr,
-                                          const ::mlir::DataLayout & /*dataLayout*/) {
-      }]#!if(isRead, "return false",
-             "return getArrRef() == ptr && getRvalue() != ptr")#[{;
+    bool $cppClass::canEraseAsDeadStoreTo(::mlir::Value ptr, const ::mlir::DataLayout &) {
+      return }]#!if(isRead, "false",
+                    "getArrRef() == ptr && getRvalue() != ptr")#[{;
     }
   }];
 }
