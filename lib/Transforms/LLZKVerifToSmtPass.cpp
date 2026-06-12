@@ -66,7 +66,8 @@ struct ContractHelperNames {
   std::string pre;
   std::string target;
   std::string post;
-  std::optional<std::string> includes;
+  std::string entry;
+  SmallVector<std::string> includeHelpers;
 };
 
 struct LoweredSignature {
@@ -243,6 +244,34 @@ buildEqualityConditions(OpBuilder &builder, Location loc, ValueRange lhs, ValueR
     conditions.push_back(builder.create<llzk::smt::EqOp>(loc, lhsValue, rhsValue).getResult());
   }
   return conditions;
+}
+
+static void populateVoidCheckRegion(
+    Region &region, Location loc, llvm::function_ref<void(OpBuilder &)> buildBody
+) {
+  Block *block = new Block();
+  region.push_back(block);
+  OpBuilder builder = OpBuilder::atBlockBegin(block);
+  buildBody(builder);
+  builder.create<llzk::smt::YieldOp>(loc);
+}
+
+static void proveByUnsatAndAssert(OpBuilder &builder, Location loc, Value condition) {
+  builder.create<llzk::smt::PushOp>(loc, 1);
+  Value negated = builder.create<llzk::smt::NotOp>(loc, condition).getResult();
+  builder.create<llzk::smt::AssertOp>(loc, negated);
+  auto check = builder.create<llzk::smt::CheckOp>(loc, TypeRange {});
+
+  populateVoidCheckRegion(check.getSatRegion(), loc, [&](OpBuilder &regionBuilder) {
+    regionBuilder.create<llzk::smt::PopOp>(loc, 1);
+  });
+  populateVoidCheckRegion(check.getUnknownRegion(), loc, [&](OpBuilder &regionBuilder) {
+    regionBuilder.create<llzk::smt::PopOp>(loc, 1);
+  });
+  populateVoidCheckRegion(check.getUnsatRegion(), loc, [&](OpBuilder &regionBuilder) {
+    regionBuilder.create<llzk::smt::PopOp>(loc, 1);
+    regionBuilder.create<llzk::smt::AssertOp>(loc, condition);
+  });
 }
 
 class ExprLowerer {
@@ -742,8 +771,25 @@ getOrCreateContractHelpers(LoweringContext &state, ModuleOp module, ContractOp c
   }
 
   std::string prefix = ("smt_verif_" + contract.getSymName()).str();
+  std::string preName = prefix + "_pre";
+  std::string targetName = prefix + "_target";
+  std::string postName = prefix + "_post";
+  std::string entryName = prefix + "_entry";
+
+  SmallVector<IncludeOp> includes;
+  contract.walk([&](IncludeOp includeOp) { includes.push_back(includeOp); });
+
+  SmallVector<std::string> includeHelperNames;
+  includeHelperNames.reserve(includes.size());
+  for (auto [index, _] : llvm::enumerate(includes)) {
+    includeHelperNames.push_back(prefix + "_include_" + std::to_string(index));
+  }
+
+  ContractHelperNames names {preName, targetName, postName, entryName, includeHelperNames};
+  state.contractHelpers[contract.getOperation()] = names;
+
   auto preHelper =
-      createContractConditionHelper(state, module, contract, prefix + "_pre", [](Operation *op) {
+      createContractConditionHelper(state, module, contract, preName, [](Operation *op) {
     return isa<RequireComputeOp, RequireConstrainOp>(op);
   });
   if (failed(preHelper)) {
@@ -751,7 +797,7 @@ getOrCreateContractHelpers(LoweringContext &state, ModuleOp module, ContractOp c
   }
 
   auto postHelper =
-      createContractConditionHelper(state, module, contract, prefix + "_post", [](Operation *op) {
+      createContractConditionHelper(state, module, contract, postName, [](Operation *op) {
     return isa<EnsureComputeOp, EnsureConstrainOp>(op);
   });
   if (failed(postHelper)) {
@@ -765,8 +811,6 @@ getOrCreateContractHelpers(LoweringContext &state, ModuleOp module, ContractOp c
     return failure();
   }
 
-  ContractHelperNames names {prefix + "_pre", prefix + "_target", prefix + "_post", std::nullopt};
-  state.contractHelpers[contract.getOperation()] = names;
   return names;
 }
 
@@ -787,25 +831,60 @@ static FailureOr<SmallVector<Value>> lowerIncludeHelperOperands(
   return loweredOperands;
 }
 
-static LogicalResult
-maybeCreateIncludeHelper(LoweringContext &state, ModuleOp module, ContractOp contract) {
-  SmallVector<IncludeOp> includes;
-  contract.walk([&](IncludeOp includeOp) { includes.push_back(includeOp); });
-  if (includes.empty()) {
-    return success();
+static FailureOr<func::FuncOp> createIncludeWrapperHelper(
+    LoweringContext &state, ModuleOp module, IncludeOp includeOp, StringRef helperName
+) {
+  auto calleeTarget = includeOp.getCalleeTarget(state.tables);
+  if (failed(calleeTarget)) {
+    return failure();
+  }
+  ContractOp callee = calleeTarget->get();
+  auto calleeHelpers = getOrCreateContractHelpers(state, module, callee);
+  if (failed(calleeHelpers)) {
+    return failure();
   }
 
+  auto loweredSig = lowerContractSignature(state, callee);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  OpBuilder moduleBuilder(module.getBodyRegion());
+  moduleBuilder.setInsertionPoint(&module.getBody()->back());
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      includeOp.getLoc(), helperName,
+      FunctionType::get(state.context, loweredSig->argTypes, TypeRange {})
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder bodyBuilder = OpBuilder::atBlockBegin(entry);
+  bodyBuilder.create<func::CallOp>(
+      includeOp.getLoc(), calleeHelpers->entry, TypeRange {}, entry->getArguments()
+  );
+  bodyBuilder.create<func::ReturnOp>(includeOp.getLoc());
+  return helper;
+}
+
+static LogicalResult createContractEntryHelper(
+    LoweringContext &state, ModuleOp module, ContractOp contract,
+    SmallVectorImpl<IncludeOp> &includes
+) {
   auto loweredSig = lowerContractSignature(state, contract);
   if (failed(loweredSig)) {
     return failure();
   }
 
-  std::string helperName = ("smt_verif_" + contract.getSymName() + "_includes").str();
+  auto helperInfoIt = state.contractHelpers.find(contract.getOperation());
+  if (helperInfoIt == state.contractHelpers.end()) {
+    contract.emitError("missing contract helper names for entry helper generation");
+    return failure();
+  }
+  const ContractHelperNames &helperInfo = helperInfoIt->second;
+
   OpBuilder moduleBuilder(module.getBodyRegion());
-  // modules don't have a terminator, so just insert at the back
   moduleBuilder.setInsertionPoint(&module.getBody()->back());
   auto helper = moduleBuilder.create<func::FuncOp>(
-      contract.getLoc(), helperName,
+      contract.getLoc(), helperInfo.entry,
       FunctionType::get(state.context, loweredSig->argTypes, TypeRange {})
   );
 
@@ -815,47 +894,37 @@ maybeCreateIncludeHelper(LoweringContext &state, ModuleOp module, ContractOp con
   DenseMap<StringRef, Value> selfMemberMap;
   seedContractArgumentMaps(state, contract, entry, valueMap, selfMemberMap);
 
-  for (IncludeOp includeOp : includes) {
-    auto calleeTarget = includeOp.getCalleeTarget(state.tables);
-    if (failed(calleeTarget)) {
-      return failure();
-    }
-    ContractOp callee = calleeTarget->get();
-    auto calleeHelpers = getOrCreateContractHelpers(state, module, callee);
-    if (failed(calleeHelpers)) {
-      return failure();
-    }
+  auto preCall = bodyBuilder.create<func::CallOp>(
+      contract.getLoc(), helperInfo.pre, TypeRange {llzk::smt::BoolType::get(state.context)},
+      entry->getArguments()
+  );
+  proveByUnsatAndAssert(bodyBuilder, contract.getLoc(), preCall.getResult(0));
 
+  auto targetCall = bodyBuilder.create<func::CallOp>(
+      contract.getLoc(), helperInfo.target, TypeRange {llzk::smt::BoolType::get(state.context)},
+      entry->getArguments()
+  );
+  proveByUnsatAndAssert(bodyBuilder, contract.getLoc(), targetCall.getResult(0));
+
+  for (auto [index, includeOp] : llvm::enumerate(includes)) {
     auto loweredOperands = lowerIncludeHelperOperands(
         state, contract, includeOp.getArgOperands(), bodyBuilder, valueMap, selfMemberMap
     );
     if (failed(loweredOperands)) {
       return failure();
     }
-
-    auto preCall = bodyBuilder.create<func::CallOp>(
-        includeOp.getLoc(), calleeHelpers->pre, TypeRange {llzk::smt::BoolType::get(state.context)},
-        *loweredOperands
+    bodyBuilder.create<func::CallOp>(
+        includeOp.getLoc(), helperInfo.includeHelpers[index], TypeRange {}, *loweredOperands
     );
-    auto targetCall = bodyBuilder.create<func::CallOp>(
-        includeOp.getLoc(), calleeHelpers->target,
-        TypeRange {llzk::smt::BoolType::get(state.context)}, *loweredOperands
-    );
-    auto postCall = bodyBuilder.create<func::CallOp>(
-        includeOp.getLoc(), calleeHelpers->post,
-        TypeRange {llzk::smt::BoolType::get(state.context)}, *loweredOperands
-    );
-    Value antecedent = bodyBuilder.create<llzk::smt::AndOp>(
-        includeOp.getLoc(), preCall.getResult(0), targetCall.getResult(0)
-    );
-    Value implication = bodyBuilder.create<llzk::smt::ImpliesOp>(
-        includeOp.getLoc(), antecedent, postCall.getResult(0)
-    );
-    bodyBuilder.create<llzk::smt::AssertOp>(includeOp.getLoc(), implication);
   }
 
+  auto postCall = bodyBuilder.create<func::CallOp>(
+      contract.getLoc(), helperInfo.post, TypeRange {llzk::smt::BoolType::get(state.context)},
+      entry->getArguments()
+  );
+  proveByUnsatAndAssert(bodyBuilder, contract.getLoc(), postCall.getResult(0));
+
   bodyBuilder.create<func::ReturnOp>(contract.getLoc());
-  state.contractHelpers[contract.getOperation()].includes = helperName;
   return success();
 }
 
@@ -894,8 +963,23 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
         }
       }
 
-      if (failed(getOrCreateContractHelpers(state, module, contract)) ||
-          failed(maybeCreateIncludeHelper(state, module, contract))) {
+      auto contractHelpers = getOrCreateContractHelpers(state, module, contract);
+      if (failed(contractHelpers)) {
+        signalPassFailure();
+        return;
+      }
+
+      SmallVector<IncludeOp> includes;
+      contract.walk([&](IncludeOp includeOp) { includes.push_back(includeOp); });
+      for (auto [index, includeOp] : llvm::enumerate(includes)) {
+        if (failed(createIncludeWrapperHelper(
+                state, module, includeOp, contractHelpers->includeHelpers[index]
+            ))) {
+          signalPassFailure();
+          return;
+        }
+      }
+      if (failed(createContractEntryHelper(state, module, contract, includes))) {
         signalPassFailure();
         return;
       }

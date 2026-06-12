@@ -23,24 +23,27 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_Box_compute(%[[X:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
-// CHECK:   return %[[X]] : !smt.int
-// CHECK: }
-// CHECK: func.func @smt_Box_constrain(%[[SELF_VALUE:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
-// CHECK:   return %[[SELF_VALUE]] : !smt.int
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckBox_pre(%[[PRE_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[TRUE0:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[TRUE0]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckBox_post(%[[POST_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[TRUE1:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[TRUE1]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckBox_target(%[[TARGET_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[BOX_COMPUTED:[0-9a-zA-Z_\.]+]] = call @smt_Box_compute(%[[TARGET_ARG]]) : (!smt.int) -> !smt.int
-// CHECK:   %[[BOX_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[BOX_COMPUTED]], %[[TARGET_SELF]] : !smt.int
+// CHECK: func.func @smt_verif_CheckBox_target(%[[SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[BOX_COMPUTED:[0-9a-zA-Z_\.]+]] = call @smt_Box_compute(%[[ARG]]) : (!smt.int) -> !smt.int
+// CHECK:   %[[BOX_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[BOX_COMPUTED]], %[[SELF]] : !smt.int
 // CHECK:   return %[[BOX_EQ]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckBox_entry(%[[ENTRY_SELF:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ENTRY_ARG:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK:   %[[PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckBox_pre(%[[ENTRY_SELF]], %[[ENTRY_ARG]]) : (!smt.int, !smt.int) -> !smt.bool
+// CHECK:   smt.push 1
+// CHECK:   %[[NOT_PRE:[0-9a-zA-Z_\.]+]] = smt.not %[[PRE]]
+// CHECK:   smt.assert %[[NOT_PRE]]
+// CHECK:   smt.check sat {
+// CHECK:     smt.pop 1
+// CHECK:   } unknown {
+// CHECK:     smt.pop 1
+// CHECK:   } unsat {
+// CHECK:     smt.pop 1
+// CHECK:     smt.assert %[[PRE]]
+// CHECK:   }
+// CHECK:   %[[TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckBox_target(%[[ENTRY_SELF]], %[[ENTRY_ARG]]) : (!smt.int, !smt.int) -> !smt.bool
+// CHECK:   %[[POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckBox_post(%[[ENTRY_SELF]], %[[ENTRY_ARG]]) : (!smt.int, !smt.int) -> !smt.bool
+// CHECK:   return
 // CHECK: }
 // CHECK-NOT: verif.contract
 
@@ -58,21 +61,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_same(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
-// CHECK:   return %[[A]] : !smt.int
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckSame_pre(%[[IN:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[TRUE2:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[TRUE2]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckSame_post(%[[IN2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET2:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[TRUE3:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[TRUE3]] : !smt.bool
-// CHECK: }
 // CHECK: func.func @smt_verif_CheckSame_target(%[[TARGET_IN:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_RET:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK:   %[[SAME_RET:[0-9a-zA-Z_\.]+]] = call @smt_same(%[[TARGET_IN]]) : (!smt.int) -> !smt.int
 // CHECK:   %[[SAME_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[SAME_RET]], %[[TARGET_RET]] : !smt.int
 // CHECK:   return %[[SAME_EQ]] : !smt.bool
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckSame_entry(
+// CHECK:   smt.check sat {
+// CHECK:   } unknown {
+// CHECK:   } unsat {
+// CHECK:   }
 // CHECK: }
 
 // -----
@@ -96,28 +94,23 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_leaf_target(%[[GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK: func.func @smt_verif_Leaf_entry(%[[LEAF_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   %[[LEAF_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_pre(%[[LEAF_GATE]]) : (!smt.bool) -> !smt.bool
+// CHECK:   smt.push 1
+// CHECK:   %[[LEAF_NOT_PRE:[0-9a-zA-Z_\.]+]] = smt.not %[[LEAF_PRE]]
+// CHECK:   smt.assert %[[LEAF_NOT_PRE]]
+// CHECK:   smt.check sat {
+// CHECK:   } unknown {
+// CHECK:   } unsat {
+// CHECK:     smt.assert %[[LEAF_PRE]]
+// CHECK:   }
+// CHECK: }
+// CHECK: func.func @smt_verif_Wrapper_include_0(%[[WRAP_INCLUDE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_Leaf_entry(%[[WRAP_INCLUDE_GATE]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
-// CHECK: func.func @smt_verif_Leaf_pre(%[[LEAF_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   return %[[LEAF_GATE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_Leaf_post(%[[LEAF_POST_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   %[[TRUE4:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[TRUE4]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_Leaf_target(%[[LEAF_TARGET_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   call @smt_leaf_target(%[[LEAF_TARGET_GATE]]) : (!smt.bool) -> ()
-// CHECK:   %[[LEAF_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[LEAF_TARGET_TRUE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_Wrapper_includes(%[[WRAP_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// CHECK:   %[[PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_pre(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_target(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_Leaf_post(%[[WRAP_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[PRE]], %[[TARGET]]
-// CHECK:   %[[IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[ANT]], %[[POST]]
-// CHECK:   smt.assert %[[IMPL]]
+// CHECK: func.func @smt_verif_Wrapper_entry(%[[WRAP_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_Wrapper_include_0(%[[WRAP_GATE]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
 
@@ -151,33 +144,17 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_Pair_compute(%[[PAIR_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
-// CHECK:   return %[[PAIR_X]], %[[PAIR_Y]] : !smt.int, !smt.int
+// CHECK: func.func @smt_verif_CheckPair_target(%[[LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[PAIR_COMP:[0-9a-zA-Z_\.]+]]:2 = call @smt_Pair_compute(%[[X]], %[[Y]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[PAIR_CONSTR:[0-9a-zA-Z_\.]+]]:2 = call @smt_Pair_constrain(%[[LEFT]], %[[RIGHT]], %[[X]], %[[Y]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[PAIR_AND2:[0-9a-zA-Z_\.]+]] = smt.and
+// CHECK:   return %{{[0-9a-zA-Z_\.]+}} : !smt.bool
 // CHECK: }
-// CHECK: func.func @smt_Pair_constrain(%[[SELF_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[SELF_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_ARG_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_ARG_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
-// CHECK:   return %[[SELF_LEFT]], %[[SELF_RIGHT]] : !smt.int, !smt.int
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckPair_pre(%[[PRE_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PRE_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[PRE_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[PRE_TRUE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckPair_post(%[[POST_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POST_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[POST_LEFT_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[POST_LEFT]], %[[POST_X]] : !smt.int
-// CHECK:   %[[POST_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[POST_RIGHT]], %[[POST_Y]] : !smt.int
-// CHECK:   %[[POST_AND:[0-9a-zA-Z_\.]+]] = smt.and %[[POST_LEFT_EQ]], %[[POST_EQ]]
-// CHECK:   return %[[POST_AND]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckPair_target(%[[TARGET_LEFT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_RIGHT:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_X:[0-9a-zA-Z_\.]+]]: !smt.int, %[[TARGET_Y:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[PAIR_COMP:[0-9a-zA-Z_\.]+]]:2 = call @smt_Pair_compute(%[[TARGET_X]], %[[TARGET_Y]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
-// CHECK:   %[[PAIR_COMP_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_COMP]]#0, %[[TARGET_LEFT]] : !smt.int
-// CHECK:   %[[PAIR_COMP_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_COMP]]#1, %[[TARGET_RIGHT]] : !smt.int
-// CHECK:   %[[PAIR_CONSTR:[0-9a-zA-Z_\.]+]]:2 = call @smt_Pair_constrain(%[[TARGET_LEFT]], %[[TARGET_RIGHT]], %[[TARGET_X]], %[[TARGET_Y]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> (!smt.int, !smt.int)
-// CHECK:   %[[PAIR_CONSTR_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_CONSTR]]#0, %[[TARGET_LEFT]] : !smt.int
-// CHECK:   %[[PAIR_CONSTR_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_CONSTR]]#1, %[[TARGET_RIGHT]] : !smt.int
-// CHECK:   %[[PAIR_AND0:[0-9a-zA-Z_\.]+]] = smt.and %[[PAIR_COMP_EQ0]], %[[PAIR_COMP_EQ1]]
-// CHECK:   %[[PAIR_AND1:[0-9a-zA-Z_\.]+]] = smt.and %[[PAIR_AND0]], %[[PAIR_CONSTR_EQ0]]
-// CHECK:   %[[PAIR_AND2:[0-9a-zA-Z_\.]+]] = smt.and %[[PAIR_AND1]], %[[PAIR_CONSTR_EQ1]]
-// CHECK:   return %[[PAIR_AND2]] : !smt.bool
+// CHECK: func.func @smt_verif_CheckPair_entry(
+// CHECK:   %[[PAIR_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckPair_post
+// CHECK:   smt.push 1
+// CHECK:   %[[PAIR_NOT_POST:[0-9a-zA-Z_\.]+]] = smt.not %[[PAIR_POST]]
+// CHECK:   smt.assert %[[PAIR_NOT_POST]]
 // CHECK: }
 
 // -----
@@ -222,21 +199,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_observe_outer(%[[OUTER_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK: func.func @smt_verif_CheckOuter_entry(%[[INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK:   %[[OUTER_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckOuter_post(%[[INNER]], %[[FLAG]], %[[EXPECTED]]) : (!struct.type<@Inner>, !smt.int, !smt.int) -> !smt.bool
+// CHECK:   %[[OUTER_NOT_POST:[0-9a-zA-Z_\.]+]] = smt.not %[[OUTER_POST]]
+// CHECK:   smt.assert %[[OUTER_NOT_POST]]
 // CHECK:   return
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckOuter_pre(%[[OUTER_PRE_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_PRE_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_PRE_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[OUTER_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[OUTER_TRUE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckOuter_post(%[[OUTER_POST_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_POST_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_POST_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   %[[OUTER_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[OUTER_POST_FLAG]], %[[OUTER_POST_EXPECTED]] : !smt.int
-// CHECK:   return %[[OUTER_EQ]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_CheckOuter_target(%[[OUTER_TARGET_INNER:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner>, %[[OUTER_TARGET_FLAG:[0-9a-zA-Z_\.]+]]: !smt.int, %[[OUTER_TARGET_EXPECTED:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK:   call @smt_observe_outer(%[[OUTER_TARGET_INNER]], %[[OUTER_TARGET_FLAG]], %[[OUTER_TARGET_EXPECTED]]) : (!struct.type<@Inner>, !smt.int, !smt.int) -> ()
-// CHECK:   %[[OUTER_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[OUTER_TARGET_TRUE]] : !smt.bool
 // CHECK: }
 
 // -----
@@ -271,47 +238,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_leaf_gate(%[[LEAF_GATE_ARG:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK: func.func @smt_verif_MiddleGate_include_0(%[[MID_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_LeafGate_entry(%[[MID_GATE]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
-// CHECK: func.func @smt_middle_gate(%[[MID_GATE_ARG:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK: func.func @smt_verif_TopGate_include_0(%[[TOP_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_MiddleGate_entry(%[[TOP_GATE]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
-// CHECK: func.func @smt_verif_MiddleGate_target(%[[MID_TARGET_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   call @smt_middle_gate(%[[MID_TARGET_GATE]]) : (!smt.bool) -> ()
-// CHECK:   %[[MID_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[MID_TARGET_TRUE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_MiddleGate_includes(%[[MID_INCLUDE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// CHECK:   %[[MID_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafGate_pre(%[[MID_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[MID_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafGate_target(%[[MID_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[MID_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafGate_post(%[[MID_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[MID_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[MID_PRE]], %[[MID_TARGET]]
-// CHECK:   %[[MID_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[MID_ANT]], %[[MID_POST]]
-// CHECK:   smt.assert %[[MID_IMPL]]
-// CHECK:   return
-// CHECK: }
-// CHECK: func.func @smt_top_gate(%[[TOP_GATE_ARG:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// CHECK:   return
-// CHECK: }
-// CHECK: func.func @smt_verif_TopGate_pre(%[[TOP_PRE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   return %[[TOP_PRE_GATE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_TopGate_post(%[[TOP_POST_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   return %[[TOP_POST_GATE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_TopGate_target(%[[TOP_TARGET_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) -> !smt.bool {
-// CHECK:   call @smt_top_gate(%[[TOP_TARGET_GATE]]) : (!smt.bool) -> ()
-// CHECK:   %[[TOP_TARGET_TRUE:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK:   return %[[TOP_TARGET_TRUE]] : !smt.bool
-// CHECK: }
-// CHECK: func.func @smt_verif_TopGate_includes(%[[TOP_INCLUDE_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// CHECK:   %[[TOP_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_MiddleGate_pre(%[[TOP_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[TOP_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_MiddleGate_target(%[[TOP_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[TOP_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_MiddleGate_post(%[[TOP_INCLUDE_GATE]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[TOP_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[TOP_PRE]], %[[TOP_TARGET]]
-// CHECK:   %[[TOP_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[TOP_ANT]], %[[TOP_POST]]
-// CHECK:   smt.assert %[[TOP_IMPL]]
+// CHECK: func.func @smt_verif_TopGate_entry(%[[TOP_ENTRY_GATE:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_TopGate_include_0(%[[TOP_ENTRY_GATE]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
 
@@ -345,21 +281,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_multi_include_target(%[[MULTI_LHS:[0-9a-zA-Z_\.]+]]: !smt.bool, %[[MULTI_RHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK: func.func @smt_verif_MultiInclude_include_0(%[[LHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_FirstLeaf_entry(%[[LHS]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
-// CHECK: func.func @smt_verif_MultiInclude_includes(%[[MULTI_INCLUDE_LHS:[0-9a-zA-Z_\.]+]]: !smt.bool, %[[MULTI_INCLUDE_RHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// CHECK:   %[[FIRST_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_FirstLeaf_pre(%[[MULTI_INCLUDE_LHS]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[FIRST_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_FirstLeaf_target(%[[MULTI_INCLUDE_LHS]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[FIRST_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_FirstLeaf_post(%[[MULTI_INCLUDE_LHS]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[FIRST_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[FIRST_PRE]], %[[FIRST_TARGET]]
-// CHECK:   %[[FIRST_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[FIRST_ANT]], %[[FIRST_POST]]
-// CHECK:   smt.assert %[[FIRST_IMPL]]
-// CHECK:   %[[SECOND_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_SecondLeaf_pre(%[[MULTI_INCLUDE_RHS]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[SECOND_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_SecondLeaf_target(%[[MULTI_INCLUDE_RHS]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[SECOND_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_SecondLeaf_post(%[[MULTI_INCLUDE_RHS]]) : (!smt.bool) -> !smt.bool
-// CHECK:   %[[SECOND_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[SECOND_PRE]], %[[SECOND_TARGET]]
-// CHECK:   %[[SECOND_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[SECOND_ANT]], %[[SECOND_POST]]
-// CHECK:   smt.assert %[[SECOND_IMPL]]
+// CHECK: func.func @smt_verif_MultiInclude_include_1(%[[RHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_SecondLeaf_entry(%[[RHS]]) : (!smt.bool) -> ()
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_verif_MultiInclude_entry(%[[ENTRY_LHS:[0-9a-zA-Z_\.]+]]: !smt.bool, %[[ENTRY_RHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   call @smt_verif_MultiInclude_include_0(%[[ENTRY_LHS]]) : (!smt.bool) -> ()
+// CHECK:   call @smt_verif_MultiInclude_include_1(%[[ENTRY_RHS]]) : (!smt.bool) -> ()
 // CHECK:   return
 // CHECK: }
