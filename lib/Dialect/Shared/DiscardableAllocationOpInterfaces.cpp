@@ -7,14 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/DiscardableAllocationOpInterfaces.h"
+#include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.h"
 
 // Include the generated interface definitions.
-#include "llzk/Transforms/DiscardableAllocationOpInterfaces.cpp.inc"
+#include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.cpp.inc"
 
 namespace llzk {
 
-// Note: definition is placed here to avoid "vtable will be emitted in every translation unit"
+// Note: definition is placed here rather than the header to avoid the error:
+//       "vtable will be emitted in every translation unit"
 mlir::StringRef DiscardableAllocationResource::getName() { return "DiscardableAllocation"; }
 
 } // namespace llzk

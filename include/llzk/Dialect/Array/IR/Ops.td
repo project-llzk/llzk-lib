@@ -13,8 +13,8 @@
 include "llzk/Dialect/Array/IR/Dialect.td"
 include "llzk/Dialect/Array/IR/OpInterfaces.td"
 include "llzk/Dialect/Array/IR/Types.td"
+include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
-include "llzk/Transforms/DiscardableAllocationOpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"

@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/DiscardableAllocationOpInterfaces.h"
+#include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Analysis/DataLayoutAnalysis.h>

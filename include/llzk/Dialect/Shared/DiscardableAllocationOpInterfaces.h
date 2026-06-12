@@ -23,4 +23,4 @@ struct DiscardableAllocationResource
 } // namespace llzk
 
 // Include TableGen'd declarations
-#include "llzk/Transforms/DiscardableAllocationOpInterfaces.h.inc"
+#include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.h.inc"

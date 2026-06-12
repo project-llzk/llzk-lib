@@ -11,8 +11,8 @@
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
-#include "llzk/Transforms/DiscardableAllocationOpInterfaces.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Interfaces/InferTypeOpInterface.h>

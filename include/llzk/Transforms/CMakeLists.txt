@@ -1,10 +1,5 @@
 include_directories(${MLIR_INCLUDE_DIRS} ${LLZK_INCLUDE_DIR})
 
-set(LLVM_TARGET_DEFINITIONS "DiscardableAllocationOpInterfaces.td")
-mlir_tablegen(DiscardableAllocationOpInterfaces.h.inc --gen-op-interface-decls)
-mlir_tablegen(DiscardableAllocationOpInterfaces.cpp.inc --gen-op-interface-defs)
-
-
 set(LLVM_TARGET_DEFINITIONS "LLZKTransformationPasses.td")
 mlir_tablegen(LLZKTransformationPasses.h.inc -gen-pass-decls -name=Transformation)
 mlir_tablegen(LLZKTransformationPasses.capi.h.inc -gen-pass-capi-header --prefix LLZKTransformation)
