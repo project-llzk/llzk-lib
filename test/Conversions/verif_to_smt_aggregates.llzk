@@ -1,0 +1,186 @@
+// RUN: llzk-opt --llzk-verif-to-smt %s -split-input-file | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @id_array(%arg: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+    function.return %arg : !array.type<2 x !felt.type>
+  }
+
+  verif.contract @CheckArray for @id_array (
+      %arg: !array.type<2 x !felt.type>,
+      %ret: !array.type<2 x !felt.type>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_id_array(%[[ARG0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG1:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK:   return %[[ARG0]], %[[ARG1]] : !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckArray_target(%[[IN0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[IN1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[RET1:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[CALL:[0-9a-zA-Z_\.]+]]:2 = call @smt_id_array(%[[IN0]], %[[IN1]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[CALL]]#0, %[[RET0]] : !smt.int
+// CHECK:   %[[EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[CALL]]#1, %[[RET1]] : !smt.int
+// CHECK:   %[[AND:[0-9a-zA-Z_\.]+]] = smt.and %[[EQ0]], %[[EQ1]]
+// CHECK:   return %[[AND]] : !smt.bool
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayBox {
+    struct.member @left : !array.type<2 x !felt.type>
+    struct.member @right : !array.type<2 x !felt.type>
+
+    function.def @compute(
+        %left: !array.type<2 x !felt.type>, %right: !array.type<2 x !felt.type>
+    ) -> !struct.type<@ArrayBox> {
+      %self = struct.new : !struct.type<@ArrayBox>
+      struct.writem %self[@left] = %left : !struct.type<@ArrayBox>, !array.type<2 x !felt.type>
+      struct.writem %self[@right] = %right : !struct.type<@ArrayBox>, !array.type<2 x !felt.type>
+      function.return %self : !struct.type<@ArrayBox>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrayBox>,
+        %left: !array.type<2 x !felt.type>,
+        %right: !array.type<2 x !felt.type>
+    ) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckArrayBox for @ArrayBox (
+      %self: !struct.type<@ArrayBox>,
+      %left: !array.type<2 x !felt.type>,
+      %right: !array.type<2 x !felt.type>
+  ) {
+    %ok = arith.constant true
+    verif.require_compute %ok
+    verif.ensure_constrain %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_ArrayBox_compute(%[[L0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[L1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[R0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[R1:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int) {
+// CHECK:   return %[[L0]], %[[L1]], %[[R0]], %[[R1]] : !smt.int, !smt.int, !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckArrayBox_target(%[[SELF0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[SELF1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[SELF2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[SELF3:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARG3:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[COMP:[0-9a-zA-Z_\.]+]]:4 = call @smt_ArrayBox_compute(%[[ARG0]], %[[ARG1]], %[[ARG2]], %[[ARG3]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int)
+// CHECK:   %[[EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[COMP]]#0, %[[SELF0]] : !smt.int
+// CHECK:   %[[CONSTR:[0-9a-zA-Z_\.]+]]:4 = call @smt_ArrayBox_constrain(%[[SELF0]], %[[SELF1]], %[[SELF2]], %[[SELF3]], %[[ARG0]], %[[ARG1]], %[[ARG2]], %[[ARG3]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int)
+// CHECK:   %[[EQ7:[0-9a-zA-Z_\.]+]] = smt.eq %[[CONSTR]]#3, %[[SELF3]] : !smt.int
+// CHECK:   return %{{[0-9a-zA-Z_\.]+}} : !smt.bool
+// CHECK: }
+
+// -----
+
+!Pair = !pod.type<[@lhs: !felt.type, @rhs: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @id_pair(%pair: !Pair) -> !Pair {
+    function.return %pair : !Pair
+  }
+
+  verif.contract @CheckPairPod for @id_pair (%pair: !Pair, %ret: !Pair) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_id_pair(%[[PAIR0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR1:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK:   return %[[PAIR0]], %[[PAIR1]] : !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckPairPod_target(%[[PAIR_IN0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_IN1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_RET0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[PAIR_RET1:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[PAIR_CALL:[0-9a-zA-Z_\.]+]]:2 = call @smt_id_pair(%[[PAIR_IN0]], %[[PAIR_IN1]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[PAIR_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_CALL]]#0, %[[PAIR_RET0]] : !smt.int
+// CHECK:   %[[PAIR_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[PAIR_CALL]]#1, %[[PAIR_RET1]] : !smt.int
+// CHECK: }
+
+// -----
+
+!PodArray = !pod.type<[@vals: !array.type<2 x !felt.type>]>
+module attributes {llzk.lang} {
+  function.def @id_pod_array(%arg: !PodArray) -> !PodArray {
+    function.return %arg : !PodArray
+  }
+
+  verif.contract @CheckPodArray for @id_pod_array (%arg: !PodArray, %ret: !PodArray) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_id_pod_array(%[[POD_ARR0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POD_ARR1:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK:   return %[[POD_ARR0]], %[[POD_ARR1]] : !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckPodArray_target(%[[POD_IN0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POD_IN1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POD_RET0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[POD_RET1:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[POD_CALL:[0-9a-zA-Z_\.]+]]:2 = call @smt_id_pod_array(%[[POD_IN0]], %[[POD_IN1]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[POD_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[POD_CALL]]#0, %[[POD_RET0]] : !smt.int
+// CHECK:   %[[POD_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[POD_CALL]]#1, %[[POD_RET1]] : !smt.int
+// CHECK: }
+
+// -----
+
+!Entry = !pod.type<[@x: !felt.type]>
+!EntryArray = !array.type<2 x !Entry>
+module attributes {llzk.lang} {
+  function.def @id_array_of_pod(%arg: !EntryArray) -> !EntryArray {
+    function.return %arg : !EntryArray
+  }
+
+  verif.contract @CheckArrayOfPod for @id_array_of_pod (%arg: !EntryArray, %ret: !EntryArray) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_id_array_of_pod(%[[ARR_POD0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARR_POD1:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK:   return %[[ARR_POD0]], %[[ARR_POD1]] : !smt.int, !smt.int
+// CHECK: }
+// CHECK: func.func @smt_verif_CheckArrayOfPod_target(%[[ARR_IN0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARR_IN1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARR_RET0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[ARR_RET1:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:   %[[ARR_CALL:[0-9a-zA-Z_\.]+]]:2 = call @smt_id_array_of_pod(%[[ARR_IN0]], %[[ARR_IN1]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK:   %[[ARR_EQ0:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARR_CALL]]#0, %[[ARR_RET0]] : !smt.int
+// CHECK:   %[[ARR_EQ1:[0-9a-zA-Z_\.]+]] = smt.eq %[[ARR_CALL]]#1, %[[ARR_RET1]] : !smt.int
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @leaf_array(%arg: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+    function.return %arg : !array.type<2 x !felt.type>
+  }
+
+  function.def @wrap_array(%arg: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+    function.return %arg : !array.type<2 x !felt.type>
+  }
+
+  verif.contract @LeafArray for @leaf_array (
+      %arg: !array.type<2 x !felt.type>,
+      %ret: !array.type<2 x !felt.type>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+
+  verif.contract @WrapArray for @wrap_array (
+      %arg: !array.type<2 x !felt.type>,
+      %ret: !array.type<2 x !felt.type>
+  ) {
+    verif.include @LeafArray(%arg, %ret) : (!array.type<2 x !felt.type>, !array.type<2 x !felt.type>) -> ()
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_verif_WrapArray_includes(%[[WRAP0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[WRAP1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[WRAP_RET0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[WRAP_RET1:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK:   %[[PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafArray_pre(%[[WRAP0]], %[[WRAP1]], %[[WRAP_RET0]], %[[WRAP_RET1]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:   %[[TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafArray_target(%[[WRAP0]], %[[WRAP1]], %[[WRAP_RET0]], %[[WRAP_RET1]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:   %[[POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_LeafArray_post(%[[WRAP0]], %[[WRAP1]], %[[WRAP_RET0]], %[[WRAP_RET1]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:   %[[ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[PRE]], %[[TARGET]]
+// CHECK:   %[[IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[ANT]], %[[POST]]
+// CHECK:   smt.assert %[[IMPL]]
+// CHECK:   return
+// CHECK: }

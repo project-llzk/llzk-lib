@@ -12,6 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Pass/PassManager.h>
@@ -70,6 +72,19 @@ void registerTransformationPassPipelines() {
       [](OpPassManager &pm) {
     pm.addPass(llzk::createComputeConstrainToProductPass());
     pm.addPass(llzk::createFuseProductLoopsPass());
+  }
+  );
+
+  PassPipelineRegistration<>(
+      "llzk-verif-to-smt",
+      "Normalize array/pod aggregates and lower verif contracts to SMT helpers",
+      [](OpPassManager &pm) {
+    pm.addPass(llzk::array::createArrayToScalarPass());
+    pm.addPass(llzk::pod::createPodToScalarPass());
+    pm.addPass(llzk::array::createArrayToScalarPass());
+    pm.addPass(llzk::pod::createPodToScalarPass());
+    pm.addPass(createCanonicalizerPass());
+    pm.addPass(llzk::createVerifToSmtPass());
   }
   );
 }

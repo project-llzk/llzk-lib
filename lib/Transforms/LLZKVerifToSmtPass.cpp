@@ -8,15 +8,17 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the `-llzk-verif-to-smt` pass.
+/// This file implements the `-llzk-scalar-verif-to-smt` pass.
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Enums.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/SMT/IR/SMTTypes.h"
@@ -34,6 +36,7 @@
 #include <mlir/IR/SymbolTable.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 
 #include <memory>
@@ -79,6 +82,9 @@ struct LoweringContext {
   DenseMap<Operation *, ContractHelperNames> contractHelpers {};
 };
 
+static FailureOr<SmallVector<MemberDefOp>>
+getStructMembers(LoweringContext &state, StructType type, Operation *origin);
+
 static Type lowerType(MLIRContext *context, Type type) {
   if (isa<FeltType>(type)) {
     return llzk::smt::IntType::get(context);
@@ -88,6 +94,94 @@ static Type lowerType(MLIRContext *context, Type type) {
     return llzk::smt::BoolType::get(context);
   }
   return type;
+}
+
+static bool typeContainsUnsupportedAggregate(
+    LoweringContext &state, Type type, Operation *origin, llvm::DenseSet<Type> &visited
+) {
+  if (!visited.insert(type).second) {
+    return false;
+  }
+  if (isa<llzk::array::ArrayType, llzk::pod::PodType>(type)) {
+    return true;
+  }
+  if (auto structType = dyn_cast<StructType>(type)) {
+    auto members = getStructMembers(state, structType, origin);
+    if (failed(members)) {
+      return true;
+    }
+    for (MemberDefOp member : *members) {
+      if (typeContainsUnsupportedAggregate(state, member.getType(), origin, visited)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static bool typeContainsUnsupportedAggregate(LoweringContext &state, Type type, Operation *origin) {
+  llvm::DenseSet<Type> visited;
+  return typeContainsUnsupportedAggregate(state, type, origin, visited);
+}
+
+static LogicalResult ensureScalarTypeSupported(
+    LoweringContext &state, Type type, Operation *origin, StringRef description
+) {
+  if (!typeContainsUnsupportedAggregate(state, type, origin)) {
+    return success();
+  }
+  origin->emitError() << "llzk-scalar-verif-to-smt requires array/pod-free IR for " << description
+                      << "; run -llzk-verif-to-smt instead";
+  return failure();
+}
+
+static LogicalResult ensureScalarSignatureSupported(
+    LoweringContext &state, FunctionType type, Operation *origin, StringRef description
+) {
+  for (Type input : type.getInputs()) {
+    if (failed(ensureScalarTypeSupported(state, input, origin, description))) {
+      return failure();
+    }
+  }
+  for (Type result : type.getResults()) {
+    if (failed(ensureScalarTypeSupported(state, result, origin, description))) {
+      return failure();
+    }
+  }
+  return success();
+}
+
+static LogicalResult ensureScalarContractSupported(LoweringContext &state, ContractOp contract) {
+  if (failed(ensureScalarSignatureSupported(
+          state, contract.getFunctionType(), contract, "contract signature"
+      ))) {
+    return failure();
+  }
+
+  if (contract.hasStructTarget()) {
+    auto structTarget = contract.getStructTarget(state.tables);
+    if (failed(structTarget)) {
+      return failure();
+    }
+    for (MemberDefOp member : structTarget->get().getMemberDefs()) {
+      if (failed(ensureScalarTypeSupported(
+              state, member.getType(), contract, "struct target member types"
+          ))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  auto targetFunc = llzk::lookupSymbolIn<FuncDefOp>(
+      state.tables, contract.getTarget(), llzk::Within(contract->getParentOp()), contract, true
+  );
+  if (failed(targetFunc)) {
+    return failure();
+  }
+  return ensureScalarSignatureSupported(
+      state, targetFunc->get().getFunctionType(), contract, "target function signature"
+  );
 }
 
 static FailureOr<StructDefOp>
@@ -778,6 +872,10 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
     module.walk([&](ContractOp contract) { contracts.push_back(contract); });
 
     for (ContractOp contract : contracts) {
+      if (failed(ensureScalarContractSupported(state, contract))) {
+        signalPassFailure();
+        return;
+      }
       if (contract.hasStructTarget()) {
         auto structTarget = contract.getStructTarget(state.tables);
         if (failed(structTarget) ||

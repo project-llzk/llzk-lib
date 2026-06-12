@@ -1,0 +1,16 @@
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s -verify-diagnostics
+
+module attributes {llzk.lang} {
+  function.def @id_array(%arg: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+    function.return %arg : !array.type<2 x !felt.type>
+  }
+
+  // expected-error@+1 {{llzk-scalar-verif-to-smt requires array/pod-free IR for contract signature; run -llzk-verif-to-smt instead}}
+  verif.contract @CheckArray for @id_array (
+      %arg: !array.type<2 x !felt.type>,
+      %ret: !array.type<2 x !felt.type>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}

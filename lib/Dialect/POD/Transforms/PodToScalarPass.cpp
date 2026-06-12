@@ -76,6 +76,8 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Dialect.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
@@ -102,6 +104,7 @@ using namespace llzk;
 using namespace llzk::pod;
 using namespace llzk::function;
 using namespace llzk::component;
+using namespace llzk::verif;
 
 #define DEBUG_TYPE "llzk-pod-to-scalar"
 
@@ -273,14 +276,34 @@ static void processInputOperands(
   });
 }
 
+/// Rebuild a `verif.include` while preserving explicit instantiation state from `oldInclude`.
+inline static IncludeOp createIncludePreservingInstantiationOperands(
+    Location loc, IncludeOp oldInclude, ArrayRef<ValueRange> mapOperands, ValueRange argOperands,
+    ConversionPatternRewriter &rewriter
+) {
+  SmallVector<Attribute> templateParams;
+  if (ArrayAttr templateParamsAttr = oldInclude.getTemplateParamsAttr()) {
+    templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
+  }
+
+  if (oldInclude.getMapOperands().empty()) {
+    return rewriter.create<IncludeOp>(loc, oldInclude.getCalleeAttr(), argOperands, templateParams);
+  }
+
+  return rewriter.create<IncludeOp>(
+      loc, oldInclude.getCalleeAttr(), mapOperands, oldInclude.getNumDimsPerMapAttr(), argOperands,
+      templateParams
+  );
+}
+
 /// Register the dialects and operations that remain legal across the conversion-based stages.
 inline static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
-      polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, verif::VerifDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
 }
 
@@ -530,6 +553,109 @@ public:
   }
 };
 
+/// Rewrite pod-typed contract signatures to pass one scalar per POD record instead.
+class SplitPodInContractOp : public OpConversionPattern<ContractOp> {
+public:
+  using OpConversionPattern<ContractOp>::OpConversionPattern;
+
+  inline static bool legal(ContractOp op) {
+    return !containsSplittablePodType(op.getArgumentTypes()) &&
+           !containsSplittablePodType(op.getResultTypes());
+  }
+
+  LogicalResult match(ContractOp op) const override { return failure(legal(op)); }
+
+  void rewrite(ContractOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    class Impl {
+      ContractOp op;
+      SmallVector<size_t> originalInputIdxToSize;
+      SplitFunctionNameInfo inputNameInfo;
+
+      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) {
+        return splitPodType(origTypes, &originalInputIdxToSize);
+      }
+
+      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) {
+        return replicateFunctionNameAttrsAsNeeded(
+            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
+            inputNameInfo.originalNames, inputNameInfo.existingNames,
+            inputNameInfo.splitNameSuffixes
+        );
+      }
+
+      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) {
+        OpBuilder::InsertionGuard guard(rewriter);
+        rewriter.setInsertionPointToStart(&entryBlock);
+
+        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+          Value oldV = entryBlock.getArgument(i);
+          if (PodType pt = splittablePod(oldV.getType())) {
+            Location loc = oldV.getLoc();
+            auto newPod = rewriter.create<NewPodOp>(loc, pt);
+            rewriter.replaceAllUsesWith(oldV, newPod);
+            entryBlock.eraseArgument(i);
+            for (RecordAttr record : pt.getRecords()) {
+              BlockArgument newArg = entryBlock.insertArgument(i, record.getType(), loc);
+              genWrite(loc, newPod, record.getName(), newArg, rewriter);
+              ++i;
+            }
+          } else {
+            ++i;
+          }
+        }
+      }
+
+    public:
+      explicit Impl(ContractOp op) : op(op) {
+        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+          return op.getArgNameAttr(i);
+        }, getSplitRecordNameSuffixes);
+      }
+
+      void convert(ConversionPatternRewriter &rewriter) {
+        FunctionType oldTy = op.getFunctionType();
+        SmallVector<Type> newInputs = convertInputs(oldTy.getInputs());
+        SmallVector<Type> newResults = splitPodType(oldTy.getResults());
+        FunctionType newTy =
+            FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newResults));
+        if (newTy == oldTy) {
+          return;
+        }
+
+        assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
+        rewriter.modifyOpInPlace(op, [&]() {
+          op.setFunctionType(newTy);
+          if (ArrayAttr newArgAttrs = convertInputAttrs(op.getArgAttrsAttr(), newInputs)) {
+            op.setArgAttrsAttr(newArgAttrs);
+          }
+        });
+        assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
+
+        Region *body = op.getCallableRegion();
+        if (!body || body->empty()) {
+          return;
+        }
+        Block &entryBlock = body->front();
+        bool blockArgsNeedUpdate =
+            !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()) ||
+            llvm::any_of(llvm::zip_equal(entryBlock.getArgumentTypes(), newInputs), [](auto pair) {
+          return std::get<0>(pair) != std::get<1>(pair);
+        });
+        if (!blockArgsNeedUpdate) {
+          return;
+        }
+        processBlockArgs(entryBlock, rewriter);
+        assert(std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()));
+        for (unsigned i = 0, e = entryBlock.getNumArguments(); i < e; ++i) {
+          assert(entryBlock.getArgument(i).getType() == newInputs[i]);
+        }
+      }
+    };
+
+    Impl(op).convert(rewriter);
+  }
+};
+
 /// Rewrite `function.return` to flatten any POD operands into their scalar record values.
 ///
 /// This mirrors the function-signature conversion performed by `SplitPodInFuncDefOp`: POD results
@@ -607,9 +733,35 @@ public:
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
+    rewriter.setInsertionPoint(newCall);
     processInputOperands(
         newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter
     );
+  }
+};
+
+/// Rewrite included-contract calls whose arguments contain PODs to use flattened scalar
+/// signatures.
+class SplitPodInIncludeOp : public OpConversionPattern<IncludeOp> {
+public:
+  using OpConversionPattern<IncludeOp>::OpConversionPattern;
+
+  inline static bool legal(IncludeOp op) {
+    return !containsSplittablePodType(op.getArgOperands().getTypes());
+  }
+
+  LogicalResult match(IncludeOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(IncludeOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    IncludeOp newInclude = createIncludePreservingInstantiationOperands(
+        op.getLoc(), op, adaptor.getMapOperands(), adaptor.getArgOperands(), rewriter
+    );
+    rewriter.setInsertionPoint(newInclude);
+    processInputOperands(
+        newInclude.getArgOperands(), newInclude.getArgOperandsMutable(), newInclude, rewriter
+    );
+    rewriter.eraseOp(op);
   }
 };
 
@@ -730,8 +882,10 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       // clang-format off
       SplitInitFromNewPodOp,
       SplitPodInFuncDefOp,
+      SplitPodInContractOp,
       SplitPodInReturnOp,
-      SplitPodInCallOp
+      SplitPodInCallOp,
+      SplitPodInIncludeOp
       // clang-format on
       >(ctx);
 
@@ -746,8 +900,10 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   baseTargetSetup(target);
   target.addDynamicallyLegalOp<NewPodOp>(SplitInitFromNewPodOp::legal);
   target.addDynamicallyLegalOp<FuncDefOp>(SplitPodInFuncDefOp::legal);
+  target.addDynamicallyLegalOp<ContractOp>(SplitPodInContractOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitPodInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
+  target.addDynamicallyLegalOp<IncludeOp>(SplitPodInIncludeOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
 

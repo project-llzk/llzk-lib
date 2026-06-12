@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-verif-to-smt %s -split-input-file | FileCheck --enable-var-scope %s
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s -split-input-file | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   struct.def @Box {
@@ -312,5 +312,54 @@ module attributes {llzk.lang} {
 // CHECK:   %[[TOP_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[TOP_PRE]], %[[TOP_TARGET]]
 // CHECK:   %[[TOP_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[TOP_ANT]], %[[TOP_POST]]
 // CHECK:   smt.assert %[[TOP_IMPL]]
+// CHECK:   return
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @first_leaf(%lhs: i1) {
+    function.return
+  }
+
+  function.def @second_leaf(%rhs: i1) {
+    function.return
+  }
+
+  function.def @multi_include_target(%lhs: i1, %rhs: i1) {
+    function.return
+  }
+
+  verif.contract @FirstLeaf for @first_leaf (%lhs: i1) {
+    verif.require_compute %lhs
+  }
+
+  verif.contract @SecondLeaf for @second_leaf (%rhs: i1) {
+    verif.ensure_compute %rhs
+  }
+
+  verif.contract @MultiInclude for @multi_include_target (%lhs: i1, %rhs: i1) {
+    verif.include @FirstLeaf(%lhs) : (i1) -> ()
+    verif.include @SecondLeaf(%rhs) : (i1) -> ()
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_multi_include_target(%[[MULTI_LHS:[0-9a-zA-Z_\.]+]]: !smt.bool, %[[MULTI_RHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   return
+// CHECK: }
+// CHECK: func.func @smt_verif_MultiInclude_includes(%[[MULTI_INCLUDE_LHS:[0-9a-zA-Z_\.]+]]: !smt.bool, %[[MULTI_INCLUDE_RHS:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// CHECK:   %[[FIRST_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_FirstLeaf_pre(%[[MULTI_INCLUDE_LHS]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[FIRST_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_FirstLeaf_target(%[[MULTI_INCLUDE_LHS]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[FIRST_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_FirstLeaf_post(%[[MULTI_INCLUDE_LHS]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[FIRST_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[FIRST_PRE]], %[[FIRST_TARGET]]
+// CHECK:   %[[FIRST_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[FIRST_ANT]], %[[FIRST_POST]]
+// CHECK:   smt.assert %[[FIRST_IMPL]]
+// CHECK:   %[[SECOND_PRE:[0-9a-zA-Z_\.]+]] = call @smt_verif_SecondLeaf_pre(%[[MULTI_INCLUDE_RHS]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[SECOND_TARGET:[0-9a-zA-Z_\.]+]] = call @smt_verif_SecondLeaf_target(%[[MULTI_INCLUDE_RHS]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[SECOND_POST:[0-9a-zA-Z_\.]+]] = call @smt_verif_SecondLeaf_post(%[[MULTI_INCLUDE_RHS]]) : (!smt.bool) -> !smt.bool
+// CHECK:   %[[SECOND_ANT:[0-9a-zA-Z_\.]+]] = smt.and %[[SECOND_PRE]], %[[SECOND_TARGET]]
+// CHECK:   %[[SECOND_IMPL:[0-9a-zA-Z_\.]+]] = smt.implies %[[SECOND_ANT]], %[[SECOND_POST]]
+// CHECK:   smt.assert %[[SECOND_IMPL]]
 // CHECK:   return
 // CHECK: }
