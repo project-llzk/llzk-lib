@@ -25,6 +25,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -2522,7 +2523,12 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     if (failed(runPipeline(universalCleanup, modOp))) {
       return failure();
     }
-    return success();
+
+    OpPassManager allocationCleanup(ModuleOp::getOperationName());
+    allocationCleanup.addPass(
+        createRemoveUnusedDiscardableAllocationsPass(CreateArrayOp::getOperationName())
+    );
+    return runPipeline(allocationCleanup, modOp);
   }
 
   // Perform cleanup according to the 'cleanupMode' option.

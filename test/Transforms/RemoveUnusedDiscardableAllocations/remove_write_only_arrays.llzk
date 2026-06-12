@@ -1,0 +1,94 @@
+// RUN: llzk-opt -split-input-file -llzk-remove-unused-discardable-allocations="allocator-op=array.new" %s | FileCheck --enable-var-scope %s
+// RUN: not llzk-opt -split-input-file -llzk-remove-unused-discardable-allocations="allocator-op=arith.constant" %s 2>&1 | FileCheck --check-prefix=ERR %s
+
+module attributes {llzk.lang} {
+  function.def @unused_array() -> index {
+    %ret = arith.constant 42 : index
+    %value = arith.constant 7 : index
+    %array = array.new %value : !array.type<1 x index>
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @unused_array() -> index {
+// CHECK-NOT:     array.new
+// CHECK-NOT:     arith.constant 7
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index
+// ERR: 'arith.constant' op selected for discardable-allocation cleanup but is not marked with MemAlloc<DiscardableAllocationResource>
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write_only_array(%value: index) -> index {
+    %i = arith.constant 0 : index
+    %ret = arith.constant 42 : index
+    %array = array.new : !array.type<1 x index>
+    array.write %array[%i] = %value : !array.type<1 x index>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @write_only_array(
+// CHECK-NOT:     array.new
+// CHECK-NOT:     array.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write_only_multi_element_array(%value: index) -> index {
+    %i = arith.constant 0 : index
+    %j = arith.constant 1 : index
+    %ret = arith.constant 42 : index
+    %array = array.new : !array.type<2 x index>
+    array.write %array[%i] = %value : !array.type<2 x index>, index
+    array.write %array[%j] = %value : !array.type<2 x index>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @write_only_multi_element_array(
+// CHECK-NOT:     array.new
+// CHECK-NOT:     array.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @read_keeps_allocation(%value: index) -> index {
+    %i = arith.constant 0 : index
+    %array = array.new : !array.type<1 x index>
+    array.write %array[%i] = %value : !array.type<1 x index>, index
+    %loaded = array.read %array[%i] : !array.type<1 x index>, index
+    function.return %loaded : index
+  }
+}
+
+// CHECK-LABEL: function.def @read_keeps_allocation(
+// CHECK:         %[[ARRAY:[0-9a-zA-Z_\.]+]] = array.new
+// CHECK:         array.write %[[ARRAY]]
+// CHECK:         %[[LOADED:[0-9a-zA-Z_\.]+]] = array.read %[[ARRAY]]
+// CHECK:         function.return %[[LOADED]] : index
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @dead_store_operands_are_erased(%lhs: index, %rhs: index) -> index {
+    %i = arith.constant 0 : index
+    %ret = arith.constant 42 : index
+    %value = arith.addi %lhs, %rhs : index
+    %array = array.new : !array.type<1 x index>
+    array.write %array[%i] = %value : !array.type<1 x index>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @dead_store_operands_are_erased(
+// CHECK-NOT:     arith.addi
+// CHECK-NOT:     array.new
+// CHECK-NOT:     array.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index

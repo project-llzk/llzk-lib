@@ -12,6 +12,8 @@
 #include "llzk/Config/Config.h"
 #include "llzk/Pass/PassBase.h"
 
+#include <llvm/ADT/StringRef.h>
+
 namespace llzk {
 
 void addRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm);
