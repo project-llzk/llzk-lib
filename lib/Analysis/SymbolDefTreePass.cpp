@@ -20,9 +20,9 @@ namespace llzk {
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 } // namespace llzk
 
-using namespace llzk;
-
 namespace {
+
+using namespace llzk;
 
 class PassImpl : public llzk::impl::SymbolDefTreePrinterPassBase<PassImpl> {
   using Base = SymbolDefTreePrinterPassBase<PassImpl>;

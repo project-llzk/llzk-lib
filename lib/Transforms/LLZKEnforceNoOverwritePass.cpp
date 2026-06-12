@@ -31,21 +31,16 @@ namespace llzk {
 
 #define DEBUG_TYPE "llzk-enforce-no-overwrites-pass"
 
-using std::make_unique;
+namespace {
 
-using namespace mlir;
-
-namespace llzk {
-
-using namespace function;
-using namespace component;
+using namespace llzk;
 
 class PassImpl : public llzk::impl::EnforceNoMemberOverwritePassBase<PassImpl> {
   using Base = EnforceNoMemberOverwritePassBase<PassImpl>;
   using Base::Base;
 
   void runOnOperation() override {
-    getOperation()->walk([this](StructDefOp structDef) {
+    getOperation()->walk([this](component::StructDefOp structDef) {
       auto result = analyzeStruct(structDef);
       if (failed(result)) {
         signalPassFailure();
@@ -65,4 +60,4 @@ class PassImpl : public llzk::impl::EnforceNoMemberOverwritePassBase<PassImpl> {
   }
 };
 
-} // namespace llzk
+} // namespace
