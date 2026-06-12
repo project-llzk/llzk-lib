@@ -1,0 +1,57 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      scf.while : () -> () {
+        %true = arith.constant  true 
+        scf.condition(%true)
+      } do {
+        scf.yield
+      } 
+
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    // expected-error@+1 {{'verif.invariant' op no invariant target with label "loopA" found in contract target "Top"}}
+    verif.invariant for @loopA() {
+      %true = arith.constant  true
+      verif.require_compute %true
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      scf.while : () -> () {
+        %true = arith.constant  true 
+        scf.condition(%true)
+      } do {
+        scf.yield
+      } attributes {loop_label = "loopB"}
+
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    // expected-error@+1 {{'verif.invariant' op no invariant target with label "loopA" found in contract target "Top"}}
+    verif.invariant for @loopA() {
+      %true = arith.constant  true
+      verif.require_compute %true
+    }
+  }
+}
