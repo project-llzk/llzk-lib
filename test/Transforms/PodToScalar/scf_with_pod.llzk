@@ -1,0 +1,488 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"bn128">
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp>} {
+  struct.def @Nop {
+    function.def @compute(%arg0: !F) -> !struct.type<@Nop> {
+      %self = struct.new : !struct.type<@Nop>
+      function.return %self : !struct.type<@Nop>
+    }
+    function.def @constrain(%arg0: !struct.type<@Nop>, %arg1: !F) {
+      function.return
+    }
+  }
+
+  struct.def @SubCmp {
+    struct.member @n : !struct.type<@Nop>
+    struct.member @n$inputs : !pod.type<[@i: !F]>
+
+    function.def @compute(%arg0: !F) -> !struct.type<@SubCmp> {
+      %self = struct.new : !struct.type<@SubCmp>
+      %pod_1 = pod.new : !pod.type<[@i: !F]>
+      pod.write %pod_1[@i] = %arg0 : !pod.type<[@i: !F]>, !F
+      %c1 = arith.constant 1 : index
+      %pod_2 = pod.new { @count = %c1 }  : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>
+      %0 = pod.read %pod_2[@count] : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, index
+      %1 = arith.subi %0, %c1 : index
+      pod.write %pod_2[@count] = %1 : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, index
+      %c0 = arith.constant 0 : index
+      %2 = arith.cmpi eq, %1, %c0 : index
+      scf.if %2 {
+        %3 = pod.read %pod_1[@i] : !pod.type<[@i: !F]>, !F
+        %4 = function.call @Nop::@compute(%3) : (!F) -> !struct.type<@Nop>
+        pod.write %pod_2[@comp] = %4 : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, !struct.type<@Nop>
+      }
+      struct.writem %self[@n$inputs] = %pod_1 : !struct.type<@SubCmp>, !pod.type<[@i: !F]>
+      %5 = pod.read %pod_2[@comp] : !pod.type<[@count: index, @comp: !struct.type<@Nop>]>, !struct.type<@Nop>
+      struct.writem %self[@n] = %5 : !struct.type<@SubCmp>, !struct.type<@Nop>
+      function.return %self : !struct.type<@SubCmp>
+    }
+    function.def @constrain(%arg0: !struct.type<@SubCmp>, %arg1: !F) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp>} {
+// CHECK-NEXT:    struct.def @Nop {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Nop> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Nop>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Nop>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Nop>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @SubCmp {
+// CHECK-NEXT:      struct.member @n : !struct.type<@Nop>
+// CHECK-NEXT:      struct.member @n$inputs_i : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@SubCmp> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@Nop>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@SubCmp>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_7]], %[[VAL_7]] : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_8]], %[[VAL_9]] : index
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_10]] -> (!struct.type<@Nop>) {
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Nop::@compute(%[[VAL_4]]) : (!felt.type<"bn128">) -> !struct.type<@Nop>
+// CHECK-NEXT:          scf.yield %[[VAL_12]] : !struct.type<@Nop>
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : !struct.type<@Nop>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@n$inputs_i] = %[[VAL_4]] : <@SubCmp>, !felt.type<"bn128">
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@n] = %[[VAL_11]] : <@SubCmp>, !struct.type<@Nop>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@SubCmp>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@SubCmp>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @nested_if_local_pods(%a: index, %b: index) -> index {
+    %c0 = arith.constant 0 : index
+    %cond0 = arith.cmpi sgt, %a, %c0 : index
+    %ret = scf.if %cond0 -> (index) {
+      %cond1 = arith.cmpi sgt, %b, %c0 : index
+      %inner = scf.if %cond1 -> (index) {
+        %p0 = pod.new : !pod.type<[@m: index]>
+        pod.write %p0[@m] = %a : !pod.type<[@m: index]>, index
+        %r0 = pod.read %p0[@m] : !pod.type<[@m: index]>, index
+        %next0 = arith.addi %r0, %b : index
+        scf.yield %next0 : index
+      } else {
+        %p1 = pod.new : !pod.type<[@m: index]>
+        pod.write %p1[@m] = %a : !pod.type<[@m: index]>, index
+        %r1 = pod.read %p1[@m] : !pod.type<[@m: index]>, index
+        %next1 = arith.subi %r1, %b : index
+        scf.yield %next1 : index
+      }
+      scf.yield %inner : index
+    } else {
+      %p2 = pod.new : !pod.type<[@m: index]>
+      pod.write %p2[@m] = %b : !pod.type<[@m: index]>, index
+      %r2 = pod.read %p2[@m] : !pod.type<[@m: index]>, index
+      scf.yield %r2 : index
+    }
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_if_local_pods(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_3]] -> (index) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_1]], %[[VAL_2]] : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_5]] -> (index) {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_7]] : index
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_7]] : index
+// CHECK-NEXT:        }
+// CHECK-NEXT:        scf.yield %[[VAL_6]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @nested_if_external_new(%a: index, %b: index) -> index {
+    %pod = pod.new : !pod.type<[@value: index]>
+    %c0 = arith.constant 0 : index
+    %cond0 = arith.cmpi sgt, %a, %c0 : index
+    scf.if %cond0 {
+      %cond1 = arith.cmpi sgt, %b, %c0 : index
+      scf.if %cond1 {
+        %read0 = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+        %next0 = arith.addi %read0, %a : index
+        pod.write %pod[@value] = %next0 : !pod.type<[@value: index]>, index
+      } else {
+        %read1 = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+        %next1 = arith.addi %read1, %b : index
+        pod.write %pod[@value] = %next1 : !pod.type<[@value: index]>, index
+      }
+    } else {
+      %read2 = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+      %next2 = arith.subi %read2, %b : index
+      pod.write %pod[@value] = %next2 : !pod.type<[@value: index]>, index
+    }
+    %ret = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_if_external_new(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_3]] : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_4]] -> (index) {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_1]], %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_6]] -> (index) {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_0]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_8]] : index
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_9]] : index
+// CHECK-NEXT:        }
+// CHECK-NEXT:        scf.yield %[[VAL_7]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_6]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @if_result_and_external_write(%a: index, %b: index) -> index {
+    %pod = pod.new : !pod.type<[@value: index]>
+    pod.write %pod[@value] = %b : !pod.type<[@value: index]>, index
+    %c0 = arith.constant 0 : index
+    %cond = arith.cmpi sgt, %a, %c0 : index
+    %res = scf.if %cond -> (index) {
+      %next0 = arith.addi %a, %b : index
+      pod.write %pod[@value] = %next0 : !pod.type<[@value: index]>, index
+      scf.yield %next0 : index
+    } else {
+      %next1 = arith.subi %a, %b : index
+      pod.write %pod[@value] = %next1 : !pod.type<[@value: index]>, index
+      scf.yield %next1 : index
+    }
+    %final = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+    %sum = arith.addi %res, %final : index
+    function.return %sum : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @if_result_and_external_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]]:2 = scf.if %[[VAL_3]] -> (index, index) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_5]], %[[VAL_5]] : index, index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_6]], %[[VAL_6]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]]#0, %[[VAL_4]]#1 : index
+// CHECK-NEXT:      function.return %[[VAL_7]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @nested_if_external_new_and_write(%a: index, %b: index) -> index {
+    %pod = pod.new : !pod.type<[@value: index]>
+    pod.write %pod[@value] = %a : !pod.type<[@value: index]>, index
+    %c0 = arith.constant 0 : index
+    %cond0 = arith.cmpi sgt, %a, %c0 : index
+    scf.if %cond0 {
+      %cond1 = arith.cmpi sgt, %b, %c0 : index
+      scf.if %cond1 {
+        %read0 = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+        %next0 = arith.addi %read0, %b : index
+        pod.write %pod[@value] = %next0 : !pod.type<[@value: index]>, index
+      } else {
+        %read1 = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+        %next1 = arith.subi %read1, %b : index
+        pod.write %pod[@value] = %next1 : !pod.type<[@value: index]>, index
+      }
+    } else {
+      %read2 = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+      %next2 = arith.addi %read2, %a : index
+      pod.write %pod[@value] = %next2 : !pod.type<[@value: index]>, index
+    }
+    %ret = pod.read %pod[@value] : !pod.type<[@value: index]>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_if_external_new_and_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_3]] -> (index) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_1]], %[[VAL_2]] : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_5]] -> (index) {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_7]] : index
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_0]], %[[VAL_1]] : index
+// CHECK-NEXT:          scf.yield %[[VAL_8]] : index
+// CHECK-NEXT:        }
+// CHECK-NEXT:        scf.yield %[[VAL_6]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_0]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_5]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @while_local_pod(%start: index, %count: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %res:2 = scf.while (%i = %count, %acc = %start) : (index, index) -> (index, index) {
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %i, %acc : index, index
+    } do {
+    ^bb0(%i2: index, %acc2: index):
+      %p = pod.new : !pod.type<[@tmp: index]>
+      pod.write %p[@tmp] = %acc2 : !pod.type<[@tmp: index]>, index
+      %read = pod.read %p[@tmp] : !pod.type<[@tmp: index]>, index
+      %nextAcc = arith.addi %read, %i2 : index
+      %nextI = arith.subi %i2, %c1 : index
+      scf.yield %nextI, %nextAcc : index, index
+    }
+    function.return %res#1 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @while_local_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_1]], %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) : (index, index) -> (index, index) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_5]], %[[VAL_2]] : index
+// CHECK-NEXT:        scf.condition(%[[VAL_7]]) %[[VAL_5]], %[[VAL_6]] : index, index
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_5]] : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_5]], %[[VAL_3]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_8]], %[[VAL_7]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_4]]#1 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @for_local_pod(%start: index) -> index {
+    %lb = arith.constant 0 : index
+    %ub = arith.constant 4 : index
+    %step = arith.constant 1 : index
+    %sum = scf.for %iv = %lb to %ub step %step
+        iter_args(%acc = %start) -> (index) {
+      %p = pod.new : !pod.type<[@tmp: index]>
+      pod.write %p[@tmp] = %acc : !pod.type<[@tmp: index]>, index
+      %read = pod.read %p[@tmp] : !pod.type<[@tmp: index]>, index
+      %next = arith.addi %read, %iv : index
+      scf.yield %next : index
+    }
+    function.return %sum : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @for_local_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_1]] to %[[VAL_2]] step %[[VAL_3]] iter_args(%[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) -> (index) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_5]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_7]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Inner = !pod.type<[@m: index, @n: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+module attributes {llzk.lang} {
+  function.def @if_write_then_whole_pod_consume(%a: index, %b: index) -> index {
+    %c0 = arith.constant 0 : index
+    %p = pod.new { @m = %c0, @n = %b } : !Inner
+    %outer = pod.new : !Outer
+
+    %cond = arith.cmpi sgt, %a, %c0 : index
+    scf.if %cond {
+      pod.write %p[@m] = %a : !Inner, index
+      pod.write %outer[@inner] = %p : !Outer, !Inner
+    } else {
+      pod.write %p[@m] = %b : !Inner, index
+      pod.write %outer[@inner] = %p : !Outer, !Inner
+    }
+
+    %inner = pod.read %outer[@inner] : !Outer, !Inner
+    %ret = pod.read %inner[@m] : !Inner, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @if_write_then_whole_pod_consume(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_0]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_3]] -> (index) {
+// CHECK-NEXT:        scf.yield %[[VAL_0]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!counter_pod = !pod.type<[@acc: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @stateful_pod_accumulator(%init: !felt.type, %step: !felt.type) -> !felt.type {
+    %state = pod.new { @acc = %init } : !counter_pod
+
+    %lb = arith.constant 0 : index
+    %ub = arith.constant 8 : index
+    %one = arith.constant 1 : index
+
+    scf.for %i = %lb to %ub step %one {
+      %old_acc = pod.read %state[@acc] : !counter_pod, !felt.type
+      %new_acc = felt.add %old_acc, %step : !felt.type
+      pod.write %state[@acc] = %new_acc : !counter_pod, !felt.type
+    }
+
+    %result = pod.read %state[@acc] : !counter_pod, !felt.type
+    function.return %result : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @stateful_pod_accumulator(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] iter_args(%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) -> (!felt.type) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_7]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!loop_state = !pod.type<[
+  @i: !felt.type, // current loop index, as felt
+  @sum: !felt.type, // running sum
+  @values: !array.type<8 x !felt.type> // array updated on each iteration
+]>
+module attributes {llzk.lang} {
+  function.def @stateful_pod_array_while(
+    %lo: !felt.type,
+    %hi: !felt.type,
+    %step: !felt.type
+  ) -> !felt.type attributes {function.allow_non_native_field_ops} {
+    %state = pod.new : !loop_state
+    %zero_felt = felt.const 0
+    %zero_index = arith.constant 0 : index
+    %initial_values = array.new : !array.type<8 x !felt.type>
+
+    // Initialize POD records before any reads.
+    pod.write %state[@i] = %lo : !loop_state, !felt.type
+    pod.write %state[@sum] = %zero_felt : !loop_state, !felt.type
+    pod.write %state[@values] = %initial_values : !loop_state, !array.type<8 x !felt.type>
+
+    %final_i = scf.while (%loop_i = %lo) : (!felt.type) -> !felt.type {
+      // Read the current loop index from the POD.
+      %cur_i = pod.read %state[@i] : !loop_state, !felt.type
+
+      // Continue while cur_i < hi.
+      %cond = bool.cmp lt(%cur_i, %hi)
+      scf.condition(%cond) %cur_i : !felt.type
+    } do {
+    ^bb0(%body_i: !felt.type):
+      // Read current scalar state.
+      %cur_sum = pod.read %state[@sum] : !loop_state, !felt.type
+
+      // Read the array record from the POD.
+      %cur_values = pod.read %state[@values] : !loop_state, !array.type<8 x !felt.type>
+
+      // Convert the loop index to an array index and store a value.
+      %idx = cast.toindex %body_i
+      %next_sum = felt.add %cur_sum, %body_i : !felt.type
+      array.write %cur_values[%idx] = %next_sum : !array.type<8 x !felt.type>, !felt.type
+
+      // Write the updated array back into the POD.
+      pod.write %state[@values] = %cur_values : !loop_state, !array.type<8 x !felt.type>
+
+      // Update scalar POD records.
+      %next_i = felt.add %body_i, %step : !felt.type
+      pod.write %state[@sum] = %next_sum : !loop_state, !felt.type
+      pod.write %state[@i] = %next_i : !loop_state, !felt.type
+
+      // Yield the next control value.
+      scf.yield %next_i : !felt.type
+    }
+
+    // Read final state after the loop.
+    %final_sum = pod.read %state[@sum] : !loop_state, !felt.type
+    %final_values = pod.read %state[@values] : !loop_state, !array.type<8 x !felt.type>
+
+    // Return one value from the final array just to make the array update observable.
+    %first = array.read %final_values[%zero_index] : !array.type<8 x !felt.type>, !felt.type
+
+    %result = felt.add %final_sum, %first : !felt.type
+    function.return %result : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @stateful_pod_array_while(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]]:3 = scf.while (%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_0]], %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_3]], %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_5]]) : (!felt.type, !felt.type, !array.type<8 x !felt.type>) -> (!felt.type, !felt.type, !array.type<8 x !felt.type>) {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_7]], %[[VAL_1]]) : !felt.type, !felt.type
+// CHECK-NEXT:        scf.condition(%[[VAL_10]]) %[[VAL_7]], %[[VAL_8]], %[[VAL_9]] : !felt.type, !felt.type, !array.type<8 x !felt.type>
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8 x !felt.type>):
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_11]] : !felt.type
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_12]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_13]]{{\[}}%[[VAL_14]]] = %[[VAL_15]] : <8 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_11]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_16]], %[[VAL_15]], %[[VAL_13]] : !felt.type, !felt.type, !array.type<8 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]#2{{\[}}%[[VAL_4]]] : <8 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]]#1, %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_18]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

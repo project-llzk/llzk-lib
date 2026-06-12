@@ -70,6 +70,10 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     Rewrites constraint expressions into an (observationally) equivalent system where the degree of
     every polynomial is less than or equal to the specified maximum.
 
+    High-degree subexpressions are factored into auxiliary struct members. The pass also recurses
+    through degree-neutral roots such as `felt.add`, `felt.sub`, and `felt.neg`, so composite
+    equality operands and struct constrain call arguments satisfy their degree bounds.
+
     This pass is best used as part of the `-llzk-full-poly-lowering` pipeline, which includes
     additional cleanup passes to ensure correctness and optimal performance.
   }];

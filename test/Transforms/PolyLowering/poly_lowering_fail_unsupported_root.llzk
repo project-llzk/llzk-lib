@@ -1,0 +1,18 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  struct.def @UnsupportedDivRoot {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %out: !felt.type) -> !struct.type<@UnsupportedDivRoot> {
+      %self = struct.new : !struct.type<@UnsupportedDivRoot>
+      function.return %self : !struct.type<@UnsupportedDivRoot>
+    }
+
+    function.def @constrain(%self: !struct.type<@UnsupportedDivRoot>, %a: !felt.type, %b: !felt.type, %c: !felt.type, %out: !felt.type) {
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %rhs = felt.div %ab, %c : !felt.type, !felt.type
+      // expected-error@+1 {{'constrain.eq' op poly lowering postcondition failed: equality operand degree exceeds max-degree 2 (lhs degree 1, rhs degree 3)}}
+      constrain.eq %out, %rhs : !felt.type
+      function.return
+    }
+  }
+}

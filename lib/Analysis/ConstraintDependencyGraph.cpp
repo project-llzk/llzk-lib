@@ -191,6 +191,12 @@ void SourceRefAnalysis::visitExternalCall(
     }
     return;
   }
+  if (resultLattices.empty()) {
+    // `verif.include` and other no-result call-like ops still need to be
+    // treated as valid callable edges, but there are no results to
+    // translate back to the caller.
+    return;
+  }
   // Call is to a defined function with a body, but it's treated as external so we
   // can translate the results based on the arguments.
   auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);

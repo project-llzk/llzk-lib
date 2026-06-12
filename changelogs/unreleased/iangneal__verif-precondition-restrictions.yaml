@@ -1,0 +1,5 @@
+changed:
+  - '`verif.contract` now rejects preconditions (`verif.require_*`) derived from struct members or function return values'
+  - '`verif.contract` for the `llzk.main` struct rejects direct `verif.require_*` ops as well'
+fixed:
+  - Update SourceRefAnalysis to handle `scf.while`, `verif.contract`, and `verif.include`

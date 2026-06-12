@@ -30,6 +30,7 @@
 #include "llzk/Dialect/POD/IR/Attrs.capi.h.inc"
 #include "llzk/Dialect/POD/IR/Ops.capi.h.inc"
 #include "llzk/Dialect/POD/IR/Types.capi.h.inc"
+#include "llzk/Dialect/POD/Transforms/TransformationPasses.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
