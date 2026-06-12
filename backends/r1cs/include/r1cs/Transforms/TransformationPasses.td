@@ -20,7 +20,6 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
     This pass is best used as part of the `-llzk-full-r1cs-lowering` pipeline which includes
     a degree lowering pass and clean up passes to ensure correctness and performance.
   }];
-  let constructor = "r1cs::createR1CSLoweringPass()";
 }
 
 #endif // R1CS_TRANSFORMATION_PASSES_TD

@@ -134,9 +134,10 @@ lowerConst(OpBuilder &b, mlir::arith::ConstantOp cst, llvm::DenseMap<Value, Valu
   return lowerConstImpl(b, cst.getResult(), cst.getLoc(), value, mapping);
 }
 
-class PCLLoweringPass : public pcl::conversion::impl::PCLLoweringPassBase<PCLLoweringPass> {
+class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
+  using Base = PCLLoweringPassBase<PassImpl>;
+  using Base::Base;
 
-private:
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<pcl::PCLDialect, func::FuncDialect>();
   }
@@ -530,7 +531,3 @@ private:
   }
 };
 } // namespace
-
-std::unique_ptr<Pass> pcl::conversion::createPCLLoweringPass() {
-  return std::make_unique<PCLLoweringPass>();
-}
