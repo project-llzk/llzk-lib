@@ -51,7 +51,16 @@ class ConditionOp<string mnemonic, list<Trait> traits = []>
 //===------------------------------------------------------------------===//
 
 class RequireOpBase<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[PreconditionOpInterface]>;
+    : ConditionOp<mnemonic, traits#[PreconditionOpInterface]> {
+  let description = [{
+    Base of an operation that encodes a precondition.
+
+    Preconditions:
+    - May not depend on values transitively derived from struct member reads
+    or from function return values.
+    - May not be present on the `llzk.main` entry struct.
+  }];
+}
 
 def RequireComputeOp : RequireOpBase<"require_compute"> {
   let summary = "witness computation precondition";
@@ -82,11 +91,12 @@ def EnsureConstrainOp : EnsureOpBase<"ensure_constrain"> {
 
 def ContractOp
     : VerifDialectOp<
-          "contract", [ParentOneOf<["::mlir::ModuleOp",
-                                    "::llzk::polymorphic::TemplateOp"]>,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       AffineScope, AutomaticAllocationScope,
-                       FunctionOpInterface, NoTerminator, IsolatedFromAbove]> {
+          "contract",
+          [ParentOneOf<["::mlir::ModuleOp", "::llzk::polymorphic::TemplateOp"]>,
+           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+           AutomaticAllocationScope, FunctionOpInterface,
+           SingleBlockImplicitTerminator<"::llzk::verif::ContractEndOp">,
+           IsolatedFromAbove]> {
   let summary = "defines a specification contract for a given symbol";
   let description = [{
     A specification contract for a given function or struct in the circuit.
@@ -103,6 +113,8 @@ def ContractOp
     return values are appended to the end of the contract's argument list.
 
     Contracts may not directly target struct functions; they must target the structs themselves.
+    Contracts targeting the module's `llzk.main` struct may not contain direct
+    `verif.require_compute` or `verif.require_constrain` operations in their body.
 
     For templated targets (i.e., functions or structs within a `poly.template`),
     the contract body may reference the target template's parameters and
@@ -138,9 +150,60 @@ def ContractOp
 
   let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
+  let hasRegionVerifier = 1;
 
-  // Builder that infers all information from the target.
-  let builders = [OpBuilder<(ins "::llvm::StringRef":$name,
+  // Define builders manually so builder-created contracts always contain a
+  // complete single-block body with the implicit `verif.contract_end`.
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::TypeAttr":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+      }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::mlir::StringAttr":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::TypeAttr":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        $_state.getOrAddProperties<Properties>().sym_name = sym_name;
+        $_state.getOrAddProperties<Properties>().target = target;
+        $_state.getOrAddProperties<Properties>().function_type = function_type;
+        if (arg_attrs) {
+          $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        initializeEmptyBody(
+            $_builder, $_state, ::mlir::cast<::mlir::FunctionType>(function_type.getValue())
+        );
+        assert(resultTypes.size() == 0u && "mismatched number of results");
+        $_state.addTypes(resultTypes);
+      }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::FunctionType":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+      }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::llvm::StringRef":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::FunctionType":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        $_state.getOrAddProperties<Properties>().sym_name = $_builder.getStringAttr(sym_name);
+        $_state.getOrAddProperties<Properties>().target = target;
+        $_state.getOrAddProperties<Properties>().function_type = ::mlir::TypeAttr::get(function_type);
+        if (arg_attrs) {
+          $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        initializeEmptyBody($_builder, $_state, function_type);
+        assert(resultTypes.size() == 0u && "mismatched number of results");
+        $_state.addTypes(resultTypes);
+      }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$name,
                       "llvm::StringRef":$target)>,
                   OpBuilder<(ins "::llvm::StringRef":$name,
                       "::mlir::SymbolRefAttr":$target)>];
@@ -234,7 +297,34 @@ def ContractOp
       return getTargetOp(tables);
     }
 
+  private:
+    /// Populate a builder-created contract body with one entry block matching
+    /// the function signature and insert the implicit `verif.contract_end`.
+    static void initializeEmptyBody(
+        ::mlir::OpBuilder &builder, ::mlir::OperationState &state,
+        ::mlir::FunctionType functionType
+    );
   }];
+}
+
+//===------------------------------------------------------------------===//
+// ContractEndOp
+//===------------------------------------------------------------------===//
+
+def ContractEndOp
+    : VerifDialectOp<"contract_end", [Pure, Terminator,
+                                      HasParent<"::llzk::verif::ContractOp">]> {
+  let summary = "terminates a verif.contract body";
+  let description = [{
+    Implicit terminator for `verif.contract` regions. This operation is inserted
+    automatically by the parser and omitted by the custom printer so contract
+    syntax remains terminator-free.
+
+    A terminator is expected by certain MLIR utilities (e.g., the data-flow analysis
+    framework), which is why this op is added.
+  }];
+
+  let assemblyFormat = "attr-dict";
 }
 
 //===------------------------------------------------------------------===//

@@ -36,6 +36,26 @@ void llzkVerif_attachInterfaces(MlirContext context) {
 // ContractOp
 //===----------------------------------------------------------------------===//
 
+LLZK_DEFINE_OP_BUILD_METHOD(
+    Verif, ContractOp, MlirIdentifier sym_name, MlirAttribute target, MlirAttribute function_type,
+    MlirAttribute arg_attrs
+) {
+  ArrayAttr argAttrs;
+  if (!mlirAttributeIsNull(arg_attrs)) {
+    argAttrs = cast<ArrayAttr>(unwrap(arg_attrs));
+  }
+
+  return mlirOpBuilderInsert(
+      builder,
+      wrap(
+          llzk::create<ContractOp>(
+              builder, location, unwrap(sym_name), cast<SymbolRefAttr>(unwrap(target)),
+              cast<FunctionType>(cast<TypeAttr>(unwrap(function_type)).getValue()), argAttrs
+          )
+      )
+  );
+}
+
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Verif, ContractOp, FromTargetIdentifier, MlirIdentifier sym_name, MlirIdentifier target
 ) {

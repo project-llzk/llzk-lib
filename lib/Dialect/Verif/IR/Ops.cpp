@@ -9,22 +9,27 @@
 
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
+#include "llzk/Analysis/ConstraintDependencyGraph.h"
+#include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
@@ -149,6 +154,158 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
   return failure();
 }
 
+enum class ForbiddenRequireConditionKind : uint8_t {
+  MainContract,
+  StructMember,
+  FunctionReturn,
+};
+
+/// Classified failure for a single direct verif.require_* condition.
+struct ForbiddenRequireCondition {
+  ForbiddenRequireConditionKind kind;
+  llvm::SmallSetVector<Location, 2> sourceLocs;
+};
+
+/// One failing precondition reached through a verif.include, together with the
+/// classified forbidden source kind and any representative source locations.
+struct ForbiddenIncludedPrecondition {
+  std::optional<Location> calleePreconditionLoc = std::nullopt;
+  ForbiddenRequireConditionKind kind;
+  llvm::SmallSetVector<Location, 2> sourceLocs;
+};
+
+/// Aggregate of all nested precondition failures caused by one include site.
+struct ForbiddenIncludedPreconditions {
+  IncludeOp includeOp;
+  llvm::SmallVector<ForbiddenIncludedPrecondition> failures;
+};
+
+std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
+    ModuleOp module, PreconditionOpInterface preCondOp, ContractOp contract
+) {
+  ForbiddenPreconditionInfluenceInfo influence =
+      analyzeForbiddenPreconditionOpInfluenceInfo(module, contract, preCondOp);
+  if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::StructMember)) {
+    return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::StructMember,
+        .sourceLocs = influence.structMemberLocs,
+    };
+  }
+  if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::FunctionReturn)) {
+    return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::FunctionReturn,
+        .sourceLocs = {},
+    };
+  }
+  return std::nullopt;
+}
+
+std::optional<ForbiddenIncludedPreconditions>
+classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
+  SymbolTableCollection tables;
+  auto calleeTarget = includeOp.getCalleeTarget(tables);
+  if (failed(calleeTarget)) {
+    return std::nullopt;
+  }
+  ContractOp parentContract = includeOp->getParentOfType<ContractOp>();
+  auto summary = analyzeForbiddenIncludedOpSummary(module, parentContract, includeOp);
+  if (!summary) {
+    return std::nullopt;
+  }
+
+  ForbiddenIncludedPreconditions result {.includeOp = includeOp, .failures = {}};
+  for (const auto &failure : summary.failures) {
+    if (hasInfluence(
+            failure.influenceInfo.influence, ForbiddenPreconditionInfluence::StructMember
+        )) {
+      result.failures.push_back(
+          ForbiddenIncludedPrecondition {
+              .calleePreconditionLoc = failure.preconditionLoc,
+              .kind = ForbiddenRequireConditionKind::StructMember,
+              .sourceLocs = failure.influenceInfo.structMemberLocs,
+          }
+      );
+      continue;
+    }
+    if (hasInfluence(
+            failure.influenceInfo.influence, ForbiddenPreconditionInfluence::FunctionReturn
+        )) {
+      result.failures.push_back(
+          ForbiddenIncludedPrecondition {
+              .calleePreconditionLoc = failure.preconditionLoc,
+              .kind = ForbiddenRequireConditionKind::FunctionReturn,
+              .sourceLocs = {},
+          }
+      );
+    }
+  }
+  return result.failures.empty() ? std::nullopt
+                                 : std::optional<ForbiddenIncludedPreconditions>(result);
+}
+
+// Map a classified restriction failure to the verifier diagnostic emitted on
+// the offending require op.
+LogicalResult emitForbiddenPrecondition(
+    PreconditionOpInterface preCondOp, ForbiddenRequireConditionKind kind,
+    llvm::ArrayRef<Location> sourceLocs = {}
+) {
+  switch (kind) {
+  case ForbiddenRequireConditionKind::MainContract:
+    return preCondOp->emitOpError(
+        "cannot appear directly in a contract that targets the main entry-point struct"
+    );
+  case ForbiddenRequireConditionKind::StructMember: {
+    InFlightDiagnostic diag =
+        preCondOp->emitOpError("condition cannot be derived from a struct member value");
+    for (auto sourceLoc : sourceLocs) {
+      diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
+    }
+    return diag;
+  }
+  case ForbiddenRequireConditionKind::FunctionReturn: {
+    return preCondOp->emitOpError("condition cannot be derived from a function return value");
+  }
+  }
+  llvm_unreachable("unknown forbidden require condition kind");
+}
+
+LogicalResult emitForbiddenIncludedPreconditions(
+    IncludeOp includeOp, llvm::ArrayRef<ForbiddenIncludedPrecondition> failures
+) {
+  bool sawStructMember = false;
+  bool sawFunctionReturn = false;
+  for (const ForbiddenIncludedPrecondition &failure : failures) {
+    sawStructMember |= failure.kind == ForbiddenRequireConditionKind::StructMember;
+    sawFunctionReturn |= failure.kind == ForbiddenRequireConditionKind::FunctionReturn;
+  }
+
+  InFlightDiagnostic diag = [&]() -> InFlightDiagnostic {
+    if (sawStructMember && sawFunctionReturn) {
+      return includeOp.emitOpError(
+          "includes preconditions whose conditions cannot be derived from forbidden sources"
+      );
+    }
+    if (sawStructMember) {
+      return includeOp.emitOpError(
+          "includes preconditions whose conditions cannot be derived from a struct member value"
+      );
+    }
+    return includeOp.emitOpError(
+        "includes preconditions whose conditions cannot be derived from a function return value"
+    );
+  }();
+
+  for (const ForbiddenIncludedPrecondition &failure : failures) {
+    if (failure.calleePreconditionLoc) {
+      diag.attachNote(*failure.calleePreconditionLoc) << "included precondition triggered here";
+    }
+    for (Location sourceLoc : failure.sourceLocs) {
+      diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
+    }
+  }
+  return diag;
+}
+
 } // namespace
 
 namespace llzk::verif {
@@ -157,9 +314,21 @@ namespace llzk::verif {
 // ContractOp
 //===------------------------------------------------------------------===//
 
+void ContractOp::initializeEmptyBody(
+    OpBuilder &builder, OperationState &state, FunctionType functionType
+) {
+  Region *body = state.addRegion();
+  auto *entryBlock = new Block();
+
+  SmallVector<Location> argLocs(functionType.getNumInputs(), state.location);
+  entryBlock->addArguments(functionType.getInputs(), argLocs);
+  body->push_back(entryBlock);
+
+  ContractOp::ensureTerminator(*body, builder, state.location);
+}
+
 void ContractOp::build(
-    ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
-    llvm::StringRef target
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef name, llvm::StringRef target
 ) {
   build(odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target));
 }
@@ -386,6 +555,8 @@ ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
     return parser.emitError(loc, "expected non-empty contract body");
   }
 
+  ContractOp::ensureTerminator(*body, parser.getBuilder(), result.location);
+
   return success();
 }
 
@@ -412,7 +583,7 @@ void ContractOp::print(OpAsmPrinter &p) {
   p << ' ';
   p.printRegion(
       body, /*printEntryBlockArgs=*/false,
-      /*printBlockTerminators=*/true
+      /*printBlockTerminators=*/false
   );
 }
 
@@ -468,6 +639,55 @@ LogicalResult ContractOp::verify() {
     return WalkResult::advance();
   });
   return failure(res.wasInterrupted());
+}
+
+LogicalResult ContractOp::verifyRegions() {
+  // Verify precondition restrictions in the region verifier so that ops contained
+  // within the contract are verified before these checks. This avoids segfaults
+  // when there are malformed inner ops and instead allows appropriate inner diagnostics
+  // to be generated first. In sum, we can rest assured that the ops we traverse and
+  // analyze here have already been verified.
+
+  SmallVector<PreconditionOpInterface> preconditionOps =
+      walkCollect<PreconditionOpInterface>(*this);
+  SmallVector<IncludeOp> includeOps = walkCollect<IncludeOp>(*this);
+  if (preconditionOps.empty() && includeOps.empty()) {
+    return success();
+  }
+
+  bool targetsMainStruct = false;
+  {
+    SymbolTableCollection tables;
+    auto structTarget = getStructTarget(tables);
+    targetsMainStruct = succeeded(structTarget) && structTarget->get().isMainComponent();
+  }
+
+  for (PreconditionOpInterface preCond : preconditionOps) {
+    if (targetsMainStruct) {
+      return emitForbiddenPrecondition(preCond, ForbiddenRequireConditionKind::MainContract);
+    }
+  }
+
+  ModuleOp module = getOperation()->getParentOfType<ModuleOp>();
+  if (!module) {
+    return emitOpError("must have a parent module to analyze condition provenance");
+  }
+
+  for (PreconditionOpInterface preCond : preconditionOps) {
+    if (auto forbidden = classifyForbiddenConditionProvenance(module, preCond, *this)) {
+      return emitForbiddenPrecondition(
+          preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
+      );
+    }
+  }
+
+  for (IncludeOp includeOp : includeOps) {
+    if (auto forbidden = classifyForbiddenIncludedPrecondition(module, includeOp)) {
+      return emitForbiddenIncludedPreconditions(forbidden->includeOp, forbidden->failures);
+    }
+  }
+
+  return success();
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>

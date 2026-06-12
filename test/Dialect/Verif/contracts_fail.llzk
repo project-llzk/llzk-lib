@@ -245,6 +245,901 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecret for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %isEq = bool.cmp eq(%secret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaIf for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.if %cond -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    } else {
+      scf.yield %value : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaFor for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %lb = arith.constant 0 : index
+    %ub = arith.constant 1 : index
+    %step = arith.constant 1 : index
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.for %iv = %lb to %ub step %step iter_args(%acc = %value) -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaWhile for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.while (%acc = %value) : (!felt.type) -> !felt.type {
+      scf.condition(%cond) %acc : !felt.type
+    } do {
+    ^bb0(%iter : !felt.type):
+      scf.yield %secret : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckSecretViaWhile for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    %cond = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %selected = scf.while (%acc = %secret) : (!felt.type) -> !felt.type {
+      scf.condition(%cond) %acc : !felt.type
+    } do {
+    ^bb0(%iter : !felt.type):
+      scf.yield %iter : !felt.type
+    }
+    %isEq = bool.cmp eq(%selected, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateViaIfCondition for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    %false = arith.constant false
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.if %member_gate -> (i1) {
+      scf.yield %true : i1
+    } else {
+      scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckWhileAfterRegionArg for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.while (%acc = %true) : (i1) -> i1 {
+      scf.condition(%true) %acc : i1
+    } do {
+    ^bb0(%iter : i1):
+      // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+      verif.require_constrain %iter
+      scf.yield %member_gate : i1
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateViaExecuteRegion for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.execute_region -> i1 {
+      scf.yield %member_gate : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckTripCountViaForBounds for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index) {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    %selected = scf.for %iv = %lb to %member_trip_count step %step iter_args(%acc = %true) -> (i1) {
+      scf.yield %acc : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckInnerRequire for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index) {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    %selected = scf.for %iv = %lb to %member_trip_count step %step iter_args(%acc = %true) -> (i1) {
+      // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+      verif.require_constrain %acc
+      scf.yield %acc : i1
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateViaYield for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.while (%acc = %true) : (i1) -> i1 {
+      scf.condition(%member_gate) %acc : i1
+    } do {
+    ^bb0(%iter : i1):
+      scf.yield %iter : i1
+    }
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckRegionVerification for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    // expected-error@+1 {{'scf.while' op  region control flow edge from Region #1 to Region #0: source has 1 operands, but target successor needs 0}}
+    %selected = scf.while : () -> i1 {
+      scf.condition(%true) %true : i1
+    } do {
+    ^bb0(%iter : i1):
+      scf.yield %member_gate : i1
+    }
+    verif.require_constrain %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckGateWithinLoop for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    %selected = scf.while (%init = %true) : (i1) -> i1 {
+      scf.condition(%true) %init : i1
+    } do {
+    ^bb0(%iter : i1):
+      // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+      verif.require_constrain %iter
+      %yield_val = bool.and %member_gate, %iter
+      scf.yield %yield_val : i1
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @FuncWithRet for @passthrough (%a : !felt.type, %ret_value : !felt.type) {
+    %isEq = bool.cmp eq(%a, %ret_value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaIfCondition for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    %false = arith.constant false
+    %selected = scf.if %ret_value -> (i1) {
+      scf.yield %true : i1
+    } else {
+      scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaExecuteRegion for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %selected = scf.execute_region -> i1 {
+      scf.yield %ret_value : i1
+    }
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaIfCondition for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    %false = arith.constant false
+    %selected = scf.if %flag -> (i1) {
+      scf.yield %ret_value : i1
+    } else {
+      scf.yield %false : i1
+    }
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %selected
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @ReturnGateViaIfCondition for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    scf.if %ret_value {
+      // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+      verif.require_compute %true
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @same(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    function.def @compute(%value: !felt.type) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %value : !struct.type<@SecretBox>, !felt.type
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CallMemberRet for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    %ret = function.call @same(%secret) : (!felt.type) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @same(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  function.def @passthrough(%a : !felt.type) -> !felt.type {
+    function.return %a : !felt.type
+  }
+
+  verif.contract @CallTargetRet for @passthrough (%a : !felt.type, %ret_value : !felt.type) {
+    %ret = function.call @same(%ret_value) : (!felt.type) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %ret_value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @select_secret(%secret: !felt.type, %fallback: !felt.type, %gate: i1) -> !felt.type {
+    %selected = scf.if %gate -> (!felt.type) {
+      scf.yield %secret : !felt.type
+    } else {
+      scf.yield %fallback : !felt.type
+    }
+    function.return %selected : !felt.type
+  }
+
+  struct.def @SecretBox {
+    struct.member @secret : !felt.type
+    struct.member @gate : i1
+    function.def @compute(%secret: !felt.type, %gate: i1) -> !struct.type<@SecretBox> {
+      %self = struct.new : !struct.type<@SecretBox>
+      struct.writem %self[@secret] = %secret : !struct.type<@SecretBox>, !felt.type
+      struct.writem %self[@gate] = %gate : !struct.type<@SecretBox>, i1
+      function.return %self : !struct.type<@SecretBox>
+    }
+    function.def @constrain(%self: !struct.type<@SecretBox>, %value: !felt.type, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CallHelperWithMemberControlledReturn for @SecretBox (%self: !struct.type<@SecretBox>, %value: !felt.type, %gate: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %secret = struct.readm %self[@secret] : !struct.type<@SecretBox>, !felt.type
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@SecretBox>, i1
+    %ret = function.call @select_secret(%secret, %value, %member_gate) : (!felt.type, !felt.type, i1) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @select_ret(%ret_value: i1, %fallback: i1) -> i1 {
+    %true = arith.constant true
+    %false = arith.constant false
+    %selected = scf.if %ret_value -> (i1) {
+      scf.yield %true : i1
+    } else {
+      scf.yield %false : i1
+    }
+    %result = arith.ori %selected, %fallback : i1
+    function.return %result : i1
+  }
+
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  verif.contract @CallHelperWithReturnControlledValue for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %ret = function.call @select_ret(%ret_value, %flag) : (i1, i1) -> i1
+    %isEq = arith.cmpi eq, %ret, %flag : i1
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @loop_pick(%seed: !felt.type, %trip_count: index) -> !felt.type {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %selected = scf.for %iv = %lb to %trip_count step %step iter_args(%acc = %seed) -> (!felt.type) {
+      scf.yield %acc : !felt.type
+    }
+    function.return %selected : !felt.type
+  }
+
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index, %value: !felt.type) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CallHelperWithLoopControlledReturn for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index, %value: !felt.type) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    %ret = function.call @loop_pick(%value, %member_trip_count) : (!felt.type, index) -> !felt.type
+    %isEq = bool.cmp eq(%ret, %value) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_constrain' op condition cannot be derived from a struct member value}}
+    verif.require_constrain %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @extern_passthrough(%a : !felt.type) -> !felt.type
+
+  function.def @check(%a : !felt.type) {
+    function.return
+  }
+
+  verif.contract @CallExternalRet for @check (%a : !felt.type) {
+    %ret = function.call @extern_passthrough(%a) : (!felt.type) -> !felt.type
+    %isEq = bool.cmp eq(%a, %ret) : !felt.type, !felt.type
+    // expected-error@+1 {{'verif.require_compute' op condition cannot be derived from a function return value}}
+    verif.require_compute %isEq
+  }
+}
+
+// -----
+
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
+    %ok = arith.constant true
+    // expected-error@+1 {{'verif.require_compute' op cannot appear directly in a contract that targets the main entry-point struct}}
+    verif.require_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
+    %ok = arith.constant true
+    // expected-error@+1 {{'verif.require_constrain' op cannot appear directly in a contract that targets the main entry-point struct}}
+    verif.require_constrain %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @helper_gates(%gate_a: i1, %gate_b: i1) {
+    function.return
+  }
+
+  struct.def @GateBox {
+    struct.member @gate_a : i1
+    struct.member @gate_b : i1
+    function.def @compute(%gate_a: i1, %gate_b: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate_a] = %gate_a : !struct.type<@GateBox>, i1
+      struct.writem %self[@gate_b] = %gate_b : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate_a: i1, %gate_b: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @Leaf for @helper_gates (%gate_a: i1, %gate_b: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate_a
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate_b
+  }
+
+  verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate_a: i1, %gate_b: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate_a = struct.readm %self[@gate_a] : !struct.type<@GateBox>, i1
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate_b = struct.readm %self[@gate_b] : !struct.type<@GateBox>, i1
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
+    verif.include @Leaf(%member_gate_a, %member_gate_b) : (i1, i1) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @helper_gate(%gate: i1) {
+    function.return
+  }
+
+  struct.def @CountBox {
+    struct.member @trip_count : index
+    function.def @compute(%trip_count: index) -> !struct.type<@CountBox> {
+      %self = struct.new : !struct.type<@CountBox>
+      struct.writem %self[@trip_count] = %trip_count : !struct.type<@CountBox>, index
+      function.return %self : !struct.type<@CountBox>
+    }
+    function.def @constrain(%self: !struct.type<@CountBox>, %trip_count: index) {
+      function.return
+    }
+  }
+
+  verif.contract @Leaf for @helper_gate (%gate: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate
+  }
+
+  verif.contract @Wrapper for @CountBox (%self: !struct.type<@CountBox>, %trip_count: index) {
+    %lb = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_trip_count = struct.readm %self[@trip_count] : !struct.type<@CountBox>, index
+    scf.for %iv = %lb to %member_trip_count step %step {
+      // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
+      verif.include @Leaf(%true) : (i1) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @helper_gate(%gate: i1) {
+    function.return
+  }
+
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @Leaf for @helper_gate (%gate: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate
+  }
+
+  verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
+    verif.include @Leaf(%member_gate) : (i1) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  function.def @leaf_gate(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf_gate (%gate: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_compute %gate
+  }
+
+  verif.contract @Wrapper for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a function return value}}
+    verif.include @Leaf(%ret_value) : (i1) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @helper_gate(%gate: i1) {
+    function.return
+  }
+
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @Leaf for @helper_gate (%gate: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate
+  }
+
+  verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    %true = arith.constant true
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    scf.if %member_gate {
+      // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
+      verif.include @Leaf(%true) : (i1) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @passthrough_bool(%flag : i1) -> i1 {
+    function.return %flag : i1
+  }
+
+  function.def @leaf_gate(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf_gate (%gate: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_compute %gate
+  }
+
+  verif.contract @Wrapper for @passthrough_bool (%flag : i1, %ret_value : i1) {
+    %true = arith.constant true
+    scf.if %ret_value {
+      // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a function return value}}
+      verif.include @Leaf(%true) : (i1) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @helper_gate(%gate: i1) {
+    function.return
+  }
+
+  struct.def @GateBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@GateBox> {
+      %self = struct.new : !struct.type<@GateBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@GateBox>, i1
+      function.return %self : !struct.type<@GateBox>
+    }
+    function.def @constrain(%self: !struct.type<@GateBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @Leaf for @helper_gate (%gate: i1) {
+    // expected-note@+1 {{included precondition triggered here}}
+    verif.require_constrain %gate
+  }
+
+  verif.contract @Middle for @helper_gate (%gate: i1) {
+    verif.include @Leaf(%gate) : (i1) -> ()
+  }
+
+  verif.contract @Wrapper for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
+    // expected-note@+1 {{forbidden struct member value originates here}}
+    %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
+    // expected-error@+1 {{'verif.include' op includes preconditions whose conditions cannot be derived from a struct member value}}
+    verif.include @Middle(%member_gate) : (i1) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @Top {
     function.def @compute() -> !struct.type<@Top> {
       %self = struct.new : !struct.type<@Top>

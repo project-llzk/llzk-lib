@@ -37,6 +37,12 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif);
 ///
 /// Attempting to use those interfaces without calling this function first will result in an error.
 MLIR_CAPI_EXPORTED void llzkVerif_attachInterfaces(MlirContext context);
+  
+/// Build a `verif.contract` from explicit attributes and signature metadata.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    Verif, ContractOp, MlirIdentifier sym_name, MlirAttribute target, MlirAttribute function_type,
+    MlirAttribute arg_attrs
+);
 
 /// Build a `verif.contract` with arguments and attributes derived from the target.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
