@@ -16,13 +16,70 @@
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/Pass/Pass.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Transforms/Passes.h>
 
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/raw_ostream.h>
+
+#include <memory>
+#include <string>
+
 using namespace mlir;
 
 namespace llzk {
+namespace {
+
+static std::string printOperationToString(Operation *op) {
+  std::string buffer;
+  llvm::raw_string_ostream os(buffer);
+  op->print(os);
+  os.flush();
+  return buffer;
+}
+
+class VerifAggregateScalarizationPass
+    : public PassWrapper<VerifAggregateScalarizationPass, OperationPass<ModuleOp>> {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(VerifAggregateScalarizationPass)
+
+  StringRef getArgument() const final { return "llzk-verif-aggregate-scalarization"; }
+  StringRef getDescription() const final {
+    return "Repeatedly scalarize array/pod aggregates until the module stabilizes";
+  }
+
+  void runOnOperation() override {
+    ModuleOp module = getOperation();
+    constexpr unsigned kMaxIterations = 8;
+
+    for (unsigned iteration = 0; iteration < kMaxIterations; ++iteration) {
+      std::string before = printOperationToString(module);
+
+      OpPassManager pm(ModuleOp::getOperationName());
+      pm.addPass(llzk::array::createArrayToScalarPass());
+      pm.addPass(llzk::pod::createPodToScalarPass());
+      pm.addPass(createCanonicalizerPass());
+      if (failed(runPipeline(pm, module))) {
+        signalPassFailure();
+        return;
+      }
+
+      std::string after = printOperationToString(module);
+      if (before == after) {
+        return;
+      }
+    }
+
+    module.emitError(
+    ) << "verif aggregate scalarization did not reach a fixpoint within the iteration limit";
+    signalPassFailure();
+  }
+};
+
+} // namespace
 
 struct FullPolyLoweringOptions : public PassPipelineOptions<FullPolyLoweringOptions> {
   Option<unsigned> maxDegree {
@@ -35,6 +92,10 @@ void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
   pm.addPass(llzk::createRedundantReadAndWriteEliminationPass());
   pm.addPass(llzk::createRedundantOperationEliminationPass());
   pm.addPass(llzk::createUnusedDeclarationEliminationPass());
+}
+
+std::unique_ptr<Pass> createVerifAggregateScalarizationPass() {
+  return std::make_unique<VerifAggregateScalarizationPass>();
 }
 
 void registerTransformationPassPipelines() {
@@ -79,11 +140,7 @@ void registerTransformationPassPipelines() {
       "llzk-verif-to-smt",
       "Normalize array/pod aggregates and lower verif contracts to SMT helpers",
       [](OpPassManager &pm) {
-    pm.addPass(llzk::array::createArrayToScalarPass());
-    pm.addPass(llzk::pod::createPodToScalarPass());
-    pm.addPass(llzk::array::createArrayToScalarPass());
-    pm.addPass(llzk::pod::createPodToScalarPass());
-    pm.addPass(createCanonicalizerPass());
+    pm.addPass(llzk::createVerifAggregateScalarizationPass());
     pm.addPass(llzk::createVerifToSmtPass());
   }
   );

@@ -276,26 +276,6 @@ static void processInputOperands(
   });
 }
 
-/// Rebuild a `verif.include` while preserving explicit instantiation state from `oldInclude`.
-inline static IncludeOp createIncludePreservingInstantiationOperands(
-    Location loc, IncludeOp oldInclude, ArrayRef<ValueRange> mapOperands, ValueRange argOperands,
-    ConversionPatternRewriter &rewriter
-) {
-  SmallVector<Attribute> templateParams;
-  if (ArrayAttr templateParamsAttr = oldInclude.getTemplateParamsAttr()) {
-    templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
-  }
-
-  if (oldInclude.getMapOperands().empty()) {
-    return rewriter.create<IncludeOp>(loc, oldInclude.getCalleeAttr(), argOperands, templateParams);
-  }
-
-  return rewriter.create<IncludeOp>(
-      loc, oldInclude.getCalleeAttr(), mapOperands, oldInclude.getNumDimsPerMapAttr(), argOperands,
-      templateParams
-  );
-}
-
 /// Register the dialects and operations that remain legal across the conversion-based stages.
 inline static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalDialect<
@@ -306,6 +286,80 @@ inline static void baseTargetSetup(ConversionTarget &target) {
       arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
 }
+
+template <typename FunctionLikeOp>
+class SplitPodInFunctionLikeOpImpl : public FunctionTypeConverter {
+  SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+  SplitFunctionNameInfo inputNameInfo;
+  SplitFunctionNameInfo resultNameInfo;
+
+  static constexpr bool supportsResultAttrs() {
+    return requires(FunctionLikeOp op, ArrayAttr attrs) {
+      op.getResAttrsAttr();
+      op.setResAttrsAttr(attrs);
+    };
+  }
+
+protected:
+  SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
+    return splitPodType(origTypes, &originalInputIdxToSize);
+  }
+  SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
+    return splitPodType(origTypes, &originalResultIdxToSize);
+  }
+  ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+    return replicateFunctionNameAttrsAsNeeded(
+        origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
+        inputNameInfo.originalNames, inputNameInfo.existingNames, inputNameInfo.splitNameSuffixes
+    );
+  }
+  ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+    if constexpr (!supportsResultAttrs()) {
+      return nullptr;
+    }
+    return replicateFunctionNameAttrsAsNeeded(
+        origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
+        resultNameInfo.originalNames, resultNameInfo.existingNames, resultNameInfo.splitNameSuffixes
+    );
+  }
+
+  void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
+    OpBuilder::InsertionGuard guard(rewriter);
+    rewriter.setInsertionPointToStart(&entryBlock);
+
+    for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+      Value oldV = entryBlock.getArgument(i);
+      if (PodType pt = splittablePod(oldV.getType())) {
+        Location loc = oldV.getLoc();
+        auto newPod = rewriter.create<NewPodOp>(loc, pt);
+        rewriter.replaceAllUsesWith(oldV, newPod);
+        entryBlock.eraseArgument(i);
+        for (RecordAttr record : pt.getRecords()) {
+          BlockArgument newArg = entryBlock.insertArgument(i, record.getType(), loc);
+          genWrite(loc, newPod, record.getName(), newArg, rewriter);
+          ++i;
+        }
+      } else {
+        ++i;
+      }
+    }
+  }
+
+public:
+  explicit SplitPodInFunctionLikeOpImpl(FunctionLikeOp op) {
+    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+      return op.getArgNameAttr(i);
+    }, getSplitRecordNameSuffixes);
+    if constexpr (supportsResultAttrs()) {
+      resultNameInfo = collectSplitFunctionNameInfo(
+          op.getResultTypes(),
+          [resultAttrs = op.getAllResultAttrs()](unsigned i) {
+        return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
+      }, getSplitRecordNameSuffixes
+      );
+    }
+  }
+};
 
 /// Rewrite pod-typed `llzk.nondet` allocations into explicit `pod.new` allocations so the rest of
 /// the pass only needs to reason about POD storage through POD dialect operations.
@@ -479,77 +533,7 @@ public:
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    // Update in/out types of the function to replace pods with scalars
-    class Impl : public FunctionTypeConverter {
-      SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
-      SplitFunctionNameInfo inputNameInfo;
-      SplitFunctionNameInfo resultNameInfo;
-
-    protected:
-      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
-        return splitPodType(origTypes, &originalInputIdxToSize);
-      }
-      SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
-        return splitPodType(origTypes, &originalResultIdxToSize);
-      }
-      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
-            inputNameInfo.originalNames, inputNameInfo.existingNames,
-            inputNameInfo.splitNameSuffixes
-        );
-      }
-      ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
-            resultNameInfo.originalNames, resultNameInfo.existingNames,
-            resultNameInfo.splitNameSuffixes
-        );
-      }
-
-      /// For each argument to the Block that has a splittable PodType, replace it with the
-      /// necessary number of scalar arguments, generate a NewPodOp, and generate writes from
-      /// the new block scalar arguments to the new pod. All users of the original block
-      /// argument are updated to target the result of the NewPodOp.
-      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
-        OpBuilder::InsertionGuard guard(rewriter);
-        rewriter.setInsertionPointToStart(&entryBlock);
-
-        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-          Value oldV = entryBlock.getArgument(i);
-          if (PodType pt = splittablePod(oldV.getType())) {
-            Location loc = oldV.getLoc();
-            // Generate `NewPodOp` and replace uses of the argument with it.
-            auto newPod = rewriter.create<NewPodOp>(loc, pt);
-            rewriter.replaceAllUsesWith(oldV, newPod);
-            // Remove the argument from the block
-            entryBlock.eraseArgument(i);
-            // For all indices in the PodType (i.e., the element count), generate a new
-            // block argument and a write of that argument to the new pod.
-            for (RecordAttr record : pt.getRecords()) {
-              BlockArgument newArg = entryBlock.insertArgument(i, record.getType(), loc);
-              genWrite(loc, newPod, record.getName(), newArg, rewriter);
-              ++i;
-            }
-          } else {
-            ++i;
-          }
-        }
-      }
-
-    public:
-      Impl(FuncDefOp op) {
-        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&op](unsigned i) {
-          return op.getArgNameAttr(i);
-        }, getSplitRecordNameSuffixes);
-        resultNameInfo = collectSplitFunctionNameInfo(
-            op.getResultTypes(), [resultAttrs = op.getAllResultAttrs()](unsigned i) {
-          return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
-        }, getSplitRecordNameSuffixes
-        );
-      }
-    };
-    Impl(op).convert(op, rewriter);
+    SplitPodInFunctionLikeOpImpl<FuncDefOp>(op).convert(op, rewriter);
   }
 };
 
@@ -566,93 +550,7 @@ public:
   LogicalResult match(ContractOp op) const override { return failure(legal(op)); }
 
   void rewrite(ContractOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    class Impl {
-      ContractOp op;
-      SmallVector<size_t> originalInputIdxToSize;
-      SplitFunctionNameInfo inputNameInfo;
-
-      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) {
-        return splitPodType(origTypes, &originalInputIdxToSize);
-      }
-
-      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
-            inputNameInfo.originalNames, inputNameInfo.existingNames,
-            inputNameInfo.splitNameSuffixes
-        );
-      }
-
-      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) {
-        OpBuilder::InsertionGuard guard(rewriter);
-        rewriter.setInsertionPointToStart(&entryBlock);
-
-        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-          Value oldV = entryBlock.getArgument(i);
-          if (PodType pt = splittablePod(oldV.getType())) {
-            Location loc = oldV.getLoc();
-            auto newPod = rewriter.create<NewPodOp>(loc, pt);
-            rewriter.replaceAllUsesWith(oldV, newPod);
-            entryBlock.eraseArgument(i);
-            for (RecordAttr record : pt.getRecords()) {
-              BlockArgument newArg = entryBlock.insertArgument(i, record.getType(), loc);
-              genWrite(loc, newPod, record.getName(), newArg, rewriter);
-              ++i;
-            }
-          } else {
-            ++i;
-          }
-        }
-      }
-
-    public:
-      explicit Impl(ContractOp op) : op(op) {
-        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
-          return op.getArgNameAttr(i);
-        }, getSplitRecordNameSuffixes);
-      }
-
-      void convert(ConversionPatternRewriter &rewriter) {
-        FunctionType oldTy = op.getFunctionType();
-        SmallVector<Type> newInputs = convertInputs(oldTy.getInputs());
-        SmallVector<Type> newResults = splitPodType(oldTy.getResults());
-        FunctionType newTy =
-            FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newResults));
-        if (newTy == oldTy) {
-          return;
-        }
-
-        assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
-        rewriter.modifyOpInPlace(op, [&]() {
-          op.setFunctionType(newTy);
-          if (ArrayAttr newArgAttrs = convertInputAttrs(op.getArgAttrsAttr(), newInputs)) {
-            op.setArgAttrsAttr(newArgAttrs);
-          }
-        });
-        assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
-
-        Region *body = op.getCallableRegion();
-        if (!body || body->empty()) {
-          return;
-        }
-        Block &entryBlock = body->front();
-        bool blockArgsNeedUpdate =
-            !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()) ||
-            llvm::any_of(llvm::zip_equal(entryBlock.getArgumentTypes(), newInputs), [](auto pair) {
-          return std::get<0>(pair) != std::get<1>(pair);
-        });
-        if (!blockArgsNeedUpdate) {
-          return;
-        }
-        processBlockArgs(entryBlock, rewriter);
-        assert(std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()));
-        for (unsigned i = 0, e = entryBlock.getNumArguments(); i < e; ++i) {
-          assert(entryBlock.getArgument(i).getType() == newInputs[i]);
-        }
-      }
-    };
-
-    Impl(op).convert(rewriter);
+    SplitPodInFunctionLikeOpImpl<ContractOp>(op).convert(op, rewriter);
   }
 };
 

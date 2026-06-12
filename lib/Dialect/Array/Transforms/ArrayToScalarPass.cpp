@@ -267,26 +267,6 @@ CallOp newCallOpWithSplitResults(
   return newCall;
 }
 
-/// Rebuild a `verif.include` while preserving explicit instantiation state from `oldInclude`.
-inline IncludeOp createIncludePreservingInstantiationOperands(
-    Location loc, IncludeOp oldInclude, ArrayRef<ValueRange> mapOperands, ValueRange argOperands,
-    ConversionPatternRewriter &rewriter
-) {
-  SmallVector<Attribute> templateParams;
-  if (ArrayAttr templateParamsAttr = oldInclude.getTemplateParamsAttr()) {
-    templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
-  }
-
-  if (oldInclude.getMapOperands().empty()) {
-    return rewriter.create<IncludeOp>(loc, oldInclude.getCalleeAttr(), argOperands, templateParams);
-  }
-
-  return rewriter.create<IncludeOp>(
-      loc, oldInclude.getCalleeAttr(), mapOperands, oldInclude.getNumDimsPerMapAttr(), argOperands,
-      templateParams
-  );
-}
-
 /// Create an `array.read` for one scalar element of `baseArrayOp`.
 inline ReadArrayOp
 genRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
@@ -324,6 +304,81 @@ void processInputOperands(
     outputOpRef.assign(ValueRange(newOperands));
   });
 }
+
+template <typename FunctionLikeOp>
+class SplitArrayInFunctionLikeOpImpl : public FunctionTypeConverter {
+  SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+  SplitFunctionNameInfo inputNameInfo;
+  SplitFunctionNameInfo resultNameInfo;
+
+  static constexpr bool supportsResultAttrs() {
+    return requires(FunctionLikeOp op, ArrayAttr attrs) {
+      op.getResAttrsAttr();
+      op.setResAttrsAttr(attrs);
+    };
+  }
+
+protected:
+  SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
+    return splitArrayType(origTypes, &originalInputIdxToSize);
+  }
+  SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
+    return splitArrayType(origTypes, &originalResultIdxToSize);
+  }
+  ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+    return replicateFunctionNameAttrsAsNeeded(
+        origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
+        inputNameInfo.originalNames, inputNameInfo.existingNames, inputNameInfo.splitNameSuffixes
+    );
+  }
+  ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+    if constexpr (!supportsResultAttrs()) {
+      return nullptr;
+    }
+    return replicateFunctionNameAttrsAsNeeded(
+        origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
+        resultNameInfo.originalNames, resultNameInfo.existingNames, resultNameInfo.splitNameSuffixes
+    );
+  }
+
+  void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
+    OpBuilder::InsertionGuard guard(rewriter);
+    rewriter.setInsertionPointToStart(&entryBlock);
+
+    for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+      Value oldV = entryBlock.getArgument(i);
+      if (ArrayType at = splittableArray(oldV.getType())) {
+        Location loc = oldV.getLoc();
+        auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+        rewriter.replaceAllUsesWith(oldV, newArray);
+        entryBlock.eraseArgument(i);
+        std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+        assert(allIndices && "static-shape arrays must provide subelement indices");
+        assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
+        for (ArrayAttr subIdx : *allIndices) {
+          BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
+          genWrite(loc, newArray, subIdx, newArg, rewriter);
+          ++i;
+        }
+      } else {
+        ++i;
+      }
+    }
+  }
+
+public:
+  explicit SplitArrayInFunctionLikeOpImpl(FunctionLikeOp op) {
+    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+      return op.getArgNameAttr(i);
+    }, getSplitArrayIndexSuffixes);
+    if constexpr (supportsResultAttrs()) {
+      ArrayAttr resultAttrs = op.getAllResultAttrs();
+      resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
+        return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
+      }, getSplitArrayIndexSuffixes);
+    }
+  }
+};
 
 namespace {
 
@@ -460,79 +515,7 @@ public:
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    // Update in/out types of the function to replace arrays with scalars
-    class Impl : public FunctionTypeConverter {
-      SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
-      SplitFunctionNameInfo inputNameInfo;
-      SplitFunctionNameInfo resultNameInfo;
-
-    protected:
-      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
-        return splitArrayType(origTypes, &originalInputIdxToSize);
-      }
-      SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
-        return splitArrayType(origTypes, &originalResultIdxToSize);
-      }
-      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
-            inputNameInfo.originalNames, inputNameInfo.existingNames,
-            inputNameInfo.splitNameSuffixes
-        );
-      }
-      ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
-            resultNameInfo.originalNames, resultNameInfo.existingNames,
-            resultNameInfo.splitNameSuffixes
-        );
-      }
-
-      /// For each argument to the Block that has a splittable ArrayType, replace it with the
-      /// necessary number of scalar arguments, generate a CreateArrayOp, and generate writes from
-      /// the new block scalar arguments to the new array. All users of the original block argument
-      /// are updated to target the result of the CreateArrayOp.
-      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
-        OpBuilder::InsertionGuard guard(rewriter);
-        rewriter.setInsertionPointToStart(&entryBlock);
-
-        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-          Value oldV = entryBlock.getArgument(i);
-          if (ArrayType at = splittableArray(oldV.getType())) {
-            Location loc = oldV.getLoc();
-            // Generate `CreateArrayOp` and replace uses of the argument with it.
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
-            // Remove the argument from the block
-            entryBlock.eraseArgument(i);
-            // For all indices in the ArrayType (i.e., the element count), generate a new block
-            // argument and a write of that argument to the new array.
-            std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
-            assert(allIndices); // follows from legal() check
-            assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
-            for (ArrayAttr subIdx : allIndices.value()) {
-              BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-              genWrite(loc, newArray, subIdx, newArg, rewriter);
-              ++i;
-            }
-          } else {
-            ++i;
-          }
-        }
-      }
-
-    public:
-      Impl(FuncDefOp op) {
-        ArrayAttr resultAttrs = op.getAllResultAttrs();
-        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
-          return op.getArgNameAttr(i);
-        }, getSplitArrayIndexSuffixes);
-        resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
-          return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
-        }, getSplitArrayIndexSuffixes);
-      }
-    };
-    Impl(op).convert(op, rewriter);
+    SplitArrayInFunctionLikeOpImpl<FuncDefOp>(op).convert(op, rewriter);
   }
 };
 
@@ -549,96 +532,7 @@ public:
   LogicalResult match(ContractOp op) const override { return failure(legal(op)); }
 
   void rewrite(ContractOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    class Impl {
-      ContractOp op;
-      SmallVector<size_t> originalInputIdxToSize;
-      SplitFunctionNameInfo inputNameInfo;
-
-      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) {
-        return splitArrayType(origTypes, &originalInputIdxToSize);
-      }
-
-      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
-            inputNameInfo.originalNames, inputNameInfo.existingNames,
-            inputNameInfo.splitNameSuffixes
-        );
-      }
-
-      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) {
-        OpBuilder::InsertionGuard guard(rewriter);
-        rewriter.setInsertionPointToStart(&entryBlock);
-
-        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-          Value oldV = entryBlock.getArgument(i);
-          if (ArrayType at = splittableArray(oldV.getType())) {
-            Location loc = oldV.getLoc();
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
-            entryBlock.eraseArgument(i);
-            std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
-            assert(allIndices && "static-shape arrays must provide subelement indices");
-            assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
-            for (ArrayAttr subIdx : *allIndices) {
-              BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-              genWrite(loc, newArray, subIdx, newArg, rewriter);
-              ++i;
-            }
-          } else {
-            ++i;
-          }
-        }
-      }
-
-    public:
-      explicit Impl(ContractOp op) : op(op) {
-        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
-          return op.getArgNameAttr(i);
-        }, getSplitArrayIndexSuffixes);
-      }
-
-      void convert(ConversionPatternRewriter &rewriter) {
-        FunctionType oldTy = op.getFunctionType();
-        SmallVector<Type> newInputs = convertInputs(oldTy.getInputs());
-        SmallVector<Type> newResults = splitArrayType(oldTy.getResults());
-        FunctionType newTy =
-            FunctionType::get(oldTy.getContext(), TypeRange(newInputs), TypeRange(newResults));
-        if (newTy == oldTy) {
-          return;
-        }
-
-        assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
-        rewriter.modifyOpInPlace(op, [&]() {
-          op.setFunctionType(newTy);
-          if (ArrayAttr newArgAttrs = convertInputAttrs(op.getArgAttrsAttr(), newInputs)) {
-            op.setArgAttrsAttr(newArgAttrs);
-          }
-        });
-        assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
-
-        Region *body = op.getCallableRegion();
-        if (!body || body->empty()) {
-          return;
-        }
-        Block &entryBlock = body->front();
-        bool blockArgsNeedUpdate =
-            !std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()) ||
-            llvm::any_of(llvm::zip_equal(entryBlock.getArgumentTypes(), newInputs), [](auto pair) {
-          return std::get<0>(pair) != std::get<1>(pair);
-        });
-        if (!blockArgsNeedUpdate) {
-          return;
-        }
-        processBlockArgs(entryBlock, rewriter);
-        assert(std::cmp_equal(entryBlock.getNumArguments(), newInputs.size()));
-        for (unsigned i = 0, e = entryBlock.getNumArguments(); i < e; ++i) {
-          assert(entryBlock.getArgument(i).getType() == newInputs[i]);
-        }
-      }
-    };
-
-    Impl(op).convert(rewriter);
+    SplitArrayInFunctionLikeOpImpl<ContractOp>(op).convert(op, rewriter);
   }
 };
 
