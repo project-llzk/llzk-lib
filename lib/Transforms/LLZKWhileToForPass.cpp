@@ -35,7 +35,6 @@
 #include <algorithm>
 
 namespace llzk {
-#define GEN_PASS_DECL_WHILETOFORPASS
 #define GEN_PASS_DEF_WHILETOFORPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -333,7 +332,10 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   return forOp;
 }
 
-class WhileToForPass : public impl::WhileToForPassBase<WhileToForPass> {
+class PassImpl : public llzk::impl::WhileToForPassBase<PassImpl> {
+  using Base = WhileToForPassBase<PassImpl>;
+  using Base::Base;
+
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<cast::CastDialect>();
   }
@@ -356,5 +358,4 @@ class WhileToForPass : public impl::WhileToForPassBase<WhileToForPass> {
   }
 };
 
-std::unique_ptr<Pass> createWhileToForPass() { return std::make_unique<WhileToForPass>(); }
 } // namespace llzk

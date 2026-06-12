@@ -32,7 +32,6 @@
 #include <ranges>
 
 namespace llzk {
-#define GEN_PASS_DECL_COMPUTECONSTRAINTOPRODUCTPASS
 #define GEN_PASS_DEF_COMPUTECONSTRAINTOPRODUCTPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -80,10 +79,10 @@ LogicalResult alignStartingAt(
   return success();
 }
 
-class ComputeConstrainToProductPass
-    : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
+class PassImpl : public llzk::impl::ComputeConstrainToProductPassBase<PassImpl> {
+  using Base = ComputeConstrainToProductPassBase<PassImpl>;
+  using Base::Base;
 
-public:
   void runOnOperation() override {
     ModuleOp mod = getOperation();
     StructDefOp root;
@@ -251,10 +250,6 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
   }
 
   return success();
-}
-
-std::unique_ptr<Pass> createComputeConstrainToProductPass() {
-  return make_unique<ComputeConstrainToProductPass>();
 }
 
 } // namespace llzk

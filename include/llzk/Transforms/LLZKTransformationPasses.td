@@ -18,7 +18,6 @@ def RedundantReadAndWriteEliminationPass
   let description = [{
     Remove read and write operations to struct members and arrays that are redundant or unnecessary.
   }];
-  let constructor = "llzk::createRedundantReadAndWriteEliminationPass()";
 }
 
 def RedundantOperationEliminationPass : LLZKPass<"llzk-duplicate-op-elim"> {
@@ -29,7 +28,6 @@ def RedundantOperationEliminationPass : LLZKPass<"llzk-duplicate-op-elim"> {
 
     Pass should be run after `llzk-duplicate-read-write-elim` for maximum effect.
   }];
-  let constructor = "llzk::createRedundantOperationEliminationPass()";
 }
 
 def UnusedDeclarationEliminationPass
@@ -43,7 +41,6 @@ def UnusedDeclarationEliminationPass
     Pass should be run after `llzk-duplicate-read-write-elim`
     and `llzk-duplicate-op-elim` for maximum effect.
   }];
-  let constructor = "llzk::createUnusedDeclarationEliminationPass()";
   let options = [Option<"removeStructs", "remove-structs", "bool",
                         /* default */ "false",
                         "Whether to remove unused struct definitions as well. "
@@ -66,7 +63,6 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     This pass is best used as part of the `-llzk-full-poly-lowering` pipeline, which includes
     additional cleanup passes to ensure correctness and optimal performance.
   }];
-  let constructor = "llzk::createPolyLoweringPass()";
   let options = [Option<"maxDegree", "max-degree", "unsigned",
                         /* default */ "2",
                         "Maximum degree of constraint polynomials "
@@ -93,7 +89,6 @@ def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
     This pass also assumes that all subcomponents that are created by calling a struct "@compute"
     function are ultimately written to exactly one member within the current struct.
   }];
-  let constructor = "llzk::createInlineStructsPass()";
   let options = [Option<"maxComplexity", "max-merge-complexity", "uint64_t",
                         /* default */ "0",
                         "Maximum allowed constraint+multiplications in merged "
@@ -106,7 +101,6 @@ def ComputeConstrainToProductPass
   let summary = "Replace separate @compute and @constrain functions in a "
                 "struct with a single @product function";
   let description = summary;
-  let constructor = "llzk::createComputeConstrainToProductPass()";
   let options = [Option<"rootStruct", "root-struct", "std::string",
                         /* default */ "\"@Main\"",
                         "Root struct at which to start alignment "
@@ -116,21 +110,17 @@ def ComputeConstrainToProductPass
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
   let summary = "Fuse matching witness/constraint loops in a @product function";
   let description = summary;
-  let constructor = "llzk::createFuseProductLoopsPass()";
-  let options = [];
 }
 
 def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   let summary = "Checks that every struct member is written exactly once";
   let description = [{
-      This pass currently reports an error if any struct member may not be written 
-      exactly once (i.e. overwritten or left uninitialized), and does not 
-      attempt to perform any repairs (e.g. SSA-ifying overwritten struct 
-      members, or default-initializing unwritten members). This pass 
+      This pass currently reports an error if any struct member may not be written
+      exactly once (i.e. overwritten or left uninitialized), and does not
+      attempt to perform any repairs (e.g. SSA-ifying overwritten struct
+      members, or default-initializing unwritten members). This pass
       overapproximates conditionals, and can result in false positives.
   }];
-  let constructor = "llzk::createNoOverwritesPass()";
-  let options = [];
 }
 
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
@@ -142,8 +132,6 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "to equivalent scf.for loops, which are preferred by some "
       "analyses. This pass may introduce some spurious felt/index casts which "
       "should be cleaned up by --canonicalize.";
-  let constructor = "llzk::createWhileToForPass()";
-  let options = [];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

@@ -321,9 +321,10 @@ ValueMap cloneValueMap(const ValueMap &orig) {
   return res;
 }
 
-class RedundantReadAndWriteEliminationPass
-    : public llzk::impl::RedundantReadAndWriteEliminationPassBase<
-          RedundantReadAndWriteEliminationPass> {
+class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<PassImpl> {
+  using Base = RedundantReadAndWriteEliminationPassBase<PassImpl>;
+  using Base::Base;
+
   /// @brief Run the pass over the LLZK module. Currently the pass is intraprocedural,
   /// so this defers the optimization to `runOnFunc` for each function in the module.
   /// @note Due to MLIR limitations, you need to write passes as passes over ModuleOp,
@@ -676,7 +677,3 @@ class RedundantReadAndWriteEliminationPass
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createRedundantReadAndWriteEliminationPass() {
-  return std::make_unique<RedundantReadAndWriteEliminationPass>();
-};

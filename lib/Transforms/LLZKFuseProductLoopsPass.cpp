@@ -28,20 +28,23 @@
 
 #include <memory>
 
+// Include the generated base pass class definitions.
 namespace llzk {
-
-#define GEN_PASS_DECL_FUSEPRODUCTLOOPSPASS
 #define GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
+} // namespace llzk
+
+namespace llzk {
 
 using namespace llzk::function;
 
 // Bitwidth of `index` for instantiating SMT variables
 constexpr int INDEX_WIDTH = 64;
 
-class FuseProductLoopsPass : public impl::FuseProductLoopsPassBase<FuseProductLoopsPass> {
+class PassImpl : public llzk::impl::FuseProductLoopsPassBase<PassImpl> {
+  using Base = FuseProductLoopsPassBase<PassImpl>;
+  using Base::Base;
 
-public:
   void runOnOperation() override {
     mlir::ModuleOp mod = getOperation();
     mod.walk([this](FuncDefOp funcDef) {
@@ -173,7 +176,4 @@ mlir::LogicalResult fuseMatchingLoopPairs(mlir::Region &body, mlir::MLIRContext 
   return mlir::success();
 }
 
-std::unique_ptr<mlir::Pass> createFuseProductLoopsPass() {
-  return std::make_unique<FuseProductLoopsPass>();
-}
 } // namespace llzk

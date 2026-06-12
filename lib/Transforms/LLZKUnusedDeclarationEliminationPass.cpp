@@ -24,8 +24,6 @@
 
 // Include the generated base pass class definitions.
 namespace llzk {
-// the *DECL* macro is required when a pass has options to declare the option struct
-#define GEN_PASS_DECL_UNUSEDDECLARATIONELIMINATIONPASS
 #define GEN_PASS_DEF_UNUSEDDECLARATIONELIMINATIONPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -44,8 +42,9 @@ SymbolRefAttr getFullMemberSymbol(MemberRefOpInterface op) {
   return appendLeaf(structSym, op.getMemberNameAttr());
 }
 
-class UnusedDeclarationEliminationPass
-    : public llzk::impl::UnusedDeclarationEliminationPassBase<UnusedDeclarationEliminationPass> {
+class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImpl> {
+  using Base = UnusedDeclarationEliminationPassBase<PassImpl>;
+  using Base::Base;
 
   /// @brief Shared context between the operations in this pass (member removal, struct removal)
   /// that doesn't need to be persisted after the pass completes.
@@ -230,7 +229,3 @@ class UnusedDeclarationEliminationPass
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createUnusedDeclarationEliminationPass() {
-  return std::make_unique<UnusedDeclarationEliminationPass>();
-};

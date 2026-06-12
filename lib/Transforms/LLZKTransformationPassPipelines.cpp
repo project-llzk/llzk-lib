@@ -30,9 +30,9 @@ struct FullPolyLoweringOptions : public PassPipelineOptions<FullPolyLoweringOpti
 };
 
 void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
-  pm.addPass(llzk::createRedundantReadAndWriteEliminationPass());
-  pm.addPass(llzk::createRedundantOperationEliminationPass());
-  pm.addPass(llzk::createUnusedDeclarationEliminationPass());
+  pm.addPass(createRedundantReadAndWriteEliminationPass());
+  pm.addPass(createRedundantOperationEliminationPass());
+  pm.addPass(createUnusedDeclarationEliminationPass());
 }
 
 void registerTransformationPassPipelines() {
@@ -57,7 +57,7 @@ void registerTransformationPassPipelines() {
       "and definitions.",
       [](OpPassManager &pm, const FullPolyLoweringOptions &opts) {
     // 1. Degree lowering
-    pm.addPass(llzk::createPolyLoweringPass(opts.maxDegree));
+    pm.addPass(createPolyLoweringPass(PolyLoweringPassOptions {.maxDegree = opts.maxDegree}));
 
     // 2. Cleanup
     addRemoveUnnecessaryOpsAndDefsPipeline(pm);
@@ -68,8 +68,8 @@ void registerTransformationPassPipelines() {
       "llzk-product-program",
       "Convert @compute/@constrain functions to @product function and perform alignment",
       [](OpPassManager &pm) {
-    pm.addPass(llzk::createComputeConstrainToProductPass());
-    pm.addPass(llzk::createFuseProductLoopsPass());
+    pm.addPass(createComputeConstrainToProductPass());
+    pm.addPass(createFuseProductLoopsPass());
   }
   );
 }

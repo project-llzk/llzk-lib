@@ -25,7 +25,6 @@
 #include <memory>
 
 namespace llzk {
-#define GEN_PASS_DECL_ENFORCENOMEMBEROVERWRITEPASS
 #define GEN_PASS_DEF_ENFORCENOMEMBEROVERWRITEPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -41,8 +40,9 @@ namespace llzk {
 using namespace function;
 using namespace component;
 
-class EnforceNoMemberOverwritePass
-    : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
+class PassImpl : public llzk::impl::EnforceNoMemberOverwritePassBase<PassImpl> {
+  using Base = EnforceNoMemberOverwritePassBase<PassImpl>;
+  using Base::Base;
 
   void runOnOperation() override {
     getOperation()->walk([this](StructDefOp structDef) {
@@ -65,7 +65,4 @@ class EnforceNoMemberOverwritePass
   }
 };
 
-std::unique_ptr<mlir::Pass> createNoOverwritesPass() {
-  return make_unique<EnforceNoMemberOverwritePass>();
-}
 } // namespace llzk
