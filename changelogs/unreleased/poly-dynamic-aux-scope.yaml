@@ -1,2 +1,2 @@
 fixed:
-  - Reject polynomial and R1CS lowering on nested-region constrain bodies instead of materializing component-scope auxiliaries inside control flow
+  - Reject polynomial and R1CS lowering on non-straight-line constrain bodies instead of materializing component-scope auxiliaries inside control flow

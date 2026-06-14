@@ -34,7 +34,8 @@ checkForAuxMemberConflicts(component::StructDefOp structDef, llvm::StringRef aux
 
 /// Rejects control flow under `constrainFunc`; polynomial and R1CS auxiliary
 /// materialization assumes control flow has already been flattened or otherwise
-/// lowered away.
+/// lowered away. The region check catches multi-block function bodies before
+/// the operation walk rejects nested regions or successor-bearing operations.
 mlir::LogicalResult
 checkConstrainBodyIsStraightLine(function::FuncDefOp constrainFunc, llvm::StringRef passName);
 

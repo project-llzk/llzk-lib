@@ -1,6 +1,24 @@
 // RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
 
 module attributes {llzk.lang = "llzk"} {
+  struct.def @MultiBlockAuxScope {
+    function.def @compute(%a: !felt.type) -> !struct.type<@MultiBlockAuxScope> {
+      %self = struct.new : !struct.type<@MultiBlockAuxScope>
+      function.return %self : !struct.type<@MultiBlockAuxScope>
+    }
+
+    // expected-error@+1 {{poly lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+    function.def @constrain(%self: !struct.type<@MultiBlockAuxScope>, %a: !felt.type) {
+      function.return
+    ^unreachable:
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
   struct.def @LoopAuxScopeRepro {
     struct.member @out : !felt.type {llzk.pub}
 

@@ -18,7 +18,8 @@ def R1CSLoweringPass : LLZKPass<"llzk-r1cs-lowering"> {
   let description = [{
     Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect.
     The pass expects already-flattened, straight-line `constrain` bodies. Run `llzk-flatten` or
-    another control-flow lowering pass before this pass.
+    another control-flow lowering pass before this pass; nested-region, successor-bearing, or
+    multi-block constraints are rejected before R1CS normalization.
     This pass is best used on already-flattened input as part of the `-llzk-full-r1cs-lowering`
     pipeline which includes a degree lowering pass and clean up passes to ensure correctness and
     performance.

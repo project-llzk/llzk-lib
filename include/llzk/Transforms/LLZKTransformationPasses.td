@@ -75,8 +75,9 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     equality operands and struct constrain call arguments satisfy their degree bounds.
 
     The pass expects already-flattened, straight-line `constrain` bodies. Run `llzk-flatten` or
-    another control-flow lowering pass before this pass; nested-region or multi-block constraints
-    are rejected instead of being rewritten with component-lifetime auxiliary members.
+    another control-flow lowering pass before this pass; nested-region, successor-bearing, or
+    multi-block constraints are rejected instead of being rewritten with component-lifetime
+    auxiliary members.
 
     This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`
     pipeline, which includes additional cleanup passes to ensure correctness and optimal
