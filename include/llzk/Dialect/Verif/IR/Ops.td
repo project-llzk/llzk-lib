@@ -553,6 +553,8 @@ class InvariantInnerOp<string mnemonic, list<Trait> traits = []>
       effects.emplace_back(::mlir::MemoryEffects::Write::get());
     }
   }];
+
+  let assemblyFormat = "$value attr-dict";
 }
 
 def IncreasesOp : InvariantInnerOp<"increases"> {}
@@ -587,6 +589,8 @@ def StepOp : VerifDialectOp<
       effects.emplace_back(::mlir::MemoryEffects::Write::get());
     }
   }];
+
+  let assemblyFormat = "$region attr-dict";
 }
 
 def StepYieldOp : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]> {
@@ -597,6 +601,8 @@ def StepYieldOp : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]
 
   let arguments = (ins I1:$value);
   let results = (outs);
+
+  let assemblyFormat = "$value attr-dict";
 }
 
 def OldOp : VerifDialectOp<"old", [Pure, HasAncestor<"::llzk::verif::StepOp">, AllTypesMatch<["value", "result"]>]> {
@@ -609,6 +615,8 @@ def OldOp : VerifDialectOp<"old", [Pure, HasAncestor<"::llzk::verif::StepOp">, A
 
   let arguments = (ins AnyLLZKType:$value);
   let results = (outs AnyLLZKType:$result);
+
+  let assemblyFormat = "$value `:` type($result) attr-dict";
 }
 
 #endif // LLZK_VERIF_OPS

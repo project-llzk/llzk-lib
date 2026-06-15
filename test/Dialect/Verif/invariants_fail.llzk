@@ -55,3 +55,51 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @Bar() attributes {function.allow_witness} {
+    %c0 = felt.const  4
+    %0 = scf.while (%1 = %c0) : (!felt.type) -> (!felt.type) {
+      %true = arith.constant  true 
+      scf.condition(%true) %1 : !felt.type
+    } do {
+      ^bb0(%2: !felt.type):
+      scf.yield %2 : !felt.type
+    } attributes {loop_label = "loopA"}
+    function.return
+  }
+
+  verif.contract @Foo for @Bar () {
+    // expected-error@+1 {{'verif.invariant' op target has 1 arguments but invariant declared 2}}
+    verif.invariant for @loopA(%0: !felt.type, %1: !felt.type) {
+      %true = arith.constant  true
+      verif.require_compute %true
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @Bar() attributes {function.allow_witness} {
+    %c0 = felt.const  4
+    %0 = scf.while (%1 = %c0) : (!felt.type) -> (!felt.type) {
+      %true = arith.constant  true 
+      scf.condition(%true) %1 : !felt.type
+    } do {
+      ^bb0(%2: !felt.type):
+      scf.yield %2 : !felt.type
+    } attributes {loop_label = "loopA"}
+    function.return
+  }
+
+  verif.contract @Foo for @Bar () {
+    // expected-error@+1 {{'verif.invariant' op target argument #0 expected type '!felt.type' but invariant declared type !array.type<1 x !felt.type>}}
+    verif.invariant for @loopA(%0: !array.type<1 x !felt.type>) {
+      %true = arith.constant  true
+      verif.require_compute %true
+    }
+  }
+}
