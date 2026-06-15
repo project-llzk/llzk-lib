@@ -12,6 +12,7 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Operation.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/STLExtras.h>
@@ -56,6 +57,24 @@ Value rebuildExprInCompute(
     if (!callOp.getMapOperands().empty()) {
       callOp.emitError(
           "cannot rebuild affine-instantiated function.call in compute-side auxiliary expression"
+      );
+      return nullptr;
+    }
+
+    SymbolTableCollection tables;
+    FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return nullptr;
+    }
+    FuncDefOp targetFunc = target->get();
+    bool invalidTarget =
+        (targetFunc.hasAllowConstraintAttr() && !computeFunc.hasAllowConstraintAttr()) ||
+        (targetFunc.hasAllowNonNativeFieldOpsAttr() &&
+         !computeFunc.hasAllowNonNativeFieldOpsAttr());
+    if (invalidTarget) {
+      callOp.emitError(
+          "cannot rebuild function.call in compute-side auxiliary expression because the callee "
+          "requires attributes not present on the compute function"
       );
       return nullptr;
     }

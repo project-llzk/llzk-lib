@@ -22,8 +22,6 @@ module attributes {llzk.lang} {
 
   }
 
-  function.def private @extern_payload() -> !ToFelt attributes {extern}
-
   struct.def @UsesAffineCall {
     struct.member @out : !felt.type
 
@@ -32,13 +30,14 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@UsesAffineCall>
     }
 
-    function.def @constrain(%self: !struct.type<@UsesAffineCall>) {
+    function.def @constrain(%self: !struct.type<@UsesAffineCall>)
+        attributes {function.allow_constraint, function.allow_witness} {
       %lb = arith.constant 0 : index
       %ub = arith.constant 2 : index
       %step = arith.constant 1 : index
       scf.for %i = %lb to %ub step %step {
-        // expected-error@+1 {{can only have affine map instantiations when targeting a "@compute" function}}
-        %payload = function.call @extern_payload(){(%i)} : () -> !ToFelt
+        // expected-error@+1 {{cannot rebuild affine-instantiated function.call in compute-side auxiliary expression}}
+        %payload = function.call @TToFelt::@ToFelt::@compute(){(%i)} : () -> !ToFelt
         %value = struct.readm %payload[@out] : !ToFelt, !felt.type
         %square = felt.mul %value, %value : !felt.type, !felt.type
         %quad = felt.mul %square, %square : !felt.type, !felt.type
