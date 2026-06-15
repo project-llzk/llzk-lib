@@ -201,7 +201,8 @@ def ForAllOp : QuantifierOp<"forall", "all elements"> {}
 
 def ExistsOp : QuantifierOp<"exists", "at least one element"> {}
 
-def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator, ParentOneOf<["ForAllOp", "ExistsOp"]>]> {
+def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator,
+                                      ParentOneOf<["ForAllOp", "ExistsOp"]>]> {
   let summary = "boolean yield operation";
   let description = [{
     This terminator operation yields the boolean value of the predicate inside the body of 
