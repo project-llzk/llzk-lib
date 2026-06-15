@@ -412,6 +412,7 @@ Functions</h2></td></tr>
 <tr class="memitem:aff868f4126dfe56cae327fc5359725c8" id="r_aff868f4126dfe56cae327fc5359725c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aff868f4126dfe56cae327fc5359725c8">registerInliningExtensions</a> (DialectRegistry &amp;registry)</td></tr>
 <tr class="memitem:a12a702f1e67b6a7dd0c787d2770dfb8c" id="r_a12a702f1e67b6a7dd0c787d2770dfb8c"><td class="memItemLeft" align="right" valign="top">Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12a702f1e67b6a7dd0c787d2770dfb8c">rebuildExprInCompute</a> (Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</td></tr>
 <tr class="memitem:affe604776b9bbde83b6a6d31f9bc4c86" id="r_affe604776b9bbde83b6a6d31f9bc4c86"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#affe604776b9bbde83b6a6d31f9bc4c86">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> structDef, StringRef prefix)</td></tr>
+<tr class="memitem:a9c2edf42a0e3443db901cf9d6f57080b" id="r_a9c2edf42a0e3443db901cf9d6f57080b"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9c2edf42a0e3443db901cf9d6f57080b">checkConstrainBodyIsStraightLine</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> constrainFunc, StringRef passName)</td></tr>
 <tr class="memitem:a1adebd123866cbb2b9e02bbd5b99c9ca" id="r_a1adebd123866cbb2b9e02bbd5b99c9ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1adebd123866cbb2b9e02bbd5b99c9ca">replaceSubsequentUsesWith</a> (Value oldVal, Value newVal, Operation *afterOp)</td></tr>
 <tr class="memitem:a9242d33a82efd7ed7ce93aa0996a1ebf" id="r_a9242d33a82efd7ed7ce93aa0996a1ebf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9242d33a82efd7ed7ce93aa0996a1ebf">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> structDef, StringRef name)</td></tr>
 <tr class="memitem:ad4ff96ece25453858228f3aff1f625c7" id="r_ad4ff96ece25453858228f3aff1f625c7"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4ff96ece25453858228f3aff1f625c7">getFeltDegree</a> (Value val, DenseMap&lt; Value, unsigned &gt; &amp;memo)</td></tr>
@@ -602,6 +603,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ace269cecbfb44bc5826cd9136d88ae7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuild a <span class="tt">function.call</span> while preserving explicit instantiation state from <span class="tt">oldCall</span>.  <br /></td></tr>
 <tr class="memitem:ad809d2a8931e263f7879703211032d0d" id="r_ad809d2a8931e263f7879703211032d0d"><td class="memItemLeft" align="right" valign="top">mlir::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad809d2a8931e263f7879703211032d0d">rebuildExprInCompute</a> (mlir::Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> computeFunc, mlir::OpBuilder &amp;builder, llvm::DenseMap&lt; mlir::Value, mlir::Value &gt; &amp;memo)</td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
+<tr class="memitem:a6fc587cc3996664c7883f3957bc088f8" id="r_a6fc587cc3996664c7883f3957bc088f8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6fc587cc3996664c7883f3957bc088f8">checkConstrainBodyIsStraightLine</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> constrainFunc, llvm::StringRef passName)</td></tr>
+<tr class="memdesc:a6fc587cc3996664c7883f3957bc088f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rejects control flow under <span class="tt">constrainFunc</span>; polynomial and R1CS auxiliary materialization assumes control flow has already been flattened or otherwise lowered away.  <br /></td></tr>
 <tr class="memitem:a520c8c09dbbe575a7e8708ed8f6f7c44" id="r_a520c8c09dbbe575a7e8708ed8f6f7c44"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a520c8c09dbbe575a7e8708ed8f6f7c44">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name)</td></tr>
 <tr class="memitem:a07235a51b81f09557523887e9b11ca93" id="r_a07235a51b81f09557523887e9b11ca93"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07235a51b81f09557523887e9b11ca93">getFeltDegree</a> (mlir::Value val, llvm::DenseMap&lt; mlir::Value, unsigned &gt; &amp;memo)</td></tr>
 <tr class="memitem:ac05a1e5322d050b620a18869c6e310b4" id="r_ac05a1e5322d050b620a18869c6e310b4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac05a1e5322d050b620a18869c6e310b4">replaceSubsequentUsesWith</a> (mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp)</td></tr>
@@ -1151,7 +1154,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00121">121</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00151">151</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -2104,6 +2107,53 @@ template&lt;typename T, typename... Args&gt; </div>
 <p>Generate a string by calling <span class="tt">base.print(llvm::raw_ostream &amp;)</span> on a stream backed by the returned string. </p>
 
 <p class="definition">Definition at line <a class="el" href="StreamHelper_8h_source.html#l00052">52</a> of file <a class="el" href="StreamHelper_8h_source.html">StreamHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a9c2edf42a0e3443db901cf9d6f57080b" name="a9c2edf42a0e3443db901cf9d6f57080b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9c2edf42a0e3443db901cf9d6f57080b">&#9670;&#160;</a></span>checkConstrainBodyIsStraightLine() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::checkConstrainBodyIsStraightLine </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em>constrainFunc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>passName</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00102">102</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a6fc587cc3996664c7883f3957bc088f8" name="a6fc587cc3996664c7883f3957bc088f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6fc587cc3996664c7883f3957bc088f8">&#9670;&#160;</a></span>checkConstrainBodyIsStraightLine() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::checkConstrainBodyIsStraightLine </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em>constrainFunc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>passName</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Rejects control flow under <span class="tt">constrainFunc</span>; polynomial and R1CS auxiliary materialization assumes control flow has already been flattened or otherwise lowered away. </p>
+<p>The region check catches multi-block function bodies before the operation walk rejects nested regions or successor-bearing operations. </p>
 
 </div>
 </div>
@@ -3913,7 +3963,7 @@ template&lt;typename OpImplClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00129">129</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00159">159</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -9023,7 +9073,7 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00102">102</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00132">132</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>

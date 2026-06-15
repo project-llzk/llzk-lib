@@ -197,6 +197,8 @@ var namespacellzk =
     [ "buildStringViaCallback", "namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380", null ],
     [ "buildStringViaInsertionOp", "namespacellzk.html#a9f1d3c78bf8b6e096419767531cf5ab1", null ],
     [ "buildStringViaPrint", "namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28", null ],
+    [ "checkConstrainBodyIsStraightLine", "namespacellzk.html#a9c2edf42a0e3443db901cf9d6f57080b", null ],
+    [ "checkConstrainBodyIsStraightLine", "namespacellzk.html#a6fc587cc3996664c7883f3957bc088f8", null ],
     [ "checkedCast", "namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237", null ],
     [ "checkFields", "namespacellzk.html#acf5eaa8548259d578f83f0ab17fce45c", null ],
     [ "checkForAuxMemberConflicts", "namespacellzk.html#a61474e8347bb745efe90d84dccb680a8", null ],
