@@ -152,8 +152,8 @@ std::unique_ptr<XorBoolOpBuildFuncHelper> XorBoolOpBuildFuncHelper::get() {
 
 namespace {
 template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
-  QuantifierOpBuildFuncHelper(MlirOperation (*ctor)(MlirOpBuilder, MlirLocation, MlirValue))
-      : ctor(ctor) {};
+  QuantifierOpBuildFuncHelper(MlirOperation (*ctorFn)(MlirOpBuilder, MlirLocation, MlirValue))
+      : ctor(ctorFn) {};
 
   mlir::OwningOpRef<mlir::ModuleOp> parentModule;
   MlirOperation (*ctor)(MlirOpBuilder, MlirLocation, MlirValue);
