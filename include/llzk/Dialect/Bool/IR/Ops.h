@@ -12,6 +12,7 @@
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 
 #include <mlir/Interfaces/InferTypeOpInterface.h>

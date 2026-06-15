@@ -13,6 +13,7 @@
 include "llzk/Dialect/Bool/IR/Dialect.td"
 include "llzk/Dialect/Bool/IR/Attrs.td"
 include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/Array/IR/Types.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/Shared/OpsBase.td"
 
@@ -166,6 +167,51 @@ def LLZK_CmpOp
     `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict
   }];
   let hasFolder = 1;
+}
+
+class QuantifierOp<string mnemonic, string cond, list<Trait> traits = []>
+    : BoolDialectOp<mnemonic, traits#[NotFieldNative, Pure, SingleBlock]> {
+  let summary = mnemonic#" quantifier operation";
+  let description = [{
+    This operation applies a predicate to each element of the given sort. 
+    Returns true iff the predicate is true for }]#cond#[{ of the sort.
+
+    Only LLZK arrays are supported as the sort type at the moment.
+
+    Example:
+    ```
+    %c10 = felt.const  10
+    %0 = array.new %a, %b, %c : !array.type<3 x !felt.type>
+    %1 = bool.}]#mnemonic#[{ %e: !felt.type in %0 {
+      %2 = bool.cmp lt(%e, %c10)
+      bool.yield %2
+    }
+    ```
+  }];
+
+  let arguments = (ins LLZK_ArrayType:$sort);
+  let results = (outs I1:$result);
+  let regions = (region SizedRegion<1>:$region);
+
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+}
+
+def ForAllOp : QuantifierOp<"forall", "all elements"> {}
+
+def ExistsOp : QuantifierOp<"exists", "at least one element"> {}
+
+def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator, ParentOneOf<["ForAllOp", "ExistsOp"]>]> {
+  let summary = "boolean yield operation";
+  let description = [{
+    This terminator operation yields the boolean value of the predicate inside the body of 
+    `bool.forall` and `bool.exists` operations.
+  }];
+
+  let arguments = (ins I1:$value);
+  let results = (outs);
+
+  let assemblyFormat = "$value attr-dict";
 }
 
 #endif // LLZK_BOOLEAN_OPS

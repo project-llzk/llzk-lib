@@ -11,7 +11,10 @@
 
 #include "llzk-c/Dialect/Bool.h"
 
+#include "llzk/Dialect/Array/IR/Ops.h"
+
 // Include necessary generated CAPI
+#include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"
 
 // Include the auto-generated tests
@@ -19,6 +22,12 @@
 #include "llzk/Dialect/Bool/IR/Dialect.capi.test.cpp.inc"
 #include "llzk/Dialect/Bool/IR/Enums.capi.test.cpp.inc"
 #include "llzk/Dialect/Bool/IR/Ops.capi.test.cpp.inc"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+
+#include <llvm/ADT/Sequence.h>
+#include <llvm/ADT/SmallVectorExtras.h>
+
+#include <memory>
 
 class CmpAttrTest : public CAPITest,
                     public testing::WithParamInterface<LlzkBoolFeltCmpPredicate> {};
@@ -139,4 +148,74 @@ std::unique_ptr<XorBoolOpBuildFuncHelper> XorBoolOpBuildFuncHelper::get() {
     }
   };
   return std::make_unique<Impl>();
+}
+
+namespace {
+template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
+  QuantifierOpBuildFuncHelper(MlirOperation (*ctor)(MlirOpBuilder, MlirLocation, MlirValue))
+      : ctor(ctor) {};
+
+  mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+  MlirOperation (*ctor)(MlirOpBuilder, MlirLocation, MlirValue);
+
+  MlirOperation
+  callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+    this->parentModule = testClass.cppGenStructAndSetInsertionPoint(
+        builder, location, llzk::function::FunctionKind::StructCompute
+    );
+    testClass.setAllowNonNativeFieldOpsAttrOnFuncDef(builder);
+    auto op = ctor(builder, location, generateArrayValue(*unwrap(builder), unwrap(location)));
+    fillBody(unwrap(op), *unwrap(builder), unwrap(location));
+    return op;
+  }
+
+  /// Generates an array for passing it to the quantifier op.
+  MlirValue generateArrayValue(mlir::OpBuilder &builder, mlir::Location location) {
+    auto consts = llvm::map_to_vector(llvm::seq(10), [&](uint64_t v) -> mlir::Value {
+      return builder.create<llzk::felt::FeltConstantOp>(
+          location, llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, v))
+      );
+    });
+    return wrap(
+        builder
+            .create<llzk::array::CreateArrayOp>(
+                location,
+                llzk::array::ArrayType::get(llzk::felt::FeltType::get(builder.getContext()), {10}),
+                consts
+            )
+            .getResult()
+    );
+  }
+
+  /// Fills the body of the quantifier op to ensure its properly constructed.
+  void fillBody(mlir::Operation *op, mlir::OpBuilder &builder, mlir::Location location) {
+    mlir::OpBuilder::InsertionGuard giard(builder);
+    auto &block = op->getRegion(0).emplaceBlock();
+    auto arg = block.addArgument(llzk::felt::FeltType::get(builder.getContext()), location);
+    builder.setInsertionPointToStart(&block);
+    auto zero = builder.create<llzk::felt::FeltConstantOp>(
+        location, llzk::felt::FeltConstAttr::get(builder.getContext(), llvm::APInt(64, 0))
+    );
+    auto cmpOp = builder.create<llzk::boolean::CmpOp>(
+        location,
+        llzk::boolean::FeltCmpPredicateAttr::get(
+            builder.getContext(), llzk::boolean::FeltCmpPredicate::EQ
+        ),
+        arg, zero
+    );
+    builder.create<llzk::boolean::YieldOp>(location, cmpOp);
+  }
+};
+} // namespace
+
+std::unique_ptr<ForAllOpBuildFuncHelper> ForAllOpBuildFuncHelper::get() {
+  return std::make_unique<QuantifierOpBuildFuncHelper<ForAllOpBuildFuncHelper>>(
+      llzkBool_ForAllOpBuild
+  );
+}
+
+std::unique_ptr<ExistsOpBuildFuncHelper> ExistsOpBuildFuncHelper::get() {
+  return std::make_unique<QuantifierOpBuildFuncHelper<ExistsOpBuildFuncHelper>>(
+      llzkBool_ExistsOpBuild
+  );
 }

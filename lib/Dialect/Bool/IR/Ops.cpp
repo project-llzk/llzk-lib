@@ -14,6 +14,10 @@
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/OpImplementation.h>
+#include <mlir/Support/LLVM.h>
+
+#include <cassert>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -151,5 +155,130 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   }
   return makeBoolAttr(getContext(), eval(getPredicate(), lval, rval));
 }
+
+//===------------------------------------------------------------------===//
+// Quantifier ops common impl
+//===------------------------------------------------------------------===//
+
+namespace {
+/// Verifies a quantifier operation.
+///
+/// The region of the operation must have only 1 argument and its type must match
+/// the element type of the sort.
+template <typename Op> LogicalResult verifyQuantOp(Op op) {
+  auto *block = op.getBody();
+  if (!block || block->getNumArguments() != 1) {
+    return op->emitOpError() << "must have one block argument";
+  }
+  auto argType = block->getArgument(0).getType();
+  auto eltType = op.getSort().getType().getElementType();
+  if (argType != eltType) {
+    return op->emitOpError() << "expects element type " << argType << " but sort has element type "
+                             << eltType;
+  }
+
+  auto termOp = block->getTerminator();
+  if (!llvm::dyn_cast_if_present<YieldOp>(termOp)) {
+    return op->emitOpError() << "expects 'bool.yield' terminator op";
+  }
+  return success();
+}
+
+/// Parses a quantifier operation.
+///
+/// The grammar is the same for both `forall` and `exists`:
+///
+/// ```
+/// bool.(forall|exists) %elt (`:` type(%elt))? `in` $sort `:` type($sort) $region (`attributes`
+/// attr-dict)?
+/// ```
+template <typename Op> ParseResult parseQuantOp(OpAsmParser &parser, OperationState &result) {
+  OpAsmParser::Argument arg;
+  if (parser.parseArgument(arg)) {
+    return failure();
+  }
+  assert(!arg.type);
+  if (succeeded(parser.parseOptionalColon())) {
+    if (parser.parseType(arg.type)) {
+      return failure();
+    }
+  }
+  if (parser.parseKeyword("in")) {
+    return failure();
+  }
+  OpAsmParser::UnresolvedOperand sortOperand;
+  array::ArrayType sortType;
+  if (parser.parseOperand(sortOperand)) {
+    return failure();
+  }
+  if (parser.parseColonType(sortType)) {
+    return failure();
+  }
+  if (parser.resolveOperand(sortOperand, sortType, result.operands)) {
+    return failure();
+  }
+
+  if (!arg.type) {
+    arg.type = sortType.getElementType();
+    assert(arg.type && "argument type must be inferred from the array element type");
+  }
+
+  auto *body = result.addRegion();
+  SMLoc loc = parser.getCurrentLocation();
+  if (parser.parseRegion(
+          *body, {arg},
+          /*enableNameShadowing=*/false
+      )) {
+    return failure();
+  }
+
+  if (body->empty()) {
+    return parser.emitError(loc, "expected non-empty invariant body");
+  }
+  if (parser.parseOptionalAttrDictWithKeyword(result.attributes)) {
+    return failure();
+  }
+
+  result.types = {parser.getBuilder().getI1Type()};
+  return success();
+}
+
+/// Prints a quantifier operation.
+template <typename Op> void printQuantOp(OpAsmPrinter &p, Op op) {
+  p << ' ';
+  p.printRegionArgument(op.getBody()->getArgument(0));
+  p << " in ";
+  p.printOperand(op.getSort());
+  p << " : " << op.getSort().getType();
+  p << ' ';
+  p.printRegion(op.getRegion(), /*printEntryBlockArgs=*/false);
+  p << ' ';
+  p.printOptionalAttrDictWithKeyword(op->getAttrs());
+}
+} // namespace
+
+//===------------------------------------------------------------------===//
+// ForAllOp
+//===------------------------------------------------------------------===//
+
+LogicalResult ForAllOp::verify() { return verifyQuantOp(*this); }
+
+ParseResult ForAllOp::parse(OpAsmParser &parser, OperationState &result) {
+  return parseQuantOp<ForAllOp>(parser, result);
+}
+
+void ForAllOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
+
+//===------------------------------------------------------------------===//
+// ExistsOp
+//===------------------------------------------------------------------===//
+
+LogicalResult ExistsOp::verify() { return verifyQuantOp(*this); }
+
+ParseResult ExistsOp::parse(OpAsmParser &parser, OperationState &result) {
+  return parseQuantOp<ExistsOp>(parser, result);
+}
+
+void ExistsOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
 
 } // namespace llzk::boolean
