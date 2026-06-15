@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Shared/Builders.h"
 
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+
 #include <mlir/IR/Builders.h>
 #include <mlir/Support/LLVM.h>
 
@@ -270,7 +271,8 @@ Derived &ModuleLikeBuilder<Derived>::insertConstrainCall(
 
 template <typename Derived>
 Derived &ModuleLikeBuilder<Derived>::insertFreeFunc(
-    std::string_view funcName, FunctionType type, Location loc, llvm::function_ref<void(OpBuilder&)> fnBody
+    std::string_view funcName, FunctionType type, Location loc,
+    llvm::function_ref<void(OpBuilder &)> fnBody
 ) {
   ensureNoSuchFreeFunc(funcName);
 

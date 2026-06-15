@@ -57,22 +57,21 @@ def InvariantTarget : OpInterface<"InvariantTargetOpInterface"> {
   }];
   let cppNamespace = "::llzk::verif";
 
-  let methods = [InterfaceMethod<[{Gets the label of the loop, if available.}],
-                                 "::mlir::FailureOr<::mlir::StringRef>",
-                                 "getLabel", (ins), [{
+  let methods =
+      [InterfaceMethod<[{Gets the label of the loop, if available.}],
+                       "::mlir::FailureOr<::mlir::StringRef>", "getLabel",
+                       (ins), [{
                                    auto attr = ::mlir::dyn_cast_or_null<::mlir::StringAttr>($_op->getDiscardableAttr("loop_label"));
                                    if (!attr) return ::mlir::failure();
                                    return attr.getValue();
                                  }]>,
-                 InterfaceMethod<
-                     [{Gets the types of the values that the invariant binds inside its body.}],
-                     "::mlir::SmallVector<::mlir::Type>", "getArgumentTypes",
-                     (ins)>,
+       InterfaceMethod<
+           [{Gets the types of the values that the invariant binds inside its body.}],
+           "::mlir::SmallVector<::mlir::Type>", "getArgumentTypes", (ins)>,
   ];
 }
 
-def ContractTarget
-    : OpInterface<"ContractTargetOpInterface", [Symbol]> {
+def ContractTarget : OpInterface<"ContractTargetOpInterface", [Symbol]> {
   let description = [{
     Interface implemented by operations that can be targeted by a contract.
 

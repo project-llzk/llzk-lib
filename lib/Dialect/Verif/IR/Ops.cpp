@@ -40,6 +40,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/Twine.h>
+
 #include <memory>
 
 // TableGen'd implementation files
@@ -1096,10 +1097,14 @@ Operation *IncludeOp::resolveCallable() {
 // InvariantOp
 //===------------------------------------------------------------------===//
 
-
-void InvariantOp::build(OpBuilder &odsBuilder, OperationState &odsState, StringRef loop_name, ArrayRef<Type> loop_arg_types, ArrayRef<Location> loop_arg_locs) {
-  odsState.getOrAddProperties<InvariantOp::Properties>().loop_name = odsBuilder.getStringAttr(loop_name);
-  odsState.getOrAddProperties<InvariantOp::Properties>().loop_arg_types = odsBuilder.getTypeArrayAttr(loop_arg_types);
+void InvariantOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef loop_name,
+    ArrayRef<Type> loop_arg_types, ArrayRef<Location> loop_arg_locs
+) {
+  odsState.getOrAddProperties<InvariantOp::Properties>().loop_name =
+      odsBuilder.getStringAttr(loop_name);
+  odsState.getOrAddProperties<InvariantOp::Properties>().loop_arg_types =
+      odsBuilder.getTypeArrayAttr(loop_arg_types);
   auto region = std::make_unique<Region>();
   auto &block = region->emplaceBlock();
   block.addArguments(loop_arg_types, loop_arg_locs);
@@ -1192,7 +1197,6 @@ ParseResult InvariantOp::parse(OpAsmParser &parser, OperationState &result) {
   }
   result.getOrAddProperties<InvariantOp::Properties>().loop_name = loopNameAttr;
 
-
   // Parse the function signature.
   bool isVariadic = false;
   SmallVector<OpAsmParser::Argument> entryArgs;
@@ -1210,8 +1214,9 @@ ParseResult InvariantOp::parse(OpAsmParser &parser, OperationState &result) {
     return failure();
   }
 
-  SmallVector<Type> argTypes = llvm::map_to_vector(entryArgs, [](auto arg) {return arg.type; });
-  result.getOrAddProperties<InvariantOp::Properties>().loop_arg_types = parser.getBuilder().getTypeArrayAttr(argTypes);
+  SmallVector<Type> argTypes = llvm::map_to_vector(entryArgs, [](auto arg) { return arg.type; });
+  result.getOrAddProperties<InvariantOp::Properties>().loop_arg_types =
+      parser.getBuilder().getTypeArrayAttr(argTypes);
 
   auto *body = result.addRegion();
   SMLoc loc = parser.getCurrentLocation();

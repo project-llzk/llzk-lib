@@ -37,7 +37,7 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif);
 ///
 /// Attempting to use those interfaces without calling this function first will result in an error.
 MLIR_CAPI_EXPORTED void llzkVerif_attachInterfaces(MlirContext context);
-  
+
 /// Build a `verif.contract` from explicit attributes and signature metadata.
 LLZK_DECLARE_OP_BUILD_METHOD(
     Verif, ContractOp, MlirIdentifier sym_name, MlirAttribute target, MlirAttribute function_type,
@@ -60,11 +60,12 @@ LLZK_DECLARE_OP_BUILD_METHOD(
     Verif, IncludeOp, MlirAttribute callee, MlirValueRange argOperands, MlirAttribute templateParams
 );
 
-/// Build a `verif.invariant` with a list of argument types and locations. 
+/// Build a `verif.invariant` with a list of argument types and locations.
 ///
 /// The pointers to the types and locations must point to the same amount of elements.
 LLZK_DECLARE_OP_BUILD_METHOD(
-    Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types, MlirLocation const *locs
+    Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types,
+    MlirLocation const *locs
 );
 
 /// Returns the body of the invariant operation.

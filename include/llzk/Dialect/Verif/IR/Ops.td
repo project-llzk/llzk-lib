@@ -593,7 +593,8 @@ def StepOp : VerifDialectOp<
   let assemblyFormat = "$region attr-dict";
 }
 
-def StepYieldOp : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]> {
+def StepYieldOp
+    : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]> {
   let summary = "step yield operation";
   let description = [{
     Terminator operation for `verif.step` blocks. Takes the boolean value carrying the predicate's result.
@@ -605,7 +606,8 @@ def StepYieldOp : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]
   let assemblyFormat = "$value attr-dict";
 }
 
-def OldOp : VerifDialectOp<"old", [Pure, HasAncestor<"::llzk::verif::StepOp">, AllTypesMatch<["value", "result"]>]> {
+def OldOp : VerifDialectOp<"old", [Pure, HasAncestor<"::llzk::verif::StepOp">,
+                                   AllTypesMatch<["value", "result"]>]> {
   let summary = "old operation";
   let description = [{
     This operation allows accessing the value of an expression in the previous iteration of the loop.

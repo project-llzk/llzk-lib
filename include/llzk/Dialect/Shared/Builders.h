@@ -285,8 +285,14 @@ public:
     return insertConstrainCall(caller, callee, getUnknownLoc(), getUnknownLoc());
   }
 
-  Derived &insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc, llvm::function_ref<void(mlir::OpBuilder&)> fnBody = nullptr);
-  inline Derived &insertFreeFunc(std::string_view funcName, ::mlir::FunctionType type, llvm::function_ref<void(mlir::OpBuilder&)> fnBody = nullptr) {
+  Derived &insertFreeFunc(
+      std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc,
+      llvm::function_ref<void(mlir::OpBuilder &)> fnBody = nullptr
+  );
+  inline Derived &insertFreeFunc(
+      std::string_view funcName, ::mlir::FunctionType type,
+      llvm::function_ref<void(mlir::OpBuilder &)> fnBody = nullptr
+  ) {
     return insertFreeFunc(funcName, type, getUnknownLoc(), fnBody);
   }
 

@@ -105,16 +105,19 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 //===----------------------------------------------------------------------===//
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types, MlirLocation const *locs
+    Verif, InvariantOp, MlirStringRef loopName, intptr_t numArgs, MlirType const *types,
+    MlirLocation const *locs
 ) {
   SmallVector<Type> typesSto;
   SmallVector<Location> locsSto;
   auto typesRef = unwrapList(numArgs, types, typesSto);
   auto locsRef = unwrapList(numArgs, locs, locsSto);
 
-  return mlirOpBuilderInsert(builder, wrap(llzk::create<InvariantOp>(builder, location, unwrap(loopName), typesRef, locsRef)));
+  return mlirOpBuilderInsert(
+      builder,
+      wrap(llzk::create<InvariantOp>(builder, location, unwrap(loopName), typesRef, locsRef))
+  );
 }
-
 
 MlirBlock llzkVerif_InvariantOpGetBody(MlirOperation op) {
   return wrap(unwrap_cast<InvariantOp>(op).getBody());

@@ -21,4 +21,3 @@
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Verif/IR/OpInterfaces.h.inc"
-
