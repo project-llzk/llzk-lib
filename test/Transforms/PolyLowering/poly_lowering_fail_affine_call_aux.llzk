@@ -19,8 +19,9 @@ module attributes {llzk.lang} {
         function.return
       }
 
-      function.def private @make() -> !struct.type<@TToFelt::@ToFelt<[@A]>> attributes {extern}
     }
+
+    function.def private @make() -> !struct.type<@TToFelt::@ToFelt<[@A]>> attributes {extern}
 
   }
 
@@ -39,7 +40,7 @@ module attributes {llzk.lang} {
       %step = arith.constant 1 : index
       scf.for %i = %lb to %ub step %step {
         // expected-error@+1 {{cannot rebuild affine-instantiated function.call in compute-side auxiliary expression}}
-        %payload = function.call @TToFelt::@ToFelt::@make(){(%i)} : () -> !ToFelt
+        %payload = function.call @TToFelt::@make(){(%i)} : () -> !ToFelt
         %value = struct.readm %payload[@out] : !ToFelt, !felt.type
         %square = felt.mul %value, %value : !felt.type, !felt.type
         %quad = felt.mul %square, %square : !felt.type, !felt.type
