@@ -21,4 +21,4 @@ void registerTransformationPassPipelines();
 #define GEN_PASS_REGISTRATION
 #include "r1cs/Transforms/TransformationPasses.h.inc"
 
-}; // namespace r1cs
+} // namespace r1cs
