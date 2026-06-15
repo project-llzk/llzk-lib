@@ -30,6 +30,7 @@
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
@@ -168,6 +169,7 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
+  llzk::component::registerStructTransformationPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
@@ -179,10 +181,10 @@ int main(int argc, char **argv) {
   pcl::registerTransformationPasses();
   pcl::conversion::registerPCLTransformationPasses();
 #endif // LLZK_WITH_PCL
+  llzk::smt::registerConversionPasses();
 
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
-  llzk::smt::registerConversionPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

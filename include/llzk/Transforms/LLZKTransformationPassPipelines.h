@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Pass/PassManager.h>

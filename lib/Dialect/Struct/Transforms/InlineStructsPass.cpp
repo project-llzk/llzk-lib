@@ -1,4 +1,4 @@
-//===-- LLZKInlineStructsPass.cpp -------------------------------*- C++ -*-===//
+//===-- InlineStructsPass.cpp -----------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -18,7 +18,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/LLZKInlineStructsPass.h"
+#include "llzk/Dialect/Struct/Transforms/InlineStructsPass.h"
 
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -26,8 +26,8 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -47,10 +47,10 @@
 #include <optional>
 
 // Include the generated base pass class definitions.
-namespace llzk {
+namespace llzk::component {
 #define GEN_PASS_DEF_INLINESTRUCTSPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h.inc"
+} // namespace llzk::component
 
 using namespace mlir;
 using namespace llzk;
@@ -926,7 +926,7 @@ LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan)
 
 namespace {
 
-class PassImpl : public llzk::impl::InlineStructsPassBase<PassImpl> {
+class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
   using Base = InlineStructsPassBase<PassImpl>;
   using Base::Base;
 
