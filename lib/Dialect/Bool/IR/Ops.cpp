@@ -192,7 +192,7 @@ template <typename Op> LogicalResult verifyQuantOp(Op op) {
 /// bool.(forall|exists) %elt (`:` type(%elt))? `in` $sort `:` type($sort) $region (`attributes`
 /// attr-dict)?
 /// ```
-template <typename Op> ParseResult parseQuantOp(OpAsmParser &parser, OperationState &result) {
+ParseResult parseQuantOp(OpAsmParser &parser, OperationState &result) {
   OpAsmParser::Argument arg;
   if (parser.parseArgument(arg)) {
     return failure();
@@ -264,7 +264,7 @@ template <typename Op> void printQuantOp(OpAsmPrinter &p, Op op) {
 LogicalResult ForAllOp::verify() { return verifyQuantOp(*this); }
 
 ParseResult ForAllOp::parse(OpAsmParser &parser, OperationState &result) {
-  return parseQuantOp<ForAllOp>(parser, result);
+  return parseQuantOp(parser, result);
 }
 
 void ForAllOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
@@ -276,7 +276,7 @@ void ForAllOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
 LogicalResult ExistsOp::verify() { return verifyQuantOp(*this); }
 
 ParseResult ExistsOp::parse(OpAsmParser &parser, OperationState &result) {
-  return parseQuantOp<ExistsOp>(parser, result);
+  return parseQuantOp(parser, result);
 }
 
 void ExistsOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
