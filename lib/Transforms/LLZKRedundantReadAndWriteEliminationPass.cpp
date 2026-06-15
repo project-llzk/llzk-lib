@@ -518,14 +518,19 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // Read a value from an array. This works on both readarr operations (which
     // return a scalar value) and extractarr operations (which return a subarray).
     auto doArrayReadLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass readarr) {
-      std::shared_ptr<ReferenceNode> currValTree = state.at(translate(readarr.getArrRef()));
+      Value resVal = readarr.getResult();
+      std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(readarr.getArrRef()));
+      if (currValTree == nullptr) {
+        state[resVal] = ReferenceNode::create(resVal, resVal);
+        readVals.push_back(resVal);
+        return;
+      }
 
       for (Value origIdx : readarr.getIndices()) {
         Value idxVal = translate(origIdx);
         currValTree = currValTree->getOrCreateChild(idxVal);
       }
 
-      Value resVal = readarr.getResult();
       if (!currValTree->hasStoredValue()) {
         currValTree->setCurrentValue(resVal);
       }
@@ -554,7 +559,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // the variable index aliases one of the other elements and may or may not
     // override that value.
     auto doArrayWriteLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass writearr) {
-      std::shared_ptr<ReferenceNode> currValTree = state.at(translate(writearr.getArrRef()));
+      std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(writearr.getArrRef()));
+      if (currValTree == nullptr) {
+        return;
+      }
       Value newVal = translate(writearr.getRvalue());
       std::shared_ptr<ReferenceNode> valTree = tryGetValTree(newVal);
 
@@ -596,9 +604,14 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // adding this to readVals
       readVals.push_back(newStruct);
     } else if (auto readm = dyn_cast<MemberReadOp>(op)) {
-      auto structVal = state.at(translate(readm.getComponent()));
-      FlatSymbolRefAttr symbol = readm.getMemberNameAttr();
       Value resVal = translate(readm.getVal());
+      auto structVal = tryGetValTree(translate(readm.getComponent()));
+      if (structVal == nullptr) {
+        state[resVal] = ReferenceNode::create(resVal, resVal);
+        readVals.push_back(readm.getVal());
+        return;
+      }
+      FlatSymbolRefAttr symbol = readm.getMemberNameAttr();
       // Check if such a child already exists.
       if (auto child = structVal->getChild(symbol)) {
         LLVM_DEBUG(
@@ -615,7 +628,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // specifically add the untranslated value back for removal checks
       readVals.push_back(readm.getVal());
     } else if (auto writem = dyn_cast<MemberWriteOp>(op)) {
-      auto structVal = state.at(translate(writem.getComponent()));
+      auto structVal = tryGetValTree(translate(writem.getComponent()));
+      if (structVal == nullptr) {
+        return;
+      }
       Value writeVal = translate(writem.getVal());
       FlatSymbolRefAttr symbol = writem.getMemberNameAttr();
       auto valTree = tryGetValTree(writeVal);
