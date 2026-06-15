@@ -30,7 +30,7 @@
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>

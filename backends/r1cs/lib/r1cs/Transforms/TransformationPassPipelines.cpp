@@ -14,7 +14,7 @@
 
 #include "r1cs/Transforms/TransformationPasses.h"
 
-#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
@@ -32,7 +32,7 @@ void registerTransformationPassPipelines() {
     pm.addPass(llzk::createPolyLoweringPass(llzk::PolyLoweringPassOptions {.maxDegree = 2}));
 
     // 2. Cleanup
-    llzk::addRemoveUnnecessaryOpsAndDefsPipeline(pm);
+    llzk::buildRemoveUnnecessaryOpsAndDefsPipeline(pm);
 
     // 3. Convert to R1CS
     pm.addPass(r1cs::createR1CSLoweringPass());
