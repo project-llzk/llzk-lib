@@ -1,9 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -llzk-pod-to-scalar -canonicalize -llzk-inline-structs %s 2>&1 | FileCheck --enable-var-scope %s
-//
-// COM: the following passes should run before inlining structs:
-// COM: - llzk-flatten: to instantiate templated structs and unroll loops
-// COM: - llzk-pod-to-scalar: to convert aggregate pod types into scalar SSA values
-// COM: - canonicalize: to remove known condition `scf.if` regions so struct inlining can link "@compute" calls to struct members
+// RUN: llzk-opt -llzk-full-struct-inlining %s 2>&1 | FileCheck --enable-var-scope %s
 
 //////////////////////////////////////////////////////////////////////////////////
 // template Nop() {

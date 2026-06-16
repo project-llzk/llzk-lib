@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten,llzk-inline-structs{max-merge-complexity=2})' -verify-diagnostics %s | FileCheck %s
+// RUN: llzk-opt -split-input-file -llzk-full-struct-inlining="array-to-scalar=0 pod-to-scalar=false inlining={max-merge-complexity=2}" -verify-diagnostics %s | FileCheck %s
 
 // TESTS: full inlining is within `maxComplexity` limit
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {

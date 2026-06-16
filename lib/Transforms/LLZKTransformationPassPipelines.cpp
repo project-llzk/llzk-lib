@@ -14,6 +14,9 @@
 
 #include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 
+#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
+
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Transforms/Passes.h>
@@ -21,6 +24,15 @@
 using namespace mlir;
 
 namespace llzk {
+
+namespace {
+
+template <typename NestedPassOptionT>
+inline std::unique_ptr<Pass> createConfiguredPass(const NestedPassOptionT &options) {
+  return options.getValue().createPass();
+}
+
+} // namespace
 
 //===----------------------------------------------------------------------===//
 // Pipeline implementation.
@@ -46,6 +58,23 @@ void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringOpti
 void buildProductProgramPipeline(OpPassManager &pm) {
   pm.addPass(createComputeConstrainToProductPass());
   pm.addPass(createFuseProductLoopsPass());
+}
+
+void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInliningOptions &opts) {
+  pm.addPass(createConfiguredPass(opts.flattening));
+
+  // Run array-to-scalar first because it can split arrays within a pod
+  // but pod-to-scalar cannot split pods within an array.
+  if (opts.arrayToScalar) {
+    pm.addPass(array::createArrayToScalarPass());
+  }
+  if (opts.podToScalar) {
+    pm.addPass(pod::createPodToScalarPass());
+  }
+  // Canonicalize to remove known-condition `scf.if` regions so struct inlining
+  // can link "@compute" calls to struct members.
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(createConfiguredPass(opts.inlining));
 }
 
 //===----------------------------------------------------------------------===//
@@ -76,6 +105,12 @@ void registerTransformationPassPipelines() {
       "llzk-product-program",
       "Convert @compute/@constrain functions to @product function and perform alignment",
       buildProductProgramPipeline
+  );
+
+  PassPipelineRegistration<FullStructInliningOptions>(
+      "llzk-full-struct-inlining",
+      "Run flattening and inlining of all struct definitions into the `main` struct.",
+      buildFullStructInliningPipeline
   );
 }
 
