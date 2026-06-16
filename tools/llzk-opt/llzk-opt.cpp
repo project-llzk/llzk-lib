@@ -33,6 +33,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPassPipelines.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
