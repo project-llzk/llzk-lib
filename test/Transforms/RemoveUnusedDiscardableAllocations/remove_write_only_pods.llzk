@@ -56,4 +56,3 @@ module attributes {llzk.lang} {
 // CHECK-NOT:     pod.write
 // CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
 // CHECK-NEXT:    function.return %[[RET]] : index
-
