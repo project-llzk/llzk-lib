@@ -648,6 +648,11 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         return;
       }
 
+      if (failed(checkConstrainBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
+        signalPassFailure();
+        return;
+      }
+
       DenseMap<Value, unsigned> degreeMemo;
       DenseMap<Value, Value> rewrites;
       SmallVector<AuxAssignment> auxAssignments;

@@ -53,8 +53,8 @@ void registerTransformationPassPipelines() {
 
   PassPipelineRegistration<FullPolyLoweringOptions>(
       "llzk-full-poly-lowering",
-      "Lower all polynomial constraints to a given max degree, then remove unnecessary operations "
-      "and definitions.",
+      "Lower already-flattened polynomial constraints to a given max degree, then remove "
+      "unnecessary operations and definitions.",
       [](OpPassManager &pm, const FullPolyLoweringOptions &opts) {
     // 1. Degree lowering
     pm.addPass(createPolyLoweringPass(PolyLoweringPassOptions {.maxDegree = opts.maxDegree}));

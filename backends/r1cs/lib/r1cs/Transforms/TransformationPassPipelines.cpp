@@ -26,7 +26,8 @@ namespace r1cs {
 
 void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs", [](OpPassManager &pm) {
+      "llzk-full-r1cs-lowering", "Lower already-flattened polynomial constraints to r1cs",
+      [](OpPassManager &pm) {
     // 1. Degree lowering
     pm.addPass(llzk::createPolyLoweringPass(llzk::PolyLoweringPassOptions {.maxDegree = 2}));
 

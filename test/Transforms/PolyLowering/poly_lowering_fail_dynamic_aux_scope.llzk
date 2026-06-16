@@ -1,0 +1,146 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @MultiBlockAuxScope {
+    function.def @compute(%a: !felt.type) -> !struct.type<@MultiBlockAuxScope> {
+      %self = struct.new : !struct.type<@MultiBlockAuxScope>
+      function.return %self : !struct.type<@MultiBlockAuxScope>
+    }
+
+    // expected-error@+1 {{poly lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+    function.def @constrain(%self: !struct.type<@MultiBlockAuxScope>, %a: !felt.type) {
+      function.return
+    ^unreachable:
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @LoopAuxScopeRepro {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@LoopAuxScopeRepro> {
+      %self = struct.new : !struct.type<@LoopAuxScopeRepro>
+      struct.writem %self[@out] = %a : !struct.type<@LoopAuxScopeRepro>, !felt.type
+      function.return %self : !struct.type<@LoopAuxScopeRepro>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopAuxScopeRepro>, %a: !felt.type) {
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 2 : index
+      %step = arith.constant 1 : index
+      %one = felt.const 1 : !felt.type
+
+      // expected-error@+1 {{poly lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+      %res = scf.for %iv = %lb to %ub step %step iter_args(%acc = %a) -> !felt.type {
+        %sq = felt.mul %acc, %acc : !felt.type, !felt.type
+        %cube = felt.mul %sq, %acc : !felt.type, !felt.type
+        constrain.eq %cube, %cube : !felt.type
+        %next = felt.add %acc, %one : !felt.type, !felt.type
+        scf.yield %next : !felt.type
+      }
+
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @LoopIVAuxScope {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@LoopIVAuxScope> {
+      %self = struct.new : !struct.type<@LoopIVAuxScope>
+      struct.writem %self[@out] = %a : !struct.type<@LoopIVAuxScope>, !felt.type
+      function.return %self : !struct.type<@LoopIVAuxScope>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopIVAuxScope>, %a: !felt.type) {
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 2 : index
+      %step = arith.constant 1 : index
+
+      // expected-error@+1 {{poly lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+      scf.for %iv = %lb to %ub step %step {
+        %iv_felt = cast.tofelt %iv : index
+        %sq = felt.mul %iv_felt, %iv_felt : !felt.type, !felt.type
+        %cube = felt.mul %sq, %a : !felt.type, !felt.type
+        constrain.eq %cube, %cube : !felt.type
+      }
+
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @BranchAuxScope {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%a: !felt.type, %cond: i1) -> !struct.type<@BranchAuxScope> {
+      %self = struct.new : !struct.type<@BranchAuxScope>
+      struct.writem %self[@out] = %a : !struct.type<@BranchAuxScope>, !felt.type
+      function.return %self : !struct.type<@BranchAuxScope>
+    }
+
+    function.def @constrain(%self: !struct.type<@BranchAuxScope>, %a: !felt.type, %cond: i1) {
+      // expected-error@+1 {{poly lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+      scf.if %cond {
+        %sq = felt.mul %a, %a : !felt.type, !felt.type
+        %cube = felt.mul %sq, %a : !felt.type, !felt.type
+        constrain.eq %cube, %cube : !felt.type
+      }
+
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @ChildConstrainArg {
+    function.def @compute(%x: !felt.type) -> !struct.type<@ChildConstrainArg> {
+      %self = struct.new : !struct.type<@ChildConstrainArg>
+      function.return %self : !struct.type<@ChildConstrainArg>
+    }
+
+    function.def @constrain(%self: !struct.type<@ChildConstrainArg>, %x: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @LoopCallArgAuxScope {
+    struct.member @child : !struct.type<@ChildConstrainArg>
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@LoopCallArgAuxScope> {
+      %self = struct.new : !struct.type<@LoopCallArgAuxScope>
+      function.return %self : !struct.type<@LoopCallArgAuxScope>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopCallArgAuxScope>, %a: !felt.type) {
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 2 : index
+      %step = arith.constant 1 : index
+      %one = felt.const 1 : !felt.type
+      %child = struct.readm %self[@child] : !struct.type<@LoopCallArgAuxScope>, !struct.type<@ChildConstrainArg>
+
+      // expected-error@+1 {{poly lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+      %res = scf.for %iv = %lb to %ub step %step iter_args(%acc = %a) -> !felt.type {
+        %sq = felt.mul %acc, %acc : !felt.type, !felt.type
+        function.call @ChildConstrainArg::@constrain(%child, %sq) : (!struct.type<@ChildConstrainArg>, !felt.type) -> ()
+        %next = felt.add %acc, %one : !felt.type, !felt.type
+        scf.yield %next : !felt.type
+      }
+
+      function.return
+    }
+  }
+}
