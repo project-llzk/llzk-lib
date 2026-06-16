@@ -1,5 +1,17 @@
 var NAVTREEINDEX49 =
 {
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#acdedc48214333b43d77ca34219041105":[12,0,1,13,0,1,4],
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#ad0b1efb8adefcff944f4f6b7beca7409":[10,0,2,16,0,1,2],
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#ad0b1efb8adefcff944f4f6b7beca7409":[12,0,1,13,0,1,2],
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#ae7ffb8532374ecd3224a960f6d14fed2":[10,0,2,16,0,1,8],
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#ae7ffb8532374ecd3224a960f6d14fed2":[12,0,1,13,0,1,8],
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#af544b7970f3cf18d8a68520857c94890":[10,0,2,16,0,1,3],
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#af544b7970f3cf18d8a68520857c94890":[12,0,1,13,0,1,3],
+"classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html":[10,0,2,16,0,2],
+"classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html":[12,0,1,13,0,2],
+"classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html#a0d8f29c8454508792b109fa007b55730":[10,0,2,16,0,2,0],
+"classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html#a0d8f29c8454508792b109fa007b55730":[12,0,1,13,0,2,0],
+"classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html#a40f13e8a39ef9c766d7a305cd722a5ac":[10,0,2,16,0,2,1],
 "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html#a40f13e8a39ef9c766d7a305cd722a5ac":[12,0,1,13,0,2,1],
 "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html":[10,0,2,16,0,3],
 "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html":[12,0,1,13,0,3],
@@ -237,17 +249,5 @@ var NAVTREEINDEX49 =
 "classllzk_1_1ram_1_1LoadOp.html#acd69af6290eb03a859355edda47f6504":[12,0,1,14,1,3],
 "classllzk_1_1ram_1_1LoadOp.html#aceccd0201401ed9076a7b5ce9a45c101":[10,0,2,17,1,8],
 "classllzk_1_1ram_1_1LoadOp.html#aceccd0201401ed9076a7b5ce9a45c101":[12,0,1,14,1,8],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html":[10,0,2,17,2],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html":[12,0,1,14,2],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#a3d62185eea1639ffc8668ede6ee588ef":[10,0,2,17,2,5],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#a3d62185eea1639ffc8668ede6ee588ef":[12,0,1,14,2,5],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#a79c4b297001d6b0b1119123b1621b7ed":[10,0,2,17,2,4],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#a79c4b297001d6b0b1119123b1621b7ed":[12,0,1,14,2,4],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#a7fffa3d8509745889650d76f2d25d2ac":[10,0,2,17,2,0],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#a7fffa3d8509745889650d76f2d25d2ac":[12,0,1,14,2,0],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#addb34567ec294500ad77e325c93a4195":[10,0,2,17,2,3],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#addb34567ec294500ad77e325c93a4195":[12,0,1,14,2,3],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#ae24b030007294000e949986fe066dfaf":[10,0,2,17,2,1],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#ae24b030007294000e949986fe066dfaf":[12,0,1,14,2,1],
-"classllzk_1_1ram_1_1LoadOpAdaptor.html#afe85d0fd4d9519b312891c8376d4e5c8":[10,0,2,17,2,2]
+"classllzk_1_1ram_1_1LoadOpAdaptor.html":[10,0,2,17,2]
 };

@@ -134,6 +134,7 @@ $(function(){initNavTree('PodToScalarPass_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="String_2IR_2Dialect_8h_source.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKConversionUtils_8h_source.html">llzk/Transforms/LLZKConversionUtils.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SpecializedMemoryPasses_8h_source.html">llzk/Transforms/SpecializedMemoryPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Concepts_8h_source.html">llzk/Util/Concepts.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Walk_8h_source.html">llzk/Util/Walk.h</a>&quot;</code><br />
@@ -149,7 +150,7 @@ $(function(){initNavTree('PodToScalarPass_8cpp.html','',''); });
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for PodToScalarPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PodToScalarPass_8cpp__incl.svg" width="4662" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PodToScalarPass_8cpp__incl.svg" width="4891" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="PodToScalarPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -191,8 +192,9 @@ Functions</h2></td></tr>
 <li>Promote pod reads and writes out of <span class="tt">scf.if</span>, <span class="tt">scf.for</span>, and <span class="tt">scf.while</span> regions when the access can be modeled as an SSA value flowing through the region boundary. This puts the pod accesses that mem2reg must eliminate into a parent block or loop-carried value.</li>
 <li>Run MLIR "sroa" pass to split each pod with <span class="tt">N</span> records into <span class="tt">N</span> pods with 1 record each (to prepare for the "mem2reg" pass because its API cannot split memory by itself).</li>
 <li>Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA values.</li>
+<li>Remove pod allocations that become unread after memory promotion, then remove SSA values made dead by that cleanup.</li>
 </ol>
-<p>** Steps 4 and 5 are rerun while nested POD types are still being exposed, until a fixpoint.</p>
+<p>** Steps 4-6 are rerun while nested POD types are still being exposed, until a fixpoint.</p>
 <p>Note: This transformation imposes a "last write wins" semantics on pod records. If different/configurable semantics are added in the future, some additional transformation would be necessary before/during this pass so that multiple writes to the same record can be handled properly while they still exist.</p>
 <p>Note: This transformation will introduce a <span class="tt">nondet</span> op when there exists a read from a pod record that was not earlier written to. </p>
 
@@ -210,7 +212,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00106">106</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00110">110</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -226,7 +228,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00096">96</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00100">100</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
