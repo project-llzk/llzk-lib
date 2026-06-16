@@ -182,7 +182,7 @@ class QuantifierOp<string mnemonic, string cond, list<Trait> traits = []>
     ```
     %c10 = felt.const  10
     %0 = array.new %a, %b, %c : !array.type<3 x !felt.type>
-    %1 = bool.}]#mnemonic#[{ %e: !felt.type in %0 {
+    %1 = bool.}]#mnemonic#[{ %e in %0 !array.type<3 x !felt.type> {
       %2 = bool.cmp lt(%e, %c10)
       bool.yield %2
     }
@@ -210,8 +210,6 @@ def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator,
   }];
 
   let arguments = (ins I1:$value);
-  let results = (outs);
-
   let assemblyFormat = "$value attr-dict";
 }
 

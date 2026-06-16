@@ -12,9 +12,9 @@
 #include "llzk-c/Dialect/Bool.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Attrs.h"
 
 // Include necessary generated CAPI
-#include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"
 
 // Include the auto-generated tests
@@ -187,9 +187,9 @@ template <typename Helper> struct QuantifierOpBuildFuncHelper : public Helper {
     );
   }
 
-  /// Fills the body of the quantifier op to ensure its properly constructed.
+  /// Fills the body of the quantifier op to ensure it's properly constructed.
   void fillBody(mlir::Operation *op, mlir::OpBuilder &builder, mlir::Location location) {
-    mlir::OpBuilder::InsertionGuard giard(builder);
+    mlir::OpBuilder::InsertionGuard guard(builder);
     auto &block = op->getRegion(0).emplaceBlock();
     auto arg = block.addArgument(llzk::felt::FeltType::get(builder.getContext()), location);
     builder.setInsertionPointToStart(&block);

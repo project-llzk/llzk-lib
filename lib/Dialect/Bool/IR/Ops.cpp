@@ -233,7 +233,7 @@ ParseResult parseQuantOp(OpAsmParser &parser, OperationState &result) {
   }
 
   if (body->empty()) {
-    return parser.emitError(loc, "expected non-empty invariant body");
+    return parser.emitError(loc, "expected non-empty body");
   }
   if (parser.parseOptionalAttrDictWithKeyword(result.attributes)) {
     return failure();
