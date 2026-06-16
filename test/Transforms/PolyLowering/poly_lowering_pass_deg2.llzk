@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering='flatten-inline={inlining={max-merge-complexity=1}}' -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   // lowers constraints to be at most degree 2 polynomials

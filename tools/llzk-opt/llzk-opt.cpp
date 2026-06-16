@@ -15,6 +15,7 @@
 
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
+#include "r1cs/Transforms/TransformationPassPipelines.h"
 #include "r1cs/Transforms/TransformationPasses.h"
 #include "smt/Conversions/ConversionPasses.h"
 #include "tools/config.h"

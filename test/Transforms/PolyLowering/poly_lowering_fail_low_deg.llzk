@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=1" -verify-diagnostics %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="lowering={max-degree=1}" -verify-diagnostics %s
 
 // expected-error@+1 {{Invalid max degree: 1. Must be >= 2.}}
 module attributes {llzk.lang} {

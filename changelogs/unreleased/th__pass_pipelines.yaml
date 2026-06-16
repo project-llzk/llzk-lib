@@ -3,3 +3,5 @@ added:
 
 changed:
   - "[header incompatibility] move `llzk-inline-structs` pass definition to `llzk/Dialect/Struct/Transforms/TransformationPasses.h`"
+  - "run `llzk-full-struct-inlining` at start of `llzk-full-poly-lowering` pass pipeline"
+  - "run `llzk-full-poly-lowering` with `max-degree=2` at start of `llzk-full-r1cs-lowering` pass pipeline"

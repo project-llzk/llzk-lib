@@ -19,23 +19,25 @@
 
 namespace llzk {
 
-struct FullPolyLoweringOptions : public mlir::PassPipelineOptions<FullPolyLoweringOptions> {
-  Option<unsigned> maxDegree {
-      *this, "max-degree", llvm::cl::desc("Maximum polynomial degree (must be ≥ 2)"),
-      llvm::cl::init(2)
-  };
+/// Pure C++ configuration for the full struct inlining pipeline.
+struct FullStructInliningConfig {
+  polymorphic::FlatteningPassOptions flattening;
+  bool arrayToScalar = true;
+  bool podToScalar = true;
+  component::InlineStructsPassOptions inlining;
 };
 
+/// CLI Option configuration for the full struct inlining pipeline.
 struct FullStructInliningOptions : public mlir::PassPipelineOptions<FullStructInliningOptions> {
 
-  using FlatteningPipelinePassOptions = NestedPassOptions<
+  using FlatteningOptions = NestedPassOptions<
       static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::polymorphic::createFlatteningPass)>;
-  using InlineStructsPipelinePassOptions = NestedPassOptions<
+  using InliningOptions = NestedPassOptions<
       static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::component::createInlineStructsPass)>;
 
-  Option<FlatteningPipelinePassOptions> flattening {
+  Option<FlatteningOptions> flattening {
       *this, "flattening", llvm::cl::desc("options for the flattening pass used in this pipeline"),
-      llvm::cl::init(FlatteningPipelinePassOptions {})
+      llvm::cl::init(FlatteningOptions {})
   };
   Option<bool> arrayToScalar {
       *this, "array-to-scalar",
@@ -46,9 +48,37 @@ struct FullStructInliningOptions : public mlir::PassPipelineOptions<FullStructIn
       *this, "pod-to-scalar",
       llvm::cl::desc("whether to run the pod-to-scalar pass in this pipeline"), llvm::cl::init(true)
   };
-  Option<InlineStructsPipelinePassOptions> inlining {
+  Option<InliningOptions> inlining {
       *this, "inlining", llvm::cl::desc("options for the inlining pass used in this pipeline"),
-      llvm::cl::init(InlineStructsPipelinePassOptions {})
+      llvm::cl::init(InliningOptions {})
+  };
+};
+
+/// Pure C++ configuration for the full polynomial lowering pipeline.
+struct FullPolyLoweringConfig {
+  FullStructInliningConfig structInlining;
+  PolyLoweringPassOptions polyLowering;
+};
+
+/// CLI Option configuration for the full polynomial lowering pipeline.
+struct FullPolyLoweringOptions : public mlir::PassPipelineOptions<FullPolyLoweringOptions> {
+
+  using StructInliningOptions = NestedPipelineOptions<FullStructInliningOptions>;
+
+  using PolyLoweringOptions = NestedPassOptions<
+      static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::createPolyLoweringPass)>;
+
+  Option<StructInliningOptions> structInlining {
+      *this, "flatten-inline",
+      llvm::cl::desc(
+          "options for the struct flattening and inlining pipeline used before polynomial lowering"
+      ),
+      llvm::cl::init(StructInliningOptions {})
+  };
+  Option<PolyLoweringOptions> polyLowering {
+      *this, "lowering",
+      llvm::cl::desc("options for the polynomial lowering pass used in this pipeline"),
+      llvm::cl::init(PolyLoweringOptions {})
   };
 };
 
@@ -56,11 +86,11 @@ void buildRemoveUnnecessaryOpsPipeline(mlir::OpPassManager &);
 
 void buildRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &);
 
-void buildFullPolyLoweringPipeline(mlir::OpPassManager &, const FullPolyLoweringOptions &);
+void buildFullPolyLoweringPipeline(mlir::OpPassManager &, const FullPolyLoweringConfig &);
 
 void buildProductProgramPipeline(mlir::OpPassManager &);
 
-void buildFullStructInliningPipeline(mlir::OpPassManager &, const FullStructInliningOptions &);
+void buildFullStructInliningPipeline(mlir::OpPassManager &, const FullStructInliningConfig &);
 
 void registerTransformationPassPipelines();
 

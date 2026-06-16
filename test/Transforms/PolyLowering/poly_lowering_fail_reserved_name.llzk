@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=2" -verify-diagnostics %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="lowering={max-degree=2}" -verify-diagnostics %s
 
 module attributes {llzk.lang} {
   struct.def @CmpConstraint {

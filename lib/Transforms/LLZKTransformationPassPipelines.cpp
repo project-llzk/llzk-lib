@@ -25,6 +25,10 @@ using namespace mlir;
 
 namespace llzk {
 
+//===----------------------------------------------------------------------===//
+// Pipeline implementation.
+//===----------------------------------------------------------------------===//
+
 namespace {
 
 template <typename NestedPassOptionT>
@@ -32,11 +36,41 @@ inline std::unique_ptr<Pass> createConfiguredPass(const NestedPassOptionT &optio
   return options.getValue().createPass();
 }
 
-} // namespace
+void buildFullStructInliningPipelineImpl(
+    OpPassManager &pm, std::unique_ptr<Pass> flatteningPass, bool arrayToScalar, bool podToScalar,
+    std::unique_ptr<Pass> inliningPass
+) {
+  pm.addPass(std::move(flatteningPass));
 
-//===----------------------------------------------------------------------===//
-// Pipeline implementation.
-//===----------------------------------------------------------------------===//
+  // Run array-to-scalar first because it can split arrays within a pod
+  // but pod-to-scalar cannot split pods within an array.
+  if (arrayToScalar) {
+    pm.addPass(array::createArrayToScalarPass());
+  }
+  if (podToScalar) {
+    pm.addPass(pod::createPodToScalarPass());
+  }
+  // Canonicalize to remove known-condition `scf.if` regions so struct inlining
+  // can link "@compute" calls to struct members.
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(std::move(inliningPass));
+}
+
+void buildFullPolyLoweringPipelineImpl(
+    OpPassManager &pm, std::unique_ptr<Pass> flatteningPass, bool arrayToScalar, bool podToScalar,
+    std::unique_ptr<Pass> inliningPass, std::unique_ptr<Pass> polyLoweringPass
+) {
+  // 1. Struct flattening and inlining
+  buildFullStructInliningPipelineImpl(
+      pm, std::move(flatteningPass), arrayToScalar, podToScalar, std::move(inliningPass)
+  );
+  // 2. Degree lowering
+  pm.addPass(std::move(polyLoweringPass));
+  // 3. Cleanup
+  buildRemoveUnnecessaryOpsAndDefsPipeline(pm);
+}
+
+} // namespace
 
 void buildRemoveUnnecessaryOpsPipeline(mlir::OpPassManager &pm) {
   pm.addPass(createRedundantReadAndWriteEliminationPass());
@@ -48,33 +82,25 @@ void buildRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm) {
   pm.addPass(createUnusedDeclarationEliminationPass());
 }
 
-void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringOptions &opts) {
-  // 1. Degree lowering
-  pm.addPass(createPolyLoweringPass(PolyLoweringPassOptions {.maxDegree = opts.maxDegree}));
-  // 2. Cleanup
-  buildRemoveUnnecessaryOpsAndDefsPipeline(pm);
-}
-
 void buildProductProgramPipeline(OpPassManager &pm) {
   pm.addPass(createComputeConstrainToProductPass());
   pm.addPass(createFuseProductLoopsPass());
 }
 
-void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInliningOptions &opts) {
-  pm.addPass(createConfiguredPass(opts.flattening));
+void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInliningConfig &cfg) {
+  buildFullStructInliningPipelineImpl(
+      pm, polymorphic::createFlatteningPass(cfg.flattening), cfg.arrayToScalar, cfg.podToScalar,
+      component::createInlineStructsPass(cfg.inlining)
+  );
+}
 
-  // Run array-to-scalar first because it can split arrays within a pod
-  // but pod-to-scalar cannot split pods within an array.
-  if (opts.arrayToScalar) {
-    pm.addPass(array::createArrayToScalarPass());
-  }
-  if (opts.podToScalar) {
-    pm.addPass(pod::createPodToScalarPass());
-  }
-  // Canonicalize to remove known-condition `scf.if` regions so struct inlining
-  // can link "@compute" calls to struct members.
-  pm.addPass(mlir::createCanonicalizerPass());
-  pm.addPass(createConfiguredPass(opts.inlining));
+void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConfig &cfg) {
+  buildFullPolyLoweringPipelineImpl(
+      pm, polymorphic::createFlatteningPass(cfg.structInlining.flattening),
+      cfg.structInlining.arrayToScalar, cfg.structInlining.podToScalar,
+      component::createInlineStructsPass(cfg.structInlining.inlining),
+      createPolyLoweringPass(cfg.polyLowering)
+  );
 }
 
 //===----------------------------------------------------------------------===//
@@ -94,13 +120,6 @@ void registerTransformationPassPipelines() {
       buildRemoveUnnecessaryOpsAndDefsPipeline
   );
 
-  PassPipelineRegistration<FullPolyLoweringOptions>(
-      "llzk-full-poly-lowering",
-      "Lower already-flattened polynomial constraints to a given max degree, then remove "
-      "unnecessary operations and definitions.",
-      buildFullPolyLoweringPipeline
-  );
-
   PassPipelineRegistration<>(
       "llzk-product-program",
       "Convert @compute/@constrain functions to @product function and perform alignment",
@@ -110,7 +129,26 @@ void registerTransformationPassPipelines() {
   PassPipelineRegistration<FullStructInliningOptions>(
       "llzk-full-struct-inlining",
       "Run flattening and inlining of all struct definitions into the `main` struct.",
-      buildFullStructInliningPipeline
+      [](OpPassManager &pm, const FullStructInliningOptions &opts) {
+    buildFullStructInliningPipelineImpl(
+        pm, createConfiguredPass(opts.flattening), opts.arrayToScalar, opts.podToScalar,
+        createConfiguredPass(opts.inlining)
+    );
+  }
+  );
+
+  PassPipelineRegistration<FullPolyLoweringOptions>(
+      "llzk-full-poly-lowering",
+      "Lower polynomial constraints to a given max degree, then remove "
+      "unnecessary operations and definitions.",
+      [](OpPassManager &pm, const FullPolyLoweringOptions &opts) {
+    auto structInlining = opts.structInlining.getValue().createOptions();
+    buildFullPolyLoweringPipelineImpl(
+        pm, createConfiguredPass(structInlining->flattening), structInlining->arrayToScalar,
+        structInlining->podToScalar, createConfiguredPass(structInlining->inlining),
+        createConfiguredPass(opts.polyLowering)
+    );
+  }
   );
 }
 
