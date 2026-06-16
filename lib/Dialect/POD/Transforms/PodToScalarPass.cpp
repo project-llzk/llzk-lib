@@ -1664,7 +1664,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
 
     // Cleanup SSA values made dead by the transformations
     OpPassManager cleanupPM(ModuleOp::getOperationName());
-    cleanupPM.addPass(createRemoveDeadValuesPass());
+    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);
     while (podAllocWeight != 0) {
