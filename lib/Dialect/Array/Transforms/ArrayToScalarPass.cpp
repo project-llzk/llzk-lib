@@ -311,7 +311,7 @@ void processInputOperands(
 
 /// Shared signature-conversion logic for array-bearing function-like ops.
 ///
-/// This helper is used for both `function.def` and `verif.contract`, which now share the same
+/// This helper is used for both `function.def` and `verif.contract`, which share the same
 /// rewrite shape: split array-typed arguments/results into scalar leaves, expand any associated
 /// arg/result name attributes via `FunctionTypeConverter`, and then rebuild the entry block so the
 /// original aggregate argument still exists locally for the body. The body-local reconstruction

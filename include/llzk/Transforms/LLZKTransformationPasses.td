@@ -161,7 +161,7 @@ def AggregateScalarizationPass : LLZKPass<"llzk-aggregate-scalarization"> {
     Repeatedly runs the existing array-to-scalar and pod-to-scalar passes,
     followed by canonicalization, until the module reaches a fixpoint. This is
     intended as a reusable preprocessing step for pipelines that need
-    array/pod-free IR at function and contract boundaries.
+    array/pod-free IR.
   }];
   let options = [];
 }
@@ -172,9 +172,8 @@ def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
   let description = [{
     Lowers verif contracts into SMT helper functions for target computation,
     preconditions, postconditions, and include implications. This pass currently
-    expects array/pod-free IR and supports a focused subset of LLZK constructs
-    intended to lock down the target IR shape for verif-to-SMT lowering. Use
-    the `-llzk-verif-to-smt` pipeline to preprocess aggregate types first.
+    expects array/pod-free. Use the `-llzk-verif-to-smt` pipeline to preprocess
+    aggregate types first.
   }];
   let options = [];
 }
