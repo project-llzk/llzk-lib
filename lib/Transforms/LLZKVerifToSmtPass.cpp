@@ -256,17 +256,33 @@ static void populateVoidCheckRegion(
   builder.create<llzk::smt::YieldOp>(loc);
 }
 
-static void proveByUnsatAndAssert(OpBuilder &builder, Location loc, Value condition) {
+static void proveByUnsatAndAssert(
+    OpBuilder &builder, Location loc, Value condition, StringRef contractName, StringRef stageName
+) {
   builder.create<llzk::smt::PushOp>(loc, 1);
   Value negated = builder.create<llzk::smt::NotOp>(loc, condition).getResult();
   builder.create<llzk::smt::AssertOp>(loc, negated);
   auto check = builder.create<llzk::smt::CheckOp>(loc, TypeRange {});
 
+  auto makeFailureMessage = [&](StringRef outcome) {
+    return builder.getStringAttr(
+        (Twine("verification failed in ") + contractName + " " + stageName + ": " + outcome).str()
+    );
+  };
+
   populateVoidCheckRegion(check.getSatRegion(), loc, [&](OpBuilder &regionBuilder) {
     regionBuilder.create<llzk::smt::PopOp>(loc, 1);
+    Value failed = regionBuilder.create<arith::ConstantOp>(loc, regionBuilder.getBoolAttr(false));
+    regionBuilder.create<llzk::boolean::AssertOp>(
+        loc, failed, makeFailureMessage("counterexample found")
+    );
   });
   populateVoidCheckRegion(check.getUnknownRegion(), loc, [&](OpBuilder &regionBuilder) {
     regionBuilder.create<llzk::smt::PopOp>(loc, 1);
+    Value failed = regionBuilder.create<arith::ConstantOp>(loc, regionBuilder.getBoolAttr(false));
+    regionBuilder.create<llzk::boolean::AssertOp>(
+        loc, failed, makeFailureMessage("condition unprovable")
+    );
   });
   populateVoidCheckRegion(check.getUnsatRegion(), loc, [&](OpBuilder &regionBuilder) {
     regionBuilder.create<llzk::smt::PopOp>(loc, 1);
@@ -898,13 +914,17 @@ static LogicalResult createContractEntryHelper(
       contract.getLoc(), helperInfo.pre, TypeRange {llzk::smt::BoolType::get(state.context)},
       entry->getArguments()
   );
-  proveByUnsatAndAssert(bodyBuilder, contract.getLoc(), preCall.getResult(0));
+  proveByUnsatAndAssert(
+      bodyBuilder, contract.getLoc(), preCall.getResult(0), contract.getSymName(), "pre"
+  );
 
   auto targetCall = bodyBuilder.create<func::CallOp>(
       contract.getLoc(), helperInfo.target, TypeRange {llzk::smt::BoolType::get(state.context)},
       entry->getArguments()
   );
-  proveByUnsatAndAssert(bodyBuilder, contract.getLoc(), targetCall.getResult(0));
+  proveByUnsatAndAssert(
+      bodyBuilder, contract.getLoc(), targetCall.getResult(0), contract.getSymName(), "target"
+  );
 
   for (auto [index, includeOp] : llvm::enumerate(includes)) {
     auto loweredOperands = lowerIncludeHelperOperands(
@@ -922,7 +942,9 @@ static LogicalResult createContractEntryHelper(
       contract.getLoc(), helperInfo.post, TypeRange {llzk::smt::BoolType::get(state.context)},
       entry->getArguments()
   );
-  proveByUnsatAndAssert(bodyBuilder, contract.getLoc(), postCall.getResult(0));
+  proveByUnsatAndAssert(
+      bodyBuilder, contract.getLoc(), postCall.getResult(0), contract.getSymName(), "post"
+  );
 
   bodyBuilder.create<func::ReturnOp>(contract.getLoc());
   return success();
@@ -930,7 +952,9 @@ static LogicalResult createContractEntryHelper(
 
 struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<func::FuncDialect, llzk::smt::SMTDialect>();
+    registry.insert<
+        arith::ArithDialect, func::FuncDialect, llzk::boolean::BoolDialect, llzk::smt::SMTDialect>(
+    );
   }
 
   void runOnOperation() override {
