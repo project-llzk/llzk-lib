@@ -1,0 +1,59 @@
+// RUN: llzk-opt -split-input-file -llzk-remove-unused-discardable-allocations="allocator-op=pod.new" %s | FileCheck --enable-var-scope %s
+// RUN: not llzk-opt -split-input-file -llzk-remove-unused-discardable-allocations="allocator-op=arith.constant" %s 2>&1 | FileCheck --check-prefix=ERR %s
+
+module attributes {llzk.lang} {
+  function.def @unused_pod() -> index {
+    %ret = arith.constant 42 : index
+    %value = arith.constant 7 : index
+    %pod = pod.new : !pod.type<[@n: index]>
+    pod.write %pod[@n] = %value : !pod.type<[@n: index]>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @unused_pod() -> index {
+// CHECK-NOT:     pod.new
+// CHECK-NOT:     pod.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index
+// ERR: 'arith.constant' op selected for discardable-allocation cleanup but is not marked with MemAlloc<DiscardableAllocationResource>
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write_only_pod(%value: index) -> index {
+    %i = arith.constant 0 : index
+    %ret = arith.constant 42 : index
+    %pod = pod.new : !pod.type<[@n: index]>
+    pod.write %pod[@n] = %value : !pod.type<[@n: index]>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @write_only_pod(
+// CHECK-NOT:     pod.new
+// CHECK-NOT:     pod.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write_only_multi_record_pod(%lhs: index, %rhs: index) -> index {
+    %i = arith.constant 0 : index
+    %ret = arith.constant 42 : index
+    %value = arith.addi %lhs, %rhs : index
+    %pod = pod.new : !pod.type<[@a: index, @b: index]>
+    pod.write %pod[@a] = %value : !pod.type<[@a: index, @b: index]>, index
+    pod.write %pod[@b] = %value : !pod.type<[@a: index, @b: index]>, index
+    function.return %ret : index
+  }
+}
+
+// CHECK-LABEL: function.def @write_only_multi_record_pod(
+// CHECK-NOT:     arith.addi
+// CHECK-NOT:     pod.new
+// CHECK-NOT:     pod.write
+// CHECK:         %[[RET:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:    function.return %[[RET]] : index
+
