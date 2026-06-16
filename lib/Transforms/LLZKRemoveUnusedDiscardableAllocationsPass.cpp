@@ -57,8 +57,8 @@ static FailureOr<bool> collectRemovableUsers(
     Operation *allocator, SmallVectorImpl<Operation *> &usersToErase, const DataLayout &dataLayout
 ) {
   if (allocator->getNumResults() != 1) {
-    allocator->emitOpError(
-    ) << "selected for discardable-allocation cleanup but does not have one result";
+    allocator->emitOpError()
+        << "selected for discardable-allocation cleanup but does not have one result";
     return failure();
   }
 
@@ -153,9 +153,9 @@ static FailureOr<bool> removeUnusedDiscardableAllocations(
         return WalkResult::advance();
       }
       if (!hasDiscardableAllocationEffect(allocator)) {
-        allocator->emitOpError(
-        ) << "selected for discardable-allocation cleanup but is not marked with "
-             "MemAlloc<DiscardableAllocationResource>";
+        allocator->emitOpError()
+            << "selected for discardable-allocation cleanup but is not marked with "
+               "MemAlloc<DiscardableAllocationResource>";
         return WalkResult::interrupt();
       }
 
