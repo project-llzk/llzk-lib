@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.14.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: mlir_hotfix::RemoveDeadValuesWorkaroundPass Class Reference</title>
+<title>LLZK: llzk::detail::RemoveDeadValuesWorkaroundPass Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -78,7 +78,7 @@ $(function() {
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html','','classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass-members'); });
+$(function(){initNavTree('classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html','','classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass-members'); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -106,33 +106,39 @@ $(function(){initNavTree('classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.ht
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">mlir_hotfix::RemoveDeadValuesWorkaroundPass Class Reference</div></div>
+<a href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">llzk::detail::RemoveDeadValuesWorkaroundPass Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>A workaround wrapper around MLIR's <span class="tt">remove-dead-values</span> pass that normalizes empty <span class="tt">scf.if</span> else regions before running the upstream implementation and cleans up the trivial regions afterwards.  
+ <a href="#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for mlir_hotfix::RemoveDeadValuesWorkaroundPass:</div>
+Inheritance diagram for llzk::detail::RemoveDeadValuesWorkaroundPass:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass__inherit__graph.svg" width="244" height="166"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass__inherit__graph.svg" width="244" height="166"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
-Collaboration diagram for mlir_hotfix::RemoveDeadValuesWorkaroundPass:</div>
+Collaboration diagram for llzk::detail::RemoveDeadValuesWorkaroundPass:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass__coll__graph.svg" width="244" height="166"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass__coll__graph.svg" width="244" height="166"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a48a8f25fe1315cdf7500ca814d13cd7b" id="r_a48a8f25fe1315cdf7500ca814d13cd7b"><td class="memItemLeft" align="right" valign="top">llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a48a8f25fe1315cdf7500ca814d13cd7b">getArgument</a> () const override</td></tr>
-<tr class="memitem:ae5b7e97d24e923e3e7b5e401741a311c" id="r_ae5b7e97d24e923e3e7b5e401741a311c"><td class="memItemLeft" align="right" valign="top">llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae5b7e97d24e923e3e7b5e401741a311c">getDescription</a> () const override</td></tr>
-<tr class="memitem:acdb206aa61307b49ac495c6615a56cb9" id="r_acdb206aa61307b49ac495c6615a56cb9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acdb206aa61307b49ac495c6615a56cb9">runOnOperation</a> () final</td></tr>
+<tr class="memitem:a85af92de9cb9d495c83ffc26a59604f4" id="r_a85af92de9cb9d495c83ffc26a59604f4"><td class="memItemLeft" align="right" valign="top">llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a85af92de9cb9d495c83ffc26a59604f4">getArgument</a> () const override</td></tr>
+<tr class="memitem:a54a805817b574d20777d40039acde302" id="r_a54a805817b574d20777d40039acde302"><td class="memItemLeft" align="right" valign="top">llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a54a805817b574d20777d40039acde302">getDescription</a> () const override</td></tr>
+<tr class="memitem:a1128cd7310a65fb115825a1aa73cd4e0" id="r_a1128cd7310a65fb115825a1aa73cd4e0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1128cd7310a65fb115825a1aa73cd4e0">runOnOperation</a> () final</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00071">71</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<div class="textblock"><p>A workaround wrapper around MLIR's <span class="tt">remove-dead-values</span> pass that normalizes empty <span class="tt">scf.if</span> else regions before running the upstream implementation and cleans up the trivial regions afterwards. </p>
+
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00138">138</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a48a8f25fe1315cdf7500ca814d13cd7b" name="a48a8f25fe1315cdf7500ca814d13cd7b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a48a8f25fe1315cdf7500ca814d13cd7b">&#9670;&#160;</a></span>getArgument()</h2>
+<a id="a85af92de9cb9d495c83ffc26a59604f4" name="a85af92de9cb9d495c83ffc26a59604f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85af92de9cb9d495c83ffc26a59604f4">&#9670;&#160;</a></span>getArgument()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -141,7 +147,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">llvm::StringRef mlir_hotfix::RemoveDeadValuesWorkaroundPass::getArgument </td>
+          <td class="memname">llvm::StringRef llzk::detail::RemoveDeadValuesWorkaroundPass::getArgument </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -154,12 +160,12 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00076">76</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00143">143</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
-<a id="ae5b7e97d24e923e3e7b5e401741a311c" name="ae5b7e97d24e923e3e7b5e401741a311c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae5b7e97d24e923e3e7b5e401741a311c">&#9670;&#160;</a></span>getDescription()</h2>
+<a id="a54a805817b574d20777d40039acde302" name="a54a805817b574d20777d40039acde302"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54a805817b574d20777d40039acde302">&#9670;&#160;</a></span>getDescription()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -168,7 +174,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">llvm::StringRef mlir_hotfix::RemoveDeadValuesWorkaroundPass::getDescription </td>
+          <td class="memname">llvm::StringRef llzk::detail::RemoveDeadValuesWorkaroundPass::getDescription </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -181,12 +187,12 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00077">77</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00144">144</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
-<a id="acdb206aa61307b49ac495c6615a56cb9" name="acdb206aa61307b49ac495c6615a56cb9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acdb206aa61307b49ac495c6615a56cb9">&#9670;&#160;</a></span>runOnOperation()</h2>
+<a id="a1128cd7310a65fb115825a1aa73cd4e0" name="a1128cd7310a65fb115825a1aa73cd4e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1128cd7310a65fb115825a1aa73cd4e0">&#9670;&#160;</a></span>runOnOperation()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -195,7 +201,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void mlir_hotfix::RemoveDeadValuesWorkaroundPass::runOnOperation </td>
+          <td class="memname">void llzk::detail::RemoveDeadValuesWorkaroundPass::runOnOperation </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -208,12 +214,12 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="llzk-opt_8cpp_source.html#l00079">79</a> of file <a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00146">146</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>tools/llzk-opt/<a class="el" href="llzk-opt_8cpp_source.html">llzk-opt.cpp</a></li>
+<li>include/llzk/Transforms/<a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -222,7 +228,7 @@ Public Member Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="namespacemlir__hotfix.html">mlir_hotfix</a></li><li class="navelem"><a href="classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html">RemoveDeadValuesWorkaroundPass</a></li>
+    <li class="navelem"><a href="namespacellzk.html">llzk</a></li><li class="navelem"><a href="namespacellzk_1_1detail.html">detail</a></li><li class="navelem"><a href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html">RemoveDeadValuesWorkaroundPass</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

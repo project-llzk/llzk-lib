@@ -4,7 +4,7 @@ var namespaces_dup =
     [ "llvm", "namespacellvm.html", "namespacellvm" ],
     [ "llzk", "namespacellzk.html", "namespacellzk" ],
     [ "mlir", "namespacemlir.html", "namespacemlir" ],
-    [ "mlir_hotfix", "namespacemlir__hotfix.html", "namespacemlir__hotfix" ],
+    [ "mlir_hotfix", "namespacemlir__hotfix.html", null ],
     [ "Step1A_InstantiateStructs", "namespaceStep1A__InstantiateStructs.html", null ],
     [ "Step1B_InstantiateFunctions", "namespaceStep1B__InstantiateFunctions.html", null ],
     [ "Step2_Unroll", "namespaceStep2__Unroll.html", null ],

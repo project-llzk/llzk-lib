@@ -636,6 +636,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ae8b4d905283c2fdd116e0f4e34bc4f5e template"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="structllzk_1_1SpecializedSROA.html">SpecializedSROA</a>&lt; AllocOpTy &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae8b4d905283c2fdd116e0f4e34bc4f5e">createSpecializedSROAPass</a> ()</td></tr>
 <tr class="memitem:a7fd9658ca5a12ab4dc0ab714ec84a801" id="r_a7fd9658ca5a12ab4dc0ab714ec84a801"><td class="memTemplParams" colspan="2">template&lt;typename AllocOpTy&gt; </td></tr>
 <tr class="memitem:a7fd9658ca5a12ab4dc0ab714ec84a801 template"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="structllzk_1_1SpecializedMem2Reg.html">SpecializedMem2Reg</a>&lt; AllocOpTy &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7fd9658ca5a12ab4dc0ab714ec84a801">createSpecializedMem2RegPass</a> ()</td></tr>
+<tr class="memitem:a3ab490f475f65197f682c34e68953b29" id="r_a3ab490f475f65197f682c34e68953b29"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ab490f475f65197f682c34e68953b29">createRemoveDeadValuesWorkaroundPass</a> ()</td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a" id="r_ad19f7db21d0d9d7f998bb6f00782e35a"><td class="memTemplParams" colspan="2">template&lt;typename OpClass, typename... Args&gt; </td></tr>
 <tr class="memitem:ad19f7db21d0d9d7f998bb6f00782e35a template"><td class="memItemLeft" align="right" valign="top">OpClass&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad19f7db21d0d9d7f998bb6f00782e35a">delegate_to_build</a> (mlir::Location location, Args &amp;&amp;...args)</td></tr>
 <tr class="memitem:ae84de17f3956dc25edb6816991ded1ef" id="r_ae84de17f3956dc25edb6816991ded1ef"><td class="memTemplParams" colspan="2">template&lt;typename OpClass&gt; </td></tr>
@@ -3029,6 +3030,33 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 
 </div>
 </div>
+<a id="a3ab490f475f65197f682c34e68953b29" name="a3ab490f475f65197f682c34e68953b29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ab490f475f65197f682c34e68953b29">&#9670;&#160;</a></span>createRemoveDeadValuesWorkaroundPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt; mlir::Pass &gt; llzk::createRemoveDeadValuesWorkaroundPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00187">187</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+
+</div>
+</div>
 <a id="a24116a6e55835f2dd61b126be1842f3b" name="a24116a6e55835f2dd61b126be1842f3b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a24116a6e55835f2dd61b126be1842f3b">&#9670;&#160;</a></span>createRemoveUnusedDiscardableAllocationsPass() <span class="overload">[1/2]</span></h2>
 
@@ -3084,7 +3112,7 @@ template&lt;typename AllocOpTy&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00126">126</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00129">129</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>
@@ -3105,7 +3133,7 @@ template&lt;typename AllocOpTy&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00075">75</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SpecializedMemoryPasses_8h_source.html#l00078">78</a> of file <a class="el" href="SpecializedMemoryPasses_8h_source.html">SpecializedMemoryPasses.h</a>.</p>
 
 </div>
 </div>

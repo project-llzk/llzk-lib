@@ -1,5 +1,13 @@
 var NAVTREEINDEX32 =
 {
+"classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html#aca6c04db280d489c6c736aa988f7ba3a":[12,0,1,7,9,2],
+"classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html#af7c55e7d5e54ef25c6bea6e435de7aba":[10,0,2,10,9,5],
+"classllzk_1_1felt_1_1DivFeltOpGenericAdaptor.html#af7c55e7d5e54ef25c6bea6e435de7aba":[12,0,1,7,9,5],
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html":[10,0,2,10,10],
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html":[12,0,1,7,10],
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html#a500dfac8856dfd25ff2a53e26915e7d7":[10,0,2,10,10,2],
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html#a500dfac8856dfd25ff2a53e26915e7d7":[12,0,1,7,10,2],
+"classllzk_1_1felt_1_1FeltBinaryOpInterface.html#aea6b9fe7a3f498b6a63647d1d6afe907":[10,0,2,10,10,1],
 "classllzk_1_1felt_1_1FeltBinaryOpInterface.html#aea6b9fe7a3f498b6a63647d1d6afe907":[12,0,1,7,10,1],
 "classllzk_1_1felt_1_1FeltConstantOp.html":[10,0,2,10,11],
 "classllzk_1_1felt_1_1FeltConstantOp.html":[12,0,1,7,11],
@@ -241,13 +249,5 @@ var NAVTREEINDEX32 =
 "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#a5a988fb0743330912269d43ade3e4734":[12,0,1,7,21,7],
 "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#aa5ea260e6623ec545833bf3706cca006":[10,0,2,10,21,6],
 "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#aa5ea260e6623ec545833bf3706cca006":[12,0,1,7,21,6],
-"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#ab3052d315d1690e9e2f35d02d2b8fa77":[10,0,2,10,21,0],
-"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#ab3052d315d1690e9e2f35d02d2b8fa77":[12,0,1,7,21,0],
-"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#afb8652df3715a427d74ff7f3ccabb845":[10,0,2,10,21,1],
-"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#afb8652df3715a427d74ff7f3ccabb845":[12,0,1,7,21,1],
-"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#afbb60c044d205e3f024ee2ff778ce8ca":[10,0,2,10,21,2],
-"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#afbb60c044d205e3f024ee2ff778ce8ca":[12,0,1,7,21,2],
-"classllzk_1_1felt_1_1NegFeltOp.html":[10,0,2,10,22],
-"classllzk_1_1felt_1_1NegFeltOp.html":[12,0,1,7,22],
-"classllzk_1_1felt_1_1NegFeltOp.html#a03f32cd04fd307f24a8e36dcf01c0796":[10,0,2,10,22,15]
+"classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html#ab3052d315d1690e9e2f35d02d2b8fa77":[10,0,2,10,21,0]
 };

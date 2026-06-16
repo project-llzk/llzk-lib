@@ -1169,7 +1169,7 @@ var hierarchy =
     [ "mlir::PassWrapper", null, [
       [ "llzk::SpecializedMem2Reg< AllocOpTy >", "structllzk_1_1SpecializedMem2Reg.html", null ],
       [ "llzk::SpecializedSROA< AllocOpTy >", "structllzk_1_1SpecializedSROA.html", null ],
-      [ "mlir_hotfix::RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", null ]
+      [ "llzk::detail::RemoveDeadValuesWorkaroundPass", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html", null ]
     ] ],
     [ "llzk::pod::detail::PodAccessOpInterfaceInterfaceTraits", "structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::pod::detail::PodRefOpInterfaceInterfaceTraits", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits.html", null ],

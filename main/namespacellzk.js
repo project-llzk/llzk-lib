@@ -236,6 +236,7 @@ var namespacellzk =
     [ "createPredecessorPrinterPass", "namespacellzk.html#ad7b0cecbacac9888fb1c047273c91378", null ],
     [ "createRedundantOperationEliminationPass", "namespacellzk.html#af49520457eaff34f68f6c3defa2571ae", null ],
     [ "createRedundantReadAndWriteEliminationPass", "namespacellzk.html#af73faea85b5225f29d750ce00d34cc76", null ],
+    [ "createRemoveDeadValuesWorkaroundPass", "namespacellzk.html#a3ab490f475f65197f682c34e68953b29", null ],
     [ "createRemoveUnusedDiscardableAllocationsPass", "namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b", null ],
     [ "createRemoveUnusedDiscardableAllocationsPass", "namespacellzk.html#abc0a27fe70a0d0c8f5e60a4bba52f416", null ],
     [ "createSpecializedMem2RegPass", "namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801", null ],

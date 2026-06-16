@@ -170,7 +170,8 @@ var annotated_dup =
       [ "detail", "namespacellzk_1_1detail.html", [
         [ "DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits" ],
         [ "DiscardableAllocationAccessorOpInterfaceTrait", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", null ],
-        [ "NonDetOpGenericAdaptorBase", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" ]
+        [ "NonDetOpGenericAdaptorBase", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" ],
+        [ "RemoveDeadValuesWorkaroundPass", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass" ]
       ] ],
       [ "felt", "namespacellzk_1_1felt.html", [
         [ "detail", "namespacellzk_1_1felt_1_1detail.html", [
@@ -829,9 +830,6 @@ var annotated_dup =
       [ "FieldParser<::llzk::polymorphic::FlatteningCleanupMode, ::llzk::polymorphic::FlatteningCleanupMode >", "structmlir_1_1FieldParser_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_00_01_1_1llzk_1_1pola55774467e14cd5e75dd57edfedecbc7.html", null ],
       [ "FieldParser<::llzk::smt::BVCmpPredicate, ::llzk::smt::BVCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1BVCmpPredicate_00_01_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
       [ "FieldParser<::llzk::smt::IntPredicate, ::llzk::smt::IntPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1IntPredicate_00_01_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ]
-    ] ],
-    [ "mlir_hotfix", "namespacemlir__hotfix.html", [
-      [ "RemoveDeadValuesWorkaroundPass", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html", "classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass" ]
     ] ],
     [ "std", null, [
       [ "hash< llzk::CDGAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4" ],

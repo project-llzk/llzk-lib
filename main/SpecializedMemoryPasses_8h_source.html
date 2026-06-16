@@ -120,137 +120,207 @@ $(function(){initNavTree('SpecializedMemoryPasses_8h_source.html','',''); });
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;mlir/Analysis/DataLayoutAnalysis.h&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;mlir/IR/Builders.h&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;mlir/IR/Dominance.h&gt;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;mlir/Interfaces/MemorySlotInterfaces.h&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/Pass/Pass.h&gt;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/Transforms/Mem2Reg.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/Transforms/SROA.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
-<div class="foldopen" id="foldopen00036" data-start="{" data-end="};">
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html">   36</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structllzk_1_1SpecializedSROA.html">SpecializedSROA</a> : mlir::PassWrapper&lt;SpecializedSROA&lt;AllocOpTy&gt;, mlir::OperationPass&lt;&gt;&gt; {</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f">   38</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f">getArgument</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-specialized-sroa&quot;</span>; }</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="foldopen" id="foldopen00040" data-start="{" data-end="}">
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html#a2b726ee008a802040cab98433e25bc71">   40</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedSROA.html#a2b726ee008a802040cab98433e25bc71">getDescription</a>()<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Scalar replacement of aggregates for a specific allocator op type&quot;</span>;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  }</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;mlir/IR/Builders.h&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;mlir/IR/Dominance.h&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/Interfaces/MemorySlotInterfaces.h&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/Pass/Pass.h&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/Pass/PassManager.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/Transforms/Mem2Reg.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/Transforms/Passes.h&gt;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/Transforms/SROA.h&gt;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
+<div class="foldopen" id="foldopen00039" data-start="{" data-end="};">
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html">   39</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structllzk_1_1SpecializedSROA.html">SpecializedSROA</a> : mlir::PassWrapper&lt;SpecializedSROA&lt;AllocOpTy&gt;, mlir::OperationPass&lt;&gt;&gt; {</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f">   41</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f">getArgument</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-specialized-sroa&quot;</span>; }</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="foldopen" id="foldopen00043" data-start="{" data-end="}">
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html#a2b726ee008a802040cab98433e25bc71">   43</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedSROA.html#a2b726ee008a802040cab98433e25bc71">getDescription</a>()<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Scalar replacement of aggregates for a specific allocator op type&quot;</span>;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  }</div>
 </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="foldopen" id="foldopen00044" data-start="{" data-end="}">
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html#a8a955632f8b609ef74734af2ba8e204a">   44</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="structllzk_1_1SpecializedSROA.html#a8a955632f8b609ef74734af2ba8e204a">runOnOperation</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    mlir::Operation *scopeOp = this-&gt;getOperation();</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keyword">auto</span> &amp;dataLayoutAnalysis = this-&gt;<span class="keyword">template</span> getAnalysis&lt;mlir::DataLayoutAnalysis&gt;();</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keyword">const</span> mlir::DataLayout &amp;dataLayout = dataLayoutAnalysis.getAtOrAbove(scopeOp);</div>
+<div class="foldopen" id="foldopen00047" data-start="{" data-end="}">
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedSROA.html#a8a955632f8b609ef74734af2ba8e204a">   47</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="structllzk_1_1SpecializedSROA.html#a8a955632f8b609ef74734af2ba8e204a">runOnOperation</a>()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    mlir::Operation *scopeOp = this-&gt;getOperation();</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordtype">bool</span> changed = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordflow">for</span> (mlir::Region &amp;region : scopeOp-&gt;getRegions()) {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      <span class="keywordflow">if</span> (region.getBlocks().empty()) {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>        <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      }</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      mlir::OpBuilder builder(&amp;region.front(), region.front().begin());</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      mlir::SmallVector&lt;mlir::DestructurableAllocationOpInterface&gt; allocators;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      region.walk([&amp;](AllocOpTy allocator) { allocators.emplace_back(allocator); });</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keyword">auto</span> &amp;dataLayoutAnalysis = this-&gt;<span class="keyword">template</span> getAnalysis&lt;mlir::DataLayoutAnalysis&gt;();</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keyword">const</span> mlir::DataLayout &amp;dataLayout = dataLayoutAnalysis.getAtOrAbove(scopeOp);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordtype">bool</span> changed = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="keywordflow">for</span> (mlir::Region &amp;region : scopeOp-&gt;getRegions()) {</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>      <span class="keywordflow">if</span> (region.getBlocks().empty()) {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      }</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      mlir::OpBuilder builder(&amp;region.front(), region.front().begin());</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      <span class="keywordflow">if</span> (mlir::succeeded(mlir::tryToDestructureMemorySlots(allocators, builder, dataLayout))) {</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>        changed = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      }</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    }</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordflow">if</span> (!changed) {</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      this-&gt;markAllAnalysesPreserved();</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    }</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  }</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      mlir::SmallVector&lt;mlir::DestructurableAllocationOpInterface&gt; allocators;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      region.walk([&amp;](AllocOpTy allocator) { allocators.emplace_back(allocator); });</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      <span class="keywordflow">if</span> (mlir::succeeded(mlir::tryToDestructureMemorySlots(allocators, builder, dataLayout))) {</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>        changed = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      }</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    }</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordflow">if</span> (!changed) {</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      this-&gt;markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    }</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  }</div>
 </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>};</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>};</div>
 </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span><span class="comment">// Pass factory for `SpecializedSROA`.</span></div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
-<div class="foldopen" id="foldopen00075" data-start="{" data-end="}">
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">   75</a></span>std::unique_ptr&lt;SpecializedSROA&lt;AllocOpTy&gt;&gt; <a class="code hl_function" href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">createSpecializedSROAPass</a>() {</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordflow">return</span> std::make_unique&lt;SpecializedSROA&lt;AllocOpTy&gt;&gt;();</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>}</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="comment">// Pass factory for `SpecializedSROA`.</span></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
+<div class="foldopen" id="foldopen00078" data-start="{" data-end="}">
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">   78</a></span>std::unique_ptr&lt;SpecializedSROA&lt;AllocOpTy&gt;&gt; <a class="code hl_function" href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">createSpecializedSROAPass</a>() {</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordflow">return</span> std::make_unique&lt;SpecializedSROA&lt;AllocOpTy&gt;&gt;();</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>}</div>
 </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span></div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
-<div class="foldopen" id="foldopen00083" data-start="{" data-end="};">
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html">   83</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structllzk_1_1SpecializedMem2Reg.html">SpecializedMem2Reg</a></div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    : mlir::PassWrapper&lt;SpecializedMem2Reg&lt;AllocOpTy&gt;, mlir::OperationPass&lt;&gt;&gt; {</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html#a8af957d71c6fb7c039529000c292c11b">   86</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedMem2Reg.html#a8af957d71c6fb7c039529000c292c11b">getArgument</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-specialized-mem2reg&quot;</span>; }</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="foldopen" id="foldopen00088" data-start="{" data-end="}">
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html#ac4575c6b46ff28d261547a85788f3355">   88</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedMem2Reg.html#ac4575c6b46ff28d261547a85788f3355">getDescription</a>()<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Promotes memory slots of a specific allocator op type into values&quot;</span>;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  }</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span></div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
+<div class="foldopen" id="foldopen00086" data-start="{" data-end="};">
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html">   86</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structllzk_1_1SpecializedMem2Reg.html">SpecializedMem2Reg</a></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    : mlir::PassWrapper&lt;SpecializedMem2Reg&lt;AllocOpTy&gt;, mlir::OperationPass&lt;&gt;&gt; {</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html#a8af957d71c6fb7c039529000c292c11b">   89</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedMem2Reg.html#a8af957d71c6fb7c039529000c292c11b">getArgument</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-specialized-mem2reg&quot;</span>; }</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="foldopen" id="foldopen00091" data-start="{" data-end="}">
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html#ac4575c6b46ff28d261547a85788f3355">   91</a></span>  mlir::StringRef <a class="code hl_function" href="structllzk_1_1SpecializedMem2Reg.html#ac4575c6b46ff28d261547a85788f3355">getDescription</a>()<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Promotes memory slots of a specific allocator op type into values&quot;</span>;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  }</div>
 </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="foldopen" id="foldopen00092" data-start="{" data-end="}">
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c">   92</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c">runOnOperation</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    mlir::Operation *scopeOp = this-&gt;getOperation();</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    <span class="keyword">auto</span> &amp;dataLayoutAnalysis = this-&gt;<span class="keyword">template</span> getAnalysis&lt;mlir::DataLayoutAnalysis&gt;();</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keyword">const</span> mlir::DataLayout &amp;dataLayout = dataLayoutAnalysis.getAtOrAbove(scopeOp);</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keyword">auto</span> &amp;dominance = this-&gt;<span class="keyword">template</span> getAnalysis&lt;mlir::DominanceInfo&gt;();</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keywordtype">bool</span> changed = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordflow">for</span> (mlir::Region &amp;region : scopeOp-&gt;getRegions()) {</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>      <span class="keywordflow">if</span> (region.getBlocks().empty()) {</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>        <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      }</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>      mlir::OpBuilder builder(&amp;region.front(), region.front().begin());</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>      mlir::SmallVector&lt;mlir::PromotableAllocationOpInterface&gt; allocators;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>      region.walk([&amp;](AllocOpTy allocator) { allocators.emplace_back(allocator); });</div>
+<div class="foldopen" id="foldopen00095" data-start="{" data-end="}">
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno"><a class="line" href="structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c">   95</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c">runOnOperation</a>()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    mlir::Operation *scopeOp = this-&gt;getOperation();</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keyword">auto</span> &amp;dataLayoutAnalysis = this-&gt;<span class="keyword">template</span> getAnalysis&lt;mlir::DataLayoutAnalysis&gt;();</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keyword">const</span> mlir::DataLayout &amp;dataLayout = dataLayoutAnalysis.getAtOrAbove(scopeOp);</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keyword">auto</span> &amp;dominance = this-&gt;<span class="keyword">template</span> getAnalysis&lt;mlir::DominanceInfo&gt;();</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keywordtype">bool</span> changed = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordflow">for</span> (mlir::Region &amp;region : scopeOp-&gt;getRegions()) {</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>      <span class="keywordflow">if</span> (region.getBlocks().empty()) {</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>      }</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>      mlir::OpBuilder builder(&amp;region.front(), region.front().begin());</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>      <span class="keywordflow">if</span> (mlir::succeeded(</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>              mlir::tryToPromoteMemorySlots(allocators, builder, dataLayout, dominance)</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>          )) {</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>        changed = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      }</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    }</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keywordflow">if</span> (!changed) {</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>      this-&gt;markAllAnalysesPreserved();</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    }</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  }</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>      mlir::SmallVector&lt;mlir::PromotableAllocationOpInterface&gt; allocators;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      region.walk([&amp;](AllocOpTy allocator) { allocators.emplace_back(allocator); });</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      <span class="keywordflow">if</span> (mlir::succeeded(</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>              mlir::tryToPromoteMemorySlots(allocators, builder, dataLayout, dominance)</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>          )) {</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        changed = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      }</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    }</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="keywordflow">if</span> (!changed) {</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      this-&gt;markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    }</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  }</div>
 </div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>};</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>};</div>
 </div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span><span class="comment">// Pass factory for `SpecializedMem2Reg`.</span></div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
-<div class="foldopen" id="foldopen00126" data-start="{" data-end="}">
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno"><a class="line" href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">  126</a></span>std::unique_ptr&lt;SpecializedMem2Reg&lt;AllocOpTy&gt;&gt; <a class="code hl_function" href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">createSpecializedMem2RegPass</a>() {</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keywordflow">return</span> std::make_unique&lt;SpecializedMem2Reg&lt;AllocOpTy&gt;&gt;();</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>}</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span> </div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="comment">// Pass factory for `SpecializedMem2Reg`.</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AllocOpTy&gt;</div>
+<div class="foldopen" id="foldopen00129" data-start="{" data-end="}">
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno"><a class="line" href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">  129</a></span>std::unique_ptr&lt;SpecializedMem2Reg&lt;AllocOpTy&gt;&gt; <a class="code hl_function" href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">createSpecializedMem2RegPass</a>() {</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keywordflow">return</span> std::make_unique&lt;SpecializedMem2Reg&lt;AllocOpTy&gt;&gt;();</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>}</div>
 </div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><span class="keyword">namespace </span>detail {</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span></div>
+<div class="foldopen" id="foldopen00138" data-start="{" data-end="};">
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno"><a class="line" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html">  138</a></span><span class="keyword">class </span><a class="code hl_class" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html">RemoveDeadValuesWorkaroundPass</a></div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    : <span class="keyword">public</span> mlir::PassWrapper&lt;RemoveDeadValuesWorkaroundPass, mlir::OperationPass&lt;&gt;&gt; {</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(<a class="code hl_class" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html">RemoveDeadValuesWorkaroundPass</a>)</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno"><a class="line" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a85af92de9cb9d495c83ffc26a59604f4">  143</a></span>  <a class="code hl_namespace" href="namespacellvm.html">llvm</a>::StringRef <a class="code hl_function" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a85af92de9cb9d495c83ffc26a59604f4">getArgument</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;remove-dead-values&quot;</span>; }</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno"><a class="line" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a54a805817b574d20777d40039acde302">  144</a></span>  llvm::StringRef <a class="code hl_function" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a54a805817b574d20777d40039acde302">getDescription</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Remove dead values&quot;</span>; }</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span> </div>
+<div class="foldopen" id="foldopen00146" data-start="{" data-end="}">
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno"><a class="line" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a1128cd7310a65fb115825a1aa73cd4e0">  146</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a1128cd7310a65fb115825a1aa73cd4e0">runOnOperation</a>() final {</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    <span class="comment">// Pre-pass: add a trivial block to empty `else` regions so upstream pass code can handle them.</span></div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    getOperation()-&gt;walk([](mlir::scf::IfOp ifOp) {</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>      <span class="keywordflow">if</span> (ifOp.getElseRegion().empty()) {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>        mlir::Block &amp;elseBlock = ifOp.getElseRegion().emplaceBlock();</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        mlir::OpBuilder builder(ifOp.getContext());</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        builder.setInsertionPointToEnd(&amp;elseBlock);</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>        builder.create&lt;mlir::scf::YieldOp&gt;(ifOp.getLoc());</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>      }</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    });</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span> </div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    mlir::OpPassManager pm(getOperation()-&gt;getName().getStringRef());</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    pm.addPass(mlir::createRemoveDeadValuesPass());</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="keywordflow">if</span> (mlir::failed(runPipeline(pm, getOperation()))) {</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>      signalPassFailure();</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    }</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span> </div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    <span class="comment">// Post-pass: remove trivial `else` blocks that are left behind.</span></div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    getOperation()-&gt;walk([](mlir::scf::IfOp ifOp) {</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>      <span class="keywordflow">if</span> (ifOp.getResults().empty()) {</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        mlir::Region &amp;elseRegion = ifOp.getElseRegion();</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>        <span class="keywordflow">if</span> (!llvm::hasSingleElement(elseRegion)) {</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>          <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>        }</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>        mlir::Block &amp;elseBlock = elseRegion.front();</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>        <span class="keywordflow">if</span> (!llvm::hasSingleElement(elseBlock)) {</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>          <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>        }</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        <span class="keywordflow">if</span> (!llvm::isa&lt;mlir::scf::YieldOp&gt;(elseBlock.front())) {</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>          <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>        }</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>        elseRegion.dropAllReferences();</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        elseBlock.clear();</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>        elseRegion.getBlocks().clear();</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>      }</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    });</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  }</div>
+</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>};</div>
+</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>} <span class="comment">// namespace detail</span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
+<div class="foldopen" id="foldopen00187" data-start="{" data-end="}">
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno"><a class="line" href="namespacellzk.html#a3ab490f475f65197f682c34e68953b29">  187</a></span><span class="keyword">inline</span> std::unique_ptr&lt;mlir::Pass&gt; <a class="code hl_function" href="namespacellzk.html#a3ab490f475f65197f682c34e68953b29">createRemoveDeadValuesWorkaroundPass</a>() {</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  <span class="keywordflow">return</span> std::make_unique&lt;detail::RemoveDeadValuesWorkaroundPass&gt;();</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>}</div>
+</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>} <span class="comment">// namespace llzk</span></div>
+<div class="ttc" id="aclassllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass_html"><div class="ttname"><a href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html">llzk::detail::RemoveDeadValuesWorkaroundPass</a></div><div class="ttdoc">A workaround wrapper around MLIR&#39;s remove-dead-values pass that normalizes empty scf....</div><div class="ttdef"><b>Definition</b> <a href="#l00138">SpecializedMemoryPasses.h:139</a></div></div>
+<div class="ttc" id="aclassllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass_html_a1128cd7310a65fb115825a1aa73cd4e0"><div class="ttname"><a href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a1128cd7310a65fb115825a1aa73cd4e0">llzk::detail::RemoveDeadValuesWorkaroundPass::runOnOperation</a></div><div class="ttdeci">void runOnOperation() final</div><div class="ttdef"><b>Definition</b> <a href="#l00146">SpecializedMemoryPasses.h:146</a></div></div>
+<div class="ttc" id="aclassllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass_html_a54a805817b574d20777d40039acde302"><div class="ttname"><a href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a54a805817b574d20777d40039acde302">llzk::detail::RemoveDeadValuesWorkaroundPass::getDescription</a></div><div class="ttdeci">llvm::StringRef getDescription() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00144">SpecializedMemoryPasses.h:144</a></div></div>
+<div class="ttc" id="aclassllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass_html_a85af92de9cb9d495c83ffc26a59604f4"><div class="ttname"><a href="classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html#a85af92de9cb9d495c83ffc26a59604f4">llzk::detail::RemoveDeadValuesWorkaroundPass::getArgument</a></div><div class="ttdeci">llvm::StringRef getArgument() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00143">SpecializedMemoryPasses.h:143</a></div></div>
+<div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00271">SourceRefLattice.cpp:271</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a7fd9658ca5a12ab4dc0ab714ec84a801"><div class="ttname"><a href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">llzk::createSpecializedMem2RegPass</a></div><div class="ttdeci">std::unique_ptr&lt; SpecializedMem2Reg&lt; AllocOpTy &gt; &gt; createSpecializedMem2RegPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00126">SpecializedMemoryPasses.h:126</a></div></div>
-<div class="ttc" id="anamespacellzk_html_ae8b4d905283c2fdd116e0f4e34bc4f5e"><div class="ttname"><a href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">llzk::createSpecializedSROAPass</a></div><div class="ttdeci">std::unique_ptr&lt; SpecializedSROA&lt; AllocOpTy &gt; &gt; createSpecializedSROAPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00075">SpecializedMemoryPasses.h:75</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html">llzk::SpecializedMem2Reg</a></div><div class="ttdoc">A variant of the MLIR mem2reg pass that only promotes memory slots belonging to allocators of type Al...</div><div class="ttdef"><b>Definition</b> <a href="#l00083">SpecializedMemoryPasses.h:84</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html_a2d0b0da35bd31542880453a50509048c"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c">llzk::SpecializedMem2Reg::runOnOperation</a></div><div class="ttdeci">void runOnOperation() override</div><div class="ttdef"><b>Definition</b> <a href="#l00092">SpecializedMemoryPasses.h:92</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html_a8af957d71c6fb7c039529000c292c11b"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html#a8af957d71c6fb7c039529000c292c11b">llzk::SpecializedMem2Reg::getArgument</a></div><div class="ttdeci">mlir::StringRef getArgument() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00086">SpecializedMemoryPasses.h:86</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html_ac4575c6b46ff28d261547a85788f3355"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html#ac4575c6b46ff28d261547a85788f3355">llzk::SpecializedMem2Reg::getDescription</a></div><div class="ttdeci">mlir::StringRef getDescription() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00088">SpecializedMemoryPasses.h:88</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedSROA_html"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html">llzk::SpecializedSROA</a></div><div class="ttdoc">A variant of the MLIR sroa pass that only destructures memory slots belonging to allocators of type A...</div><div class="ttdef"><b>Definition</b> <a href="#l00036">SpecializedMemoryPasses.h:36</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedSROA_html_a2b726ee008a802040cab98433e25bc71"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html#a2b726ee008a802040cab98433e25bc71">llzk::SpecializedSROA::getDescription</a></div><div class="ttdeci">mlir::StringRef getDescription() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00040">SpecializedMemoryPasses.h:40</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedSROA_html_a8a955632f8b609ef74734af2ba8e204a"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html#a8a955632f8b609ef74734af2ba8e204a">llzk::SpecializedSROA::runOnOperation</a></div><div class="ttdeci">void runOnOperation() override</div><div class="ttdef"><b>Definition</b> <a href="#l00044">SpecializedMemoryPasses.h:44</a></div></div>
-<div class="ttc" id="astructllzk_1_1SpecializedSROA_html_af54b7b68cfe2706337ad898d8e20cc7f"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f">llzk::SpecializedSROA::getArgument</a></div><div class="ttdeci">mlir::StringRef getArgument() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00038">SpecializedMemoryPasses.h:38</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a3ab490f475f65197f682c34e68953b29"><div class="ttname"><a href="namespacellzk.html#a3ab490f475f65197f682c34e68953b29">llzk::createRemoveDeadValuesWorkaroundPass</a></div><div class="ttdeci">std::unique_ptr&lt; mlir::Pass &gt; createRemoveDeadValuesWorkaroundPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00187">SpecializedMemoryPasses.h:187</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a7fd9658ca5a12ab4dc0ab714ec84a801"><div class="ttname"><a href="namespacellzk.html#a7fd9658ca5a12ab4dc0ab714ec84a801">llzk::createSpecializedMem2RegPass</a></div><div class="ttdeci">std::unique_ptr&lt; SpecializedMem2Reg&lt; AllocOpTy &gt; &gt; createSpecializedMem2RegPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00129">SpecializedMemoryPasses.h:129</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ae8b4d905283c2fdd116e0f4e34bc4f5e"><div class="ttname"><a href="namespacellzk.html#ae8b4d905283c2fdd116e0f4e34bc4f5e">llzk::createSpecializedSROAPass</a></div><div class="ttdeci">std::unique_ptr&lt; SpecializedSROA&lt; AllocOpTy &gt; &gt; createSpecializedSROAPass()</div><div class="ttdef"><b>Definition</b> <a href="#l00078">SpecializedMemoryPasses.h:78</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html">llzk::SpecializedMem2Reg</a></div><div class="ttdoc">A variant of the MLIR mem2reg pass that only promotes memory slots belonging to allocators of type Al...</div><div class="ttdef"><b>Definition</b> <a href="#l00086">SpecializedMemoryPasses.h:87</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html_a2d0b0da35bd31542880453a50509048c"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c">llzk::SpecializedMem2Reg::runOnOperation</a></div><div class="ttdeci">void runOnOperation() override</div><div class="ttdef"><b>Definition</b> <a href="#l00095">SpecializedMemoryPasses.h:95</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html_a8af957d71c6fb7c039529000c292c11b"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html#a8af957d71c6fb7c039529000c292c11b">llzk::SpecializedMem2Reg::getArgument</a></div><div class="ttdeci">mlir::StringRef getArgument() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00089">SpecializedMemoryPasses.h:89</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedMem2Reg_html_ac4575c6b46ff28d261547a85788f3355"><div class="ttname"><a href="structllzk_1_1SpecializedMem2Reg.html#ac4575c6b46ff28d261547a85788f3355">llzk::SpecializedMem2Reg::getDescription</a></div><div class="ttdeci">mlir::StringRef getDescription() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00091">SpecializedMemoryPasses.h:91</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedSROA_html"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html">llzk::SpecializedSROA</a></div><div class="ttdoc">A variant of the MLIR sroa pass that only destructures memory slots belonging to allocators of type A...</div><div class="ttdef"><b>Definition</b> <a href="#l00039">SpecializedMemoryPasses.h:39</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedSROA_html_a2b726ee008a802040cab98433e25bc71"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html#a2b726ee008a802040cab98433e25bc71">llzk::SpecializedSROA::getDescription</a></div><div class="ttdeci">mlir::StringRef getDescription() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00043">SpecializedMemoryPasses.h:43</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedSROA_html_a8a955632f8b609ef74734af2ba8e204a"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html#a8a955632f8b609ef74734af2ba8e204a">llzk::SpecializedSROA::runOnOperation</a></div><div class="ttdeci">void runOnOperation() override</div><div class="ttdef"><b>Definition</b> <a href="#l00047">SpecializedMemoryPasses.h:47</a></div></div>
+<div class="ttc" id="astructllzk_1_1SpecializedSROA_html_af54b7b68cfe2706337ad898d8e20cc7f"><div class="ttname"><a href="structllzk_1_1SpecializedSROA.html#af54b7b68cfe2706337ad898d8e20cc7f">llzk::SpecializedSROA::getArgument</a></div><div class="ttdeci">mlir::StringRef getArgument() const override</div><div class="ttdef"><b>Definition</b> <a href="#l00041">SpecializedMemoryPasses.h:41</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

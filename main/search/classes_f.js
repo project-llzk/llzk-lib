@@ -21,7 +21,7 @@ var searchData=
   ['redundantoperationeliminationpassbase_18',['RedundantOperationEliminationPassBase',['../classllzk_1_1impl_1_1RedundantOperationEliminationPassBase.html',1,'llzk::impl']]],
   ['redundantreadandwriteeliminationpassbase_19',['RedundantReadAndWriteEliminationPassBase',['../classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html',1,'llzk::impl']]],
   ['refvaluecapture_20',['RefValueCapture',['../structllzk_1_1RefValueCapture.html',1,'llzk']]],
-  ['removedeadvaluesworkaroundpass_21',['RemoveDeadValuesWorkaroundPass',['../classmlir__hotfix_1_1RemoveDeadValuesWorkaroundPass.html',1,'mlir_hotfix']]],
+  ['removedeadvaluesworkaroundpass_21',['RemoveDeadValuesWorkaroundPass',['../classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html',1,'llzk::detail']]],
   ['removeunuseddiscardableallocationspassbase_22',['RemoveUnusedDiscardableAllocationsPassBase',['../classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html',1,'llzk::impl']]],
   ['removeunuseddiscardableallocationspassoptions_23',['RemoveUnusedDiscardableAllocationsPassOptions',['../structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html',1,'llzk']]],
   ['repeatop_24',['RepeatOp',['../classllzk_1_1smt_1_1RepeatOp.html',1,'llzk::smt']]],
