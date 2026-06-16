@@ -48,6 +48,9 @@
 /// 5. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
 ///    values. This pass also runs several standard optimizations so the final result is condensed.
 ///
+/// 6. Remove array allocations that become unread after memory promotion, then remove SSA values
+///    made dead by that cleanup.
+///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
 /// different/configurable semantics are added in the future, some additional transformation would
 /// be necessary before/during this pass so that multiple writes to the same index can be handled
@@ -80,6 +83,7 @@
 #include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
@@ -967,7 +971,10 @@ static void step3(ModuleOp modOp) {
 }
 
 /// Pass driver for the full array-to-scalar lowering pipeline described above.
-class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
+class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
+  using Base = ArrayToScalarPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     ModuleOp module = getOperation();
 
@@ -1016,7 +1023,13 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
     nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
     // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
     nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
-    // Cleanup SSA values made dead by the transformations
+    // Cleanup allocations made dead by memory promotion.
+    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    // Cleanup SSA values made dead by removing allocations and writes.
     nestedPM.addPass(createRemoveDeadValuesPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
@@ -1030,8 +1043,3 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
 };
 
 } // namespace
-
-/// Create the pass that rewrites eligible arrays into scalar SSA values.
-std::unique_ptr<Pass> llzk::array::createArrayToScalarPass() {
-  return std::make_unique<ArrayToScalarPass>();
-};

@@ -88,9 +88,9 @@ struct FullPolyLoweringOptions : public PassPipelineOptions<FullPolyLoweringOpti
 };
 
 void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
-  pm.addPass(llzk::createRedundantReadAndWriteEliminationPass());
-  pm.addPass(llzk::createRedundantOperationEliminationPass());
-  pm.addPass(llzk::createUnusedDeclarationEliminationPass());
+  pm.addPass(createRedundantReadAndWriteEliminationPass());
+  pm.addPass(createRedundantOperationEliminationPass());
+  pm.addPass(createUnusedDeclarationEliminationPass());
 }
 
 std::unique_ptr<Pass> createVerifAggregateScalarizationPass() {
@@ -115,11 +115,11 @@ void registerTransformationPassPipelines() {
 
   PassPipelineRegistration<FullPolyLoweringOptions>(
       "llzk-full-poly-lowering",
-      "Lower all polynomial constraints to a given max degree, then remove unnecessary operations "
-      "and definitions.",
+      "Lower already-flattened polynomial constraints to a given max degree, then remove "
+      "unnecessary operations and definitions.",
       [](OpPassManager &pm, const FullPolyLoweringOptions &opts) {
     // 1. Degree lowering
-    pm.addPass(llzk::createPolyLoweringPass(opts.maxDegree));
+    pm.addPass(createPolyLoweringPass(PolyLoweringPassOptions {.maxDegree = opts.maxDegree}));
 
     // 2. Cleanup
     addRemoveUnnecessaryOpsAndDefsPipeline(pm);
@@ -130,8 +130,8 @@ void registerTransformationPassPipelines() {
       "llzk-product-program",
       "Convert @compute/@constrain functions to @product function and perform alignment",
       [](OpPassManager &pm) {
-    pm.addPass(llzk::createComputeConstrainToProductPass());
-    pm.addPass(llzk::createFuseProductLoopsPass());
+    pm.addPass(createComputeConstrainToProductPass());
+    pm.addPass(createFuseProductLoopsPass());
   }
   );
 

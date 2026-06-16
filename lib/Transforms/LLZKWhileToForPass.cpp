@@ -35,7 +35,6 @@
 #include <algorithm>
 
 namespace llzk {
-#define GEN_PASS_DECL_WHILETOFORPASS
 #define GEN_PASS_DEF_WHILETOFORPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -44,11 +43,10 @@ namespace llzk {
 
 using namespace mlir;
 using namespace scf;
+using namespace llzk::boolean;
+using namespace llzk::felt;
 
-namespace llzk {
-
-using namespace boolean;
-using namespace felt;
+namespace {
 
 struct ForOpInfo {
   // SSA values holding the loop bounds
@@ -124,8 +122,8 @@ static inline ForOpInfo parseInfo(WhileOp op) {
 
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
-  if (op->hasAttr(LoopBoundsAttr::name)) {
-    auto bounds = op->getAttrOfType<LoopBoundsAttr>(LoopBoundsAttr::name);
+  if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
+    auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
 
     OpBuilder builder {op->getContext()};
     builder.setInsertionPoint(op);
@@ -222,7 +220,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     if (!isa<FeltType>(val.getType())) {
       return val;
     }
-    return rewriter.create<cast::FeltToIndexOp>(val.getLoc(), val).getResult();
+    return rewriter.create<llzk::cast::FeltToIndexOp>(val.getLoc(), val).getResult();
   };
 
   // Emit a prelude setting up the loop bounds
@@ -231,7 +229,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   auto step = copyIfNeeded(*info.step);
 
   // Store the original type of the scf.while's induction var so we can cast back if necessary
-  ensure(
+  llzk::ensure(
       lb.getType() == ub.getType() && lb.getType() == step.getType(),
       "cannot have differing types for loop bounds"
   );
@@ -259,8 +257,8 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     // If the induction var was a felt, we need to cast it back to felt in the scf.for body
     // Note that this means the body of the scf.for might cast it back to index again anyway, but
     // --canonicalize should fix that
-    inductionVar =
-        rewriter.create<cast::IntToFeltOp>(forOp.getLoc(), ivarType, inductionVar).getResult();
+    inductionVar = rewriter.create<llzk::cast::IntToFeltOp>(forOp.getLoc(), ivarType, inductionVar)
+                       .getResult();
   }
 
   // Start by mapping the `before` block to the loop body
@@ -333,9 +331,12 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   return forOp;
 }
 
-class WhileToForPass : public impl::WhileToForPassBase<WhileToForPass> {
+class PassImpl : public llzk::impl::WhileToForPassBase<PassImpl> {
+  using Base = WhileToForPassBase<PassImpl>;
+  using Base::Base;
+
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<cast::CastDialect>();
+    registry.insert<llzk::cast::CastDialect>();
   }
   void runOnOperation() override {
     IRRewriter rewriter {getOperation().getContext()};
@@ -356,5 +357,4 @@ class WhileToForPass : public impl::WhileToForPassBase<WhileToForPass> {
   }
 };
 
-std::unique_ptr<Pass> createWhileToForPass() { return std::make_unique<WhileToForPass>(); }
-} // namespace llzk
+} // namespace

@@ -27,14 +27,14 @@ namespace llzk {
 #include "llzk/Validators/LLZKValidationPasses.h.inc"
 } // namespace llzk
 
-using namespace mlir;
-using namespace llzk;
 using namespace llzk::component;
-using namespace llzk::function;
 
 namespace {
-class MemberWriteValidatorPass
-    : public llzk::impl::MemberWriteValidatorPassBase<MemberWriteValidatorPass> {
+
+class PassImpl : public llzk::impl::MemberWriteValidatorPassBase<PassImpl> {
+  using Base = MemberWriteValidatorPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     StructDefOp structDef = getOperation();
 
@@ -60,8 +60,5 @@ class MemberWriteValidatorPass
     markAllAnalysesPreserved();
   }
 };
-} // namespace
 
-std::unique_ptr<mlir::Pass> llzk::createMemberWriteValidatorPass() {
-  return std::make_unique<MemberWriteValidatorPass>();
-};
+} // namespace

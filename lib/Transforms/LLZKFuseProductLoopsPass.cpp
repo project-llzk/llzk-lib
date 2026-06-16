@@ -12,8 +12,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/LLZKFuseProductLoopsPass.h"
-
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -28,42 +26,30 @@
 
 #include <memory>
 
+// Include the generated base pass class definitions.
 namespace llzk {
-
-#define GEN_PASS_DECL_FUSEPRODUCTLOOPSPASS
 #define GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
+} // namespace llzk
 
-using namespace llzk::function;
+namespace {
+
+using namespace mlir;
+using namespace llzk;
 
 // Bitwidth of `index` for instantiating SMT variables
 constexpr int INDEX_WIDTH = 64;
 
-class FuseProductLoopsPass : public impl::FuseProductLoopsPassBase<FuseProductLoopsPass> {
-
-public:
-  void runOnOperation() override {
-    mlir::ModuleOp mod = getOperation();
-    mod.walk([this](FuncDefOp funcDef) {
-      if (funcDef.isStructProduct()) {
-        if (mlir::failed(fuseMatchingLoopPairs(funcDef.getFunctionBody(), &getContext()))) {
-          signalPassFailure();
-        }
-      }
-    });
-  }
-};
-
-static inline bool isConstOrStructParam(mlir::Value val) {
+static inline bool isConstOrStructParam(Value val) {
   // TODO: doing arithmetic over constants should also be fine?
-  return val.getDefiningOp<mlir::arith::ConstantIndexOp>() ||
-         val.getDefiningOp<llzk::polymorphic::ConstReadOp>();
+  return val.getDefiningOp<arith::ConstantIndexOp>() ||
+         val.getDefiningOp<polymorphic::ConstReadOp>();
 }
 
-llvm::SMTExprRef mkExpr(mlir::Value value, llvm::SMTSolver *solver) {
-  if (auto constOp = value.getDefiningOp<mlir::arith::ConstantIndexOp>()) {
+static llvm::SMTExprRef mkExpr(Value value, llvm::SMTSolver *solver) {
+  if (auto constOp = value.getDefiningOp<arith::ConstantIndexOp>()) {
     return solver->mkBitvector(llvm::APSInt::get(constOp.value()), INDEX_WIDTH);
-  } else if (auto polyReadOp = value.getDefiningOp<llzk::polymorphic::ConstReadOp>()) {
+  } else if (auto polyReadOp = value.getDefiningOp<polymorphic::ConstReadOp>()) {
 
     return solver->mkSymbol(
         std::string {polyReadOp.getConstName()}.c_str(), solver->getBitvectorSort(INDEX_WIDTH)
@@ -73,7 +59,7 @@ llvm::SMTExprRef mkExpr(mlir::Value value, llvm::SMTSolver *solver) {
   return nullptr; // Unreachable
 }
 
-llvm::SMTExprRef tripCount(mlir::scf::ForOp op, llvm::SMTSolver *solver) {
+static llvm::SMTExprRef tripCount(scf::ForOp op, llvm::SMTSolver *solver) {
   const auto *one = solver->mkBitvector(llvm::APSInt::get(1), INDEX_WIDTH);
   return solver->mkBVSDiv(
       solver->mkBVAdd(
@@ -84,7 +70,7 @@ llvm::SMTExprRef tripCount(mlir::scf::ForOp op, llvm::SMTSolver *solver) {
   );
 }
 
-static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
+static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
   // A priori, two loops can be fused if:
   // 1. They live in the same parent region,
   // 2. One comes from witgen and the other comes from constraint gen, and
@@ -96,14 +82,14 @@ static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
   }
 
   // Check 2.
-  if (!a->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ||
-      !b->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+  if (!a->hasAttrOfType<StringAttr>(PRODUCT_SOURCE) ||
+      !b->hasAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
     // Ideally this should never happen, since the pass only runs on fused @product functions, but
     // check anyway just to be safe
     return false;
   }
-  if (a->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE) ==
-      b->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
+  if (a->getAttrOfType<StringAttr>(PRODUCT_SOURCE) ==
+      b->getAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
     return false;
   }
 
@@ -112,8 +98,8 @@ static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
   // param", we definitely can't tell if they're equal. If the trip counts are only "constant up to
   // a struct param" but not actually constant, we can ask a solver if the equations are guaranteed
   // to be the same
-  auto tripCountA = mlir::constantTripCount(a.getLowerBound(), a.getUpperBound(), a.getStep());
-  auto tripCountB = mlir::constantTripCount(b.getLowerBound(), b.getUpperBound(), b.getStep());
+  auto tripCountA = constantTripCount(a.getLowerBound(), a.getUpperBound(), a.getStep());
+  auto tripCountB = constantTripCount(b.getLowerBound(), b.getUpperBound(), b.getStep());
   if (tripCountA.has_value() && tripCountB.has_value() && *tripCountA == *tripCountB) {
     return true;
   }
@@ -132,48 +118,61 @@ static inline bool canLoopsBeFused(mlir::scf::ForOp a, mlir::scf::ForOp b) {
   return !*solver->check();
 }
 
-mlir::LogicalResult fuseMatchingLoopPairs(mlir::Region &body, mlir::MLIRContext *context) {
+static LogicalResult fuseMatchingLoopPairs(Region &body, MLIRContext *context) {
   // Start by collecting all possible loops
-  llvm::SmallVector<mlir::scf::ForOp> witnessLoops, constraintLoops;
-  body.walk<mlir::WalkOrder::PreOrder>([&witnessLoops, &constraintLoops](mlir::scf::ForOp forOp) {
-    if (!forOp->hasAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE)) {
-      return mlir::WalkResult::skip();
+  llvm::SmallVector<scf::ForOp> witnessLoops, constraintLoops;
+  body.walk<WalkOrder::PreOrder>([&witnessLoops, &constraintLoops](scf::ForOp forOp) {
+    if (!forOp->hasAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
+      return WalkResult::skip();
     }
-    auto productSource = forOp->getAttrOfType<mlir::StringAttr>(PRODUCT_SOURCE);
+    auto productSource = forOp->getAttrOfType<StringAttr>(PRODUCT_SOURCE);
     if (productSource == FUNC_NAME_COMPUTE) {
       witnessLoops.push_back(forOp);
     } else if (productSource == FUNC_NAME_CONSTRAIN) {
       constraintLoops.push_back(forOp);
     }
     // Skipping here, because any nested loops can't possibly be fused at this stage
-    return mlir::WalkResult::skip();
+    return WalkResult::skip();
   });
 
   // A pair of loops will be fused iff (1) they can be fused according to the rules above, and (2)
   // neither can be fused with anything else (so there's no ambiguity)
-  auto fusionCandidates = alignmentHelpers::getMatchingPairs<mlir::scf::ForOp>(
+  auto fusionCandidates = alignmentHelpers::getMatchingPairs<scf::ForOp>(
       witnessLoops, constraintLoops, canLoopsBeFused
   );
 
   // This shouldn't happen, since we allow partial matches
-  if (mlir::failed(fusionCandidates)) {
-    return mlir::failure();
+  if (failed(fusionCandidates)) {
+    return failure();
   }
 
   // Finally, fuse all the marked loops...
-  mlir::IRRewriter rewriter {context};
+  IRRewriter rewriter {context};
   for (auto [w, c] : *fusionCandidates) {
-    auto fusedLoop = mlir::fuseIndependentSiblingForLoops(w, c, rewriter);
-    fusedLoop->setAttr(PRODUCT_SOURCE, rewriter.getAttr<mlir::StringAttr>("fused"));
+    auto fusedLoop = fuseIndependentSiblingForLoops(w, c, rewriter);
+    fusedLoop->setAttr(PRODUCT_SOURCE, rewriter.getAttr<StringAttr>("fused"));
     // ...and recurse to fuse nested loops
-    if (mlir::failed(fuseMatchingLoopPairs(fusedLoop.getBodyRegion(), context))) {
-      return mlir::failure();
+    if (failed(fuseMatchingLoopPairs(fusedLoop.getBodyRegion(), context))) {
+      return failure();
     }
   }
-  return mlir::success();
+  return success();
 }
 
-std::unique_ptr<mlir::Pass> createFuseProductLoopsPass() {
-  return std::make_unique<FuseProductLoopsPass>();
-}
-} // namespace llzk
+class PassImpl : public llzk::impl::FuseProductLoopsPassBase<PassImpl> {
+  using Base = FuseProductLoopsPassBase<PassImpl>;
+  using Base::Base;
+
+  void runOnOperation() override {
+    ModuleOp mod = getOperation();
+    mod.walk([this](function::FuncDefOp funcDef) {
+      if (funcDef.isStructProduct()) {
+        if (failed(fuseMatchingLoopPairs(funcDef.getFunctionBody(), &getContext()))) {
+          signalPassFailure();
+        }
+      }
+    });
+  }
+};
+
+} // namespace

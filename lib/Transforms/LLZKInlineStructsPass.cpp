@@ -48,8 +48,6 @@
 
 // Include the generated base pass class definitions.
 namespace llzk {
-// the *DECL* macro is required when a pass has options to declare the option struct
-#define GEN_PASS_DECL_INLINESTRUCTSPASS
 #define GEN_PASS_DEF_INLINESTRUCTSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -928,7 +926,10 @@ LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan)
 
 namespace {
 
-class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructsPass> {
+class PassImpl : public llzk::impl::InlineStructsPassBase<PassImpl> {
+  using Base = InlineStructsPassBase<PassImpl>;
+  using Base::Base;
+
   static uint64_t complexity(FuncDefOp f) {
     uint64_t complexity = 0;
     f.getBody().walk([&complexity](Operation *op) {
@@ -1237,7 +1238,3 @@ public:
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createInlineStructsPass() {
-  return std::make_unique<InlineStructsPass>();
-};

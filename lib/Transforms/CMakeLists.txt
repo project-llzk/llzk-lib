@@ -6,8 +6,6 @@ file(GLOB LLZKTransforms_SOURCES "*.cpp")
 target_sources(
   LLZKTransforms PRIVATE
     ${LLZKTransforms_SOURCES}
-    LLZKWhileToForPass.cpp
-    LLZKVerifToSmtPass.cpp
 )
 
 target_link_libraries(

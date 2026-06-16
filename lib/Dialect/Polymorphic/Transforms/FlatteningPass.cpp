@@ -25,6 +25,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -2407,13 +2408,10 @@ private:
 
 } // namespace Step5_Cleanup
 
-class FlatteningPass : public llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass> {
-public:
-  using Base = llzk::polymorphic::impl::FlatteningPassBase<FlatteningPass>;
-  // Allows us to use the default construction and explicit options constructor
+class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
+  using Base = FlatteningPassBase<PassImpl>;
   using Base::Base;
 
-private:
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -2443,7 +2441,7 @@ private:
     // - Remove templates that contain no struct or function definitions
     // - Convert templates with no constant parameters or expressions into modules
     OpPassManager universalCleanup(ModuleOp::getOperationName());
-    universalCleanup.addPass(createEmptyTemplateRemoval());
+    universalCleanup.addPass(createEmptyTemplateRemovalPass());
 
     // Run universal cleanup as a preliminary step to satisfy the
     // `assert(!isNullOrEmpty(paramNames))` precondition in `genClone()`.
@@ -2525,7 +2523,14 @@ private:
     if (failed(runPipeline(universalCleanup, modOp))) {
       return failure();
     }
-    return success();
+
+    OpPassManager allocationCleanup(ModuleOp::getOperationName());
+    allocationCleanup.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    return runPipeline(allocationCleanup, modOp);
   }
 
   // Perform cleanup according to the 'cleanupMode' option.
@@ -2628,12 +2633,3 @@ private:
 };
 
 } // namespace
-
-std::unique_ptr<Pass> llzk::polymorphic::createFlatteningPass() {
-  return std::make_unique<FlatteningPass>();
-};
-
-std::unique_ptr<Pass>
-llzk::polymorphic::createFlatteningPass(llzk::polymorphic::FlatteningPassOptions &&options) {
-  return std::make_unique<FlatteningPass>(options);
-};

@@ -38,7 +38,10 @@ inline bool contains(IncludeStack &stack, StringRef &&loc) {
   return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
 }
 
-class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<InlineIncludesPass> {
+class PassImpl : public llzk::include::impl::InlineIncludesPassBase<PassImpl> {
+  using Base = InlineIncludesPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     std::vector<std::pair<ModuleOp, IncludeStack>> currLevel = {
         std::make_pair(getOperation(), IncludeStack())
@@ -80,7 +83,3 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::include::createInlineIncludesPass() {
-  return std::make_unique<InlineIncludesPass>();
-};

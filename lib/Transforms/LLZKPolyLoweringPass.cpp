@@ -32,7 +32,6 @@
 
 // Include the generated base pass class definitions.
 namespace llzk {
-#define GEN_PASS_DECL_POLYLOWERINGPASS
 #define GEN_PASS_DEF_POLYLOWERINGPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -54,11 +53,10 @@ struct AuxAssignment {
   Value computedValue;
 };
 
-class PolyLoweringPass : public llzk::impl::PolyLoweringPassBase<PolyLoweringPass> {
-public:
-  void setMaxDegree(unsigned degree) { this->maxDegree = degree; }
+class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
+  using Base = PolyLoweringPassBase<PassImpl>;
+  using Base::Base;
 
-private:
   unsigned auxCounter = 0;
 
   void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
@@ -373,6 +371,11 @@ private:
         return;
       }
 
+      if (failed(checkConstrainBodyIsStraightLine(constrainFunc, "poly lowering"))) {
+        signalPassFailure();
+        return;
+      }
+
       DenseMap<Value, unsigned> degreeMemo;
       DenseMap<Value, Value> rewrites;
       SmallVector<AuxAssignment> auxAssignments;
@@ -468,14 +471,5 @@ private:
     });
   }
 };
+
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createPolyLoweringPass() {
-  return std::make_unique<PolyLoweringPass>();
-};
-
-std::unique_ptr<mlir::Pass> llzk::createPolyLoweringPass(unsigned maxDegree) {
-  auto pass = std::make_unique<PolyLoweringPass>();
-  static_cast<PolyLoweringPass *>(pass.get())->setMaxDegree(maxDegree);
-  return pass;
-}

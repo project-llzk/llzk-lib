@@ -29,9 +29,6 @@ using namespace mlir;
 
 namespace llzk {
 
-using namespace function;
-
-#define GEN_PASS_DECL_PREDECESSORPRINTERPASS
 #define GEN_PASS_DEF_PREDECESSORPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 
@@ -40,13 +37,13 @@ raw_ostream &printRegionless(raw_ostream &os, Operation *op, bool withParent = f
   std::string s;
   llvm::raw_string_ostream ss(s);
   if (withParent) {
-    if (auto fnOp = op->getParentOfType<FuncDefOp>()) {
+    if (auto fnOp = op->getParentOfType<function::FuncDefOp>()) {
       os << '<' << fnOp.getFullyQualifiedName() << ">:";
     } else {
       os << "<(no parent function op)>:";
     }
   }
-  op->print(ss, mlir::OpPrintingFlags().skipRegions());
+  op->print(ss, OpPrintingFlags().skipRegions());
   ss.flush();
   // Skipping regions inserts a new line we don't want, so trim it here.
   llvm::StringRef r(s);
@@ -197,12 +194,16 @@ protected:
   void setToEntryState(PredecessorLattice *lattice) override {}
 };
 
-class PredecessorPrinterPass : public impl::PredecessorPrinterPassBase<PredecessorPrinterPass> {
+} // namespace llzk
 
-public:
-  PredecessorPrinterPass() : impl::PredecessorPrinterPassBase<PredecessorPrinterPass>() {}
+namespace {
 
-protected:
+using namespace llzk;
+
+class PassImpl : public llzk::impl::PredecessorPrinterPassBase<PassImpl> {
+  using Base = PredecessorPrinterPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     markAllAnalysesPreserved();
     // Note: options like `outputStream` are safe to read here, but not in the
@@ -212,11 +213,11 @@ protected:
     DataFlowSolver solver;
     if (preRunRequiredAnalyses) {
       ensure(
-          dataflow::loadAndRunRequiredAnalyses(solver, getOperation()).succeeded(),
+          llzk::dataflow::loadAndRunRequiredAnalyses(solver, getOperation()).succeeded(),
           "failed to pre-run!"
       );
     } else {
-      dataflow::loadRequiredAnalyses(solver);
+      llzk::dataflow::loadRequiredAnalyses(solver);
     }
     solver.load<PredecessorAnalysis>(os);
     LogicalResult res = solver.initializeAndRun(getOperation());
@@ -225,7 +226,7 @@ protected:
       llvm::report_fatal_error("PredecessorAnalysis failed.");
     }
 
-    getOperation()->walk<WalkOrder::PreOrder>([&](FuncDefOp fnOp) {
+    getOperation()->walk<WalkOrder::PreOrder>([&](function::FuncDefOp fnOp) {
       Region &fnBody = fnOp.getFunctionBody();
       if (fnBody.empty()) {
         return WalkResult::skip();
@@ -241,8 +242,4 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass> createPredecessorPrinterPass() {
-  return std::make_unique<PredecessorPrinterPass>();
-}
-
-} // namespace llzk
+} // namespace

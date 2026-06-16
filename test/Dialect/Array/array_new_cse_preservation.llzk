@@ -1,0 +1,37 @@
+// RUN: llzk-opt --pass-pipeline='builtin.module(cse, canonicalize)' %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %a: !felt.type<"babybear"> {function.arg_name = "a"},
+      %b: !felt.type<"babybear"> {function.arg_name = "b"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %i = arith.constant 0 : index
+      %x = array.new %a : !array.type<1 x !felt.type<"babybear">>
+      %y = array.new %a : !array.type<1 x !felt.type<"babybear">>
+      array.write %x[%i] = %b : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %r = array.read %y[%i] : !array.type<1 x !felt.type<"babybear">>, !felt.type<"babybear">
+      struct.writem %self[@out] = %r : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>,
+      %a: !felt.type<"babybear">,
+      %b: !felt.type<"babybear">
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @compute(
+// CHECK-SAME:    %[[A:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">
+// CHECK-SAME:    %[[B:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">
+// CHECK:         %[[X:[0-9a-zA-Z_\.]+]] = array.new %[[A]] : <1 x !felt.type<"babybear">>
+// CHECK:         %[[Y:[0-9a-zA-Z_\.]+]] = array.new %[[A]] : <1 x !felt.type<"babybear">>
+// CHECK:         array.write %[[X]]
+// CHECK-SAME:      = %[[B]]
+// CHECK:         %[[R:[0-9a-zA-Z_\.]+]] = array.read %[[Y]]
+// CHECK:         struct.writem {{.*}}[@out] = %[[R]]

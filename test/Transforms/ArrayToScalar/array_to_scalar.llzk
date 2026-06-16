@@ -22,6 +22,25 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @dead_new_and_write() -> index {
+    %0 = arith.constant 0 : index
+    %value = arith.constant 7 : index
+    %ret = arith.constant 42 : index
+
+    %r = array.new : !array.type<1 x index>
+    array.write %r[%0] = %value : !array.type<1 x index>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: function.def @dead_new_and_write() -> index {
+// CHECK-NOT:    array.new
+// CHECK-NOT:    array.write
+// CHECK:        %[[V:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:   function.return %[[V]] : index
+// CHECK-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
   function.def @multiple_read_and_write() -> !felt.type {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
