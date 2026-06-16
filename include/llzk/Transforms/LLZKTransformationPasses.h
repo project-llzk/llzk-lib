@@ -18,10 +18,6 @@ namespace llzk {
 
 void addRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm);
 
-std::unique_ptr<mlir::Pass> createVerifAggregateScalarizationPass();
-
-std::unique_ptr<mlir::Pass> createVerifToSmtPass();
-
 void registerTransformationPassPipelines();
 
 void registerInliningExtensions(mlir::DialectRegistry &registry);

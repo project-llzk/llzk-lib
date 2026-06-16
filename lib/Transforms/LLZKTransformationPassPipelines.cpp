@@ -29,8 +29,8 @@
 #include <string>
 
 namespace llzk {
-#define GEN_PASS_DECL_VERIFAGGREGATESCALARIZATIONPASS
-#define GEN_PASS_DEF_VERIFAGGREGATESCALARIZATIONPASS
+#define GEN_PASS_DECL_AGGREGATESCALARIZATIONPASS
+#define GEN_PASS_DEF_AGGREGATESCALARIZATIONPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
@@ -47,8 +47,8 @@ static std::string printOperationToString(Operation *op) {
   return buffer;
 }
 
-class VerifAggregateScalarizationPass
-    : public impl::VerifAggregateScalarizationPassBase<VerifAggregateScalarizationPass> {
+class AggregateScalarizationPass
+    : public impl::AggregateScalarizationPassBase<AggregateScalarizationPass> {
 public:
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -93,10 +93,6 @@ void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &pm) {
   pm.addPass(createUnusedDeclarationEliminationPass());
 }
 
-std::unique_ptr<Pass> createVerifAggregateScalarizationPass() {
-  return std::make_unique<VerifAggregateScalarizationPass>();
-}
-
 void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
       "llzk-remove-unnecessary-ops",
@@ -139,7 +135,7 @@ void registerTransformationPassPipelines() {
       "llzk-verif-to-smt",
       "Normalize array/pod aggregates and lower verif contracts to SMT helpers",
       [](OpPassManager &pm) {
-    pm.addPass(llzk::createVerifAggregateScalarizationPass());
+    pm.addPass(llzk::createAggregateScalarizationPass());
     pm.addPass(llzk::createVerifToSmtPass());
   }
   );

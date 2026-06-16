@@ -1016,9 +1016,3 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
 };
 
 } // namespace
-
-namespace llzk {
-
-std::unique_ptr<Pass> createVerifToSmtPass() { return std::make_unique<VerifToSmtPass>(); }
-
-} // namespace llzk

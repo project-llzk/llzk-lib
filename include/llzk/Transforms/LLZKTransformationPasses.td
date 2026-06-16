@@ -154,17 +154,15 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
       "should be cleaned up by --canonicalize.";
 }
 
-def VerifAggregateScalarizationPass
-    : LLZKPass<"llzk-verif-aggregate-scalarization"> {
+def AggregateScalarizationPass : LLZKPass<"llzk-aggregate-scalarization"> {
   let summary =
       "Repeatedly scalarize array/pod aggregates until the module stabilizes";
   let description = [{
     Repeatedly runs the existing array-to-scalar and pod-to-scalar passes,
     followed by canonicalization, until the module reaches a fixpoint. This is
-    intended as a preprocessing step for verif-to-SMT lowering on contracts
-    that still mention aggregate array or pod types.
+    intended as a reusable preprocessing step for pipelines that need
+    array/pod-free IR at function and contract boundaries.
   }];
-  let constructor = "llzk::createVerifAggregateScalarizationPass()";
   let options = [];
 }
 
@@ -178,7 +176,6 @@ def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
     intended to lock down the target IR shape for verif-to-SMT lowering. Use
     the `-llzk-verif-to-smt` pipeline to preprocess aggregate types first.
   }];
-  let constructor = "llzk::createVerifToSmtPass()";
   let options = [];
 }
 
