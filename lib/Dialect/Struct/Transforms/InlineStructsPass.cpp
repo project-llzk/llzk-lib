@@ -595,6 +595,11 @@ public:
   }
 
 private:
+  /// Rewrite a call that still consumes `origin` after inlining so the callee takes each cloned
+  /// member as a separate argument and the call site materializes matching `struct.readm` values.
+  ///
+  /// This only supports calls to resolvable, non-external functions because the pass must update
+  /// both the call operation and the callee signature in lockstep.
   inline LogicalResult handleUseInCallOp(OpOperand &use, CallOp inCall, Operation *origin) const {
     LLVM_DEBUG(
         llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   use in call: " << inCall << '\n'
@@ -806,6 +811,9 @@ private:
   }
 };
 
+/// Apply the post-inlining cleanup for one caller struct by folding rewritten member-read
+/// chains, resolving dangling uses of soon-to-be-erased ops, and then erasing the obsolete
+/// cloned scaffolding in dependency order.
 static LogicalResult finalizeStruct(
     SymbolTableCollection &tables, StructDefOp caller, PendingErasure &&toDelete,
     DestToSrcToClonedSrcInDest &&destToSrcToClone
@@ -894,6 +902,8 @@ static LogicalResult finalizeStruct(
 
 } // namespace
 
+/// Execute the inlining plan one caller struct at a time, accumulating per-callee member
+/// replacement maps and then finalizing each caller after all requested callees have been inlined.
 LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan) {
   for (auto &[caller, callees] : plan) {
     // Cache operations that should be deleted but must wait until all callees are processed
@@ -1007,6 +1017,8 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
     return res.wasInterrupted();
   }
 
+  /// Reject symbol-use graphs that contain references to template `param` or `expr` ops. This pass
+  /// only supports concrete struct instances (run `llzk-flatten` to instantiate templates first).
   static LogicalResult
   verifyNoTemplateSymbolBindings(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
     for (const SymbolUseGraphNode *node : useGraph.nodesIter()) {
@@ -1026,6 +1038,8 @@ class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
     return success();
   }
 
+  /// Emit a diagnostic for a cycle discovered while traversing the symbol-use slice reachable
+  /// from struct "@constrain" functions, attaching notes for each symbol in the cycle.
   static LogicalResult emitConstrainReachableCycleError(
       ArrayRef<const SymbolUseGraphNode *> dfsStack, const SymbolUseGraphNode *cycleHead,
       SymbolTableCollection &tables
