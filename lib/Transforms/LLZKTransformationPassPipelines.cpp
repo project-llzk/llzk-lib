@@ -12,74 +12,14 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
-#include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/Pass/Pass.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
-#include <mlir/Transforms/Passes.h>
-
-#include <llvm/ADT/StringRef.h>
-#include <llvm/Support/raw_ostream.h>
-
-#include <memory>
-#include <string>
-
-namespace llzk {
-#define GEN_PASS_DECL_AGGREGATESCALARIZATIONPASS
-#define GEN_PASS_DEF_AGGREGATESCALARIZATIONPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
 
 using namespace mlir;
 
 namespace llzk {
-namespace {
-
-static std::string printOperationToString(Operation *op) {
-  std::string buffer;
-  llvm::raw_string_ostream os(buffer);
-  op->print(os);
-  os.flush();
-  return buffer;
-}
-
-class AggregateScalarizationPass
-    : public impl::AggregateScalarizationPassBase<AggregateScalarizationPass> {
-public:
-  void runOnOperation() override {
-    ModuleOp module = getOperation();
-    constexpr unsigned kMaxIterations = 8;
-
-    for (unsigned iteration = 0; iteration < kMaxIterations; ++iteration) {
-      std::string before = printOperationToString(module);
-
-      OpPassManager pm(ModuleOp::getOperationName());
-      pm.addPass(llzk::array::createArrayToScalarPass());
-      pm.addPass(llzk::pod::createPodToScalarPass());
-      pm.addPass(createCanonicalizerPass());
-      if (failed(runPipeline(pm, module))) {
-        signalPassFailure();
-        return;
-      }
-
-      std::string after = printOperationToString(module);
-      if (before == after) {
-        return;
-      }
-    }
-
-    module.emitError(
-    ) << "verif aggregate scalarization did not reach a fixpoint within the iteration limit";
-    signalPassFailure();
-  }
-};
-
-} // namespace
-
 struct FullPolyLoweringOptions : public PassPipelineOptions<FullPolyLoweringOptions> {
   Option<unsigned> maxDegree {
       *this, "max-degree", llvm::cl::desc("Maximum polynomial degree (must be ≥ 2)"),

@@ -1,0 +1,77 @@
+// RUN: llzk-opt --llzk-aggregate-scalarization %s -split-input-file | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @id_pod_array(
+      %arg: !pod.type<[@items: !array.type<2 x !felt.type>]>
+  ) -> !pod.type<[@items: !array.type<2 x !felt.type>]> {
+    function.return %arg : !pod.type<[@items: !array.type<2 x !felt.type>]>
+  }
+
+  verif.contract @CheckPodArray for @id_pod_array (
+      %arg: !pod.type<[@items: !array.type<2 x !felt.type>]>,
+      %ret: !pod.type<[@items: !array.type<2 x !felt.type>]>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: function.def @id_pod_array(%[[ARG0:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG1:[0-9A-Za-z_\.]+]]: !felt.type) -> (!felt.type, !felt.type) {
+// CHECK: function.return %[[ARG0]], %[[ARG1]] : !felt.type, !felt.type
+// CHECK: verif.contract @CheckPodArray for @id_pod_array (%[[CARG0:[0-9A-Za-z_\.]+]]: !felt.type, %[[CARG1:[0-9A-Za-z_\.]+]]: !felt.type, %[[CRET0:[0-9A-Za-z_\.]+]]: !felt.type, %[[CRET1:[0-9A-Za-z_\.]+]]: !felt.type) {
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @id_array_pod(
+      %arg: !array.type<2 x !pod.type<[@lhs: !felt.type, @rhs: !felt.type]>>
+  ) -> !array.type<2 x !pod.type<[@lhs: !felt.type, @rhs: !felt.type]>> {
+    function.return %arg : !array.type<2 x !pod.type<[@lhs: !felt.type, @rhs: !felt.type]>>
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: function.def @id_array_pod(%[[ARG0:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG1:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG2:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG3:[0-9A-Za-z_\.]+]]: !felt.type) -> (!felt.type, !felt.type, !felt.type, !felt.type) {
+// CHECK: function.return %[[ARG0]], %[[ARG1]], %[[ARG2]], %[[ARG3]] : !felt.type, !felt.type, !felt.type, !felt.type
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NestedBox {
+    struct.member @value : !array.type<2 x !pod.type<[@lo: !felt.type, @hi: !felt.type]>>
+
+    function.def @compute(
+        %value: !array.type<2 x !pod.type<[@lo: !felt.type, @hi: !felt.type]>>
+    ) -> !struct.type<@NestedBox> {
+      %self = struct.new : !struct.type<@NestedBox>
+      struct.writem %self[@value] = %value : !struct.type<@NestedBox>, !array.type<2 x !pod.type<[@lo: !felt.type, @hi: !felt.type]>>
+      function.return %self : !struct.type<@NestedBox>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@NestedBox>,
+        %value: !array.type<2 x !pod.type<[@lo: !felt.type, @hi: !felt.type]>>
+    ) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckNestedBox for @NestedBox (
+      %self: !struct.type<@NestedBox>,
+      %value: !array.type<2 x !pod.type<[@lo: !felt.type, @hi: !felt.type]>>
+  ) {
+    %ok = arith.constant true
+    verif.require_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: struct.def @NestedBox {
+// CHECK: struct.member @value_0_lo : !felt.type
+// CHECK: struct.member @value_0_hi : !felt.type
+// CHECK: struct.member @value_1_lo : !felt.type
+// CHECK: struct.member @value_1_hi : !felt.type
+// CHECK: function.def @compute(%[[V0:[0-9A-Za-z_\.]+]]: !felt.type, %[[V1:[0-9A-Za-z_\.]+]]: !felt.type, %[[V2:[0-9A-Za-z_\.]+]]: !felt.type, %[[V3:[0-9A-Za-z_\.]+]]: !felt.type) -> !struct.type<@NestedBox>
+// CHECK: function.def @constrain(%[[SELF:[0-9A-Za-z_\.]+]]: !struct.type<@NestedBox>, %[[IN0:[0-9A-Za-z_\.]+]]: !felt.type, %[[IN1:[0-9A-Za-z_\.]+]]: !felt.type, %[[IN2:[0-9A-Za-z_\.]+]]: !felt.type, %[[IN3:[0-9A-Za-z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK: verif.contract @CheckNestedBox for @NestedBox (%[[CSELF:[0-9A-Za-z_\.]+]]: !struct.type<@NestedBox>, %[[CIN0:[0-9A-Za-z_\.]+]]: !felt.type, %[[CIN1:[0-9A-Za-z_\.]+]]: !felt.type, %[[CIN2:[0-9A-Za-z_\.]+]]: !felt.type, %[[CIN3:[0-9A-Za-z_\.]+]]: !felt.type) {
