@@ -28,6 +28,12 @@
 #include <memory>
 #include <string>
 
+namespace llzk {
+#define GEN_PASS_DECL_VERIFAGGREGATESCALARIZATIONPASS
+#define GEN_PASS_DEF_VERIFAGGREGATESCALARIZATIONPASS
+#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
+} // namespace llzk
+
 using namespace mlir;
 
 namespace llzk {
@@ -42,15 +48,8 @@ static std::string printOperationToString(Operation *op) {
 }
 
 class VerifAggregateScalarizationPass
-    : public PassWrapper<VerifAggregateScalarizationPass, OperationPass<ModuleOp>> {
+    : public impl::VerifAggregateScalarizationPassBase<VerifAggregateScalarizationPass> {
 public:
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(VerifAggregateScalarizationPass)
-
-  StringRef getArgument() const final { return "llzk-verif-aggregate-scalarization"; }
-  StringRef getDescription() const final {
-    return "Repeatedly scalarize array/pod aggregates until the module stabilizes";
-  }
-
   void runOnOperation() override {
     ModuleOp module = getOperation();
     constexpr unsigned kMaxIterations = 8;

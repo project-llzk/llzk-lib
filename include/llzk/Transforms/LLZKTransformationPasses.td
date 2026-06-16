@@ -146,6 +146,20 @@ def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let options = [];
 }
 
+def VerifAggregateScalarizationPass
+    : LLZKPass<"llzk-verif-aggregate-scalarization"> {
+  let summary =
+      "Repeatedly scalarize array/pod aggregates until the module stabilizes";
+  let description = [{
+    Repeatedly runs the existing array-to-scalar and pod-to-scalar passes,
+    followed by canonicalization, until the module reaches a fixpoint. This is
+    intended as a preprocessing step for verif-to-SMT lowering on contracts
+    that still mention aggregate array or pod types.
+  }];
+  let constructor = "llzk::createVerifAggregateScalarizationPass()";
+  let options = [];
+}
+
 def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
   let summary =
       "Lower scalarized verif contracts and simple LLZK targets to SMT helpers";

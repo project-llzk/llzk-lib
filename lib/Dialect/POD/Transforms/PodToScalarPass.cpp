@@ -287,6 +287,14 @@ inline static void baseTargetSetup(ConversionTarget &target) {
   target.addLegalOp<ModuleOp>();
 }
 
+/// Shared signature-conversion logic for POD-bearing function-like ops.
+///
+/// This helper is used for both `function.def` and `verif.contract`, which need the same boundary
+/// rewrite: split pod-typed arguments/results into scalar record values, expand any associated
+/// arg/result name attributes via `FunctionTypeConverter`, and then rebuild the entry block so the
+/// original POD argument is re-materialized for the existing body. Reconstructing the POD value at
+/// the start of the region keeps the rest of the conversion local to the function boundary instead
+/// of forcing every in-body user to be rewritten eagerly.
 template <typename FunctionLikeOp>
 class SplitPodInFunctionLikeOpImpl : public FunctionTypeConverter {
   SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
