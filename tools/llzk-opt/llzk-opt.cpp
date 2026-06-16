@@ -85,9 +85,7 @@ inline static void registerTransformsPasses() {
   mlir::registerMem2Reg();
   mlir::registerPrintIRPass();
   mlir::registerPrintOpStats();
-  mlir::registerPass([]() -> std::unique_ptr<mlir::Pass> {
-    return llzk::createRemoveDeadValuesWorkaroundPass();
-  });
+  mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
   mlir::registerSCCP();
   mlir::registerSROA();
   mlir::registerStripDebugInfo();

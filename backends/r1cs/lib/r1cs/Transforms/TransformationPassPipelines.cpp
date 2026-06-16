@@ -30,23 +30,18 @@ void buildFullR1CSLoweringPipeline(OpPassManager &pm) {
   // 1. Polynomial degree lowering and cleanup
   llzk::FullPolyLoweringConfig config;
   config.polyLowering = llzk::PolyLoweringPassOptions {.maxDegree = 2};
-  // // TODO: may need to override some things because the defaults here are
-  // // correct but the defaults in poly lowering may not be the same.
-  // config.structInlining = llzk::FullStructInliningConfig {
-  //     .flattening = polymorphic::FlatteningPassOptions {},
-  //     .arrayToScalar = true,
-  //     .podToScalar = true,
-  //     .inlining = component::InlineStructsPassOptions {}
-  // };
   llzk::buildFullPolyLoweringPipeline(pm, config);
-
-  // TODO: need to remove scf control flow ops... probably canon.
 
   // 2. Convert to R1CS
   pm.addPass(r1cs::createR1CSLoweringPass());
 
   // 3. Run CSE to eliminate to_linear ops
   pm.addPass(mlir::createCSEPass());
+
+  // Other passes that may be helpful to add in the future:
+  // - llzk::createRemoveDeadValuesWorkaroundPass()
+  // - mlir::createCanonicalizerPass()
+  //    (was run via poly-lowering -> struct-inlining but again may be useful)
 }
 
 void registerTransformationPassPipelines() {
