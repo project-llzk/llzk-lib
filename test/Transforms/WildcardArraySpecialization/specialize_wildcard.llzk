@@ -194,6 +194,29 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @id(%arr: !array.type<? x !felt.type>) -> !array.type<? x !felt.type> {
+    function.return %arr : !array.type<? x !felt.type>
+  }
+
+  function.def @call_id(%arr: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+    %0 = function.call @id(%arr) : (!array.type<1 x !felt.type>) -> !array.type<? x !felt.type>
+    %1 = poly.unifiable_cast %0 : (!array.type<? x !felt.type>) -> !array.type<1 x !felt.type>
+    function.return %1 : !array.type<1 x !felt.type>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"id_!a<f:1>"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<1 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"id_!a<f:1>"(%[[VAL_1]]) : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<1 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TLog {
     struct.def @Log {
       function.def @compute(%msg: !string.type, %arr: !array.type<? x !felt.type>) -> !struct.type<@TLog::@Log<[]>> {

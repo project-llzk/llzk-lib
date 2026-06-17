@@ -837,9 +837,23 @@ public:
       if (failed(newCalleeAttr)) {
         return failure();
       }
+      SmallVector<Type> newResultTypes;
+      FailureOr<SymbolLookupResult<FuncDefOp>> specializedFuncRes =
+          lookupTopLevelSymbol<FuncDefOp>(symTables, *newCalleeAttr, op);
+      if (failed(specializedFuncRes)) {
+        return failure();
+      }
+      newResultTypes.append(
+          specializedFuncRes->get().getFunctionType().getResults().begin(),
+          specializedFuncRes->get().getFunctionType().getResults().end()
+      );
+      if (!tracker_.areLegalConversions(
+              op.getResultTypes(), newResultTypes, "SpecializeWildcardCallOp"
+          )) {
+        return failure();
+      }
       tracker_.recordInstantiation(op.getCalleeAttr());
       tracker_.updateModifiedFlag(true);
-      SmallVector<Type> newResultTypes(op.getResultTypes().begin(), op.getResultTypes().end());
       replaceOpWithNewOp<CallOp>(
           rewriter, op, TypeRange(newResultTypes), *newCalleeAttr,
           CallOp::toVectorOfValueRange(op.getMapOperands()), op.getNumDimsPerMapAttr(),
