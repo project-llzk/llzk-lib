@@ -116,29 +116,24 @@ struct LoweredSignature {
 
 /// Shared lowering state for one execution of the pass.
 class LoweringContext {
-  MLIRContext *context = nullptr;
-  SymbolTableCollection tables {};
-
 public:
-  /// Cached free-function helpers keyed by the original `function.def`.
-  DenseMap<Operation *, func::FuncOp> functionHelpers {};
-
-  /// Cached struct target helpers keyed by the original `struct.def`.
-  DenseMap<Operation *, TargetHelperNames> structHelpers {};
-
-  /// Cached contract helper bundles keyed by the original `verif.contract`.
-  DenseMap<Operation *, ContractHelperNames> contractHelpers {};
-
   explicit LoweringContext(MLIRContext *ctx) : context(ctx) {}
 
-  /// Resolve the `struct.def` for the given struct type.
-  FailureOr<StructDefOp> resolveStructDef(StructType type, Operation *origin);
+  /// Get the SMT-converted function for the given LLZK source function op.
+  FailureOr<func::FuncOp> getFuncHelper(FuncDefOp sourceOp) {
+    if (auto it = functionHelpers.find(sourceOp); it != functionHelpers.end()) {
+      return it->second;
+    }
+    return failure();
+  }
 
   /// Return the members of the given struct type in declaration order.
   FailureOr<SmallVector<MemberDefOp>> getStructMembers(StructType type, Operation *origin);
 
-  /// Return `true` iff the given type still contains an unsupported aggregate.
-  bool typeContainsUnsupportedAggregate(Type type, Operation *origin);
+  /// Lookup callee target using the current context's SymbolTableColelction.
+  FailureOr<SymbolLookupResult<FuncDefOp>> getCalleeTarget(CallOp call) {
+    return call.getCalleeTarget(tables);
+  }
 
   /// Emit an error if the given scalar-only type requirement is violated.
   LogicalResult ensureScalarTypeSupported(Type type, Operation *origin, StringRef description);
@@ -147,8 +142,36 @@ public:
   LogicalResult
   ensureScalarSignatureSupported(FunctionType type, Operation *origin, StringRef description);
 
+  /// Return the direct target definition for the given contract.
+  FailureOr<Operation *> getDirectTargetDefinition(ContractOp contract);
+
   /// Emit an error if the given contract or its target still contains aggregates.
   LogicalResult ensureScalarContractSupported(ContractOp contract);
+
+  /// Lower a free function target to an SMT helper, reusing an existing helper if present.
+  FailureOr<func::FuncOp> getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func);
+
+  /// Lower a struct target to its SMT compute and constrain helpers.
+  FailureOr<TargetHelperNames> getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef);
+
+  /// Create or look up the direct helper symbols for one contract.
+  FailureOr<ContractHelperNames> getOrCreateContractHelpers(ModuleOp module, ContractOp contract);
+
+  /// Create a per-include helper that forwards to the callee contract entry helper.
+  FailureOr<func::FuncOp>
+  createIncludeWrapperHelper(ModuleOp module, IncludeOp includeOp, StringRef helperName);
+
+  /// Create the full `_entry` helper for one contract.
+  LogicalResult createContractEntryHelper(
+      ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes
+  );
+
+private:
+  /// Resolve the `struct.def` for the given struct type.
+  FailureOr<StructDefOp> resolveStructDef(StructType type, Operation *origin);
+
+  /// Return `true` iff the given type still contains an unsupported aggregate.
+  bool typeContainsUnsupportedAggregate(Type type, Operation *origin);
 
   /// Lower the boundary signature of a callable to SMT-facing scalar types.
   FailureOr<LoweredSignature> lowerCallableSignature(FunctionType type, Operation *origin);
@@ -159,12 +182,6 @@ public:
   /// Seed lowered contract argument maps for ordinary args and flattened `%self` members.
   FailureOr<std::pair<DenseMap<Value, Value>, DenseMap<StringRef, Value>>>
   seedContractArgumentMaps(ContractOp contract, Block *entry);
-
-  /// Lower a free function target to an SMT helper, reusing an existing helper if present.
-  FailureOr<func::FuncOp> getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func);
-
-  /// Lower a struct target to its SMT compute and constrain helpers.
-  FailureOr<TargetHelperNames> getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef);
 
   /// Create a direct contract condition helper, such as `_pre` or `_post`.
   FailureOr<func::FuncOp> createContractConditionHelper(
@@ -178,31 +195,11 @@ public:
   /// Create the `_target` helper for a struct contract target.
   FailureOr<func::FuncOp> createStructTargetHelper(ModuleOp module, ContractOp contract);
 
-  /// Create or look up the direct helper symbols for one contract.
-  FailureOr<ContractHelperNames> getOrCreateContractHelpers(ModuleOp module, ContractOp contract);
-
   /// Lower one include operand list using the contract-local lowering environment.
   FailureOr<SmallVector<Value>> lowerIncludeHelperOperands(
       ValueRange operands, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
       DenseMap<StringRef, Value> &selfMemberMap
   );
-
-  /// Create a per-include helper that forwards to the callee contract entry helper.
-  FailureOr<func::FuncOp>
-  createIncludeWrapperHelper(ModuleOp module, IncludeOp includeOp, StringRef helperName);
-
-  /// Create the full `_entry` helper for one contract.
-  LogicalResult createContractEntryHelper(
-      ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes
-  );
-
-  /// Return the direct target definition for the given contract.
-  FailureOr<Operation *> getDirectTargetDefinition(ContractOp contract);
-
-  /// Lookup callee target using the current context's SymbolTableColelction.
-  FailureOr<SymbolLookupResult<ContractOp>> getCalleeTarget(CallOp call) {
-    return call.getCalleeTarget(tables);
-  }
 
   /// Lower one LLZK scalar type to the corresponding SMT-facing type.
   Type lowerType(Type type) {
@@ -223,31 +220,42 @@ public:
     builder.setInsertionPointToEnd(module.getBody());
     return builder;
   }
-};
 
-/// Return `true` iff the given type still contains an unsupported aggregate.
-static bool typeContainsUnsupportedAggregateImpl(
-    LoweringContext &state, Type type, Operation *origin, llvm::DenseSet<Type> &visited
-) {
-  if (!visited.insert(type).second) {
-    return false;
-  }
-  if (isa<array::ArrayType, pod::PodType>(type)) {
-    return true;
-  }
-  if (auto structType = dyn_cast<StructType>(type)) {
-    auto members = state.getStructMembers(structType, origin);
-    if (failed(members)) {
+  bool typeContainsUnsupportedAggregateImpl(
+      Type type, Operation *origin, llvm::DenseSet<Type> &visited
+  ) {
+    if (!visited.insert(type).second) {
+      return false;
+    }
+    if (isa<array::ArrayType, pod::PodType>(type)) {
       return true;
     }
-    for (MemberDefOp member : *members) {
-      if (typeContainsUnsupportedAggregateImpl(state, member.getType(), origin, visited)) {
+    if (auto structType = dyn_cast<StructType>(type)) {
+      auto members = getStructMembers(structType, origin);
+      if (failed(members)) {
         return true;
       }
+      for (MemberDefOp member : *members) {
+        if (typeContainsUnsupportedAggregateImpl(member.getType(), origin, visited)) {
+          return true;
+        }
+      }
     }
+    return false;
   }
-  return false;
-}
+
+  MLIRContext *context = nullptr;
+  SymbolTableCollection tables {};
+
+  /// Cached free-function helpers keyed by the original `function.def`.
+  DenseMap<Operation *, func::FuncOp> functionHelpers {};
+
+  /// Cached struct target helpers keyed by the original `struct.def`.
+  DenseMap<Operation *, TargetHelperNames> structHelpers {};
+
+  /// Cached contract helper bundles keyed by the original `verif.contract`.
+  DenseMap<Operation *, ContractHelperNames> contractHelpers {};
+};
 
 /// Resolve the `struct.def` for the given struct type.
 FailureOr<StructDefOp> LoweringContext::resolveStructDef(StructType type, Operation *origin) {
@@ -271,7 +279,7 @@ LoweringContext::getStructMembers(StructType type, Operation *origin) {
 /// Return `true` iff the given type still contains an unsupported aggregate.
 bool LoweringContext::typeContainsUnsupportedAggregate(Type type, Operation *origin) {
   llvm::DenseSet<Type> visited;
-  return typeContainsUnsupportedAggregateImpl(*this, type, origin, visited);
+  return typeContainsUnsupportedAggregateImpl(type, origin, visited);
 }
 
 /// Emit an error if the given scalar-only type requirement is violated.
@@ -522,8 +530,8 @@ public:
         return failure();
       }
 
-      auto it = state.functionHelpers.find(calleeTarget->get().getOperation());
-      if (it == state.functionHelpers.end()) {
+      auto funcHelperRes = state.getFuncHelper(calleeTarget->get());
+      if (failed(funcHelperRes)) {
         call.emitError("verif-to-smt requires a lowered helper for called function");
         return failure();
       }
@@ -539,7 +547,7 @@ public:
       }
 
       auto loweredCall = builder.create<func::CallOp>(
-          call.getLoc(), it->second.getSymName(), it->second.getFunctionType().getResults(),
+          call.getLoc(), funcHelperRes->getSymName(), funcHelperRes->getFunctionType().getResults(),
           loweredOperands
       );
       for (auto [orig, lowered] : llvm::zip(call.getResults(), loweredCall.getResults())) {
