@@ -286,11 +286,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       DenseMap<Value, unsigned> &degreeMemo, DenseMap<Value, Value> &rewrites,
       SmallVector<AuxAssignment> &auxAssignments
   ) {
-    Value loweredVal =
-        lowerExpression(
-            val, structDef, constrainFunc, callOp.getOperation(), degreeMemo, rewrites,
-            auxAssignments
-        );
+    Value loweredVal = lowerExpression(
+        val, structDef, constrainFunc, callOp.getOperation(), degreeMemo, rewrites, auxAssignments
+    );
     DenseMap<Value, unsigned> checkMemo;
     if (getDegree(loweredVal, checkMemo) <= 1) {
       return loweredVal;
