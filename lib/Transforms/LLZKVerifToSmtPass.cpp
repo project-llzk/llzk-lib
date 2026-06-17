@@ -60,6 +60,7 @@
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 
 #include <string>
@@ -167,6 +168,9 @@ public:
       ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes
   );
 
+  /// Return the struct definitions that were lowered to SMT helpers.
+  ArrayRef<StructDefOp> getLoweredStructDefs() const { return loweredStructDefs; }
+
 private:
   /// Resolve the `struct.def` for the given struct type.
   FailureOr<StructDefOp> resolveStructDef(StructType type, Operation *origin);
@@ -253,6 +257,12 @@ private:
 
   /// Cached struct target helpers keyed by the original `struct.def`.
   DenseMap<Operation *, TargetHelperNames> structHelpers {};
+
+  /// Struct targets that were lowered to SMT helpers and can be removed after lowering.
+  SmallVector<StructDefOp> loweredStructDefs {};
+
+  /// Set used to deduplicate lowered struct target cleanup.
+  DenseSet<Operation *> loweredStructDefSet {};
 
   /// Cached contract helper bundles keyed by the original `verif.contract`.
   DenseMap<Operation *, ContractHelperNames> contractHelpers {};
@@ -717,6 +727,9 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
 
   TargetHelperNames helperNames {computeName, constrainName};
   structHelpers[structDef.getOperation()] = helperNames;
+  if (loweredStructDefSet.insert(structDef.getOperation()).second) {
+    loweredStructDefs.push_back(structDef);
+  }
   return helperNames;
 }
 
@@ -872,8 +885,6 @@ LoweringContext::createStructTargetHelper(ModuleOp module, ContractOp contract) 
   }
   unsigned numFlattenedSelfMembers = members->size();
 
-  bool useCompute = walkContains<RequireComputeOp, EnsureComputeOp>(contract);
-  bool useConstrain = walkContains<RequireConstrainOp, EnsureConstrainOp>(contract);
   OpBuilder moduleBuilder = createModuleBuilder(module);
   std::string helperName = ("smt_verif_" + contract.getSymName() + "_target").str();
   auto helper = moduleBuilder.create<func::FuncOp>(
@@ -888,24 +899,20 @@ LoweringContext::createStructTargetHelper(ModuleOp module, ContractOp contract) 
   ValueRange nonSelfArgs = args.drop_front(numFlattenedSelfMembers);
 
   SmallVector<Value> conditions;
-  if (useCompute) {
-    auto computeCall = entryBuilder.create<func::CallOp>(
-        contract.getLoc(), targetHelpers->compute, TypeRange(selfArgs.getTypes()), nonSelfArgs
-    );
-    SmallVector<Value> computeConditions = buildEqualityConditions(
-        entryBuilder, contract.getLoc(), computeCall.getResults(), selfArgs
-    );
-    llvm::append_range(conditions, computeConditions);
-  }
-  if (useConstrain) {
-    auto constrainCall = entryBuilder.create<func::CallOp>(
-        contract.getLoc(), targetHelpers->constrain, TypeRange(selfArgs.getTypes()), args
-    );
-    SmallVector<Value> constrainConditions = buildEqualityConditions(
-        entryBuilder, contract.getLoc(), constrainCall.getResults(), selfArgs
-    );
-    llvm::append_range(conditions, constrainConditions);
-  }
+  auto computeCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), targetHelpers->compute, TypeRange(selfArgs.getTypes()), nonSelfArgs
+  );
+  SmallVector<Value> computeConditions =
+      buildEqualityConditions(entryBuilder, contract.getLoc(), computeCall.getResults(), selfArgs);
+  llvm::append_range(conditions, computeConditions);
+
+  auto constrainCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), targetHelpers->constrain, TypeRange(selfArgs.getTypes()), args
+  );
+  SmallVector<Value> constrainConditions = buildEqualityConditions(
+      entryBuilder, contract.getLoc(), constrainCall.getResults(), selfArgs
+  );
+  llvm::append_range(conditions, constrainConditions);
 
   Value combined = buildConjunction(entryBuilder, contract.getLoc(), conditions);
   entryBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
@@ -1166,6 +1173,9 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
 
     for (ContractOp contract : contracts) {
       contract.erase();
+    }
+    for (StructDefOp structDef : state.getLoweredStructDefs()) {
+      structDef.erase();
     }
   }
 };

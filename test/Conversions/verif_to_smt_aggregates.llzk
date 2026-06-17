@@ -126,28 +126,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:   struct.def @ArrayBox {
-// CHECK-NEXT:     struct.member @left_0 : !felt.type
-// CHECK-NEXT:     struct.member @left_1 : !felt.type
-// CHECK-NEXT:     struct.member @right_2 : !felt.type
-// CHECK-NEXT:     struct.member @right_3 : !felt.type
-// CHECK-NEXT:     function.def @compute(%[[ARG0_6:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG1_6:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG2_4:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG3_4:[0-9A-Za-z_\.]+]]: !felt.type) -> !struct.type<@ArrayBox> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[SELF:[0-9A-Za-z_\.]+]] = struct.new : <@ArrayBox>
-// CHECK-DAG:       struct.writem %[[SELF]][@left_0] = %[[ARG0_6]] : <@ArrayBox>, !felt.type
-// CHECK-DAG:       struct.writem %[[SELF]][@left_1] = %[[ARG1_6]] : <@ArrayBox>, !felt.type
-// CHECK-DAG:       struct.writem %[[SELF]][@right_2] = %[[ARG2_4]] : <@ArrayBox>, !felt.type
-// CHECK-DAG:       struct.writem %[[SELF]][@right_3] = %[[ARG3_4]] : <@ArrayBox>, !felt.type
-// CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@ArrayBox>
-// CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[ARG0_7:[0-9A-Za-z_\.]+]]: !struct.type<@ArrayBox>, %[[ARG1_7:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG2_5:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG3_5:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG4:[0-9A-Za-z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:       function.return
-// CHECK-NEXT:     }
+// CHECK-NEXT:   func.func @smt_ArrayBox_compute(%[[ARG0_6:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_6:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_4:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_4:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int) {
+// CHECK-NEXT:     return %[[ARG0_6]], %[[ARG1_6]], %[[ARG2_4]], %[[ARG3_4]] : !smt.int, !smt.int, !smt.int, !smt.int
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_ArrayBox_compute(%[[ARG0_8:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_8:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_6:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_6:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int) {
-// CHECK-NEXT:     return %[[ARG0_8]], %[[ARG1_8]], %[[ARG2_6]], %[[ARG3_6]] : !smt.int, !smt.int, !smt.int, !smt.int
-// CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_ArrayBox_constrain(%[[ARG0_9:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_9:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_7:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_7:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG4_1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG5:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG6:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG7:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int) {
-// CHECK-NEXT:     return %[[ARG0_9]], %[[ARG1_9]], %[[ARG2_7]], %[[ARG3_7]] : !smt.int, !smt.int, !smt.int, !smt.int
+// CHECK-NEXT:   func.func @smt_ArrayBox_constrain(%[[ARG0_7:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_7:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_5:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_5:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG4:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG5:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG6:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG7:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int) {
+// CHECK-NEXT:     return %[[ARG0_7]], %[[ARG1_7]], %[[ARG2_5]], %[[ARG3_5]] : !smt.int, !smt.int, !smt.int, !smt.int
 // CHECK-NEXT:   }
 // CHECK-NEXT:   func.func @smt_verif_CheckArrayBox_pre(%[[ARG0_10:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_10:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_8:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_8:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG4_2:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG5_1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG6_1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG7_1:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:     %[[TRUE_2:[0-9A-Za-z_\.]+]] = smt.constant true
