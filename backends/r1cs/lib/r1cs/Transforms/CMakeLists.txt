@@ -3,7 +3,6 @@ add_library(R1CS::Transforms ALIAS R1CSTransforms)
 
 file(GLOB R1CSTransforms_SOURCES "*.cpp")
 
-
 target_sources(R1CSTransforms PRIVATE ${R1CSTransforms_SOURCES})
 
 target_link_libraries(
@@ -15,6 +14,7 @@ target_link_libraries(
     MLIRIR MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
     LLVMHeaders MLIRHeaders
   PRIVATE
+    LLZKTransforms
     LLZKDialect
     R1CSDialect
     LLZKAnalysis
