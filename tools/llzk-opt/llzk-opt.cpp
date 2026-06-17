@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
-  llzk::component::registerStructTransformationPasses();
+  llzk::component::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
