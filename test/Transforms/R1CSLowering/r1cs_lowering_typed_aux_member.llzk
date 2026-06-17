@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering --verify-each %s | FileCheck --enable-var-scope %s
 
-module attributes {llzk.lang} {
+module attributes {llzk.lang, llzk.main = !struct.type<@TypedR1CSAux>} {
   struct.def @TypedR1CSAux {
     struct.member @out : !felt.type<"babybear"> {llzk.pub}
 
