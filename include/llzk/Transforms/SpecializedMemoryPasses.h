@@ -18,11 +18,14 @@
 #pragma once
 
 #include <mlir/Analysis/DataLayoutAnalysis.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
 #include <mlir/Pass/Pass.h>
+#include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/Mem2Reg.h>
+#include <mlir/Transforms/Passes.h>
 #include <mlir/Transforms/SROA.h>
 
 #include <llvm/ADT/SmallVector.h>
@@ -125,6 +128,64 @@ struct SpecializedMem2Reg
 template <typename AllocOpTy>
 std::unique_ptr<SpecializedMem2Reg<AllocOpTy>> createSpecializedMem2RegPass() {
   return std::make_unique<SpecializedMem2Reg<AllocOpTy>>();
+}
+
+namespace detail {
+
+/// A workaround wrapper around MLIR's `remove-dead-values` pass that normalizes empty
+/// `scf.if` else regions before running the upstream implementation and cleans up the trivial
+/// regions afterwards.
+class RemoveDeadValuesWorkaroundPass
+    : public mlir::PassWrapper<RemoveDeadValuesWorkaroundPass, mlir::OperationPass<>> {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(RemoveDeadValuesWorkaroundPass)
+
+  llvm::StringRef getArgument() const override { return "remove-dead-values"; }
+  llvm::StringRef getDescription() const override { return "Remove dead values"; }
+
+  void runOnOperation() final {
+    // Pre-pass: add a trivial block to empty `else` regions so upstream pass code can handle them.
+    getOperation()->walk([](mlir::scf::IfOp ifOp) {
+      if (ifOp.getElseRegion().empty()) {
+        mlir::Block &elseBlock = ifOp.getElseRegion().emplaceBlock();
+        mlir::OpBuilder builder(ifOp.getContext());
+        builder.setInsertionPointToEnd(&elseBlock);
+        builder.create<mlir::scf::YieldOp>(ifOp.getLoc());
+      }
+    });
+
+    mlir::OpPassManager pm(getOperation()->getName().getStringRef());
+    pm.addPass(mlir::createRemoveDeadValuesPass());
+    if (mlir::failed(runPipeline(pm, getOperation()))) {
+      signalPassFailure();
+    }
+
+    // Post-pass: remove trivial `else` blocks that are left behind.
+    getOperation()->walk([](mlir::scf::IfOp ifOp) {
+      if (ifOp.getResults().empty()) {
+        mlir::Region &elseRegion = ifOp.getElseRegion();
+        if (!llvm::hasSingleElement(elseRegion)) {
+          return;
+        }
+        mlir::Block &elseBlock = elseRegion.front();
+        if (!llvm::hasSingleElement(elseBlock)) {
+          return;
+        }
+        if (!llvm::isa<mlir::scf::YieldOp>(elseBlock.front())) {
+          return;
+        }
+        elseRegion.dropAllReferences();
+        elseBlock.clear();
+        elseRegion.getBlocks().clear();
+      }
+    });
+  }
+};
+
+} // namespace detail
+
+inline std::unique_ptr<mlir::Pass> createRemoveDeadValuesWorkaroundPass() {
+  return std::make_unique<detail::RemoveDeadValuesWorkaroundPass>();
 }
 
 } // namespace llzk

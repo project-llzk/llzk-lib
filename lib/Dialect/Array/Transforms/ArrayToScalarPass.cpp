@@ -1030,7 +1030,7 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
         }
     ));
     // Cleanup SSA values made dead by removing allocations and writes.
-    nestedPM.addPass(createRemoveDeadValuesPass());
+    nestedPM.addPass(createRemoveDeadValuesWorkaroundPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;

@@ -46,7 +46,10 @@
 /// 5. Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA
 ///    values.
 ///
-/// ** Steps 4 and 5 are rerun while nested POD types are still being exposed, until a fixpoint.
+/// 6. Remove pod allocations that become unread after memory promotion, then remove SSA values
+///    made dead by that cleanup.
+///
+/// ** Steps 4-6 are rerun while nested POD types are still being exposed, until a fixpoint.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on pod records. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -79,6 +82,7 @@
 #include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Walk.h"
@@ -1723,9 +1727,14 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
     scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
     scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
 
-    // Cleanup SSA values made dead by the transformations
+    // Cleanup allocations made dead by memory promotion and other dead SSA values.
     OpPassManager cleanupPM(ModuleOp::getOperationName());
-    cleanupPM.addPass(createRemoveDeadValuesPass());
+    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = NewPodOp::getOperationName().str()
+        }
+    ));
+    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);
     while (podAllocWeight != 0) {
