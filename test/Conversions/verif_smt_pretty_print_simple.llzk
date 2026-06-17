@@ -1,0 +1,28 @@
+// RUN: llzk-opt --llzk-verif-to-smt --smt-pretty-print='entry=smt_verif_CheckGate_entry' -o /dev/null %s | FileCheck --check-prefix=SIMPLE %s
+
+module attributes {llzk.lang} {
+  function.def @gate_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @CheckGate for @gate_target (%gate: i1) {
+    verif.require_compute %gate
+    verif.ensure_compute %gate
+  }
+}
+
+// SIMPLE: (set-logic ALL)
+// SIMPLE-NEXT: ; root: smt_verif_CheckGate_entry
+// SIMPLE: (declare-const smt_verif_CheckGate_entry__arg0 Bool)
+// SIMPLE: ; check-sat stage=pre expect=unsat
+// SIMPLE-NEXT: (check-sat)
+// SIMPLE-NEXT: (pop 1)
+// SIMPLE-NEXT: (assert smt_verif_CheckGate_entry__arg0)
+// SIMPLE: ; check-sat stage=target expect=unsat
+// SIMPLE-NEXT: (check-sat)
+// SIMPLE-NEXT: (pop 1)
+// SIMPLE-NEXT: (assert true)
+// SIMPLE: ; check-sat stage=post expect=unsat
+// SIMPLE-NEXT: (check-sat)
+// SIMPLE-NEXT: (pop 1)
+// SIMPLE-NEXT: (assert smt_verif_CheckGate_entry__arg0)

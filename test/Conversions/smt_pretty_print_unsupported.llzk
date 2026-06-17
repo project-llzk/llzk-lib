@@ -1,0 +1,13 @@
+// RUN: not llzk-opt --smt-pretty-print='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=UNSUPPORTED %s
+
+module {
+  func.func @main(%x: !smt.int) {
+    %abs = smt.int.abs %x
+    %zero = smt.int.constant 0
+    %ok = smt.eq %abs, %zero : !smt.int
+    smt.assert %ok
+    return
+  }
+}
+
+// UNSUPPORTED: unsupported{{.*}}smt-pretty-print

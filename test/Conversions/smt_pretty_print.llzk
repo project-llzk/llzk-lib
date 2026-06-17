@@ -1,0 +1,26 @@
+// RUN: llzk-opt --smt-pretty-print='entry=main' -o /dev/null %s | FileCheck --check-prefix=GENERIC %s
+
+module {
+  func.func @helper(%x: !smt.int, %flag: !smt.bool) -> !smt.int {
+    %c5 = smt.int.constant 5
+    %sum = smt.int.add %x, %c5
+    %neg = smt.int.neg %x
+    %result = smt.ite %flag, %sum, %neg : !smt.int
+    return %result : !smt.int
+  }
+
+  func.func @main(%x: !smt.int, %flag: !smt.bool) {
+    %value = call @helper(%x, %flag) : (!smt.int, !smt.bool) -> !smt.int
+    %symbol = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %symbol, %value : !smt.int
+    smt.assert %ok
+    return
+  }
+}
+
+// GENERIC: (set-logic ALL)
+// GENERIC-NEXT: ; root: main
+// GENERIC-DAG: (declare-const main__arg0 Int)
+// GENERIC-DAG: (declare-const main__arg1 Bool)
+// GENERIC-DAG: (declare-fun result () Int)
+// GENERIC: (assert (= result (ite main__arg1 (+ main__arg0 5) (- main__arg0))))

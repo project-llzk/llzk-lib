@@ -1,0 +1,20 @@
+// RUN: not llzk-opt --smt-pretty-print='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=STATEFUL %s
+
+module {
+  func.func @bad_helper(%x: !smt.int) -> !smt.int {
+    %zero = smt.int.constant 0
+    %ok = smt.eq %x, %zero : !smt.int
+    smt.assert %ok
+    return %x : !smt.int
+  }
+
+  func.func @main(%x: !smt.int) {
+    %value = call @bad_helper(%x) : (!smt.int) -> !smt.int
+    %zero = smt.int.constant 0
+    %ok = smt.eq %value, %zero : !smt.int
+    smt.assert %ok
+    return
+  }
+}
+
+// STATEFUL: error: stateful SMT ops are not allowed in inlined helper functions

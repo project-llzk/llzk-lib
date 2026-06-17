@@ -1,0 +1,11 @@
+// RUN: not llzk-opt --smt-pretty-print='entry=missing' -o /dev/null %s 2>&1 | FileCheck --check-prefix=MISSING %s
+// RUN: not llzk-opt --smt-pretty-print -o /dev/null %s 2>&1 | FileCheck --check-prefix=NOROOT %s
+
+module {
+  func.func @helper(%x: !smt.int) -> !smt.int {
+    return %x : !smt.int
+  }
+}
+
+// MISSING: error: smt-pretty-print could not find entry symbol @missing
+// NOROOT: error: smt-pretty-print found no smt_verif_*_entry roots; pass --entry to export a different func.func

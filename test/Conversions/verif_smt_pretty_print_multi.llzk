@@ -1,0 +1,34 @@
+// RUN: llzk-opt --llzk-verif-to-smt --smt-pretty-print -o /dev/null %s | FileCheck --check-prefix=MULTI %s
+
+module attributes {llzk.lang} {
+  function.def @id_bool(%gate: i1) -> i1 {
+    function.return %gate : i1
+  }
+
+  function.def @id_array(%arg: !array.type<2 x !felt.type>) -> !array.type<2 x !felt.type> {
+    function.return %arg : !array.type<2 x !felt.type>
+  }
+
+  verif.contract @BoolCheck for @id_bool (%gate: i1, %ret: i1) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+
+  verif.contract @ArrayCheck for @id_array (
+      %arg: !array.type<2 x !felt.type>,
+      %ret: !array.type<2 x !felt.type>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// MULTI: ; root: smt_verif_BoolCheck_entry
+// MULTI: (declare-const smt_verif_BoolCheck_entry__arg0 Bool)
+// MULTI: (declare-const smt_verif_BoolCheck_entry__arg1 Bool)
+// MULTI: (reset)
+// MULTI: ; root: smt_verif_ArrayCheck_entry
+// MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg0 Int)
+// MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg1 Int)
+// MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg2 Int)
+// MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg3 Int)
