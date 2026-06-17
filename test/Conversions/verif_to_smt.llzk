@@ -23,38 +23,30 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:   struct.def @Box {
-// CHECK-NEXT:     struct.member @value : !felt.type
-// CHECK-NEXT:     function.def @compute(%[[ARG0:[0-9A-Za-z_\.]+]]: !felt.type) -> !struct.type<@Box> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[SELF:[0-9A-Za-z_\.]+]] = struct.new : <@Box>
-// CHECK-NEXT:       struct.writem %[[SELF]][@value] = %[[ARG0]] : <@Box>, !felt.type
-// CHECK-NEXT:       function.return %[[SELF]] : !struct.type<@Box>
-// CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[ARG0_1:[0-9A-Za-z_\.]+]]: !struct.type<@Box>, %[[ARG1:[0-9A-Za-z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:       function.return
-// CHECK-NEXT:     }
+// CHECK-NEXT:   func.func @smt_Box_compute(%[[ARG0:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK-NEXT:     return %[[ARG0]] : !smt.int
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_Box_compute(%[[ARG0_2:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.int {
-// CHECK-NEXT:     return %[[ARG0_2]] : !smt.int
+// CHECK-NEXT:   func.func @smt_Box_constrain(%[[ARG0_1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK-NEXT:     return %[[ARG0_1]] : !smt.int
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_Box_constrain(%[[ARG0_3:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_1:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.int {
-// CHECK-NEXT:     return %[[ARG0_3]] : !smt.int
-// CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_verif_CheckBox_pre(%[[ARG0_4:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_2:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK-NEXT:   func.func @smt_verif_CheckBox_pre(%[[ARG0_2:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_1:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:     %[[TRUE:[0-9A-Za-z_\.]+]] = smt.constant true
 // CHECK-NEXT:     return %[[TRUE]] : !smt.bool
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_verif_CheckBox_post(%[[ARG0_5:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_3:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK-NEXT:   func.func @smt_verif_CheckBox_post(%[[ARG0_3:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_2:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:     %[[TRUE_1:[0-9A-Za-z_\.]+]] = smt.constant true
 // CHECK-NEXT:     return %[[TRUE_1]] : !smt.bool
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_verif_CheckBox_target(%[[ARG0_6:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_4:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
-// CHECK-NEXT:     %[[VAL_0:[0-9A-Za-z_\.]+]] = call @smt_Box_compute(%[[ARG1_4]]) : (!smt.int) -> !smt.int
-// CHECK-NEXT:     %[[VAL_1:[0-9A-Za-z_\.]+]] = smt.eq %[[VAL_0]], %[[ARG0_6]] : !smt.int
-// CHECK-NEXT:     return %[[VAL_1]] : !smt.bool
+// CHECK-NEXT:   func.func @smt_verif_CheckBox_target(%[[ARG0_4:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_3:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK-NEXT:     %[[VAL_0:[0-9A-Za-z_\.]+]] = call @smt_Box_compute(%[[ARG1_3]]) : (!smt.int) -> !smt.int
+// CHECK-NEXT:     %[[VAL_1:[0-9A-Za-z_\.]+]] = smt.eq %[[VAL_0]], %[[ARG0_4]] : !smt.int
+// CHECK-NEXT:     %[[VAL_2:[0-9A-Za-z_\.]+]] = call @smt_Box_constrain(%[[ARG0_4]], %[[ARG1_3]]) : (!smt.int, !smt.int) -> !smt.int
+// CHECK-NEXT:     %[[VAL_3:[0-9A-Za-z_\.]+]] = smt.eq %[[VAL_2]], %[[ARG0_4]] : !smt.int
+// CHECK-NEXT:     %[[VAL_4:[0-9A-Za-z_\.]+]] = smt.and %[[VAL_1]], %[[VAL_3]]
+// CHECK-NEXT:     return %[[VAL_4]] : !smt.bool
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_verif_CheckBox_entry(%[[ARG0_7:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_5:[0-9A-Za-z_\.]+]]: !smt.int) {
-// CHECK-NEXT:     %[[VAL_0_1:[0-9A-Za-z_\.]+]] = call @smt_verif_CheckBox_pre(%[[ARG0_7]], %[[ARG1_5]]) : (!smt.int, !smt.int) -> !smt.bool
+// CHECK-NEXT:   func.func @smt_verif_CheckBox_entry(%[[ARG0_5:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_4:[0-9A-Za-z_\.]+]]: !smt.int) {
+// CHECK-NEXT:     %[[VAL_0_1:[0-9A-Za-z_\.]+]] = call @smt_verif_CheckBox_pre(%[[ARG0_5]], %[[ARG1_4]]) : (!smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:     smt.push 1
 // CHECK-NEXT:     %[[VAL_1_1:[0-9A-Za-z_\.]+]] = smt.not %[[VAL_0_1]]
 // CHECK-NEXT:     smt.assert %[[VAL_1_1]]
@@ -70,10 +62,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:       smt.pop 1
 // CHECK-NEXT:       smt.assert %[[VAL_0_1]]
 // CHECK-NEXT:     }
-// CHECK-NEXT:     %[[VAL_2:[0-9A-Za-z_\.]+]] = call @smt_verif_CheckBox_target(%[[ARG0_7]], %[[ARG1_5]]) : (!smt.int, !smt.int) -> !smt.bool
+// CHECK-NEXT:     %[[VAL_2_1:[0-9A-Za-z_\.]+]] = call @smt_verif_CheckBox_target(%[[ARG0_5]], %[[ARG1_4]]) : (!smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:     smt.push 1
-// CHECK-NEXT:     %[[VAL_3:[0-9A-Za-z_\.]+]] = smt.not %[[VAL_2]]
-// CHECK-NEXT:     smt.assert %[[VAL_3]]
+// CHECK-NEXT:     %[[VAL_3_1:[0-9A-Za-z_\.]+]] = smt.not %[[VAL_2_1]]
+// CHECK-NEXT:     smt.assert %[[VAL_3_1]]
 // CHECK-NEXT:     smt.check sat {
 // CHECK-NEXT:       smt.pop 1
 // CHECK-NEXT:       %[[FALSE_2:[0-9A-Za-z_\.]+]] = arith.constant false
@@ -84,12 +76,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:       bool.assert %[[FALSE_3]], "verification failed in CheckBox target: condition unprovable"
 // CHECK-NEXT:     } unsat {
 // CHECK-NEXT:       smt.pop 1
-// CHECK-NEXT:       smt.assert %[[VAL_2]]
+// CHECK-NEXT:       smt.assert %[[VAL_2_1]]
 // CHECK-NEXT:     }
-// CHECK-NEXT:     %[[VAL_4:[0-9A-Za-z_\.]+]] = call @smt_verif_CheckBox_post(%[[ARG0_7]], %[[ARG1_5]]) : (!smt.int, !smt.int) -> !smt.bool
+// CHECK-NEXT:     %[[VAL_4_1:[0-9A-Za-z_\.]+]] = call @smt_verif_CheckBox_post(%[[ARG0_5]], %[[ARG1_4]]) : (!smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:     smt.push 1
-// CHECK-NEXT:     %[[VAL_5:[0-9A-Za-z_\.]+]] = smt.not %[[VAL_4]]
-// CHECK-NEXT:     smt.assert %[[VAL_5]]
+// CHECK-NEXT:     %[[VAL_5_1:[0-9A-Za-z_\.]+]] = smt.not %[[VAL_4_1]]
+// CHECK-NEXT:     smt.assert %[[VAL_5_1]]
 // CHECK-NEXT:     smt.check sat {
 // CHECK-NEXT:       smt.pop 1
 // CHECK-NEXT:       %[[FALSE_4:[0-9A-Za-z_\.]+]] = arith.constant false
@@ -100,7 +92,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:       bool.assert %[[FALSE_5]], "verification failed in CheckBox post: condition unprovable"
 // CHECK-NEXT:     } unsat {
 // CHECK-NEXT:       smt.pop 1
-// CHECK-NEXT:       smt.assert %[[VAL_4]]
+// CHECK-NEXT:       smt.assert %[[VAL_4_1]]
 // CHECK-NEXT:     }
 // CHECK-NEXT:     return
 // CHECK-NEXT:   }
@@ -389,26 +381,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:   struct.def @Pair {
-// CHECK-NEXT:     struct.member @left : !felt.type
-// CHECK-NEXT:     struct.member @right : !felt.type
-// CHECK-NEXT:     function.def @compute(%[[ARG0_27:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG1_10:[0-9A-Za-z_\.]+]]: !felt.type) -> !struct.type<@Pair> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[SELF_1:[0-9A-Za-z_\.]+]] = struct.new : <@Pair>
-// CHECK-NEXT:       struct.writem %[[SELF_1]][@left] = %[[ARG0_27]] : <@Pair>, !felt.type
-// CHECK-NEXT:       struct.writem %[[SELF_1]][@right] = %[[ARG1_10]] : <@Pair>, !felt.type
-// CHECK-NEXT:       function.return %[[SELF_1]] : !struct.type<@Pair>
-// CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[ARG0_28:[0-9A-Za-z_\.]+]]: !struct.type<@Pair>, %[[ARG1_11:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG2:[0-9A-Za-z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:       function.return
-// CHECK-NEXT:     }
+// CHECK-NEXT:   func.func @smt_Pair_compute(%[[ARG0_27:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_10:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK-NEXT:     return %[[ARG0_27]], %[[ARG1_10]] : !smt.int, !smt.int
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_Pair_compute(%[[ARG0_29:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_12:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
-// CHECK-NEXT:     return %[[ARG0_29]], %[[ARG1_12]] : !smt.int, !smt.int
+// CHECK-NEXT:   func.func @smt_Pair_constrain(%[[ARG0_28:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_11:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
+// CHECK-NEXT:     return %[[ARG0_28]], %[[ARG1_11]] : !smt.int, !smt.int
 // CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_Pair_constrain(%[[ARG0_30:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_13:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3:[0-9A-Za-z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
-// CHECK-NEXT:     return %[[ARG0_30]], %[[ARG1_13]] : !smt.int, !smt.int
-// CHECK-NEXT:   }
-// CHECK-NEXT:   func.func @smt_verif_CheckPair_pre(%[[ARG0_31:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_14:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_2:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_1:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK-NEXT:   func.func @smt_verif_CheckPair_pre(%[[ARG0_29:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_12:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG3_1:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:     %[[TRUE_9:[0-9A-Za-z_\.]+]] = smt.constant true
 // CHECK-NEXT:     return %[[TRUE_9]] : !smt.bool
 // CHECK-NEXT:   }
