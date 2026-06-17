@@ -325,7 +325,8 @@ LogicalResult LoweringContext::ensureScalarContractSupported(ContractOp contract
       return failure();
     }
     for (MemberDefOp member : structTarget->get().getMemberDefs()) {
-      if (failed(ensureScalarTypeSupported(member.getType(), contract, "struct target member types")
+      if (failed(
+              ensureScalarTypeSupported(member.getType(), contract, "struct target member types")
           )) {
         return failure();
       }
@@ -1105,8 +1106,8 @@ FailureOr<Operation *> LoweringContext::getDirectTargetDefinition(ContractOp con
 struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
   /// Register the dialects required by the generated SMT helper IR.
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<arith::ArithDialect, func::FuncDialect, boolean::BoolDialect, smt::SMTDialect>(
-    );
+    registry
+        .insert<arith::ArithDialect, func::FuncDialect, boolean::BoolDialect, smt::SMTDialect>();
   }
 
   /// Run the contract lowering sequentially over the module body.
