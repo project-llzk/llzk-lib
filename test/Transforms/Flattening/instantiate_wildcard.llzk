@@ -146,3 +146,51 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeT
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @LaterConcrete {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+
+    function.def @bridge(%arg0: !poly.tvar<@B>) {
+      %0 = poly.unifiable_cast %arg0 : (!poly.tvar<@B>) -> !poly.tvar<@A>
+      function.return
+    }
+  }
+
+  poly.template @UseLaterConcrete {
+    struct.def @UseLaterConcrete {
+      function.def @compute(%arg0: !felt.type<"bn128">) -> !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>> {
+        %self = struct.new : !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>>
+        function.call @LaterConcrete::@bridge<[?, !felt.type<"bn128">]>(%arg0) : (!felt.type<"bn128">) -> ()
+        function.return %self : !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>>,
+          %arg0: !felt.type<"bn128">) {
+        function.call @LaterConcrete::@bridge<[?, !felt.type<"bn128">]>(%arg0) : (!felt.type<"bn128">) -> ()
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @LaterConcrete_f_f_bridge(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @UseLaterConcrete {
+// CHECK-NEXT:      struct.def @UseLaterConcrete {
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@UseLaterConcrete::@UseLaterConcrete> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@UseLaterConcrete::@UseLaterConcrete>
+// CHECK-NEXT:          function.call @LaterConcrete_f_f_bridge(%[[VAL_1]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@UseLaterConcrete::@UseLaterConcrete>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@UseLaterConcrete::@UseLaterConcrete>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.call @LaterConcrete_f_f_bridge(%[[VAL_4]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

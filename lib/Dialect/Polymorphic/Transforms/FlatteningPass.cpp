@@ -1486,8 +1486,8 @@ private:
     }
 
     // When template parameters are specified on the CallOp, use them as the source of truth
-    // and also perform inference for wildcard parameters.
-    WildcardTypeBodyInferer bodyInferer(symTables, paramNameToConcrete);
+    // for concrete arguments, then infer wildcard parameters against the full explicit map.
+    SmallVector<std::pair<TemplateParamOp, FlatSymbolRefAttr>> wildcardParams;
     for (auto [paramOp, attr] : llvm::zip_equal(realParams, callParams.getValue())) {
       auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
       AttrConcreteness classification = classifyAttrConcreteness(attr);
@@ -1503,7 +1503,11 @@ private:
         );
         continue;
       }
+      wildcardParams.emplace_back(paramOp, paramName);
+    }
 
+    WildcardTypeBodyInferer bodyInferer(symTables, paramNameToConcrete);
+    for (auto [paramOp, paramName] : wildcardParams) {
       auto inferredValOpt = inferUnifiedParam(unifyResult, paramName);
       if (inferredValOpt.has_value() && isConcreteAttr(*inferredValOpt)) {
         LLVM_DEBUG(
