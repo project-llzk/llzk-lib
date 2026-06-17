@@ -17,7 +17,7 @@ var searchData=
   ['add_20_3a_3allzk_3a_3afelt_3a_3aaddfeltop_14',['&lt;span class=&quot;tt&quot;&gt;felt.add&lt;/span&gt; (llzk::felt::AddFeltOp)',['../dialects.html#feltadd-llzkfeltaddfeltop',1,'']]],
   ['add_20_3a_3ar1cs_3a_3aaddop_15',['&lt;span class=&quot;tt&quot;&gt;r1cs.add&lt;/span&gt; (r1cs::AddOp)',['../backend-dialects.html#r1csadd-r1csaddop',1,'']]],
   ['addabstractedge_16',['addAbstractEdge',['../classllzk_1_1CallGraphNode.html#a947372cf83eb386be6054bd829fba754',1,'llzk::CallGraphNode']]],
-  ['addauxmember_17',['addAuxMember',['../namespacellzk.html#a9242d33a82efd7ed7ce93aa0996a1ebf',1,'llzk::addAuxMember(StructDefOp structDef, StringRef name)'],['../namespacellzk.html#a520c8c09dbbe575a7e8708ed8f6f7c44',1,'llzk::addAuxMember(component::StructDefOp structDef, llvm::StringRef name)']]],
+  ['addauxmember_17',['addAuxMember',['../namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2',1,'llzk::addAuxMember(StructDefOp structDef, StringRef name, Type type)'],['../namespacellzk.html#ae8d599c44e8cbf2affce75a3fae1d1a0',1,'llzk::addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type)']]],
   ['addcalledge_18',['addCallEdge',['../classllzk_1_1CallGraphNode.html#a838ff297b3f54861144a2676e24f205c',1,'llzk::CallGraphNode']]],
   ['addchildedge_19',['addChildEdge',['../classllzk_1_1CallGraphNode.html#a499083ea87ccb86517535958702e3247',1,'llzk::CallGraphNode']]],
   ['addfeltop_20',['AddFeltOp',['../classllzk_1_1felt_1_1AddFeltOp.html',1,'llzk::felt']]],

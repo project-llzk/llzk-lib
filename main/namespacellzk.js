@@ -158,8 +158,8 @@ var namespacellzk =
       [ "TOMB", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aad347574c48f5bbb0a804da9bb77d67a3", null ]
     ] ],
     [ "add", "namespacellzk.html#a043252dc88df97886ee3b6f3f83c1cf4", null ],
-    [ "addAuxMember", "namespacellzk.html#a520c8c09dbbe575a7e8708ed8f6f7c44", null ],
-    [ "addAuxMember", "namespacellzk.html#a9242d33a82efd7ed7ce93aa0996a1ebf", null ],
+    [ "addAuxMember", "namespacellzk.html#ae8d599c44e8cbf2affce75a3fae1d1a0", null ],
+    [ "addAuxMember", "namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2", null ],
     [ "addLangAttrForLLZKDialect", "namespacellzk.html#ad1625d8ebd06095492c891b4fe65d5ef", null ],
     [ "addLangAttrForLLZKDialect", "namespacellzk.html#ad8079cba340b7e8ca05e0fd88b364334", null ],
     [ "addRemoveUnnecessaryOpsAndDefsPipeline", "namespacellzk.html#a2ddf3edf6f2b52c9021b51108f0eaff3", null ],

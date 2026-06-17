@@ -116,13 +116,14 @@ $(function(){initNavTree('LLZKLoweringUtils_8h.html','',''); });
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/Builders.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Types.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Value.h&gt;</code><br />
 <code>#include &lt;mlir/Support/LogicalResult.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKLoweringUtils.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKLoweringUtils_8h__incl.svg" width="3666" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKLoweringUtils_8h__incl.svg" width="3730" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -146,7 +147,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a61474e8347bb745efe90d84dccb680a8">llzk::checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
 <tr class="memitem:a6fc587cc3996664c7883f3957bc088f8" id="r_a6fc587cc3996664c7883f3957bc088f8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a6fc587cc3996664c7883f3957bc088f8">llzk::checkConstrainBodyIsStraightLine</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> constrainFunc, llvm::StringRef passName)</td></tr>
 <tr class="memdesc:a6fc587cc3996664c7883f3957bc088f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rejects control flow under <span class="tt">constrainFunc</span>; polynomial and R1CS auxiliary materialization assumes control flow has already been flattened or otherwise lowered away.  <br /></td></tr>
-<tr class="memitem:a520c8c09dbbe575a7e8708ed8f6f7c44" id="r_a520c8c09dbbe575a7e8708ed8f6f7c44"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a520c8c09dbbe575a7e8708ed8f6f7c44">llzk::addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name)</td></tr>
+<tr class="memitem:ae8d599c44e8cbf2affce75a3fae1d1a0" id="r_ae8d599c44e8cbf2affce75a3fae1d1a0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ae8d599c44e8cbf2affce75a3fae1d1a0">llzk::addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name, mlir::Type type)</td></tr>
 <tr class="memitem:a07235a51b81f09557523887e9b11ca93" id="r_a07235a51b81f09557523887e9b11ca93"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a07235a51b81f09557523887e9b11ca93">llzk::getFeltDegree</a> (mlir::Value val, llvm::DenseMap&lt; mlir::Value, unsigned &gt; &amp;memo)</td></tr>
 <tr class="memitem:ac05a1e5322d050b620a18869c6e310b4" id="r_ac05a1e5322d050b620a18869c6e310b4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ac05a1e5322d050b620a18869c6e310b4">llzk::replaceSubsequentUsesWith</a> (mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp)</td></tr>
 <tr class="memdesc:ac05a1e5322d050b620a18869c6e310b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replaces all <em>subsequent uses</em> of <span class="tt">oldVal</span> with <span class="tt">newVal</span>, starting <em>after</em> <span class="tt">afterOp</span>.  <br /></td></tr>

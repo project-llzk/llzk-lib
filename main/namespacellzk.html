@@ -414,7 +414,7 @@ Functions</h2></td></tr>
 <tr class="memitem:affe604776b9bbde83b6a6d31f9bc4c86" id="r_affe604776b9bbde83b6a6d31f9bc4c86"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#affe604776b9bbde83b6a6d31f9bc4c86">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> structDef, StringRef prefix)</td></tr>
 <tr class="memitem:a9c2edf42a0e3443db901cf9d6f57080b" id="r_a9c2edf42a0e3443db901cf9d6f57080b"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9c2edf42a0e3443db901cf9d6f57080b">checkConstrainBodyIsStraightLine</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> constrainFunc, StringRef passName)</td></tr>
 <tr class="memitem:a1adebd123866cbb2b9e02bbd5b99c9ca" id="r_a1adebd123866cbb2b9e02bbd5b99c9ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1adebd123866cbb2b9e02bbd5b99c9ca">replaceSubsequentUsesWith</a> (Value oldVal, Value newVal, Operation *afterOp)</td></tr>
-<tr class="memitem:a9242d33a82efd7ed7ce93aa0996a1ebf" id="r_a9242d33a82efd7ed7ce93aa0996a1ebf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9242d33a82efd7ed7ce93aa0996a1ebf">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> structDef, StringRef name)</td></tr>
+<tr class="memitem:a5fe59d40fb1bc5ada1e38667de05c6f2" id="r_a5fe59d40fb1bc5ada1e38667de05c6f2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5fe59d40fb1bc5ada1e38667de05c6f2">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> structDef, StringRef name, Type type)</td></tr>
 <tr class="memitem:ad4ff96ece25453858228f3aff1f625c7" id="r_ad4ff96ece25453858228f3aff1f625c7"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4ff96ece25453858228f3aff1f625c7">getFeltDegree</a> (Value val, DenseMap&lt; Value, unsigned &gt; &amp;memo)</td></tr>
 <tr class="memitem:a43127389e7b4fa6c9df9cb41983736ba" id="r_a43127389e7b4fa6c9df9cb41983736ba"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a43127389e7b4fa6c9df9cb41983736ba">createPolyLoweringPass</a> ()</td></tr>
 <tr class="memitem:a3460f70cd78487eb92a7eb734118102f" id="r_a3460f70cd78487eb92a7eb734118102f"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3460f70cd78487eb92a7eb734118102f">createPolyLoweringPass</a> (<a class="el" href="structllzk_1_1PolyLoweringPassOptions.html">PolyLoweringPassOptions</a> options)</td></tr>
@@ -605,7 +605,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
 <tr class="memitem:a6fc587cc3996664c7883f3957bc088f8" id="r_a6fc587cc3996664c7883f3957bc088f8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6fc587cc3996664c7883f3957bc088f8">checkConstrainBodyIsStraightLine</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> constrainFunc, llvm::StringRef passName)</td></tr>
 <tr class="memdesc:a6fc587cc3996664c7883f3957bc088f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rejects control flow under <span class="tt">constrainFunc</span>; polynomial and R1CS auxiliary materialization assumes control flow has already been flattened or otherwise lowered away.  <br /></td></tr>
-<tr class="memitem:a520c8c09dbbe575a7e8708ed8f6f7c44" id="r_a520c8c09dbbe575a7e8708ed8f6f7c44"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a520c8c09dbbe575a7e8708ed8f6f7c44">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name)</td></tr>
+<tr class="memitem:ae8d599c44e8cbf2affce75a3fae1d1a0" id="r_ae8d599c44e8cbf2affce75a3fae1d1a0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae8d599c44e8cbf2affce75a3fae1d1a0">addAuxMember</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef name, mlir::Type type)</td></tr>
 <tr class="memitem:a07235a51b81f09557523887e9b11ca93" id="r_a07235a51b81f09557523887e9b11ca93"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07235a51b81f09557523887e9b11ca93">getFeltDegree</a> (mlir::Value val, llvm::DenseMap&lt; mlir::Value, unsigned &gt; &amp;memo)</td></tr>
 <tr class="memitem:ac05a1e5322d050b620a18869c6e310b4" id="r_ac05a1e5322d050b620a18869c6e310b4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac05a1e5322d050b620a18869c6e310b4">replaceSubsequentUsesWith</a> (mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp)</td></tr>
 <tr class="memdesc:ac05a1e5322d050b620a18869c6e310b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replaces all <em>subsequent uses</em> of <span class="tt">oldVal</span> with <span class="tt">newVal</span>, starting <em>after</em> <span class="tt">afterOp</span>.  <br /></td></tr>
@@ -1115,8 +1115,8 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a id="a520c8c09dbbe575a7e8708ed8f6f7c44" name="a520c8c09dbbe575a7e8708ed8f6f7c44"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a520c8c09dbbe575a7e8708ed8f6f7c44">&#9670;&#160;</a></span>addAuxMember() <span class="overload">[1/2]</span></h2>
+<a id="ae8d599c44e8cbf2affce75a3fae1d1a0" name="ae8d599c44e8cbf2affce75a3fae1d1a0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8d599c44e8cbf2affce75a3fae1d1a0">&#9670;&#160;</a></span>addAuxMember() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1129,15 +1129,20 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="a9242d33a82efd7ed7ce93aa0996a1ebf" name="a9242d33a82efd7ed7ce93aa0996a1ebf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9242d33a82efd7ed7ce93aa0996a1ebf">&#9670;&#160;</a></span>addAuxMember() <span class="overload">[2/2]</span></h2>
+<a id="a5fe59d40fb1bc5ada1e38667de05c6f2" name="a5fe59d40fb1bc5ada1e38667de05c6f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5fe59d40fb1bc5ada1e38667de05c6f2">&#9670;&#160;</a></span>addAuxMember() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1150,7 +1155,12 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Type</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">

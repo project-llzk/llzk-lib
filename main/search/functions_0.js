@@ -4,7 +4,7 @@ var searchData=
   ['abstractsparseforwarddataflowanalysis_1',['AbstractSparseForwardDataFlowAnalysis',['../classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html#a81cd95b674c0a6d37078212896837bf8',1,'llzk::dataflow::AbstractSparseForwardDataFlowAnalysis']]],
   ['add_2',['add',['../namespacellzk.html#a043252dc88df97886ee3b6f3f83c1cf4',1,'llzk']]],
   ['addabstractedge_3',['addAbstractEdge',['../classllzk_1_1CallGraphNode.html#a947372cf83eb386be6054bd829fba754',1,'llzk::CallGraphNode']]],
-  ['addauxmember_4',['addAuxMember',['../namespacellzk.html#a9242d33a82efd7ed7ce93aa0996a1ebf',1,'llzk::addAuxMember(StructDefOp structDef, StringRef name)'],['../namespacellzk.html#a520c8c09dbbe575a7e8708ed8f6f7c44',1,'llzk::addAuxMember(component::StructDefOp structDef, llvm::StringRef name)']]],
+  ['addauxmember_4',['addAuxMember',['../namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2',1,'llzk::addAuxMember(StructDefOp structDef, StringRef name, Type type)'],['../namespacellzk.html#ae8d599c44e8cbf2affce75a3fae1d1a0',1,'llzk::addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type)']]],
   ['addcalledge_5',['addCallEdge',['../classllzk_1_1CallGraphNode.html#a838ff297b3f54861144a2676e24f205c',1,'llzk::CallGraphNode']]],
   ['addchildedge_6',['addChildEdge',['../classllzk_1_1CallGraphNode.html#a499083ea87ccb86517535958702e3247',1,'llzk::CallGraphNode']]],
   ['addfeltopadaptor_7',['AddFeltOpAdaptor',['../classllzk_1_1felt_1_1AddFeltOpAdaptor.html#a7f3f522bba4a1d3808fa3ab4afc7a599',1,'llzk::felt::AddFeltOpAdaptor']]],
