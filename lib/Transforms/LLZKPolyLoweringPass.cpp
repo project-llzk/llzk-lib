@@ -66,6 +66,22 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     });
   }
 
+  static bool valueDominatesUse(Value value, Operation *useOp) {
+    if (!useOp || llvm::isa<BlockArgument>(value)) {
+      return true;
+    }
+
+    Operation *defOp = value.getDefiningOp();
+    if (!defOp) {
+      return true;
+    }
+
+    // checkConstrainBodyIsStraightLine has already rejected multi-block or
+    // nested-region constrain bodies. Within that invariant, same-block order
+    // is a sufficient and exact dominance check for values introduced here.
+    return defOp->getBlock() == useOp->getBlock() && defOp->isBeforeInBlock(useOp);
+  }
+
   // Recursively compute degree of FeltOps SSA values
   unsigned getDegree(Value val, DenseMap<Value, unsigned> &memo) {
     if (auto it = memo.find(val); it != memo.end()) {
@@ -105,27 +121,39 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   Value lowerExpression(
-      Value val, StructDefOp structDef, FuncDefOp constrainFunc,
+      Value val, StructDefOp structDef, FuncDefOp constrainFunc, Operation *useOp,
       DenseMap<Value, unsigned> &degreeMemo, DenseMap<Value, Value> &rewrites,
       SmallVector<AuxAssignment> &auxAssignments
   ) {
-    if (rewrites.count(val)) {
-      return rewrites[val];
+    auto rewriteIt = rewrites.find(val);
+    if (rewriteIt != rewrites.end() && valueDominatesUse(rewriteIt->second, useOp)) {
+      return rewriteIt->second;
     }
+
+    auto cacheIdentityRewriteIfAbsent = [&]() {
+      if (!rewrites.contains(val)) {
+        rewrites[val] = val;
+      }
+    };
 
     unsigned degree = getDegree(val, degreeMemo);
     if (degree <= maxDegree) {
-      rewrites[val] = val;
+      // A cached replacement that does not dominate this use may still be the
+      // right replacement for later uses. Return the original value for this
+      // use without clobbering that scoped rewrite.
+      cacheIdentityRewriteIfAbsent();
       return val;
     }
 
     // Degree-neutral roots can still contain over-degree operands.
     auto lowerBinaryRoot = [&](auto op) -> Value {
       Value lhs = lowerExpression(
-          op.getLhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          op.getLhs(), structDef, constrainFunc, op.getOperation(), degreeMemo, rewrites,
+          auxAssignments
       );
       Value rhs = lowerExpression(
-          op.getRhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          op.getRhs(), structDef, constrainFunc, op.getOperation(), degreeMemo, rewrites,
+          auxAssignments
       );
 
       if (lhs != op.getLhs()) {
@@ -135,7 +163,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         op.getRhsMutable().set(rhs);
       }
       degreeMemo[val] = std::max(getDegree(lhs, degreeMemo), getDegree(rhs, degreeMemo));
-      rewrites[val] = val;
+      cacheIdentityRewriteIfAbsent();
       return val;
     };
 
@@ -149,24 +177,27 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
     if (auto negOp = val.getDefiningOp<NegFeltOp>()) {
       Value operand = lowerExpression(
-          negOp.getOperand(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          negOp.getOperand(), structDef, constrainFunc, negOp.getOperation(), degreeMemo, rewrites,
+          auxAssignments
       );
 
       if (operand != negOp.getOperand()) {
         negOp.getOperandMutable().set(operand);
       }
       degreeMemo[val] = getDegree(operand, degreeMemo);
-      rewrites[val] = val;
+      cacheIdentityRewriteIfAbsent();
       return val;
     }
 
     if (auto mulOp = val.getDefiningOp<MulFeltOp>()) {
       // Recursively lower operands first
       Value lhs = lowerExpression(
-          mulOp.getLhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          mulOp.getLhs(), structDef, constrainFunc, mulOp.getOperation(), degreeMemo, rewrites,
+          auxAssignments
       );
       Value rhs = lowerExpression(
-          mulOp.getRhs(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+          mulOp.getRhs(), structDef, constrainFunc, mulOp.getOperation(), degreeMemo, rewrites,
+          auxAssignments
       );
 
       unsigned lhsDeg = getDegree(lhs, degreeMemo);
@@ -246,7 +277,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
 
     // Unsupported roots are left unchanged.
-    rewrites[val] = val;
+    cacheIdentityRewriteIfAbsent();
     return val;
   }
 
@@ -256,7 +287,10 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       SmallVector<AuxAssignment> &auxAssignments
   ) {
     Value loweredVal =
-        lowerExpression(val, structDef, constrainFunc, degreeMemo, rewrites, auxAssignments);
+        lowerExpression(
+            val, structDef, constrainFunc, callOp.getOperation(), degreeMemo, rewrites,
+            auxAssignments
+        );
     DenseMap<Value, unsigned> checkMemo;
     if (getDegree(loweredVal, checkMemo) <= 1) {
       return loweredVal;
@@ -389,13 +423,15 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
         if (degreeLhs > maxDegree) {
           Value loweredExpr = lowerExpression(
-              lhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+              lhsOperand.get(), structDef, constrainFunc, constraintOp.getOperation(), degreeMemo,
+              rewrites, auxAssignments
           );
           lhsOperand.set(loweredExpr);
         }
         if (degreeRhs > maxDegree) {
           Value loweredExpr = lowerExpression(
-              rhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments
+              rhsOperand.get(), structDef, constrainFunc, constraintOp.getOperation(), degreeMemo,
+              rewrites, auxAssignments
           );
           rhsOperand.set(loweredExpr);
         }

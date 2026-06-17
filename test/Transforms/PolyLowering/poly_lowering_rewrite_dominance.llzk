@@ -1,0 +1,45 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" --verify-each %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @Child {
+    function.def @compute(%x: !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>, %x: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child : !struct.type<@Child>
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %cubeish = felt.mul %ab, %a : !felt.type, !felt.type
+      struct.writem %self[@out] = %cubeish : !struct.type<@Parent>, !felt.type
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>, %a: !felt.type, %b: !felt.type) {
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      function.call @Child::@constrain(%child, %ab) : (!struct.type<@Child>, !felt.type) -> ()
+      %cubeish = felt.mul %ab, %a : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@Parent>, !felt.type
+      constrain.eq %out, %cubeish : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Parent
+// CHECK-LABEL: function.def @constrain
+// CHECK:       %[[AB:.*]] = felt.mul %{{.*}}, %{{.*}} : !felt.type, !felt.type
+// CHECK:       %[[CHILD:.*]] = struct.readm %{{.*}}[@child] : <@Parent>, !struct.type<@Child>
+// CHECK:       %[[CALL_AUX:.*]] = struct.readm %{{.*}}[@__llzk_poly_lowering_pass_aux_member_{{[0-9]+}}] : <@Parent>, !felt.type
+// CHECK:       constrain.eq %[[CALL_AUX]], %[[AB]] : !felt.type, !felt.type
+// CHECK:       function.call @Child::@constrain(%[[CHILD]], %[[CALL_AUX]]) : (!struct.type<@Child>, !felt.type) -> ()
