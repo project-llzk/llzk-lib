@@ -194,3 +194,59 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CallOuterExplicitReturn {
+    function.def @compute(%arg0: !felt.type<"bn128">) -> !struct.type<@CallOuterExplicitReturn> {
+      %self = struct.new : !struct.type<@CallOuterExplicitReturn>
+      function.call @OuterExplicitReturn::@wrap<[?]>(%arg0) : (!felt.type<"bn128">) -> ()
+      function.return %self : !struct.type<@CallOuterExplicitReturn>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallOuterExplicitReturn>, %arg0: !felt.type<"bn128">) {
+      function.call @OuterExplicitReturn::@wrap<[?]>(%arg0) : (!felt.type<"bn128">) -> ()
+      function.return
+    }
+  }
+
+  poly.template @InnerExplicitReturn {
+    poly.param @Ret : !poly.tvar<@Ret>
+    poly.param @Arg : !poly.tvar<@Arg>
+
+    function.def @ret(%arg0: !poly.tvar<@Arg>) -> !poly.tvar<@Ret> {
+      %0 = poly.unifiable_cast %arg0 : (!poly.tvar<@Arg>) -> !poly.tvar<@Ret>
+      function.return %0 : !poly.tvar<@Ret>
+    }
+  }
+
+  poly.template @OuterExplicitReturn {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap(%arg0: !felt.type<"bn128">) {
+      %0 = function.call @InnerExplicitReturn::@ret<[!felt.type<"bn128">, ?]>(%arg0) : (!felt.type<"bn128">) -> !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @CallOuterExplicitReturn {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@CallOuterExplicitReturn> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterExplicitReturn>
+// CHECK-NEXT:        function.call @OuterExplicitReturn_f_wrap(%[[VAL_0]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@CallOuterExplicitReturn>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterExplicitReturn>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @OuterExplicitReturn_f_wrap(%[[VAL_3]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerExplicitReturn_f_f_ret(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_4]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterExplicitReturn_f_wrap(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @InnerExplicitReturn_f_f_ret(%[[VAL_6]]) : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

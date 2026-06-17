@@ -1055,6 +1055,16 @@ public:
     });
   }
 
+  Attribute convertAttr(Attribute attr) const {
+    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      Type convertedTy = convertType(tyAttr.getValue());
+      if (convertedTy != tyAttr.getValue()) {
+        return TypeAttr::get(convertedTy);
+      }
+    }
+    return convertIfPossible(attr);
+  }
+
   bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
   const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
 };
@@ -1152,7 +1162,8 @@ public:
         return WalkResult::advance();
       }
       FuncDefOp nestedTgt = nestedTgtOpt->get();
-      if (!llvm::isa<TemplateOp>(nestedTgt->getParentOp())) {
+      auto nestedTemplate = llvm::dyn_cast<TemplateOp>(nestedTgt->getParentOp());
+      if (!nestedTemplate) {
         return WalkResult::advance();
       }
 
@@ -1163,6 +1174,15 @@ public:
         auto resultTvar = llvm::dyn_cast<TypeVarType>(convertedResultTy);
         auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedResultTy);
         if (!resultTvar || !nestedTvar || resultTvar.getNameRef() != paramName) {
+          continue;
+        }
+        if (std::optional<Attribute> candidate = inferFromExplicitNestedCallParams(
+                nestedCall, nestedTemplate, nestedTvar.getNameRef(), tyConv
+            )) {
+          WalkResult candidateResult = noteCandidate(*candidate);
+          if (candidateResult.wasInterrupted()) {
+            return candidateResult;
+          }
           continue;
         }
         if (std::optional<Attribute> candidate = infer(nestedTgt, nestedTvar.getNameRef())) {
@@ -1180,6 +1200,28 @@ public:
       return std::nullopt;
     }
     return inferred;
+  }
+
+private:
+  std::optional<Attribute> inferFromExplicitNestedCallParams(
+      CallOp nestedCall, TemplateOp nestedTemplate, FlatSymbolRefAttr nestedParamName,
+      const FuncInstTypeConverter &tyConv
+  ) const {
+    ArrayAttr nestedCallParams = nestedCall.getTemplateParamsAttr();
+    if (isNullOrEmpty(nestedCallParams)) {
+      return std::nullopt;
+    }
+
+    for (auto [paramOp, attr] :
+         llvm::zip_equal(nestedTemplate.getConstOps<TemplateParamOp>(), nestedCallParams)) {
+      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+      if (paramName != nestedParamName) {
+        continue;
+      }
+      Attribute convertedAttr = tyConv.convertAttr(attr);
+      return isConcreteAttr(convertedAttr) ? std::make_optional(convertedAttr) : std::nullopt;
+    }
+    return std::nullopt;
   }
 };
 
