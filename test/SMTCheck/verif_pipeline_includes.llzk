@@ -1,0 +1,24 @@
+// RUN: llzk-opt --llzk-verif-to-smt --smt-pretty-print='entry=smt_verif_TopGate_entry' -o /dev/null %s | llzk-smt-check - | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @gate_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @LeafGate for @gate_target (%gate: i1) {
+    %true = arith.constant true
+    verif.require_compute %true
+    verif.ensure_compute %true
+  }
+
+  verif.contract @TopGate for @gate_target (%gate: i1) {
+    verif.include @LeafGate(%gate) : (i1) -> ()
+  }
+}
+
+// CHECK: pre: unsat (expected unsat)
+// CHECK-NEXT: target: unsat (expected unsat)
+// CHECK-NEXT: pre: unsat (expected unsat)
+// CHECK-NEXT: target: unsat (expected unsat)
+// CHECK-NEXT: post: unsat (expected unsat)
+// CHECK-NEXT: post: unsat (expected unsat)
