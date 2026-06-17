@@ -203,9 +203,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Mod1>} {
 // CHECK-NEXT:      struct.member @val : !felt.type
 // CHECK-NEXT:      function.def @compute(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Mod1> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@Mod1>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_13]][@val] : <@Mod1>, !felt.type
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_15]] : <@Mod1>, !felt.type
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_13]][@mod2] : <@Mod1>, !struct.type<@Mod2>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@val] : <@Mod2>, !felt.type
+// CHECK-NEXT:        %[[CHILD_SQ:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_1] = %[[CHILD_SQ]] : <@Mod1>, !felt.type
 // CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
 // CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_2] = %[[VAL_16]] : <@Mod1>, !felt.type
 // CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_16]], %[[VAL_16]] : !felt.type, !felt.type

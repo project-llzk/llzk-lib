@@ -1,0 +1,66 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" --verify-each %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @TableOffsetAux {
+    struct.member @x : !felt.type {column}
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@TableOffsetAux> {
+      %self = struct.new : !struct.type<@TableOffsetAux>
+      struct.writem %self[@x] = %x : !struct.type<@TableOffsetAux>, !felt.type
+      function.return %self : !struct.type<@TableOffsetAux>
+    }
+
+    function.def @constrain(%self: !struct.type<@TableOffsetAux>, %x: !felt.type) {
+      %prev = struct.readm %self[@x] : !struct.type<@TableOffsetAux>, !felt.type {tableOffset = -1 : index}
+      %sq = felt.mul %prev, %prev : !felt.type, !felt.type
+      %fourth = felt.mul %sq, %sq : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@TableOffsetAux>, !felt.type
+      constrain.eq %out, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @TableOffsetAux
+// CHECK-LABEL: function.def @compute
+// CHECK:       %[[SELF:.*]] = struct.new : <@TableOffsetAux>
+// CHECK-NOT:   struct.readm %[[SELF]][@x] : <@TableOffsetAux>, !felt.type{{$}}
+// CHECK:       struct.readm %[[SELF]][@x] : <@TableOffsetAux>, !felt.type {tableOffset = -1 : index}
+// CHECK:       struct.writem %[[SELF]][@__llzk_poly_lowering_pass_aux_member_0]
+// CHECK-LABEL: function.def @constrain
+// CHECK:       struct.readm {{.*}}[@x] : <@TableOffsetAux>, !felt.type {tableOffset = -1 : index}
+// CHECK:       struct.readm {{.*}}[@__llzk_poly_lowering_pass_aux_member_0] : <@TableOffsetAux>, !felt.type
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AffineOffsetAux {
+    struct.member @x : !felt.type {column}
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@AffineOffsetAux> {
+      %self = struct.new : !struct.type<@AffineOffsetAux>
+      struct.writem %self[@x] = %x : !struct.type<@AffineOffsetAux>, !felt.type
+      function.return %self : !struct.type<@AffineOffsetAux>
+    }
+
+    function.def @constrain(%self: !struct.type<@AffineOffsetAux>, %x: !felt.type) {
+      %idx = arith.constant 2 : index
+      %prev = struct.readm %self[@x] {()[%idx]} : !struct.type<@AffineOffsetAux>, !felt.type {tableOffset = affine_map<()[s0] -> (s0 - 1)>}
+      %sq = felt.mul %prev, %prev : !felt.type, !felt.type
+      %fourth = felt.mul %sq, %sq : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@AffineOffsetAux>, !felt.type
+      constrain.eq %out, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @AffineOffsetAux
+// CHECK-LABEL: function.def @compute
+// CHECK:       %[[SELF2:.*]] = struct.new : <@AffineOffsetAux>
+// CHECK:       %[[IDX:.*]] = arith.constant 2 : index
+// CHECK:       struct.readm %[[SELF2]][@x] {()[%[[IDX]]]} : <@AffineOffsetAux>, !felt.type {tableOffset = {{.*}}}
+// CHECK:       struct.writem %[[SELF2]][@__llzk_poly_lowering_pass_aux_member_{{[0-9]+}}]
+// CHECK-LABEL: function.def @constrain
+// CHECK:       struct.readm {{.*}}[@x] {()[%{{.*}}]} : <@AffineOffsetAux>, !felt.type {tableOffset = {{.*}}}
