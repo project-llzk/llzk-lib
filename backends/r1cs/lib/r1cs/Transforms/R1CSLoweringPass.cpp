@@ -340,7 +340,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(op);
           std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
-          MemberDefOp auxMember = addAuxMember(structDef, auxName);
+          MemberDefOp auxMember = addAuxMember(structDef, auxName, val.getType());
           Value aux = builder.create<MemberReadOp>(
               val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxMember.getNameAttr()
@@ -532,7 +532,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       // Entire linear combination was zero
       result = builder.create<r1cs::ConstOp>(
           loc, r1cs::LinearType::get(builder.getContext()),
-          r1cs::FeltAttr::get(builder.getContext(), 0)
+          r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
       );
     }
 
@@ -673,7 +673,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
-          MemberDefOp auxMember = addAuxMember(structDef, auxName);
+          MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
           Value aux = builder.create<MemberReadOp>(
               eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxMember.getNameAttr()

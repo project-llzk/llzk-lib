@@ -1,0 +1,4 @@
+fixed:
+  - Emit polynomial-lowering auxiliary members with the exact type of the materialized expression
+  - Emit all R1CS-lowering auxiliary members with the exact type of the materialized expression
+  - Emit synthesized zero R1CS linear-combination constants with a printable integer width
