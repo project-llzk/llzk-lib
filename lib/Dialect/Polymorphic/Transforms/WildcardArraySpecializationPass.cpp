@@ -898,6 +898,22 @@ public:
       return failure();
     }
 
+    StructType targetStructType = targetStruct.getType();
+    SmallVector<Type> newResultTypes;
+    if (targetFunc.nameIsConstrain()) {
+      StructType selfType = getAtIndex<StructType>(op.getArgOperands().getTypes(), 0);
+      if (!selfType) {
+        return failure();
+      }
+
+      std::string newStructName = buildWildcardSpecializationName(targetStruct.getSymName(), info);
+      SymbolRefAttr expectedSelfNameRef =
+          replaceLeafReference(targetStructType.getNameRef(), newStructName);
+      if (selfType.getNameRef() != expectedSelfNameRef) {
+        return failure();
+      }
+    }
+
     FailureOr<StructType> newStructTypeRes =
         getOrCreateSpecializedStruct(op, rewriter, symTables, targetStruct, info, tracker_);
     if (failed(newStructTypeRes)) {
@@ -905,13 +921,8 @@ public:
     }
     StructType newStructType = *newStructTypeRes;
 
-    SmallVector<Type> newResultTypes;
-    if (targetFunc.nameIsConstrain()) {
-      if (op.getArgOperands().empty() || op.getArgOperands().front().getType() != newStructType) {
-        return failure();
-      }
-    } else {
-      WildcardArrayTypeConverter tyConv(info.replacements, targetStruct.getType(), newStructType);
+    if (!targetFunc.nameIsConstrain()) {
+      WildcardArrayTypeConverter tyConv(info.replacements, targetStructType, newStructType);
       if (failed(tyConv.convertTypes(op.getResultTypes(), newResultTypes))) {
         return failure();
       }
