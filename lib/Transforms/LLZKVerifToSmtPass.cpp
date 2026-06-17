@@ -442,9 +442,9 @@ class ExprLowerer {
 public:
   /// Construct an expression lowerer that reuses previously lowered values.
   ExprLowerer(
-      LoweringContext &s, OpBuilder &b, DenseMap<Value, Value> &v, DenseMap<StringRef, Value> &s
+      LoweringContext &l, OpBuilder &b, DenseMap<Value, Value> &v, DenseMap<StringRef, Value> &s
   )
-      : state(s), builder(b), valueMap(v), selfMemberMap(s) {}
+      : state(l), builder(b), valueMap(v), selfMemberMap(s) {}
 
   /// Lower the given LLZK SSA value to an SMT-facing SSA value.
   FailureOr<Value> lower(Value value) {
