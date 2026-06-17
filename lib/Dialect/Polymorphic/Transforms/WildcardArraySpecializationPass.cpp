@@ -161,17 +161,19 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
 struct WildcardArraySpecializationInfo {
   DenseMap<ArrayType, ArrayType> replacements;
   SmallVector<std::pair<ArrayType, ArrayType>> ordered;
+  bool hasConflictingReplacements = false;
 
   bool empty() const { return ordered.empty(); }
 
   LogicalResult record(ArrayType oldTy, ArrayType newTy) {
+    ordered.emplace_back(oldTy, newTy);
     auto it = replacements.find(oldTy);
     if (it == replacements.end()) {
       replacements.try_emplace(oldTy, newTy);
-      ordered.emplace_back(oldTy, newTy);
       return success();
     }
-    return success(it->second == newTy);
+    hasConflictingReplacements |= it->second != newTy;
+    return success();
   }
 
   SmallVector<Attribute> getConcreteTypeAttrs() const {
@@ -183,6 +185,25 @@ struct WildcardArraySpecializationInfo {
     return attrs;
   }
 };
+
+static void updateFuncSignature(FuncDefOp func, FunctionType newFuncTy) {
+  FunctionType oldFuncTy = func.getFunctionType();
+  if (oldFuncTy == newFuncTy) {
+    return;
+  }
+
+  func.setFunctionType(newFuncTy);
+  Region &body = func.getFunctionBody();
+  if (body.empty()) {
+    return;
+  }
+
+  Block &entryBlock = body.front();
+  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs() && "function arity changed");
+  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
+    arg.setType(newTy);
+  }
+}
 
 /// Returns whether `type` contains an `array.type` with at least one dynamic
 /// dimension anywhere in the nested type structure.
@@ -708,6 +729,16 @@ static LogicalResult applyWildcardSpecializationConversions(
 }
 
 static LogicalResult applyWildcardSpecializationConversions(
+    FuncDefOp newFunc, FunctionType newFuncTy, const WildcardArraySpecializationInfo &info
+) {
+  updateFuncSignature(newFunc, newFuncTy);
+  if (!info.hasConflictingReplacements) {
+    return applyWildcardSpecializationConversions(newFunc, info);
+  }
+  return verifyNestedCallSymbols(newFunc);
+}
+
+static LogicalResult applyWildcardSpecializationConversions(
     StructDefOp newStruct, StructType oldStructType, StructType newStructType,
     const WildcardArraySpecializationInfo &info
 ) {
@@ -721,7 +752,7 @@ static LogicalResult applyWildcardSpecializationConversions(
 
 static FailureOr<SymbolRefAttr> getOrCreateSpecializedFreeFunc(
     CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp targetFunc,
-    const WildcardArraySpecializationInfo &info
+    const WildcardArraySpecializationInfo &info, FunctionType callSig
 ) {
   ModuleOp parentModule = getParentOfType<ModuleOp>(targetFunc);
   assert(parentModule && "free function must be nested in a module");
@@ -739,7 +770,7 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFreeFunc(
     newFunc = targetFunc.clone();
     newFunc.setSymName(newFuncName);
     symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(targetFunc));
-    if (failed(applyWildcardSpecializationConversions(newFunc, info))) {
+    if (failed(applyWildcardSpecializationConversions(newFunc, callSig, info))) {
       newFunc.erase();
       return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
         diag.append("failure while creating wildcard-specialized function '", newFuncName, '\'');
@@ -833,7 +864,7 @@ public:
 
     if (!targetFunc.isInStruct()) {
       FailureOr<SymbolRefAttr> newCalleeAttr =
-          getOrCreateSpecializedFreeFunc(op, rewriter, symTables, targetFunc, info);
+          getOrCreateSpecializedFreeFunc(op, rewriter, symTables, targetFunc, info, callSig);
       if (failed(newCalleeAttr)) {
         return failure();
       }

@@ -194,6 +194,31 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @takes_two(
+      %arg0: !array.type<? x !felt.type>,
+      %arg1: !array.type<? x !felt.type>) {
+    function.return
+  }
+
+  function.def @call_two_sizes(
+      %arg0: !array.type<1 x !felt.type>,
+      %arg1: !array.type<2 x !felt.type>) {
+    function.call @takes_two(%arg0, %arg1) : (!array.type<1 x !felt.type>, !array.type<2 x !felt.type>) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"takes_two_!a<f:1>_!a<f:2>"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_two_sizes(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) {
+// CHECK-NEXT:      function.call @"takes_two_!a<f:1>_!a<f:2>"(%[[VAL_2]], %[[VAL_3]]) : (!array.type<1 x !felt.type>, !array.type<2 x !felt.type>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   function.def @id(%arr: !array.type<? x !felt.type>) -> !array.type<? x !felt.type> {
     function.return %arr : !array.type<? x !felt.type>
   }
