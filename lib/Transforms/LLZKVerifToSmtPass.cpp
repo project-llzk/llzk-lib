@@ -53,6 +53,7 @@
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -724,28 +725,6 @@ FailureOr<LoweredSignature> LoweringContext::lowerContractSignature(ContractOp c
   return lowerCallableSignature(contract.getFunctionType(), contract);
 }
 
-/// Return `true` iff the contract contains compute-mode conditions.
-static bool contractUsesComputeTarget(ContractOp contract) {
-  bool usesCompute = false;
-  contract.walk([&](Operation *op) {
-    if (isa<RequireComputeOp, EnsureComputeOp>(op)) {
-      usesCompute = true;
-    }
-  });
-  return usesCompute;
-}
-
-/// Return `true` iff the contract contains constrain-mode conditions.
-static bool contractUsesConstrainTarget(ContractOp contract) {
-  bool usesConstrain = false;
-  contract.walk([&](Operation *op) {
-    if (isa<RequireConstrainOp, EnsureConstrainOp>(op)) {
-      usesConstrain = true;
-    }
-  });
-  return usesConstrain;
-}
-
 /// Seed lowered contract argument maps for ordinary args and flattened `%self` members.
 FailureOr<std::pair<DenseMap<Value, Value>, DenseMap<StringRef, Value>>>
 LoweringContext::seedContractArgumentMaps(ContractOp contract, Block *entry) {
@@ -893,8 +872,8 @@ LoweringContext::createStructTargetHelper(ModuleOp module, ContractOp contract) 
   }
   unsigned numFlattenedSelfMembers = members->size();
 
-  bool useCompute = contractUsesComputeTarget(contract);
-  bool useConstrain = contractUsesConstrainTarget(contract);
+  bool useCompute = walkContains<RequireComputeOp, EnsureComputeOp>(contract);
+  bool useConstrain = walkContains<RequireConstrainOp, EnsureConstrainOp>(contract);
   OpBuilder moduleBuilder = createModuleBuilder(module);
   std::string helperName = ("smt_verif_" + contract.getSymName() + "_target").str();
   auto helper = moduleBuilder.create<func::FuncOp>(
