@@ -59,6 +59,8 @@
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 
+#include <cstdint>
+
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
 #define GEN_PASS_DEF_FLATTENINGPASS
