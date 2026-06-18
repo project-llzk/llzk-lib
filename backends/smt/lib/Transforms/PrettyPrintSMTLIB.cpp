@@ -68,8 +68,9 @@ static std::string sanitizeSymbol(StringRef name) {
 }
 
 static std::string sortForType(Type type) {
-  return TypeSwitch<Type, std::string>(type).Case<llzk::smt::IntType>([](auto) { return "Int"; }
-  ).Case<llzk::smt::BoolType>([](auto) {
+  return TypeSwitch<Type, std::string>(type).Case<llzk::smt::IntType>([](auto) {
+    return "Int";
+  }).Case<llzk::smt::BoolType>([](auto) {
     return "Bool";
   }).Default([&](Type) -> std::string {
     llvm::report_fatal_error("unsupported SMTLIB sort in pretty printer");
@@ -476,8 +477,9 @@ private:
       constOp.getValue().toStringSigned(str);
       return str.str().str();
     })
-        .Case<llzk::smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); }
-        )
+        .Case<llzk::smt::EqOp>([&](auto exprOp) {
+      return buildSExpr("=", exprOp.getInputs(), ctx);
+    })
         .Case<llzk::smt::NotOp>([&](auto exprOp) {
       return buildSExpr("not", ValueRange {exprOp.getInput()}, ctx);
     })
