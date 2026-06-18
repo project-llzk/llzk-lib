@@ -784,22 +784,22 @@ public:
 
   LogicalResult
   matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto *typeConverter = getTypeConverter();
-    assert(typeConverter && "expected pod-array type converter");
+    auto *tyConv = getTypeConverter();
+    assert(tyConv && "expected pod-array type converter");
 
     FunctionType oldTy = op.getFunctionType();
     TypeConverter::SignatureConversion inputConversion(oldTy.getNumInputs());
-    if (failed(typeConverter->convertSignatureArgs(oldTy.getInputs(), inputConversion))) {
+    if (failed(tyConv->convertSignatureArgs(oldTy.getInputs(), inputConversion))) {
       return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod inputs");
     }
 
     SmallVector<Type> newResults;
-    if (failed(typeConverter->convertTypes(oldTy.getResults(), newResults))) {
+    if (failed(tyConv->convertTypes(oldTy.getResults(), newResults))) {
       return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod results");
     }
 
     if (!op.getBody().empty() &&
-        failed(rewriter.convertRegionTypes(&op.getBody(), *typeConverter, &inputConversion))) {
+        failed(rewriter.convertRegionTypes(&op.getBody(), *tyConv, &inputConversion))) {
       return rewriter.notifyMatchFailure(op, "failed to convert function body block arguments");
     }
 
@@ -872,11 +872,11 @@ public:
   LogicalResult matchAndRewrite(
       CallOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto *typeConverter = getTypeConverter();
-    assert(typeConverter && "expected pod-array type converter");
+    auto *tyConv = getTypeConverter();
+    assert(tyConv && "expected pod-array type converter");
 
     SmallVector<Type> newResultTypes;
-    if (failed(typeConverter->convertTypes(op.getResultTypes(), newResultTypes))) {
+    if (failed(tyConv->convertTypes(op.getResultTypes(), newResultTypes))) {
       return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod call results");
     }
 
