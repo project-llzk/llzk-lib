@@ -1,5 +1,4 @@
-// RUN: llzk-opt  -split-input-file --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root},llzk-inline-structs)' -verify-diagnostics %s | FileCheck %s
-// COM: This could be merged with `inline_structs_pass.llzk` once the issue with the default cleanup method of `llzk-flatten` is fixed (LLZK-303).
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root},llzk-inline-structs,llzk-unused-declaration-elim{remove-structs})' -verify-diagnostics %s | FileCheck %s
 
 // TESTS: Inlining after `llzk-flatten` pass removes struct parameters
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
@@ -54,13 +53,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -137,45 +138,48 @@ module attributes {llzk.main = !struct.type<@TMain::@Main>, llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: struct.def @TPair_f_77_Pair {
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@TPair_f_77_Pair> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_f_77_Pair>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_f_77_Pair>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    struct.member @"sub:!s<@TMakeGuess_77_MakeGuess>+dat" : !array.type<4 x !struct.type<@TPair_f_77_Pair>>
-// CHECK-NEXT:    function.def @compute() -> !struct.type<@TMain::@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = struct.new : <@TMain::@Main>
-// CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !struct.type<@TPair_f_77_Pair>>
-// CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V4]]] = %[[V6]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V3]]] = %[[V7]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V2]]] = %[[V8]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      array.write %[[V5]]{{\[}}%[[V1]]] = %[[V9]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:      struct.writem %[[V0]][@"sub:!s<@TMakeGuess_77_MakeGuess>+dat"] = %[[V5]] : <@TMain::@Main>, !array.type<4 x !struct.type<@TPair_f_77_Pair>>
-// CHECK-NEXT:      function.return %[[V0]] : !struct.type<@TMain::@Main>
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V10:[0-9a-zA-Z_\.]+]]: !struct.type<@TMain::@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V11:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V12:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V10]][@"sub:!s<@TMakeGuess_77_MakeGuess>+dat"] : <@TMain::@Main>, !array.type<4 x !struct.type<@TPair_f_77_Pair>>
-// CHECK-NEXT:      %[[V14:[0-9a-zA-Z_\.]+]] = array.len %[[V13]], %[[V11]] : <4 x !struct.type<@TPair_f_77_Pair>>
-// CHECK-NEXT:      scf.for %[[V15:[0-9a-zA-Z_\.]+]] = %[[V11]] to %[[V14]] step %[[V12]] {
-// CHECK-NEXT:        %[[V16:[0-9a-zA-Z_\.]+]] = array.read %[[V13]]{{\[}}%[[V15]]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
-// CHECK-NEXT:        function.call @TPair_f_77_Pair::@constrain(%[[V16]]) : (!struct.type<@TPair_f_77_Pair>) -> ()
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@TMain::@Main>} {
+// CHECK-NEXT:    struct.def @TPair_f_77_Pair {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_f_77_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_f_77_Pair>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TPair_f_77_Pair>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_f_77_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @TMain {
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        struct.member @"sub:!s<@TMakeGuess_77_MakeGuess>+dat" : !array.type<4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TMain::@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TMain::@Main>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_6]]] = %[[VAL_8]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_5]]] = %[[VAL_9]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_4]]] = %[[VAL_10]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TPair_f_77_Pair::@compute() : () -> !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          array.write %[[VAL_7]]{{\[}}%[[VAL_3]]] = %[[VAL_11]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@"sub:!s<@TMakeGuess_77_MakeGuess>+dat"] = %[[VAL_7]] : <@TMain::@Main>, !array.type<4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TMain::@Main>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@TMain::@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@"sub:!s<@TMakeGuess_77_MakeGuess>+dat"] : <@TMain::@Main>, !array.type<4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_15]], %[[VAL_13]] : <4 x !struct.type<@TPair_f_77_Pair>>
+// CHECK-NEXT:          scf.for %[[VAL_17:[0-9a-zA-Z_\.]+]] = %[[VAL_13]] to %[[VAL_16]] step %[[VAL_14]] {
+// CHECK-NEXT:            %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_15]]{{\[}}%[[VAL_17]]] : <4 x !struct.type<@TPair_f_77_Pair>>, !struct.type<@TPair_f_77_Pair>
+// CHECK-NEXT:            function.call @TPair_f_77_Pair::@constrain(%[[VAL_18]]) : (!struct.type<@TPair_f_77_Pair>) -> ()
+// CHECK-NEXT:          }
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
