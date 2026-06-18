@@ -92,6 +92,49 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @check_guard(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @GuardedPrePipeline for @check_guard (%gate: i1) {
+    %true = arith.constant true
+    scf.if %gate {
+      verif.require_compute %true
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:   function.def @check_guard(%[[ARG0_45:[0-9A-Za-z_\.]+]]: i1) {
+// CHECK-NEXT:     function.return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_check_guard(%[[ARG0_46:[0-9A-Za-z_\.]+]]: !smt.bool) {
+// CHECK-NEXT:     return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPrePipeline_pre(%[[ARG0_47:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     %[[TRUE_14:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     %[[IMPLIES_0:[0-9A-Za-z_\.]+]] = smt.implies %[[ARG0_47]], %[[TRUE_14]]
+// CHECK-NEXT:     return %[[IMPLIES_0]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPrePipeline_post(%[[ARG0_48:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     %[[TRUE_15:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     return %[[TRUE_15]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPrePipeline_target(%[[ARG0_49:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     call @smt_check_guard(%[[ARG0_49]]) : (!smt.bool) -> ()
+// CHECK-NEXT:     %[[TRUE_16:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     return %[[TRUE_16]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPrePipeline_entry(%[[ARG0_50:[0-9A-Za-z_\.]+]]: !smt.bool) {
+// CHECK:        %[[PRE_0:[0-9A-Za-z_\.]+]] = call @smt_verif_GuardedPrePipeline_pre(%[[ARG0_50]]) : (!smt.bool) -> !smt.bool
+// CHECK:        smt.assert %[[PRE_0]]
+// CHECK:        return
+// CHECK-NEXT:   }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ArrayBox {
     struct.member @left : !array.type<2 x !felt.type>
     struct.member @right : !array.type<2 x !felt.type>
@@ -659,3 +702,66 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     return
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang = "circom"} {
+  poly.template @LessThanPower {
+    poly.param @base
+
+    struct.def @LessThanPower {
+      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+
+      function.def @compute(%in: !felt.type<"bn128">) -> !struct.type<@LessThanPower::@LessThanPower<[@base]>> attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : !struct.type<@LessThanPower::@LessThanPower<[@base]>>
+        %base = poly.read_const @base : !felt.type<"bn128">
+        %shifted = felt.shr %in, %base : !felt.type<"bn128">, !felt.type<"bn128">
+        %zero = felt.const 0 : <"bn128">
+        %gt = bool.cmp gt(%shifted, %zero) : !felt.type<"bn128">, !felt.type<"bn128">
+        %out = scf.if %gt -> (!felt.type<"bn128">) {
+          %false = felt.const 0 : <"bn128">
+          scf.yield %false : !felt.type<"bn128">
+        } else {
+          %true = felt.const 1 : <"bn128">
+          scf.yield %true : !felt.type<"bn128">
+        }
+        struct.writem %self[@out] = %out : !struct.type<@LessThanPower::@LessThanPower<[@base]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@LessThanPower::@LessThanPower<[@base]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@LessThanPower::@LessThanPower<[@base]>>, %in: !felt.type<"bn128">) {
+        function.return
+      }
+    }
+
+    verif.contract @LessThanPowerContract for @LessThanPower::@LessThanPower (
+        %self: !struct.type<@LessThanPower::@LessThanPower<[@base]>>, %in: !felt.type<"bn128">
+    ) {
+      %base = poly.read_const @base : !felt.type<"bn128">
+      %out = struct.readm %self[@out] : !struct.type<@LessThanPower::@LessThanPower<[@base]>>, !felt.type<"bn128">
+      %two = felt.const 2 : <"bn128">
+      %limit = felt.pow %two, %base : !felt.type<"bn128">, !felt.type<"bn128">
+      %lt = bool.cmp lt(%in, %limit) : !felt.type<"bn128">, !felt.type<"bn128">
+      %expected = scf.if %lt -> (!felt.type<"bn128">) {
+        %one = felt.const 1 : <"bn128">
+        scf.yield %one : !felt.type<"bn128">
+      } else {
+        %zero = felt.const 0 : <"bn128">
+        scf.yield %zero : !felt.type<"bn128">
+      }
+      %ok = bool.cmp eq(%out, %expected) : !felt.type<"bn128">, !felt.type<"bn128">
+      verif.ensure_compute %ok
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @smt_LessThanPower_compute(
+// CHECK: smt.bv.lshr
+// CHECK: func.func @smt_verif_LessThanPowerContract_post(
+// CHECK: smt.int.div
+// CHECK: smt.ite
+// CHECK: func.func @smt_verif_LessThanPowerContract_target(
+// CHECK: call @smt_LessThanPower_compute(
+// CHECK-NOT: scf.if
+// CHECK-NOT: felt.shr
+// CHECK-NOT: felt.pow

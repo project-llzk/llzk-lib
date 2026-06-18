@@ -101,6 +101,274 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @ScalarFeltOps {
+    poly.param @shift
+
+    struct.def @Box {
+      struct.member @value : !felt.type<"bn128">
+
+      function.def @compute(%x: !felt.type<"bn128">) -> !struct.type<@ScalarFeltOps::@Box<[@shift]>> {
+        %self = struct.new : !struct.type<@ScalarFeltOps::@Box<[@shift]>>
+        struct.writem %self[@value] = %x : !struct.type<@ScalarFeltOps::@Box<[@shift]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@ScalarFeltOps::@Box<[@shift]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@ScalarFeltOps::@Box<[@shift]>>, %x: !felt.type<"bn128">) {
+        function.return
+      }
+    }
+
+    verif.contract @FeltOps for @ScalarFeltOps::@Box (
+        %self: !struct.type<@ScalarFeltOps::@Box<[@shift]>>, %x: !felt.type<"bn128">
+    ) {
+      %shift = poly.read_const @shift : !felt.type<"bn128">
+      %a = felt.uintdiv %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %b = felt.umod %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %c = felt.sintdiv %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %d = felt.smod %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %e = felt.neg %x : !felt.type<"bn128">
+      %f = felt.bit_and %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %g = felt.bit_or %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %h = felt.bit_xor %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %i = felt.bit_not %x : !felt.type<"bn128">
+      %j = felt.shl %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %k = felt.shr %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %l = felt.pow %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %m = felt.div %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %n = felt.inv %shift : !felt.type<"bn128">
+      %o = felt.add %a, %b : !felt.type<"bn128">, !felt.type<"bn128">
+      %p = felt.add %o, %c : !felt.type<"bn128">, !felt.type<"bn128">
+      %q = felt.add %p, %d : !felt.type<"bn128">, !felt.type<"bn128">
+      %r = felt.add %q, %e : !felt.type<"bn128">, !felt.type<"bn128">
+      %s = felt.add %r, %f : !felt.type<"bn128">, !felt.type<"bn128">
+      %t = felt.add %s, %g : !felt.type<"bn128">, !felt.type<"bn128">
+      %u = felt.add %t, %h : !felt.type<"bn128">, !felt.type<"bn128">
+      %v = felt.add %u, %i : !felt.type<"bn128">, !felt.type<"bn128">
+      %w = felt.add %v, %j : !felt.type<"bn128">, !felt.type<"bn128">
+      %x2 = felt.add %w, %k : !felt.type<"bn128">, !felt.type<"bn128">
+      %y2 = felt.add %x2, %l : !felt.type<"bn128">, !felt.type<"bn128">
+      %z2 = felt.add %y2, %m : !felt.type<"bn128">, !felt.type<"bn128">
+      %sum = felt.add %z2, %n : !felt.type<"bn128">, !felt.type<"bn128">
+      %ok = bool.cmp eq(%sum, %sum) : !felt.type<"bn128">, !felt.type<"bn128">
+      verif.ensure_compute %ok
+    }
+  }
+}
+
+// CHECK-LABEL: poly.template @ScalarFeltOps {
+// CHECK: func.func @smt_Box_compute(%[[BOX_X:[0-9A-Za-z_\.]+]]: !smt.int, %[[BOX_SHIFT:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK: func.func @smt_verif_FeltOps_post(
+// CHECK-SAME: %[[SELF:[0-9A-Za-z_\.]+]]: !smt.int, %[[X:[0-9A-Za-z_\.]+]]: !smt.int, %[[SHIFT:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: smt.int.div
+// CHECK: smt.int.mod
+// CHECK: smt.int.neg
+// CHECK: smt.int2bv
+// CHECK: smt.bv.and
+// CHECK: smt.bv.or
+// CHECK: smt.bv.xor
+// CHECK: smt.bv.not
+// CHECK: smt.bv.shl
+// CHECK: smt.bv.lshr
+// CHECK-NOT: smt.bv2int {{.*}} signed
+// CHECK: smt.declare_fun "felt_div_
+// CHECK: smt.declare_fun "felt_inv_
+// CHECK: func.func @smt_verif_FeltOps_target(%[[TARGET_SELF:[0-9A-Za-z_\.]+]]: !smt.int, %[[TARGET_X:[0-9A-Za-z_\.]+]]: !smt.int, %[[TARGET_SHIFT:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK: call @smt_Box_compute(%[[TARGET_X]], %[[TARGET_SHIFT]])
+// CHECK: func.func @smt_verif_FeltOps_entry(
+// CHECK: return
+// CHECK-NOT: felt.
+// CHECK-NOT: poly.read_const
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check_guard(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @GuardedPre for @check_guard (%gate: i1) {
+    %true = arith.constant true
+    scf.if %gate {
+      verif.require_compute %true
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:   function.def @check_guard(%[[ARG0:[0-9A-Za-z_\.]+]]: i1) {
+// CHECK-NEXT:     function.return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_check_guard(%[[ARG0_1:[0-9A-Za-z_\.]+]]: !smt.bool) {
+// CHECK-NEXT:     return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPre_pre(%[[ARG0_2:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     %[[TRUE:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     %[[IMPLIES:[0-9A-Za-z_\.]+]] = smt.implies %[[ARG0_2]], %[[TRUE]]
+// CHECK-NEXT:     return %[[IMPLIES]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPre_post(%[[ARG0_3:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     %[[TRUE_1:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     return %[[TRUE_1]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPre_target(%[[ARG0_4:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     call @smt_check_guard(%[[ARG0_4]]) : (!smt.bool) -> ()
+// CHECK-NEXT:     %[[TRUE_2:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     return %[[TRUE_2]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPre_entry(%[[ARG0_5:[0-9A-Za-z_\.]+]]: !smt.bool) {
+// CHECK-NEXT:     %[[PRE:[0-9A-Za-z_\.]+]] = call @smt_verif_GuardedPre_pre(%[[ARG0_5]]) : (!smt.bool) -> !smt.bool
+// CHECK-NEXT:     smt.push 1
+// CHECK-NEXT:     %[[NOT_PRE:[0-9A-Za-z_\.]+]] = smt.not %[[PRE]]
+// CHECK-NEXT:     smt.assert %[[NOT_PRE]]
+// CHECK-NEXT:     smt.check sat {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       %[[FALSE:[0-9A-Za-z_\.]+]] = arith.constant false
+// CHECK-NEXT:       bool.assert %[[FALSE]], "verification failed in GuardedPre pre: counterexample found"
+// CHECK-NEXT:     } unknown {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       %[[FALSE_1:[0-9A-Za-z_\.]+]] = arith.constant false
+// CHECK-NEXT:       bool.assert %[[FALSE_1]], "verification failed in GuardedPre pre: condition unprovable"
+// CHECK-NEXT:     } unsat {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       smt.assert %[[PRE]]
+// CHECK-NEXT:     }
+// CHECK-NEXT:     %[[TARGET:[0-9A-Za-z_\.]+]] = call @smt_verif_GuardedPre_target(%[[ARG0_5]]) : (!smt.bool) -> !smt.bool
+// CHECK-NEXT:     smt.push 1
+// CHECK-NEXT:     %[[NOT_TARGET:[0-9A-Za-z_\.]+]] = smt.not %[[TARGET]]
+// CHECK-NEXT:     smt.assert %[[NOT_TARGET]]
+// CHECK-NEXT:     smt.check sat {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       %[[FALSE_2:[0-9A-Za-z_\.]+]] = arith.constant false
+// CHECK-NEXT:       bool.assert %[[FALSE_2]], "verification failed in GuardedPre target: counterexample found"
+// CHECK-NEXT:     } unknown {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       %[[FALSE_3:[0-9A-Za-z_\.]+]] = arith.constant false
+// CHECK-NEXT:       bool.assert %[[FALSE_3]], "verification failed in GuardedPre target: condition unprovable"
+// CHECK-NEXT:     } unsat {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       smt.assert %[[TARGET]]
+// CHECK-NEXT:     }
+// CHECK-NEXT:     %[[POST:[0-9A-Za-z_\.]+]] = call @smt_verif_GuardedPre_post(%[[ARG0_5]]) : (!smt.bool) -> !smt.bool
+// CHECK-NEXT:     smt.push 1
+// CHECK-NEXT:     %[[NOT_POST:[0-9A-Za-z_\.]+]] = smt.not %[[POST]]
+// CHECK-NEXT:     smt.assert %[[NOT_POST]]
+// CHECK-NEXT:     smt.check sat {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       %[[FALSE_4:[0-9A-Za-z_\.]+]] = arith.constant false
+// CHECK-NEXT:       bool.assert %[[FALSE_4]], "verification failed in GuardedPre post: counterexample found"
+// CHECK-NEXT:     } unknown {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       %[[FALSE_5:[0-9A-Za-z_\.]+]] = arith.constant false
+// CHECK-NEXT:       bool.assert %[[FALSE_5]], "verification failed in GuardedPre post: condition unprovable"
+// CHECK-NEXT:     } unsat {
+// CHECK-NEXT:       smt.pop 1
+// CHECK-NEXT:       smt.assert %[[POST]]
+// CHECK-NEXT:     }
+// CHECK-NEXT:     return
+// CHECK-NEXT:   }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check_guard_else(%gate: i1, %fallback: i1) {
+    function.return
+  }
+
+  verif.contract @GuardedPreElse for @check_guard_else (%gate: i1, %fallback: i1) {
+    %true = arith.constant true
+    scf.if %gate {
+      verif.require_compute %true
+    } else {
+      verif.require_compute %fallback
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:   function.def @check_guard_else(%[[ARG0_6:[0-9A-Za-z_\.]+]]: i1, %[[ARG1_5:[0-9A-Za-z_\.]+]]: i1) {
+// CHECK-NEXT:     function.return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_check_guard_else(%[[ARG0_7:[0-9A-Za-z_\.]+]]: !smt.bool, %[[ARG1_6:[0-9A-Za-z_\.]+]]: !smt.bool) {
+// CHECK-NEXT:     return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_GuardedPreElse_pre(%[[ARG0_8:[0-9A-Za-z_\.]+]]: !smt.bool, %[[ARG1_7:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     %[[TRUE_3:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     %[[THEN_IMP:[0-9A-Za-z_\.]+]] = smt.implies %[[ARG0_8]], %[[TRUE_3]]
+// CHECK-NEXT:     %[[NOT_GATE:[0-9A-Za-z_\.]+]] = smt.not %[[ARG0_8]]
+// CHECK-NEXT:     %[[ELSE_IMP:[0-9A-Za-z_\.]+]] = smt.implies %[[NOT_GATE]], %[[ARG1_7]]
+// CHECK-NEXT:     %[[BOTH:[0-9A-Za-z_\.]+]] = smt.and %[[THEN_IMP]], %[[ELSE_IMP]]
+// CHECK-NEXT:     return %[[BOTH]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NOT: scf.if
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @check_nested_guard(%outer: i1, %inner: i1) {
+    function.return
+  }
+
+  verif.contract @NestedGuardedPre for @check_nested_guard (%outer: i1, %inner: i1) {
+    %true = arith.constant true
+    scf.if %outer {
+      scf.if %inner {
+        verif.require_compute %true
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:   function.def @check_nested_guard(%[[ARG0_9:[0-9A-Za-z_\.]+]]: i1, %[[ARG1_8:[0-9A-Za-z_\.]+]]: i1) {
+// CHECK-NEXT:     function.return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_check_nested_guard(%[[ARG0_10:[0-9A-Za-z_\.]+]]: !smt.bool, %[[ARG1_9:[0-9A-Za-z_\.]+]]: !smt.bool) {
+// CHECK-NEXT:     return
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_verif_NestedGuardedPre_pre(%[[ARG0_11:[0-9A-Za-z_\.]+]]: !smt.bool, %[[ARG1_10:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.bool {
+// CHECK-NEXT:     %[[TRUE_4:[0-9A-Za-z_\.]+]] = smt.constant true
+// CHECK-NEXT:     %[[INNER_IMP:[0-9A-Za-z_\.]+]] = smt.implies %[[ARG1_10]], %[[TRUE_4]]
+// CHECK-NEXT:     %[[OUTER_IMP:[0-9A-Za-z_\.]+]] = smt.implies %[[ARG0_11]], %[[INNER_IMP]]
+// CHECK-NEXT:     return %[[OUTER_IMP]] : !smt.bool
+// CHECK-NEXT:   }
+// CHECK-NOT: scf.if
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @select_value(%a: !felt.type, %b: !felt.type, %gate: i1) -> !felt.type {
+    %selected = scf.if %gate -> (!felt.type) {
+      scf.yield %a : !felt.type
+    } else {
+      scf.yield %b : !felt.type
+    }
+    function.return %selected : !felt.type
+  }
+
+  verif.contract @ResultIfTarget for @select_value (%a: !felt.type, %b: !felt.type, %gate: i1, %ret_value: !felt.type) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:   function.def @select_value(%[[ARG0_12:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG1_11:[0-9A-Za-z_\.]+]]: !felt.type, %[[ARG2_9:[0-9A-Za-z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:     %[[VAL_0_3:[0-9A-Za-z_\.]+]] = scf.if %[[ARG2_9]] -> (!felt.type) {
+// CHECK-NEXT:       scf.yield %[[ARG0_12]] : !felt.type
+// CHECK-NEXT:     } else {
+// CHECK-NEXT:       scf.yield %[[ARG1_11]] : !felt.type
+// CHECK-NEXT:     }
+// CHECK-NEXT:     function.return %[[VAL_0_3]] : !felt.type
+// CHECK-NEXT:   }
+// CHECK-NEXT:   func.func @smt_select_value(%[[ARG0_13:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1_12:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2_10:[0-9A-Za-z_\.]+]]: !smt.bool) -> !smt.int {
+// CHECK-NEXT:     %[[ITE:[0-9A-Za-z_\.]+]] = smt.ite %[[ARG2_10]], %[[ARG0_13]], %[[ARG1_12]] : !smt.int
+// CHECK-NEXT:     return %[[ITE]] : !smt.int
+// CHECK-NOT: scf.if
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @same(%a: !felt.type) -> !felt.type {
     function.return %a : !felt.type
   }
