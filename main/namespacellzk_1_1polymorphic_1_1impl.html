@@ -115,12 +115,15 @@ $(function(){initNavTree('namespacellzk_1_1polymorphic_1_1impl.html','',''); });
 Classes</h2></td></tr>
 <tr class="memitem:EmptyTemplateRemovalPassBase" id="r_EmptyTemplateRemovalPassBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html">EmptyTemplateRemovalPassBase</a></td></tr>
 <tr class="memitem:FlatteningPassBase" id="r_FlatteningPassBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html">FlatteningPassBase</a></td></tr>
+<tr class="memitem:WildcardArraySpecializationPassBase" id="r_WildcardArraySpecializationPassBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html">WildcardArraySpecializationPassBase</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a2e5cf6f63b6241bfdd29584246522989" id="r_a2e5cf6f63b6241bfdd29584246522989"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2e5cf6f63b6241bfdd29584246522989">createEmptyTemplateRemovalPass</a> ()</td></tr>
 <tr class="memitem:a955ff135daddc754effad52771cf78c7" id="r_a955ff135daddc754effad52771cf78c7"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a955ff135daddc754effad52771cf78c7">createFlatteningPass</a> ()</td></tr>
 <tr class="memitem:a084de07d158f08f97da63b2c1ea2c26f" id="r_a084de07d158f08f97da63b2c1ea2c26f"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a084de07d158f08f97da63b2c1ea2c26f">createFlatteningPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a> options)</td></tr>
+<tr class="memitem:ac8e53b3a5768255afb895c5259f00daf" id="r_ac8e53b3a5768255afb895c5259f00daf"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac8e53b3a5768255afb895c5259f00daf">createWildcardArraySpecializationPass</a> ()</td></tr>
+<tr class="memitem:ac7355b80fb85bd7bbab3f413dfedd80e" id="r_ac7355b80fb85bd7bbab3f413dfedd80e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac7355b80fb85bd7bbab3f413dfedd80e">createWildcardArraySpecializationPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html">WildcardArraySpecializationPassOptions</a> options)</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a2e5cf6f63b6241bfdd29584246522989" name="a2e5cf6f63b6241bfdd29584246522989"></a>
@@ -139,7 +142,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html#l00086">86</a> of file <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html">EmptyTemplateRemovalPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html#l00087">87</a> of file <a class="el" href="EmptyTemplateRemovalPass_8cpp_source.html">EmptyTemplateRemovalPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -158,7 +161,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00200">200</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00201">201</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -177,7 +180,45 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00204">204</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00205">205</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac8e53b3a5768255afb895c5259f00daf" name="ac8e53b3a5768255afb895c5259f00daf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8e53b3a5768255afb895c5259f00daf">&#9670;&#160;</a></span>createWildcardArraySpecializationPass() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::polymorphic::impl::createWildcardArraySpecializationPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00308">308</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac7355b80fb85bd7bbab3f413dfedd80e" name="ac7355b80fb85bd7bbab3f413dfedd80e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac7355b80fb85bd7bbab3f413dfedd80e">&#9670;&#160;</a></span>createWildcardArraySpecializationPass() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::polymorphic::impl::createWildcardArraySpecializationPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html">WildcardArraySpecializationPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00312">312</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
 
 </div>
 </div>

@@ -21,7 +21,7 @@ var searchData=
   ['array_20read_20_3a_3allzk_3a_3aarray_3a_3areadarrayop_18',['&lt;span class=&quot;tt&quot;&gt;array.read&lt;/span&gt; (llzk::array::ReadArrayOp)',['../dialects.html#arrayread-llzkarrayreadarrayop',1,'']]],
   ['array_20to_20scalar_19',['&lt;span class=&quot;tt&quot;&gt;-llzk-array-to-scalar&lt;/span&gt;',['../tools.html#autotoc_md-llzk-array-to-scalar',1,'']]],
   ['array_20write_20_3a_3allzk_3a_3aarray_3a_3awritearrayop_20',['&lt;span class=&quot;tt&quot;&gt;array.write&lt;/span&gt; (llzk::array::WriteArrayOp)',['../dialects.html#arraywrite-llzkarraywritearrayop',1,'']]],
-  ['arrays_21',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
+  ['arrays_21',['arrays',['../tools.html#autotoc_md-llzk-specialize-wildcard-arrays',1,'<span class="tt">-llzk-specialize-wildcard-arrays</span>'],['../syntax.html#pseudo-homogeneous',1,'Pseudo-homogeneous arrays']]],
   ['arraytype_22',['ArrayType',['../dialects.html#arraytype',1,'']]],
   ['assert_20_3a_3allzk_3a_3aboolean_3a_3aassertop_23',['&lt;span class=&quot;tt&quot;&gt;bool.assert&lt;/span&gt; (llzk::boolean::AssertOp)',['../dialects.html#boolassert-llzkbooleanassertop',1,'']]],
   ['attributes_24',['Attributes',['../dialects.html#attributes-3',1,'Attributes'],['../dialects.html#attributes-6',1,'Attributes'],['../dialects.html#attributes-8',1,'Attributes'],['../dialects.html#attributes-15',1,'Attributes'],['../dialects.html#attributes-19',1,'Attributes'],['../backend-dialects.html#attributes-34',1,'Attributes']]],

@@ -1118,7 +1118,8 @@ var hierarchy =
       [ "llzk::include::impl::InlineIncludesPassBase< DerivedT >", "classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html", null ],
       [ "llzk::pod::impl::PodToScalarPassBase< DerivedT >", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html", null ],
       [ "llzk::polymorphic::impl::EmptyTemplateRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", null ],
-      [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ]
+      [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ],
+      [ "llzk::polymorphic::impl::WildcardArraySpecializationPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", null ]
     ] ],
     [ "OpGeneratorData", "structOpGeneratorData.html", [
       [ "OpHeaderGenerator", "structOpHeaderGenerator.html", null ],
@@ -1567,6 +1568,7 @@ var hierarchy =
     [ "llzk::UnusedDeclarationEliminationPassOptions", "structllzk_1_1UnusedDeclarationEliminationPassOptions.html", null ],
     [ "llzk::ValueLess", "structllzk_1_1ValueLess.html", null ],
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", null ],
+    [ "llzk::polymorphic::WildcardArraySpecializationPassOptions", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html", null ],
     [ "llzk::witgen::WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", null ],
     [ "llzk::Within", "classllzk_1_1Within.html", null ],
     [ "llzk::array::detail::WriteArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1WriteArrayOpGenericAdaptorBase.html", [

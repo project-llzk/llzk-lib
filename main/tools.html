@@ -269,6 +269,14 @@ $(function(){initNavTree('tools.html','',''); });
                   </li>
                 </ul>
               </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-13">Options </a>
+                  </li>
+                </ul>
+              </li>
             </ul>
           </li>
           <li class="level3">
@@ -478,6 +486,14 @@ Options</h5>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
+</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-specialize-wildcard-arrays"></a>
+<span class="tt">-llzk-specialize-wildcard-arrays</span></h4>
+<p><em>Refine wildcard array casts and specialize concrete call targets</em></p>
+<p>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</p>
+<p>This pass is intended to run after <span class="tt">llzk-flatten</span>. It iterates to a fixpoint so newly-refined cast result types can enable further callable specialization in later iterations.</p>
+<h5 class="doxsection"><a class="anchor" id="options-13"></a>
+Options</h5>
+<div class="fragment"><div class="line">-max-iter : Maximum number of iterations before the pass gives up reaching a fixpoint.</div>
 </div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
 Validation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-validate-member-writes"></a>

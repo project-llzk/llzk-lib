@@ -373,7 +373,8 @@ var annotated_dup =
         ] ],
         [ "impl", "namespacellzk_1_1polymorphic_1_1impl.html", [
           [ "EmptyTemplateRemovalPassBase", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase" ],
-          [ "FlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase" ]
+          [ "FlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase" ],
+          [ "WildcardArraySpecializationPassBase", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase" ]
         ] ],
         [ "ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", "classllzk_1_1polymorphic_1_1ApplyMapOp" ],
         [ "ApplyMapOpAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor.html", "classllzk_1_1polymorphic_1_1ApplyMapOpAdaptor" ],
@@ -397,6 +398,7 @@ var annotated_dup =
         [ "UnifiableCastOp", "classllzk_1_1polymorphic_1_1UnifiableCastOp.html", "classllzk_1_1polymorphic_1_1UnifiableCastOp" ],
         [ "UnifiableCastOpAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOpAdaptor.html", "classllzk_1_1polymorphic_1_1UnifiableCastOpAdaptor" ],
         [ "UnifiableCastOpGenericAdaptor", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor" ],
+        [ "WildcardArraySpecializationPassOptions", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions" ],
         [ "YieldOp", "classllzk_1_1polymorphic_1_1YieldOp.html", "classllzk_1_1polymorphic_1_1YieldOp" ],
         [ "YieldOpAdaptor", "classllzk_1_1polymorphic_1_1YieldOpAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpAdaptor" ],
         [ "YieldOpGenericAdaptor", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor" ]

@@ -198,7 +198,25 @@ $(function(){initNavTree('Polymorphic_2Transforms_2TransformationPasses_8td_sour
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  ];</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>}</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>#endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>def WildcardArraySpecializationPass</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    : LLZKPass&lt;&quot;llzk-specialize-wildcard-arrays&quot;&gt; {</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  let summary =</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>      &quot;Refine wildcard array casts and specialize concrete call targets&quot;;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  let description = [{</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    Refines `poly.unifiable_cast` results when wildcard `array.type` dimensions can be replaced</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    with concrete integer sizes from the input type. Then specializes free functions, extern</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    This pass is intended to run after `llzk-flatten`. It iterates to a fixpoint so newly-refined</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    cast result types can enable further callable specialization in later iterations.</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  }];</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  let options = [Option&lt;&quot;iterationLimit&quot;, &quot;max-iter&quot;, &quot;unsigned&quot;,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                        /* default */ &quot;1000&quot;,</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                        &quot;Maximum number of iterations before the pass gives up &quot;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>                        &quot;reaching a fixpoint.&quot;&gt;];</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>}</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>#endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

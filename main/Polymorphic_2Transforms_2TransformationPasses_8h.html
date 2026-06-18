@@ -123,7 +123,7 @@ Include dependency graph for TransformationPasses.h:</div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2Transforms_2TransformationPasses_8h__dep__incl.svg" width="1287" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2Transforms_2TransformationPasses_8h__dep__incl.svg" width="1595" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">Go to the source code of this file.</a></p>
@@ -131,6 +131,7 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3AFlatteningPassOptions" id="r_llzk_3A_3Apolymorphic_3A_3AFlatteningPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">llzk::polymorphic::FlatteningPassOptions</a></td></tr>
+<tr class="memitem:llzk_3A_3Apolymorphic_3A_3AWildcardArraySpecializationPassOptions" id="r_llzk_3A_3Apolymorphic_3A_3AWildcardArraySpecializationPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html">llzk::polymorphic::WildcardArraySpecializationPassOptions</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -143,16 +144,21 @@ Macros</h2></td></tr>
 <tr class="memitem:a50fd6f4ec277edd1b62f2efe4a35eede" id="r_a50fd6f4ec277edd1b62f2efe4a35eede"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a50fd6f4ec277edd1b62f2efe4a35eede">GEN_PASS_REGISTRATION</a></td></tr>
 <tr class="memitem:a0846c994ff4bb1149ba7336b344d7617" id="r_a0846c994ff4bb1149ba7336b344d7617"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0846c994ff4bb1149ba7336b344d7617">GEN_PASS_DECL_EMPTYTEMPLATEREMOVALPASS</a></td></tr>
 <tr class="memitem:a447537d09c3fbdef041493fabe55ec78" id="r_a447537d09c3fbdef041493fabe55ec78"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a447537d09c3fbdef041493fabe55ec78">GEN_PASS_DECL_FLATTENINGPASS</a></td></tr>
+<tr class="memitem:a97fe1ac86f3b4f88da0449564517c815" id="r_a97fe1ac86f3b4f88da0449564517c815"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a97fe1ac86f3b4f88da0449564517c815">GEN_PASS_DECL_WILDCARDARRAYSPECIALIZATIONPASS</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a4167d219fba917ab844dcf3b9814c544" id="r_a4167d219fba917ab844dcf3b9814c544"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">llzk::polymorphic::createEmptyTemplateRemovalPass</a> ()</td></tr>
 <tr class="memitem:ab875e94fd92641f81305cf2406f52c7b" id="r_ab875e94fd92641f81305cf2406f52c7b"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">llzk::polymorphic::createFlatteningPass</a> ()</td></tr>
 <tr class="memitem:ad393f359fc8e0f9993c776221b5d31fd" id="r_ad393f359fc8e0f9993c776221b5d31fd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd">llzk::polymorphic::createFlatteningPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1FlatteningPassOptions.html">FlatteningPassOptions</a> options)</td></tr>
+<tr class="memitem:ae49a61882b349f3a4009b320d315f897" id="r_ae49a61882b349f3a4009b320d315f897"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ae49a61882b349f3a4009b320d315f897">llzk::polymorphic::createWildcardArraySpecializationPass</a> ()</td></tr>
+<tr class="memitem:aefda83d8c08e1e89fb91992a6044b3ad" id="r_aefda83d8c08e1e89fb91992a6044b3ad"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#aefda83d8c08e1e89fb91992a6044b3ad">llzk::polymorphic::createWildcardArraySpecializationPass</a> (<a class="el" href="structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html">WildcardArraySpecializationPassOptions</a> options)</td></tr>
 <tr class="memitem:a701cdc0a80b6262758b8c7863da288e4" id="r_a701cdc0a80b6262758b8c7863da288e4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#a701cdc0a80b6262758b8c7863da288e4">llzk::polymorphic::registerEmptyTemplateRemovalPass</a> ()</td></tr>
 <tr class="memitem:af3e6bd4fd9d374d353819b1906c21a91" id="r_af3e6bd4fd9d374d353819b1906c21a91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#af3e6bd4fd9d374d353819b1906c21a91">llzk::polymorphic::registerEmptyTemplateRemovalPassPass</a> ()</td></tr>
 <tr class="memitem:a04ac74004f60ea0b82cce0b453d838f8" id="r_a04ac74004f60ea0b82cce0b453d838f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#a04ac74004f60ea0b82cce0b453d838f8">llzk::polymorphic::registerFlatteningPass</a> ()</td></tr>
 <tr class="memitem:aa2967e64982a04611c249dd98ce6a986" id="r_aa2967e64982a04611c249dd98ce6a986"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#aa2967e64982a04611c249dd98ce6a986">llzk::polymorphic::registerFlatteningPassPass</a> ()</td></tr>
+<tr class="memitem:ad65d2782d8402b08fab510fc1b60b844" id="r_ad65d2782d8402b08fab510fc1b60b844"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ad65d2782d8402b08fab510fc1b60b844">llzk::polymorphic::registerWildcardArraySpecializationPass</a> ()</td></tr>
+<tr class="memitem:afef387130f95becad67e7e438d377142" id="r_afef387130f95becad67e7e438d377142"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#afef387130f95becad67e7e438d377142">llzk::polymorphic::registerWildcardArraySpecializationPassPass</a> ()</td></tr>
 <tr class="memitem:ac756baa8d3f96f499ebf79ef4c91d018" id="r_ac756baa8d3f96f499ebf79ef4c91d018"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ac756baa8d3f96f499ebf79ef4c91d018">llzk::polymorphic::registerTransformationPasses</a> ()</td></tr>
 </table>
 <a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
@@ -201,6 +207,22 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00007">7</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a97fe1ac86f3b4f88da0449564517c815" name="a97fe1ac86f3b4f88da0449564517c815"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97fe1ac86f3b4f88da0449564517c815">&#9670;&#160;</a></span>GEN_PASS_DECL_WILDCARDARRAYSPECIALIZATIONPASS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GEN_PASS_DECL_WILDCARDARRAYSPECIALIZATIONPASS</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00008">8</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
