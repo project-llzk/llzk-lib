@@ -1240,11 +1240,11 @@ FailureOr<InvariantTargetOpInterface> InvariantOp::getTarget() {
   }
 
   if (matches.size() == 0) {
-    return emitError() << "no invariant target with label \"" << getLoopName()
+    return emitOpError() << "no invariant target with label \"" << getLoopName()
                        << "\" found in contract target " << target->get().getNameAttr();
   }
   if (matches.size() > 1) {
-    return emitError() << "ambiguous label \"" << getLoopName() << "\" matched " << matches.size()
+    return emitOpError() << "ambiguous label \"" << getLoopName() << "\" matched " << matches.size()
                        << " invariant targets in contract target " << target->get().getNameAttr();
   }
   return matches[0];

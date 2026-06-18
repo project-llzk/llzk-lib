@@ -543,7 +543,6 @@ def InvariantOp
   }];
 
   let arguments = (ins StrAttr:$loop_name, TypeArrayAttr:$loop_arg_types);
-  let results = (outs);
 
   let regions = (region SizedRegion<1>:$region);
 
@@ -582,7 +581,6 @@ class InvariantInnerOp<string mnemonic, list<Trait> traits = []>
   }];
 
   let arguments = (ins LLZK_FeltType:$value);
-  let results = (outs);
 
   let extraClassDefinition = [{
     // This side effect models "program termination". Based on
@@ -615,9 +613,6 @@ def StepOp : VerifDialectOp<
     and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.
   }];
 
-  let arguments = (ins);
-  let results = (outs);
-
   let regions = (region SizedRegion<1>:$region);
 
   let extraClassDefinition = [{
@@ -641,7 +636,6 @@ def StepYieldOp
   }];
 
   let arguments = (ins I1:$value);
-  let results = (outs);
 
   let assemblyFormat = "$value attr-dict";
 }
