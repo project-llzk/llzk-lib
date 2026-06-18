@@ -1,0 +1,23 @@
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_CheckShift_entry' -o /dev/null %s | FileCheck --check-prefix=SHR %s
+
+module attributes {llzk.lang} {
+  function.def @shr_target(%x: !felt.type<"bn128">, %shift: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+    %result = felt.shr %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+    function.return %result : !felt.type<"bn128">
+  }
+
+  verif.contract @CheckShift for @shr_target (
+      %x: !felt.type<"bn128">, %shift: !felt.type<"bn128">, %ret: !felt.type<"bn128">
+  ) {
+    %true = arith.constant true
+    verif.require_compute %true
+    verif.ensure_compute %true
+  }
+}
+
+// SHR: (set-logic ALL)
+// SHR-NEXT: ; root: smt_verif_CheckShift_entry
+// SHR: ; check-sat stage=target expect=unsat
+// SHR: (ubv_to_int
+// SHR: (bvlshr
+// SHR: ((_ int_to_bv 254)

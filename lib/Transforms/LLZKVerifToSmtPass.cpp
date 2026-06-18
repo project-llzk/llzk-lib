@@ -132,6 +132,12 @@ static FailureOr<bool> isInThenRegion(scf::IfOp ifOp, Operation *descendant) {
   return failure();
 }
 
+static bool templateHasLowerableDefs(polymorphic::TemplateOp templateOp) {
+  return llvm::any_of(templateOp.getBodyRegion().front().getOperations(), [](Operation &op) {
+    return isa<StructDefOp, FuncDefOp>(op);
+  });
+}
+
 /// Stores the helper symbol names created for a struct target.
 struct TargetHelperNames {
   /// Symbol name of the lowered `@compute` helper.
@@ -1906,7 +1912,7 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
 
     SmallVector<TemplateOp> emptyTemplates;
     module.walk([&](TemplateOp templateOp) {
-      if (templateOp.getBodyRegion().front().empty()) {
+      if (!templateHasLowerableDefs(templateOp)) {
         emptyTemplates.push_back(templateOp);
       }
     });

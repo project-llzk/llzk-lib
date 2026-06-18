@@ -11,6 +11,7 @@
 #include "smt/Transforms/SMTPasses.h"
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/SMT/IR/SMTAttributes.h"
 #include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/SMT/IR/SMTTypes.h"
@@ -68,9 +69,11 @@ static std::string sanitizeSymbol(StringRef name) {
 }
 
 static std::string sortForType(Type type) {
-  return TypeSwitch<Type, std::string>(type).Case<llzk::smt::IntType>([](auto) { return "Int"; }
-  ).Case<llzk::smt::BoolType>([](auto) {
-    return "Bool";
+  return TypeSwitch<Type, std::string>(type)
+      .Case<llzk::smt::IntType>([](auto) { return "Int"; })
+      .Case<llzk::smt::BoolType>([](auto) { return "Bool"; })
+      .Case<llzk::smt::BitVectorType>([](auto type) {
+    return "(_ BitVec " + std::to_string(type.getWidth()) + ")";
   }).Default([&](Type) -> std::string {
     llvm::report_fatal_error("unsupported SMTLIB sort in smt-to-smtlib");
   });
@@ -186,6 +189,7 @@ private:
         .Case<arith::ConstantOp>([&](auto constOp) { return emitArithConstant(constOp, ctx); })
         .Case<llzk::smt::BoolConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
         .Case<llzk::smt::IntConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
+        .Case<llzk::smt::BVConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
         .Case<llzk::smt::EqOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::NotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::AndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
@@ -200,6 +204,14 @@ private:
         .Case<llzk::smt::IntDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::IntModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::IntCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::Int2BVOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BV2IntOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVAndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVXOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVNotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVShlOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVLShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::boolean::AssertOp>([&](auto assertOp) {
       return assertOp.emitError(
           "boolean.assert is only supported inside smt.check failure "
@@ -476,6 +488,9 @@ private:
       constOp.getValue().toStringSigned(str);
       return str.str().str();
     })
+        .Case<llzk::smt::BVConstantOp>([](auto constOp) {
+      return constOp.getValue().getValueAsString();
+    })
         .Case<llzk::smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); }
         )
         .Case<llzk::smt::NotOp>([&](auto exprOp) {
@@ -515,8 +530,27 @@ private:
     })
         .Case<llzk::smt::IntModOp>([&](auto exprOp) {
       return buildSExpr("mod", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
-    }).Case<llzk::smt::IntCmpOp>([&](auto cmpOp) {
-      return buildCmpExpr(cmpOp, ctx);
+    })
+        .Case<llzk::smt::IntCmpOp>([&](auto cmpOp) { return buildCmpExpr(cmpOp, ctx); })
+        .Case<llzk::smt::Int2BVOp>([&](auto exprOp) { return buildInt2BVExpr(exprOp, ctx); })
+        .Case<llzk::smt::BV2IntOp>([&](auto exprOp) { return buildBV2IntExpr(exprOp, ctx); })
+        .Case<llzk::smt::BVAndOp>([&](auto exprOp) {
+      return buildSExpr("bvand", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
+    })
+        .Case<llzk::smt::BVOrOp>([&](auto exprOp) {
+      return buildSExpr("bvor", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
+    })
+        .Case<llzk::smt::BVXOrOp>([&](auto exprOp) {
+      return buildSExpr("bvxor", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
+    })
+        .Case<llzk::smt::BVNotOp>([&](auto exprOp) {
+      return buildSExpr("bvnot", ValueRange {exprOp.getInput()}, ctx);
+    })
+        .Case<llzk::smt::BVShlOp>([&](auto exprOp) {
+      return buildSExpr("bvshl", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
+    })
+        .Case<llzk::smt::BVLShrOp>([&](auto exprOp) {
+      return buildSExpr("bvlshr", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     }).Case<arith::ConstantOp>([&](auto constOp) {
       return buildArithConstantExpr(constOp);
     }).Default([&](Operation *unknownOp) {
@@ -555,6 +589,27 @@ private:
       break;
     }
     return buildSExpr(pred, ValueRange {cmpOp.getLhs(), cmpOp.getRhs()}, ctx);
+  }
+
+  FailureOr<std::string> buildInt2BVExpr(llzk::smt::Int2BVOp op, EvalContext &ctx) {
+    auto input = lookup(op.getInput(), ctx);
+    if (failed(input)) {
+      return failure();
+    }
+    auto resultType = cast<llzk::smt::BitVectorType>(op.getResult().getType());
+    return "((_ int_to_bv " + std::to_string(resultType.getWidth()) + ") " + *input + ")";
+  }
+
+  FailureOr<std::string> buildBV2IntExpr(llzk::smt::BV2IntOp op, EvalContext &ctx) {
+    if (op.getIsSigned()) {
+      op.emitOpError("signed smt.bv2int is not supported by smt-to-smtlib");
+      return failure();
+    }
+    auto input = lookup(op.getInput(), ctx);
+    if (failed(input)) {
+      return failure();
+    }
+    return "(ubv_to_int " + *input + ")";
   }
 
   FailureOr<std::string> buildSExpr(StringRef opName, ValueRange operands, EvalContext &ctx) {
