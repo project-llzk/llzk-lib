@@ -178,7 +178,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       // Optimization: If lhs == rhs, factor it only once
       if (lhs == rhs && eraseMul) {
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
-        MemberDefOp auxMember = addAuxMember(structDef, auxName);
+        MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
 
         auto auxVal = builder.create<MemberReadOp>(
             lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
@@ -206,7 +206,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
         // Create auxiliary member for toFactor
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
-        MemberDefOp auxMember = addAuxMember(structDef, auxName);
+        MemberDefOp auxMember = addAuxMember(structDef, auxName, toFactor.getType());
 
         // Read back as MemberReadOp (new SSA value)
         auto auxVal = builder.create<MemberReadOp>(
@@ -265,7 +265,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     // Callees only receive SSA values, not the caller expression tree, so nonlinear
     // call arguments must be represented by an auxiliary member read.
     std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
-    MemberDefOp auxMember = addAuxMember(structDef, auxName);
+    MemberDefOp auxMember = addAuxMember(structDef, auxName, loweredVal.getType());
 
     OpBuilder builder(callOp);
     Value selfVal = constrainFunc.getSelfValueFromConstrain();
