@@ -1112,29 +1112,6 @@ void InvariantOp::build(
 }
 
 namespace {
-static FailureOr<InvariantTargetOpInterface> verifyLabel(
-    ContractTargetOpInterface target, StringRef label,
-    llvm::function_ref<InFlightDiagnostic()> emitError
-) {
-  SmallVector<InvariantTargetOpInterface> matches;
-  for (auto invariantTarget : target.getLoops()) {
-    auto targetLabel = invariantTarget.getLabel();
-    if (succeeded(targetLabel) && *targetLabel == label) {
-      matches.push_back(invariantTarget);
-    }
-  }
-
-  if (matches.size() == 0) {
-    return emitError() << "no invariant target with label \"" << label
-                       << "\" found in contract target " << target.getNameAttr();
-  }
-  if (matches.size() > 1) {
-    return emitError() << "ambiguous label \"" << label << "\" matched " << matches.size()
-                       << " invariant targets in contract target " << target.getNameAttr();
-  }
-  return matches[0];
-}
-
 static LogicalResult verifyArgTypes(InvariantTargetOpInterface target, InvariantOp *op) {
   auto targetArgTypes = target.getArgumentTypes();
   auto declaredTypes = op->getLoopArgTypes().getValue();
@@ -1171,13 +1148,7 @@ static LogicalResult verifyArgTypes(InvariantTargetOpInterface target, Invariant
 } // namespace
 
 LogicalResult InvariantOp::verify() {
-  FailureOr<SymbolLookupResult<ContractTargetOpInterface>> target =
-      getParentContract().getTargetOp();
-  if (failed(target)) {
-    return failure();
-  }
-  auto invariantTarget =
-      verifyLabel(target->get(), getLoopName(), [this]() { return emitOpError(); });
+  auto invariantTarget = getTarget();
   if (failed(invariantTarget)) {
     return failure();
   }
@@ -1253,6 +1224,30 @@ void InvariantOp::print(OpAsmPrinter &p) {
 
 ContractOp InvariantOp::getParentContract() {
   return this->getOperation()->getParentOfType<ContractOp>();
+}
+
+FailureOr<InvariantTargetOpInterface> InvariantOp::getTarget() {
+  auto target = getParentContract().getTargetOp();
+  if (failed(target)) {
+    return failure();
+  }
+  SmallVector<InvariantTargetOpInterface> matches;
+  for (auto invariantTarget : target->get().getLoops()) {
+    auto targetLabel = invariantTarget.getLabel();
+    if (succeeded(targetLabel) && *targetLabel == getLoopName()) {
+      matches.push_back(invariantTarget);
+    }
+  }
+
+  if (matches.size() == 0) {
+    return emitError() << "no invariant target with label \"" << getLoopName()
+                       << "\" found in contract target " << target->get().getNameAttr();
+  }
+  if (matches.size() > 1) {
+    return emitError() << "ambiguous label \"" << getLoopName() << "\" matched " << matches.size()
+                       << " invariant targets in contract target " << target->get().getNameAttr();
+  }
+  return matches[0];
 }
 
 } // namespace llzk::verif

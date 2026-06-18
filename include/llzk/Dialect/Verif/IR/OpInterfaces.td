@@ -83,12 +83,9 @@ def ContractTarget : OpInterface<"ContractTargetOpInterface", [Symbol]> {
       [{Gets the ops that can be targeted by invariant ops.}],
       "::llvm::SmallVector<::llzk::verif::InvariantTargetOpInterface>",
       "getLoops", (ins), [{
-                        ::mlir::SmallVector<::llzk::verif::InvariantTargetOpInterface> targets;
-                        $_op->walk([&targets](::llzk::verif::InvariantTargetOpInterface target) {
-                            targets.push_back(target);
-                          });
-                        return targets;
-                      }]>];
+        auto op = $_op; // walkCollect expects an l-value but the expansion of $_op is not.
+        return walkCollect<::llzk::verif::InvariantTargetOpInterface>(op);
+      }]>];
 
   let extraClassDeclaration = [{
     /// Emulates the static method with the same name found in operations.

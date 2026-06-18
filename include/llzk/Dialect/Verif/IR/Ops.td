@@ -502,6 +502,44 @@ def InvariantOp
   let summary = "loop invariant definition operation";
   let description = [{
     Defines an invariant for a loop inside the target of a contract.
+
+    The targeted loop op must implement the `InvariantTargetOpInterface`.
+    This interface is already implemented by the `scf.while` and `scf.for` 
+    operations. The loop name is defined on either of those ops with a 
+    string attribute named `loop_label`.
+
+    The arguments of the body must match those declared by the target op. 
+    In the case of `scf.for` the control values must also be block arguments 
+    in the following order: lower bound, induction variable, upper bound, and stride.
+
+    Example:
+    ```
+    module attributes {llzk.lang} {
+      struct.def @Top {
+        function.def @compute() -> !struct.type<@Top> {
+          %self = struct.new : !struct.type<@Top>
+          %c0 = arith.constant 0 : index 
+          %c10 = arith.constant 10 : index 
+          %c1 = arith.constant 1  : index 
+          %0 = felt.const  5
+          %1 = scf.for %iv = %c0 to %c10 step %c1 iter_args(%2 = %0) -> !felt.type {
+            scf.yield %2 : !felt.type
+          } {loop_label = "loopA"}
+          function.return %self : !struct.type<@Top>
+        }
+        function.def @constrain(%self: !struct.type<@Top>)  {
+          function.return
+        }
+      }
+
+      verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+        verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index, %extra: !felt.type) {
+          %true = arith.constant  true
+          verif.require_compute %true
+        }
+      }
+    }
+    ```
   }];
 
   let arguments = (ins StrAttr:$loop_name, TypeArrayAttr:$loop_arg_types);
@@ -520,6 +558,8 @@ def InvariantOp
   let extraClassDeclaration = [{
     /// Returns the contract operation that contains this invariant.
     ::llzk::verif::ContractOp getParentContract();
+    /// Returns the loop target.
+    ::mlir::FailureOr<::llzk::verif::InvariantTargetOpInterface> getTarget();
   }];
 }
 
