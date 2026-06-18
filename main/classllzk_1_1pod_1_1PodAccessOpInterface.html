@@ -128,12 +128,10 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0f4a17c2054e117ceb4db32837a2e705" id="r_a0f4a17c2054e117ceb4db32837a2e705"><td class="memItemLeft" align="right" valign="top">::mlir::FlatSymbolRefAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0f4a17c2054e117ceb4db32837a2e705">getRecordNameAttr</a> ()</td></tr>
-<tr class="memdesc:a0f4a17c2054e117ceb4db32837a2e705"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the record name attribute from the pod access op.  <br /></td></tr>
+<tr class="memitem:a8cd1ba0717ea2b8ad22e7d191a02b479" id="r_a8cd1ba0717ea2b8ad22e7d191a02b479"><td class="memItemLeft" align="right" valign="top">::mlir::StringAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8cd1ba0717ea2b8ad22e7d191a02b479">getRecordNameAttr</a> ()</td></tr>
+<tr class="memdesc:a8cd1ba0717ea2b8ad22e7d191a02b479"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the record name attribute from the pod access op.  <br /></td></tr>
 <tr class="memitem:ae5c23d76b12308892856b9b61acda57d" id="r_ae5c23d76b12308892856b9b61acda57d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae5c23d76b12308892856b9b61acda57d">isRead</a> ()</td></tr>
 <tr class="memdesc:ae5c23d76b12308892856b9b61acda57d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write.  <br /></td></tr>
-<tr class="memitem:acb4bb255264cf71da7be0b7edf1f6705" id="r_acb4bb255264cf71da7be0b7edf1f6705"><td class="memItemLeft" align="right" valign="top">inline ::mlir::StringAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acb4bb255264cf71da7be0b7edf1f6705">getRecordNameAsStringAttr</a> ()</td></tr>
-<tr class="memdesc:acb4bb255264cf71da7be0b7edf1f6705"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the record name as an attribute suitable for destructuring indices.  <br /></td></tr>
 <tr class="memitem:ad4566a9ac7d07595ef5dc988c1d183ce" id="r_ad4566a9ac7d07595ef5dc988c1d183ce"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4566a9ac7d07595ef5dc988c1d183ce">canRewire</a> (const ::mlir::DestructurableMemorySlot &amp;slot, ::llvm::SmallPtrSetImpl&lt;::mlir::Attribute &gt; &amp;usedIndices, ::mlir::SmallVectorImpl&lt;::mlir::MemorySlot &gt; &amp;mustBeSafelyUsed, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
 <tr class="memdesc:ad4566a9ac7d07595ef5dc988c1d183ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by companion interface DestructurableAccessorOpInterface / SROA pass.  <br /></td></tr>
 <tr class="memitem:a6b77a97c171542dbee0490801711bbaf" id="r_a6b77a97c171542dbee0490801711bbaf"><td class="memItemLeft" align="right" valign="top">::mlir::DeletionKind&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6b77a97c171542dbee0490801711bbaf">rewire</a> (const ::mlir::DestructurableMemorySlot &amp;slot, ::llvm::DenseMap&lt;::mlir::Attribute, ::mlir::MemorySlot &gt; &amp;subslots, ::mlir::OpBuilder &amp;builder, const ::mlir::DataLayout &amp;dataLayout)</td></tr>
@@ -182,7 +180,7 @@ Public Member Functions</h2></td></tr>
 <p>Required by companion interface DestructurableAccessorOpInterface / SROA pass. </p>
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00465">465</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00466">466</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -253,47 +251,18 @@ Public Member Functions</h2></td></tr>
 
 <p>Gets the type of the referenced pod. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html#l00152">152</a> of file <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html#l00147">147</a> of file <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
-<a id="acb4bb255264cf71da7be0b7edf1f6705" name="acb4bb255264cf71da7be0b7edf1f6705"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acb4bb255264cf71da7be0b7edf1f6705">&#9670;&#160;</a></span>getRecordNameAsStringAttr()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">inline ::mlir::StringAttr llzk::pod::PodAccessOpInterface::getRecordNameAsStringAttr </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Gets the record name as an attribute suitable for destructuring indices. </p>
-
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html#l00123">123</a> of file <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
-
-</div>
-</div>
-<a id="a0f4a17c2054e117ceb4db32837a2e705" name="a0f4a17c2054e117ceb4db32837a2e705"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0f4a17c2054e117ceb4db32837a2e705">&#9670;&#160;</a></span>getRecordNameAttr()</h2>
+<a id="a8cd1ba0717ea2b8ad22e7d191a02b479" name="a8cd1ba0717ea2b8ad22e7d191a02b479"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cd1ba0717ea2b8ad22e7d191a02b479">&#9670;&#160;</a></span>getRecordNameAttr()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mlir::FlatSymbolRefAttr llzk::pod::PodAccessOpInterface::getRecordNameAttr </td>
+          <td class="memname">mlir::StringAttr llzk::pod::PodAccessOpInterface::getRecordNameAttr </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -351,7 +320,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html#l00141">141</a> of file <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html#l00136">136</a> of file <a class="el" href="POD_2IR_2OpInterfaces_8h_8inc_source.html">OpInterfaces.h.inc</a>.</p>
 
 </div>
 </div>
@@ -387,7 +356,7 @@ Public Member Functions</h2></td></tr>
 <p>Required by companion interface DestructurableAccessorOpInterface / SROA pass. </p>
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00483">483</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00484">484</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

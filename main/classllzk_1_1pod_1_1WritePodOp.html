@@ -144,9 +144,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3f00435fff2f4cf3d2b1823a77a54cc7" id="r_a3f00435fff2f4cf3d2b1823a77a54cc7"><td class="memItemLeft" align="right" valign="top">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3f00435fff2f4cf3d2b1823a77a54cc7">getODSResultIndexAndLength</a> (unsigned index)</td></tr>
 <tr class="memitem:a032e663e0b208c9c1197590b15a28e5c" id="r_a032e663e0b208c9c1197590b15a28e5c"><td class="memItemLeft" align="right" valign="top">::mlir::Operation::result_range&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a032e663e0b208c9c1197590b15a28e5c">getODSResults</a> (unsigned index)</td></tr>
 <tr class="memitem:abd62d93abcff720ea665b84d255965f7" id="r_abd62d93abcff720ea665b84d255965f7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abd62d93abcff720ea665b84d255965f7">writeProperties</a> (::mlir::DialectBytecodeWriter &amp;writer)</td></tr>
-<tr class="memitem:a1d73ebd820e0cbb24a0621e663bc05d7" id="r_a1d73ebd820e0cbb24a0621e663bc05d7"><td class="memItemLeft" align="right" valign="top">::mlir::FlatSymbolRefAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d73ebd820e0cbb24a0621e663bc05d7">getRecordNameAttr</a> ()</td></tr>
+<tr class="memitem:a42a801ff066eeef0bd069d37117c20e1" id="r_a42a801ff066eeef0bd069d37117c20e1"><td class="memItemLeft" align="right" valign="top">::mlir::StringAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a42a801ff066eeef0bd069d37117c20e1">getRecordNameAttr</a> ()</td></tr>
 <tr class="memitem:ad5b52f5e311886f08c344600ce223e86" id="r_ad5b52f5e311886f08c344600ce223e86"><td class="memItemLeft" align="right" valign="top">::llvm::StringRef&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad5b52f5e311886f08c344600ce223e86">getRecordName</a> ()</td></tr>
-<tr class="memitem:a2330182c7b6b3e032147ed928c1ea3c2" id="r_a2330182c7b6b3e032147ed928c1ea3c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2330182c7b6b3e032147ed928c1ea3c2">setRecordNameAttr</a> (::mlir::FlatSymbolRefAttr attr)</td></tr>
+<tr class="memitem:adbcfa4b06cb258e2d0a8be2de89a5b84" id="r_adbcfa4b06cb258e2d0a8be2de89a5b84"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adbcfa4b06cb258e2d0a8be2de89a5b84">setRecordNameAttr</a> (::mlir::StringAttr attr)</td></tr>
 <tr class="memitem:a5f77b6861908de15665ff9ee72fbbe9e" id="r_a5f77b6861908de15665ff9ee72fbbe9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5f77b6861908de15665ff9ee72fbbe9e">setRecordName</a> (::llvm::StringRef attrValue)</td></tr>
 <tr class="memitem:abbc19c0fb7ce2b214f9612e4cdb09ef5" id="r_abbc19c0fb7ce2b214f9612e4cdb09ef5"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abbc19c0fb7ce2b214f9612e4cdb09ef5">verifyInvariantsImpl</a> ()</td></tr>
 <tr class="memitem:a3c671b5c1118bd5557b3d25f078812c2" id="r_a3c671b5c1118bd5557b3d25f078812c2"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3c671b5c1118bd5557b3d25f078812c2">verifyInvariants</a> ()</td></tr>
@@ -188,9 +188,9 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:af4d45cb944b4bf6c35ab356c96d99248" id="r_af4d45cb944b4bf6c35ab356c96d99248"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af4d45cb944b4bf6c35ab356c96d99248">setInherentAttr</a> (<a class="el" href="#a6e4fe7e90e0d8dea0dd55e587f9592e6">Properties</a> &amp;prop, llvm::StringRef name, mlir::Attribute value)</td></tr>
 <tr class="memitem:ad60e0f95d85d11edfc492ed46f92162d" id="r_ad60e0f95d85d11edfc492ed46f92162d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad60e0f95d85d11edfc492ed46f92162d">populateInherentAttrs</a> (::mlir::MLIRContext *ctx, const <a class="el" href="#a6e4fe7e90e0d8dea0dd55e587f9592e6">Properties</a> &amp;prop, ::mlir::NamedAttrList &amp;attrs)</td></tr>
 <tr class="memitem:a46fb49fe64771426c8a0936bfdcf8d33" id="r_a46fb49fe64771426c8a0936bfdcf8d33"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a46fb49fe64771426c8a0936bfdcf8d33">verifyInherentAttrs</a> (::mlir::OperationName opName, ::mlir::NamedAttrList &amp;attrs, llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError)</td></tr>
-<tr class="memitem:a32e39114f815a230b825a24fda8e466b" id="r_a32e39114f815a230b825a24fda8e466b"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a32e39114f815a230b825a24fda8e466b">readProperties</a> (::mlir::DialectBytecodeReader &amp;reader, ::mlir::OperationState &amp;state)</td></tr>
-<tr class="memitem:afa0a0c895578f8c08c7535754ef7d112" id="r_afa0a0c895578f8c08c7535754ef7d112"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa0a0c895578f8c08c7535754ef7d112">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value pod_ref, ::mlir::FlatSymbolRefAttr record_name, ::mlir::Value value)</td></tr>
-<tr class="memitem:acacfa27b20c92a934f6b3380c3e88c17" id="r_acacfa27b20c92a934f6b3380c3e88c17"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acacfa27b20c92a934f6b3380c3e88c17">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value pod_ref, ::mlir::FlatSymbolRefAttr record_name, ::mlir::Value value)</td></tr>
+<tr class="memitem:a50da8a397cf3c05217720916228092af" id="r_a50da8a397cf3c05217720916228092af"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a50da8a397cf3c05217720916228092af">readProperties</a> (::mlir::DialectBytecodeReader &amp;reader, ::mlir::OperationState &amp;state)</td></tr>
+<tr class="memitem:a2ae8b56030c54d3f771b69568cce353d" id="r_a2ae8b56030c54d3f771b69568cce353d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2ae8b56030c54d3f771b69568cce353d">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value pod_ref, ::mlir::StringAttr record_name, ::mlir::Value value)</td></tr>
+<tr class="memitem:a60a89ace7f230ffdd752a6ca1d4a8aa3" id="r_a60a89ace7f230ffdd752a6ca1d4a8aa3"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a60a89ace7f230ffdd752a6ca1d4a8aa3">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value pod_ref, ::mlir::StringAttr record_name, ::mlir::Value value)</td></tr>
 <tr class="memitem:a5e59049cc031ff7303f583dbabb748c4" id="r_a5e59049cc031ff7303f583dbabb748c4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e59049cc031ff7303f583dbabb748c4">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::Value pod_ref, ::llvm::StringRef record_name, ::mlir::Value value)</td></tr>
 <tr class="memitem:acda2b71bd877d0df46af552f66895627" id="r_acda2b71bd877d0df46af552f66895627"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acda2b71bd877d0df46af552f66895627">build</a> (::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::Value pod_ref, ::llvm::StringRef record_name, ::mlir::Value value)</td></tr>
 <tr class="memitem:a493d0175ccdc966208e57f438f4e9555" id="r_a493d0175ccdc966208e57f438f4e9555"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a493d0175ccdc966208e57f438f4e9555">build</a> (::mlir::OpBuilder &amp;, ::mlir::OperationState &amp;odsState, ::mlir::TypeRange resultTypes, ::mlir::ValueRange operands, ::llvm::ArrayRef&lt;::mlir::NamedAttribute &gt; attributes={})</td></tr>
@@ -309,7 +309,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01038">1038</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01014">1014</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -360,12 +360,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01030">1030</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01006">1006</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="acacfa27b20c92a934f6b3380c3e88c17" name="acacfa27b20c92a934f6b3380c3e88c17"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acacfa27b20c92a934f6b3380c3e88c17">&#9670;&#160;</a></span>build() <span class="overload">[3/5]</span></h2>
+<a id="a60a89ace7f230ffdd752a6ca1d4a8aa3" name="a60a89ace7f230ffdd752a6ca1d4a8aa3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60a89ace7f230ffdd752a6ca1d4a8aa3">&#9670;&#160;</a></span>build() <span class="overload">[3/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -396,7 +396,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>, </td>
+          <td class="paramtype">::mlir::StringAttr</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -411,7 +411,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01016">1016</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00992">992</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -457,12 +457,12 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01024">1024</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01000">1000</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="afa0a0c895578f8c08c7535754ef7d112" name="afa0a0c895578f8c08c7535754ef7d112"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afa0a0c895578f8c08c7535754ef7d112">&#9670;&#160;</a></span>build() <span class="overload">[5/5]</span></h2>
+<a id="a2ae8b56030c54d3f771b69568cce353d" name="a2ae8b56030c54d3f771b69568cce353d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ae8b56030c54d3f771b69568cce353d">&#9670;&#160;</a></span>build() <span class="overload">[5/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -488,7 +488,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>, </td>
+          <td class="paramtype">::mlir::StringAttr</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -503,7 +503,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01010">1010</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00986">986</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -528,7 +528,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01254">1254</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01230">1230</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -563,7 +563,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01184">1184</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01160">1160</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -598,7 +598,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01217">1217</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01193">1193</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -625,7 +625,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00958">958</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00946">946</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -688,7 +688,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00963">963</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00951">951</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -937,7 +937,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00942">942</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00930">930</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -956,12 +956,12 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01001">1001</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00977">977</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a1d73ebd820e0cbb24a0621e663bc05d7" name="a1d73ebd820e0cbb24a0621e663bc05d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1d73ebd820e0cbb24a0621e663bc05d7">&#9670;&#160;</a></span>getRecordNameAttr()</h2>
+<a id="a42a801ff066eeef0bd069d37117c20e1" name="a42a801ff066eeef0bd069d37117c20e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a42a801ff066eeef0bd069d37117c20e1">&#9670;&#160;</a></span>getRecordNameAttr()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -970,7 +970,7 @@ template&lt;typename RangeT&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">::mlir::FlatSymbolRefAttr llzk::pod::WritePodOp::getRecordNameAttr </td>
+          <td class="memname">::mlir::StringAttr llzk::pod::WritePodOp::getRecordNameAttr </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -1072,7 +1072,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableAllocationOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01211">1211</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01187">1187</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1147,7 +1147,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01239">1239</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01215">1215</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1168,7 +1168,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01201">1201</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01177">1177</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1189,7 +1189,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01244">1244</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01220">1220</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1220,7 +1220,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01086">1086</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01062">1062</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1256,7 +1256,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00976">976</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00964">964</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1275,12 +1275,12 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01151">1151</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01127">1127</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a32e39114f815a230b825a24fda8e466b" name="a32e39114f815a230b825a24fda8e466b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a32e39114f815a230b825a24fda8e466b">&#9670;&#160;</a></span>readProperties()</h2>
+<a id="a50da8a397cf3c05217720916228092af" name="a50da8a397cf3c05217720916228092af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a50da8a397cf3c05217720916228092af">&#9670;&#160;</a></span>readProperties()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1289,7 +1289,7 @@ template&lt;typename RangeT&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">llvm::LogicalResult llzk::pod::WritePodOp::readProperties </td>
+          <td class="memname">LogicalResult llzk::pod::WritePodOp::readProperties </td>
           <td>(</td>
           <td class="paramtype">::mlir::DialectBytecodeReader &amp;</td>          <td class="paramname"><span class="paramname"><em>reader</em></span>, </td>
         </tr>
@@ -1306,7 +1306,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00989">989</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00562">562</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1346,7 +1346,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01231">1231</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01207">1207</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1381,7 +1381,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by DestructurableAllocationOpInterface / SROA pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01193">1193</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01169">1169</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1417,7 +1417,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00969">969</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00957">957</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1453,7 +1453,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00919">919</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00907">907</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1472,12 +1472,12 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01006">1006</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00982">982</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
-<a id="a2330182c7b6b3e032147ed928c1ea3c2" name="a2330182c7b6b3e032147ed928c1ea3c2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2330182c7b6b3e032147ed928c1ea3c2">&#9670;&#160;</a></span>setRecordNameAttr()</h2>
+<a id="adbcfa4b06cb258e2d0a8be2de89a5b84" name="adbcfa4b06cb258e2d0a8be2de89a5b84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbcfa4b06cb258e2d0a8be2de89a5b84">&#9670;&#160;</a></span>setRecordNameAttr()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1488,7 +1488,7 @@ template&lt;typename RangeT&gt; </div>
         <tr>
           <td class="memname">void llzk::pod::WritePodOp::setRecordNameAttr </td>
           <td>(</td>
-          <td class="paramtype">::mlir::FlatSymbolRefAttr</td>          <td class="paramname"><span class="paramname"><em>attr</em></span></td><td>)</td>
+          <td class="paramtype">::mlir::StringAttr</td>          <td class="paramname"><span class="paramname"><em>attr</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -1520,7 +1520,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by PromotableMemOpInterface / mem2reg pass. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01206">1206</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01182">1182</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1541,7 +1541,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by <a class="el" href="classllzk_1_1DiscardableAllocationAccessorOpInterface.html">DiscardableAllocationAccessorOpInterface</a> / unused allocation cleanup. </p>
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01249">1249</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01225">1225</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1560,7 +1560,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00525">525</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00571">571</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1596,7 +1596,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00980">980</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00968">968</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1615,7 +1615,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01080">1080</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01056">1056</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1634,7 +1634,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01056">1056</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l01032">1032</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1653,7 +1653,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html#l00996">996</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2IR_2Ops_8cpp_source.html#l00567">567</a> of file <a class="el" href="POD_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

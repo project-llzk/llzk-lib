@@ -1,7 +1,5 @@
 var NAVTREEINDEX81 =
 {
-"namespacellzk_1_1verif.html#a5779cd4460ca024c3161ff72a10eb3ce":[10,0,4,20,28],
-"namespacellzk_1_1verif.html#a6c6e9c2237d93cab449bd123c18f10b2":[10,0,4,20,39],
 "namespacellzk_1_1verif.html#a6f399ab88c68b5d90aeb54490666d7e1":[10,0,4,20,29],
 "namespacellzk_1_1verif.html#a7dbe51b1fe29c482165d73cfe5082010":[10,0,4,20,33],
 "namespacellzk_1_1verif.html#ab5b1ba23977eeade15c06246fe2f0f01":[10,0,4,20,40],
@@ -249,5 +247,7 @@ var NAVTREEINDEX81 =
 "structGenStringFromOpPieces.html#a5210bcfde43f1cd02faca3d68b12ddd1":[12,0,48,5],
 "structGenStringFromOpPieces.html#a9ab080f1e911816d3109ecf326cc00e3":[12,0,48,7],
 "structGenStringFromOpPieces.html#aa6eae1441dcb57ca7e03ab5fbf32f33a":[12,0,48,0],
-"structGenStringFromOpPieces.html#ac1bd030faf81b1f3850e45e8d1ab2acb":[12,0,48,3]
+"structGenStringFromOpPieces.html#ac1bd030faf81b1f3850e45e8d1ab2acb":[12,0,48,3],
+"structGenStringFromOpPieces.html#ac656495290e6a304544e59c3d07144a7":[12,0,48,10],
+"structGenStringFromOpPieces.html#ad7155b93cbfed5fa6bcfe65d11e3e2b6":[12,0,48,2]
 };

@@ -1,7 +1,5 @@
 var NAVTREEINDEX47 =
 {
-"classllzk_1_1polymorphic_1_1ConstReadOp.html#a60c04e65d5121612cac06742790fb93c":[10,0,4,16,5,13],
-"classllzk_1_1polymorphic_1_1ConstReadOp.html#a60c04e65d5121612cac06742790fb93c":[12,0,1,13,5,13],
 "classllzk_1_1polymorphic_1_1ConstReadOp.html#a60f8639261fe1fabfca7323f9219a372":[10,0,4,16,5,7],
 "classllzk_1_1polymorphic_1_1ConstReadOp.html#a60f8639261fe1fabfca7323f9219a372":[12,0,1,13,5,7],
 "classllzk_1_1polymorphic_1_1ConstReadOp.html#a703a4658ccc3afbce068b366fdef4612":[10,0,4,16,5,2],
@@ -249,5 +247,7 @@ var NAVTREEINDEX47 =
 "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html#ae03b9983d28accfe8e1b1e61236b8a10":[10,0,4,16,15,2],
 "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html#ae03b9983d28accfe8e1b1e61236b8a10":[12,0,1,13,15,2],
 "classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html#ae85fb29fd7042badc7559ddfc4f1fa15":[10,0,4,16,15,3],
-"classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html#ae85fb29fd7042badc7559ddfc4f1fa15":[12,0,1,13,15,3]
+"classllzk_1_1polymorphic_1_1TemplateOpGenericAdaptor.html#ae85fb29fd7042badc7559ddfc4f1fa15":[12,0,1,13,15,3],
+"classllzk_1_1polymorphic_1_1TemplateParamOp.html":[10,0,4,16,16],
+"classllzk_1_1polymorphic_1_1TemplateParamOp.html":[12,0,1,13,16]
 };

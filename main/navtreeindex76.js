@@ -1,7 +1,5 @@
 var NAVTREEINDEX76 =
 {
-"dialects.html#operands-22":[7,4,0,7,0],
-"dialects.html#operands-23":[7,4,0,8,0],
 "dialects.html#operands-24":[7,4,0,9,0],
 "dialects.html#operands-25":[7,4,0,10,0],
 "dialects.html#operands-26":[7,4,0,11,0],
@@ -249,5 +247,7 @@ var NAVTREEINDEX76 =
 "dir_bdf09b3438fca8149b1e9f527c8c0fd1.html":[13,0,3,3,8,0],
 "dir_bea58845932c67eea4be1c8906b26c72.html":[13,0,0,0,0,2,2,0],
 "dir_bf1c9d5f0a4fbcc96c8bd057e52371fc.html":[13,0,0,0,0,2,15],
-"dir_c02e2f89181cb759595c63d15e2688c5.html":[13,0,0,0,0,2,13]
+"dir_c02e2f89181cb759595c63d15e2688c5.html":[13,0,0,0,0,2,13],
+"dir_c2490ce7b8342dca046463bb1b105ace.html":[13,0,0,0,0,2,4,0],
+"dir_c298ce2707b4cc7f338c5c0280243548.html":[13,0,3,1,0]
 };

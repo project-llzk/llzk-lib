@@ -348,40 +348,42 @@ $(function(){initNavTree('POD_2IR_2Ops_8td_source.html','',''); });
 <div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>  }];</div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span> </div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  let arguments = (ins Arg&lt;LLZK_PODType, &quot;the pod to read from&quot;&gt;:$pod_ref,</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>      FlatSymbolRefAttr:$record_name);</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>      StrAttr:$record_name);</div>
 <div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  let results = (outs AnyLLZKType:$result);</div>
 <div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  let assemblyFormat = [{</div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    $pod_ref `[` custom&lt;RecordName&gt;($record_name) `]` `:` type($pod_ref) `,` type($result) attr-dict</div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  }];</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  let hasVerifier = 1;</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>}</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>def LLZK_WritePodOp : ScalarPODAccessOp&lt;&quot;write&quot;, 0&gt; {</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  let summary = &quot;writes content into a plain-old-data struct record&quot;;</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  let description = [{</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    Writes a value into a named record of a pod instance. This operation has no result values.</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span> </div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    The name of the record must be a valid record name for the pod type and the source</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    value type must match the type of the record.</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span> </div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    Writing a record that was written or initialized earlier overwrites the previous value.</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    Example:</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    ```llzk</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    pod.write %0[@sym] = %1 : !pod.type&lt;[@sym: !type, ...]&gt;, !type</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    ```</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  }];</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span> </div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  let arguments = (ins Arg&lt;LLZK_PODType, &quot;the pod to write into&quot;&gt;:$pod_ref,</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>      FlatSymbolRefAttr:$record_name, AnyLLZKType:$value);</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span> </div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  let assemblyFormat = [{</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    $pod_ref `[` custom&lt;RecordName&gt;($record_name) `]` `=` $value `:` type($pod_ref) `,` type($value) attr-dict</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  }];</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  let hasVerifier = 1;</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>}</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>#endif // LLZK_POD_OPS</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  let useCustomPropertiesEncoding = 1;</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  let hasVerifier = 1;</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>}</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>def LLZK_WritePodOp : ScalarPODAccessOp&lt;&quot;write&quot;, 0&gt; {</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  let summary = &quot;writes content into a plain-old-data struct record&quot;;</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  let description = [{</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    Writes a value into a named record of a pod instance. This operation has no result values.</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    The name of the record must be a valid record name for the pod type and the source</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    value type must match the type of the record.</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    Writing a record that was written or initialized earlier overwrites the previous value.</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    Example:</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    ```llzk</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    pod.write %0[@sym] = %1 : !pod.type&lt;[@sym: !type, ...]&gt;, !type</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    ```</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  }];</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  let arguments = (ins Arg&lt;LLZK_PODType, &quot;the pod to write into&quot;&gt;:$pod_ref,</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>      StrAttr:$record_name, AnyLLZKType:$value);</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    $pod_ref `[` custom&lt;RecordName&gt;($record_name) `]` `=` $value `:` type($pod_ref) `,` type($value) attr-dict</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  }];</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  let useCustomPropertiesEncoding = 1;</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  let hasVerifier = 1;</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>}</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>#endif // LLZK_POD_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -154,8 +154,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:aff82b44910667cd8314da95e5d2cc7ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set MapOpGroupSizes attribute of <a class="el" href="classllzk_1_1pod_1_1NewPodOp.html">llzk::pod::NewPodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a85547610360977c302ef7b64b998acba" id="r_a85547610360977c302ef7b64b998acba"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a85547610360977c302ef7b64b998acba">llzkPod_NewPodOpGetResult</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:a85547610360977c302ef7b64b998acba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Result result from <a class="el" href="classllzk_1_1pod_1_1NewPodOp.html">llzk::pod::NewPodOp</a> Operation.  <br /></td></tr>
-<tr class="memitem:a386e03dce688d50b9bed0d6f0ced0916" id="r_a386e03dce688d50b9bed0d6f0ced0916"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a386e03dce688d50b9bed0d6f0ced0916">llzkPod_ReadPodOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirType resultType, MlirValue pod_ref, MlirAttribute record_name)</td></tr>
-<tr class="memdesc:a386e03dce688d50b9bed0d6f0ced0916"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">llzk::pod::ReadPodOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:add7d1bc198c7f5c2cecae25a36883e5e" id="r_add7d1bc198c7f5c2cecae25a36883e5e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#add7d1bc198c7f5c2cecae25a36883e5e">llzkPod_ReadPodOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirType resultType, MlirValue pod_ref, MlirIdentifier record_name)</td></tr>
+<tr class="memdesc:add7d1bc198c7f5c2cecae25a36883e5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">llzk::pod::ReadPodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:aa8d8ed1b9d39b49c03ce72800fe0e72d" id="r_aa8d8ed1b9d39b49c03ce72800fe0e72d"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa8d8ed1b9d39b49c03ce72800fe0e72d">llzkOperationIsA_Pod_ReadPodOp</a> (MlirOperation)</td></tr>
 <tr class="memdesc:aa8d8ed1b9d39b49c03ce72800fe0e72d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">llzk::pod::ReadPodOp</a>.  <br /></td></tr>
 <tr class="memitem:a28b44b9065027cd230c72c9d35717858" id="r_a28b44b9065027cd230c72c9d35717858"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a28b44b9065027cd230c72c9d35717858">llzkPod_ReadPodOpGetPodRef</a> (MlirOperation op)</td></tr>
@@ -170,8 +170,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a7c81c22e34cd3a00e045b250073d1899"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Result result from <a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">llzk::pod::ReadPodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a4ef87ad8f2b0e0f82782b521eac9133e" id="r_a4ef87ad8f2b0e0f82782b521eac9133e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4ef87ad8f2b0e0f82782b521eac9133e">llzkPod_ReadPodOpGetPodRefType</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a4ef87ad8f2b0e0f82782b521eac9133e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the type of the referenced pod.  <br /></td></tr>
-<tr class="memitem:ab2b8ebfbcaeb1732328f000b0222e6bd" id="r_ab2b8ebfbcaeb1732328f000b0222e6bd"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab2b8ebfbcaeb1732328f000b0222e6bd">llzkPod_WritePodOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue pod_ref, MlirValue value, MlirAttribute record_name)</td></tr>
-<tr class="memdesc:ab2b8ebfbcaeb1732328f000b0222e6bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a0f50192476f789358f2bb1dfa27ed48a" id="r_a0f50192476f789358f2bb1dfa27ed48a"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0f50192476f789358f2bb1dfa27ed48a">llzkPod_WritePodOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue pod_ref, MlirValue value, MlirIdentifier record_name)</td></tr>
+<tr class="memdesc:a0f50192476f789358f2bb1dfa27ed48a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:acc07ea832822f57c66c288b0fcbe1284" id="r_acc07ea832822f57c66c288b0fcbe1284"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acc07ea832822f57c66c288b0fcbe1284">llzkOperationIsA_Pod_WritePodOp</a> (MlirOperation)</td></tr>
 <tr class="memdesc:acc07ea832822f57c66c288b0fcbe1284"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">llzk::pod::WritePodOp</a>.  <br /></td></tr>
 <tr class="memitem:ae2422f6fca10f78a5fe2df599607f5ea" id="r_ae2422f6fca10f78a5fe2df599607f5ea"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae2422f6fca10f78a5fe2df599607f5ea">llzkPod_WritePodOpGetPodRef</a> (MlirOperation op)</td></tr>
@@ -565,8 +565,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a386e03dce688d50b9bed0d6f0ced0916" name="a386e03dce688d50b9bed0d6f0ced0916"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a386e03dce688d50b9bed0d6f0ced0916">&#9670;&#160;</a></span>llzkPod_ReadPodOpBuild()</h2>
+<a id="add7d1bc198c7f5c2cecae25a36883e5e" name="add7d1bc198c7f5c2cecae25a36883e5e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add7d1bc198c7f5c2cecae25a36883e5e">&#9670;&#160;</a></span>llzkPod_ReadPodOpBuild()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -594,7 +594,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>&#160;)</td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -739,8 +739,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ab2b8ebfbcaeb1732328f000b0222e6bd" name="ab2b8ebfbcaeb1732328f000b0222e6bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab2b8ebfbcaeb1732328f000b0222e6bd">&#9670;&#160;</a></span>llzkPod_WritePodOpBuild()</h2>
+<a id="a0f50192476f789358f2bb1dfa27ed48a" name="a0f50192476f789358f2bb1dfa27ed48a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f50192476f789358f2bb1dfa27ed48a">&#9670;&#160;</a></span>llzkPod_WritePodOpBuild()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -768,7 +768,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>&#160;)</td>
+          <td class="paramtype">MlirIdentifier</td>          <td class="paramname"><span class="paramname"><em>record_name</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">

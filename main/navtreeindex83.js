@@ -1,7 +1,5 @@
 var NAVTREEINDEX83 =
 {
-"structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html":[12,0,0,4],
-"structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html":[10,0,3,5],
 "structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html":[12,0,0,5],
 "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html":[10,0,3,6],
 "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html":[12,0,0,6],
@@ -249,5 +247,7 @@ var NAVTREEINDEX83 =
 "structllzk_1_1LLZKDialectBytecodeInterface.html#ad3b46fd55fe8865fb43dd6923a86c0b5":[12,0,1,59,0],
 "structllzk_1_1LLZKDialectVersion.html":[10,0,4,63],
 "structllzk_1_1LLZKDialectVersion.html":[12,0,1,60],
-"structllzk_1_1LLZKDialectVersion.html#a1af207d61bacf29f4caab885a7ef879a":[10,0,4,63,6]
+"structllzk_1_1LLZKDialectVersion.html#a1af207d61bacf29f4caab885a7ef879a":[10,0,4,63,6],
+"structllzk_1_1LLZKDialectVersion.html#a1af207d61bacf29f4caab885a7ef879a":[12,0,1,60,6],
+"structllzk_1_1LLZKDialectVersion.html#a661b8a4a0debab7f9bef406b5fd890c9":[10,0,4,63,1]
 };

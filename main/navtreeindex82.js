@@ -1,7 +1,5 @@
 var NAVTREEINDEX82 =
 {
-"structGenStringFromOpPieces.html#ac656495290e6a304544e59c3d07144a7":[12,0,48,10],
-"structGenStringFromOpPieces.html#ad7155b93cbfed5fa6bcfe65d11e3e2b6":[12,0,48,2],
 "structGenStringFromOpPieces.html#afdff8d7d7d44d416513d88f29af28c47":[12,0,48,8],
 "structGenerator.html":[12,0,47],
 "structGenerator.html#a175792ff2622a6ce48bf2adab7e09e58":[12,0,47,1],
@@ -249,5 +247,7 @@ var NAVTREEINDEX82 =
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a9bec98bdf64287aa532d54b5255c34e7":[12,0,0,15,0],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#acbf97e9cb8cb9c364cf0cfeaa0d1e6c7":[10,0,3,15,1],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#acbf97e9cb8cb9c364cf0cfeaa0d1e6c7":[12,0,0,15,1],
-"structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html":[10,0,3,4]
+"structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html":[10,0,3,4],
+"structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html":[12,0,0,4],
+"structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html":[10,0,3,5]
 };
